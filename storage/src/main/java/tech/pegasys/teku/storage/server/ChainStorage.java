@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
-import org.hyperledger.besu.plugin.services.exception.StorageException;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,14 +30,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.storage.api.ChainStorageFacade;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -56,34 +52,17 @@ public class ChainStorage
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
 
-  @SuppressWarnings("unused")
-  private final Optional<ExecutionLayerChannel> executionLayerChannel;
-
   private Optional<OnDiskStoreData> cachedStoreData = Optional.empty();
 
-  private final Spec spec;
-
-  private ChainStorage(
-      final Database database,
-      final FinalizedStateCache finalizedStateCache,
-      final Optional<ExecutionLayerChannel> executionLayerChannel,
-      final Spec spec) {
+  private ChainStorage(final Database database, final FinalizedStateCache finalizedStateCache) {
     this.database = database;
     this.finalizedStateCache = finalizedStateCache;
-    this.spec = spec;
-    this.executionLayerChannel = executionLayerChannel;
   }
 
-  public static ChainStorage create(
-      final Database database,
-      final Optional<ExecutionLayerChannel> executionLayerChannel,
-      final Spec spec) {
+  public static ChainStorage create(final Database database, final Spec spec) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        database,
-        new FinalizedStateCache(spec, database, finalizedStateCacheSize, true),
-        executionLayerChannel,
-        spec);
+        database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true));
   }
 
   private synchronized Optional<OnDiskStoreData> getStore() {
@@ -169,60 +148,54 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot) {
-    return SafeFuture.of(() -> database.getFinalizedBlockAtSlot(slot))
-        .thenCompose(this::unblindBlock);
+    return SafeFuture.of(() -> database.getFinalizedBlockAtSlot(slot));
   }
 
-  private SafeFuture<Optional<SignedBeaconBlock>> unblindBlock(
-      final Optional<SignedBeaconBlock> maybeBlock) {
-    if (maybeBlock.isEmpty()) {
-      return SafeFuture.completedFuture(maybeBlock);
-    }
-    return unblindBlock(maybeBlock.get()).thenApply(Optional::of);
+  @Override
+  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    return SafeFuture.of(
+        () -> {
+          database.storeUnconfirmedBlobsSidecar(blobsSidecar);
+          return null;
+        });
   }
 
-  private SafeFuture<SignedBeaconBlock> unblindBlock(final SignedBeaconBlock block) {
-    if (!block.isBlinded()) {
-      return SafeFuture.completedFuture(block);
-    }
+  @Override
+  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
+    return SafeFuture.of(
+        () -> {
+          database.removeBlobsSidecar(blobsSidecarKey);
+          return null;
+        });
+  }
 
-    final Optional<ExecutionPayloadSummary> maybeSummary =
-        block.getMessage().getBody().getOptionalExecutionPayloadSummary();
-    if (maybeSummary.isPresent() && maybeSummary.get().isDefaultPayload()) {
-      // can return without having to fetch anything
-      final SignedBeaconBlock unblinded =
-          block.unblind(
-              spec.atSlot(block.getSlot()).getSchemaDefinitions(),
-              SchemaDefinitionsBellatrix.required(
-                      spec.atSlot(block.getSlot()).getSchemaDefinitions())
-                  .getExecutionPayloadSchema()
-                  .getDefault());
-      return SafeFuture.completedFuture(unblinded);
-    }
+  @Override
+  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
+    return SafeFuture.of(
+        () -> {
+          database.pruneOldestBlobsSidecar(endSlot, pruneLimit);
+          return null;
+        });
+  }
 
-    // attempt to fetch payload from storage
-    final Optional<ExecutionPayload> maybePayload =
-        database.getExecutionPayload(block.getRoot(), block.getSlot());
-    if (maybePayload.isPresent()) {
-      return SafeFuture.completedFuture(
-          block.unblind(spec.atSlot(block.getSlot()).getSchemaDefinitions(), maybePayload.get()));
-    }
-
-    throw new StorageException(
-        String.format(
-            "Needed a payload, but not able to retrieve from storage for block %s (%s)",
-            block.getRoot(), block.getSlot()));
+  @Override
+  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
+      final UInt64 endSlot, final int pruneLimit) {
+    return SafeFuture.of(
+        () -> {
+          database.pruneOldestUnconfirmedBlobsSidecar(endSlot, pruneLimit);
+          return null;
+        });
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
-    return SafeFuture.of(() -> database.getLatestFinalizedBlockAtSlot(slot))
-        .thenCompose(this::unblindBlock);
+    return SafeFuture.of(() -> database.getLatestFinalizedBlockAtSlot(slot));
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {
-    return SafeFuture.of(() -> database.getSignedBlock(blockRoot)).thenCompose(this::unblindBlock);
+    return SafeFuture.of(() -> database.getSignedBlock(blockRoot));
   }
 
   @Override
@@ -292,8 +265,7 @@ public class ChainStorage
 
   @Override
   public SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot) {
-    final List<SignedBeaconBlock> blocks = database.getNonCanonicalBlocksAtSlot(slot);
-    return SafeFuture.collectAll(blocks.stream().map(this::unblindBlock));
+    return SafeFuture.of(() -> database.getNonCanonicalBlocksAtSlot(slot));
   }
 
   @Override
@@ -317,5 +289,11 @@ public class ChainStorage
   @Override
   public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
     return SafeFuture.of(database::getFinalizedDepositSnapshot);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.of(() -> database.getBlobsSidecar(slotAndBlockRoot));
   }
 }

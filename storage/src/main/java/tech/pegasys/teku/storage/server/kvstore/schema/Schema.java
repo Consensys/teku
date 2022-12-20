@@ -23,4 +23,6 @@ public interface Schema {
   Collection<KvStoreColumn<?, ?>> getAllColumns();
 
   Collection<KvStoreVariable<?>> getAllVariables();
+
+  Collection<Bytes> getDeletedColumnIds();
 }

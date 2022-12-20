@@ -23,26 +23,22 @@ public class StorageConfiguration {
   public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED = false;
 
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
-  public static final boolean DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY = false;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
-  public static final int DEFAULT_BLOCK_MIGRATION_BATCH_SIZE = 25;
-  public static final int DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS = 100;
-  public static final boolean DEFAULT_BLOCK_PRUNING_ENABLED = false;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofHours(1);
+  public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
+  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 32;
 
   private final Eth1Address eth1DepositContract;
 
   private final StateStorageMode dataStorageMode;
   private final long dataStorageFrequency;
   private final DatabaseVersion dataStorageCreateDbVersion;
-  private final int blockMigrationBatchSize;
-  private final int blockMigrationBatchDelay;
-  private boolean storeBlockExecutionPayloadSeparately;
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
-  private final boolean blockPruningEnabled;
   private final Duration blockPruningInterval;
+  private final Duration blobsPruningInterval;
+  private final int blobsPruningLimit;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -51,11 +47,9 @@ public class StorageConfiguration {
       final DatabaseVersion dataStorageCreateDbVersion,
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final int blockMigrationBatchSize,
-      final int blockMigrationBatchDelay,
-      final boolean blockPruningEnabled,
       final Duration blockPruningInterval,
+      final Duration blobsPruningInterval,
+      final int blobsPruningLimit,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -63,11 +57,9 @@ public class StorageConfiguration {
     this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
-    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
-    this.blockMigrationBatchSize = blockMigrationBatchSize;
-    this.blockMigrationBatchDelay = blockMigrationBatchDelay;
-    this.blockPruningEnabled = blockPruningEnabled;
     this.blockPruningInterval = blockPruningInterval;
+    this.blobsPruningInterval = blobsPruningInterval;
+    this.blobsPruningLimit = blobsPruningLimit;
     this.spec = spec;
   }
 
@@ -99,24 +91,16 @@ public class StorageConfiguration {
     return maxKnownNodeCacheSize;
   }
 
-  public boolean isStoreBlockExecutionPayloadSeparately() {
-    return storeBlockExecutionPayloadSeparately;
-  }
-
-  public int getBlockMigrationBatchSize() {
-    return blockMigrationBatchSize;
-  }
-
-  public int getBlockMigrationBatchDelay() {
-    return blockMigrationBatchDelay;
-  }
-
-  public boolean isBlockPruningEnabled() {
-    return blockPruningEnabled;
-  }
-
   public Duration getBlockPruningInterval() {
     return blockPruningInterval;
+  }
+
+  public Duration getBlobsPruningInterval() {
+    return blobsPruningInterval;
+  }
+
+  public int getBlobsPruningLimit() {
+    return blobsPruningLimit;
   }
 
   public Spec getSpec() {
@@ -132,11 +116,9 @@ public class StorageConfiguration {
     private Spec spec;
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
-    private boolean storeBlockExecutionPayloadSeparately = DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
-    private int blockMigrationBatchSize = DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
-    private int blockMigrationBatchDelay = DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
-    private boolean blockPruningEnabled = DEFAULT_BLOCK_PRUNING_ENABLED;
     private Duration blockPruningInterval = DEFAULT_BLOCK_PRUNING_INTERVAL;
+    private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
+    private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
 
     private Builder() {}
 
@@ -190,16 +172,28 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder blockPruningEnabled(final boolean blockPruningEnabled) {
-      this.blockPruningEnabled = blockPruningEnabled;
-      return this;
-    }
-
     public Builder blockPruningInterval(final Duration blockPruningInterval) {
       if (blockPruningInterval.isNegative() || blockPruningInterval.isZero()) {
         throw new InvalidConfigurationException("Block pruning interval must be positive");
       }
       this.blockPruningInterval = blockPruningInterval;
+      return this;
+    }
+
+    public Builder blobsPruningInterval(final Duration blobsPruningInterval) {
+      if (blobsPruningInterval.isNegative() || blobsPruningInterval.isZero()) {
+        throw new InvalidConfigurationException("Blobs pruning interval must be positive");
+      }
+      this.blobsPruningInterval = blobsPruningInterval;
+      return this;
+    }
+
+    public Builder blobsPruningLimit(final int blobsPruningLimit) {
+      if (blobsPruningLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid blobsPruningLimit: %d", blobsPruningLimit));
+      }
+      this.blobsPruningLimit = blobsPruningLimit;
       return this;
     }
 
@@ -211,28 +205,10 @@ public class StorageConfiguration {
           dataStorageCreateDbVersion,
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
-          blockPruningEnabled,
           blockPruningInterval,
+          blobsPruningInterval,
+          blobsPruningLimit,
           spec);
-    }
-
-    public Builder storeBlockExecutionPayloadSeparately(
-        final boolean storeBlockExecutionPayloadSeparately) {
-      this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
-      return this;
-    }
-
-    public Builder blockMigrationBatchSize(final int blockMigrationBatchSize) {
-      this.blockMigrationBatchSize = blockMigrationBatchSize;
-      return this;
-    }
-
-    public Builder blockMigrationBatchDelay(final int blockMigrationBatchDelay) {
-      this.blockMigrationBatchDelay = blockMigrationBatchDelay;
-      return this;
     }
   }
 }

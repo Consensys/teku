@@ -198,6 +198,6 @@ public class StableSubnetSubscriberTest {
 
   private StableSubnetSubscriber createStableSubnetSubscriber() {
     return new ValidatorBasedStableSubnetSubscriber(
-        validatorApiChannel, new Random(13241234L), spec);
+        validatorApiChannel, new Random(13241234L), spec, 0);
   }
 }

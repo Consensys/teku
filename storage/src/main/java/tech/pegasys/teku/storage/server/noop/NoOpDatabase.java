@@ -32,7 +32,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -122,12 +122,6 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<ExecutionPayload> getExecutionPayload(
-      final Bytes32 blockRoot, final UInt64 slot) {
-    return Optional.empty();
-  }
-
-  @Override
   public Optional<SignedBeaconBlock> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return Optional.empty();
   }
@@ -161,6 +155,11 @@ public class NoOpDatabase implements Database {
   public Stream<SignedBeaconBlock> streamFinalizedBlocks(
       final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
+  }
+
+  @Override
+  public Optional<UInt64> getGenesisTime() {
+    return Optional.empty();
   }
 
   @Override
@@ -225,7 +224,7 @@ public class NoOpDatabase implements Database {
   public void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot) {}
 
   @Override
-  public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {}
+  public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {}
 
   @Override
   public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
@@ -252,12 +251,6 @@ public class NoOpDatabase implements Database {
     return Optional.empty();
   }
 
-  @MustBeClosed
-  @Override
-  public Stream<SignedBeaconBlock> streamBlindedBlocks() {
-    return Stream.empty();
-  }
-
   @Override
   public Optional<Checkpoint> getJustifiedCheckpoint() {
     return Optional.empty();
@@ -265,6 +258,52 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {}
+
+  @Override
+  public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
+
+  @Override
+  public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
+
+  @Override
+  public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    return Optional.empty();
+  }
+
+  @Override
+  public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
+
+  @Override
+  public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
+    return Optional.empty();
+  }
+
+  @Override
+  public boolean pruneOldestBlobsSidecar(final UInt64 lastSlotToPrune, final int pruneLimit) {
+    return false;
+  }
+
+  @Override
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public boolean pruneOldestUnconfirmedBlobsSidecar(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
+    return false;
+  }
 
   @Override
   public void close() {}

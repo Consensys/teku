@@ -66,10 +66,12 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
     testImplementation 'org.mockito:mockito-core'
+    testImplementation 'tech.pegasys:jc-kzg-4844'
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:bls'))
     testImplementation testFixtures(project(':infrastructure:collections'))
     testImplementation testFixtures(project(':infrastructure:json'))
+    testImplementation testFixtures(project(':infrastructure:kzg'))
     testImplementation testFixtures(project(':infrastructure:ssz'))
 }

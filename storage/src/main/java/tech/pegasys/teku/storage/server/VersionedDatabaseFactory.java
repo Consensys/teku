@@ -19,12 +19,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreConfiguration;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
@@ -47,9 +45,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final MetricsSystem metricsSystem;
   private final File dataDirectory;
   private final int maxKnownNodeCacheSize;
-  private final int blockMigrationBatchSize;
-  private final int blockMigrationBatchDelay;
-  private final boolean storeBlockExecutionPayloadSeparately;
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
@@ -60,27 +55,18 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final Spec spec;
   private final boolean storeNonCanonicalBlocks;
 
-  private final Optional<AsyncRunner> asyncRunner;
-
   public VersionedDatabaseFactory(
-      final MetricsSystem metricsSystem,
-      final Path dataPath,
-      final Optional<AsyncRunner> asyncRunner,
-      final StorageConfiguration config) {
+      final MetricsSystem metricsSystem, final Path dataPath, final StorageConfiguration config) {
 
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
-    this.asyncRunner = asyncRunner;
 
     this.stateStorageMode = config.getDataStorageMode();
     this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
     this.maxKnownNodeCacheSize = config.getMaxKnownNodeCacheSize();
-    this.storeBlockExecutionPayloadSeparately = config.isStoreBlockExecutionPayloadSeparately();
     this.stateStorageFrequency = config.getDataStorageFrequency();
     this.eth1Address = config.getEth1DepositContract();
     this.storeNonCanonicalBlocks = config.isStoreNonCanonicalBlocksEnabled();
-    this.blockMigrationBatchSize = config.getBlockMigrationBatchSize();
-    this.blockMigrationBatchDelay = config.getBlockMigrationBatchDelay();
     this.spec = config.getSpec();
 
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
@@ -173,10 +159,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
-          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read configuration file", e);
@@ -201,10 +183,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
-          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -224,10 +202,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
-          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -252,10 +226,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
-          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -272,10 +242,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           stateStorageMode,
           stateStorageFrequency,
           storeNonCanonicalBlocks,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
-          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);
@@ -291,11 +257,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
           dbConfiguration.withDatabaseDir(dbDirectory.toPath()),
           stateStorageMode,
           storeNonCanonicalBlocks,
-          storeBlockExecutionPayloadSeparately,
-          blockMigrationBatchSize,
-          blockMigrationBatchDelay,
           maxKnownNodeCacheSize,
-          asyncRunner,
           spec);
     } catch (final IOException e) {
       throw DatabaseStorageException.unrecoverable("Failed to read metadata", e);

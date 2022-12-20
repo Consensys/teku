@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.options;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.storage.server.StateStorageMode.ARCHIVE;
+import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import java.nio.file.Path;
@@ -199,22 +200,39 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
                     .sync(b -> b.reconstructHistoricStatesEnabled(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Cannot reconstruct historic states when using prune data storage mode");
+        .hasMessage("Cannot reconstruct historic states without using ARCHIVE data storage mode");
   }
 
   @Test
   void shouldSetBlockPruningOptions() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
-            "--Xdata-storage-block-pruning-enabled", "--Xdata-storage-block-pruning-interval=150");
-    assertThat(config.storageConfiguration().isBlockPruningEnabled()).isTrue();
+            "--data-storage-mode=MINIMAL", "--Xdata-storage-block-pruning-interval=150");
+    assertThat(config.storageConfiguration().getDataStorageMode()).isEqualTo(MINIMAL);
     assertThat(config.storageConfiguration().getBlockPruningInterval())
         .isEqualTo(Duration.ofSeconds(150));
     assertThat(
             createConfigBuilder()
                 .storageConfiguration(
-                    b -> b.blockPruningEnabled(true).blockPruningInterval(Duration.ofSeconds(150)))
+                    b -> b.dataStorageMode(MINIMAL).blockPruningInterval(Duration.ofSeconds(150)))
                 .sync(b -> b.fetchAllHistoricBlocks(false))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
+  }
+
+  @Test
+  void shouldSetBlobsPruningOptions() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xdata-storage-blobs-pruning-interval=55", "--Xdata-storage-blobs-pruning-limit=10");
+    assertThat(config.storageConfiguration().getBlobsPruningInterval())
+        .isEqualTo(Duration.ofSeconds(55));
+    assertThat(config.storageConfiguration().getBlobsPruningLimit()).isEqualTo(10);
+    assertThat(
+            createConfigBuilder()
+                .storageConfiguration(
+                    b -> b.blobsPruningInterval(Duration.ofSeconds(55)).blobsPruningLimit(10))
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
@@ -225,11 +243,11 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(
             () ->
                 createConfigBuilder()
-                    .storageConfiguration(b -> b.blockPruningEnabled(true).dataStorageMode(ARCHIVE))
+                    .storageConfiguration(b -> b.dataStorageMode(MINIMAL))
                     .sync(b -> b.reconstructHistoricStatesEnabled(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Cannot reconstruct historic states when block pruning is enabled");
+        .hasMessage("Cannot reconstruct historic states without using ARCHIVE data storage mode");
   }
 
   @Test
@@ -237,7 +255,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(
             () ->
                 createConfigBuilder()
-                    .storageConfiguration(b -> b.blockPruningEnabled(true).dataStorageMode(ARCHIVE))
+                    .storageConfiguration(b -> b.dataStorageMode(MINIMAL))
                     .sync(b -> b.fetchAllHistoricBlocks(true))
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)

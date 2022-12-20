@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,7 +47,6 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -74,7 +72,6 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -95,7 +92,6 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -114,7 +110,6 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
             StorageConfiguration.builder()
                 .specProvider(spec)
                 .eth1DepositContract(eth1Address)
@@ -134,7 +129,6 @@ public class VersionedDatabaseFactoryTest {
         new VersionedDatabaseFactory(
             new StubMetricsSystem(),
             dataDir,
-            Optional.empty(),
             StorageConfiguration.builder()
                 .eth1DepositContract(eth1Address)
                 .dataStorageMode(DATA_STORAGE_MODE)

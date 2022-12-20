@@ -16,9 +16,7 @@ package tech.pegasys.teku.storage.storageSystem;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
-import java.util.Optional;
 import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -43,15 +41,12 @@ public class InMemoryStorageSystemBuilder {
   private long stateStorageFrequency = 1L;
   private boolean storeNonCanonicalBlocks = false;
 
-  private Optional<AsyncRunner> asyncRunner = Optional.empty();
-
   private Spec spec = TestSpecFactory.createMinimalPhase0();
 
   // Internal variables
   MockKvStoreInstance unifiedDb;
   private MockKvStoreInstance hotDb;
   private MockKvStoreInstance coldDb;
-  private boolean storeBlockExecutionPayloadSeparately = false;
 
   private InMemoryStorageSystemBuilder() {}
 
@@ -100,7 +95,6 @@ public class InMemoryStorageSystemBuilder {
         storageMode,
         storeConfig,
         spec,
-        Optional.empty(),
         ChainBuilder.create(spec, validatorKeys));
   }
 
@@ -115,8 +109,6 @@ public class InMemoryStorageSystemBuilder {
             .version(version)
             .storageMode(storageMode)
             .stateStorageFrequency(stateStorageFrequency)
-            .asyncRunner(asyncRunner)
-            .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
             .storeConfig(storeConfig);
 
     copy.unifiedDb = unifiedDb;
@@ -125,11 +117,6 @@ public class InMemoryStorageSystemBuilder {
     copy.spec = spec;
 
     return copy;
-  }
-
-  public InMemoryStorageSystemBuilder asyncRunner(final Optional<AsyncRunner> asyncRunner) {
-    this.asyncRunner = asyncRunner;
-    return this;
   }
 
   public InMemoryStorageSystemBuilder version(final DatabaseVersion version) {
@@ -141,12 +128,6 @@ public class InMemoryStorageSystemBuilder {
   public InMemoryStorageSystemBuilder storeNonCanonicalBlocks(
       final boolean storeNonCanonicalBlocks) {
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
-    return this;
-  }
-
-  public InMemoryStorageSystemBuilder storeBlockExecutionPayloadSeparately(
-      final boolean storeBlockExecutionPayloadSeparately) {
-    this.storeBlockExecutionPayloadSeparately = storeBlockExecutionPayloadSeparately;
     return this;
   }
 
@@ -186,12 +167,7 @@ public class InMemoryStorageSystemBuilder {
       hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createTree(
-        hotDb,
-        storageMode,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        asyncRunner,
-        spec);
+        hotDb, storageMode, storeNonCanonicalBlocks, spec);
   }
 
   private Database createV6Database() {
@@ -200,13 +176,7 @@ public class InMemoryStorageSystemBuilder {
       hotDb = MockKvStoreInstance.createEmpty(schema.getAllColumns(), schema.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createV6(
-        hotDb,
-        storageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        asyncRunner,
-        spec);
+        hotDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   // V5 only differs by the RocksDB configuration which doesn't apply to the in-memory version
@@ -230,14 +200,7 @@ public class InMemoryStorageSystemBuilder {
               v4SchemaFinalized.getAllColumns(), v4SchemaFinalized.getAllVariables());
     }
     return InMemoryKvStoreDatabaseFactory.createV4(
-        hotDb,
-        coldDb,
-        storageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        asyncRunner,
-        spec);
+        hotDb, coldDb, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   private void reopenDatabases() {

@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.kvstore.TestKvStoreDatabase;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon.HotUpdaterCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 
 public class DatabaseMigraterTest {
 
@@ -127,7 +127,7 @@ public class DatabaseMigraterTest {
     final BeaconBlockAndState blockAndState = dataStructureUtil.randomBlockAndState(1_000_000);
     migrater.openDatabases(DatabaseVersion.V5, DatabaseVersion.LEVELDB2);
     TestKvStoreDatabase originalDb = new TestKvStoreDatabase(migrater.getOriginalDatabase());
-    try (HotUpdaterCommon updater = originalDb.hotUpdater()) {
+    try (HotUpdater updater = originalDb.hotUpdater()) {
       updater.addHotState(blockAndState.getBlock().getRoot(), blockAndState.getState());
       updater.commit();
     }
@@ -147,7 +147,7 @@ public class DatabaseMigraterTest {
     final Checkpoint finalizedCheckpoint = dataStructureUtil.randomCheckpoint();
     migrater.openDatabases(DatabaseVersion.V5, DatabaseVersion.LEVELDB2);
     TestKvStoreDatabase originalDb = new TestKvStoreDatabase(migrater.getOriginalDatabase());
-    try (HotUpdaterCommon updater = originalDb.hotUpdater()) {
+    try (HotUpdater updater = originalDb.hotUpdater()) {
       updater.setGenesisTime(genesis);
       updater.setFinalizedCheckpoint(finalizedCheckpoint);
       updater.commit();

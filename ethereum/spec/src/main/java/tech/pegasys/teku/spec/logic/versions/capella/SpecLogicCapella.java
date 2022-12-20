@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
 import tech.pegasys.teku.spec.logic.common.util.BlockProposalUtil;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
+import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SpecLogicCapella extends AbstractSpecLogic {
   private final Optional<SyncCommitteeUtil> syncCommitteeUtil;
+  private final Optional<LightClientUtil> lightClientUtil;
   private final BellatrixTransitionHelpers bellatrixTransitionHelpers;
 
   private SpecLogicCapella(
@@ -60,6 +62,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
       final SyncCommitteeUtil syncCommitteeUtil,
+      final LightClientUtil lightClientUtil,
       final CapellaStateUpgrade stateUpgrade,
       final BellatrixTransitionHelpers bellatrixTransitionHelpers) {
     super(
@@ -80,6 +83,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         Optional.of(blindBlockUtil),
         Optional.of(stateUpgrade));
     this.syncCommitteeUtil = Optional.of(syncCommitteeUtil);
+    this.lightClientUtil = Optional.of(lightClientUtil);
     this.bellatrixTransitionHelpers = bellatrixTransitionHelpers;
   }
 
@@ -129,6 +133,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
     final SyncCommitteeUtil syncCommitteeUtil =
         new SyncCommitteeUtil(
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
+    final LightClientUtil lightClientUtil =
+        new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
     final BlockProcessorCapella blockProcessor =
         new BlockProcessorCapella(
             config,
@@ -175,6 +181,7 @@ public class SpecLogicCapella extends AbstractSpecLogic {
         blockProposalUtil,
         blindBlockUtil,
         syncCommitteeUtil,
+        lightClientUtil,
         stateUpgrade,
         bellatrixTransitionHelpers);
   }
@@ -182,6 +189,11 @@ public class SpecLogicCapella extends AbstractSpecLogic {
   @Override
   public Optional<SyncCommitteeUtil> getSyncCommitteeUtil() {
     return syncCommitteeUtil;
+  }
+
+  @Override
+  public Optional<LightClientUtil> getLightClientUtil() {
+    return lightClientUtil;
   }
 
   @Override

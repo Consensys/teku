@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -83,7 +84,8 @@ import tech.pegasys.teku.storage.server.DatabaseContext;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.storage.server.StateStorageMode;
 import tech.pegasys.teku.storage.server.TestDatabaseContext;
-import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDaoCommon;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.FinalizedUpdater;
+import tech.pegasys.teku.storage.server.kvstore.dataaccess.KvStoreCombinedDao.HotUpdater;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.StoreAssertions;
 import tech.pegasys.teku.storage.store.StoreBuilder;
@@ -97,7 +99,7 @@ public class DatabaseTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
-  protected final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  protected final Spec spec = TestSpecFactory.createMinimalEip4844();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final ChainProperties chainProperties = new ChainProperties(spec);
@@ -120,7 +122,7 @@ public class DatabaseTest {
   private final List<StorageSystem> storageSystems = new ArrayList<>();
 
   @BeforeEach
-  public void setup() throws IOException {
+  public void setup() {
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
@@ -180,6 +182,140 @@ public class DatabaseTest {
     database.updateWeakSubjectivityState(update);
 
     assertThat(database.getWeakSubjectivityState().getCheckpoint()).contains(checkpoint);
+  }
+
+  @TestTemplate
+  public void verifyBlobsLifecycle(final DatabaseContext context) throws IOException {
+    initialize(context);
+
+    // no blobs, no early slot
+    assertThat(database.getEarliestBlobsSidecarSlot()).isEmpty();
+
+    final BlobsSidecar blobsSidecar1 =
+        dataStructureUtil.randomBlobsSidecar(dataStructureUtil.randomBytes32(), UInt64.valueOf(1));
+    final BlobsSidecar blobsSidecar2 =
+        dataStructureUtil.randomBlobsSidecar(Bytes32.ZERO, UInt64.valueOf(2));
+    final BlobsSidecar blobsSidecar2bis =
+        dataStructureUtil.randomBlobsSidecar(Bytes32.fromHexString("0x01"), UInt64.valueOf(2));
+    final BlobsSidecar blobsSidecar3 =
+        dataStructureUtil.randomBlobsSidecar(dataStructureUtil.randomBytes32(), UInt64.valueOf(3));
+    final BlobsSidecar blobsSidecar4 =
+        dataStructureUtil.randomBlobsSidecar(dataStructureUtil.randomBytes32(), UInt64.valueOf(4));
+    final BlobsSidecar blobsSidecarNotAdded = dataStructureUtil.randomBlobsSidecar();
+
+    // add blobs out of order
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar2);
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar1);
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar2bis);
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar4);
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar3);
+
+    assertThat(database.getEarliestBlobsSidecarSlot()).contains(ONE);
+
+    // all added blobs must be there
+    List.of(blobsSidecar1, blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4)
+        .forEach(
+            blobsSidecar ->
+                assertThat(database.getBlobsSidecar(blobsSidecarToSlotAndBlockRoot(blobsSidecar)))
+                    .contains(blobsSidecar));
+
+    // non added blobs must not be there
+    assertThat(database.getBlobsSidecar(blobsSidecarToSlotAndBlockRoot(blobsSidecarNotAdded)))
+        .isEmpty();
+
+    // all blobs must be streamed ordered by slot
+    assertBlobsStream(blobsSidecar1, blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
+
+    // a subset of blobs must be streamed ordered by slot
+    assertBlobsStream(
+        UInt64.valueOf(2), UInt64.valueOf(3), blobsSidecar2, blobsSidecar2bis, blobsSidecar3);
+
+    // all blobs must be unconfirmed
+    assertUnconfirmedBlobsStream(
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar1),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar3),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
+
+    database.confirmBlobsSidecar(blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
+
+    // only 1 and 3 blobs must be unconfirmed
+    assertUnconfirmedBlobsStream(
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar1),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar3));
+    // we still have all blobs
+    assertBlobsStream(blobsSidecar1, blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
+
+    // let's prune unconfirmed with limit to 1
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(UInt64.MAX_VALUE, 1)).isTrue();
+    assertUnconfirmedBlobsStream(
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar3));
+    // we have all blobs except the first
+    assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
+
+    // let's prune unconfirmed up to slot 1 (nothing will be pruned)
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(ONE, 10)).isFalse();
+    assertUnconfirmedBlobsStream(
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar3));
+    // we still have all blobs except the first
+    assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
+
+    // let's prune all unconfirmed
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(UInt64.valueOf(3), 10)).isFalse();
+    assertUnconfirmedBlobsStream();
+    // we have blobsSidecar4
+    assertBlobsStream(blobsSidecar4);
+
+    // let's prune all up to a too old slot (nothing will be pruned)
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.valueOf(3), 10)).isFalse();
+    assertBlobsStream(blobsSidecar4);
+
+    // let's prune all up slot 4
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.valueOf(4), 1)).isTrue();
+    // all empty now
+    assertUnconfirmedBlobsStream();
+    assertBlobsStream();
+  }
+
+  @TestTemplate
+  void pruneOldestBlobsSidecar_shouldPruneUnconfirmedBlobsToo(final DatabaseContext context)
+      throws IOException {
+    initialize(context);
+
+    // no blobs, no early slot
+    assertThat(database.getEarliestBlobsSidecarSlot()).isEmpty();
+
+    final BlobsSidecar blobsSidecar1 =
+        dataStructureUtil.randomBlobsSidecar(dataStructureUtil.randomBytes32(), UInt64.valueOf(1));
+    final BlobsSidecar blobsSidecar2 =
+        dataStructureUtil.randomBlobsSidecar(dataStructureUtil.randomBytes32(), UInt64.valueOf(2));
+    final BlobsSidecar blobsSidecar3 =
+        dataStructureUtil.randomBlobsSidecar(dataStructureUtil.randomBytes32(), UInt64.valueOf(3));
+    final BlobsSidecar blobsSidecar4 =
+        dataStructureUtil.randomBlobsSidecar(dataStructureUtil.randomBytes32(), UInt64.valueOf(4));
+
+    // add unconfirmed blobs
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar2);
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar1);
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar4);
+    database.storeUnconfirmedBlobsSidecar(blobsSidecar3);
+
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.MAX_VALUE, 2)).isTrue();
+    assertUnconfirmedBlobsStream(
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar3),
+        blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
+    assertBlobsStream(blobsSidecar3, blobsSidecar4);
+
+    assertThat(database.pruneOldestBlobsSidecar(UInt64.MAX_VALUE, 100)).isFalse();
+    assertUnconfirmedBlobsStream();
+    assertBlobsStream();
   }
 
   @TestTemplate
@@ -997,17 +1133,17 @@ public class DatabaseTest {
   public void shouldRecreateGenesisStateOnRestart_archiveMode(final DatabaseContext context)
       throws IOException {
     initialize(context, StateStorageMode.ARCHIVE);
-    testShouldRecreateGenesisStateOnRestart();
+    recreateGenesisStateOnRestart();
   }
 
   @TestTemplate
   public void shouldRecreateGenesisStateOnRestart_pruneMode(final DatabaseContext context)
       throws IOException {
     initialize(context, StateStorageMode.PRUNE);
-    testShouldRecreateGenesisStateOnRestart();
+    recreateGenesisStateOnRestart();
   }
 
-  public void testShouldRecreateGenesisStateOnRestart() {
+  private void recreateGenesisStateOnRestart() {
     // Shutdown and restart
     restartStorage();
 
@@ -1120,7 +1256,7 @@ public class DatabaseTest {
     database.storeInitialAnchor(genesisAnchor);
 
     final Optional<OnDiskStoreData> maybeData =
-        ((KvStoreDatabase<?, ?, ?, ?>) database).createMemoryStore(() -> 0L);
+        ((KvStoreDatabase) database).createMemoryStore(() -> 0L);
     assertThat(maybeData).isNotEmpty();
 
     final OnDiskStoreData data = maybeData.get();
@@ -1206,7 +1342,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       database.close();
       assertThatThrownBy(() -> updater.setGenesisTime(UInt64.ONE))
           .isInstanceOf(ShuttingDownException.class);
@@ -1214,8 +1350,8 @@ public class DatabaseTest {
   }
 
   @MustBeClosed
-  private KvStoreCombinedDaoCommon.HotUpdaterCommon hotUpdater() {
-    return ((KvStoreDatabase<?, ?, ?, ?>) database).hotUpdater();
+  private HotUpdater hotUpdater() {
+    return ((KvStoreDatabase) database).hotUpdater();
   }
 
   @TestTemplate
@@ -1224,7 +1360,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.FinalizedUpdaterCommon updater = finalizedUpdater()) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
       SignedBlockAndState newBlock = chainBuilder.generateNextBlock();
       database.close();
       assertThatThrownBy(() -> updater.addFinalizedState(newBlock.getRoot(), newBlock.getState()))
@@ -1233,8 +1369,8 @@ public class DatabaseTest {
   }
 
   @MustBeClosed
-  private KvStoreCombinedDaoCommon.FinalizedUpdaterCommon finalizedUpdater() {
-    return ((KvStoreDatabase<?, ?, ?, ?>) database).finalizedUpdater();
+  private FinalizedUpdater finalizedUpdater() {
+    return ((KvStoreDatabase) database).finalizedUpdater();
   }
 
   @TestTemplate
@@ -1243,7 +1379,7 @@ public class DatabaseTest {
     initialize(context);
     database.storeInitialAnchor(genesisAnchor);
 
-    try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+    try (final HotUpdater updater = hotUpdater()) {
       final MinGenesisTimeBlockEvent genesisTimeBlockEvent =
           dataStructureUtil.randomMinGenesisTimeBlockEvent(1);
       database.close();
@@ -1283,7 +1419,7 @@ public class DatabaseTest {
       createStorageSystem(context, StateStorageMode.PRUNE, StoreConfig.createDefault(), false);
       database.storeInitialAnchor(genesisAnchor);
 
-      try (final KvStoreCombinedDaoCommon.HotUpdaterCommon updater = hotUpdater()) {
+      try (final HotUpdater updater = hotUpdater()) {
         final Thread dbCloserThread =
             new Thread(
                 () -> {
@@ -1465,14 +1601,11 @@ public class DatabaseTest {
             .streamBlocksAndStates(0, 6)
             .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
 
-    switch (storageMode) {
-      case ARCHIVE:
-        assertFinalizedStatesAvailable(historicalStates);
-        break;
-      case PRUNE:
-        assertStatesUnavailable(
-            historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
-        break;
+    if (storageMode.storesFinalizedStates()) {
+      assertFinalizedStatesAvailable(historicalStates);
+    } else {
+      assertStatesUnavailable(
+          historicalStates.values().stream().map(BeaconState::getSlot).collect(toList()));
     }
   }
 
@@ -1708,11 +1841,16 @@ public class DatabaseTest {
     justifyAndFinalizeEpoch(
         spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
-    database.pruneFinalizedBlocks(UInt64.valueOf(2), UInt64.valueOf(5));
-    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isPresent();
-    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isPresent();
+    database.pruneFinalizedBlocks(UInt64.valueOf(3));
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(2))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(3))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isPresent();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
+
+    database.pruneFinalizedBlocks(UInt64.valueOf(5));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
@@ -1840,21 +1978,18 @@ public class DatabaseTest {
         primaryChain.getBlockAtSlot(2),
         primaryChain.getBlockAtSlot(3));
 
-    switch (storageMode) {
-      case ARCHIVE:
-        // Finalized states should be available
-        final Map<Bytes32, BeaconState> expectedStates =
-            primaryChain
-                .streamBlocksAndStates(0, 7)
-                .collect(toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
-        assertFinalizedStatesAvailable(expectedStates);
-        break;
-      case PRUNE:
-        // Check pruned states
-        final List<UInt64> unavailableSlots =
-            allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
-        assertStatesUnavailable(unavailableSlots);
-        break;
+    if (storageMode.storesFinalizedStates()) {
+      // Finalized states should be available
+      final Map<Bytes32, BeaconState> expectedStates =
+          primaryChain
+              .streamBlocksAndStates(0, 7)
+              .collect(toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getState));
+      assertFinalizedStatesAvailable(expectedStates);
+    } else {
+      // Check pruned states
+      final List<UInt64> unavailableSlots =
+          allBlocksAndStates.stream().map(SignedBlockAndState::getSlot).collect(toList());
+      assertStatesUnavailable(unavailableSlots);
     }
   }
 
@@ -2133,6 +2268,31 @@ public class DatabaseTest {
     storageSystems.add(storageSystem);
   }
 
+  private void assertUnconfirmedBlobsStream(SlotAndBlockRoot... slotAndBlockRoots) {
+    assertUnconfirmedBlobsStream(ZERO, UInt64.MAX_VALUE, slotAndBlockRoots);
+  }
+
+  private void assertUnconfirmedBlobsStream(
+      UInt64 startSlot, UInt64 endSlot, SlotAndBlockRoot... slotAndBlockRoots) {
+    try (Stream<SlotAndBlockRoot> blobsSidecarStream =
+        database.streamUnconfirmedBlobsSidecar(startSlot, endSlot)) {
+      final List<SlotAndBlockRoot> allSlotAndBlockRoots = blobsSidecarStream.collect(toList());
+      assertThat(allSlotAndBlockRoots).containsExactly(slotAndBlockRoots);
+    }
+  }
+
+  private void assertBlobsStream(BlobsSidecar... blobsSidecars) {
+    assertBlobsStream(ZERO, UInt64.MAX_VALUE, blobsSidecars);
+  }
+
+  private void assertBlobsStream(UInt64 startSlot, UInt64 endSlot, BlobsSidecar... blobsSidecars) {
+    try (Stream<BlobsSidecar> blobsSidecarStream =
+        database.streamBlobsSidecar(startSlot, endSlot)) {
+      final List<BlobsSidecar> allBlobs = blobsSidecarStream.collect(toList());
+      assertThat(allBlobs).containsExactly(blobsSidecars);
+    }
+  }
+
   public static class CreateForkChainResult {
     private final ChainBuilder forkChain;
     private final UInt64 firstHotBlockSlot;
@@ -2149,5 +2309,10 @@ public class DatabaseTest {
     public UInt64 getFirstHotBlockSlot() {
       return firstHotBlockSlot;
     }
+  }
+
+  private static SlotAndBlockRoot blobsSidecarToSlotAndBlockRoot(final BlobsSidecar blobsSidecar) {
+    return new SlotAndBlockRoot(
+        blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot());
   }
 }

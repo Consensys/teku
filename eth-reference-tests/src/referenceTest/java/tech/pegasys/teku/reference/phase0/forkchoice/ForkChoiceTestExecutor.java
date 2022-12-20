@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference.phase0.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
@@ -46,7 +47,9 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -64,6 +67,7 @@ import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -128,7 +132,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       runSteps(testDefinition, spec, recentChainData, forkChoice, executionLayer);
     } catch (final AssertionError e) {
       final String protoArrayData =
-          recentChainData.getForkChoiceStrategy().orElseThrow().getNodeData().stream()
+          recentChainData.getForkChoiceStrategy().orElseThrow().getBlockData().stream()
               .map(Object::toString)
               .collect(Collectors.joining("\n"));
       throw new AssertionError(
@@ -177,7 +181,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
         LOG.info("Current slot: {} Epoch: {}", currentSlot, spec.computeEpochAtSlot(currentSlot));
       } else if (step.containsKey("block")) {
-        applyBlock(testDefinition, spec, forkChoice, step, executionLayer);
+        applyBlock(testDefinition, spec, recentChainData, forkChoice, step, executionLayer);
 
       } else if (step.containsKey("attestation")) {
         applyAttestation(testDefinition, forkChoice, step);
@@ -276,6 +280,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
   private void applyBlock(
       final TestDefinition testDefinition,
       final Spec spec,
+      final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
       final ExecutionLayerChannelStub executionLayer) {
@@ -296,6 +301,40 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     assertThat(importResult)
         .describedAs("Incorrect block import result for block %s", block)
         .has(new Condition<>(r -> r.isSuccessful() == valid, "isSuccessful matching " + valid));
+
+    if (valid
+        && spec.computeEpochAtSlot(block.getSlot())
+            .plus(1)
+            .isLessThan(recentChainData.getCurrentEpoch().orElseThrow())) {
+      applyAttestationWeight(spec, recentChainData, block);
+    }
+  }
+
+  private static void applyAttestationWeight(
+      final Spec spec, final RecentChainData recentChainData, final SignedBeaconBlock block) {
+    // Apply attestations from block that we may have skipped because they're old
+    // The spec tests currently require this but it doesn't make sense to incur this cost during
+    // a sync where the attestation weighting is almost certainly useless.
+    final BeaconState preState =
+        safeJoin(
+                recentChainData.retrieveStateAtSlot(
+                    new SlotAndBlockRoot(block.getSlot(), block.getParentRoot())))
+            .orElseThrow();
+    final VoteUpdater voteUpdater = recentChainData.startVoteUpdate();
+    final ForkChoiceStrategy forkChoiceStrategy =
+        recentChainData.getUpdatableForkChoiceStrategy().orElseThrow();
+    block
+        .getMessage()
+        .getBody()
+        .getAttestations()
+        .forEach(
+            attestation ->
+                forkChoiceStrategy.onAttestation(
+                    voteUpdater,
+                    spec.atSlot(block.getSlot())
+                        .getAttestationUtil()
+                        .getIndexedAttestation(preState, attestation)));
+    voteUpdater.commit();
   }
 
   @SuppressWarnings("unchecked")

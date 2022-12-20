@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import static java.lang.Integer.max;
 import static java.lang.Integer.min;
 import static java.util.Collections.emptySet;
 import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
@@ -47,15 +48,18 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
               .thenComparing(SubnetSubscription::getSubnetId));
   private final Random random;
   private final Spec spec;
+  private final int minimumSubnetSubscriptions;
 
   public ValidatorBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber,
       final Random random,
-      final Spec spec) {
+      final Spec spec,
+      final int minimumSubnetSubscriptions) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.random = random;
     IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
     this.spec = spec;
+    this.minimumSubnetSubscriptions = min(minimumSubnetSubscriptions, ATTESTATION_SUBNET_COUNT);
   }
 
   @Override
@@ -91,8 +95,10 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
       UInt64 currentSlot, int validatorCount) {
 
     final int randomSubnetsPerValidator = ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR;
-    int totalNumberOfSubscriptions =
+    final int requiredSubnetSubscriptions =
         min(ATTESTATION_SUBNET_COUNT, randomSubnetsPerValidator * validatorCount);
+    final int totalNumberOfSubscriptions =
+        max(requiredSubnetSubscriptions, minimumSubnetSubscriptions);
 
     if (subnetSubscriptions.size() == totalNumberOfSubscriptions) {
       return emptySet();
@@ -101,7 +107,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
         "Updating number of persistent subnet subscriptions from {} to {}",
         subnetSubscriptions.size(),
         totalNumberOfSubscriptions);
-    Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
+    final Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
 
     while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
       if (subnetSubscriptions.size() < totalNumberOfSubscriptions) {

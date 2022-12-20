@@ -151,6 +151,7 @@ public class FuzzUtil {
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {
+      e.printStackTrace();
       // "expected error"
       return Optional.empty();
     }

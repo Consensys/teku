@@ -60,10 +60,30 @@ class BlockPrunerTest {
   }
 
   @Test
+  void shouldPruneWhenFirstStarted() {
+    when(database.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(50))));
+    asyncRunner.executeDueActions();
+    verify(database).pruneFinalizedBlocks(any());
+  }
+
+  @Test
+  void shouldPruneAfterInterval() {
+    when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
+    asyncRunner.executeDueActions();
+    verify(database, never()).pruneFinalizedBlocks(any());
+
+    when(database.getFinalizedCheckpoint())
+        .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(52))));
+    triggerNextPruning();
+    verify(database).pruneFinalizedBlocks(any());
+  }
+
+  @Test
   void shouldNotPruneWhenFinalizedCheckpointNotSet() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedBlocks(any(), any());
+    verify(database, never()).pruneFinalizedBlocks(any());
   }
 
   @Test
@@ -71,7 +91,7 @@ class BlockPrunerTest {
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(epochsToKeep)));
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedBlocks(any(), any());
+    verify(database, never()).pruneFinalizedBlocks(any());
   }
 
   @Test
@@ -83,7 +103,7 @@ class BlockPrunerTest {
     // SlotToKeep = FinalizedEpoch (50) * SlotsPerEpoch(10) - EpochsToKeep(5) * SlotsPerEpoch(10)
     // = 500 - 50 = 450, last slot to prune = 550 - 1 = 449.
     final UInt64 lastSlotToPrune = UInt64.valueOf(449);
-    verify(database).pruneFinalizedBlocks(UInt64.ZERO, lastSlotToPrune);
+    verify(database).pruneFinalizedBlocks(lastSlotToPrune);
   }
 
   @Test
@@ -94,7 +114,7 @@ class BlockPrunerTest {
     triggerNextPruning();
     // Should prune all blocks in the first epoch (ie blocks 0 - 9)
     final UInt64 lastSlotToPrune = UInt64.valueOf(SLOTS_PER_EPOCH - 1);
-    verify(database).pruneFinalizedBlocks(UInt64.ZERO, lastSlotToPrune);
+    verify(database).pruneFinalizedBlocks(lastSlotToPrune);
   }
 
   private void triggerNextPruning() {

@@ -16,12 +16,10 @@ package tech.pegasys.teku.storage.storageSystem;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
-import java.util.Optional;
 import tech.pegasys.teku.beacon.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
@@ -80,13 +78,11 @@ public class StorageSystem implements AutoCloseable {
       final StateStorageMode storageMode,
       final StoreConfig storeConfig,
       final Spec spec,
-      final Optional<ExecutionLayerChannel> executionLayerChannel,
       final ChainBuilder chainBuilder) {
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
     // Create and start storage server
-    final ChainStorage chainStorageServer =
-        ChainStorage.create(database, executionLayerChannel, spec);
+    final ChainStorage chainStorageServer = ChainStorage.create(database, spec);
 
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =

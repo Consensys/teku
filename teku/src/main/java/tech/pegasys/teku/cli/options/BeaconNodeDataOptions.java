@@ -70,36 +70,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private boolean storeNonCanonicalBlocksEnabled =
       StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
 
-  @CommandLine.Option(
-      names = {"--Xdata-storage-store-payload-separately-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Store the execution payload of blocks separate to the rest of the block",
-      fallbackValue = "true",
-      hidden = true,
-      arity = "0..1")
-  private boolean storeBlockExecutionPayloadSeparately =
-      StorageConfiguration.DEFAULT_STORE_BLOCK_PAYLOAD_SEPARATELY;
-
-  @CommandLine.Option(
-      names = {"--Xdata-storage-block-migrate-batch-size"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Set the batch size for migrating finalized blocks to blinded storage",
-      hidden = true,
-      arity = "1")
-  private int blockMigrationBatchSize = StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_SIZE;
-
-  @CommandLine.Option(
-      names = {"--Xdata-storage-block-migrate-batch-delay-ms"},
-      paramLabel = "<INTEGER>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Set the delay time in millis to wait after committing a batch of blocks",
-      hidden = true,
-      arity = "1")
-  private int blockMigrationBatchDelayMillis =
-      StorageConfiguration.DEFAULT_BLOCK_MIGRATION_BATCH_DELAY_MS;
-
   /**
    * Default value selected based on experimentation to minimise memory usage without affecting sync
    * time. Not that states later in the chain with more validators have more branches so need a
@@ -126,16 +96,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       SyncConfig.DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 
   @CommandLine.Option(
-      names = {"--Xdata-storage-block-pruning-enabled"},
-      hidden = true,
-      paramLabel = "<BOOLEAN>",
-      description = "Prune finalized blocks prior to the required retention period",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      arity = "0..1")
-  private boolean blockPruningEnabled = StorageConfiguration.DEFAULT_BLOCK_PRUNING_ENABLED;
-
-  @CommandLine.Option(
       names = {"--Xdata-storage-block-pruning-interval"},
       hidden = true,
       paramLabel = "<INTEGER>",
@@ -145,6 +105,28 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "0..1")
   private long blockPruningIntervalSeconds =
       StorageConfiguration.DEFAULT_BLOCK_PRUNING_INTERVAL.toSeconds();
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-blobs-pruning-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Interval in seconds between blobs sidecars pruning",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private long blobsSidecarsPruningIntervalSeconds =
+      StorageConfiguration.DEFAULT_BLOBS_PRUNING_INTERVAL.toSeconds();
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-blobs-pruning-limit"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Maximum number of blobs sidecars that can be pruned in in each pruning session",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private int blobsSidecarsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
 
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
@@ -160,15 +142,13 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageFrequency(dataStorageFrequency)
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
-                .storeBlockExecutionPayloadSeparately(storeBlockExecutionPayloadSeparately)
-                .blockMigrationBatchSize(blockMigrationBatchSize)
-                .blockMigrationBatchDelay(blockMigrationBatchDelayMillis)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
-                .blockPruningEnabled(blockPruningEnabled)
-                .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds)));
+                .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds))
+                .blobsPruningInterval(Duration.ofSeconds(blobsSidecarsPruningIntervalSeconds))
+                .blobsPruningLimit(blobsSidecarsPruningLimit));
     builder.sync(
         b ->
-            b.fetchAllHistoricBlocks(!blockPruningEnabled)
+            b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())
                 .reconstructHistoricStatesEnabled(reconstructHistoricStates));
   }
 
@@ -183,9 +163,5 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
           : DatabaseVersion.DEFAULT_VERSION;
     }
     return DatabaseVersion.fromString(createDbVersion).orElse(DatabaseVersion.DEFAULT_VERSION);
-  }
-
-  public boolean isStoreBlockExecutionPayloadSeparately() {
-    return storeBlockExecutionPayloadSeparately;
   }
 }

@@ -60,7 +60,7 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
     return kzg;
   }
 
-  public void validateBlobSidecar(
+  private void validateBlobSidecar(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,

@@ -25,10 +25,10 @@ public class KvStoreColumn<TKey, TValue> {
   private final KvStoreSerializer<TValue> valueSerializer;
 
   private KvStoreColumn(
-      final byte[] id,
+      final Bytes id,
       final KvStoreSerializer<TKey> keySerializer,
       final KvStoreSerializer<TValue> valueSerializer) {
-    this.id = Bytes.wrap(id);
+    this.id = id;
     this.keySerializer = keySerializer;
     this.valueSerializer = valueSerializer;
   }
@@ -37,8 +37,11 @@ public class KvStoreColumn<TKey, TValue> {
       final int id,
       final KvStoreSerializer<K> keySerializer,
       final KvStoreSerializer<V> valueSerializer) {
-    final byte byteId = toByteExact(id);
-    return new KvStoreColumn<>(new byte[] {byteId}, keySerializer, valueSerializer);
+    return new KvStoreColumn<>(asColumnId(id), keySerializer, valueSerializer);
+  }
+
+  public static Bytes asColumnId(final int id) {
+    return Bytes.of(toByteExact(id));
   }
 
   public Bytes getId() {

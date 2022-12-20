@@ -121,8 +121,10 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   public <K, V> Optional<ColumnEntry<K, V>> getFirstEntry(final KvStoreColumn<K, V> column) {
     assertOpen();
     assertValidColumn(column);
-    return Optional.ofNullable(columnData.get(column).firstEntry())
-        .map(e -> columnEntry(column, e));
+    final NavigableMap<Bytes, Bytes> values = columnData.get(column);
+    return values.isEmpty()
+        ? Optional.empty()
+        : Optional.of(values.firstEntry()).map(e -> columnEntry(column, e));
   }
 
   @Override
@@ -146,12 +148,24 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K, V> Stream<K> streamKeys(KvStoreColumn<K, V> column) {
+    return streamKeyRaw(column)
+        .map(entry -> column.getKeySerializer().deserialize(entry.toArrayUnsafe()));
+  }
+
+  @Override
   public Stream<ColumnEntry<Bytes, Bytes>> streamRaw(final KvStoreColumn<?, ?> column) {
     assertOpen();
     assertValidColumn(column);
     return columnData.get(column).entrySet().stream()
         .peek(value -> assertOpen())
         .map(entry -> columnEntry(entry));
+  }
+
+  public Stream<Bytes> streamKeyRaw(final KvStoreColumn<?, ?> column) {
+    assertOpen();
+    assertValidColumn(column);
+    return columnData.get(column).keySet().stream();
   }
 
   @Override
@@ -174,6 +188,19 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   }
 
   @Override
+  public <K extends Comparable<K>, V> Stream<K> streamKeys(
+      KvStoreColumn<K, V> column, K from, K to) {
+    assertOpen();
+    return columnData
+        .get(column)
+        .subMap(keyToBytes(column, from), true, keyToBytes(column, to), true)
+        .keySet()
+        .stream()
+        .peek(value -> assertOpen())
+        .map(e -> columnKey(column, e));
+  }
+
+  @Override
   public KvStoreTransaction startTransaction() {
     assertOpen();
     return new MockKvStoreTransaction(this);
@@ -192,7 +219,7 @@ public class MockKvStoreInstance implements KvStoreAccessor {
   private <K, V> ColumnEntry<K, V> columnEntry(
       final KvStoreColumn<K, V> column, final Map.Entry<Bytes, Bytes> entry) {
     final K key = columnKey(column, entry.getKey());
-    final V value = columnValue(column, entry.getValue()).get();
+    final V value = columnValue(column, entry.getValue()).orElse(null);
     return ColumnEntry.create(key, value);
   }
 

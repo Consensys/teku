@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreFactory;
 import tech.pegasys.teku.spec.datastructures.forkchoice.TestStoreImpl;
@@ -231,8 +232,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     head.getParentRoot(),
                     head.getStateRoot(),
                     head.getExecutionBlockHash().orElse(Bytes32.ZERO),
-                    false,
-                    spec.calculateBlockCheckpoints(head.getState()))));
+                    ProtoNodeValidationStatus.VALID,
+                    spec.calculateBlockCheckpoints(head.getState()),
+                    ZERO)));
   }
 
   @Test

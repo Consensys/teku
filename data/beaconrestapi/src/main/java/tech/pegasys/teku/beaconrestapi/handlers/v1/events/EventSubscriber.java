@@ -152,4 +152,13 @@ public class EventSubscriber {
           .ifExceptionGetsHereRaiseABug();
     }
   }
+
+  /*
+   Using this as a way of notifying clients that our EventSubscriber is ready and they should start receiving events
+  */
+  public void sendReadyComment() {
+    if (!stopped.get()) {
+      asyncRunner.runAsync(() -> sseClient.sendComment("ready")).ifExceptionGetsHereRaiseABug();
+    }
+  }
 }

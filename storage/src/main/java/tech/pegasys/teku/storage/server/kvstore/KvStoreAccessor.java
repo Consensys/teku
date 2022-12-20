@@ -67,6 +67,9 @@ public interface KvStoreAccessor extends AutoCloseable {
   @MustBeClosed
   <K, V> Stream<ColumnEntry<K, V>> stream(KvStoreColumn<K, V> column);
 
+  @MustBeClosed
+  <K, V> Stream<K> streamKeys(KvStoreColumn<K, V> column);
+
   /**
    * WARNING: should only be used to migrate data between database instances
    *
@@ -98,6 +101,9 @@ public interface KvStoreAccessor extends AutoCloseable {
   @MustBeClosed
   <K extends Comparable<K>, V> Stream<ColumnEntry<K, V>> stream(
       KvStoreColumn<K, V> column, K from, K to);
+
+  @MustBeClosed
+  <K extends Comparable<K>, V> Stream<K> streamKeys(KvStoreColumn<K, V> column, K from, K to);
 
   KvStoreTransaction startTransaction();
 

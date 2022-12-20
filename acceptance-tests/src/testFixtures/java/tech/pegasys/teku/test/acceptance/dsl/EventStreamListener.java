@@ -14,20 +14,27 @@
 package tech.pegasys.teku.test.acceptance.dsl;
 
 import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.ReadyState;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class EventStreamListener {
   EventSource eventSource;
   final Eth2EventHandler handler = new Eth2EventHandler();
 
   public EventStreamListener(final String url) {
-    eventSource = new EventSource.Builder(handler, URI.create(url)).build();
+    eventSource =
+        new EventSource.Builder(handler, URI.create(url)).readTimeout(5, TimeUnit.MINUTES).build();
     eventSource.start();
   }
 
   public List<Eth2EventHandler.PackedMessage> getMessages() {
     return handler.getMessages();
+  }
+
+  public boolean isReady() {
+    return eventSource.getState() == ReadyState.OPEN && handler.hasReceivedComment();
   }
 
   public void close() {

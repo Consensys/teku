@@ -49,6 +49,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
   protected final int finalizedOffset;
 
   private final KvStoreColumn<Bytes32, SignedBeaconBlock> hotBlocksByRoot;
+
   // Checkpoint states are no longer stored, keeping only for backwards compatibility.
   private final KvStoreColumn<Checkpoint, BeaconState> checkpointStates;
   private final KvStoreColumn<UInt64, VoteTracker> votes;
@@ -199,9 +200,10 @@ public abstract class V6SchemaCombined implements SchemaCombined {
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
-        .put("BLINDED_BLOCKS_BY_ROOT", getColumnBlindedBlocksByRoot())
-        .put("EXECUTION_PAYLOAD_BY_BLOCK_ROOT", getColumnExecutionPayloadByBlockRoot())
-        .put("FINALIZED_BLOCK_ROOT_BY_SLOT", getColumnFinalizedBlockRootBySlot())
+        .put("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", getColumnBlobsSidecarBySlotAndBlockRoot())
+        .put(
+            "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
+            getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot())
         .build();
   }
 

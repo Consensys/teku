@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
@@ -262,5 +264,25 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(createConfigBuilder().discovery(b -> b.minPeers(0).maxPeers(0)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void minimumSubnetSubscriptions_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-minimum-subnet-subscriptions", "10");
+    final P2PConfig config = tekuConfiguration.p2p();
+    assertThat(config.getSpec()).isNotNull();
+    assertThat(tekuConfiguration.p2p().getMinimumSubnetSubscriptions()).isEqualTo(10);
+    assertThat(createConfigBuilder().p2p(b -> b.minimumSubnetSubscriptions(10)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void minimumSubnetSubscriptions_negativeSubscriptionsShouldThrowException() {
+    assertThatThrownBy(
+            () -> createConfigBuilder().p2p(b -> b.minimumSubnetSubscriptions(-1)).build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Invalid minimumSubnetSubscriptions: -1");
   }
 }

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore;
 
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.storage.server.Database;
@@ -25,19 +23,12 @@ import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedSnapshot;
 import tech.pegasys.teku.storage.server.kvstore.schema.V6SchemaCombinedTreeState;
 
 public class InMemoryKvStoreDatabaseFactory {
-  // block migration is for file based storage that gets migrated to blinded storage,
-  // and is not particularly useful in-memory, so just defaulting some sensible values.
-  private static final int BLOCK_MIGRATION_BATCH_SIZE = 25;
-  private static final int BLOCK_MIGRATION_BATCH_DELAY = 100;
-
   public static Database createV4(
       MockKvStoreInstance hotDb,
       MockKvStoreInstance coldDb,
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
 
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV4(spec);
@@ -51,10 +42,6 @@ public class InMemoryKvStoreDatabaseFactory {
         storageMode,
         stateStorageFrequency,
         storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        BLOCK_MIGRATION_BATCH_SIZE,
-        BLOCK_MIGRATION_BATCH_DELAY,
-        asyncRunner,
         spec);
   }
 
@@ -63,42 +50,19 @@ public class InMemoryKvStoreDatabaseFactory {
       final StateStorageMode storageMode,
       final long stateStorageFrequency,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedSnapshot combinedSchema = V6SchemaCombinedSnapshot.createV6(spec);
     return KvStoreDatabase.createWithStateSnapshots(
-        db,
-        combinedSchema,
-        storageMode,
-        stateStorageFrequency,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        BLOCK_MIGRATION_BATCH_SIZE,
-        BLOCK_MIGRATION_BATCH_DELAY,
-        asyncRunner,
-        spec);
+        db, combinedSchema, storageMode, stateStorageFrequency, storeNonCanonicalBlocks, spec);
   }
 
   public static Database createTree(
       MockKvStoreInstance db,
       final StateStorageMode storageMode,
       final boolean storeNonCanonicalBlocks,
-      final boolean storeBlockExecutionPayloadSeparately,
-      final Optional<AsyncRunner> asyncRunner,
       final Spec spec) {
     final V6SchemaCombinedTreeState schema = new V6SchemaCombinedTreeState(spec);
     return KvStoreDatabase.createWithStateTree(
-        new StubMetricsSystem(),
-        db,
-        schema,
-        storageMode,
-        storeNonCanonicalBlocks,
-        storeBlockExecutionPayloadSeparately,
-        BLOCK_MIGRATION_BATCH_SIZE,
-        BLOCK_MIGRATION_BATCH_DELAY,
-        1000,
-        asyncRunner,
-        spec);
+        new StubMetricsSystem(), db, schema, storageMode, storeNonCanonicalBlocks, 1000, spec);
   }
 }

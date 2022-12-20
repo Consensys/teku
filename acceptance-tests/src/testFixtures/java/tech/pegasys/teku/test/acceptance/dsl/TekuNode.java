@@ -158,6 +158,7 @@ public class TekuNode extends Node {
   public void startEventListener(final EventType... eventTypes) {
     maybeEventStreamListener =
         Optional.of(new EventStreamListener(getEventUrl(List.of(eventTypes))));
+    waitFor(() -> assertThat(maybeEventStreamListener.get().isReady()).isTrue());
   }
 
   public void waitForContributionAndProofEvent() {
@@ -301,32 +302,33 @@ public class TekuNode extends Node {
           "Must start listening to events before waiting for them... Try calling TekuNode.startEventListener(..)!");
     }
 
+    if (!maybeEventStreamListener.get().isReady()) {
+      fail(
+          "Event stream listener should have been ready, but wasn't! Logs:\n"
+              + container.getLogs());
+    }
+
     waitFor(
         () -> {
           final List<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
               blsToExecutionChanges =
                   getEventsOfTypeFromEventStream(
                       EventType.bls_to_execution_change, this::mapBlsToExecutionChangeFromEvent);
-
-          final Optional<tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange>
-              eventForValidator =
-                  blsToExecutionChanges.stream()
-                      .filter(m -> UInt64.valueOf(validatorIndex).equals(m.message.validatorIndex))
-                      .findFirst();
-          assertThat(eventForValidator).isPresent();
+          assertThat(blsToExecutionChanges.stream())
+              .anyMatch(m -> UInt64.valueOf(validatorIndex).equals(m.message.validatorIndex));
         });
   }
 
   private <T> List<T> getEventsOfTypeFromEventStream(
       final EventType type, final Function<PackedMessage, T> mapperFn) {
-    if (maybeEventStreamListener.isEmpty()) {
-      return List.of();
-    }
-
-    return maybeEventStreamListener.get().getMessages().stream()
-        .filter(packedMessage -> packedMessage.getEvent().equals(type.name()))
-        .map(mapperFn)
-        .collect(toList());
+    return maybeEventStreamListener
+        .map(
+            eventStreamListener ->
+                eventStreamListener.getMessages().stream()
+                    .filter(packedMessage -> packedMessage.getEvent().equals(type.name()))
+                    .map(mapperFn)
+                    .collect(toList()))
+        .orElseGet(List::of);
   }
 
   private tech.pegasys.teku.api.schema.capella.SignedBlsToExecutionChange

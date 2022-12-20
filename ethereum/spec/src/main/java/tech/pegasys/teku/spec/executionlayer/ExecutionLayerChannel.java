@@ -153,7 +153,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ExecutionPayloadContext context, UInt64 slot, boolean isBlind);
 
   enum Version {
-    KILNV2;
+    KILNV2,
+    NO_BLOCK_VALUE;
 
     public static final Version DEFAULT_VERSION = KILNV2;
   }
