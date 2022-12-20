@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.generator.BlockProposalTestUtil;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
@@ -117,6 +118,7 @@ public class BeaconChainUtil {
             spec,
             new InlineEventThread(),
             storageClient,
+            BlobsSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP)),
         true);
@@ -143,6 +145,7 @@ public class BeaconChainUtil {
             spec,
             new InlineEventThread(),
             storageClient,
+            BlobsSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP)),
         signDeposits);
@@ -242,7 +245,6 @@ public class BeaconChainUtil {
         forkChoice
             .onBlock(
                 block,
-                Optional.empty(),
                 Optional.empty(),
                 new ExecutionLayerChannelStub(spec, false, Optional.empty()))
             .join();
@@ -386,6 +388,7 @@ public class BeaconChainUtil {
                 spec,
                 forkChoiceExecutor,
                 recentChainData,
+                BlobsSidecarManager.NOOP,
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP));

@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
@@ -353,7 +354,14 @@ public class BlockValidatorTest {
     SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
     final BlobsSidecar consistentBlobsSidecar =
-        specContext.getDataStructureUtil().randomBlobsSidecar(block.getRoot(), block.getSlot());
+        specContext
+            .getDataStructureUtil()
+            .randomBlobsSidecar(
+                block.getRoot(),
+                block.getSlot(),
+                BeaconBlockBodyEip4844.required(block.getBeaconBlock().orElseThrow().getBody())
+                    .getBlobKzgCommitments()
+                    .size());
 
     assertTrue(
         blockValidator.validate(block, Optional.of(consistentBlobsSidecar)).join().isAccept());

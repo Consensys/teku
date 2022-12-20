@@ -96,6 +96,8 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
@@ -225,6 +227,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceNotifier forkChoiceNotifier;
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
+  protected volatile BlobsSidecarManager blobsSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
@@ -382,6 +385,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   public void initAll() {
     initKeyValueStore();
     initExecutionLayer();
+    initBlobsImporter();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
     initMergeMonitors();
@@ -421,6 +425,19 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initExecutionLayer() {
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
+  }
+
+  protected void initBlobsImporter() {
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      final BlobsSidecarManagerImpl blobsSidecarManagerImpl =
+          new BlobsSidecarManagerImpl(
+              spec, recentChainData, storageQueryChannel, storageUpdateChannel);
+      eventChannels.subscribe(SlotEventsChannel.class, blobsSidecarManagerImpl);
+
+      blobsSidecarManager = blobsSidecarManagerImpl;
+    } else {
+      blobsSidecarManager = BlobsSidecarManager.NOOP;
+    }
   }
 
   protected void initMergeMonitors() {
@@ -573,6 +590,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             forkChoiceExecutor,
             recentChainData,
+            blobsSidecarManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -933,6 +951,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new BlockManager(
             recentChainData,
             blockImporter,
+            blobsSidecarManager,
             pendingBlocks,
             futureBlocks,
             blockValidator,

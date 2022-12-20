@@ -422,8 +422,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-      finalizedUpdater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+    public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+      finalizedUpdater.confirmBlobsSidecar(slotAndBlockRoot);
     }
 
     @Override

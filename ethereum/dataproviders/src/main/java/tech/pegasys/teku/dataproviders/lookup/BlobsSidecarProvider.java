@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.block;
+package tech.pegasys.teku.dataproviders.lookup;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
-public interface BlockImportChannel extends ChannelInterface {
-  SafeFuture<BlockImportResult> importBlock(
-      SignedBeaconBlock block, Optional<BlobsSidecar> blobsSidecar);
+@FunctionalInterface
+public interface BlobsSidecarProvider {
 
-  default SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
-    return importBlock(block, Optional.empty());
+  default SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(SignedBeaconBlock block) {
+    return getBlobsSidecar(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
   }
+
+  SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 }

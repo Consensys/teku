@@ -21,6 +21,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import com.google.common.base.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,15 +30,20 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844Impl;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockValidator {
@@ -116,7 +122,9 @@ public class BlockValidator {
                 return reject(
                     "Block proposed by incorrect proposer (%s)", block.getProposerIndex());
               }
-              if (spec.atSlot(block.getSlot()).miscHelpers().isMergeTransitionComplete(postState)) {
+              final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
+
+              if (miscHelpers.isMergeTransitionComplete(postState)) {
                 Optional<ExecutionPayload> executionPayload =
                     block.getMessage().getBody().getOptionalExecutionPayload();
 
@@ -134,10 +142,16 @@ public class BlockValidator {
                 }
               }
 
-              // TODO kzg validation by calling validate_blobs_sidecar from misc helper
-
               if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
                 return reject("Block signature is invalid");
+              }
+
+              if (blobsSidecar.isPresent()) {
+                if (!blockKzgCommitmentsAreValidAgainstBlobsSidecar(
+                    block, blobsSidecar.get(), miscHelpers)) {
+                  return reject(
+                      "Block kzg commitments are invalid against the given blobs sidecars");
+                }
               }
 
               return InternalValidationResult.ACCEPT;
@@ -207,6 +221,27 @@ public class BlockValidator {
         block.getMessage(),
         recentChainData.getStore(),
         recentChainData.getForkChoiceStrategy().orElseThrow());
+  }
+
+  private boolean blockKzgCommitmentsAreValidAgainstBlobsSidecar(
+      final SignedBeaconBlock block,
+      final BlobsSidecar blobsSidecar,
+      final MiscHelpers miscHelpers) {
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        BeaconBlockBodyEip4844Impl.required(block.getBeaconBlock().orElseThrow().getBody())
+            .getBlobKzgCommitments();
+    try {
+      return miscHelpers.isDataAvailable(
+          block.getSlot(),
+          block.getRoot(),
+          blobKzgCommitments.stream()
+              .map(SszKZGCommitment::getKZGCommitment)
+              .collect(Collectors.toUnmodifiableList()),
+          blobsSidecar);
+    } catch (KZGException ex) {
+      LOG.debug("kzg validation exception", ex);
+      return false;
+    }
   }
 
   private boolean blockAndBlobsSidecarAreConsistent(
