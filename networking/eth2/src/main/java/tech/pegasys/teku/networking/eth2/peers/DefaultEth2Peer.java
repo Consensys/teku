@@ -45,6 +45,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
@@ -205,6 +206,29 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestBlockAndBlobsSidecarByRoot(
+      final List<Bytes32> blockRoots,
+      final RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener)
+      throws RpcException {
+    if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
+      throw new RpcException(
+          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " can per request");
+    }
+    return rpcMethods
+        .beaconBlockAndBlobsSidecarByRoot()
+        .map(
+            method ->
+                requestStream(
+                    method,
+                    new BeaconBlockAndBlobsSidecarByRootRequestMessage(blockRoots),
+                    listener))
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException(
+                    "BlockAndBlobsSidecarByRoot method is not available")));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
@@ -219,6 +243,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         rpcMethods.beaconBlocksByRoot();
     return requestOptionalItem(
         blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
+      Bytes32 blockRoot) {
+    return rpcMethods
+        .beaconBlockAndBlobsSidecarByRoot()
+        .map(
+            method ->
+                requestOptionalItem(
+                    method, new BeaconBlockAndBlobsSidecarByRootRequestMessage(List.of(blockRoot))))
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException(
+                    "BlockAndBlobsSidecarByRoot method is not available")));
   }
 
   @Override
