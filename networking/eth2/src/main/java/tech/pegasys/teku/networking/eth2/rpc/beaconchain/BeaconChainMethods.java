@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -94,8 +95,10 @@ public class BeaconChainMethods {
     this.blobsSidecarsByRange = blobsSidecarsByRange;
     this.getMetadata = getMetadata;
     this.ping = ping;
-    allMethods =
-        List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange, getMetadata, ping);
+    this.allMethods =
+        new ArrayList<>(
+            List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange, getMetadata, ping));
+    blobsSidecarsByRange.ifPresent(allMethods::add);
   }
 
   public static BeaconChainMethods create(
