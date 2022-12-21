@@ -16,25 +16,32 @@ package tech.pegasys.teku.spec.logic.versions.eip4844.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import net.jqwik.api.Disabled;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
 import net.jqwik.api.lifecycle.AddLifecycleHook;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.propertytest.suppliers.type.BlobBytesSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.BytesSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGProofSupplier;
 
 @AddLifecycleHook(KzgResolver.class)
 public class CKZG4844PropertyTest {
+
+  private static final BytesSupplier BYTES_SUPPLIER = new BytesSupplier();
+  private static final BlobBytesSupplier BLOB_BYTES_SUPPLIER = new BlobBytesSupplier();
+
   @Property(tries = 100)
   void fuzzComputeAggregateKzgProof(
-      final KZG kzg, @ForAll final List<@From(supplier = BytesSupplier.class) Bytes> blobs) {
+      final KZG kzg, @ForAll final List<@From("randomBlob") Bytes> blobs) {
     try {
       kzg.computeAggregateKzgProof(blobs);
     } catch (Exception e) {
@@ -45,7 +52,7 @@ public class CKZG4844PropertyTest {
   @Property(tries = 100)
   void fuzzVerifyAggregateKzgProof(
       final KZG kzg,
-      @ForAll final List<@From(supplier = BytesSupplier.class) Bytes> blobs,
+      @ForAll final List<@From("randomBlob") Bytes> blobs,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
       @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
     try {
@@ -56,13 +63,16 @@ public class CKZG4844PropertyTest {
   }
 
   @Property(tries = 100)
-  @Disabled("Enable once #6622 is fixed")
-  void fuzzBlobToKzgCommitment(
-      final KZG kzg, @ForAll(supplier = BytesSupplier.class) final Bytes blob) {
+  void fuzzBlobToKzgCommitment(final KZG kzg, @ForAll("randomBlob") final Bytes blob) {
     try {
       kzg.blobToKzgCommitment(blob);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
     }
+  }
+
+  @Provide
+  Arbitrary<Bytes> blobBytes() {
+    return Arbitraries.oneOf(BLOB_BYTES_SUPPLIER.get(), BYTES_SUPPLIER.get());
   }
 }
