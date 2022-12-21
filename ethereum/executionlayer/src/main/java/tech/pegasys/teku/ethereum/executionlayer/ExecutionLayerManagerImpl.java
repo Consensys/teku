@@ -465,18 +465,13 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                         localExecutionPayload,
                         slot,
                         FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
+                  } else {
+                    return getResultfromSignedBuilderBid(
+                        signedBuilderBidMaybe.get(),
+                        executionPayloadContext,
+                        state,
+                        validatorRegistration.get());
                   }
-                  final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
-                  logReceivedBuilderBid(signedBuilderBid.getMessage());
-                  final ExecutionPayloadHeader executionPayloadHeader =
-                      builderBidValidator.validateAndGetPayloadHeader(
-                          spec, signedBuilderBid, validatorRegistration.get(), state);
-                  return new ExecutionPayloadResult(
-                      executionPayloadContext,
-                      Optional.empty(),
-                      Optional.of(SafeFuture.completedFuture(executionPayloadHeader)),
-                      Optional.empty(),
-                      Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
                 })
             .exceptionally(
                 error -> {
@@ -491,6 +486,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                 });
 
     return repackBuilderResultFuture(executionPayloadResultFuture, executionPayloadContext);
+  }
+
+  private ExecutionPayloadResult getResultfromSignedBuilderBid(
+      final SignedBuilderBid signedBuilderBid,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final SignedValidatorRegistration validatorRegistration)
+      throws Exception {
+    logReceivedBuilderBid(signedBuilderBid.getMessage());
+    final ExecutionPayloadHeader executionPayloadHeader =
+        builderBidValidator.validateAndGetPayloadHeader(
+            spec, signedBuilderBid, validatorRegistration, state);
+    return new ExecutionPayloadResult(
+        executionPayloadContext,
+        Optional.empty(),
+        Optional.of(SafeFuture.completedFuture(executionPayloadHeader)),
+        Optional.empty(),
+        Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
   }
 
   private ExecutionPayloadResult repackBuilderResultFuture(
