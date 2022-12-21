@@ -86,7 +86,7 @@ public class LibP2PPeer implements Peer {
 
   @Override
   public void checkPeerIdentity() {
-    if (maybeAgentString.isEmpty()) {
+    if (maybeAgentString.isPresent()) {
       return;
     }
     getAgentVersionFromIdentity()
