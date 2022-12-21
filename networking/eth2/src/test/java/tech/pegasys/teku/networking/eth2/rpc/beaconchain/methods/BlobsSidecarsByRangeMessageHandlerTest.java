@@ -55,6 +55,9 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
+  private static final RpcException RESOURCE_UNAVAILABLE_EXCEPTION =
+      new ResourceUnavailableException("Blobs sidecars are not available.");
+
   private final Spec spec = TestSpecFactory.createMinimalEip4844();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -93,26 +96,24 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void validateRequest_preEip4844() {
-    final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(ONE);
-    final BlobsSidecarsByRangeMessageHandler handler =
-        new BlobsSidecarsByRangeMessageHandler(
-            spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
+  public void validateRequest_requestEpochNotInMinEpochsForBlobsSidecarsRange() {
+    // current epoch - 5000
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(5000));
+    // request epoch (2) < min epoch (5000 - 4096)
     final Optional<RpcException> result =
         handler.validateRequest(
-            protocolId, new BlobsSidecarsByRangeRequestMessage(ONE, ONE.plus(1)));
-    assertThat(result)
-        .hasValueSatisfying(
-            rpcException -> {
-              assertThat(rpcException.getResponseCode())
-                  .isEqualTo(RpcResponseStatus.INVALID_REQUEST_CODE);
-              assertThat(rpcException.getErrorMessageString())
-                  .isEqualTo("Can't request blobs sidecars for slots before the EIP-4844 fork");
-            });
+            protocolId, new BlobsSidecarsByRangeRequestMessage(startSlot, ONE.plus(1)));
+    final RpcException expectedRpcException =
+        new RpcException(
+            RpcResponseStatus.INVALID_REQUEST_CODE,
+            "The request epoch 2 is not within the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS range.");
+    assertThat(result).hasValue(expectedRpcException);
   }
 
   @Test
   public void validateRequest_validRequest() {
+    // min epoch will be the eip 4844 fork epoch (1)
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(4));
     final Optional<RpcException> result =
         handler.validateRequest(protocolId, new BlobsSidecarsByRangeRequestMessage(startSlot, ONE));
     assertThat(result).isEmpty();
@@ -144,30 +145,19 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBestBlockRoot())
         .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
 
-    // earliest available sidecar epoch - 5001
+    // earliest available sidecar epoch - 5010
     when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(eip4844ForkEpoch.plus(5000))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(eip4844ForkEpoch.plus(5009))));
 
-    // current epoch - 9001
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(eip4844ForkEpoch.plus(9000));
-
-    // start slot in epoch 8500
+    // start slot in epoch 5000
     final BlobsSidecarsByRangeRequestMessage request =
-        new BlobsSidecarsByRangeRequestMessage(UInt64.valueOf(8500).times(slotsPerEpoch), count);
+        new BlobsSidecarsByRangeRequestMessage(UInt64.valueOf(5000).times(slotsPerEpoch), count);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
-    // blobs sidecars should be available in the [4904(9000 - 4096), 9000] range, but they are
-    // available from epoch 5001
-    final ArgumentCaptor<RpcException> argumentCaptor = ArgumentCaptor.forClass(RpcException.class);
-    verify(listener).completeWithErrorResponse(argumentCaptor.capture());
-
-    final RpcException exception = argumentCaptor.getValue();
-
-    assertThat(exception).isInstanceOf(ResourceUnavailableException.class);
-    assertThat(exception.getErrorMessageString())
-        .isEqualTo(
-            "Blobs sidecars are not available in the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range.");
+    // blobs sidecars should be available from epoch 5000, but they are
+    // available from epoch 5010
+    verify(listener).completeWithErrorResponse(RESOURCE_UNAVAILABLE_EXCEPTION);
   }
 
   @Test
@@ -202,7 +192,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }
 
-  public BlobsSidecar setUpBlobsSidecarData(final UInt64 slot, final Bytes32 headBlockRoot) {
+  private BlobsSidecar setUpBlobsSidecarData(final UInt64 slot, final Bytes32 headBlockRoot) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
     when(combinedChainDataClient.getBlockAtSlotExact(slot, headBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
