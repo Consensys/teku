@@ -183,8 +183,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
 
   enum Version {
-    KILNV2,
-    NO_BLOCK_VALUE;
+    KILNV2;
 
     public static final Version DEFAULT_VERSION = KILNV2;
   }

@@ -1754,6 +1754,10 @@ public final class DataStructureUtil {
     return blobSchema.create(randomBytes(blobSchema.getLength()));
   }
 
+  public Bytes randomBlobBytes() {
+    return randomBlob().getBytes();
+  }
+
   public BlobsSidecar randomBlobsSidecar() {
     return randomBlobsSidecar(randomBytes32(), randomUInt64());
   }

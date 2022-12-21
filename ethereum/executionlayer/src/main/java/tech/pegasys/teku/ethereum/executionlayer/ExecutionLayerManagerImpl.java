@@ -153,10 +153,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem) {
     checkNotNull(version);
     LOG.info("Execution Engine version: {}", version);
-    if (version != Version.KILNV2 && version != Version.NO_BLOCK_VALUE) {
+    if (version != Version.KILNV2) {
       throw new InvalidConfigurationException("Unsupported execution engine version: " + version);
     }
-    final ExecutionEngineClient engineClient = new Web3JExecutionEngineClient(web3JClient, version);
+    final ExecutionEngineClient engineClient = new Web3JExecutionEngineClient(web3JClient);
     final ExecutionEngineClient metricEngineClient =
         new MetricRecordingExecutionEngineClient(engineClient, timeProvider, metricsSystem);
     return new ThrottlingExecutionEngineClient(
