@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -324,9 +325,16 @@ class BlockFactoryTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(dataStructureUtil.randomPayloadExecutionContext(false))));
-    when(executionLayer.engineGetPayload(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(executionPayload));
-    when(executionLayer.builderGetHeader(any(), any()))
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(false)))
+        .then(
+            args ->
+                new ExecutionPayloadResult(
+                    args.getArgument(0),
+                    Optional.of(SafeFuture.completedFuture(executionPayload)),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty()));
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(true)))
         .then(
             args ->
                 new ExecutionPayloadResult(

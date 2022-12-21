@@ -553,7 +553,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
-    return blockImporterFactory.sendSignedBlock(maybeBlindedBlock);
+    return blockImporterFactory
+        .sendSignedBlock(maybeBlindedBlock)
+        .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
   }
 
   @Override

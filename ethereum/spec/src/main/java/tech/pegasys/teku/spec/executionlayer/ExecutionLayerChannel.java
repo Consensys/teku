@@ -126,6 +126,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * This is low level method, use {@link #initiateBlockProduction(ExecutionPayloadContext,
    * BeaconState, boolean)} instead
    */
+  @Deprecated
   SafeFuture<ExecutionPayload> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
@@ -138,6 +139,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * This is low level method, use {@link #initiateBlockAndBlobsProduction(ExecutionPayloadContext,
    * BeaconState, boolean)} instead
    */
+  @Deprecated
   SafeFuture<BlobsBundle> engineGetBlobsBundle(
       UInt64 slot, final Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional);
 
@@ -149,6 +151,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * This is low level method, use {@link #initiateBlockProduction(ExecutionPayloadContext,
    * BeaconState, boolean)} instead
    */
+  @Deprecated
   ExecutionPayloadResult builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state);
 

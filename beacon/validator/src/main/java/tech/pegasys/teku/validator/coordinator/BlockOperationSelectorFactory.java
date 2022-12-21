@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
@@ -160,23 +161,23 @@ public class BlockOperationSelectorFactory {
 
       // Execution Payload / Execution Payload Header
       if (bodyBuilder.supportsExecutionPayload()) {
+        final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
+            forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
         if (!bodyBuilder.supportsKzgCommitments()) {
           if (bodyBuilder.isBlinded()) {
-            builderSetPayloadHeader(bodyBuilder, parentRoot, blockSlotState);
+            builderSetPayloadHeader(bodyBuilder, blockSlotState, executionPayloadContextFuture);
           } else {
-            builderSetPayload(bodyBuilder, parentRoot, blockSlotState);
+            builderSetPayload(bodyBuilder, blockSlotState, executionPayloadContextFuture);
           }
         } else {
           // Execution Payload / Execution Payload Header + KZG Commitments
           SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
-              forkChoiceNotifier
-                  .getPayloadId(parentRoot, blockSlotState.getSlot())
-                  .thenApply(
-                      executionPayloadContextOptional ->
-                          executionLayerChannel.initiateBlockAndBlobsProduction(
-                              executionPayloadContextOptional.orElseThrow(),
-                              blockSlotState,
-                              bodyBuilder.isBlinded()));
+              executionPayloadContextFuture.thenApply(
+                  executionPayloadContextOptional ->
+                      executionLayerChannel.initiateBlockAndBlobsProduction(
+                          executionPayloadContextOptional.orElseThrow(),
+                          blockSlotState,
+                          bodyBuilder.isBlinded()));
           builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
           builderSetKzgCommitments(bodyBuilder, executionPayloadResultFuture);
         }
@@ -202,8 +203,8 @@ public class BlockOperationSelectorFactory {
 
   private void builderSetPayload(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final Bytes32 parentRoot,
-      final BeaconState blockSlotState) {
+      final BeaconState blockSlotState,
+      SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
     Supplier<SafeFuture<ExecutionPayload>> defaultPayload =
         () ->
             SafeFuture.completedFuture(
@@ -213,26 +214,23 @@ public class BlockOperationSelectorFactory {
                     .getDefault());
 
     bodyBuilder.executionPayload(
-        forkChoiceNotifier
-            .getPayloadId(parentRoot, blockSlotState.getSlot())
-            .thenCompose(
-                executionPayloadContext -> {
-                  if (executionPayloadContext.isEmpty()) {
-                    return defaultPayload.get();
-                  } else {
-                    return executionLayerChannel
-                        .initiateBlockProduction(
-                            executionPayloadContext.get(), blockSlotState, true)
-                        .getExecutionPayloadFuture()
-                        .orElseThrow();
-                  }
-                }));
+        executionPayloadContextFuture.thenCompose(
+            executionPayloadContext -> {
+              if (executionPayloadContext.isEmpty()) {
+                return defaultPayload.get();
+              } else {
+                return executionLayerChannel
+                    .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, false)
+                    .getExecutionPayloadFuture()
+                    .orElseThrow();
+              }
+            }));
   }
 
   private void builderSetPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final Bytes32 parentRoot,
-      final BeaconState blockSlotState) {
+      final BeaconState blockSlotState,
+      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
     Supplier<SafeFuture<ExecutionPayloadHeader>> defaultPayloadHeader =
         () ->
             SafeFuture.completedFuture(
@@ -242,20 +240,17 @@ public class BlockOperationSelectorFactory {
                     .getHeaderOfDefaultPayload());
 
     bodyBuilder.executionPayloadHeader(
-        forkChoiceNotifier
-            .getPayloadId(parentRoot, blockSlotState.getSlot())
-            .thenCompose(
-                executionPayloadContext -> {
-                  if (executionPayloadContext.isEmpty()) {
-                    return defaultPayloadHeader.get();
-                  } else {
-                    return executionLayerChannel
-                        .initiateBlockProduction(
-                            executionPayloadContext.get(), blockSlotState, true)
-                        .getExecutionPayloadHeaderFuture()
-                        .orElseThrow();
-                  }
-                }));
+        executionPayloadContextFuture.thenCompose(
+            executionPayloadContext -> {
+              if (executionPayloadContext.isEmpty()) {
+                return defaultPayloadHeader.get();
+              } else {
+                return executionLayerChannel
+                    .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)
+                    .getExecutionPayloadHeaderFuture()
+                    .orElseThrow();
+              }
+            }));
   }
 
   private void builderSetKzgCommitments(
