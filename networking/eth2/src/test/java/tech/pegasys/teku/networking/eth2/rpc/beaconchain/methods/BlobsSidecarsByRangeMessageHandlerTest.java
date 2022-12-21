@@ -58,7 +58,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private static final RpcException RESOURCE_UNAVAILABLE_EXCEPTION =
       new ResourceUnavailableException(
-          "Blobs sidecars are not available in the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range.");
+          "Blobs sidecars are not available within the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range.");
 
   private final Spec spec = TestSpecFactory.createMinimalEip4844();
 

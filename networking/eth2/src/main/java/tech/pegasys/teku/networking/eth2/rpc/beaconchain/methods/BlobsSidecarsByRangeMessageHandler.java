@@ -110,7 +110,7 @@ public class BlobsSidecarsByRangeMessageHandler
               if (!verifyBlobsSidecarsAreAvailable(earliestAvailableEpoch, currentEpoch)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException(
-                        "Blobs sidecars are not available in the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range."));
+                        "Blobs sidecars are not available within the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range."));
               }
               final RequestState initialState =
                   new RequestState(
