@@ -228,7 +228,10 @@ public class BlobsSidecarsByRangeMessageHandler
               block ->
                   block
                       .map(SignedBeaconBlock::getRoot)
-                      .map(combinedChainDataClient::getBlobsSidecarByBlockRoot)
+                      .map(
+                          blockRoot ->
+                              combinedChainDataClient.getBlobsSidecarBySlotAndBlockRoot(
+                                  currentSlot.get(), blockRoot))
                       .orElse(SafeFuture.completedFuture(Optional.empty())));
     }
 

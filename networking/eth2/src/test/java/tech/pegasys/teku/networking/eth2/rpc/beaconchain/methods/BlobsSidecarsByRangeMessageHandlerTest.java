@@ -207,7 +207,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBlockAtSlotExact(slot, headBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar(headBlockRoot, slot);
-    when(combinedChainDataClient.getBlobsSidecarByBlockRoot(block.getRoot()))
+    when(combinedChainDataClient.getBlobsSidecarBySlotAndBlockRoot(slot, block.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobsSidecar)));
     return blobsSidecar;
   }
