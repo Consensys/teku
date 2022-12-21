@@ -1,6 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
+# Instructs the beacon node to subscribe to all sync committee subnets.
+# Then each slot monitors the number of peers available on those subnets.
+# Useful for simulating a validator in a sync committee without needing a real validator.
+
+
 URL="${1:-http://localhost:5051}"
 METRICS_URL="${2:-http://localhost:8008/metrics}"
 CURL="curl --fail -s"
@@ -33,7 +38,7 @@ do
   }
 ]
 END`
-#  $CURL -X POST -H 'Content-Type: application/json' --data "${DATA}" "${URL}/eth/v1/validator/sync_committee_subscriptions" || echo "Failed to subscribe"
+  $CURL -X POST -H 'Content-Type: application/json' --data "${DATA}" "${URL}/eth/v1/validator/sync_committee_subscriptions" || echo "Failed to subscribe"
   PEER_COUNT=$($CURL "${URL}/eth/v1/node/peers" | jq .meta.count || echo 'Unknown')
   SUBNET_PEER_METRICS=$($CURL "${METRICS_URL}" | grep -v '#' | grep 'network_subnet_peer_count')
   SUBNET_PEER_COUNT_0=$(echo "${SUBNET_PEER_METRICS}" | grep 'sync_committee_0",}' | cut -f 2 -d ' ' || echo 'Unknown')
