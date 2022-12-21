@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -40,7 +41,6 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -68,6 +68,8 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final UInt64 startSlot = eip4844ForkEpoch.increment().times(slotsPerEpoch);
 
+  private final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
+
   private final UInt64 count = UInt64.valueOf(5);
 
   private final UInt64 maxRequestSize = UInt64.valueOf(8);
@@ -93,27 +95,15 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   public void setUp() {
     when(peer.wantToMakeRequest()).thenReturn(true);
     when(peer.wantToReceiveBlobsSidecars(listener, count.longValue())).thenReturn(true);
-  }
-
-  @Test
-  public void validateRequest_requestEpochNotInMinEpochsForBlobsSidecarsRange() {
-    // current epoch - 5000
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(5000));
-    // request epoch (2) < min epoch (5000 - 4096)
-    final Optional<RpcException> result =
-        handler.validateRequest(
-            protocolId, new BlobsSidecarsByRangeRequestMessage(startSlot, ONE.plus(1)));
-    final RpcException expectedRpcException =
-        new RpcException(
-            RpcResponseStatus.INVALID_REQUEST_CODE,
-            "The request epoch 2 is not within the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS range.");
-    assertThat(result).hasValue(expectedRpcException);
+    when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(eip4844ForkEpoch.increment());
+    when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
+    when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
   public void validateRequest_validRequest() {
-    // min epoch will be the eip 4844 fork epoch (1)
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(4));
     final Optional<RpcException> result =
         handler.validateRequest(protocolId, new BlobsSidecarsByRangeRequestMessage(startSlot, ONE));
     assertThat(result).isEmpty();
@@ -142,14 +132,14 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldSendResourceUnavailableIfBlobsSidecarsAreNotAvailable() {
 
-    when(combinedChainDataClient.getBestBlockRoot())
-        .thenReturn(Optional.of(dataStructureUtil.randomBytes32()));
+    // current epoch is 5020
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(5020));
 
     // earliest available sidecar epoch - 5010
     when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
         .thenReturn(SafeFuture.completedFuture(Optional.of(eip4844ForkEpoch.plus(5009))));
 
-    // start slot in epoch 5000
+    // start slot in epoch 5000 within MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS range
     final BlobsSidecarsByRangeRequestMessage request =
         new BlobsSidecarsByRangeRequestMessage(UInt64.valueOf(5000).times(slotsPerEpoch), count);
 
@@ -161,23 +151,35 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
+  public void shouldSendResourceUnavailableIfNoBlobsSidecarsHaveBeenSent() {
+    when(combinedChainDataClient.getBlockAtSlotExact(any(), eq(headBlockRoot)))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock())));
+    // no sidecars in database
+    when(combinedChainDataClient.getBlobsSidecarBySlotAndBlockRoot(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    // request not within the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS range [1,2] so available is
+    // assumed
+    final BlobsSidecarsByRangeRequestMessage request =
+        new BlobsSidecarsByRangeRequestMessage(ZERO, count);
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    verify(combinedChainDataClient, times(count.intValue()))
+        .getBlobsSidecarBySlotAndBlockRoot(any(), any());
+
+    verify(listener).completeWithErrorResponse(RESOURCE_UNAVAILABLE_EXCEPTION);
+  }
+
+  @Test
   public void shouldSendToPeerRequestedNumberOfBlobsSidecars() {
-
-    final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
-
-    when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(eip4844ForkEpoch.increment());
-    when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
-    when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
 
     final BlobsSidecarsByRangeRequestMessage request =
         new BlobsSidecarsByRangeRequestMessage(startSlot, count);
 
     final List<BlobsSidecar> expectedSent =
-        UInt64.rangeClosed(request.getStartSlot(), request.getMaxSlot())
-            .map(slot -> setUpBlobsSidecarData(slot, headBlockRoot))
-            .collect(Collectors.toList());
+        setUpBlobsSidecarData(startSlot, request.getMaxSlot(), headBlockRoot);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -192,13 +194,20 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }
 
-  private BlobsSidecar setUpBlobsSidecarData(final UInt64 slot, final Bytes32 headBlockRoot) {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-    when(combinedChainDataClient.getBlockAtSlotExact(slot, headBlockRoot))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-    final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar(headBlockRoot, slot);
-    when(combinedChainDataClient.getBlobsSidecarBySlotAndBlockRoot(slot, block.getRoot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blobsSidecar)));
-    return blobsSidecar;
+  private List<BlobsSidecar> setUpBlobsSidecarData(
+      final UInt64 startSlot, final UInt64 maxSlot, final Bytes32 headBlockRoot) {
+    return UInt64.rangeClosed(startSlot, maxSlot)
+        .map(
+            slot -> {
+              final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+              when(combinedChainDataClient.getBlockAtSlotExact(slot, headBlockRoot))
+                  .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+              final BlobsSidecar blobsSidecar =
+                  dataStructureUtil.randomBlobsSidecar(headBlockRoot, slot);
+              when(combinedChainDataClient.getBlobsSidecarBySlotAndBlockRoot(slot, block.getRoot()))
+                  .thenReturn(SafeFuture.completedFuture(Optional.of(blobsSidecar)));
+              return blobsSidecar;
+            })
+        .collect(Collectors.toList());
   }
 }
