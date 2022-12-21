@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -369,7 +370,13 @@ class BlockOperationSelectorFactoryTest {
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState))
-        .thenReturn(SafeFuture.completedFuture(randomExecutionPayloadHeader));
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
+                Optional.empty(),
+                Optional.of(SafeFuture.completedFuture(randomExecutionPayloadHeader)),
+                Optional.empty(),
+                Optional.empty()));
 
     factory
         .createSelector(

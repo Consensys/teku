@@ -144,11 +144,13 @@ class ExecutionLayerManagerImplTest {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState beaconState = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
-    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
-        .isCompletedWithValue(payload);
+    resultContainsPayload(
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, beaconState, false),
+        payload);
 
     // we expect no calls to builder
     verifyNoInteractions(builderClient);
@@ -164,11 +166,13 @@ class ExecutionLayerManagerImplTest {
         dataStructureUtil.randomPayloadExecutionContext(false, true);
     executionLayerManager = createExecutionLayerChannelImpl(false, false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState beaconState = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload = prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
-    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
-        .isCompletedWithValue(payload);
+    resultContainsPayload(
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, beaconState, false),
+        payload);
 
     // we expect no calls to builder
     verifyNoInteractions(builderClient);
@@ -191,7 +195,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect result from the builder
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
@@ -235,7 +240,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
@@ -279,7 +285,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     verifyFallbackToLocalEL(slot, payload, executionPayloadContext, FallbackReason.BUILDER_ERROR);
   }
@@ -305,7 +312,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     verifyFallbackToLocalEL(
         slot, payload, executionPayloadContext, FallbackReason.BUILDER_NOT_AVAILABLE);
@@ -335,7 +343,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     verifyFallbackToLocalEL(
         slot, payload, executionPayloadContext, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
@@ -363,7 +372,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     verifyFallbackToLocalEL(
         slot, payload, executionPayloadContext, FallbackReason.TRANSITION_NOT_FINALIZED);
@@ -393,7 +403,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     verifyFallbackToLocalEL(
         slot, payload, executionPayloadContext, FallbackReason.CIRCUIT_BREAKER_ENGAGED);
@@ -423,7 +434,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     verifyFallbackToLocalEL(
         slot, payload, executionPayloadContext, FallbackReason.CIRCUIT_BREAKER_ENGAGED);
@@ -451,7 +463,8 @@ class ExecutionLayerManagerImplTest {
 
     // we expect local engine header as result
     resultContainsHeader(
-        executionLayerManager.builderGetHeader(executionPayloadContext, state), header);
+        executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
+        header);
 
     verifyFallbackToLocalEL(
         slot, payload, executionPayloadContext, FallbackReason.VALIDATOR_NOT_REGISTERED);
@@ -469,7 +482,9 @@ class ExecutionLayerManagerImplTest {
                   dataStructureUtil.randomPayloadExecutionContext(slot, false);
               final BeaconState state = dataStructureUtil.randomBeaconState(slot);
               prepareEngineGetPayloadResponse(executionPayloadContext, slot);
-              assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+              assertThat(
+                      executionLayerManager.initiateBlockProduction(
+                          executionPayloadContext, state, true))
                   .satisfies(
                       result ->
                           result
@@ -506,6 +521,7 @@ class ExecutionLayerManagerImplTest {
     spec = TestSpecFactory.createMinimalEip4844();
     dataStructureUtil = new DataStructureUtil(spec);
     final UInt64 slot = dataStructureUtil.randomUInt64();
+    final BeaconState beaconState = dataStructureUtil.randomBeaconState(slot);
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final ExecutionPayloadContext executionPayloadContext =
@@ -515,16 +531,14 @@ class ExecutionLayerManagerImplTest {
     // BlobsBundle is requested after ExecutionPayload, so should warm-up
     when(executionClientHandler.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
-    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
-        .isCompletedWithValue(executionPayload);
-
     when(executionClientHandler.engineGetBlobsBundle(executionPayloadContext.getPayloadId(), slot))
         .thenReturn(SafeFuture.completedFuture(blobsBundle));
 
-    assertThat(
-            executionLayerManager.engineGetBlobsBundle(
-                slot, executionPayloadContext.getPayloadId(), Optional.empty()))
-        .isCompletedWithValue(blobsBundle);
+    final ExecutionPayloadResult executionPayloadResult =
+        executionLayerManager.initiateBlockAndBlobsProduction(
+            executionPayloadContext, beaconState, false);
+    resultContainsPayload(executionPayloadResult, executionPayload);
+    resultContainsBlobsBundle(executionPayloadResult, blobsBundle);
 
     // we expect no calls to builder
     verifyNoInteractions(builderClient);
@@ -698,6 +712,30 @@ class ExecutionLayerManagerImplTest {
                             .orElseThrow()
                             .get()
                             .equals(executionPayloadHeader))
+                    .isTrue());
+  }
+
+  private void resultContainsPayload(
+      final ExecutionPayloadResult executionPayloadResult,
+      final ExecutionPayload executionPayload) {
+    assertThat(executionPayloadResult)
+        .satisfies(
+            result ->
+                assertThat(
+                        result
+                            .getExecutionPayloadFuture()
+                            .orElseThrow()
+                            .get()
+                            .equals(executionPayload))
+                    .isTrue());
+  }
+
+  private void resultContainsBlobsBundle(
+      final ExecutionPayloadResult executionPayloadResult, final BlobsBundle blobsBundle) {
+    assertThat(executionPayloadResult)
+        .satisfies(
+            result ->
+                assertThat(result.getBlobsBundleFuture().orElseThrow().get().equals(blobsBundle))
                     .isTrue());
   }
 }

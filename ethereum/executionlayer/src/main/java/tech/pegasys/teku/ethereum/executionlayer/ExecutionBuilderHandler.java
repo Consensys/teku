@@ -69,7 +69,7 @@ public class ExecutionBuilderHandler {
       Optional<BuilderClient> builderClient,
       EventLogger eventLogger) {
     this.spec = spec;
-    this.latestBuilderAvailability = new AtomicBoolean(false);
+    this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
     this.builderBidValidator = builderBidValidator;
     this.builderCircuitBreaker = builderCircuitBreaker;
@@ -78,12 +78,9 @@ public class ExecutionBuilderHandler {
   }
 
   private Optional<ExecutionPayloadResult> validateBuilderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    final UInt64 slot = state.getSlot();
-
-    final SafeFuture<ExecutionPayload> localExecutionPayload =
-        executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, slot);
-
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final SafeFuture<ExecutionPayload> localExecutionPayload) {
     final Optional<SignedValidatorRegistration> validatorRegistration =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
 
@@ -108,7 +105,7 @@ public class ExecutionBuilderHandler {
     if (fallbackReason != null) {
       return Optional.of(
           getResultFromLocalExecutionPayload(
-              executionPayloadContext, localExecutionPayload, slot, fallbackReason));
+              executionPayloadContext, localExecutionPayload, state.getSlot(), fallbackReason));
     }
 
     return Optional.empty();
@@ -117,16 +114,15 @@ public class ExecutionBuilderHandler {
   public ExecutionPayloadResult builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
+    final SafeFuture<ExecutionPayload> localExecutionPayload =
+        executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
     final Optional<ExecutionPayloadResult> validationResult =
-        validateBuilderGetHeader(executionPayloadContext, state);
+        validateBuilderGetHeader(executionPayloadContext, state, localExecutionPayload);
     if (validationResult.isPresent()) {
       return validationResult.get();
     }
 
     final UInt64 slot = state.getSlot();
-
-    final SafeFuture<ExecutionPayload> localExecutionPayload =
-        executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, slot);
 
     final Optional<SignedValidatorRegistration> validatorRegistration =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
@@ -215,7 +211,9 @@ public class ExecutionBuilderHandler {
         Optional.of(
             executionPayloadResultFuture.thenCompose(
                 executionPayloadResult ->
-                    executionPayloadResult.getFallbackDataFuture().orElseThrow())),
+                    executionPayloadResult
+                        .getFallbackDataFuture()
+                        .orElse(SafeFuture.completedFuture(Optional.empty())))),
         Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
   }
 

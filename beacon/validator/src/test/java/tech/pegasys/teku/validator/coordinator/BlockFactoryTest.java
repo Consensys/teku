@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -326,7 +327,14 @@ class BlockFactoryTest {
     when(executionLayer.engineGetPayload(any(), any()))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
     when(executionLayer.builderGetHeader(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
+        .then(
+            args ->
+                new ExecutionPayloadResult(
+                    args.getArgument(0),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(executionPayloadHeader)),
+                    Optional.empty(),
+                    Optional.empty()));
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
