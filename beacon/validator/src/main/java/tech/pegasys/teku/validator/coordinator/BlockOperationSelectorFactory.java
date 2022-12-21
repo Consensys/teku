@@ -191,7 +191,7 @@ public class BlockOperationSelectorFactory {
       bodyBuilder.executionPayloadHeader(
           executionPayloadResultFuture.thenCompose(
               executionPayloadResult ->
-                  executionPayloadResult.getExecutionPayloaHeaderdFuture().orElseThrow()));
+                  executionPayloadResult.getExecutionPayloadHeaderFuture().orElseThrow()));
     } else {
       bodyBuilder.executionPayload(
           executionPayloadResultFuture.thenCompose(
@@ -252,7 +252,7 @@ public class BlockOperationSelectorFactory {
                     return executionLayerChannel
                         .initiateBlockProduction(
                             executionPayloadContext.get(), blockSlotState, true)
-                        .getExecutionPayloaHeaderdFuture()
+                        .getExecutionPayloadHeaderFuture()
                         .orElseThrow();
                   }
                 }));

@@ -211,7 +211,7 @@ public class ExecutionBuilderHandler {
         Optional.of(
             executionPayloadResultFuture.thenCompose(
                 executionPayloadResult ->
-                    executionPayloadResult.getExecutionPayloaHeaderdFuture().orElseThrow())),
+                    executionPayloadResult.getExecutionPayloadHeaderFuture().orElseThrow())),
         Optional.of(
             executionPayloadResultFuture.thenCompose(
                 executionPayloadResult ->

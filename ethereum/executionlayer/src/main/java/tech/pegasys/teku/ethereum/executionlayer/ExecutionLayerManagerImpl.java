@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -354,6 +355,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public ExecutionPayloadResult builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state) {
     return executionBuilderHandler.builderGetHeader(executionPayloadContext, state);
+  }
+
+  @VisibleForTesting
+  public ExecutionBuilderHandler getExecutionBuilderHandler() {
+    return executionBuilderHandler;
   }
 
   void recordExecutionPayloadFallbackSource(

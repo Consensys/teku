@@ -25,19 +25,19 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBun
 public class ExecutionPayloadResult {
   private final ExecutionPayloadContext executionPayloadContext;
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
-  private final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloaHeaderdFuture;
+  private final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderFuture;
   private final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture;
   private final Optional<SafeFuture<Optional<FallbackData>>> fallbackDataFuture;
 
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
-      final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloaHeaderFuture,
+      final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderFuture,
       final Optional<SafeFuture<Optional<FallbackData>>> fallbackDataFuture,
       final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
-    this.executionPayloaHeaderdFuture = executionPayloaHeaderFuture;
+    this.executionPayloadHeaderFuture = executionPayloadHeaderFuture;
     this.fallbackDataFuture = fallbackDataFuture;
     this.blobsBundleFuture = blobsBundleFuture;
   }
@@ -50,8 +50,8 @@ public class ExecutionPayloadResult {
     return executionPayloadFuture;
   }
 
-  public Optional<SafeFuture<ExecutionPayloadHeader>> getExecutionPayloaHeaderdFuture() {
-    return executionPayloaHeaderdFuture;
+  public Optional<SafeFuture<ExecutionPayloadHeader>> getExecutionPayloadHeaderFuture() {
+    return executionPayloadHeaderFuture;
   }
 
   /**
@@ -90,7 +90,7 @@ public class ExecutionPayloadResult {
     final ExecutionPayloadResult that = (ExecutionPayloadResult) o;
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
         && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
-        && Objects.equals(executionPayloaHeaderdFuture, that.executionPayloaHeaderdFuture)
+        && Objects.equals(executionPayloadHeaderFuture, that.executionPayloadHeaderFuture)
         && Objects.equals(fallbackDataFuture, that.fallbackDataFuture)
         && Objects.equals(blobsBundleFuture, that.blobsBundleFuture);
   }
@@ -100,7 +100,7 @@ public class ExecutionPayloadResult {
     return Objects.hash(
         executionPayloadContext,
         executionPayloadFuture,
-        executionPayloaHeaderdFuture,
+        executionPayloadHeaderFuture,
         fallbackDataFuture,
         blobsBundleFuture);
   }
@@ -110,7 +110,7 @@ public class ExecutionPayloadResult {
     return MoreObjects.toStringHelper(this)
         .add("executionPayloadContext", executionPayloadContext)
         .add("executionPayloadFuture", executionPayloadFuture)
-        .add("executionPayloaHeaderdFuture", executionPayloaHeaderdFuture)
+        .add("executionPayloadHeaderFuture", executionPayloadHeaderFuture)
         .add("fallbackDataFuture", fallbackDataFuture)
         .add("blobsBundleFuture", blobsBundleFuture)
         .toString();
