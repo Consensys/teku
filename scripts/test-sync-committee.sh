@@ -27,7 +27,6 @@ do
   NOW=$(date "+%s")
   SLOT=$(((${NOW} - ${GENESIS_TIME}) / ${SECONDS_PER_SLOT}))
   EPOCH=$((${SLOT} / ${SLOTS_PER_EPOCH}))
-  SLOT_IN_EPOCH=$((${SLOT} % ${SLOTS_PER_EPOCH}))
   # shellcheck disable=SC2006
   DATA=`cat<<END
 [
