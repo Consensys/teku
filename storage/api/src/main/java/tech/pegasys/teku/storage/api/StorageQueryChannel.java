@@ -36,14 +36,10 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<WeakSubjectivityState> getWeakSubjectivityState();
 
-  /**
-   * @return The earliest available finalized block's slot
-   */
+  /** @return The earliest available finalized block's slot */
   SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot();
 
-  /**
-   * @return The earliest available finalized block
-   */
+  /** @return The earliest available finalized block */
   SafeFuture<Optional<SignedBeaconBlock>> getEarliestAvailableBlock();
 
   SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot);
@@ -82,9 +78,7 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot();
 
-  /**
-   * @return The earliest available finalized blobs sidecar's slot
-   */
+  /** @return The earliest available finalized blobs sidecar's slot */
   SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot();
 
   SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot);

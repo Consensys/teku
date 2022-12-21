@@ -419,16 +419,12 @@ public class CombinedChainDataClient {
     return Optional.ofNullable(recentChainData.getGenesisTime());
   }
 
-  /**
-   * @return The slot at which the chain head block was proposed
-   */
+  /** @return The slot at which the chain head block was proposed */
   public UInt64 getHeadSlot() {
     return this.recentChainData.getHeadSlot();
   }
 
-  /**
-   * @return The epoch in which the chain head block was proposed
-   */
+  /** @return The epoch in which the chain head block was proposed */
   public UInt64 getHeadEpoch() {
     final UInt64 headSlot = getHeadSlot();
     return spec.computeEpochAtSlot(headSlot);
@@ -438,16 +434,12 @@ public class CombinedChainDataClient {
     return recentChainData.getCurrentForkInfo();
   }
 
-  /**
-   * @return The current slot according to clock time
-   */
+  /** @return The current slot according to clock time */
   public UInt64 getCurrentSlot() {
     return this.recentChainData.getCurrentSlot().orElseGet(this::getHeadSlot);
   }
 
-  /**
-   * @return The current epoch according to clock time
-   */
+  /** @return The current epoch according to clock time */
   public UInt64 getCurrentEpoch() {
     final UInt64 headSlot = getCurrentSlot();
     return spec.computeEpochAtSlot(headSlot);
@@ -463,9 +455,7 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
-  /**
-   * @return The earliest available block's slot
-   */
+  /** @return The earliest available block's slot */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return historicalChainData.getEarliestAvailableBlockSlot();
   }
