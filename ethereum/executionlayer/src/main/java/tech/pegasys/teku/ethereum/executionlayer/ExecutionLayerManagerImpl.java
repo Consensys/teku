@@ -380,10 +380,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                     signedValidatorRegistrations));
   }
 
-  @Override
-  public ExecutionPayloadResult builderGetHeader(
+  private Optional<ExecutionPayloadResult> validateBuilderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-
     final UInt64 slot = state.getSlot();
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
@@ -411,11 +409,34 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     }
 
     if (fallbackReason != null) {
-      return getResultFromLocalExecutionPayload(
-          executionPayloadContext, localExecutionPayload, slot, fallbackReason);
+      return Optional.of(
+          getResultFromLocalExecutionPayload(
+              executionPayloadContext, localExecutionPayload, slot, fallbackReason));
     }
 
-    final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
+    return Optional.empty();
+  }
+
+  @Override
+  public ExecutionPayloadResult builderGetHeader(
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+
+    final Optional<ExecutionPayloadResult> validationResult =
+        validateBuilderGetHeader(executionPayloadContext, state);
+    if (validationResult.isPresent()) {
+      return validationResult.get();
+    }
+
+    final UInt64 slot = state.getSlot();
+
+    final SafeFuture<ExecutionPayload> localExecutionPayload =
+        engineGetPayload(executionPayloadContext, slot, true);
+
+    final Optional<SignedValidatorRegistration> validatorRegistration =
+        executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
+
+    final BLSPublicKey validatorPublicKey =
+        validatorRegistration.orElseThrow().getMessage().getPublicKey();
 
     LOG.trace(
         "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
@@ -423,7 +444,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         validatorPublicKey,
         executionPayloadContext.getParentHash());
 
-    final SafeFuture<ExecutionPayloadResult> executionPayloadResultSafeFuture =
+    final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
         builderClient
             .orElseThrow()
             .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
@@ -469,15 +490,21 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                       FallbackReason.BUILDER_ERROR);
                 });
 
+    return repackBuilderResultFuture(executionPayloadResultFuture, executionPayloadContext);
+  }
+
+  private ExecutionPayloadResult repackBuilderResultFuture(
+      final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture,
+      final ExecutionPayloadContext executionPayloadContext) {
     return new ExecutionPayloadResult(
         executionPayloadContext,
         Optional.empty(),
         Optional.of(
-            executionPayloadResultSafeFuture.thenCompose(
+            executionPayloadResultFuture.thenCompose(
                 executionPayloadResult ->
                     executionPayloadResult.getExecutionPayloaHeaderdFuture().orElseThrow())),
         Optional.of(
-            executionPayloadResultSafeFuture.thenCompose(
+            executionPayloadResultFuture.thenCompose(
                 executionPayloadResult ->
                     executionPayloadResult.getFallbackDataFuture().orElseThrow())),
         Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
