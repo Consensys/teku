@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.logic.versions.eip4844.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.eip4844.BlobBytesSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.type.BytesSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGProofSupplier;
 
@@ -34,7 +37,8 @@ public class CKZG4844PropertyTest {
 
   @Property(tries = 100)
   void fuzzComputeAggregateKzgProof(
-      final KZG kzg, @ForAll final List<@From(supplier = BlobBytesSupplier.class) Bytes> blobs) {
+      final KZG kzg,
+      @ForAll final List<@From(supplier = DiverseBlobBytesSupplier.class) Bytes> blobs) {
     try {
       kzg.computeAggregateKzgProof(blobs);
     } catch (Exception e) {
@@ -45,7 +49,7 @@ public class CKZG4844PropertyTest {
   @Property(tries = 100)
   void fuzzVerifyAggregateKzgProof(
       final KZG kzg,
-      @ForAll final List<@From(supplier = BlobBytesSupplier.class) Bytes> blobs,
+      @ForAll final List<@From(supplier = DiverseBlobBytesSupplier.class) Bytes> blobs,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
       @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
     try {
@@ -57,11 +61,20 @@ public class CKZG4844PropertyTest {
 
   @Property(tries = 100)
   void fuzzBlobToKzgCommitment(
-      final KZG kzg, @ForAll(supplier = BlobBytesSupplier.class) final Bytes blob) {
+      final KZG kzg, @ForAll(supplier = DiverseBlobBytesSupplier.class) final Bytes blob) {
     try {
       kzg.blobToKzgCommitment(blob);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
+    }
+  }
+
+  private static class DiverseBlobBytesSupplier extends BlobBytesSupplier {
+
+    @Override
+    public Arbitrary<Bytes> get() {
+      final Arbitrary<Bytes> randomSizeBLob = new BytesSupplier().get();
+      return Arbitraries.oneOf(List.of(super.get(), randomSizeBLob));
     }
   }
 }
