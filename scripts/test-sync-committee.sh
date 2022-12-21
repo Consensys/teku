@@ -27,6 +27,8 @@ do
   NOW=$(date "+%s")
   SLOT=$(((${NOW} - ${GENESIS_TIME}) / ${SECONDS_PER_SLOT}))
   EPOCH=$((${SLOT} / ${SLOTS_PER_EPOCH}))
+
+  # Instruct beacon node to subscribe to subnet
   # shellcheck disable=SC2006
   DATA=`cat<<END
 [
@@ -38,6 +40,8 @@ do
 ]
 END`
   $CURL -X POST -H 'Content-Type: application/json' --data "${DATA}" "${URL}/eth/v1/validator/sync_committee_subscriptions" || echo "Failed to subscribe"
+
+  # Gather and report on peer counts
   PEER_COUNT=$($CURL "${URL}/eth/v1/node/peers" | jq .meta.count || echo 'Unknown')
   SUBNET_PEER_METRICS=$($CURL "${METRICS_URL}" | grep -v '#' | grep 'network_subnet_peer_count')
   SUBNET_PEER_COUNT_0=$(echo "${SUBNET_PEER_METRICS}" | grep 'sync_committee_0",}' | cut -f 2 -d ' ' || echo 'Unknown')
@@ -45,5 +49,7 @@ END`
   SUBNET_PEER_COUNT_2=$(echo "${SUBNET_PEER_METRICS}" | grep 'sync_committee_2",}' | cut -f 2 -d ' ' || echo 'Unknown')
   SUBNET_PEER_COUNT_3=$(echo "${SUBNET_PEER_METRICS}" | grep 'sync_committee_3",}' | cut -f 2 -d ' ' || echo 'Unknown')
   echo "Slot: ${SLOT} Total peers: ${PEER_COUNT} Peers on sync subnets: ${SUBNET_PEER_COUNT_0} ${SUBNET_PEER_COUNT_1} ${SUBNET_PEER_COUNT_2} ${SUBNET_PEER_COUNT_3}"
+
+  # Wait for the next slot
   sleep "${SECONDS_PER_SLOT}"
 done
