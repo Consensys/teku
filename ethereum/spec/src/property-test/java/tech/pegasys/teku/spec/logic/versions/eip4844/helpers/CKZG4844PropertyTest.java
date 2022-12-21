@@ -21,27 +21,24 @@ import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
-import net.jqwik.api.Provide;
 import net.jqwik.api.lifecycle.AddLifecycleHook;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.BlobBytesSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.BytesSupplier;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGProofSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @AddLifecycleHook(KzgResolver.class)
 public class CKZG4844PropertyTest {
 
-  private static final BytesSupplier BYTES_SUPPLIER = new BytesSupplier();
-  private static final BlobBytesSupplier BLOB_BYTES_SUPPLIER = new BlobBytesSupplier();
-
   @Property(tries = 100)
   void fuzzComputeAggregateKzgProof(
-      final KZG kzg, @ForAll final List<@From("randomBlob") Bytes> blobs) {
+      final KZG kzg, @ForAll final List<@From(supplier = BlobBytesSupplier.class) Bytes> blobs) {
     try {
       kzg.computeAggregateKzgProof(blobs);
     } catch (Exception e) {
@@ -52,7 +49,7 @@ public class CKZG4844PropertyTest {
   @Property(tries = 100)
   void fuzzVerifyAggregateKzgProof(
       final KZG kzg,
-      @ForAll final List<@From("randomBlob") Bytes> blobs,
+      @ForAll final List<@From(supplier = BlobBytesSupplier.class) Bytes> blobs,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
       @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
     try {
@@ -63,7 +60,8 @@ public class CKZG4844PropertyTest {
   }
 
   @Property(tries = 100)
-  void fuzzBlobToKzgCommitment(final KZG kzg, @ForAll("randomBlob") final Bytes blob) {
+  void fuzzBlobToKzgCommitment(
+      final KZG kzg, @ForAll(supplier = BlobBytesSupplier.class) final Bytes blob) {
     try {
       kzg.blobToKzgCommitment(blob);
     } catch (Exception e) {
@@ -71,8 +69,16 @@ public class CKZG4844PropertyTest {
     }
   }
 
-  @Provide
-  Arbitrary<Bytes> randomBlob() {
-    return Arbitraries.oneOf(BLOB_BYTES_SUPPLIER.get(), BYTES_SUPPLIER.get());
+  public static class BlobBytesSupplier extends DataStructureUtilSupplier<Bytes> {
+
+    public BlobBytesSupplier() {
+      super(DataStructureUtil::randomBlobBytes, SpecMilestone.EIP4844);
+    }
+
+    @Override
+    public Arbitrary<Bytes> get() {
+      return Arbitraries.oneOf(
+          super.get(), Arbitraries.bytes().array(byte[].class).map(Bytes::wrap));
+    }
   }
 }
