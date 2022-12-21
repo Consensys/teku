@@ -72,7 +72,7 @@ public class CKZG4844PropertyTest {
   }
 
   @Provide
-  Arbitrary<Bytes> blobBytes() {
+  Arbitrary<Bytes> randomBlob() {
     return Arbitraries.oneOf(BLOB_BYTES_SUPPLIER.get(), BYTES_SUPPLIER.get());
   }
 }
