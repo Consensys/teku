@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.coordinator;
+package tech.pegasys.teku.validator.coordinator.publisher;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
@@ -19,31 +19,34 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.coordinator.BlockFactory;
+import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
-public class BlockPublisherPhase0 implements BlockPublisher {
+public class BlockPublisherEip4844 implements BlockPublisher {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockFactory blockFactory;
-  private final BlockGossipChannel blockGossipChannel;
   private final BlockImportChannel blockImportChannel;
+  private final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel;
   private final PerformanceTracker performanceTracker;
   private final DutyMetrics dutyMetrics;
 
-  public BlockPublisherPhase0(
+  public BlockPublisherEip4844(
       final BlockFactory blockFactory,
-      final BlockGossipChannel blockGossipChannel,
       final BlockImportChannel blockImportChannel,
+      final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     this.blockFactory = blockFactory;
-    this.blockGossipChannel = blockGossipChannel;
     this.blockImportChannel = blockImportChannel;
+    this.blockAndBlobsSidecarGossipChannel = blockAndBlobsSidecarGossipChannel;
     this.performanceTracker = performanceTracker;
     this.dutyMetrics = dutyMetrics;
   }
@@ -58,9 +61,15 @@ public class BlockPublisherPhase0 implements BlockPublisher {
   private SafeFuture<SendSignedBlockResult> sendUnblindedSignedBlock(
       final SignedBeaconBlock block) {
     performanceTracker.saveProducedBlock(block);
-    blockGossipChannel.publishBlock(block);
-    return blockImportChannel
-        .importBlock(block, Optional.empty())
+    final SafeFuture<SignedBeaconBlockAndBlobsSidecar> blockAndBlobsSidecarSafeFuture =
+        blockFactory.supplementBlockWithSidecar(block);
+    return blockAndBlobsSidecarSafeFuture
+        .thenPeek(blockAndBlobsSidecarGossipChannel::publishBlockAndBlobsSidecar)
+        .thenCompose(
+            blockAndBlobsSidecar ->
+                blockImportChannel.importBlock(
+                    blockAndBlobsSidecar.getSignedBeaconBlock(),
+                    Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
         .thenApply(
             result -> {
               if (result.isSuccessful()) {

@@ -205,7 +205,7 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final BeaconState blockSlotState,
       SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
-    Supplier<SafeFuture<ExecutionPayload>> defaultPayload =
+    Supplier<SafeFuture<ExecutionPayload>> preMergePayload =
         () ->
             SafeFuture.completedFuture(
                 SchemaDefinitionsBellatrix.required(
@@ -217,7 +217,7 @@ public class BlockOperationSelectorFactory {
         executionPayloadContextFuture.thenCompose(
             executionPayloadContext -> {
               if (executionPayloadContext.isEmpty()) {
-                return defaultPayload.get();
+                return preMergePayload.get();
               } else {
                 return executionLayerChannel
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, false)
@@ -231,7 +231,7 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final BeaconState blockSlotState,
       final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
-    Supplier<SafeFuture<ExecutionPayloadHeader>> defaultPayloadHeader =
+    Supplier<SafeFuture<ExecutionPayloadHeader>> preMergePayloadHeader =
         () ->
             SafeFuture.completedFuture(
                 SchemaDefinitionsBellatrix.required(
@@ -243,7 +243,7 @@ public class BlockOperationSelectorFactory {
         executionPayloadContextFuture.thenCompose(
             executionPayloadContext -> {
               if (executionPayloadContext.isEmpty()) {
-                return defaultPayloadHeader.get();
+                return preMergePayloadHeader.get();
               } else {
                 return executionLayerChannel
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)

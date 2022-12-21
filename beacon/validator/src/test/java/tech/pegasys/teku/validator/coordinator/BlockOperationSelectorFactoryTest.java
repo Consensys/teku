@@ -346,8 +346,8 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.engineGetPayload(executionPayloadContext, slot))
-        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+    prepareBlockProductionWithPayload(
+        randomExecutionPayload, executionPayloadContext, blockSlotState);
 
     factory
         .createSelector(
@@ -369,14 +369,8 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.builderGetHeader(executionPayloadContext, blockSlotState))
-        .thenReturn(
-            new ExecutionPayloadResult(
-                executionPayloadContext,
-                Optional.empty(),
-                Optional.of(SafeFuture.completedFuture(randomExecutionPayloadHeader)),
-                Optional.empty(),
-                Optional.empty()));
+    prepareBlockProductionWithPayloadHeader(
+        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState);
 
     factory
         .createSelector(
@@ -397,8 +391,8 @@ class BlockOperationSelectorFactoryTest {
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-    when(executionLayer.engineGetPayload(executionPayloadContext, slot))
-        .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
+    prepareBlockProductionWithPayload(
+        randomExecutionPayload, executionPayloadContext, blockSlotState);
 
     factory
         .createSelector(
@@ -421,6 +415,34 @@ class BlockOperationSelectorFactoryTest {
     factory.createUnblinderSelector().accept(blockUnblinder);
 
     assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
+  }
+
+  private void prepareBlockProductionWithPayload(
+      final ExecutionPayload executionPayload,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState) {
+    when(executionLayer.initiateBlockProduction(executionPayloadContext, blockSlotState, false))
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
+                Optional.of(SafeFuture.completedFuture(executionPayload)),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty()));
+  }
+
+  private void prepareBlockProductionWithPayloadHeader(
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState) {
+    when(executionLayer.initiateBlockProduction(executionPayloadContext, blockSlotState, true))
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
+                Optional.empty(),
+                Optional.of(SafeFuture.completedFuture(executionPayloadHeader)),
+                Optional.empty(),
+                Optional.empty()));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
@@ -517,6 +539,26 @@ class BlockOperationSelectorFactoryTest {
         SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
       this.blsToExecutionChanges = blsToExecutionChanges;
       return this;
+    }
+
+    @Override
+    public Boolean supportsSyncAggregate() {
+      return true;
+    }
+
+    @Override
+    public Boolean supportsExecutionPayload() {
+      return true;
+    }
+
+    @Override
+    public Boolean supportsBlsToExecutionChanges() {
+      return true;
+    }
+
+    @Override
+    public Boolean supportsKzgCommitments() {
+      return false;
     }
 
     @Override

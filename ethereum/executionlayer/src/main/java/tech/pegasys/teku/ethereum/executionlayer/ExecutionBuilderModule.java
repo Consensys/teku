@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class ExecutionBuilderHandler {
+public class ExecutionBuilderModule {
   private static final Logger LOG = LogManager.getLogger();
   // TODO: the will be Builder API where Payload will come together with Blobs, until this pack it
   // with dummy
@@ -61,7 +61,7 @@ public class ExecutionBuilderHandler {
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
 
-  public ExecutionBuilderHandler(
+  public ExecutionBuilderModule(
       Spec spec,
       ExecutionLayerManagerImpl executionLayerManager,
       BuilderBidValidator builderBidValidator,

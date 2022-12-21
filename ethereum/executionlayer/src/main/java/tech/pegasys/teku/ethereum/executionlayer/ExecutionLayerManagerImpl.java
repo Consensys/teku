@@ -74,7 +74,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
   private final BlobsBundleValidator blobsBundleValidator;
-  private final ExecutionBuilderHandler executionBuilderHandler;
+  private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
   public static ExecutionLayerManagerImpl create(
@@ -189,14 +189,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     this.spec = spec;
     this.blobsBundleValidator = blobsBundleValidator;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
-    this.executionBuilderHandler =
-        new ExecutionBuilderHandler(
+    this.executionBuilderModule =
+        new ExecutionBuilderModule(
             spec, this, builderBidValidator, builderCircuitBreaker, builderClient, eventLogger);
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
-    executionBuilderHandler.updateBuilderAvailability();
+    executionBuilderModule.updateBuilderAvailability();
     executionResultCache.headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false).clear();
   }
 
@@ -302,7 +302,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         executionPayloadContext.getPayloadId(),
         slot);
     if (!isFallbackCall
-        && executionBuilderHandler.isBuilderAvailable()
+        && executionBuilderModule.isBuilderAvailable()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
     }
@@ -342,24 +342,24 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
-    return executionBuilderHandler.builderRegisterValidators(signedValidatorRegistrations, slot);
+    return executionBuilderModule.builderRegisterValidators(signedValidatorRegistrations, slot);
   }
 
   @Override
   public SafeFuture<ExecutionPayload> builderGetPayload(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return executionBuilderHandler.builderGetPayload(signedBlindedBeaconBlock);
+    return executionBuilderModule.builderGetPayload(signedBlindedBeaconBlock);
   }
 
   @Override
   public ExecutionPayloadResult builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state) {
-    return executionBuilderHandler.builderGetHeader(executionPayloadContext, state);
+    return executionBuilderModule.builderGetHeader(executionPayloadContext, state);
   }
 
   @VisibleForTesting
-  public ExecutionBuilderHandler getExecutionBuilderHandler() {
-    return executionBuilderHandler;
+  public ExecutionBuilderModule getExecutionBuilderModule() {
+    return executionBuilderModule;
   }
 
   void recordExecutionPayloadFallbackSource(

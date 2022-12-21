@@ -92,6 +92,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisherFactory;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
 

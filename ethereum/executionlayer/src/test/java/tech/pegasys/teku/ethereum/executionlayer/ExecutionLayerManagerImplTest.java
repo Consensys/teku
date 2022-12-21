@@ -74,7 +74,7 @@ class ExecutionLayerManagerImplTest {
     // trigger update of builder status (should not do anything since builder is not enabled)
     executionLayerManager.onSlot(UInt64.ONE);
 
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isFalse();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
     verifyNoInteractions(builderClient);
     verifyNoInteractions(eventLogger);
   }
@@ -86,7 +86,7 @@ class ExecutionLayerManagerImplTest {
 
     updateBuilderStatus(builderClientResponse);
 
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isTrue();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
     verifyNoInteractions(eventLogger);
   }
 
@@ -97,7 +97,7 @@ class ExecutionLayerManagerImplTest {
 
     updateBuilderStatus(builderClientResponse);
 
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isFalse();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
     verify(eventLogger).builderIsNotAvailable("oops");
   }
 
@@ -108,34 +108,34 @@ class ExecutionLayerManagerImplTest {
 
     updateBuilderStatus(builderClientResponse);
 
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isFalse();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
     verify(eventLogger).builderIsNotAvailable("oops");
   }
 
   @Test
   public void builderAvailabilityIsUpdatedOnSlotEventAndLoggedAdequately() {
     // Initially builder should be available
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isTrue();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
 
     // Given builder status is ok
     updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
 
     // Then
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isTrue();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
     verifyNoInteractions(eventLogger);
 
     // Given builder status is not ok
     updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")));
 
     // Then
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isFalse();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
     verify(eventLogger).builderIsNotAvailable("oops");
 
     // Given builder status is back to being ok
     updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()));
 
     // Then
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isTrue();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
     verify(eventLogger).builderIsAvailable();
   }
 
@@ -194,7 +194,7 @@ class ExecutionLayerManagerImplTest {
     prepareEngineGetPayloadResponse(executionPayloadContext, slot);
 
     // we expect result from the builder
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -239,7 +239,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -284,7 +284,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -311,7 +311,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -342,7 +342,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -371,7 +371,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -402,7 +402,7 @@ class ExecutionLayerManagerImplTest {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(true);
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -433,7 +433,7 @@ class ExecutionLayerManagerImplTest {
     when(builderCircuitBreaker.isEngaged(any())).thenThrow(new RuntimeException("error"));
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -462,7 +462,7 @@ class ExecutionLayerManagerImplTest {
             .createFromExecutionPayload(payload);
 
     // we expect local engine header as result
-    resultContainsHeader(
+    resultContainsPayloadHeader(
         executionLayerManager.initiateBlockProduction(executionPayloadContext, state, true),
         header);
 
@@ -666,13 +666,13 @@ class ExecutionLayerManagerImplTest {
   private void setBuilderOffline(final UInt64 slot) {
     updateBuilderStatus(SafeFuture.completedFuture(Response.withErrorMessage("oops")), slot);
     reset(builderClient);
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isFalse();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isFalse();
   }
 
   private void setBuilderOnline() {
     updateBuilderStatus(SafeFuture.completedFuture(Response.withNullPayload()), UInt64.ONE);
     reset(builderClient);
-    assertThat(executionLayerManager.getExecutionBuilderHandler().isBuilderAvailable()).isTrue();
+    assertThat(executionLayerManager.getExecutionBuilderModule().isBuilderAvailable()).isTrue();
   }
 
   private void verifyBuilderCalled(
@@ -700,7 +700,7 @@ class ExecutionLayerManagerImplTest {
     assertThat(actualCount).isOne();
   }
 
-  private void resultContainsHeader(
+  private void resultContainsPayloadHeader(
       final ExecutionPayloadResult executionPayloadResult,
       final ExecutionPayloadHeader executionPayloadHeader) {
     assertThat(executionPayloadResult)

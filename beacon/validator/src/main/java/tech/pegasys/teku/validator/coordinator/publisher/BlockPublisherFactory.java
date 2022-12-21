@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.coordinator;
+package tech.pegasys.teku.validator.coordinator.publisher;
 
 import com.google.common.base.Suppliers;
 import java.util.HashMap;
@@ -25,6 +25,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.coordinator.BlockFactory;
+import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherFactory {
@@ -44,6 +46,7 @@ public class BlockPublisherFactory {
     final BlockPublisherPhase0 blockPublisherPhase0 =
         new BlockPublisherPhase0(
             blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
+
     // Not needed for all networks
     final Supplier<BlockPublisherEip4844> blockAndBlobsSidecarPublisherSupplier =
         Suppliers.memoize(
@@ -54,6 +57,8 @@ public class BlockPublisherFactory {
                     blockAndBlobsSidecarGossipChannel,
                     performanceTracker,
                     dutyMetrics));
+
+    // Populate forks publishers
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
