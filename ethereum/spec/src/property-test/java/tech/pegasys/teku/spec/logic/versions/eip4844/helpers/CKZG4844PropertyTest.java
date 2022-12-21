@@ -73,8 +73,8 @@ public class CKZG4844PropertyTest {
 
     @Override
     public Arbitrary<Bytes> get() {
-      final Arbitrary<Bytes> randomSizeBLob = new BytesSupplier().get();
-      return Arbitraries.oneOf(List.of(super.get(), randomSizeBLob));
+      final Arbitrary<Bytes> randomSizeBlob = new BytesSupplier().get();
+      return Arbitraries.oneOf(List.of(super.get(), randomSizeBlob));
     }
   }
 }
