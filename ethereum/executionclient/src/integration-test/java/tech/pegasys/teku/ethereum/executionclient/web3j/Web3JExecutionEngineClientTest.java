@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -87,7 +86,7 @@ public class Web3JExecutionEngineClientTest {
             .timeProvider(timeProvider)
             .executionClientEventsPublisher(executionClientEventsPublisher)
             .build();
-    eeClient = new Web3JExecutionEngineClient(web3JClient, Version.DEFAULT_VERSION);
+    eeClient = new Web3JExecutionEngineClient(web3JClient);
   }
 
   @AfterEach
