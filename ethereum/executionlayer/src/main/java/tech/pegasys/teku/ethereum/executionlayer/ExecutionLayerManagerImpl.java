@@ -466,7 +466,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
                         slot,
                         FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
                   } else {
-                    return getResultfromSignedBuilderBid(
+                    return getResultFromSignedBuilderBid(
                         signedBuilderBidMaybe.get(),
                         executionPayloadContext,
                         state,
@@ -488,7 +488,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     return repackBuilderResultFuture(executionPayloadResultFuture, executionPayloadContext);
   }
 
-  private ExecutionPayloadResult getResultfromSignedBuilderBid(
+  private ExecutionPayloadResult getResultFromSignedBuilderBid(
       final SignedBuilderBid signedBuilderBid,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
