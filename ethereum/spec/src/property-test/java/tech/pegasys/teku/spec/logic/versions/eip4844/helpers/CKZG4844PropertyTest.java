@@ -16,8 +16,6 @@ package tech.pegasys.teku.spec.logic.versions.eip4844.helpers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import net.jqwik.api.Arbitraries;
-import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
@@ -27,8 +25,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.eip4844.BlobBytesSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.BytesSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.type.DiverseBlobBytesSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGProofSupplier;
 
@@ -66,15 +63,6 @@ public class CKZG4844PropertyTest {
       kzg.blobToKzgCommitment(blob);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
-    }
-  }
-
-  private static class DiverseBlobBytesSupplier extends BlobBytesSupplier {
-
-    @Override
-    public Arbitrary<Bytes> get() {
-      final Arbitrary<Bytes> randomSizeBlob = new BytesSupplier().get();
-      return Arbitraries.oneOf(List.of(super.get(), randomSizeBlob));
     }
   }
 }
