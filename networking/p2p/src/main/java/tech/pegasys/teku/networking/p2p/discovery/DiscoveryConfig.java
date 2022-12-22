@@ -27,6 +27,7 @@ public class DiscoveryConfig {
   public static final boolean DEFAULT_P2P_DISCOVERY_ENABLED = true;
   public static final int DEFAULT_P2P_PEERS_LOWER_BOUND = 64;
   public static final int DEFAULT_P2P_PEERS_UPPER_BOUND = 100;
+  public static final boolean DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED = true;
 
   private final boolean isDiscoveryEnabled;
   private final int listenUdpPort;
@@ -36,6 +37,7 @@ public class DiscoveryConfig {
   private final int minPeers;
   private final int maxPeers;
   private final int minRandomlySelectedPeers;
+  private final boolean siteLocalAddressesEnabled;
 
   private DiscoveryConfig(
       final boolean isDiscoveryEnabled,
@@ -45,7 +47,8 @@ public class DiscoveryConfig {
       final List<String> bootnodes,
       final int minPeers,
       final int maxPeers,
-      final int minRandomlySelectedPeers) {
+      final int minRandomlySelectedPeers,
+      final boolean siteLocalAddressesEnabled) {
     this.isDiscoveryEnabled = isDiscoveryEnabled;
     this.listenUdpPort = listenUdpPort;
     this.advertisedUdpPort = advertisedUdpPort;
@@ -54,6 +57,7 @@ public class DiscoveryConfig {
     this.minPeers = minPeers;
     this.maxPeers = maxPeers;
     this.minRandomlySelectedPeers = minRandomlySelectedPeers;
+    this.siteLocalAddressesEnabled = siteLocalAddressesEnabled;
   }
 
   public static Builder builder() {
@@ -92,6 +96,10 @@ public class DiscoveryConfig {
     return minRandomlySelectedPeers;
   }
 
+  public boolean areSiteLocalAddressesEnabled() {
+    return siteLocalAddressesEnabled;
+  }
+
   public static class Builder {
     private Boolean isDiscoveryEnabled = DEFAULT_P2P_DISCOVERY_ENABLED;
     private List<String> staticPeers = Collections.emptyList();
@@ -101,6 +109,7 @@ public class DiscoveryConfig {
     private OptionalInt minRandomlySelectedPeers = OptionalInt.empty();
     private OptionalInt listenUdpPort = OptionalInt.empty();
     private OptionalInt advertisedUdpPort = OptionalInt.empty();
+    private boolean siteLocalAddressesEnabled = DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED;
 
     private Builder() {}
 
@@ -115,7 +124,8 @@ public class DiscoveryConfig {
           bootnodes == null ? Collections.emptyList() : bootnodes,
           minPeers,
           maxPeers,
-          minRandomlySelectedPeers.orElseThrow());
+          minRandomlySelectedPeers.orElseThrow(),
+          siteLocalAddressesEnabled);
     }
 
     private void initMissingDefaults() {
@@ -228,6 +238,11 @@ public class DiscoveryConfig {
             String.format("Invalid minRandomlySelectedPeers: %d", minRandomlySelectedPeers));
       }
       this.minRandomlySelectedPeers = OptionalInt.of(minRandomlySelectedPeers);
+      return this;
+    }
+
+    public Builder siteLocalAddressesEnabled(final boolean siteLocalAddressesEnabled) {
+      this.siteLocalAddressesEnabled = siteLocalAddressesEnabled;
       return this;
     }
   }
