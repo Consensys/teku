@@ -76,12 +76,13 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandler
       final String protocolId, final BeaconBlockAndBlobsSidecarByRootRequestMessage request) {
 
     final UInt64 finalizedEpoch = recentChainData.getFinalizedEpoch();
-    final UInt64 currentEpoch =
+    final UInt64 minEpochForBlobsSidecar =
         recentChainData
             .getCurrentEpoch()
             .orElse(UInt64.ZERO)
             .minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS);
-    final UInt64 minimumRequestEpoch = finalizedEpoch.max(currentEpoch).max(eip4844ForkEpoch);
+    final UInt64 minimumRequestEpoch =
+        finalizedEpoch.max(minEpochForBlobsSidecar).max(eip4844ForkEpoch);
 
     for (final SszBytes32 blockRoot : request) {
       final Optional<UInt64> requestedSlot = recentChainData.getSlotForBlockRoot(blockRoot.get());

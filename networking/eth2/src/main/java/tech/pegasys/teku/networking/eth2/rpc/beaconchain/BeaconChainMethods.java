@@ -67,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessag
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -326,10 +327,8 @@ public class BeaconChainMethods {
         BeaconBlockAndBlobsSidecarByRootRequestMessage.SSZ_SCHEMA;
 
     final SignedBeaconBlockAndBlobsSidecarSchema beaconBlockAndBlobsSidecarSchema =
-        spec.forMilestone(SpecMilestone.EIP4844)
-            .getSchemaDefinitions()
-            .toVersionEip4844()
-            .orElseThrow()
+        SchemaDefinitionsEip4844.required(
+                spec.forMilestone(SpecMilestone.EIP4844).getSchemaDefinitions())
             .getSignedBeaconBlockAndBlobsSidecarSchema();
 
     final RpcContextCodec<Bytes, SignedBeaconBlockAndBlobsSidecar> noContextCodec =
@@ -369,10 +368,8 @@ public class BeaconChainMethods {
         BlobsSidecarsByRangeRequestMessage.SSZ_SCHEMA;
 
     final BlobsSidecarSchema blobsSidecarSchema =
-        spec.forMilestone(SpecMilestone.EIP4844)
-            .getSchemaDefinitions()
-            .toVersionEip4844()
-            .orElseThrow()
+        SchemaDefinitionsEip4844.required(
+                spec.forMilestone(SpecMilestone.EIP4844).getSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     final RpcContextCodec<Bytes, BlobsSidecar> noContextCodec =
