@@ -27,6 +27,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added `finalized` metadata field to applicable REST API responses
 - Use SSZ encoding for external validator client block creation requests by default. Can be disabled with `--beacon-node-ssz-blocks-enabled=false`.
 - Added a timeout (2 minutes) when attempting to load the initial state from a URL
+- Improved logging when sync committee messages fail to publish to the gossip network
 - Support for the `/eth/v1/beacon/deposit_snapshot` REST API
 
 ### Bug Fixes
