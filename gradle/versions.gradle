@@ -41,7 +41,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.8'
-    dependency 'tech.pegasys:jc-kzg-4844:0.2.0'
+    dependency 'tech.pegasys:jc-kzg-4844:0.2.1'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -165,7 +165,7 @@ dependencyManagement {
 
     // discovery includes tuweni libraries under a different name so version resolution doesn't work
     // exclude them here and leave them to be included on the classpath by the version we use
-    dependency('tech.pegasys.discovery:discovery:22.11.3') {
+    dependency('tech.pegasys.discovery:discovery:22.12.0') {
       exclude 'org.apache.tuweni:bytes'
       exclude 'org.apache.tuweni:crypto'
       exclude 'org.apache.tuweni:units'

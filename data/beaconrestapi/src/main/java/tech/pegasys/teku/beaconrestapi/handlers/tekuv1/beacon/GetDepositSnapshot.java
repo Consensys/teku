@@ -36,7 +36,7 @@ import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
  */
 public class GetDepositSnapshot extends RestApiEndpoint {
 
-  public static final String ROUTE = "/teku/v1/beacon/deposit_snapshot";
+  public static final String ROUTE = "/eth/v1/beacon/deposit_snapshot";
 
   private static final SerializableTypeDefinition<DepositTreeSnapshot> DEPOSIT_SNAPSHOT_TYPE =
       DepositTreeSnapshot.getJsonTypeDefinition();

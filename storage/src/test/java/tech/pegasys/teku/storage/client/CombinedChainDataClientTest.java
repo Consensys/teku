@@ -21,12 +21,17 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -37,7 +42,7 @@ import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 /** Note: Most tests should be added to the integration-test directory */
 class CombinedChainDataClientTest {
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalEip4844();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
@@ -49,6 +54,7 @@ class CombinedChainDataClientTest {
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
+  final BlobsSidecar sidecar = dataStructureUtil.randomBlobsSidecar();
 
   @BeforeEach
   void setUp() {
@@ -121,5 +127,28 @@ class CombinedChainDataClientTest {
     when(forkChoiceStrategy.isOptimistic(finalized.getRoot())).thenReturn(Optional.of(true));
 
     assertThat(client.isOptimisticBlock(firstBlock.getRoot())).isTrue();
+  }
+
+  @Test
+  void getsEarliestAvailableBlobsSidecarEpoch() {
+    when(historicalChainData.getEarliestAvailableBlobsSidecarSlot())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ONE)));
+
+    final Optional<UInt64> result =
+        SafeFutureAssert.safeJoin(client.getEarliestAvailableBlobsSidecarEpoch());
+
+    assertThat(result).hasValue(UInt64.ZERO);
+  }
+
+  @Test
+  void getsBlobsSidecarBySlotAndBlockRoot() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(historicalChainData.getBlobsSidecar(new SlotAndBlockRoot(UInt64.ONE, blockRoot)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar)));
+
+    final Optional<BlobsSidecar> result =
+        SafeFutureAssert.safeJoin(client.getBlobsSidecarBySlotAndBlockRoot(UInt64.ONE, blockRoot));
+
+    assertThat(result).hasValue(sidecar);
   }
 }

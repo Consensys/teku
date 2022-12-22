@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.crypto.SECP256K1.SecretKey;
 import org.apache.tuweni.units.bigints.UInt64;
+import org.ethereum.beacon.discovery.AddressAccessPolicy;
 import org.ethereum.beacon.discovery.DiscoverySystem;
 import org.ethereum.beacon.discovery.DiscoverySystemBuilder;
 import org.ethereum.beacon.discovery.schema.EnrField;
@@ -109,6 +110,10 @@ public class DiscV5Service extends Service implements DiscoveryService {
             .localNodeRecord(localNodeRecord)
             .newAddressHandler(maybeUpdateNodeRecordHandler)
             .localNodeRecordListener(this::localNodeRecordUpdated)
+            .addressAccessPolicy(
+                discoConfig.areSiteLocalAddressesEnabled()
+                    ? AddressAccessPolicy.ALLOW_ALL
+                    : address -> !address.getAddress().isSiteLocalAddress())
             .build();
     this.kvStore = kvStore;
     metricsSystem.createIntegerGauge(

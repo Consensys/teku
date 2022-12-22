@@ -473,12 +473,14 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarEpoch() {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return historicalChainData
+        .getEarliestAvailableBlobsSidecarSlot()
+        .thenApply(slot -> slot.map(spec::computeEpochAtSlot));
   }
 
-  @SuppressWarnings("unused")
-  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecarByBlockRoot(final Bytes32 blockRoot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecarBySlotAndBlockRoot(
+      final UInt64 slot, final Bytes32 blockRoot) {
+    return historicalChainData.getBlobsSidecar(new SlotAndBlockRoot(slot, blockRoot));
   }
 
   private boolean isRecentData(final UInt64 slot) {

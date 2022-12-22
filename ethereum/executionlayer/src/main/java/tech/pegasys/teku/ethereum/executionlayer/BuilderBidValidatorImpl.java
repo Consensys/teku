@@ -42,8 +42,7 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
       final Spec spec,
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
-      final BeaconState state)
-      throws BuilderBidValidationException {
+      final BeaconState state) {
 
     // validating Bid Signature
     final Bytes signingRoot =
