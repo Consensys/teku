@@ -55,9 +55,6 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
-  private static final RpcException RESOURCE_UNAVAILABLE_EXCEPTION =
-      new ResourceUnavailableException("Blobs sidecars are not available.");
-
   private final Spec spec = TestSpecFactory.createMinimalEip4844();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -147,11 +144,13 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
     // blobs sidecars should be available from epoch 5000, but they are
     // available from epoch 5010
-    verify(listener).completeWithErrorResponse(RESOURCE_UNAVAILABLE_EXCEPTION);
+    verify(listener)
+        .completeWithErrorResponse(
+            new ResourceUnavailableException("Blobs sidecars are not available."));
   }
 
   @Test
-  public void shouldSendResourceUnavailableIfNoBlobsSidecarsHaveBeenSent() {
+  public void shouldCompleteSuccessfullyIfRequestNotWithinRange() {
     when(combinedChainDataClient.getBlockAtSlotExact(any(), eq(headBlockRoot)))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock())));
@@ -169,7 +168,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     verify(combinedChainDataClient, times(count.intValue()))
         .getBlobsSidecarBySlotAndBlockRoot(any(), any());
 
-    verify(listener).completeWithErrorResponse(RESOURCE_UNAVAILABLE_EXCEPTION);
+    verify(listener).completeSuccessfully();
   }
 
   @Test

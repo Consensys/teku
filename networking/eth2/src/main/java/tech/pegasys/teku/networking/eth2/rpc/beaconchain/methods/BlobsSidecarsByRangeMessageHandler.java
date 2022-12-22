@@ -46,9 +46,6 @@ public class BlobsSidecarsByRangeMessageHandler
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final RpcException BLOBS_SIDECARS_NOT_AVAILABLE_EXCEPTION =
-      new ResourceUnavailableException("Blobs sidecars are not available.");
-
   private final Spec spec;
   private final UInt64 eip4844ForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -115,7 +112,8 @@ public class BlobsSidecarsByRangeMessageHandler
             earliestAvailableEpoch -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
               if (!checkBlobsSidecarsAreAvailable(earliestAvailableEpoch, requestEpoch)) {
-                return SafeFuture.failedFuture(BLOBS_SIDECARS_NOT_AVAILABLE_EXCEPTION);
+                return SafeFuture.failedFuture(
+                    new ResourceUnavailableException("Blobs sidecars are not available."));
               }
               final RequestState initialState =
                   new RequestState(callback, headBlockRoot, startSlot, message.getMaxSlot());
@@ -124,12 +122,8 @@ public class BlobsSidecarsByRangeMessageHandler
         .finish(
             requestState -> {
               final int sentBlobsSidecars = requestState.sentBlobsSidecars.get();
-              if (sentBlobsSidecars > 0) {
-                LOG.trace("Sent {} blobs sidecars to peer {}.", sentBlobsSidecars, peer.getId());
-                callback.completeSuccessfully();
-              } else {
-                callback.completeWithErrorResponse(BLOBS_SIDECARS_NOT_AVAILABLE_EXCEPTION);
-              }
+              LOG.trace("Sent {} blobs sidecars to peer {}.", sentBlobsSidecars, peer.getId());
+              callback.completeSuccessfully();
             },
             error -> handleProcessingRequestError(error, callback));
   }
@@ -144,8 +138,8 @@ public class BlobsSidecarsByRangeMessageHandler
     if (earliestAvailableSidecarEpoch.isEmpty()) {
       return false;
     }
-    // if request not within the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS range, assume sidecars are
-    // available
+    // if request is not within the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS range, assume sidecars
+    // are available
     if (!checkRequestEpochIsWithinMinEpochsForBlobsSidecars(requestEpoch)) {
       return true;
     }
