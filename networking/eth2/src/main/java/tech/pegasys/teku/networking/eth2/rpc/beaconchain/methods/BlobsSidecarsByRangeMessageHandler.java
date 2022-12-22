@@ -113,7 +113,8 @@ public class BlobsSidecarsByRangeMessageHandler
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
               if (!checkBlobsSidecarsAreAvailable(earliestAvailableEpoch, requestEpoch)) {
                 return SafeFuture.failedFuture(
-                    new ResourceUnavailableException("Blobs sidecars are not available."));
+                    new ResourceUnavailableException(
+                        "Requested blobs sidecars are not available."));
               }
               final RequestState initialState =
                   new RequestState(callback, headBlockRoot, startSlot, message.getMaxSlot());
@@ -148,9 +149,9 @@ public class BlobsSidecarsByRangeMessageHandler
 
   private boolean checkRequestEpochIsWithinMinEpochsForBlobsSidecars(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final UInt64 minEpoch =
+    final UInt64 minEpochForBlobsSidecar =
         eip4844ForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS));
-    return requestEpoch.isGreaterThanOrEqualTo(minEpoch)
+    return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobsSidecar)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }
 

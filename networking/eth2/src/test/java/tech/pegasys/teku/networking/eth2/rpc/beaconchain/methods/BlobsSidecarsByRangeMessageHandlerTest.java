@@ -146,7 +146,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     // available from epoch 5010
     verify(listener)
         .completeWithErrorResponse(
-            new ResourceUnavailableException("Blobs sidecars are not available."));
+            new ResourceUnavailableException("Requested blobs sidecars are not available."));
   }
 
   @Test
