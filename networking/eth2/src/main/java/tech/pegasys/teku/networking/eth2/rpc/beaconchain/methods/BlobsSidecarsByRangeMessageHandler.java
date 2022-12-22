@@ -137,10 +137,9 @@ public class BlobsSidecarsByRangeMessageHandler
    */
   private boolean checkBlobsSidecarsAreAvailable(
       final Optional<UInt64> earliestAvailableSidecarEpoch, final UInt64 requestEpoch) {
-    if (earliestAvailableSidecarEpoch.isEmpty()) {
-      return false;
-    }
-    return earliestAvailableSidecarEpoch.get().isLessThanOrEqualTo(requestEpoch);
+    return earliestAvailableSidecarEpoch
+        .map(earliestEpoch -> earliestEpoch.isLessThanOrEqualTo(requestEpoch))
+        .orElse(false);
   }
 
   private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {

@@ -140,7 +140,7 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandler
       final Optional<UInt64> requestedSlot, final UInt64 minimumRequestEpoch) {
     return requestedSlot
         .map(spec::computeEpochAtSlot)
-        .map(blockEpoch -> blockEpoch.isGreaterThanOrEqualTo(minimumRequestEpoch))
+        .map(requestEpoch -> requestEpoch.isGreaterThanOrEqualTo(minimumRequestEpoch))
         .orElse(true);
   }
 
