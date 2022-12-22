@@ -239,6 +239,17 @@ public class P2POptions {
   private boolean batchVerifyStrictThreadLimitEnabled =
       P2PConfig.DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
 
+  @Option(
+      names = {"--Xp2p-discovery-site-local-addresses-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Whether discover accepts messages and peer records with site local (RFC1918) addresses",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean siteLocalAddressesEnabled = DiscoveryConfig.DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -288,7 +299,8 @@ public class P2POptions {
               d.isDiscoveryEnabled(p2pDiscoveryEnabled)
                   .staticPeers(p2pStaticPeers)
                   .minPeers(getP2pLowerBound())
-                  .maxPeers(getP2pUpperBound());
+                  .maxPeers(getP2pUpperBound())
+                  .siteLocalAddressesEnabled(siteLocalAddressesEnabled);
             })
         .network(
             n -> {

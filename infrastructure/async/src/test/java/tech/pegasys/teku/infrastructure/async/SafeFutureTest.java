@@ -1167,6 +1167,59 @@ public class SafeFutureTest {
     assertThat(flag).isFalse();
   }
 
+  @Test
+  void thenComposeCombined_shouldReturnCombinedValueWhenBothSucceed() {
+    final SafeFuture<String> a = SafeFuture.completedFuture("a");
+    final SafeFuture<String> b = SafeFuture.completedFuture("b");
+    final SafeFuture<String> result =
+        a.thenComposeCombined(b, (s1, s2) -> SafeFuture.completedFuture(s1 + s2));
+    assertThat(result).isCompletedWithValue("ab");
+  }
+
+  @Test
+  void thenComposeCombined_shouldFailWhenFirstFails() {
+    final Exception error = new Exception("Boom!");
+    final SafeFuture<String> a = SafeFuture.failedFuture(error);
+    final SafeFuture<String> b = SafeFuture.completedFuture("b");
+    final SafeFuture<String> result =
+        a.thenComposeCombined(b, (s1, s2) -> SafeFuture.completedFuture(s1 + s2));
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
+  }
+
+  @Test
+  void thenComposeCombined_shouldFailWhenSecondFails() {
+    final Exception error = new Exception("Boom!");
+    final SafeFuture<String> a = SafeFuture.completedFuture("a");
+    final SafeFuture<String> b = SafeFuture.failedFuture(error);
+    final SafeFuture<String> result =
+        a.thenComposeCombined(b, (s1, s2) -> SafeFuture.completedFuture(s1 + s2));
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
+  }
+
+  @Test
+  void thenComposeCombined_shouldFailWhenCompositionReturnsFailedFuture() {
+    final Exception error = new Exception("Boom!");
+    final SafeFuture<String> a = SafeFuture.completedFuture("a");
+    final SafeFuture<String> b = SafeFuture.completedFuture("b");
+    final SafeFuture<String> result =
+        a.thenComposeCombined(b, (s1, s2) -> SafeFuture.failedFuture(error));
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
+  }
+
+  @Test
+  void thenComposeCombined_shouldFailWhenCompositionThrowsException() {
+    final RuntimeException error = new RuntimeException("Boom!");
+    final SafeFuture<String> a = SafeFuture.completedFuture("a");
+    final SafeFuture<String> b = SafeFuture.completedFuture("b");
+    final SafeFuture<String> result =
+        a.thenComposeCombined(
+            b,
+            (s1, s2) -> {
+              throw error;
+            });
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
+  }
+
   private List<Throwable> collectUncaughtExceptions() {
     final List<Throwable> caughtExceptions = new ArrayList<>();
     Thread.currentThread().setUncaughtExceptionHandler((t, e) -> caughtExceptions.add(e));

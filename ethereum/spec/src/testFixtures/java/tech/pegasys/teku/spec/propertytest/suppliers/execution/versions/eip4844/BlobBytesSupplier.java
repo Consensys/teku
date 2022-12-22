@@ -11,14 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer;
+package tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.eip4844;
 
-public class BuilderBidValidationException extends RuntimeException {
-  public BuilderBidValidationException(final String message) {
-    super(message);
-  }
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-  public BuilderBidValidationException(final String message, final Throwable cause) {
-    super(message, cause);
+public class BlobBytesSupplier extends DataStructureUtilSupplier<Bytes> {
+
+  public BlobBytesSupplier() {
+    super(DataStructureUtil::randomBlobBytes, SpecMilestone.EIP4844);
   }
 }

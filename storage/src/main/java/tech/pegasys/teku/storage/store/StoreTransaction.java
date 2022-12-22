@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -328,6 +329,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
           Optional.of(blockData.get(blockRoot)).map(SignedBlockAndState::getBlock));
     }
     return store.retrieveSignedBlock(blockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> retrieveSignedBlockAndBlobsSidecar(
+      Bytes32 blockRoot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   @Override

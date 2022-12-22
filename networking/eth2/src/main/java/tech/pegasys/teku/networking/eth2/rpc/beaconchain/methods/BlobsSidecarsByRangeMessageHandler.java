@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
@@ -79,31 +77,17 @@ public class BlobsSidecarsByRangeMessageHandler
   }
 
   @Override
-  public Optional<RpcException> validateRequest(
-      final String protocolId, final BlobsSidecarsByRangeRequestMessage request) {
-    final UInt64 maxSlotRequested = request.getMaxSlot();
-    final SpecMilestone specMilestone =
-        spec.getForkSchedule().getSpecMilestoneAtSlot(maxSlotRequested);
-    if (!specMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      return Optional.of(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              "Can't request blobs sidecars for slots before the EIP-4844 fork"));
-    }
-    return Optional.empty();
-  }
-
-  @Override
-  protected void onIncomingMessage(
+  public void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
       final BlobsSidecarsByRangeRequestMessage message,
       final ResponseCallback<BlobsSidecar> callback) {
+    final UInt64 startSlot = message.getStartSlot();
     LOG.trace(
         "Peer {} requested {} blobs sidecars starting at slot {}.",
         peer.getId(),
         message.getCount(),
-        message.getStartSlot());
+        startSlot);
 
     if (!peer.wantToMakeRequest()
         || !peer.wantToReceiveBlobsSidecars(
@@ -126,23 +110,21 @@ public class BlobsSidecarsByRangeMessageHandler
         .getEarliestAvailableBlobsSidecarEpoch()
         .thenCompose(
             earliestAvailableEpoch -> {
-              final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-              if (!verifyBlobsSidecarsAreAvailable(earliestAvailableEpoch, currentEpoch)) {
+              final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
+              if (checkRequestInMinEpochsRange(requestEpoch)
+                  && !checkBlobsSidecarsAreAvailable(earliestAvailableEpoch, requestEpoch)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException(
-                        "Blobs sidecars are not available in the MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS epoch range."));
+                        "Requested blobs sidecars are not available."));
               }
               final RequestState initialState =
-                  new RequestState(
-                      callback, headBlockRoot, message.getStartSlot(), message.getMaxSlot());
+                  new RequestState(callback, headBlockRoot, startSlot, message.getMaxSlot());
               return sendBlobsSidecars(initialState);
             })
         .finish(
             requestState -> {
-              LOG.trace(
-                  "Sent {} blobs sidecars to peer {}.",
-                  requestState.sentBlobsSidecars.get(),
-                  peer.getId());
+              final int sentBlobsSidecars = requestState.sentBlobsSidecars.get();
+              LOG.trace("Sent {} blobs sidecars to peer {}.", sentBlobsSidecars, peer.getId());
               callback.completeSuccessfully();
             },
             error -> handleProcessingRequestError(error, callback));
@@ -153,14 +135,19 @@ public class BlobsSidecarsByRangeMessageHandler
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/p2p-interface.md#blobssidecarsbyrange-v1">BlobsSidecarsByRange
    * v1</a>
    */
-  private boolean verifyBlobsSidecarsAreAvailable(
-      final Optional<UInt64> earliestAvailableSidecarEpoch, final UInt64 currentEpoch) {
-    if (earliestAvailableSidecarEpoch.isEmpty()) {
-      return false;
-    }
-    final UInt64 startEpoch =
+  private boolean checkBlobsSidecarsAreAvailable(
+      final Optional<UInt64> earliestAvailableSidecarEpoch, final UInt64 requestEpoch) {
+    return earliestAvailableSidecarEpoch
+        .map(earliestEpoch -> earliestEpoch.isLessThanOrEqualTo(requestEpoch))
+        .orElse(false);
+  }
+
+  private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final UInt64 minEpochForBlobsSidecar =
         eip4844ForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS));
-    return earliestAvailableSidecarEpoch.get().isLessThanOrEqualTo(startEpoch);
+    return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobsSidecar)
+        && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }
 
   private SafeFuture<RequestState> sendBlobsSidecars(final RequestState requestState) {
@@ -228,12 +215,15 @@ public class BlobsSidecarsByRangeMessageHandler
               block ->
                   block
                       .map(SignedBeaconBlock::getRoot)
-                      .map(combinedChainDataClient::getBlobsSidecarByBlockRoot)
+                      .map(
+                          blockRoot ->
+                              combinedChainDataClient.getBlobsSidecarBySlotAndBlockRoot(
+                                  currentSlot.get(), blockRoot))
                       .orElse(SafeFuture.completedFuture(Optional.empty())));
     }
 
     boolean isComplete() {
-      return currentSlot.get().equals(maxSlot)
+      return currentSlot.get().isGreaterThanOrEqualTo(maxSlot)
           || maxRequestSize.isLessThanOrEqualTo(sentBlobsSidecars.get());
     }
 

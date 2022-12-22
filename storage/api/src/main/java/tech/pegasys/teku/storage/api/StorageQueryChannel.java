@@ -78,5 +78,8 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot();
 
+  /** @return The earliest available finalized blobs sidecar's slot */
+  SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot();
+
   SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot);
 }
