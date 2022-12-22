@@ -132,7 +132,14 @@ public class BeaconChainMethodsTest {
   }
 
   @Test
-  public void shouldNotCreateBlobsSidecarsByRangeWithEip4844Enabled() {
+  public void shouldNotCreateBeaconBlockAndBlobsSidecarByRootWithEip4844Disabled() {
+    final BeaconChainMethods methods = getMethods();
+
+    assertThat(methods.beaconBlockAndBlobsSidecarByRoot()).isEmpty();
+  }
+
+  @Test
+  public void shouldCreateBlobsSidecarsByRangeWithEip4844Enabled() {
     final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalEip4844());
 
     assertThat(methods.blobsSidecarsByRange())
@@ -141,6 +148,18 @@ public class BeaconChainMethodsTest {
                 assertThat(method.getIds())
                     .containsExactly(
                         "/eth2/beacon_chain/req/blobs_sidecars_by_range/1/ssz_snappy"));
+  }
+
+  @Test
+  public void shouldCreateBeaconBlockAndBlobsSidecarsByRootWithEip4844Enabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalEip4844());
+
+    assertThat(methods.beaconBlockAndBlobsSidecarByRoot())
+        .hasValueSatisfying(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly(
+                        "/eth2/beacon_chain/req/beacon_block_and_blobs_sidecar_by_root/1/ssz_snappy"));
   }
 
   private BeaconChainMethods getMethods() {
