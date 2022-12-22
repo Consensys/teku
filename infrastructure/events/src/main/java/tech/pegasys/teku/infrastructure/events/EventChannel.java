@@ -123,23 +123,8 @@ class EventChannel<T> {
     final Class<?> returnType = method.getReturnType();
     // Allow void
     return returnType.equals(Void.TYPE)
-        // SafeFuture container
-        || returnSafeFutureContainer(method)
         // Allow Future, CompletableStage or CompletableFuture
         || hasAllowedAsyncReturnValue(returnType);
-  }
-
-  public static boolean returnSafeFutureContainer(final Method method) {
-    return method
-            .getReturnType()
-            .getCanonicalName()
-            .equals("tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult")
-        || (method.getReturnType().getCanonicalName().equals("java.util.Optional")
-            && method
-                .getGenericReturnType()
-                .getTypeName()
-                .equals(
-                    "java.util.Optional<tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult>"));
   }
 
   private static boolean hasAllowedAsyncReturnValue(final Class<?> returnType) {
