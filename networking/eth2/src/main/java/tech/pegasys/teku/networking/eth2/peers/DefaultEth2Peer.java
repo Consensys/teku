@@ -43,7 +43,9 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
@@ -204,6 +206,29 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestBlockAndBlobsSidecarByRoot(
+      final List<Bytes32> blockRoots,
+      final RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener)
+      throws RpcException {
+    if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
+      throw new RpcException(
+          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " can per request");
+    }
+    return rpcMethods
+        .beaconBlockAndBlobsSidecarByRoot()
+        .map(
+            method ->
+                requestStream(
+                    method,
+                    new BeaconBlockAndBlobsSidecarByRootRequestMessage(blockRoots),
+                    listener))
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException(
+                    "BlockAndBlobsSidecarByRoot method is not available")));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> blocksByRange =
         rpcMethods.beaconBlocksByRange();
@@ -218,6 +243,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         rpcMethods.beaconBlocksByRoot();
     return requestOptionalItem(
         blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
+  }
+
+  @Override
+  public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
+      final Bytes32 blockRoot) {
+    return rpcMethods
+        .beaconBlockAndBlobsSidecarByRoot()
+        .map(
+            method ->
+                requestOptionalItem(
+                    method, new BeaconBlockAndBlobsSidecarByRootRequestMessage(List.of(blockRoot))))
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException(
+                    "BlockAndBlobsSidecarByRoot method is not available")));
   }
 
   @Override
@@ -259,27 +299,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public boolean wantToReceiveBlocks(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    if (blockRequestTracker.wantToRequestObjects(blocksCount) == 0L) {
-      LOG.debug("Peer {} disconnected due to block rate limits", getId());
-      callback.completeWithErrorResponse(
-          new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
-      disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
-      return false;
-    }
-    return true;
+    return wantToReceiveObjects("block", blockRequestTracker, callback, blocksCount);
+  }
+
+  @Override
+  public boolean wantToReceiveBlockAndBlobsSidecars(
+      final ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback, final long blocksCount) {
+    return wantToReceiveObjects(
+        "block and blobs sidecar", blockRequestTracker, callback, blocksCount);
   }
 
   @Override
   public boolean wantToReceiveBlobsSidecars(
       final ResponseCallback<BlobsSidecar> callback, final long blobsSidecarsCount) {
-    if (blobsSidecarsRequestTracker.wantToRequestObjects(blobsSidecarsCount) == 0L) {
-      LOG.debug("Peer {} disconnected due to blobs sidecars rate limits", getId());
-      callback.completeWithErrorResponse(
-          new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
-      disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
-      return false;
-    }
-    return true;
+    return wantToReceiveObjects(
+        "blobs sidecars", blobsSidecarsRequestTracker, callback, blobsSidecarsCount);
   }
 
   @Override
@@ -313,6 +347,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         Eth2RpcResponseHandler.expectSingleResponse();
     return sendEth2Request(method, request, responseHandler)
         .thenCompose(__ -> responseHandler.getResult());
+  }
+
+  private <T> boolean wantToReceiveObjects(
+      final String requestType,
+      final RateTracker requestTracker,
+      final ResponseCallback<T> callback,
+      final long objectCount) {
+    if (requestTracker.wantToRequestObjects(objectCount) == 0L) {
+      LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
+      callback.completeWithErrorResponse(
+          new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
+      disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
+      return false;
+    }
+    return true;
   }
 
   private <I extends RpcRequest, O extends SszData> SafeFuture<Optional<O>> requestOptionalItem(
