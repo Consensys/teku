@@ -25,6 +25,8 @@ public class StorageConfiguration {
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofHours(1);
+  public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
+  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 32;
 
   private final Eth1Address eth1DepositContract;
 
@@ -35,6 +37,8 @@ public class StorageConfiguration {
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
   private final Duration blockPruningInterval;
+  private final Duration blobsPruningInterval;
+  private final int blobsPruningLimit;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -44,6 +48,8 @@ public class StorageConfiguration {
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
       final Duration blockPruningInterval,
+      final Duration blobsPruningInterval,
+      final int blobsPruningLimit,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -52,6 +58,8 @@ public class StorageConfiguration {
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.blockPruningInterval = blockPruningInterval;
+    this.blobsPruningInterval = blobsPruningInterval;
+    this.blobsPruningLimit = blobsPruningLimit;
     this.spec = spec;
   }
 
@@ -87,6 +95,14 @@ public class StorageConfiguration {
     return blockPruningInterval;
   }
 
+  public Duration getBlobsPruningInterval() {
+    return blobsPruningInterval;
+  }
+
+  public int getBlobsPruningLimit() {
+    return blobsPruningLimit;
+  }
+
   public Spec getSpec() {
     return spec;
   }
@@ -101,6 +117,8 @@ public class StorageConfiguration {
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
     private Duration blockPruningInterval = DEFAULT_BLOCK_PRUNING_INTERVAL;
+    private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
+    private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
 
     private Builder() {}
 
@@ -162,6 +180,23 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder blobsPruningInterval(final Duration blobsPruningInterval) {
+      if (blobsPruningInterval.isNegative() || blobsPruningInterval.isZero()) {
+        throw new InvalidConfigurationException("Blobs pruning interval must be positive");
+      }
+      this.blobsPruningInterval = blobsPruningInterval;
+      return this;
+    }
+
+    public Builder blobsPruningLimit(final int blobsPruningLimit) {
+      if (blobsPruningLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid blobsPruningLimit: %d", blobsPruningLimit));
+      }
+      this.blobsPruningLimit = blobsPruningLimit;
+      return this;
+    }
+
     public StorageConfiguration build() {
       return new StorageConfiguration(
           eth1DepositContract,
@@ -171,6 +206,8 @@ public class StorageConfiguration {
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
           blockPruningInterval,
+          blobsPruningInterval,
+          blobsPruningLimit,
           spec);
     }
   }

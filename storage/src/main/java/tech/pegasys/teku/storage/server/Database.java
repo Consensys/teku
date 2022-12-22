@@ -90,6 +90,9 @@ public interface Database extends AutoCloseable {
   Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
+  Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
   Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
 
   Optional<UInt64> getEarliestBlobsSidecarSlot();
@@ -135,6 +138,8 @@ public interface Database extends AutoCloseable {
   Optional<SignedBeaconBlock> getSignedBlock(Bytes32 root);
 
   Optional<BeaconState> getHotState(Bytes32 root);
+
+  Optional<UInt64> getGenesisTime();
 
   /**
    * Returns latest finalized block or any known blocks that descend from the latest finalized block

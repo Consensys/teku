@@ -130,6 +130,9 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Stream<Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
+  Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
   Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
 
   Optional<UInt64> getEarliestBlobsSidecarSlot();

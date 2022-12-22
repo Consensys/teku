@@ -22,7 +22,8 @@ class AsyncRunnerFactoryTest {
   private AsyncRunnerFactory asyncRunnerFactory =
       new AsyncRunnerFactory() {
         @Override
-        public AsyncRunner create(String name, int maxThreads, int maxQueueSize) {
+        public AsyncRunner create(
+            String name, int maxThreads, int maxQueueSize, int threadPriority) {
           return null;
         }
 

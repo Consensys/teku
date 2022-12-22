@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -234,6 +235,14 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  @SuppressWarnings("unused")
+  public SafeFuture<Void> requestBlockAndBlobsSidecarByRoot(
+      final List<Bytes32> blockRoots,
+      final RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final PendingBlockRequestHandler<Optional<SignedBeaconBlock>> handler =
         PendingBlockRequestHandler.createForSingleBlockRequest(
@@ -248,6 +257,13 @@ public class RespondingEth2Peer implements Eth2Peer {
         PendingBlockRequestHandler.createForSingleBlockRequest(() -> findBlockByRoot(blockRoot));
 
     return createPendingRequest(handler);
+  }
+
+  @Override
+  @SuppressWarnings("unused")
+  public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
+      final Bytes32 blockRoot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   private <T> SafeFuture<T> createPendingRequest(PendingBlockRequestHandler<T> handler) {
@@ -275,6 +291,12 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public boolean wantToReceiveBlocks(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
+    return true;
+  }
+
+  @Override
+  public boolean wantToReceiveBlockAndBlobsSidecars(
+      final ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback, final long blocksCount) {
     return true;
   }
 

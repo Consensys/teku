@@ -135,13 +135,21 @@ public class V4FinalizedKvStoreDao {
   }
 
   @MustBeClosed
+  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.streamKeys(
+        schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
+        new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
+        new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT));
+  }
+
+  @MustBeClosed
   public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
       final UInt64 startSlot, final UInt64 endSlot) {
-    return db.stream(
-            schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
-            new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
-            new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT))
-        .map(ColumnEntry::getKey);
+    return db.streamKeys(
+        schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
+        new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
+        new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT));
   }
 
   public Optional<UInt64> getEarliestBlobsSidecarSlot() {

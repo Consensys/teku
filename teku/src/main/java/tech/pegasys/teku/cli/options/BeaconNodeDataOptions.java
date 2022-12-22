@@ -85,7 +85,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private int maxKnownNodeCacheSize = StorageConfiguration.DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
 
   @CommandLine.Option(
-      names = {"--Xreconstruct-historic-states"},
+      names = {"--reconstruct-historic-states"},
       paramLabel = "<BOOLEAN>",
       description = "",
       arity = "0..1",
@@ -106,6 +106,28 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
   private long blockPruningIntervalSeconds =
       StorageConfiguration.DEFAULT_BLOCK_PRUNING_INTERVAL.toSeconds();
 
+  @CommandLine.Option(
+      names = {"--Xdata-storage-blobs-pruning-interval"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Interval in seconds between blobs sidecars pruning",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private long blobsSidecarsPruningIntervalSeconds =
+      StorageConfiguration.DEFAULT_BLOBS_PRUNING_INTERVAL.toSeconds();
+
+  @CommandLine.Option(
+      names = {"--Xdata-storage-blobs-pruning-limit"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Maximum number of blobs sidecars that can be pruned in in each pruning session",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private int blobsSidecarsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
+
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
@@ -121,7 +143,9 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .dataStorageCreateDbVersion(parseDatabaseVersion())
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
-                .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds)));
+                .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds))
+                .blobsPruningInterval(Duration.ofSeconds(blobsSidecarsPruningIntervalSeconds))
+                .blobsPruningLimit(blobsSidecarsPruningLimit));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())
