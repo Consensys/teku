@@ -292,6 +292,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot() {
+    return SafeFuture.of(database::getEarliestBlobsSidecarSlot);
+  }
+
+  @Override
   public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(() -> database.getBlobsSidecar(slotAndBlockRoot));
