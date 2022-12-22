@@ -17,8 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 - The `validator_beacon_node_published_attestation_total`, `validator_beacon_node_published_aggregate_total`,
   `validator_beacon_node_send_sync_committee_messages_total`, `validator_beacon_node_send_sync_committee_contributions_total`
-  and `validator_beacon_node_published_block_total` metrics have been deprecated in favour of the new `validator_beacon_node_requests_total` metric.
-  The old metrics have been removed. An update to the [Teku Dashboard](https://grafana.com/grafana/dashboards/13457) that uses the new metric is available.
+  and `validator_beacon_node_published_block_total` metrics have been replaced by the new `validator_beacon_node_requests_total` metric. An update to the [Teku Dashboard](https://grafana.com/grafana/dashboards/13457) that uses the new metric is available.
 
 ### Additions and Improvements
 - Support for additional DoS protection by using a separate [sentry beacon node](https://docs.teku.consensys.net/en/latest/HowTo/Sentry-Nodes/) to publish blocks and attestations.
