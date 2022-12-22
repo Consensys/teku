@@ -86,6 +86,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
+  private final BlobsSidecarAvailabilityCheckerFactory blobsSidecarAvailabilityCheckerFactory;
 
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
@@ -100,7 +101,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
+      final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
+      final BlobsSidecarAvailabilityCheckerFactory blobsSidecarAvailabilityCheckerFactory) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
@@ -110,6 +112,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
+    this.blobsSidecarAvailabilityCheckerFactory = blobsSidecarAvailabilityCheckerFactory;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -133,7 +136,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
-        true);
+        true,
+        BlobsSidecarAvailabilityCheckerFactory.NOOP);
   }
 
   @Override
@@ -290,8 +294,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final KzgCommitmentsProcessor kzgCommitmentsProcessor =
         KzgCommitmentsProcessor.create(specVersion.miscHelpers());
 
-    final BlobsSidecarAvailabilityChecker forkChoiceBlobsSidecarAvailabilityChecker =
-        new ForkChoiceBlobsSidecarAvailabilityChecker(
+    final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
+        blobsSidecarAvailabilityCheckerFactory.create(
             specVersion, recentChainData, block, blobsSidecar);
 
     final BeaconState postState;
@@ -304,7 +308,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   indexedAttestationCache,
                   Optional.of(payloadExecutor),
                   kzgCommitmentsProcessor,
-                  forkChoiceBlobsSidecarAvailabilityChecker);
+                  blobsSidecarAvailabilityChecker);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
@@ -317,7 +321,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenCombineAsync(
-            forkChoiceBlobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
+            blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
             (payloadResult, blobsSidecarAndValidationResult) ->
                 importBlockAndState(
                     block,

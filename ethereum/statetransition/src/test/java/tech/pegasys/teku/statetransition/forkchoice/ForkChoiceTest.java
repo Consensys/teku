@@ -126,7 +126,8 @@ class ForkChoiceTest {
           new ForkChoiceStateProvider(eventThread, recentChainData),
           new TickProcessor(spec, recentChainData),
           transitionBlockValidator,
-          DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+          DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
+          ForkChoiceBlobsSidecarAvailabilityCheckerFactory.NOOP);
 
   @BeforeEach
   public void setup() {
@@ -217,7 +218,8 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
+            ForkChoiceBlobsSidecarAvailabilityCheckerFactory.NOOP);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);

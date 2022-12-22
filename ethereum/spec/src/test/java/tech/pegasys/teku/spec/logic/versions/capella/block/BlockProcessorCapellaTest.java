@@ -82,7 +82,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
   }
 
   @Test
-  void shouldNotSweepMoreValidatorsThanLimit() {
+  public void shouldNotSweepMoreValidatorsThanLimit() {
     final int maxValidatorsPerWithdrawalSweep =
         spec.getGenesisSpecConfig().toVersionCapella().get().getMaxValidatorsPerWithdrawalSweep();
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
@@ -121,7 +121,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
   }
 
   @Test
-  void shouldFindPartialWithdrawals() {
+  public void shouldFindPartialWithdrawals() {
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
     Validator validator =
         makeValidator(data.randomPublicKey(), data.randomEth1WithdrawalCredentials());
@@ -134,7 +134,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
   }
 
   @Test
-  void shouldFindFullWithdrawals() {
+  public void shouldFindFullWithdrawals() {
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
     Validator validator =
         makeValidator(
