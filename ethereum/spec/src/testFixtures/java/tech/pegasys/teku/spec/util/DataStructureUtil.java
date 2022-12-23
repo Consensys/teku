@@ -60,6 +60,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
@@ -110,6 +111,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSid
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -1640,6 +1643,19 @@ public final class DataStructureUtil {
         randomBeaconBlockHeader(),
         randomSyncCommittee(),
         randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32));
+  }
+
+  public LightClientUpdate randomLightClientUpdate(final UInt64 slot) {
+    LightClientUpdateSchema schema = getAltairSchemaDefinitions(slot).getLightClientUpdateSchema();
+
+    return schema.create(
+        randomBeaconBlockHeader(),
+        randomSyncCommittee(),
+        randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32),
+        randomBeaconBlockHeader(),
+        randomSszBytes32Vector(schema.getFinalityBranchSchema(), this::randomBytes32),
+        randomSyncAggregate(),
+        SszUInt64.of(randomUInt64()));
   }
 
   public Withdrawal randomWithdrawal() {

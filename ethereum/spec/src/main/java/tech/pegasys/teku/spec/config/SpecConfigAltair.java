@@ -53,6 +53,8 @@ public interface SpecConfigAltair extends SpecConfig {
 
   int getSyncCommitteeBranchLength();
 
+  int getFinalityBranchLength();
+
   @Override
   Optional<SpecConfigAltair> toVersionAltair();
 }
