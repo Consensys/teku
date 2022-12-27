@@ -2,6 +2,7 @@
 rest-api-port: 5055
 rest-api-docs-enabled: True
 rest-api-enabled: True
+rest-api-light-client-enabled: True
 rest-api-interface: "127.100.0.1"
 rest-api-host-allowlist: ["test.domain.com", "11.12.13.14"]
 rest-api-cors-origins: ["127.1.2.3", "origin.allowed.com"]

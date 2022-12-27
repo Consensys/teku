@@ -52,6 +52,16 @@ public class BeaconRestApiOptions {
   private boolean restApiEnabled = false;
 
   @Option(
+      names = {"--rest-api-light-client-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Enables Beacon Rest API light client endpoints and storage of light client data.",
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean restApiLightClientEnabled = false;
+
+  @Option(
       names = {"--rest-api-interface"},
       paramLabel = "<NETWORK>",
       description = "Interface of Beacon Rest API",
@@ -125,6 +135,7 @@ public class BeaconRestApiOptions {
         restApiBuilder ->
             restApiBuilder
                 .restApiEnabled(restApiEnabled)
+                .restApiLightClientEnabled(restApiLightClientEnabled)
                 .restApiDocsEnabled(restApiDocsEnabled)
                 .restApiPort(restApiPort)
                 .restApiInterface(restApiInterface)

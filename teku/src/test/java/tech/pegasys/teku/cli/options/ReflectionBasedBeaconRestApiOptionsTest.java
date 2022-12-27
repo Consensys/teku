@@ -37,6 +37,7 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     assertThat(config.getRestApiPort()).isEqualTo(5055);
     assertThat(config.isRestApiDocsEnabled()).isTrue();
     assertThat(config.isRestApiEnabled()).isTrue();
+    assertThat(config.isRestApiLightClientEnabled()).isTrue();
     assertThat(config.getRestApiHostAllowlist()).containsExactly("test.domain.com", "11.12.13.14");
     assertThat(config.getRestApiCorsAllowedOrigins())
         .containsExactly("127.1.2.3", "origin.allowed.com");
@@ -60,6 +61,17 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isRestApiEnabled()).isTrue();
     assertThat(createConfigBuilder().restApi(b -> b.restApiEnabled(true)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void restApiLightClientEnabled_shouldNotRequireAValue() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--rest-api-light-client-enabled");
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiLightClientEnabled()).isTrue();
+    assertThat(createConfigBuilder().restApi(b -> b.restApiLightClientEnabled(true)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
