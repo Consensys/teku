@@ -49,4 +49,22 @@ public class BlockProcessorEip4844Test extends BlockProcessorCapellaTest {
                     BlobsSidecarAvailabilityChecker.NOOP))
         .isInstanceOf(StateTransitionException.class);
   }
+
+  @Override
+  public void shouldNotSweepMoreValidatorsThanLimit() {
+    // Disabled, see <a
+    // href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling Withdrawals</a>
+  }
+
+  @Override
+  public void shouldFindPartialWithdrawals() {
+    // Disabled, see <a
+    // href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling Withdrawals</a>
+  }
+
+  @Override
+  public void shouldFindFullWithdrawals() {
+    // Disabled, see <a
+    // href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling Withdrawals</a>
+  }
 }
