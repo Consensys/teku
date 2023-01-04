@@ -37,7 +37,7 @@ public class BeaconNodeReadinessManagerTest {
       new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.empty());
 
   private static final SyncingStatus OPTIMISTICALLY_SYNCING_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true));
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.of(true));
 
   private final RemoteValidatorApiChannel beaconNodeApi = mock(RemoteValidatorApiChannel.class);
   private final RemoteValidatorApiChannel failoverBeaconNodeApi =
