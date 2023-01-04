@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -72,7 +73,6 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
 
     verifyNoInteractions(validatorLogger);
-    verify(remoteBeaconNodeSyncingChannel).onFailoverNodeNotInSync(failoverBeaconNodeApi);
 
     when(beaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
@@ -82,10 +82,12 @@ public class BeaconNodeReadinessManagerTest {
     advanceToNextQueryPeriod(beaconNodeReadinessManager);
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isFalse();
-    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
+    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
 
     verify(validatorLogger).primaryBeaconNodeNotReady(true);
     verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeNotInSync();
+
+    verify(remoteBeaconNodeSyncingChannel, times(2)).onFailoverNodeNotInSync(failoverBeaconNodeApi);
 
     // primary node recovers
     when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));

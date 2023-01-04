@@ -114,14 +114,14 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
         .getSyncingStatus()
         .thenApply(
             syncingStatus -> {
-              if (!syncingStatus.isSyncing() || syncingStatus.getIsOptimistic().orElse(false)) {
-                LOG.debug("{} is in sync and ready to accept requests", beaconNodeApiEndpoint);
-                return true;
+              if (syncingStatus.isSyncing()) {
+                LOG.debug(
+                    "{} is not ready to accept requests because it is not in sync",
+                    beaconNodeApiEndpoint);
+                return false;
               }
-              LOG.debug(
-                  "{} is not ready to accept requests because it is not in sync",
-                  beaconNodeApiEndpoint);
-              return false;
+              LOG.debug("{} is in sync and ready to accept requests", beaconNodeApiEndpoint);
+              return true;
             })
         .exceptionally(
             throwable -> {
