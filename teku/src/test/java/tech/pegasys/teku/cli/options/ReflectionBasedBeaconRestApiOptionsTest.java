@@ -68,7 +68,7 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   @Test
   public void restApiLightClientEnabled_shouldNotRequireAValue() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-light-client-enabled");
+        getTekuConfigurationFromArguments("--Xrest-api-light-client-enabled");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isRestApiLightClientEnabled()).isTrue();
     assertThat(createConfigBuilder().restApi(b -> b.restApiLightClientEnabled(true)).build())

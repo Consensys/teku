@@ -444,7 +444,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       "false",
       "--rest-api-enabled",
       "false",
-      "--rest-api-light-client-enabled",
+      "--Xrest-api-light-client-enabled",
       "false",
       "--rest-api-interface",
       "127.0.0.1",
