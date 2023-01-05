@@ -184,11 +184,10 @@ public class DoppelgangerDetector {
                       mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
                   return stopDoppelgangerDetectorTask(new HashMap<>());
                 } else {
-                  if (firstCheck.get()) {
-                    firstCheck.set(false);
-                    final UInt64 previousEpoch =
-                        currentEpoch.isZero() ? currentEpoch : currentEpoch.minus(UInt64.ONE);
-                    return checkDoppelgangersAtEpoch(pubKeys, previousEpoch);
+                  if (firstCheck.compareAndSet(true, false)
+                      && currentEpoch.isGreaterThan(UInt64.ZERO)) {
+                    return checkDoppelgangersAtEpoch(pubKeys, currentEpoch.minus(UInt64.ONE))
+                        .thenCompose(__ -> checkDoppelgangersAtEpoch(pubKeys, currentEpoch));
                   } else {
                     return checkDoppelgangersAtEpoch(pubKeys, currentEpoch);
                   }
