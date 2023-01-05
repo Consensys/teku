@@ -32,7 +32,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.0'
 
-    dependencySet(group: 'io.javalin', version: '5.3.0') {
+    dependencySet(group: 'io.javalin', version: '5.2.0') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
