@@ -478,7 +478,8 @@ public class ValidatorClientService extends Service {
                               .thenAccept(
                                   doppelgangerDetected -> {
                                     if (!doppelgangerDetected.isEmpty()) {
-                                      doppelgangerDetectionAction.shutDown();
+                                      doppelgangerDetectionAction.perform(
+                                          new ArrayList<>(doppelgangerDetected.values()));
                                     }
                                   }))
                   .orElse(SafeFuture.COMPLETE);
