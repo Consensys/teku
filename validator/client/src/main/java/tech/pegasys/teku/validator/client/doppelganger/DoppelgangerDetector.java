@@ -116,7 +116,7 @@ public class DoppelgangerDetector {
     private final UInt64 startTime;
     private final Set<BLSPublicKey> pubKeys;
     private Optional<UInt64> epochAtStart = Optional.empty();
-
+    private final Map<UInt64, BLSPublicKey> detectedDoppelgangers = new HashMap<>();
     private AtomicBoolean firstCheck = new AtomicBoolean(true);
 
     public DoppelgangerDetectionTask(final UInt64 startTime, final Set<BLSPublicKey> pubKeys) {
@@ -132,7 +132,7 @@ public class DoppelgangerDetector {
       epochAtStart = Optional.empty();
       doppelgangerDetectionTask =
           asyncRunner.runWithFixedDelay(
-              () -> performDoppelgangerCheck(pubKeys),
+              this::performDoppelgangerCheck,
               checkDelay,
               checkDelay,
               throwable ->
@@ -141,10 +141,6 @@ public class DoppelgangerDetector {
                       mapToAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
                       throwable));
       return doppelgangerCheckFinished.get();
-    }
-
-    private Stream<String> mapToAbbreviatedKeys(final Set<BLSPublicKey> pubKeys) {
-      return pubKeys.stream().map(BLSPublicKey::toAbbreviatedString);
     }
 
     private synchronized SafeFuture<Void> stopDoppelgangerDetectorTask(
@@ -159,14 +155,14 @@ public class DoppelgangerDetector {
           () -> Optional.ofNullable(doppelgangerDetectionTask).ifPresent(Cancellable::cancel));
     }
 
-    private SafeFuture<Void> performDoppelgangerCheck(final Set<BLSPublicKey> pubKeys) {
+    private SafeFuture<Void> performDoppelgangerCheck() {
       if (timeProvider
           .getTimeInSeconds()
           .minus(startTime)
           .isGreaterThanOrEqualTo(timeout.toSeconds())) {
         statusLog.doppelgangerDetectionTimeout(
             mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
-        return stopDoppelgangerDetectorTask(new HashMap<>());
+        return stopDoppelgangerDetectorTask(detectedDoppelgangers);
       }
 
       return genesisDataProvider
@@ -177,25 +173,32 @@ public class DoppelgangerDetector {
                     spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
                 final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
 
-                captureEpochAtstart(currentEpoch);
+                captureEpochAtStart(currentEpoch);
 
-                if (maxEpochsReached(currentEpoch)) {
+                if (maxEpochsReached(currentEpoch) || allPubKeysAreActive()) {
                   statusLog.doppelgangerDetectionEnd(
-                      mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
-                  return stopDoppelgangerDetectorTask(new HashMap<>());
+                      mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()),
+                      detectedDoppelgangers.entrySet().stream()
+                          .collect(
+                              Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
+                  return stopDoppelgangerDetectorTask(detectedDoppelgangers);
                 } else {
                   if (firstCheck.compareAndSet(true, false)
-                      && currentEpoch.isGreaterThan(UInt64.ZERO)) {
-                    return checkDoppelgangersAtEpoch(pubKeys, currentEpoch.minus(UInt64.ONE))
+                      && currentEpoch.isGreaterThan(UInt64.ONE)) {
+                    return checkDoppelgangersAtEpoch(currentEpoch.minus(UInt64.valueOf(2)))
                         .thenCompose(
                             __ -> {
-                              if (doppelgangerCheckFinished.isPresent()) {
-                                return checkDoppelgangersAtEpoch(pubKeys, currentEpoch);
+                              if (!allPubKeysAreActive()) {
+                                return checkDoppelgangersAtEpoch(currentEpoch.minus(UInt64.ONE));
                               }
                               return SafeFuture.COMPLETE;
                             });
                   } else {
-                    return checkDoppelgangersAtEpoch(pubKeys, currentEpoch);
+                    if (currentEpoch.isGreaterThan(UInt64.ZERO)) {
+                      return checkDoppelgangersAtEpoch(currentEpoch.minus(UInt64.ONE));
+                    } else {
+                      return checkDoppelgangersAtEpoch(currentEpoch);
+                    }
                   }
                 }
               })
@@ -210,18 +213,21 @@ public class DoppelgangerDetector {
               });
     }
 
-    private SafeFuture<Void> checkDoppelgangersAtEpoch(
-        final Set<BLSPublicKey> pubKeys, final UInt64 epoch) {
+    private SafeFuture<Void> checkDoppelgangersAtEpoch(final UInt64 epoch) {
+      Set<BLSPublicKey> inactivePubKeys =
+          pubKeys.stream()
+              .filter(pubKey -> !detectedDoppelgangers.containsValue(pubKey))
+              .collect(Collectors.toSet());
       statusLog.doppelgangerCheck(
-          epoch.longValue(), mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()));
+          epoch.longValue(), mapToAbbreviatedKeys(inactivePubKeys).collect(Collectors.toSet()));
 
       return validatorApiChannel
-          .getValidatorIndices(pubKeys)
+          .getValidatorIndices(inactivePubKeys)
           .thenCompose(
               validatorIndicesByPubKeys ->
                   checkValidatorsLivenessAtEpoch(
                       epoch,
-                      pubKeys,
+                      inactivePubKeys,
                       validatorIndicesByPubKeys.entrySet().stream()
                           .collect(
                               Collectors.toMap(
@@ -231,21 +237,25 @@ public class DoppelgangerDetector {
               throwable -> {
                 LOG.error(
                     "Unable to check validators doppelgangers for keys {}. Unable to get validators indices: {}",
-                    mapToAbbreviatedKeys(pubKeys).collect(Collectors.joining(", ")),
+                    mapToAbbreviatedKeys(inactivePubKeys).collect(Collectors.joining(", ")),
                     extractErrorMessage(throwable));
                 return null;
               })
           .toVoid();
     }
 
-    private void captureEpochAtstart(final UInt64 currentEpoch) {
+    private void captureEpochAtStart(final UInt64 epoch) {
       if (epochAtStart.isEmpty()) {
-        epochAtStart = Optional.of(currentEpoch);
+        epochAtStart = Optional.of(epoch);
       }
     }
 
-    private boolean maxEpochsReached(final UInt64 currentEpoch) {
-      return currentEpoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(maxEpochs);
+    private boolean maxEpochsReached(final UInt64 epoch) {
+      return epoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(maxEpochs);
+    }
+
+    private boolean allPubKeysAreActive() {
+      return pubKeys.size() == detectedDoppelgangers.size();
     }
 
     private SafeFuture<Void> checkValidatorsLivenessAtEpoch(
@@ -304,8 +314,10 @@ public class DoppelgangerDetector {
         LOG.fatal("Validator doppelganger detected...");
         statusLog.validatorsDoppelgangersDetected(
             mapLivenessAtEpochToIndicesByPubKeyStrings(doppelgangers));
-        stopDoppelgangerDetectorTask(mapLivenessAtEpochToIndicesByPubKey(doppelgangers))
-            .ifExceptionGetsHereRaiseABug();
+        doppelgangers.forEach(
+            doppelganger ->
+                detectedDoppelgangers.putIfAbsent(
+                    doppelganger.getRight().getIndex(), doppelganger.getLeft()));
       }
     }
 
@@ -315,10 +327,8 @@ public class DoppelgangerDetector {
           .collect(Collectors.toMap(e -> e.getRight().getIndex(), e -> e.getLeft().toString()));
     }
 
-    private Map<UInt64, BLSPublicKey> mapLivenessAtEpochToIndicesByPubKey(
-        final List<Pair<BLSPublicKey, ValidatorLivenessAtEpoch>> doppelgangers) {
-      return doppelgangers.stream()
-          .collect(Collectors.toMap(e -> e.getRight().getIndex(), Pair::getLeft));
+    private Stream<String> mapToAbbreviatedKeys(final Set<BLSPublicKey> pubKeys) {
+      return pubKeys.stream().map(BLSPublicKey::toAbbreviatedString);
     }
 
     private List<Pair<BLSPublicKey, ValidatorLivenessAtEpoch>> filterLiveValidators(

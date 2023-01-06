@@ -176,10 +176,16 @@ public class StatusLogger {
         String.join(", ", publicKeys));
   }
 
-  public void doppelgangerDetectionEnd(final Set<String> publicKeys) {
+  public void doppelgangerDetectionEnd(
+      final Set<String> publicKeys, final Map<UInt64, String> doppelgangersInfo) {
     log.info(
-        "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys {}.",
+        "Doppelganger detection check finished. Stopping doppelganger detection for public keys {}.",
         String.join(", ", publicKeys));
+    if (!doppelgangersInfo.isEmpty()) {
+      validatorsDoppelgangersDetected(doppelgangersInfo);
+    } else {
+      log.info("No validators doppelganger detected.");
+    }
   }
 
   public void doppelgangerCheck(long epoch, Set<String> publicKeys) {

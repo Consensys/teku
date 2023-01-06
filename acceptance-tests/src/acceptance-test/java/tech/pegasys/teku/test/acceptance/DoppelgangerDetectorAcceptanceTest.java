@@ -84,7 +84,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     api.addLocalValidatorsAndExpect(validatorKeystores, "imported");
     firstValidatorClient.waitForLogMessageContaining("No validators doppelganger detected");
 
-    beaconNode.waitForEpochAtOrAbove(4);
+    beaconNode.waitForEpochAtOrAbove(3);
 
     final TekuValidatorNode secondValidatorClient =
         createValidatorNode(
@@ -106,6 +106,8 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     secondApi.addLocalValidatorsAndExpect(validatorKeystores, "imported");
 
     secondValidatorClient.waitForLogMessageContaining("Validator doppelganger detected...");
+    secondValidatorClient.waitForLogMessageContaining("Detected 8 validators doppelganger");
+    secondValidatorClient.waitForLogMessageContaining("Doppelganger detection check finished");
     secondValidatorClient.waitForLogMessageContaining("Detected 8 validators doppelganger");
 
     firstValidatorClient.stop();
