@@ -187,7 +187,13 @@ public class DoppelgangerDetector {
                   if (firstCheck.compareAndSet(true, false)
                       && currentEpoch.isGreaterThan(UInt64.ZERO)) {
                     return checkDoppelgangersAtEpoch(pubKeys, currentEpoch.minus(UInt64.ONE))
-                        .thenCompose(__ -> checkDoppelgangersAtEpoch(pubKeys, currentEpoch));
+                        .thenCompose(
+                            __ -> {
+                              if (doppelgangerCheckFinished.isPresent()) {
+                                return checkDoppelgangersAtEpoch(pubKeys, currentEpoch);
+                              }
+                              return SafeFuture.COMPLETE;
+                            });
                   } else {
                     return checkDoppelgangersAtEpoch(pubKeys, currentEpoch);
                   }
