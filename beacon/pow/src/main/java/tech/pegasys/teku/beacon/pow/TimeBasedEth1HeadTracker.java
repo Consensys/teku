@@ -70,7 +70,7 @@ public class TimeBasedEth1HeadTracker implements Eth1HeadTracker, RunLoopLogic {
   @Override
   public SafeFuture<Void> init() {
     return eth1Provider
-        .getLatestEth1Block()
+        .getGuaranteedLatestEth1Block()
         .thenCompose(
             headBlock -> {
               if (isOldEnough(headBlock)) {

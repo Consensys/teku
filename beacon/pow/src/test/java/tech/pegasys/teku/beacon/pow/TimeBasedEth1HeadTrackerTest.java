@@ -77,7 +77,7 @@ class TimeBasedEth1HeadTrackerTest {
     timeProvider.advanceTimeBySeconds(FOLLOW_TIME);
     withBlockTimestamps(5, 10, 15);
     assertThat(headTracker.init()).isCompleted();
-    verify(eth1Provider).getLatestEth1Block();
+    verify(eth1Provider).getGuaranteedLatestEth1Block();
     verify(eth1Provider).getEth1Block(UInt64.ZERO);
     verifyNoInteractions(subscriber);
 
@@ -91,7 +91,7 @@ class TimeBasedEth1HeadTrackerTest {
     withBlockTimestamps(5, 10, 100);
     assertThat(headTracker.init()).isCompleted();
 
-    verify(eth1Provider).getLatestEth1Block();
+    verify(eth1Provider).getGuaranteedLatestEth1Block();
     verify(subscriber).onValueChanged(UInt64.valueOf(2));
   }
 
@@ -102,7 +102,7 @@ class TimeBasedEth1HeadTrackerTest {
         withBlockTimestamps(1, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100);
     assertThat(headTracker.init()).isCompleted();
 
-    verify(eth1Provider).getLatestEth1Block();
+    verify(eth1Provider).getGuaranteedLatestEth1Block();
     final int followDistanceBlockNumber = blocks.size() - FOLLOW_DISTANCE - 1;
     verifyBlockRequested(followDistanceBlockNumber);
     verify(subscriber).onValueChanged(UInt64.valueOf(followDistanceBlockNumber));
@@ -269,7 +269,7 @@ class TimeBasedEth1HeadTrackerTest {
     withBlockTimestamps(5, 10, 100);
     assertThat(headTracker.init()).isCompleted();
 
-    verify(eth1Provider).getLatestEth1Block();
+    verify(eth1Provider).getGuaranteedLatestEth1Block();
     verify(subscriber).onValueChanged(UInt64.valueOf(2));
 
     final ValueObserver<UInt64> subscriber2 = mock(ValueObserver.class);
@@ -296,7 +296,7 @@ class TimeBasedEth1HeadTrackerTest {
     final AtomicReference<UInt64> firstHead = new AtomicReference<>();
     headTracker.subscribe(firstHead::set);
     assertThat(headTracker.init()).isCompleted();
-    verify(eth1Provider).getLatestEth1Block();
+    verify(eth1Provider).getGuaranteedLatestEth1Block();
     while (firstHead.get() == null) {
       assertThat(headTracker.advance()).isCompleted();
     }
@@ -325,7 +325,7 @@ class TimeBasedEth1HeadTrackerTest {
       blocks.add(block);
     }
 
-    when(eth1Provider.getLatestEth1Block())
+    when(eth1Provider.getGuaranteedLatestEth1Block())
         .thenReturn(SafeFuture.completedFuture(blocks.get(blocks.size() - 1)));
     return blocks;
   }
