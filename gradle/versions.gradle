@@ -1,14 +1,14 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.13.4.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.4'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.13.4'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.13.4'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.14.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.1'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.14.1'
 
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.16') {
+    dependencySet(group: 'com.google.errorprone', version: '2.17.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -59,8 +59,8 @@ dependencyManagement {
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerBuilder
     dependency 'org.webjars:swagger-ui:4.15.5'
-    dependency 'org.thymeleaf:thymeleaf:3.1.0.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.151'
+    dependency 'org.thymeleaf:thymeleaf:3.1.1.RELEASE'
+    dependency 'io.github.classgraph:classgraph:4.8.154'
     dependency 'com.github.oshi:oshi-core-java11:6.4.0'
 
     dependencySet(group: 'io.netty', version: '4.1.71.Final') {
@@ -70,15 +70,15 @@ dependencyManagement {
       }
     }
 
-    dependencySet(group: 'io.vertx', version: '4.3.5') {
+    dependencySet(group: 'io.vertx', version: '4.3.7') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.5.0'
+    dependency 'io.projectreactor:reactor-core:3.5.1'
 
-    dependency 'it.unimi.dsi:fastutil:8.5.9'
+    dependency 'it.unimi.dsi:fastutil:8.5.11'
 
     dependency 'javax.annotation:javax.annotation-api:1.3.2'
 
@@ -119,7 +119,7 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '4.9.0') {
+    dependencySet(group: 'org.mockito', version: '4.11.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
