@@ -36,6 +36,7 @@ public class BeaconRestApiConfig {
   private final int restApiPort;
   private final boolean restApiDocsEnabled;
   private final boolean restApiEnabled;
+  private final boolean restApiLightClientEnabled;
   private final boolean beaconLivenessTrackingEnabled;
   private final String restApiInterface;
   private final List<String> restApiHostAllowlist;
@@ -49,6 +50,7 @@ public class BeaconRestApiConfig {
       final int restApiPort,
       final boolean restApiDocsEnabled,
       final boolean restApiEnabled,
+      final boolean restApiLightClientEnabled,
       final String restApiInterface,
       final List<String> restApiHostAllowlist,
       final List<String> restApiCorsAllowedOrigins,
@@ -60,6 +62,7 @@ public class BeaconRestApiConfig {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
+    this.restApiLightClientEnabled = restApiLightClientEnabled;
     this.restApiInterface = restApiInterface;
     this.restApiHostAllowlist = restApiHostAllowlist;
     this.restApiCorsAllowedOrigins = restApiCorsAllowedOrigins;
@@ -80,6 +83,10 @@ public class BeaconRestApiConfig {
 
   public boolean isRestApiEnabled() {
     return restApiEnabled;
+  }
+
+  public boolean isRestApiLightClientEnabled() {
+    return restApiLightClientEnabled;
   }
 
   public boolean isBeaconLivenessTrackingEnabled() {
@@ -123,6 +130,7 @@ public class BeaconRestApiConfig {
     private int restApiPort = DEFAULT_REST_API_PORT;
     private boolean restApiDocsEnabled = false;
     private boolean restApiEnabled = false;
+    private boolean restApiLightClientEnabled = false;
     private boolean beaconLivenessTrackingEnabled = DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
     private String restApiInterface = DEFAULT_REST_API_INTERFACE;
     private List<String> restApiHostAllowlist = DEFAULT_REST_API_HOST_ALLOWLIST;
@@ -150,6 +158,12 @@ public class BeaconRestApiConfig {
 
     public BeaconRestApiConfigBuilder restApiEnabled(final boolean restApiEnabled) {
       this.restApiEnabled = restApiEnabled;
+      return this;
+    }
+
+    public BeaconRestApiConfigBuilder restApiLightClientEnabled(
+        final boolean restApiLightClientEnabled) {
+      this.restApiLightClientEnabled = restApiLightClientEnabled;
       return this;
     }
 
@@ -214,6 +228,7 @@ public class BeaconRestApiConfig {
           restApiPort,
           restApiDocsEnabled,
           restApiEnabled,
+          restApiLightClientEnabled,
           restApiInterface,
           restApiHostAllowlist,
           restApiCorsAllowedOrigins,
