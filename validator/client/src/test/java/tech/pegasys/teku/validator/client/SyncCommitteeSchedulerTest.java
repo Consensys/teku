@@ -155,6 +155,49 @@ class SyncCommitteeSchedulerTest {
   }
 
   @Test
+  void shouldTriggerResubscribeRequestForCurrentSyncCommitteeEveryEpoch() {
+    // Initial scheduler tick, will create sync periods
+    scheduler.onSlot(spec.computeStartSlotAtEpoch(UInt64.ZERO));
+    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
+
+    // Still within first epoch, should not trigger
+    scheduler.onSlot(UInt64.ONE);
+    verify(duties, never()).subscribeToSubnets();
+
+    // Now on new epoch, should trigger current sync committee subscribe request
+    scheduler.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
+    verify(duties, times(1)).subscribeToSubnets();
+  }
+
+  @Test
+  void shouldTriggerResubscribeRequestForNextSyncCommitteeEveryEpochAfterSubscribeEpoch() {
+    final int nextSyncCommitteeSubscribeEpoch = 4;
+    // Set next sync committee subscribe epoc
+    when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT))
+        .thenReturn(nextSyncCommitteeSubscribeEpoch);
+
+    // Initial scheduler tick, will create sync periods and calculate duties for current sync
+    // committee
+    scheduler.onSlot(spec.computeStartSlotAtEpoch(UInt64.ZERO));
+    getRequestedDutiesForSyncCommitteePeriod(0).complete(Optional.of(duties));
+
+    // On subscribe epoch, will calculate duties for the next sync committee
+    scheduler.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(nextSyncCommitteeSubscribeEpoch)));
+    getRequestedDutiesForSyncCommitteePeriod(1).complete(Optional.of(duties));
+    // Verify subscribe request for current sync committee
+    verify(duties, times(1)).subscribeToSubnets();
+
+    // Now on the next epoch, should trigger both subscribe request (current and next sync
+    // committee)
+    scheduler.onSlot(
+        spec.computeStartSlotAtEpoch(UInt64.valueOf(nextSyncCommitteeSubscribeEpoch + 1)));
+
+    // Verify subscribe request for current sync committee and next sync committee (2 reqs + 1
+    // previous req)
+    verify(duties, times(3)).subscribeToSubnets();
+  }
+
+  @Test
   void shouldNotSelectNewRandomNumberEachSlot() {
     when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT)).thenReturn(4);
 

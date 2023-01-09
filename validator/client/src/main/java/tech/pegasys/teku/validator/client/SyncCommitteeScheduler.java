@@ -19,6 +19,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeSche
  * subnet subscriptions are renewed if the reconnection was because the beacon chain restarted.
  */
 public class SyncCommitteeScheduler implements ValidatorTimingChannel {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final MetricsSystem metricsSystem;
@@ -47,8 +49,6 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   private Optional<SyncCommitteePeriod> currentSyncCommitteePeriod = Optional.empty();
   private Optional<SyncCommitteePeriod> nextSyncCommitteePeriod = Optional.empty();
   private UInt64 lastProductionSlot;
-
-  private UInt64 lastSubscriptionNotificationEpoch;
 
   public SyncCommitteeScheduler(
       final MetricsSystem metricsSystem,
@@ -92,15 +92,9 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
                   subscribeEpochsPriorToNextSyncPeriod));
     }
 
-    if (lastSubscriptionNotificationEpoch == null) {
-      lastSubscriptionNotificationEpoch = dutiesEpoch;
-    }
-
-    if (dutiesEpoch.isGreaterThan(lastSubscriptionNotificationEpoch)) {
-      currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
-      nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
-
-      lastSubscriptionNotificationEpoch = dutiesEpoch;
+    if (isFirstSlotOfEpoch(slot)) {
+      this.currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
+      this.nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
     }
 
     final SyncCommitteePeriod nextSyncCommitteePeriod = this.nextSyncCommitteePeriod.get();
@@ -111,6 +105,13 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
       this.currentSyncCommitteePeriod = this.nextSyncCommitteePeriod;
       this.nextSyncCommitteePeriod = Optional.empty();
     }
+  }
+
+  private boolean isFirstSlotOfEpoch(final UInt64 slot) {
+    final UInt64 currentEpoch = spec.atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
+    final UInt64 startSlotAtEpoch =
+        spec.atEpoch(slot).miscHelpers().computeStartSlotAtEpoch(currentEpoch);
+    return startSlotAtEpoch.equals(slot);
   }
 
   private SyncCommitteePeriod createSyncCommitteePeriod(
@@ -220,22 +221,11 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
     }
 
     public void requestSubnetSubscription() {
-      if (duties.isEmpty()) {
-        return;
-      }
-      final PendingDuties<SyncCommitteeScheduledDuties> pendingDuties = duties.get();
-
-      if (!pendingDuties.getScheduledDuties().isCompletedNormally()) {
-        return;
-      }
-      final Optional<SyncCommitteeScheduledDuties> maybeScheduledDuties =
-          pendingDuties.getScheduledDuties().getImmediately();
-
-      if (maybeScheduledDuties.isEmpty()) {
-        return;
-      }
-
-      maybeScheduledDuties.get().subscribeToSubnets();
+      duties
+          .map(PendingDuties::getScheduledDuties)
+          .filter(SafeFuture::isCompletedNormally)
+          .flatMap(SafeFuture::getImmediately)
+          .ifPresent(SyncCommitteeScheduledDuties::subscribeToSubnets);
     }
 
     public void recalculate() {
