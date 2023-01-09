@@ -107,9 +107,8 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   private boolean isFirstSlotOfEpoch(final UInt64 slot) {
-    final UInt64 currentEpoch = spec.atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
-    final UInt64 startSlotAtEpoch =
-        spec.atEpoch(slot).miscHelpers().computeStartSlotAtEpoch(currentEpoch);
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+    final UInt64 startSlotAtEpoch = spec.computeStartSlotAtEpoch(currentEpoch);
     return startSlotAtEpoch.equals(slot);
   }
 

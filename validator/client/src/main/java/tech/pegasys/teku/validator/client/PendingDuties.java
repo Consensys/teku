@@ -40,7 +40,8 @@ class PendingDuties {
   private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
   private final DutyLoader<?> dutyLoader;
   private final UInt64 epoch;
-  private SafeFuture<? extends Optional<? extends ScheduledDuties>> scheduledDuties = new SafeFuture<>();
+  private SafeFuture<? extends Optional<? extends ScheduledDuties>> scheduledDuties =
+      new SafeFuture<>();
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
