@@ -81,18 +81,19 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     prepareBlockAndBlobInAvailabilityWindow(true);
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(), Optional.empty());
   }
 
   @Test
   void shouldReturnInvalidDueToException() {
     prepareBlockAndBlobInAvailabilityWindow(true);
 
-    when(miscHelpers.isDataAvailable(any(), any(), any(), eq(blobsSidecar)))
-        .thenThrow(new KZGException("ops!"));
+    final Throwable cause = new KZGException("ops!");
+
+    when(miscHelpers.isDataAvailable(any(), any(), any(), eq(blobsSidecar))).thenThrow(cause);
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(), Optional.of(cause));
   }
 
   @Test
@@ -122,7 +123,8 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
             result -> result.getBlobsSidecar().isEmpty(), "has empty blob");
   }
 
-  private void assertInvalid(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
+  private void assertInvalid(
+      SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck, Optional<Throwable> cause) {
     assertThat(availabilityCheck)
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
         .isCompletedWithValueMatching(
@@ -130,7 +132,9 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
             "is not available")
         .isCompletedWithValueMatching(
             result -> result.getBlobsSidecar().orElseThrow().equals(blobsSidecar),
-            "has not empty blob");
+            "has not empty blob")
+        .isCompletedWithValueMatching(
+            result -> result.getCause().equals(cause), "doesn't match the cause");
   }
 
   private void assertNotAvailable(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
