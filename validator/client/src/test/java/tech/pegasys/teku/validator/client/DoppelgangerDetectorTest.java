@@ -463,7 +463,7 @@ public class DoppelgangerDetectorTest {
     asyncRunner.executeQueuedActions();
     Set<String> pubKeysStrings = toAbbreviatedKeys(pubKeys).collect(Collectors.toSet());
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
-    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch.longValue() - 1, pubKeysStrings);
+    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch.longValue(), pubKeysStrings);
     logCaptor.assertFatalLog(doppelgangerDetectedLog);
     Map<UInt64, BLSPublicKey> doppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1), Map.entry(UInt64.valueOf(3), pubKey3));
@@ -517,7 +517,7 @@ public class DoppelgangerDetectorTest {
     verify(statusLog).doppelgangerDetectionStart(pubKeysStrings);
     verify(statusLog, times(1))
         .doppelgangerCheck(currentEpoch.minus(1).longValue(), pubKeysStrings);
-    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch.longValue() - 1, pubKeysStrings);
+    verify(statusLog, times(1)).doppelgangerCheck(currentEpoch.longValue(), pubKeysStrings);
     logCaptor.assertFatalLog(doppelgangerDetectedLog);
     Map<UInt64, BLSPublicKey> doppelgangers =
         Map.ofEntries(Map.entry(UInt64.valueOf(1), pubKey1), Map.entry(UInt64.valueOf(3), pubKey3));

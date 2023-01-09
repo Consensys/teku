@@ -175,7 +175,7 @@ public class DoppelgangerDetector {
 
                 captureEpochAtStart(currentEpoch);
 
-                if (maxEpochsReached(currentEpoch) || allPubKeysAreActive()) {
+                if (maxEpochsReached(currentEpoch) || allKeysAreActive()) {
                   statusLog.doppelgangerDetectionEnd(
                       mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()),
                       detectedDoppelgangers.entrySet().stream()
@@ -184,21 +184,17 @@ public class DoppelgangerDetector {
                   return stopDoppelgangerDetectorTask(detectedDoppelgangers);
                 } else {
                   if (firstCheck.compareAndSet(true, false)
-                      && currentEpoch.isGreaterThan(UInt64.ONE)) {
-                    return checkDoppelgangersAtEpoch(currentEpoch.minus(UInt64.valueOf(2)))
+                      && currentEpoch.isGreaterThan(UInt64.ZERO)) {
+                    return checkDoppelgangersAtEpoch(currentEpoch.minus(UInt64.ONE))
                         .thenCompose(
                             __ -> {
-                              if (!allPubKeysAreActive()) {
-                                return checkDoppelgangersAtEpoch(currentEpoch.minus(UInt64.ONE));
+                              if (!allKeysAreActive()) {
+                                return checkDoppelgangersAtEpoch(currentEpoch);
                               }
                               return SafeFuture.COMPLETE;
                             });
                   } else {
-                    if (currentEpoch.isGreaterThan(UInt64.ZERO)) {
-                      return checkDoppelgangersAtEpoch(currentEpoch.minus(UInt64.ONE));
-                    } else {
-                      return checkDoppelgangersAtEpoch(currentEpoch);
-                    }
+                    return checkDoppelgangersAtEpoch(currentEpoch);
                   }
                 }
               })
@@ -254,8 +250,8 @@ public class DoppelgangerDetector {
       return epoch.minus(epochAtStart.get()).isGreaterThanOrEqualTo(maxEpochs);
     }
 
-    private boolean allPubKeysAreActive() {
-      return pubKeys.size() == detectedDoppelgangers.size();
+    private boolean allKeysAreActive() {
+      return detectedDoppelgangers.values().containsAll(pubKeys);
     }
 
     private SafeFuture<Void> checkValidatorsLivenessAtEpoch(
