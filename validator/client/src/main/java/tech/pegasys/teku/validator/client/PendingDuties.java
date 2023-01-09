@@ -44,7 +44,7 @@ class PendingDuties<T extends ScheduledDuties> {
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
-  protected PendingDuties(
+  private PendingDuties(
       final MetricsSystem metricsSystem, final DutyLoader<T> dutyLoader, final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
     this.epoch = epoch;
