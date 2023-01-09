@@ -39,7 +39,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    * <p>e.g. set to "ssz_static" to run only ssz static tests or "ssz_static/Attestation" for only
    * attestation ssz tests.
    */
-  private static final String TEST_TYPE = "";
+  private static final String TEST_TYPE = "sync/optimistic";
 
   /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
   private static final String SPEC = "";
