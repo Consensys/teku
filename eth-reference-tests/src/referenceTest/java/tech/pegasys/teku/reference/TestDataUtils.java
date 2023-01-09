@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import org.xerial.snappy.Snappy;
+import org.yaml.snakeyaml.LoaderOptions;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -31,6 +32,16 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class TestDataUtils {
+
+  private static final YAMLFactory YAML_FACTORY;
+
+  static {
+    final LoaderOptions loaderOptions = new LoaderOptions();
+    // Set the code point limit to 100MB - context:
+    // https://github.com/FasterXML/jackson-dataformats-text/tree/2.15/yaml#maximum-input-yaml-document-size-3-mb
+    loaderOptions.setCodePointLimit(1024 * 1024 * 100);
+    YAML_FACTORY = YAMLFactory.builder().loaderOptions(loaderOptions).build();
+  }
 
   public static <T extends SszData> T loadSsz(
       final TestDefinition testDefinition, final String fileName, final SszSchema<T> type) {
@@ -74,7 +85,7 @@ public class TestDataUtils {
       throws IOException {
     final Path path = testDefinition.getTestDirectory().resolve(fileName);
     try (final InputStream in = Files.newInputStream(path)) {
-      return new ObjectMapper(new YAMLFactory()).readerFor(type).readValue(in);
+      return new ObjectMapper(YAML_FACTORY).readerFor(type).readValue(in);
     }
   }
 
@@ -84,7 +95,7 @@ public class TestDataUtils {
       final DeserializableTypeDefinition<T> type)
       throws IOException {
     final Path path = testDefinition.getTestDirectory().resolve(fileName);
-    try (final YAMLParser in = new YAMLFactory().createParser(Files.newInputStream(path))) {
+    try (final YAMLParser in = YAML_FACTORY.createParser(Files.newInputStream(path))) {
       in.nextToken();
       return type.deserialize(in);
     }
