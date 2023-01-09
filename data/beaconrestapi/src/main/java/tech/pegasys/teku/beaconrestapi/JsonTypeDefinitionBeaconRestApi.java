@@ -165,145 +165,154 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     final SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
-    return new RestApiBuilder()
-        .openApiInfo(
-            openApi ->
-                openApi
-                    .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
-                    .version(VersionProvider.IMPLEMENTATION_VERSION)
-                    .description(
-                        "A minimal API specification for the beacon node, which enables a validator "
-                            + "to connect and perform its obligations on the Ethereum beacon chain.")
-                    .license("Apache 2.0", "https://www.apache.org/licenses/LICENSE-2.0.html"))
-        .openApiDocsEnabled(config.isRestApiDocsEnabled())
-        .listenAddress(config.getRestApiInterface())
-        .port(config.getRestApiPort())
-        .maxUrlLength(config.getMaxUrlLength())
-        .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
-        .hostAllowlist(config.getRestApiHostAllowlist())
-        .exceptionHandler(
-            ChainDataUnavailableException.class, (throwable) -> HttpErrorResponse.noContent())
-        .exceptionHandler(
-            NodeSyncingException.class, (throwable) -> HttpErrorResponse.serviceUnavailable())
-        .exceptionHandler(
-            ServiceUnavailableException.class,
-            (throwable) -> HttpErrorResponse.serviceUnavailable())
-        .exceptionHandler(
-            ContentTypeNotSupportedException.class,
-            (throwable) -> new HttpErrorResponse(SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()))
-        .exceptionHandler(
-            MissingDepositsException.class,
-            (throwable) -> new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, throwable.getMessage()))
-        .exceptionHandler(
-            BadRequestException.class,
-            (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
-        .exceptionHandler(
-            JsonProcessingException.class,
-            (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
-        .exceptionHandler(
-            IllegalArgumentException.class,
-            (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
-        // Beacon Handlers
-        .endpoint(new GetGenesis(dataProvider))
-        .endpoint(new GetStateRoot(dataProvider))
-        .endpoint(new GetStateFork(dataProvider))
-        .endpoint(new GetStateFinalityCheckpoints(dataProvider))
-        .endpoint(new GetStateValidators(dataProvider))
-        .endpoint(new GetStateValidator(dataProvider))
-        .endpoint(new GetStateValidatorBalances(dataProvider))
-        .endpoint(new GetStateCommittees(dataProvider))
-        .endpoint(new GetStateSyncCommittees(dataProvider))
-        .endpoint(new GetStateRandao(dataProvider))
-        .endpoint(new GetBlockHeaders(dataProvider))
-        .endpoint(new GetBlockHeader(dataProvider))
-        .endpoint(new PostBlock(dataProvider, spec, schemaCache))
-        .endpoint(new PostBlindedBlock(dataProvider, spec, schemaCache))
-        .endpoint(new GetBlock(dataProvider, schemaCache))
-        .endpoint(
-            new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
-                dataProvider, schemaCache))
-        .endpoint(new GetBlindedBlock(dataProvider, schemaCache))
-        .endpoint(new GetFinalizedCheckpointState(dataProvider, spec))
-        .endpoint(new GetBlockRoot(dataProvider))
-        .endpoint(new GetFinalizedBlockRoot(dataProvider))
-        .endpoint(new GetLightClientBootstrap(dataProvider, schemaCache))
-        .endpoint(new GetLightClientUpdatesByRange(schemaCache))
-        .endpoint(new GetBlockAttestations(dataProvider, spec))
-        .endpoint(new GetAttestations(dataProvider, spec))
-        .endpoint(new PostAttestation(dataProvider, schemaCache))
-        .endpoint(new GetAttesterSlashings(dataProvider, spec))
-        .endpoint(new PostAttesterSlashing(dataProvider, spec))
-        .endpoint(new GetProposerSlashings(dataProvider))
-        .endpoint(new PostProposerSlashing(dataProvider))
-        .endpoint(new GetVoluntaryExits(dataProvider))
-        .endpoint(new PostVoluntaryExit(dataProvider))
-        .endpoint(new PostSyncCommittees(dataProvider))
-        .endpoint(new PostValidatorLiveness(dataProvider))
-        .endpoint(new PostBlsToExecutionChanges(dataProvider, schemaCache))
-        .endpoint(new GetBlsToExecutionChanges(dataProvider, schemaCache))
-        // Event Handler
-        .endpoint(
-            new GetEvents(
-                dataProvider,
-                eventChannels,
-                asyncRunner,
-                timeProvider,
-                config.getMaxPendingEvents()))
-        // Node Handlers
-        .endpoint(new GetHealth(dataProvider))
-        .endpoint(new GetIdentity(dataProvider))
-        .endpoint(new GetPeers(dataProvider))
-        .endpoint(new GetPeerCount(dataProvider))
-        .endpoint(new GetPeerById(dataProvider))
-        .endpoint(new GetSyncing(dataProvider))
-        .endpoint(new GetVersion())
-        // Validator Handlers
-        .endpoint(new PostAttesterDuties(dataProvider))
-        .endpoint(new GetProposerDuties(dataProvider))
-        .endpoint(
-            new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
-                dataProvider, schemaCache))
-        .endpoint(new GetNewBlock(dataProvider, spec, schemaCache))
-        .endpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache))
-        .endpoint(new GetAttestationData(dataProvider))
-        .endpoint(new GetAggregateAttestation(dataProvider, spec))
-        .endpoint(new PostAggregateAndProofs(dataProvider, spec.getGenesisSchemaDefinitions()))
-        .endpoint(new PostSubscribeToBeaconCommitteeSubnet(dataProvider))
-        .endpoint(new PostSyncDuties(dataProvider))
-        .endpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache))
-        .endpoint(new PostSyncCommitteeSubscriptions(dataProvider))
-        .endpoint(new PostContributionAndProofs(dataProvider, schemaCache))
-        .endpoint(new PostPrepareBeaconProposer(dataProvider))
-        .endpoint(new PostRegisterValidator(dataProvider))
-        // Config Handlers
-        .endpoint(
-            new GetDepositContract(
-                config.getEth1DepositContractAddress(), dataProvider.getConfigProvider()))
-        .endpoint(new GetForkSchedule(dataProvider))
-        .endpoint(new GetSpec(dataProvider))
-        // Debug Handlers
-        .endpoint(new GetChainHeadsV1(dataProvider))
-        .endpoint(new GetChainHeadsV2(dataProvider))
-        .endpoint(
-            new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
-                dataProvider, spec, schemaCache))
-        .endpoint(new GetState(dataProvider, schemaCache))
-        .endpoint(new GetForkChoice(dataProvider))
-        // Teku Specific Handlers
-        .endpoint(new PutLogLevel())
-        .endpoint(new GetStateByBlockRoot(dataProvider, spec))
-        .endpoint(new Liveness(dataProvider))
-        .endpoint(new Readiness(dataProvider, executionClientDataProvider))
-        .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
-        .endpoint(new GetPeersScore(dataProvider))
-        .endpoint(new GetProposersData(dataProvider))
-        .endpoint(new GetDeposits(eth1DataProvider))
-        .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))
-        .endpoint(new GetEth1DataCache(eth1DataProvider))
-        .endpoint(new GetEth1VotingSummary(dataProvider, eth1DataProvider))
-        .endpoint(new GetDepositSnapshot(eth1DataProvider))
-        .endpoint(new GetGlobalValidatorInclusion(dataProvider))
-        .endpoint(new GetValidatorInclusion(dataProvider))
-        .build();
+    RestApiBuilder builder =
+        new RestApiBuilder()
+            .openApiInfo(
+                openApi ->
+                    openApi
+                        .title(StringUtils.capitalize(VersionProvider.CLIENT_IDENTITY))
+                        .version(VersionProvider.IMPLEMENTATION_VERSION)
+                        .description(
+                            "A minimal API specification for the beacon node, which enables a validator "
+                                + "to connect and perform its obligations on the Ethereum beacon chain.")
+                        .license("Apache 2.0", "https://www.apache.org/licenses/LICENSE-2.0.html"))
+            .openApiDocsEnabled(config.isRestApiDocsEnabled())
+            .listenAddress(config.getRestApiInterface())
+            .port(config.getRestApiPort())
+            .maxUrlLength(config.getMaxUrlLength())
+            .corsAllowedOrigins(config.getRestApiCorsAllowedOrigins())
+            .hostAllowlist(config.getRestApiHostAllowlist())
+            .exceptionHandler(
+                ChainDataUnavailableException.class, (throwable) -> HttpErrorResponse.noContent())
+            .exceptionHandler(
+                NodeSyncingException.class, (throwable) -> HttpErrorResponse.serviceUnavailable())
+            .exceptionHandler(
+                ServiceUnavailableException.class,
+                (throwable) -> HttpErrorResponse.serviceUnavailable())
+            .exceptionHandler(
+                ContentTypeNotSupportedException.class,
+                (throwable) ->
+                    new HttpErrorResponse(SC_UNSUPPORTED_MEDIA_TYPE, throwable.getMessage()))
+            .exceptionHandler(
+                MissingDepositsException.class,
+                (throwable) ->
+                    new HttpErrorResponse(SC_INTERNAL_SERVER_ERROR, throwable.getMessage()))
+            .exceptionHandler(
+                BadRequestException.class,
+                (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
+            .exceptionHandler(
+                JsonProcessingException.class,
+                (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
+            .exceptionHandler(
+                IllegalArgumentException.class,
+                (throwable) -> HttpErrorResponse.badRequest(throwable.getMessage()))
+            // Beacon Handlers
+            .endpoint(new GetGenesis(dataProvider))
+            .endpoint(new GetStateRoot(dataProvider))
+            .endpoint(new GetStateFork(dataProvider))
+            .endpoint(new GetStateFinalityCheckpoints(dataProvider))
+            .endpoint(new GetStateValidators(dataProvider))
+            .endpoint(new GetStateValidator(dataProvider))
+            .endpoint(new GetStateValidatorBalances(dataProvider))
+            .endpoint(new GetStateCommittees(dataProvider))
+            .endpoint(new GetStateSyncCommittees(dataProvider))
+            .endpoint(new GetStateRandao(dataProvider))
+            .endpoint(new GetBlockHeaders(dataProvider))
+            .endpoint(new GetBlockHeader(dataProvider))
+            .endpoint(new PostBlock(dataProvider, spec, schemaCache))
+            .endpoint(new PostBlindedBlock(dataProvider, spec, schemaCache))
+            .endpoint(new GetBlock(dataProvider, schemaCache))
+            .endpoint(
+                new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
+                    dataProvider, schemaCache))
+            .endpoint(new GetBlindedBlock(dataProvider, schemaCache))
+            .endpoint(new GetFinalizedCheckpointState(dataProvider, spec))
+            .endpoint(new GetBlockRoot(dataProvider))
+            .endpoint(new GetFinalizedBlockRoot(dataProvider))
+            .endpoint(new GetBlockAttestations(dataProvider, spec))
+            .endpoint(new GetAttestations(dataProvider, spec))
+            .endpoint(new PostAttestation(dataProvider, schemaCache))
+            .endpoint(new GetAttesterSlashings(dataProvider, spec))
+            .endpoint(new PostAttesterSlashing(dataProvider, spec))
+            .endpoint(new GetProposerSlashings(dataProvider))
+            .endpoint(new PostProposerSlashing(dataProvider))
+            .endpoint(new GetVoluntaryExits(dataProvider))
+            .endpoint(new PostVoluntaryExit(dataProvider))
+            .endpoint(new PostSyncCommittees(dataProvider))
+            .endpoint(new PostValidatorLiveness(dataProvider))
+            .endpoint(new PostBlsToExecutionChanges(dataProvider, schemaCache))
+            .endpoint(new GetBlsToExecutionChanges(dataProvider, schemaCache))
+            // Event Handler
+            .endpoint(
+                new GetEvents(
+                    dataProvider,
+                    eventChannels,
+                    asyncRunner,
+                    timeProvider,
+                    config.getMaxPendingEvents()))
+            // Node Handlers
+            .endpoint(new GetHealth(dataProvider))
+            .endpoint(new GetIdentity(dataProvider))
+            .endpoint(new GetPeers(dataProvider))
+            .endpoint(new GetPeerCount(dataProvider))
+            .endpoint(new GetPeerById(dataProvider))
+            .endpoint(new GetSyncing(dataProvider))
+            .endpoint(new GetVersion())
+            // Validator Handlers
+            .endpoint(new PostAttesterDuties(dataProvider))
+            .endpoint(new GetProposerDuties(dataProvider))
+            .endpoint(
+                new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
+                    dataProvider, schemaCache))
+            .endpoint(new GetNewBlock(dataProvider, spec, schemaCache))
+            .endpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache))
+            .endpoint(new GetAttestationData(dataProvider))
+            .endpoint(new GetAggregateAttestation(dataProvider, spec))
+            .endpoint(new PostAggregateAndProofs(dataProvider, spec.getGenesisSchemaDefinitions()))
+            .endpoint(new PostSubscribeToBeaconCommitteeSubnet(dataProvider))
+            .endpoint(new PostSyncDuties(dataProvider))
+            .endpoint(new GetSyncCommitteeContribution(dataProvider, schemaCache))
+            .endpoint(new PostSyncCommitteeSubscriptions(dataProvider))
+            .endpoint(new PostContributionAndProofs(dataProvider, schemaCache))
+            .endpoint(new PostPrepareBeaconProposer(dataProvider))
+            .endpoint(new PostRegisterValidator(dataProvider))
+            // Config Handlers
+            .endpoint(
+                new GetDepositContract(
+                    config.getEth1DepositContractAddress(), dataProvider.getConfigProvider()))
+            .endpoint(new GetForkSchedule(dataProvider))
+            .endpoint(new GetSpec(dataProvider))
+            // Debug Handlers
+            .endpoint(new GetChainHeadsV1(dataProvider))
+            .endpoint(new GetChainHeadsV2(dataProvider))
+            .endpoint(
+                new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
+                    dataProvider, spec, schemaCache))
+            .endpoint(new GetState(dataProvider, schemaCache))
+            .endpoint(new GetForkChoice(dataProvider))
+            // Teku Specific Handlers
+            .endpoint(new PutLogLevel())
+            .endpoint(new GetStateByBlockRoot(dataProvider, spec))
+            .endpoint(new Liveness(dataProvider))
+            .endpoint(new Readiness(dataProvider, executionClientDataProvider))
+            .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
+            .endpoint(new GetPeersScore(dataProvider))
+            .endpoint(new GetProposersData(dataProvider))
+            .endpoint(new GetDeposits(eth1DataProvider))
+            .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))
+            .endpoint(new GetEth1DataCache(eth1DataProvider))
+            .endpoint(new GetEth1VotingSummary(dataProvider, eth1DataProvider))
+            .endpoint(new GetDepositSnapshot(eth1DataProvider))
+            .endpoint(new GetGlobalValidatorInclusion(dataProvider))
+            .endpoint(new GetValidatorInclusion(dataProvider));
+
+    if (config.isRestApiLightClientEnabled()) {
+      builder =
+          builder
+              .endpoint(new GetLightClientBootstrap(dataProvider, schemaCache))
+              .endpoint(new GetLightClientUpdatesByRange(schemaCache));
+    }
+
+    return builder.build();
   }
 }

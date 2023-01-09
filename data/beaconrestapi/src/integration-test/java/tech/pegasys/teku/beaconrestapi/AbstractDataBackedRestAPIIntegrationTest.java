@@ -94,6 +94,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       BeaconRestApiConfig.builder()
           .restApiPort(0)
           .restApiEnabled(true)
+          .restApiLightClientEnabled(true)
           .restApiDocsEnabled(true)
           .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
           .restApiCorsAllowedOrigins(new ArrayList<>())
