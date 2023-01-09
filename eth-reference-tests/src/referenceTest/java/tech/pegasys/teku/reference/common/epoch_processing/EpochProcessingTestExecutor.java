@@ -67,6 +67,9 @@ public class EpochProcessingTestExecutor implements TestExecutor {
               "epoch_processing/historical_roots_update",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_HISTORICAL_ROOTS_UPDATE))
           .put(
+              "epoch_processing/historical_summaries_update",
+              new EpochProcessingTestExecutor((EpochOperation.PROCESS_HISTORICAL_SUMMARIES_UPDATE)))
+          .put(
               "epoch_processing/slashings_reset",
               new EpochProcessingTestExecutor(EpochOperation.PROCESS_SLASHINGS_RESET))
           .put(

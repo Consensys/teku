@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella.forktransition;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -93,6 +94,8 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
 
               state.setNextWithdrawalValidatorIndex(UInt64.ZERO);
               state.setNextWithdrawalIndex(UInt64.ZERO);
+              state.setHistoricalSummaries(
+                  schemaDefinitions.getHistoricalSummariesSchema().createFromElements(List.of()));
             });
   }
 }

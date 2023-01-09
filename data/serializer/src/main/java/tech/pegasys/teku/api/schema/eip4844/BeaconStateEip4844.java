@@ -18,6 +18,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Checkpoint;
@@ -26,7 +27,9 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
+import tech.pegasys.teku.api.schema.capella.HistoricalSummary;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderSchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
@@ -47,6 +50,9 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
   @JsonProperty("next_withdrawal_validator_index")
   @Schema(type = "string", example = EXAMPLE_UINT64)
   public final UInt64 nextWithdrawalValidatorIndex;
+
+  @JsonProperty("historical_summaries")
+  public final List<HistoricalSummary> historicalSummaries;
 
   public BeaconStateEip4844(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
@@ -76,7 +82,8 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
       @JsonProperty("latest_execution_payload_header")
           final ExecutionPayloadHeaderEip4844 latestExecutionPayloadHeader,
       @JsonProperty("next_withdrawal_index") final UInt64 nextWithdrawalIndex,
-      @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex) {
+      @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex,
+      @JsonProperty("historical_summaries") final List<HistoricalSummary> historicalSummaries) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -105,6 +112,7 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
     this.latestExecutionPayloadHeader = latestExecutionPayloadHeader;
     this.nextWithdrawalIndex = nextWithdrawalIndex;
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
+    this.historicalSummaries = historicalSummaries;
   }
 
   public BeaconStateEip4844(final BeaconState beaconState) {
@@ -116,6 +124,10 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
         new ExecutionPayloadHeaderEip4844(eip4844.getLatestExecutionPayloadHeader());
     this.nextWithdrawalIndex = eip4844.getNextWithdrawalIndex();
     this.nextWithdrawalValidatorIndex = eip4844.getNextWithdrawalValidatorIndex();
+    this.historicalSummaries =
+        eip4844.getHistoricalSummaries().stream()
+            .map(HistoricalSummary::new)
+            .collect(Collectors.toList());
   }
 
   @Override
@@ -132,6 +144,9 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
                     BeaconStateSchemaEip4844.required(
                             mutableBeaconStateEip4844.getBeaconStateSchema())
                         .getLastExecutionPayloadHeaderSchema(),
+                    BeaconStateSchemaEip4844.required(
+                            mutableBeaconStateEip4844.getBeaconStateSchema())
+                        .getHistoricalSummariesSchema(),
                     this));
   }
 
@@ -139,6 +154,9 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
       final MutableBeaconStateEip4844 state,
       final SyncCommitteeSchema syncCommitteeSchema,
       final ExecutionPayloadHeaderSchemaEip4844 executionPayloadHeaderSchema,
+      SszListSchema<
+              tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
+          historicalSummariesSchema,
       final BeaconStateEip4844 instance) {
 
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
@@ -149,5 +167,10 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
 
     state.setNextWithdrawalIndex(instance.nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(instance.nextWithdrawalValidatorIndex);
+    state.setHistoricalSummaries(
+        historicalSummariesSchema.createFromElements(
+            instance.historicalSummaries.stream()
+                .map(HistoricalSummary::asInternal)
+                .collect(Collectors.toList())));
   }
 }

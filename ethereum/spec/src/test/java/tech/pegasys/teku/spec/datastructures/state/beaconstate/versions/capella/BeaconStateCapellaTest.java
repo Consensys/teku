@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
+import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -30,6 +31,13 @@ public class BeaconStateCapellaTest
   protected BeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> getSchema(
       final SpecConfig specConfig) {
     return BeaconStateSchemaCapella.create(specConfig);
+  }
+
+  @Test
+  void t() {
+    BeaconStateCapella capella = randomState();
+    System.out.println(capella.getHistoricalSummaries());
+    //    assertThat(capella).isNotNull()
   }
 
   @Override
