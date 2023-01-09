@@ -19,7 +19,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
@@ -189,7 +188,7 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
   private class SyncCommitteePeriod {
 
-    private Optional<PendingDuties<SyncCommitteeScheduledDuties>> duties = Optional.empty();
+    private Optional<PendingDuties> duties = Optional.empty();
     private final UInt64 periodStartEpoch;
     private final UInt64 nextPeriodStartEpoch;
     private final UInt64 subscribeEpoch;
@@ -222,9 +221,8 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
     public void requestSubnetSubscription() {
       duties
-          .map(PendingDuties::getScheduledDuties)
-          .filter(SafeFuture::isCompletedNormally)
-          .flatMap(SafeFuture::getImmediately)
+          .flatMap(PendingDuties::getScheduledDuties)
+          .map(SyncCommitteeScheduledDuties.class::cast)
           .ifPresent(SyncCommitteeScheduledDuties::subscribeToSubnets);
     }
 

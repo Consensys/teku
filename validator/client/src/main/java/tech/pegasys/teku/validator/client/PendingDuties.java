@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
 
-class PendingDuties<T extends ScheduledDuties> {
+class PendingDuties {
   private static final Logger LOG = LogManager.getLogger();
 
   private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
@@ -45,7 +45,9 @@ class PendingDuties<T extends ScheduledDuties> {
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
   private PendingDuties(
-      final MetricsSystem metricsSystem, final DutyLoader<T> dutyLoader, final UInt64 epoch) {
+      final MetricsSystem metricsSystem,
+      final DutyLoader<? extends ScheduledDuties> dutyLoader,
+      final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
     this.epoch = epoch;
     dutiesPerformedCounter =
@@ -57,9 +59,9 @@ class PendingDuties<T extends ScheduledDuties> {
             "result");
   }
 
-  public static <T extends ScheduledDuties> PendingDuties<T> calculateDuties(
+  public static <T extends ScheduledDuties> PendingDuties calculateDuties(
       final MetricsSystem metricsSystem, final DutyLoader<T> dutyLoader, final UInt64 epoch) {
-    final PendingDuties<T> duties = new PendingDuties<>(metricsSystem, dutyLoader, epoch);
+    final PendingDuties duties = new PendingDuties(metricsSystem, dutyLoader, epoch);
     duties.recalculate();
     return duties;
   }
@@ -116,9 +118,12 @@ class PendingDuties<T extends ScheduledDuties> {
         });
   }
 
-  @SuppressWarnings("unchecked")
-  public SafeFuture<Optional<T>> getScheduledDuties() {
-    return (SafeFuture<Optional<T>>) duties;
+  public Optional<? extends ScheduledDuties> getScheduledDuties() {
+    if (duties.isCompletedNormally()) {
+      return duties.getImmediately();
+    } else {
+      return Optional.empty();
+    }
   }
 
   public synchronized void cancel() {
