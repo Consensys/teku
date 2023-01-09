@@ -48,6 +48,8 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   private Optional<SyncCommitteePeriod> nextSyncCommitteePeriod = Optional.empty();
   private UInt64 lastProductionSlot;
 
+  private UInt64 lastSubscriptionNotificationEpoch;
+
   public SyncCommitteeScheduler(
       final MetricsSystem metricsSystem,
       final Spec spec,
@@ -88,6 +90,17 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
                   syncCommitteeUtil,
                   firstEpochOfNextSyncCommitteePeriod,
                   subscribeEpochsPriorToNextSyncPeriod));
+    }
+
+    if (lastSubscriptionNotificationEpoch == null) {
+      lastSubscriptionNotificationEpoch = dutiesEpoch;
+    }
+
+    if (dutiesEpoch.isGreaterThan(lastSubscriptionNotificationEpoch)) {
+      currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
+      nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
+
+      lastSubscriptionNotificationEpoch = dutiesEpoch;
     }
 
     final SyncCommitteePeriod nextSyncCommitteePeriod = this.nextSyncCommitteePeriod.get();
@@ -174,7 +187,8 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   public void onBlockProductionDue(final UInt64 slot) {}
 
   private class SyncCommitteePeriod {
-    private Optional<PendingDuties> duties = Optional.empty();
+
+    private Optional<PendingDuties<SyncCommitteeScheduledDuties>> duties = Optional.empty();
     private final UInt64 periodStartEpoch;
     private final UInt64 nextPeriodStartEpoch;
     private final UInt64 subscribeEpoch;
@@ -205,12 +219,32 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
                           metricsSystem, dutyLoader, nextPeriodStartEpoch.minusMinZero(1))));
     }
 
+    public void requestSubnetSubscription() {
+      if (duties.isEmpty()) {
+        return;
+      }
+      final PendingDuties<SyncCommitteeScheduledDuties> pendingDuties = duties.get();
+
+      if (!pendingDuties.getScheduledDuties().isCompletedNormally()) {
+        return;
+      }
+      final Optional<SyncCommitteeScheduledDuties> maybeScheduledDuties =
+          pendingDuties.getScheduledDuties().getImmediately();
+
+      if (maybeScheduledDuties.isEmpty()) {
+        return;
+      }
+
+      maybeScheduledDuties.get().subscribeToSubnets();
+    }
+
     public void recalculate() {
       duties.ifPresent(PendingDuties::recalculate);
     }
   }
 
   public interface EarlySubscribeRandomSource {
+
     int randomEpochCount(final int epochsPerSyncCommitteePeriod);
   }
 }
