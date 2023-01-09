@@ -40,7 +40,7 @@ class PendingDuties {
   private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
   private final DutyLoader<?> dutyLoader;
   private final UInt64 epoch;
-  private SafeFuture<? extends Optional<? extends ScheduledDuties>> duties = new SafeFuture<>();
+  private SafeFuture<? extends Optional<? extends ScheduledDuties>> scheduledDuties = new SafeFuture<>();
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
@@ -104,10 +104,10 @@ class PendingDuties {
   }
 
   public synchronized void recalculate() {
-    duties.cancel(false);
+    scheduledDuties.cancel(false);
     // We need to ensure the duties future is completed before .
-    duties = dutyLoader.loadDutiesForEpoch(epoch);
-    duties.finish(
+    scheduledDuties = dutyLoader.loadDutiesForEpoch(epoch);
+    scheduledDuties.finish(
         this::processPendingActions,
         error -> {
           if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
@@ -119,15 +119,15 @@ class PendingDuties {
   }
 
   public Optional<? extends ScheduledDuties> getScheduledDuties() {
-    if (duties.isCompletedNormally()) {
-      return duties.getImmediately();
+    if (scheduledDuties.isCompletedNormally()) {
+      return scheduledDuties.getImmediately();
     } else {
       return Optional.empty();
     }
   }
 
   public synchronized void cancel() {
-    duties.cancel(false);
+    scheduledDuties.cancel(false);
     pendingActions.clear();
   }
 
@@ -150,10 +150,10 @@ class PendingDuties {
   }
 
   private synchronized Optional<? extends ScheduledDuties> getCurrentDuties() {
-    if (!duties.isCompletedNormally()) {
+    if (!scheduledDuties.isCompletedNormally()) {
       return Optional.empty();
     }
-    return duties.join();
+    return scheduledDuties.join();
   }
 
   public synchronized void onHeadUpdate(final Bytes32 newHeadDependentRoot) {
