@@ -103,53 +103,6 @@ public class BlockProcessorEip4844 extends BlockProcessorCapella {
     }
   }
 
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public void processBlsToExecutionChanges(
-      MutableBeaconState state, SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
-      throws BlockProcessingException {
-    // NOOP
-  }
-
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public void processBlsToExecutionChangesNoValidation(
-      MutableBeaconStateCapella state,
-      SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges) {
-    // NOOP
-  }
-
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public void processWithdrawals(
-      MutableBeaconState genericState, ExecutionPayloadSummary payloadSummary)
-      throws BlockProcessingException {
-    // NOOP
-  }
-
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState) {
-    // NOOP
-    return Optional.empty();
-  }
-
   @Override
   public void processBlobKzgCommitments(
       final MutableBeaconState state,
