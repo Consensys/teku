@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,8 +26,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -200,7 +201,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             BlockAndCheckpoints.fromBlockAndState(spec, bestBlock),
             BlockAndCheckpoints.fromBlockAndState(spec, forkBlock)),
         emptySet(),
-        emptySet(),
+        emptyMap(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
     assertThat(strategy.getBlockRootsAtSlot(bestBlock.getSlot()))
         .containsExactlyInAnyOrder(bestBlock.getRoot(), forkBlock.getRoot());
@@ -262,7 +263,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     strategy.applyUpdate(
         emptyList(),
         emptySet(),
-        Set.of(block2.getRoot()),
+        Map.of(block2.getRoot(), block2.getSlot()),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
 
     assertThat(strategy.contains(block1.getRoot())).isTrue();
@@ -282,7 +283,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             BlockAndCheckpoints.fromBlockAndState(spec, block1),
             BlockAndCheckpoints.fromBlockAndState(spec, block2)),
         emptySet(),
-        emptySet(),
+        emptyMap(),
         storageSystem.recentChainData().getFinalizedCheckpoint().orElseThrow());
 
     assertThat(strategy.contains(block1.getRoot())).isTrue();
@@ -303,7 +304,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // Not pruned because threshold isn't reached.
     strategy.applyUpdate(
-        emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, block2.getRoot()));
+        emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, block2.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isTrue();
     assertThat(strategy.contains(block2.getRoot())).isTrue();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -311,7 +312,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // Prune when threshold is exceeded
     strategy.applyUpdate(
-        emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, block3.getRoot()));
+        emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, block3.getRoot()));
     assertThat(strategy.contains(block1.getRoot())).isFalse();
     assertThat(strategy.contains(block2.getRoot())).isFalse();
     assertThat(strategy.contains(block3.getRoot())).isTrue();
@@ -327,7 +328,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final SignedBeaconBlock finalizedBlock = storageSystem.chainBuilder().getBlockAtSlot(4);
     final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, finalizedBlock.getRoot());
     forkChoiceStrategy.setPruneThreshold(0);
-    forkChoiceStrategy.applyUpdate(emptyList(), emptySet(), emptySet(), finalizedCheckpoint);
+    forkChoiceStrategy.applyUpdate(emptyList(), emptySet(), emptyMap(), finalizedCheckpoint);
 
     // Check that all blocks prior to latest finalized have been pruned
     final List<SignedBlockAndState> allBlocks =
@@ -359,7 +360,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     strategy.applyUpdate(
         emptyList(),
         emptySet(),
-        Set.of(block1.getRoot(), block2.getRoot()),
+        Map.of(block1.getRoot(), block1.getSlot(), block2.getRoot(), block2.getSlot()),
         new Checkpoint(ONE, block3.getRoot()));
 
     assertThat(strategy.contains(block3.getRoot())).isTrue();

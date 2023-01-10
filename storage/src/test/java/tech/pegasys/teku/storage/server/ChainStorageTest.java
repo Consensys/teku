@@ -43,7 +43,7 @@ public class ChainStorageTest {
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainStorage chainStorage;
-  private Spec spec = TestSpecFactory.createMinimalPhase0();
+  private Spec spec = TestSpecFactory.createMinimalEip4844();
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
@@ -57,7 +57,9 @@ public class ChainStorageTest {
   @AfterEach
   void tearDown() {
     try {
-      storageSystem.close();
+      if (storageSystem != null) {
+        storageSystem.close();
+      }
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

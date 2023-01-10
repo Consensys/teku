@@ -8,6 +8,7 @@ dependencies {
   api project(':ethereum:events')
 
   implementation project(':ethereum:execution-types')
+  implementation project(':ethereum:dataproviders')
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:spec')
   implementation project(':ethereum:weaksubjectivity')

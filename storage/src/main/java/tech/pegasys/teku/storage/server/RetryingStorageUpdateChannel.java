@@ -132,17 +132,6 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
     return retry(() -> delegate.onBlobsSidecarRemoval(blobsSidecarKey));
   }
 
-  @Override
-  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
-    return retry(() -> delegate.onBlobsSidecarPruning(endSlot, pruneLimit));
-  }
-
-  @Override
-  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
-      final UInt64 endSlot, final int pruneLimit) {
-    return retry(() -> delegate.onUnconfirmedBlobsSidecarPruning(endSlot, pruneLimit));
-  }
-
   private <O> SafeFuture<O> retry(final Supplier<SafeFuture<O>> method) {
     final UInt64 startTime = timeProvider.getTimeInMillis();
     while (!aborting.get()) {

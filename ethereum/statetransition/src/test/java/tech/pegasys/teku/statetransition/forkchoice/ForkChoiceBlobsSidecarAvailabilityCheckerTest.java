@@ -23,11 +23,15 @@ import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDEC
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
@@ -39,6 +43,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
   private final Spec spec = TestSpecFactory.createMainnetEip4844();
   private final SpecVersion specVersionMock = mock(SpecVersion.class);
+  private final BlobsSidecarProvider blobsProvider = mock(BlobsSidecarProvider.class);
   private final MiscHelpers miscHelpers = mock(MiscHelpers.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
@@ -76,18 +81,19 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
     prepareBlockAndBlobInAvailabilityWindow(true);
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(), Optional.empty());
   }
 
   @Test
   void shouldReturnInvalidDueToException() {
     prepareBlockAndBlobInAvailabilityWindow(true);
 
-    when(miscHelpers.isDataAvailable(any(), any(), any(), eq(blobsSidecar)))
-        .thenThrow(new RuntimeException("ops!"));
+    final Throwable cause = new KZGException("ops!");
+
+    when(miscHelpers.isDataAvailable(any(), any(), any(), eq(blobsSidecar))).thenThrow(cause);
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+    assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(), Optional.of(cause));
   }
 
   @Test
@@ -117,7 +123,8 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
             result -> result.getBlobsSidecar().isEmpty(), "has empty blob");
   }
 
-  private void assertInvalid(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
+  private void assertInvalid(
+      SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck, Optional<Throwable> cause) {
     assertThat(availabilityCheck)
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
         .isCompletedWithValueMatching(
@@ -125,7 +132,9 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
             "is not available")
         .isCompletedWithValueMatching(
             result -> result.getBlobsSidecar().orElseThrow().equals(blobsSidecar),
-            "has not empty blob");
+            "has not empty blob")
+        .isCompletedWithValueMatching(
+            result -> result.getCause().equals(cause), "doesn't match the cause");
   }
 
   private void assertNotAvailable(SafeFuture<BlobsSidecarAndValidationResult> availabilityCheck) {
@@ -157,13 +166,23 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     if (blobAvailable) {
       blobsSidecar = dataStructureUtil.randomBlobsSidecar();
+      when(blobsProvider.getBlobsSidecar(any(SlotAndBlockRoot.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(blobsSidecar)));
+      when(blobsProvider.getBlobsSidecar(any(SignedBeaconBlock.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(blobsSidecar)));
+    } else {
+      when(blobsProvider.getBlobsSidecar(any(SlotAndBlockRoot.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+      when(blobsProvider.getBlobsSidecar(any(SignedBeaconBlock.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     }
+
     blobsSidecarAvailabilityChecker =
         new ForkChoiceBlobsSidecarAvailabilityChecker(
             specVersionMock,
             recentChainData,
             dataStructureUtil.randomSignedBeaconBlock(1),
-            blobAvailable ? Optional.of(blobsSidecar) : Optional.empty());
+            blobsProvider);
   }
 
   private void prepareBlockAndBlobOutsideAvailabilityWindow(boolean blobAvailable) {
@@ -172,12 +191,22 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     if (blobAvailable) {
       blobsSidecar = dataStructureUtil.randomBlobsSidecar();
+      when(blobsProvider.getBlobsSidecar(any(SlotAndBlockRoot.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(blobsSidecar)));
+      when(blobsProvider.getBlobsSidecar(any(SignedBeaconBlock.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(blobsSidecar)));
+    } else {
+      when(blobsProvider.getBlobsSidecar(any(SlotAndBlockRoot.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+      when(blobsProvider.getBlobsSidecar(any(SignedBeaconBlock.class)))
+          .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     }
+
     blobsSidecarAvailabilityChecker =
         new ForkChoiceBlobsSidecarAvailabilityChecker(
             specVersionMock,
             recentChainData,
             dataStructureUtil.randomSignedBeaconBlock(1),
-            blobAvailable ? Optional.of(blobsSidecar) : Optional.empty());
+            blobsProvider);
   }
 }

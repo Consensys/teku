@@ -13,7 +13,11 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip4844.blobs;
 
+import static tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.validResult;
+
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -32,6 +36,22 @@ public interface BlobsSidecarAvailabilityChecker {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
       };
+
+  BlobsSidecarAvailabilityChecker NOT_REQUIRED = NOOP;
+
+  Function<BlobsSidecar, BlobsSidecarAvailabilityChecker> ALREADY_CHECKED =
+      (blobsSidecar) ->
+          new BlobsSidecarAvailabilityChecker() {
+            @Override
+            public boolean initiateDataAvailabilityCheck() {
+              return true;
+            }
+
+            @Override
+            public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
+              return SafeFuture.completedFuture(validResult(blobsSidecar));
+            }
+          };
 
   /**
    * Similar to {@link
@@ -58,30 +78,39 @@ public interface BlobsSidecarAvailabilityChecker {
   class BlobsSidecarAndValidationResult {
     private final BlobsSidecarValidationResult validationResult;
     private final Optional<BlobsSidecar> blobsSidecar;
+    private final Optional<Throwable> cause;
 
     public static final BlobsSidecarAndValidationResult NOT_AVAILABLE =
         new BlobsSidecarAndValidationResult(
-            BlobsSidecarValidationResult.NOT_AVAILABLE, Optional.empty());
+            BlobsSidecarValidationResult.NOT_AVAILABLE, Optional.empty(), Optional.empty());
 
     public static final BlobsSidecarAndValidationResult NOT_REQUIRED =
         new BlobsSidecarAndValidationResult(
-            BlobsSidecarValidationResult.NOT_REQUIRED, Optional.empty());
+            BlobsSidecarValidationResult.NOT_REQUIRED, Optional.empty(), Optional.empty());
 
     public static BlobsSidecarAndValidationResult validResult(final BlobsSidecar blobsSidecar) {
       return new BlobsSidecarAndValidationResult(
-          BlobsSidecarValidationResult.VALID, Optional.of(blobsSidecar));
+          BlobsSidecarValidationResult.VALID, Optional.of(blobsSidecar), Optional.empty());
     }
 
     public static BlobsSidecarAndValidationResult invalidResult(final BlobsSidecar blobsSidecar) {
       return new BlobsSidecarAndValidationResult(
-          BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar));
+          BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar), Optional.empty());
+    }
+
+    public static BlobsSidecarAndValidationResult invalidResult(
+        final BlobsSidecar blobsSidecar, final Throwable cause) {
+      return new BlobsSidecarAndValidationResult(
+          BlobsSidecarValidationResult.INVALID, Optional.of(blobsSidecar), Optional.of(cause));
     }
 
     private BlobsSidecarAndValidationResult(
         final BlobsSidecarValidationResult validationResult,
-        final Optional<BlobsSidecar> blobsSidecar) {
+        final Optional<BlobsSidecar> blobsSidecar,
+        final Optional<Throwable> cause) {
       this.validationResult = validationResult;
       this.blobsSidecar = blobsSidecar;
+      this.cause = cause;
     }
 
     public BlobsSidecarValidationResult getValidationResult() {
@@ -101,8 +130,31 @@ public interface BlobsSidecarAvailabilityChecker {
           || validationResult.equals(BlobsSidecarValidationResult.NOT_AVAILABLE);
     }
 
+    public Optional<Throwable> getCause() {
+      return cause;
+    }
+
     public boolean isNotRequired() {
       return validationResult.equals(BlobsSidecarValidationResult.NOT_REQUIRED);
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      final BlobsSidecarAndValidationResult that = (BlobsSidecarAndValidationResult) o;
+      return Objects.equals(validationResult, that.validationResult)
+          && Objects.equals(blobsSidecar, that.blobsSidecar)
+          && Objects.equals(cause, that.cause);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(validationResult, blobsSidecar, cause);
     }
   }
 }

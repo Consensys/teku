@@ -685,7 +685,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.delete(
           schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
     }
