@@ -37,7 +37,6 @@ import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeSche
  * subnet subscriptions are renewed if the reconnection was because the beacon chain restarted.
  */
 public class SyncCommitteeScheduler implements ValidatorTimingChannel {
-
   private static final Logger LOG = LogManager.getLogger();
 
   private final MetricsSystem metricsSystem;
@@ -186,7 +185,6 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   public void onBlockProductionDue(final UInt64 slot) {}
 
   private class SyncCommitteePeriod {
-
     private Optional<PendingDuties> duties = Optional.empty();
     private final UInt64 periodStartEpoch;
     private final UInt64 nextPeriodStartEpoch;
@@ -231,7 +229,6 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
   }
 
   public interface EarlySubscribeRandomSource {
-
     int randomEpochCount(final int epochsPerSyncCommitteePeriod);
   }
 }

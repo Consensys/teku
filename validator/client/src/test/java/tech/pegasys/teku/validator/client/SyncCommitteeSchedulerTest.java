@@ -172,7 +172,7 @@ class SyncCommitteeSchedulerTest {
   @Test
   void shouldTriggerResubscribeRequestForNextSyncCommitteeEveryEpochAfterSubscribeEpoch() {
     final int nextSyncCommitteeSubscribeEpoch = 4;
-    // Set next sync committee subscribe epoc
+    // Set next sync committee subscribe epoch
     when(earlySubscribeRandomSource.randomEpochCount(SYNC_COMMITTEE_SUBNET_COUNT))
         .thenReturn(nextSyncCommitteeSubscribeEpoch);
 
