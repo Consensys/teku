@@ -47,7 +47,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockManager;
 import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
@@ -69,7 +69,7 @@ public class BlockOperationSelectorFactory {
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
-  private final ExecutionLayerChannel executionLayerChannel;
+  private final ExecutionLayerBlockManager executionLayerInitiator;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -83,7 +83,7 @@ public class BlockOperationSelectorFactory {
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionLayerChannel executionLayerChannel) {
+      final ExecutionLayerBlockManager executionLayerInitiator) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -95,7 +95,7 @@ public class BlockOperationSelectorFactory {
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
     this.forkChoiceNotifier = forkChoiceNotifier;
-    this.executionLayerChannel = executionLayerChannel;
+    this.executionLayerInitiator = executionLayerInitiator;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
@@ -174,7 +174,7 @@ public class BlockOperationSelectorFactory {
           SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
               executionPayloadContextFuture.thenApply(
                   executionPayloadContextOptional ->
-                      executionLayerChannel.initiateBlockAndBlobsProduction(
+                      executionLayerInitiator.initiateBlockAndBlobsProduction(
                           executionPayloadContextOptional.orElseThrow(),
                           blockSlotState,
                           bodyBuilder.isBlinded()));
@@ -219,7 +219,7 @@ public class BlockOperationSelectorFactory {
               if (executionPayloadContext.isEmpty()) {
                 return preMergePayload.get();
               } else {
-                return executionLayerChannel
+                return executionLayerInitiator
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, false)
                     .getExecutionPayloadFuture()
                     .orElseThrow();
@@ -245,7 +245,7 @@ public class BlockOperationSelectorFactory {
               if (executionPayloadContext.isEmpty()) {
                 return preMergePayloadHeader.get();
               } else {
-                return executionLayerChannel
+                return executionLayerInitiator
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)
                     .getExecutionPayloadHeaderFuture()
                     .orElseThrow();
@@ -298,7 +298,7 @@ public class BlockOperationSelectorFactory {
       } else {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
-                executionLayerChannel.builderGetPayload(
+                executionLayerInitiator.builderGetPayload(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
     };
@@ -309,7 +309,7 @@ public class BlockOperationSelectorFactory {
     return signedBeaconBlock -> {
       final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
           spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
-      return executionLayerChannel
+      return executionLayerInitiator
           .getPayloadResult(signedBeaconBlock.getSlot())
           .orElseThrow()
           .getBlobs()

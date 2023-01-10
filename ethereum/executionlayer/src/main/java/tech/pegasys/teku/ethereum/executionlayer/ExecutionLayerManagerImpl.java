@@ -19,9 +19,8 @@ import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQU
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
-import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -52,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -66,10 +66,6 @@ import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final UInt64 FALLBACK_DATA_RETENTION_SLOTS = UInt64.valueOf(2);
-
-  private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
-      new ConcurrentSkipListMap<>();
 
   private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
@@ -197,7 +193,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public void onSlot(final UInt64 slot) {
     executionBuilderModule.updateBuilderAvailability();
-    executionResultCache.headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false).clear();
   }
 
   @Override
@@ -221,64 +216,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         payloadBuildingAttributes);
     return executionClientHandler.engineForkChoiceUpdated(
         forkChoiceState, payloadBuildingAttributes);
-  }
-
-  @Override
-  public Optional<ExecutionPayloadResult> getPayloadResult(final UInt64 slot) {
-    return Optional.ofNullable(executionResultCache.get(slot));
-  }
-
-  @Override
-  public ExecutionPayloadResult initiateBlockProduction(
-      final ExecutionPayloadContext context,
-      final BeaconState blockSlotState,
-      final boolean isBlind) {
-    final ExecutionPayloadResult result;
-    if (!isBlind) {
-      final SafeFuture<ExecutionPayload> executionPayloadFuture =
-          engineGetPayload(context, blockSlotState.getSlot());
-      result =
-          new ExecutionPayloadResult(
-              context,
-              Optional.of(executionPayloadFuture),
-              Optional.empty(),
-              Optional.empty(),
-              Optional.empty());
-    } else {
-      result = builderGetHeader(context, blockSlotState);
-    }
-    executionResultCache.put(blockSlotState.getSlot(), result);
-    return result;
-  }
-
-  @Override
-  public ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      final ExecutionPayloadContext context,
-      final BeaconState blockSlotState,
-      final boolean isBlind) {
-    final ExecutionPayloadResult result;
-    if (!isBlind) {
-      final SafeFuture<ExecutionPayload> executionPayloadFuture =
-          engineGetPayload(context, blockSlotState.getSlot());
-      final SafeFuture<BlobsBundle> blobsBundleFuture =
-          executionPayloadFuture.thenCompose(
-              executionPayload ->
-                  engineGetBlobsBundle(
-                      blockSlotState.getSlot(),
-                      context.getPayloadId(),
-                      Optional.of(executionPayload)));
-      result =
-          new ExecutionPayloadResult(
-              context,
-              Optional.of(executionPayloadFuture),
-              Optional.empty(),
-              Optional.empty(),
-              Optional.of(blobsBundleFuture));
-    } else {
-      result = builderGetHeader(context, blockSlotState);
-    }
-    executionResultCache.put(blockSlotState.getSlot(), result);
-    return result;
   }
 
   @Override
@@ -347,12 +284,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<ExecutionPayload> builderGetPayload(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return executionBuilderModule.builderGetPayload(signedBlindedBeaconBlock);
+      SignedBeaconBlock signedBlindedBeaconBlock,
+      Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
+    return executionBuilderModule.builderGetPayload(
+        signedBlindedBeaconBlock, getPayloadResultFunction);
   }
 
   @Override
-  public ExecutionPayloadResult builderGetHeader(
+  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state) {
     return executionBuilderModule.builderGetHeader(executionPayloadContext, state);
   }

@@ -24,6 +24,7 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':services:powchain')
   implementation project(':services:timer')
+  implementation project(':services:executionlayer')
   implementation project(':infrastructure:ssz')
   implementation project(':storage')
   implementation project(':storage:api')

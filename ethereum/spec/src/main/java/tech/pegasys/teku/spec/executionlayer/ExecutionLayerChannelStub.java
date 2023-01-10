@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -292,23 +293,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public Optional<ExecutionPayloadResult> getPayloadResult(UInt64 slot) {
-    return Optional.empty();
-  }
-
-  @Override
-  public ExecutionPayloadResult initiateBlockProduction(
-      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
-    return null;
-  }
-
-  @Override
-  public ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
-    return null;
-  }
-
-  @Override
   public SafeFuture<BlobsBundle> engineGetBlobsBundle(
       UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
     final Optional<SchemaDefinitionsEip4844> schemaDefinitionsEip4844 =
@@ -338,7 +322,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public ExecutionPayloadResult builderGetHeader(
+  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
     LOG.info(
@@ -364,17 +348,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                       .createFromExecutionPayload(executionPayload);
                 });
 
-    return new ExecutionPayloadResult(
-        executionPayloadContext,
-        Optional.empty(),
-        Optional.of(payloadHeaderFuture),
-        Optional.empty(),
-        Optional.empty());
+    return payloadHeaderFuture;
   }
 
   @Override
   public SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock) {
+      SignedBeaconBlock signedBlindedBeaconBlock,
+      Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
         spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions().toVersionBellatrix();
 

@@ -75,6 +75,7 @@ import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
+import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -90,6 +91,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
@@ -642,6 +644,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
+    final ExecutionLayerBlockManager executionLayerInitiator =
+        ExecutionLayerBlockManagerFactory.create(executionLayer, eventChannels);
     final BlockFactory blockFactory =
         new BlockFactory(
             spec,
@@ -657,7 +661,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eth1DataCache,
                 VersionProvider.getDefaultGraffiti(),
                 forkChoiceNotifier,
-                executionLayer));
+                executionLayerInitiator));
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)

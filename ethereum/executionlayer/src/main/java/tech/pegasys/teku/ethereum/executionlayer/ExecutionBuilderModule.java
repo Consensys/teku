@@ -17,13 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 
-import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -42,16 +41,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionBuilderModule {
   private static final Logger LOG = LogManager.getLogger();
-  // TODO: the will be Builder API where Payload will come together with Blobs, until this pack it
-  // with dummy
-  private static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_BUILDER_DUMMY =
-      SafeFuture.completedFuture(
-          new BlobsBundle(Bytes32.ZERO, Collections.emptyList(), Collections.emptyList()));
 
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
@@ -77,7 +70,7 @@ public class ExecutionBuilderModule {
     this.eventLogger = eventLogger;
   }
 
-  private Optional<ExecutionPayloadResult> validateBuilderGetHeader(
+  private Optional<SafeFuture<ExecutionPayloadHeader>> validateBuilderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<ExecutionPayload> localExecutionPayload) {
@@ -105,18 +98,18 @@ public class ExecutionBuilderModule {
     if (fallbackReason != null) {
       return Optional.of(
           getResultFromLocalExecutionPayload(
-              executionPayloadContext, localExecutionPayload, state.getSlot(), fallbackReason));
+              localExecutionPayload, state.getSlot(), fallbackReason));
     }
 
     return Optional.empty();
   }
 
-  public ExecutionPayloadResult builderGetHeader(
+  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
     final SafeFuture<ExecutionPayload> localExecutionPayload =
         executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
-    final Optional<ExecutionPayloadResult> validationResult =
+    final Optional<SafeFuture<ExecutionPayloadHeader>> validationResult =
         validateBuilderGetHeader(executionPayloadContext, state, localExecutionPayload);
     if (validationResult.isPresent()) {
       return validationResult.get();
@@ -136,53 +129,40 @@ public class ExecutionBuilderModule {
         validatorPublicKey,
         executionPayloadContext.getParentHash());
 
-    final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
-        builderClient
-            .orElseThrow()
-            .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
-            .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
-            .thenPeek(
-                signedBuilderBidMaybe ->
-                    LOG.trace(
-                        "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                        slot,
-                        validatorPublicKey,
-                        executionPayloadContext.getParentHash(),
-                        signedBuilderBidMaybe))
-            .thenApplyChecked(
-                signedBuilderBidMaybe -> {
-                  if (signedBuilderBidMaybe.isEmpty()) {
-                    return getResultFromLocalExecutionPayload(
-                        executionPayloadContext,
-                        localExecutionPayload,
-                        slot,
-                        FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
-                  } else {
-                    return getResultFromSignedBuilderBid(
-                        signedBuilderBidMaybe.get(),
-                        executionPayloadContext,
-                        state,
-                        validatorRegistration.get());
-                  }
-                })
-            .exceptionally(
-                error -> {
-                  LOG.error(
-                      "Unable to obtain a valid bid from builder. Falling back to local execution engine.",
-                      error);
-                  return getResultFromLocalExecutionPayload(
-                      executionPayloadContext,
-                      localExecutionPayload,
-                      slot,
-                      FallbackReason.BUILDER_ERROR);
-                });
-
-    return repackBuilderResultFuture(executionPayloadResultFuture, executionPayloadContext);
+    return builderClient
+        .orElseThrow()
+        .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
+        .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
+        .thenPeek(
+            signedBuilderBidMaybe ->
+                LOG.trace(
+                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                    slot,
+                    validatorPublicKey,
+                    executionPayloadContext.getParentHash(),
+                    signedBuilderBidMaybe))
+        .thenComposeChecked(
+            signedBuilderBidMaybe -> {
+              if (signedBuilderBidMaybe.isEmpty()) {
+                return getResultFromLocalExecutionPayload(
+                    localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
+              } else {
+                return getResultFromSignedBuilderBid(
+                    signedBuilderBidMaybe.get(), state, validatorRegistration.get());
+              }
+            })
+        .exceptionallyCompose(
+            error -> {
+              LOG.error(
+                  "Unable to obtain a valid bid from builder. Falling back to local execution engine.",
+                  error);
+              return getResultFromLocalExecutionPayload(
+                  localExecutionPayload, slot, FallbackReason.BUILDER_ERROR);
+            });
   }
 
-  private ExecutionPayloadResult getResultFromSignedBuilderBid(
+  private SafeFuture<ExecutionPayloadHeader> getResultFromSignedBuilderBid(
       final SignedBuilderBid signedBuilderBid,
-      final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SignedValidatorRegistration validatorRegistration)
       throws Exception {
@@ -190,31 +170,7 @@ public class ExecutionBuilderModule {
     final ExecutionPayloadHeader executionPayloadHeader =
         builderBidValidator.validateAndGetPayloadHeader(
             spec, signedBuilderBid, validatorRegistration, state);
-    return new ExecutionPayloadResult(
-        executionPayloadContext,
-        Optional.empty(),
-        Optional.of(SafeFuture.completedFuture(executionPayloadHeader)),
-        Optional.empty(),
-        Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
-  }
-
-  private ExecutionPayloadResult repackBuilderResultFuture(
-      final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture,
-      final ExecutionPayloadContext executionPayloadContext) {
-    return new ExecutionPayloadResult(
-        executionPayloadContext,
-        Optional.empty(),
-        Optional.of(
-            executionPayloadResultFuture.thenCompose(
-                executionPayloadResult ->
-                    executionPayloadResult.getExecutionPayloadHeaderFuture().orElseThrow())),
-        Optional.of(
-            executionPayloadResultFuture.thenCompose(
-                executionPayloadResult ->
-                    executionPayloadResult
-                        .getFallbackDataFuture()
-                        .orElse(SafeFuture.completedFuture(Optional.empty())))),
-        Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
+    return SafeFuture.completedFuture(executionPayloadHeader);
   }
 
   public SafeFuture<Void> builderRegisterValidators(
@@ -242,7 +198,8 @@ public class ExecutionBuilderModule {
   }
 
   public SafeFuture<ExecutionPayload> builderGetPayload(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
+      final SignedBeaconBlock signedBlindedBeaconBlock,
+      final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
 
     checkArgument(
         signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
@@ -251,9 +208,7 @@ public class ExecutionBuilderModule {
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
     final Optional<SafeFuture<Optional<FallbackData>>> maybeProcessedSlot =
-        executionLayerManager
-            .getPayloadResult(slot)
-            .flatMap(ExecutionPayloadResult::getFallbackDataFuture);
+        getPayloadResultFunction.apply(slot).flatMap(ExecutionPayloadResult::getFallbackDataFuture);
 
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
@@ -286,31 +241,20 @@ public class ExecutionBuilderModule {
     }
   }
 
-  private ExecutionPayloadResult getResultFromLocalExecutionPayload(
-      final ExecutionPayloadContext executionPayloadContext,
+  private SafeFuture<ExecutionPayloadHeader> getResultFromLocalExecutionPayload(
       final SafeFuture<ExecutionPayload> localExecutionPayload,
       final UInt64 slot,
       final FallbackReason reason) {
-
-    SafeFuture<Optional<FallbackData>> fallbackDataOptional =
-        localExecutionPayload.thenApply(
-            executionPayload -> Optional.of(new FallbackData(executionPayload, reason)));
-
-    SafeFuture<ExecutionPayloadHeader> header =
-        localExecutionPayload.thenApply(
-            executionPayload ->
-                spec.atSlot(slot)
-                    .getSchemaDefinitions()
-                    .toVersionBellatrix()
-                    .orElseThrow()
-                    .getExecutionPayloadHeaderSchema()
-                    .createFromExecutionPayload(executionPayload));
-    return new ExecutionPayloadResult(
-        executionPayloadContext,
-        Optional.empty(),
-        Optional.of(header),
-        Optional.of(fallbackDataOptional),
-        Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
+    // FIXME: reason should be not here
+    LOG.debug("slot {}, reason {}", slot, reason);
+    return localExecutionPayload.thenApply(
+        executionPayload ->
+            spec.atSlot(slot)
+                .getSchemaDefinitions()
+                .toVersionBellatrix()
+                .orElseThrow()
+                .getExecutionPayloadHeaderSchema()
+                .createFromExecutionPayload(executionPayload));
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
