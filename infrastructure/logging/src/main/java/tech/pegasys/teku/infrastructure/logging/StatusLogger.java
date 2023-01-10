@@ -53,10 +53,7 @@ public class StatusLogger {
   }
 
   public void startupConfigurations(final StartupLogConfig config) {
-    log.info("Configuration"); // TODO clean up formatting here
-    log.info("Network: " + config.getNetwork());
-    log.info("Storage Mode: " + config.getStorageMode());
-    log.info("Rest API Port: " + config.getRestApiPort());
+    config.report(log);
   }
 
   public void reportOptimisedBlst() {
