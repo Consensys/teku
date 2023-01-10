@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -130,12 +131,14 @@ public class BeaconStateCapella extends BeaconStateAltair {
   }
 
   @Override
-  protected void applyAdditionalFields(MutableBeaconState state) {
+  protected void applyAdditionalFields(
+      final MutableBeaconState state, final SpecVersion specVersion) {
     state
         .toMutableVersionCapella()
         .ifPresent(
             mutableBeaconStateCapella ->
                 applyCapellaFields(
+                    specVersion,
                     mutableBeaconStateCapella,
                     BeaconStateSchemaCapella.required(
                             mutableBeaconStateCapella.getBeaconStateSchema())
@@ -149,7 +152,8 @@ public class BeaconStateCapella extends BeaconStateAltair {
                     this));
   }
 
-  public static void applyCapellaFields(
+  protected static void applyCapellaFields(
+      final SpecVersion specVersion,
       MutableBeaconStateCapella state,
       SyncCommitteeSchema syncCommitteeSchema,
       ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema,
@@ -185,7 +189,8 @@ public class BeaconStateCapella extends BeaconStateAltair {
     state.setHistoricalSummaries(
         historicalSummariesSchema.createFromElements(
             instance.historicalSummaries.stream()
-                .map(HistoricalSummary::asInternal)
+                .map(
+                    historicalSummary -> historicalSummary.asInternalHistoricalSummary(specVersion))
                 .collect(Collectors.toList())));
   }
 }

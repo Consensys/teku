@@ -31,6 +31,7 @@ import tech.pegasys.teku.api.schema.capella.HistoricalSummary;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadHeaderSchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -131,12 +132,14 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
   }
 
   @Override
-  protected void applyAdditionalFields(final MutableBeaconState state) {
+  protected void applyAdditionalFields(
+      final MutableBeaconState state, final SpecVersion specVersion) {
     state
         .toMutableVersionEip4844()
         .ifPresent(
             mutableBeaconStateEip4844 ->
                 applyEip4844Fields(
+                    specVersion,
                     mutableBeaconStateEip4844,
                     BeaconStateSchemaEip4844.required(
                             mutableBeaconStateEip4844.getBeaconStateSchema())
@@ -150,7 +153,8 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
                     this));
   }
 
-  public static void applyEip4844Fields(
+  protected static void applyEip4844Fields(
+      final SpecVersion specVersion,
       final MutableBeaconStateEip4844 state,
       final SyncCommitteeSchema syncCommitteeSchema,
       final ExecutionPayloadHeaderSchemaEip4844 executionPayloadHeaderSchema,
@@ -170,7 +174,8 @@ public class BeaconStateEip4844 extends BeaconStateAltair {
     state.setHistoricalSummaries(
         historicalSummariesSchema.createFromElements(
             instance.historicalSummaries.stream()
-                .map(HistoricalSummary::asInternal)
+                .map(
+                    historicalSummary -> historicalSummary.asInternalHistoricalSummary(specVersion))
                 .collect(Collectors.toList())));
   }
 }

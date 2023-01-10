@@ -20,9 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class HistoricalSummary extends Container2<HistoricalSummary, SszBytes32, SszBytes32> {
-
-  public static final HistoricalSummarySchema SSZ_SCHEMA = new HistoricalSummarySchema();
-
   public static class HistoricalSummarySchema
       extends ContainerSchema2<HistoricalSummary, SszBytes32, SszBytes32> {
 

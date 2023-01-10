@@ -17,8 +17,11 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class HistoricalSummary {
 
@@ -45,8 +48,15 @@ public class HistoricalSummary {
   }
 
   public tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary
-      asInternal() {
-    return tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary.SSZ_SCHEMA
+      asInternalHistoricalSummary(final SpecVersion spec) {
+    final Optional<SchemaDefinitionsCapella> schemaDefinitionsCapella =
+        spec.getSchemaDefinitions().toVersionCapella();
+    if (schemaDefinitionsCapella.isEmpty()) {
+      throw new IllegalArgumentException("Could not create HistoricalSummary for pre-capella spec");
+    }
+    return schemaDefinitionsCapella
+        .get()
+        .getHistoricalSummarySchema()
         .create(SszBytes32.of(blockSummaryRoot), SszBytes32.of(stateSummaryRoot));
   }
 }
