@@ -70,12 +70,12 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
         .computeIfAbsent(blobsSidecar.getBeaconBlockSlot(), __ -> createNewMap())
         .put(blobsSidecar.getBeaconBlockRoot(), blobsSidecar);
 
-    internalStoreUnconfirmedBlobs(blobsSidecar);
+    internalStoreUnconfirmedBlobsSidecar(blobsSidecar);
   }
 
   @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    internalStoreUnconfirmedBlobs(blobsSidecar);
+    internalStoreUnconfirmedBlobsSidecar(blobsSidecar);
   }
 
   @Override
@@ -113,7 +113,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
     validatedPendingBlobs.headMap(slot.decrement()).clear();
   }
 
-  private void internalStoreUnconfirmedBlobs(final BlobsSidecar blobsSidecar) {
+  private void internalStoreUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     storageUpdateChannel
         .onBlobsSidecar(blobsSidecar)
         .thenRun(
