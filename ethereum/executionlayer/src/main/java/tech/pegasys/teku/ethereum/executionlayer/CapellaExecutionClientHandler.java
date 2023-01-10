@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -43,7 +44,7 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> engineGetPayload(
+  public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
       return super.engineGetPayload(executionPayloadContext, slot);
@@ -55,21 +56,22 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
     return executionEngineClient
         .getPayloadV2(executionPayloadContext.getPayloadId())
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        // Note: Currently ignoring the returned blockValue but will eventually want to use it
-        .thenApply(response -> response.executionPayload)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                        .getExecutionPayloadSchema()),
-            ExecutionPayloadV2::asInternalExecutionPayload)
+        .thenApply(
+            response -> {
+              final ExecutionPayloadSchema<?> payloadSchema =
+                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                      .getExecutionPayloadSchema();
+              return new ExecutionPayloadWithValue(
+                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
+                  response.blockValue);
+            })
         .thenPeek(
-            executionPayload ->
+            payloadAndValue ->
                 LOG.trace(
                     "engineGetPayloadV2(payloadId={}, slot={}) -> {}",
                     executionPayloadContext.getPayloadId(),
                     slot,
-                    executionPayload));
+                    payloadAndValue));
   }
 
   @Override

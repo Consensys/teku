@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -63,6 +62,7 @@ import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabil
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -81,6 +81,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final EventThread forkChoiceExecutor;
   private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
@@ -96,6 +97,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
+      final BlobsSidecarManager blobsSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
@@ -103,6 +105,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
@@ -123,12 +126,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
+      final BlobsSidecarManager blobsSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator) {
     this(
         spec,
         forkChoiceExecutor,
         recentChainData,
+        blobsSidecarManager,
         forkChoiceNotifier,
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
@@ -240,7 +245,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   /** Import a block to the store. */
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
@@ -248,8 +252,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
-                onBlock(
-                    block, blobsSidecar, blockSlotState, blockImportPerformance, executionLayer));
+                onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
   }
 
   /**
@@ -258,7 +261,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
    */
   private SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar,
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final ExecutionLayerChannel executionLayer) {
@@ -290,9 +292,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final KzgCommitmentsProcessor kzgCommitmentsProcessor =
         KzgCommitmentsProcessor.create(specVersion.miscHelpers());
 
-    final BlobsSidecarAvailabilityChecker forkChoiceBlobsSidecarAvailabilityChecker =
-        new ForkChoiceBlobsSidecarAvailabilityChecker(
-            specVersion, recentChainData, block, blobsSidecar);
+    final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
+        blobsSidecarManager.createAvailabilityChecker(block);
 
     final BeaconState postState;
     try {
@@ -304,7 +305,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   indexedAttestationCache,
                   Optional.of(payloadExecutor),
                   kzgCommitmentsProcessor,
-                  forkChoiceBlobsSidecarAvailabilityChecker);
+                  blobsSidecarAvailabilityChecker);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
@@ -317,7 +318,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenCombineAsync(
-            forkChoiceBlobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
+            blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
             (payloadResult, blobsSidecarAndValidationResult) ->
                 importBlockAndState(
                     block,
@@ -386,7 +387,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       LOG.debug(
           "blobsSidecar validation result: {}",
           blobsSidecarAndValidationResult.getValidationResult());
-      // TODO: store blobs
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();

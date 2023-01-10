@@ -222,15 +222,16 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<ExecutionPayload> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, false)
+        .thenApply(ExecutionPayloadWithValue::getExecutionPayload)
         .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
-  SafeFuture<ExecutionPayload> engineGetPayloadForFallback(
+  SafeFuture<ExecutionPayloadWithValue> engineGetPayloadForFallback(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, true);
   }
 
-  private SafeFuture<ExecutionPayload> engineGetPayload(
+  private SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt64 slot,
       final boolean isFallbackCall) {

@@ -23,6 +23,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -73,7 +74,7 @@ public class ExecutionBuilderModule {
   private Optional<SafeFuture<ExecutionPayloadHeader>> validateBuilderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<ExecutionPayload> localExecutionPayload) {
+      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload) {
     final Optional<SignedValidatorRegistration> validatorRegistration =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
 
@@ -107,7 +108,7 @@ public class ExecutionBuilderModule {
   public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
-    final SafeFuture<ExecutionPayload> localExecutionPayload =
+    final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload =
         executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
     final Optional<SafeFuture<ExecutionPayloadHeader>> validationResult =
         validateBuilderGetHeader(executionPayloadContext, state, localExecutionPayload);
@@ -129,6 +130,13 @@ public class ExecutionBuilderModule {
         validatorPublicKey,
         executionPayloadContext.getParentHash());
 
+    // Treat the local block value as zero if getPayload fails so any builder bid will beat it
+    // Ensures we can still propose a builder block even if the local payload is unavailable
+    final SafeFuture<UInt256> localExecutionPayloadValue =
+        localExecutionPayload
+            .thenApply(ExecutionPayloadWithValue::getValue)
+            .exceptionally(__ -> UInt256.ZERO);
+
     return builderClient
         .orElseThrow()
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
@@ -141,12 +149,19 @@ public class ExecutionBuilderModule {
                     validatorPublicKey,
                     executionPayloadContext.getParentHash(),
                     signedBuilderBidMaybe))
-        .thenComposeChecked(
-            signedBuilderBidMaybe -> {
+        .thenComposeCombined(
+            localExecutionPayloadValue,
+            (signedBuilderBidMaybe, localPayloadValue) -> {
               if (signedBuilderBidMaybe.isEmpty()) {
                 return getResultFromLocalExecutionPayload(
                     localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
               } else {
+                final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
+                logReceivedBuilderBid(signedBuilderBid.getMessage());
+                if (signedBuilderBid.getMessage().getValue().compareTo(localPayloadValue) <= 0) {
+                  return getResultFromLocalExecutionPayload(
+                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER);
+                }
                 return getResultFromSignedBuilderBid(
                     signedBuilderBidMaybe.get(), state, validatorRegistration.get());
               }
@@ -164,9 +179,7 @@ public class ExecutionBuilderModule {
   private SafeFuture<ExecutionPayloadHeader> getResultFromSignedBuilderBid(
       final SignedBuilderBid signedBuilderBid,
       final BeaconState state,
-      final SignedValidatorRegistration validatorRegistration)
-      throws Exception {
-    logReceivedBuilderBid(signedBuilderBid.getMessage());
+      final SignedValidatorRegistration validatorRegistration) {
     final ExecutionPayloadHeader executionPayloadHeader =
         builderBidValidator.validateAndGetPayloadHeader(
             spec, signedBuilderBid, validatorRegistration, state);
@@ -242,7 +255,7 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<ExecutionPayloadHeader> getResultFromLocalExecutionPayload(
-      final SafeFuture<ExecutionPayload> localExecutionPayload,
+      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload,
       final UInt64 slot,
       final FallbackReason reason) {
     // FIXME: reason should be not here
@@ -254,7 +267,7 @@ public class ExecutionBuilderModule {
                 .toVersionBellatrix()
                 .orElseThrow()
                 .getExecutionPayloadHeaderSchema()
-                .createFromExecutionPayload(executionPayload));
+                .createFromExecutionPayload(executionPayload.getExecutionPayload()));
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(

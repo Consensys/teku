@@ -38,7 +38,7 @@ public interface ExecutionClientHandler {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
-  SafeFuture<ExecutionPayload> engineGetPayload(
+  SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
   default SafeFuture<BlobsBundle> engineGetBlobsBundle(Bytes8 payloadId, UInt64 slot) {

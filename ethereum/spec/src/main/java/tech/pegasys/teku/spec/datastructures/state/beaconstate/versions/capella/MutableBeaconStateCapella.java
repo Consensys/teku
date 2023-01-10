@@ -14,11 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 
 public interface MutableBeaconStateCapella extends MutableBeaconStateBellatrix, BeaconStateCapella {
   static MutableBeaconStateCapella required(final MutableBeaconState state) {
@@ -42,6 +45,17 @@ public interface MutableBeaconStateCapella extends MutableBeaconStateBellatrix, 
     final int fieldIndex =
         getSchema().getFieldIndex(BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX);
     set(fieldIndex, SszUInt64.of(nextWithdrawalValidatorIndex));
+  }
+
+  @Override
+  default SszMutableList<HistoricalSummary> getHistoricalSummaries() {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES);
+    return getAnyByRef(fieldIndex);
+  }
+
+  default void setHistoricalSummaries(SszList<HistoricalSummary> historicalsummaries) {
+    final int fieldIndex = getSchema().getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES);
+    set(fieldIndex, historicalsummaries);
   }
 
   @Override

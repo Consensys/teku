@@ -47,6 +47,10 @@ public class LogCaptor implements AutoCloseable {
     assertThat(getMessages(level)).containsSubsequence(messages);
   }
 
+  public void assertDebugLog(final String message) {
+    assertLogged(Level.DEBUG, message);
+  }
+
   public void assertInfoLog(final String message) {
     assertLogged(Level.INFO, message);
   }
@@ -97,6 +101,10 @@ public class LogCaptor implements AutoCloseable {
     final LoggerConfig loggerConfig = context.getConfiguration().getLoggerConfig(logger.getName());
     loggerConfig.addAppender(appender, null, null);
     return new LogCaptor(loggerConfig, appender);
+  }
+
+  public void clearLogs() {
+    appender.logs.clear();
   }
 
   @Override

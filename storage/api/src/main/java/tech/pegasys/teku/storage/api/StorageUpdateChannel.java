@@ -18,7 +18,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
@@ -42,10 +41,6 @@ public interface StorageUpdateChannel extends ChannelInterface {
   SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar);
 
   SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecarKey);
-
-  SafeFuture<Void> onBlobsSidecarPruning(UInt64 endSlot, int pruneLimit);
-
-  SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(UInt64 endSlot, int pruneLimit);
 
   void onChainInitialized(AnchorPoint initialAnchor);
 }

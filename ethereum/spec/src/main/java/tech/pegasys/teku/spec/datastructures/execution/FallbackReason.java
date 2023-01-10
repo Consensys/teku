@@ -22,6 +22,7 @@ public enum FallbackReason {
   BUILDER_NOT_AVAILABLE("builder_not_available"),
   BUILDER_NOT_CONFIGURED("builder_not_configured"),
   BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),
+  LOCAL_BLOCK_VALUE_HIGHER("local_block_value_higher"),
   BUILDER_ERROR("builder_error"),
   NONE("");
 

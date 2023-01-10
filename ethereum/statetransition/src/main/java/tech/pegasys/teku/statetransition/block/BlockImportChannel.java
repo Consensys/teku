@@ -23,4 +23,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 public interface BlockImportChannel extends ChannelInterface {
   SafeFuture<BlockImportResult> importBlock(
       SignedBeaconBlock block, Optional<BlobsSidecar> blobsSidecar);
+
+  default SafeFuture<BlockImportResult> importBlock(SignedBeaconBlock block) {
+    return importBlock(block, Optional.empty());
+  }
 }

@@ -153,39 +153,12 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    return SafeFuture.of(
-        () -> {
-          database.storeUnconfirmedBlobsSidecar(blobsSidecar);
-          return null;
-        });
+    return SafeFuture.fromRunnable(() -> database.storeUnconfirmedBlobsSidecar(blobsSidecar));
   }
 
   @Override
   public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
-    return SafeFuture.of(
-        () -> {
-          database.removeBlobsSidecar(blobsSidecarKey);
-          return null;
-        });
-  }
-
-  @Override
-  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
-    return SafeFuture.of(
-        () -> {
-          database.pruneOldestBlobsSidecar(endSlot, pruneLimit);
-          return null;
-        });
-  }
-
-  @Override
-  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
-      final UInt64 endSlot, final int pruneLimit) {
-    return SafeFuture.of(
-        () -> {
-          database.pruneOldestUnconfirmedBlobsSidecar(endSlot, pruneLimit);
-          return null;
-        });
+    return SafeFuture.fromRunnable(() -> database.removeBlobsSidecar(blobsSidecarKey));
   }
 
   @Override
@@ -289,6 +262,11 @@ public class ChainStorage
   @Override
   public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
     return SafeFuture.of(database::getFinalizedDepositSnapshot);
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot() {
+    return SafeFuture.of(database::getEarliestBlobsSidecarSlot);
   }
 
   @Override

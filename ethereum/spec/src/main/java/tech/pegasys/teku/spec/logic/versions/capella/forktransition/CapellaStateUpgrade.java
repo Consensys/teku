@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.capella.forktransition;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
@@ -93,6 +95,10 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
 
               state.setNextWithdrawalValidatorIndex(UInt64.ZERO);
               state.setNextWithdrawalIndex(UInt64.ZERO);
+              state.setHistoricalSummaries(
+                  BeaconStateSchemaCapella.required(state.getBeaconStateSchema())
+                      .getHistoricalSummariesSchema()
+                      .createFromElements(List.of()));
             });
   }
 }

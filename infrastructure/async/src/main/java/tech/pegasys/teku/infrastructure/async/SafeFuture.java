@@ -520,6 +520,13 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<V>) super.thenCombine(other, fn);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public <U, V> SafeFuture<V> thenComposeCombined(
+      final CompletionStage<? extends U> other,
+      final BiFunction<? super T, ? super U, SafeFuture<V>> fn) {
+    return thenCombine(other, fn).thenCompose(Function.identity());
+  }
+
   @Override
   public <U> SafeFuture<U> thenCompose(final Function<? super T, ? extends CompletionStage<U>> fn) {
     return (SafeFuture<U>) super.thenCompose(fn);

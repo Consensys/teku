@@ -87,6 +87,11 @@ public class DelegatingSpecConfigAltair extends DelegatingSpecConfig implements 
   }
 
   @Override
+  public int getFinalityBranchLength() {
+    return specConfigAltair.getFinalityBranchLength();
+  }
+
+  @Override
   public Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.of(this);
   }

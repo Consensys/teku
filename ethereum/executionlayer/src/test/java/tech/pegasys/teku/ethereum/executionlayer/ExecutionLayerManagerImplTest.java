@@ -120,6 +120,8 @@ class ExecutionLayerManagerImplTest {
     verify(eventLogger).builderIsAvailable();
   }
 
+  // FIXME: restore removed tests
+
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled, final boolean builderValidatorEnabled) {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(false);

@@ -15,10 +15,13 @@ package tech.pegasys.teku.storage.api;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -36,9 +39,10 @@ public class StorageUpdate {
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
-  private final Set<Bytes32> deletedHotBlocks;
+  private final Map<Bytes32, UInt64> deletedHotBlocks;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final boolean blobsSidecarEnabled;
   private final boolean isEmpty;
 
   public StorageUpdate(
@@ -48,10 +52,11 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
-      final Set<Bytes32> deletedHotBlocks,
+      final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      @NonUpdating final boolean blobsSidecarEnabled) {
     this.genesisTime = genesisTime;
     this.finalizedChainData = finalizedChainData;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -62,6 +67,7 @@ public class StorageUpdate {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.blobsSidecarEnabled = blobsSidecarEnabled;
     checkArgument(
         optimisticTransitionBlockRootSet || optimisticTransitionBlockRoot.isEmpty(),
         "Can't have optimisticTransitionBlockRoot present but not set");
@@ -106,7 +112,7 @@ public class StorageUpdate {
     return hotStates;
   }
 
-  public Set<Bytes32> getDeletedHotBlocks() {
+  public Map<Bytes32, UInt64> getDeletedHotBlocks() {
     return deletedHotBlocks;
   }
 
@@ -139,4 +145,12 @@ public class StorageUpdate {
   public Map<Bytes32, SlotAndBlockRoot> getStateRoots() {
     return stateRoots;
   }
+
+  public boolean isBlobsSidecarEnabled() {
+    return blobsSidecarEnabled;
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target(ElementType.PARAMETER)
+  @interface NonUpdating {}
 }

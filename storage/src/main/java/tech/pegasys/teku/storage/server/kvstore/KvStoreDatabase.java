@@ -691,7 +691,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+      updater.confirmBlobsSidecar(slotAndBlockRoot);
       updater.commit();
     }
   }
@@ -707,7 +707,7 @@ public class KvStoreDatabase implements Database {
   public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.removeBlobsSidecar(slotAndBlockRoot);
-      updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+      updater.confirmBlobsSidecar(slotAndBlockRoot);
       updater.commit();
     }
   }
@@ -723,7 +723,7 @@ public class KvStoreDatabase implements Database {
               .peek(
                   slotAndBlockRoot -> {
                     updater.removeBlobsSidecar(slotAndBlockRoot);
-                    updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+                    updater.confirmBlobsSidecar(slotAndBlockRoot);
                   })
               .count();
       updater.commit();
@@ -744,7 +744,7 @@ public class KvStoreDatabase implements Database {
               .peek(
                   slotAndBlockRoot -> {
                     updater.removeBlobsSidecar(slotAndBlockRoot);
-                    updater.removeUnconfirmedBlobsSidecar(slotAndBlockRoot);
+                    updater.confirmBlobsSidecar(slotAndBlockRoot);
                   })
               .count();
       updater.commit();
@@ -830,6 +830,11 @@ public class KvStoreDatabase implements Database {
             update.getDeletedHotBlocks(),
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
+
+    if (update.isBlobsSidecarEnabled()) {
+      updateBlobsSidecars(update.getHotBlocks(), update.getDeletedHotBlocks());
+    }
+
     LOG.trace("Applying hot updates");
     long startTime = System.nanoTime();
     try (final HotUpdater updater = hotUpdater()) {
@@ -850,7 +855,7 @@ public class KvStoreDatabase implements Database {
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
 
-      updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks());
+      updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
 
       if (update.getStateRoots().size() > 0) {
@@ -872,7 +877,7 @@ public class KvStoreDatabase implements Database {
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
-      final Set<Bytes32> deletedHotBlocks,
+      final Map<Bytes32, UInt64> deletedHotBlocksRootsWithSlot,
       final boolean isFinalizedOptimisticBlockRootSet,
       final Optional<Bytes32> finalizedOptimisticTransitionBlockRoot) {
     if (finalizedChildToParentMap.isEmpty()) {
@@ -889,7 +894,7 @@ public class KvStoreDatabase implements Database {
       updateFinalizedDataPruneMode(finalizedChildToParentMap, finalizedBlocks);
     }
 
-    storeNonCanonicalBlocks(deletedHotBlocks, finalizedChildToParentMap);
+    storeNonCanonicalBlocks(deletedHotBlocksRootsWithSlot.keySet(), finalizedChildToParentMap);
 
     return optimisticTransitionPayload;
   }
@@ -907,6 +912,27 @@ public class KvStoreDatabase implements Database {
       return transitionBlock.flatMap(SlotAndExecutionPayloadSummary::fromBlock);
     } else {
       return Optional.empty();
+    }
+  }
+
+  private void updateBlobsSidecars(
+      final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
+      final Map<Bytes32, UInt64> deletedHotBlocks) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      LOG.trace("Confirming blobs sidecars for new hot blocks");
+      hotBlocks.values().stream()
+          .map(
+              blockAndCheckpoints ->
+                  new SlotAndBlockRoot(
+                      blockAndCheckpoints.getSlot(), blockAndCheckpoints.getRoot()))
+          .forEach(updater::confirmBlobsSidecar);
+
+      LOG.trace("Removing blobs sidecars for deleted hot blocks");
+      deletedHotBlocks.entrySet().stream()
+          .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
+          .forEach(updater::removeBlobsSidecar);
+
+      updater.commit();
     }
   }
 

@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -90,7 +92,7 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> engineGetPayload(
+  public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     LOG.trace(
         "calling engineGetPayloadV1(payloadId={}, slot={})",
@@ -99,19 +101,21 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
     return executionEngineClient
         .getPayloadV1(executionPayloadContext.getPayloadId())
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                        .getExecutionPayloadSchema()),
-            ExecutionPayloadV1::asInternalExecutionPayload)
+        .thenApply(
+            payload -> {
+              final ExecutionPayloadSchema<?> payloadSchema =
+                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                      .getExecutionPayloadSchema();
+              return new ExecutionPayloadWithValue(
+                  payload.asInternalExecutionPayload(payloadSchema), UInt256.ZERO);
+            })
         .thenPeek(
-            executionPayload ->
+            payloadAndValue ->
                 LOG.trace(
                     "engineGetPayloadV1(payloadId={}, slot={}) -> {}",
                     executionPayloadContext.getPayloadId(),
                     slot,
-                    executionPayload));
+                    payloadAndValue));
   }
 
   @Override

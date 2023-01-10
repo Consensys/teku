@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -270,15 +269,7 @@ public class ValidatorDataProvider {
 
   public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
       final Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-    return validatorApiChannel.subscribeToSyncCommitteeSubnets(
-        subscriptions.stream()
-            .map(
-                subscription ->
-                    new SyncCommitteeSubnetSubscription(
-                        subscription.getValidatorIndex(),
-                        subscription.getSyncCommitteeIndices(),
-                        subscription.getUntilEpoch()))
-            .collect(toList()));
+    return validatorApiChannel.subscribeToSyncCommitteeSubnets(subscriptions);
   }
 
   public SafeFuture<Optional<AttesterDuties>> getAttesterDuties(

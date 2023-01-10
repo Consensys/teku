@@ -61,6 +61,9 @@ public class EpochProcessingExecutor {
       case PROCESS_HISTORICAL_ROOTS_UPDATE:
         epochProcessor.processHistoricalRootsUpdate(state);
         break;
+      case PROCESS_HISTORICAL_SUMMARIES_UPDATE:
+        epochProcessor.processHistoricalSummariesUpdate(state);
+        break;
       case SYNC_COMMITTEE_UPDATES:
         epochProcessor.processSyncCommitteeUpdates(state);
         break;

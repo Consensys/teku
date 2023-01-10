@@ -14,8 +14,8 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -41,7 +41,7 @@ public interface BlockMetadataStore {
   void applyUpdate(
       Collection<BlockAndCheckpoints> addedBlocks,
       Collection<Bytes32> pulledUpBlocks,
-      Set<Bytes32> removedBlocks,
+      Map<Bytes32, UInt64> removedBlocks,
       Checkpoint finalizedCheckpoint);
 
   interface HaltableNodeProcessor {

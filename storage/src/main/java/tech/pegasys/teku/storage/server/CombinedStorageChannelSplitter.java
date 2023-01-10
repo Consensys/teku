@@ -112,17 +112,6 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarPruning(final UInt64 endSlot, final int pruneLimit) {
-    return updateDelegate.onBlobsSidecarPruning(endSlot, pruneLimit);
-  }
-
-  @Override
-  public SafeFuture<Void> onUnconfirmedBlobsSidecarPruning(
-      final UInt64 endSlot, final int pruneLimit) {
-    return updateDelegate.onUnconfirmedBlobsSidecarPruning(endSlot, pruneLimit);
-  }
-
-  @Override
   public SafeFuture<Optional<OnDiskStoreData>> onStoreRequest() {
     return asyncRunner.runAsync(queryDelegate::onStoreRequest);
   }
@@ -215,6 +204,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot() {
     return asyncRunner.runAsync(queryDelegate::getFinalizedDepositSnapshot);
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot() {
+    return asyncRunner.runAsync(queryDelegate::getEarliestAvailableBlobsSidecarSlot);
   }
 
   @Override
