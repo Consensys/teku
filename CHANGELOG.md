@@ -29,6 +29,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added a timeout (2 minutes) when attempting to load the initial state from a URL
 - Improved logging when sync committee messages fail to publish to the gossip network
 - Support for the `/eth/v1/beacon/deposit_snapshot` REST API
+- Updated bootnodes for the Gnosis chain
 
 ### Bug Fixes
 - Fixed issue which could cause command line options to be parsed incorrectly
