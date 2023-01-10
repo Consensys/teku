@@ -40,7 +40,7 @@ import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsChannel {
-  private static final int MAX_CACHED_VALIDATED_BLOBS_PER_SLOT = 10;
+  private static final int MAX_CACHED_VALIDATED_BLOBS_SIDECARS_PER_SLOT = 10;
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -64,7 +64,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   }
 
   @Override
-  public void storeUnconfirmedValidatedBlobs(final BlobsSidecar blobsSidecar) {
+  public void storeUnconfirmedValidatedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     // cache already validated blobs
     validatedPendingBlobs
         .computeIfAbsent(blobsSidecar.getBeaconBlockSlot(), __ -> createNewMap())
@@ -74,16 +74,12 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   }
 
   @Override
-  public void storeUnconfirmedBlobs(final BlobsSidecar blobsSidecar) {
-    // remove blobs from the already validated cache
-    Optional.ofNullable(validatedPendingBlobs.get(blobsSidecar.getBeaconBlockSlot()))
-        .ifPresent(map -> map.remove(blobsSidecar.getBeaconBlockRoot()));
-
+  public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     internalStoreUnconfirmedBlobs(blobsSidecar);
   }
 
   @Override
-  public void discardBlobsByBlock(final SignedBeaconBlock block) {
+  public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {
     final SlotAndBlockRoot blobsAtSlotAndBlockRoot =
         new SlotAndBlockRoot(block.getSlot(), block.getRoot());
 
@@ -120,12 +116,18 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   private void internalStoreUnconfirmedBlobs(final BlobsSidecar blobsSidecar) {
     storageUpdateChannel
         .onBlobsSidecar(blobsSidecar)
-        .thenRun(() -> LOG.debug("Unconfirmed BlobsSidecar stored {}", blobsSidecar))
+        .thenRun(
+            () ->
+                LOG.debug(
+                    "Unconfirmed BlobsSidecar stored for {}",
+                    () ->
+                        new SlotAndBlockRoot(
+                            blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot())))
         .ifExceptionGetsHereRaiseABug();
   }
 
   private Map<Bytes32, BlobsSidecar> createNewMap() {
-    return LimitedMap.createSynchronized(MAX_CACHED_VALIDATED_BLOBS_PER_SLOT);
+    return LimitedMap.createSynchronized(MAX_CACHED_VALIDATED_BLOBS_SIDECARS_PER_SLOT);
   }
 
   private Optional<BlobsSidecarAvailabilityChecker> handleEmptyBlockCommitmentsChecker(

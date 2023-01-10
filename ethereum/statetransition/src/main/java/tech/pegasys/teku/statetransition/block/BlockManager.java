@@ -193,7 +193,7 @@ public class BlockManager extends Service
       final Optional<BlockImportPerformance> blockImportPerformance) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
-        .or(() -> handleBlobs(blobsSidecar, validationResult))
+        .or(() -> handleBlobsSidecar(blobsSidecar, validationResult))
         .orElseGet(
             () ->
                 handleBlockImport(block, blockImportPerformance)
@@ -240,16 +240,16 @@ public class BlockManager extends Service
                 SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
-  private Optional<SafeFuture<BlockImportResult>> handleBlobs(
+  private Optional<SafeFuture<BlockImportResult>> handleBlobsSidecar(
       Optional<BlobsSidecar> blobsSidecar, Optional<InternalValidationResult> validationResult) {
     if (blobsSidecar.isEmpty()) {
       return Optional.empty();
     }
     if (validationResult.map(InternalValidationResult::isAccept).orElse(false)) {
-      blobsSidecarManager.storeUnconfirmedValidatedBlobs(blobsSidecar.get());
+      blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobsSidecar.get());
       return Optional.empty();
     }
-    blobsSidecarManager.storeUnconfirmedBlobs(blobsSidecar.get());
+    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar.get());
     return Optional.empty();
   }
 
@@ -302,7 +302,7 @@ public class BlockManager extends Service
                     //  Trigger the fetcher in the case the coupled BeaconBlockAndBlobsSidecar
                     //  contains a valid block but the BlobsSidecar validation fails.
                     //  Should be similar to what we do with pendingBlocks.
-                    blobsSidecarManager.discardBlobsByBlock(block);
+                    blobsSidecarManager.discardBlobsSidecarByBlock(block);
                     break;
                   default:
                     LOG.trace(
@@ -330,7 +330,7 @@ public class BlockManager extends Service
 
     invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
     pendingBlocks.remove(block);
-    blobsSidecarManager.discardBlobsByBlock(block);
+    blobsSidecarManager.discardBlobsSidecarByBlock(block);
 
     pendingBlocks
         .getItemsDependingOn(blockRoot, true)
@@ -340,7 +340,7 @@ public class BlockManager extends Service
                   blockToDrop.getMessage().hashTreeRoot(),
                   BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
               pendingBlocks.remove(blockToDrop);
-              blobsSidecarManager.discardBlobsByBlock(block);
+              blobsSidecarManager.discardBlobsSidecarByBlock(block);
             });
   }
 

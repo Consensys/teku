@@ -155,7 +155,7 @@ class ForkChoiceTest {
 
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(optimisticSyncStateTracker);
 
-    // bobs always available
+    // blobs always available
     if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
       final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
       when(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).thenReturn(true);
@@ -209,7 +209,7 @@ class ForkChoiceTest {
   }
 
   @Test
-  void onBlock_shouldFailIfBlobsAreNotRequired() {
+  void onBlock_shouldImportIfBlobsAreNotRequired() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 

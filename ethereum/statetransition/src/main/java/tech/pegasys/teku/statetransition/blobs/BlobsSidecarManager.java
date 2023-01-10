@@ -21,13 +21,13 @@ public interface BlobsSidecarManager {
   BlobsSidecarManager NOOP =
       new BlobsSidecarManager() {
         @Override
-        public void storeUnconfirmedValidatedBlobs(BlobsSidecar blobsSidecar) {}
+        public void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar) {}
 
         @Override
-        public void storeUnconfirmedBlobs(BlobsSidecar blobsSidecar) {}
+        public void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar) {}
 
         @Override
-        public void discardBlobsByBlock(SignedBeaconBlock block) {}
+        public void discardBlobsSidecarByBlock(SignedBeaconBlock block) {}
 
         @Override
         public BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block) {
@@ -35,11 +35,11 @@ public interface BlobsSidecarManager {
         }
       };
 
-  void storeUnconfirmedValidatedBlobs(BlobsSidecar blobsSidecar);
+  void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
 
-  void storeUnconfirmedBlobs(BlobsSidecar blobsSidecar);
+  void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
 
-  void discardBlobsByBlock(SignedBeaconBlock block);
+  void discardBlobsSidecarByBlock(SignedBeaconBlock block);
 
   BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 }

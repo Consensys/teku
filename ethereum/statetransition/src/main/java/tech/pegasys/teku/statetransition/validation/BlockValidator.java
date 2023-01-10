@@ -150,7 +150,7 @@ public class BlockValidator {
                 if (!blockKzgCommitmentsAreValidAgainstBlobsSidecar(
                     block, blobsSidecar.get(), miscHelpers)) {
                   return reject(
-                      "Block kzg commitments are invalid against the given blobs sidecars");
+                      "Block kzg commitments are invalid against the given blobs sidecar");
                 }
               }
 

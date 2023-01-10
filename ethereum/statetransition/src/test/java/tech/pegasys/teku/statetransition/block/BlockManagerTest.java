@@ -661,8 +661,8 @@ public class BlockManagerTest {
 
     blockManager.validateAndImportBlockAndBlobsSidecar(blockAndBlobsSidecar);
 
-    verify(blobsSidecarManager).storeUnconfirmedValidatedBlobs(blobsSidecar);
-    verify(blobsSidecarManager, never()).discardBlobsByBlock(block);
+    verify(blobsSidecarManager).storeUnconfirmedValidatedBlobsSidecar(blobsSidecar);
+    verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
   }
 
   @Test
@@ -681,15 +681,15 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
 
     if (nonStoringBlobsFailureReasons.contains(failureReason)) {
-      verify(blobsSidecarManager, never()).storeUnconfirmedBlobs(blobsSidecar);
+      verify(blobsSidecarManager, never()).storeUnconfirmedBlobsSidecar(blobsSidecar);
     } else {
-      verify(blobsSidecarManager).storeUnconfirmedBlobs(blobsSidecar);
+      verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar);
     }
     if (nonDiscardingBlobsFailureReasons.contains(failureReason)) {
       // no discard for these reason
-      verify(blobsSidecarManager, never()).discardBlobsByBlock(block);
+      verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
     } else {
-      verify(blobsSidecarManager, atLeastOnce()).discardBlobsByBlock(block);
+      verify(blobsSidecarManager, atLeastOnce()).discardBlobsSidecarByBlock(block);
     }
   }
 
@@ -699,15 +699,15 @@ public class BlockManagerTest {
     assertThat(blockManager.importBlock(block, Optional.of(blobsSidecar)))
         .isCompletedWithValueMatching(result -> result.equals(importResult));
     if (nonStoringBlobsFailureReasons.contains(importResult.getFailureReason())) {
-      verify(blobsSidecarManager, never()).storeUnconfirmedBlobs(blobsSidecar);
+      verify(blobsSidecarManager, never()).storeUnconfirmedBlobsSidecar(blobsSidecar);
     } else {
-      verify(blobsSidecarManager).storeUnconfirmedBlobs(blobsSidecar);
+      verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar);
     }
     if (nonDiscardingBlobsFailureReasons.contains(importResult.getFailureReason())) {
       // no discard for these reasons
-      verify(blobsSidecarManager, never()).discardBlobsByBlock(block);
+      verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
     } else {
-      verify(blobsSidecarManager, atLeastOnce()).discardBlobsByBlock(block);
+      verify(blobsSidecarManager, atLeastOnce()).discardBlobsSidecarByBlock(block);
     }
   }
 
@@ -716,16 +716,16 @@ public class BlockManagerTest {
     assertThat(blockManager.validateAndImportBlock(block, Optional.of(blobsSidecar)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validate(block, Optional.of(blobsSidecar));
-    verify(blobsSidecarManager, never()).storeUnconfirmedBlobs(blobsSidecar);
-    verify(blobsSidecarManager, atLeastOnce()).discardBlobsByBlock(block);
+    verify(blobsSidecarManager, never()).storeUnconfirmedBlobsSidecar(blobsSidecar);
+    verify(blobsSidecarManager, atLeastOnce()).discardBlobsSidecarByBlock(block);
   }
 
   private void assertImportBlockSuccessfully(SignedBeaconBlock block) {
     BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
     assertThat(blockManager.importBlock(block, Optional.of(blobsSidecar)))
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobsSidecarManager).storeUnconfirmedBlobs(blobsSidecar);
-    verify(blobsSidecarManager, never()).discardBlobsByBlock(block);
+    verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar);
+    verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
   }
 
   private UInt64 incrementSlot() {

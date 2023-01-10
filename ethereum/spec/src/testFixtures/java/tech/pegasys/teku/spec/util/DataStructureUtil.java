@@ -1830,7 +1830,7 @@ public final class DataStructureUtil {
   }
 
   public BlobsSidecar randomBlobsSidecar(
-      final Bytes32 blockRoot, final UInt64 slot, int numberOfBlobs) {
+      final Bytes32 blockRoot, final UInt64 slot, final int numberOfBlobs) {
     final BlobsSidecarSchema blobsSidecarSchema =
         SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
             .getBlobsSidecarSchema();

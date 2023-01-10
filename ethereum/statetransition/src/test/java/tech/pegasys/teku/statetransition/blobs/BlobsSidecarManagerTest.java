@@ -62,17 +62,17 @@ public class BlobsSidecarManagerTest {
   }
 
   @Test
-  void shouldStoreUnconfirmedValidatedBlobs() {
+  void shouldStoreUnconfirmedValidatedBlobsSidecar() {
     final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    blobsSidecarManager.storeUnconfirmedValidatedBlobs(blobsSidecar);
+    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobsSidecar);
 
     verify(storageUpdateChannel).onBlobsSidecar(blobsSidecar);
   }
 
   @Test
-  void shouldStoreUnconfirmedBlobs() {
+  void shouldStoreUnconfirmedBlobsSidecar() {
     final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    blobsSidecarManager.storeUnconfirmedBlobs(blobsSidecar);
+    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar);
 
     verify(storageUpdateChannel).onBlobsSidecar(blobsSidecar);
   }
@@ -82,7 +82,8 @@ public class BlobsSidecarManagerTest {
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar();
 
-    blobsSidecarManager.storeUnconfirmedValidatedBlobs(blockAndBlobsSidecar.getBlobsSidecar());
+    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(
+        blockAndBlobsSidecar.getBlobsSidecar());
 
     final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
         blobsSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
@@ -114,7 +115,7 @@ public class BlobsSidecarManagerTest {
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar();
 
-    blobsSidecarManager.storeUnconfirmedBlobs(blockAndBlobsSidecar.getBlobsSidecar());
+    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blockAndBlobsSidecar.getBlobsSidecar());
 
     final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
         blobsSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
@@ -141,8 +142,8 @@ public class BlobsSidecarManagerTest {
     final BlobsSidecar blobs1 = dataStructureUtil.randomBlobsSidecar(blockRoot, UInt64.ONE);
     final BlobsSidecar blobs2 = dataStructureUtil.randomBlobsSidecar(blockRoot, UInt64.valueOf(2));
 
-    blobsSidecarManager.storeUnconfirmedValidatedBlobs(blobs1);
-    blobsSidecarManager.storeUnconfirmedValidatedBlobs(blobs2);
+    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs1);
+    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs2);
 
     assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
         .containsEntry(blockRoot, blobs1);
