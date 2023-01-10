@@ -40,12 +40,15 @@ class PendingDuties {
   private final List<Consumer<ScheduledDuties>> pendingActions = new ArrayList<>();
   private final DutyLoader<?> dutyLoader;
   private final UInt64 epoch;
-  private SafeFuture<? extends Optional<? extends ScheduledDuties>> duties = new SafeFuture<>();
+  private SafeFuture<? extends Optional<? extends ScheduledDuties>> scheduledDuties =
+      new SafeFuture<>();
   private Optional<Bytes32> pendingHeadUpdate = Optional.empty();
   private final LabelledMetric<Counter> dutiesPerformedCounter;
 
   private PendingDuties(
-      final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final UInt64 epoch) {
+      final MetricsSystem metricsSystem,
+      final DutyLoader<? extends ScheduledDuties> dutyLoader,
+      final UInt64 epoch) {
     this.dutyLoader = dutyLoader;
     this.epoch = epoch;
     dutiesPerformedCounter =
@@ -57,8 +60,8 @@ class PendingDuties {
             "result");
   }
 
-  public static PendingDuties calculateDuties(
-      final MetricsSystem metricsSystem, final DutyLoader<?> dutyLoader, final UInt64 epoch) {
+  public static <T extends ScheduledDuties> PendingDuties calculateDuties(
+      final MetricsSystem metricsSystem, final DutyLoader<T> dutyLoader, final UInt64 epoch) {
     final PendingDuties duties = new PendingDuties(metricsSystem, dutyLoader, epoch);
     duties.recalculate();
     return duties;
@@ -102,10 +105,10 @@ class PendingDuties {
   }
 
   public synchronized void recalculate() {
-    duties.cancel(false);
+    scheduledDuties.cancel(false);
     // We need to ensure the duties future is completed before .
-    duties = dutyLoader.loadDutiesForEpoch(epoch);
-    duties.finish(
+    scheduledDuties = dutyLoader.loadDutiesForEpoch(epoch);
+    scheduledDuties.finish(
         this::processPendingActions,
         error -> {
           if (!(Throwables.getRootCause(error) instanceof CancellationException)) {
@@ -116,8 +119,16 @@ class PendingDuties {
         });
   }
 
+  public Optional<? extends ScheduledDuties> getScheduledDuties() {
+    if (scheduledDuties.isCompletedNormally()) {
+      return scheduledDuties.getImmediately();
+    } else {
+      return Optional.empty();
+    }
+  }
+
   public synchronized void cancel() {
-    duties.cancel(false);
+    scheduledDuties.cancel(false);
     pendingActions.clear();
   }
 
@@ -140,10 +151,10 @@ class PendingDuties {
   }
 
   private synchronized Optional<? extends ScheduledDuties> getCurrentDuties() {
-    if (!duties.isCompletedNormally()) {
+    if (!scheduledDuties.isCompletedNormally()) {
       return Optional.empty();
     }
-    return duties.join();
+    return scheduledDuties.join();
   }
 
   public synchronized void onHeadUpdate(final Bytes32 newHeadDependentRoot) {
