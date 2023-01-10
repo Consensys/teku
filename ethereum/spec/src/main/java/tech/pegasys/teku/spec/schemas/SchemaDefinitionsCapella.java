@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
@@ -65,8 +64,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
 
-  private final SszListSchema<HistoricalSummary, ?> historicalSummariesSchema;
-
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig.toVersionCapella().orElseThrow());
     this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
@@ -101,7 +98,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.signedBuilderBidSchemaCapella =
         new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
     this.historicalSummarySchema = new HistoricalSummary.HistoricalSummarySchema();
-    this.historicalSummariesSchema = beaconStateSchema.getHistoricalSummariesSchema();
   }
 
   public static SchemaDefinitionsCapella required(final SchemaDefinitions schemaDefinitions) {
@@ -173,10 +169,6 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   public HistoricalSummary.HistoricalSummarySchema getHistoricalSummarySchema() {
     return historicalSummarySchema;
-  }
-
-  public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
-    return historicalSummariesSchema;
   }
 
   @Override

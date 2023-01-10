@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
-import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
@@ -52,7 +51,6 @@ public class BeaconStateSchemaCapella
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
-    new PendingAttestation.PendingAttestationSchema(specConfig);
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
