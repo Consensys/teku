@@ -52,6 +52,14 @@ public class StatusLogger {
             + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
   }
 
+  public void startupConfigurations(
+      final String network, final String storageMode, final int restApiPort) {
+    log.info("Configuration"); // TODO clean up formatting here
+    log.info("Network: " + network);
+    log.info("Storage Mode: " + storageMode);
+    log.info("Rest API Port: " + restApiPort);
+  }
+
   public void reportOptimisedBlst() {
     log.info("Using optimized BLST library");
   }

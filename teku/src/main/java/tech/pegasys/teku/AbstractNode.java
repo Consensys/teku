@@ -39,6 +39,8 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -59,7 +61,18 @@ public abstract class AbstractNode implements Node {
   protected final ServiceConfig serviceConfig;
 
   protected AbstractNode(final TekuConfiguration tekuConfig) {
+    final String network =
+        tekuConfig
+            .eth2NetworkConfiguration()
+            .getEth2Network()
+            .map(Eth2Network::configName)
+            .orElse("empty");
+    final String storageMode = tekuConfig.storageConfiguration().getDataStorageMode().name();
+    final int restApiPort = tekuConfig.beaconChain().beaconRestApiConfig().getRestApiPort();
+
     STATUS_LOG.onStartup(VersionProvider.VERSION);
+    STATUS_LOG.startupConfigurations(network, storageMode, restApiPort);
+
     reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
