@@ -81,6 +81,11 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               "ssz_static/HistoricalBatch",
               new SszTestExecutor<>(SchemaDefinitions::getHistoricalBatchSchema))
           .put(
+              "ssz_static/HistoricalSummary",
+              new SszTestExecutor<>(
+                  schemas ->
+                      SchemaDefinitionsCapella.required(schemas).getHistoricalSummarySchema()))
+          .put(
               "ssz_static/IndexedAttestation",
               new SszTestExecutor<>(SchemaDefinitions::getIndexedAttestationSchema))
           .put(

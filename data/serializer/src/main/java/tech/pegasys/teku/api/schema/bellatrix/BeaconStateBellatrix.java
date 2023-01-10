@@ -27,6 +27,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -96,7 +97,7 @@ public class BeaconStateBellatrix extends BeaconStateAltair {
   }
 
   @Override
-  protected void applyAdditionalFields(MutableBeaconState state) {
+  protected void applyAdditionalFields(MutableBeaconState state, final SpecVersion specVersion) {
     state
         .toMutableVersionBellatrix()
         .ifPresent(
