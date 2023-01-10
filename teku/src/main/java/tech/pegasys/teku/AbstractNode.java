@@ -40,7 +40,6 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.storage.server.StateStorageMode;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
