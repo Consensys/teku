@@ -84,25 +84,6 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   public void discardBlobsByBlock(final SignedBeaconBlock block) {
-    // note: we could discard blobs sending them to the BlobsPruner which will gradually delete them
-    // from BD without
-    // queue the deletion in the storageUpdateChannel which can cause slowdown if many blobs are
-    // discarded in sequence
-    // (various pending blocks on a fork that turns out to be invalid)
-
-    // having unconfirmed affects how we handle BlobsSidecarByRange rpc method
-    // for non finalized blobs, we should have a fast way to check if corresponding blocks are in
-    // recentChainData (should be cached in ram)
-    // for finalized we should always lookup on the unconfirmed column to filter them out (even in
-    // the case we have only one blob per slot, it might be still unconfirmed (a proposed invalid
-    // block))
-
-    // for the unconfirmed column I found an interesting approach that could make the
-    // confirmed-unconfirmed flag more
-    // efficient to store and update: https://groups.google.com/g/leveldb/c/qOMWvp7gyxg but would
-    // require some changes in our kvstore layer
-
-    // async IO
     final SlotAndBlockRoot blobsAtSlotAndBlockRoot =
         new SlotAndBlockRoot(block.getSlot(), block.getRoot());
 
@@ -137,7 +118,6 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   }
 
   private void internalStoreUnconfirmedBlobs(final BlobsSidecar blobsSidecar) {
-    // async IO
     storageUpdateChannel
         .onBlobsSidecar(blobsSidecar)
         .thenRun(() -> LOG.debug("Unconfirmed BlobsSidecar stored {}", blobsSidecar))
