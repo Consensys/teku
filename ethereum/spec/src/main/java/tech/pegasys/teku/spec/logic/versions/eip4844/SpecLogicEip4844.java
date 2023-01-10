@@ -32,9 +32,9 @@ import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.Valida
 import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.eip4844.block.BlockProcessorEip4844;
 import tech.pegasys.teku.spec.logic.versions.eip4844.forktransition.Eip4844StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
@@ -56,7 +56,7 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
       final AttestationUtil attestationUtil,
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
-      final EpochProcessorBellatrix epochProcessor,
+      final EpochProcessorCapella epochProcessor,
       final BlockProcessorCapella blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
@@ -118,8 +118,8 @@ public class SpecLogicEip4844 extends AbstractSpecLogic {
             predicates,
             miscHelpers,
             beaconStateAccessors);
-    final EpochProcessorBellatrix epochProcessor =
-        new EpochProcessorBellatrix(
+    final EpochProcessorCapella epochProcessor =
+        new EpochProcessorCapella(
             config,
             miscHelpers,
             beaconStateAccessors,

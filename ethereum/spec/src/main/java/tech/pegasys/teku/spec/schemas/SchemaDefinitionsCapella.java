@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 
 public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
@@ -60,6 +61,8 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema;
   private final BuilderBidSchema builderBidSchemaCapella;
   private final SignedBuilderBidSchema signedBuilderBidSchemaCapella;
+
+  private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
 
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig.toVersionCapella().orElseThrow());
@@ -94,6 +97,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
         new BuilderBidSchema("BuilderBidCapella", executionPayloadHeaderSchemaCapella);
     this.signedBuilderBidSchemaCapella =
         new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
+    this.historicalSummarySchema = new HistoricalSummary.HistoricalSummarySchema();
   }
 
   public static SchemaDefinitionsCapella required(final SchemaDefinitions schemaDefinitions) {
@@ -161,6 +165,10 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   public SignedBlsToExecutionChangeSchema getSignedBlsToExecutionChangeSchema() {
     return signedBlsToExecutionChangeSchema;
+  }
+
+  public HistoricalSummary.HistoricalSummarySchema getHistoricalSummarySchema() {
+    return historicalSummarySchema;
   }
 
   @Override

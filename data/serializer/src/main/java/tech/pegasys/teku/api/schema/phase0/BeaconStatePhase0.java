@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation.PendingAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
@@ -114,7 +115,8 @@ public class BeaconStatePhase0 extends BeaconState implements State {
   }
 
   @Override
-  protected void applyAdditionalFields(final MutableBeaconState state) {
+  protected void applyAdditionalFields(
+      final MutableBeaconState state, final SpecVersion specVersion) {
     state
         .toMutableVersionPhase0()
         .ifPresent(

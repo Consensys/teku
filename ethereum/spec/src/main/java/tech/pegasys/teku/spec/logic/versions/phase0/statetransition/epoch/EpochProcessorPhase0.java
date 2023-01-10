@@ -69,6 +69,11 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
   }
 
   @Override
+  public void processHistoricalSummariesUpdate(final MutableBeaconState state) {
+    // Nothing to do
+  }
+
+  @Override
   public void processSyncCommitteeUpdates(final MutableBeaconState state) {
     // Nothing to do
   }
