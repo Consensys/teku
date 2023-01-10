@@ -52,12 +52,11 @@ public class StatusLogger {
             + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
   }
 
-  public void startupConfigurations(
-      final String network, final String storageMode, final int restApiPort) {
+  public void startupConfigurations(final StartupLogConfig config) {
     log.info("Configuration"); // TODO clean up formatting here
-    log.info("Network: " + network);
-    log.info("Storage Mode: " + storageMode);
-    log.info("Rest API Port: " + restApiPort);
+    log.info("Network: " + config.getNetwork());
+    log.info("Storage Mode: " + config.getStorageMode());
+    log.info("Rest API Port: " + config.getRestApiPort());
   }
 
   public void reportOptimisedBlst() {

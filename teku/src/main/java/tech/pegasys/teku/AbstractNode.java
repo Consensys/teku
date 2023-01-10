@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.OccurrenceCounter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.logging.StartupLogConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -70,7 +71,7 @@ public abstract class AbstractNode implements Node {
     final int restApiPort = tekuConfig.beaconChain().beaconRestApiConfig().getRestApiPort();
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
-    STATUS_LOG.startupConfigurations(network, storageMode, restApiPort);
+    STATUS_LOG.startupConfigurations(new StartupLogConfig(network, storageMode, restApiPort));
 
     reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
