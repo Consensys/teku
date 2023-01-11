@@ -23,7 +23,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 /**
- * <p>Designed to handle specification defined ordering and caching of block production operations.
+ * Designed to handle specification defined ordering and caching of block production operations.
+ *
  * <p>Always use this manager instead of using {@link ExecutionLayerChannel} directly for block
  * production-related activities
  */

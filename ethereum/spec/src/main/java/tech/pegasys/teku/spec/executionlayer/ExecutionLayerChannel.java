@@ -135,7 +135,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   /**
    * This is low level method, use {@link
-   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock)}  instead
+   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock)} instead
    */
   SafeFuture<ExecutionPayload> builderGetPayload(
       SignedBeaconBlock signedBlindedBeaconBlock,
