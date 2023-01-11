@@ -105,9 +105,6 @@ public class BlockOperationSelectorFactory {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti) {
     return bodyBuilder -> {
-      final SchemaDefinitions schemaDefinitions =
-          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
-
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
       final SszList<Attestation> attestations =
@@ -165,6 +162,8 @@ public class BlockOperationSelectorFactory {
 
       // Execution Payload / Execution Payload Header / KZG Commitments
       if (bodyBuilder.supportsExecutionPayload()) {
+        final SchemaDefinitions schemaDefinitions =
+            spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
         setExecutionData(bodyBuilder, schemaDefinitions, parentRoot, blockSlotState);
       }
     };
@@ -178,33 +177,33 @@ public class BlockOperationSelectorFactory {
     final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
         forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
 
-    if (bodyBuilder.supportsKzgCommitments()) {
-      // Execution Payload / Execution Payload Header + KZG Commitments
-      SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
-          executionPayloadContextFuture.thenApply(
-              executionPayloadContextOptional ->
-                  executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
-                      // kzg commitments are supported: we should have already merged by now, so we
-                      // can safely assume we have an executionPayloadContext
-                      executionPayloadContextOptional.orElseThrow(
-                          () ->
-                              new IllegalStateException(
-                                  "Cannot provide kzg commitments before The Merge")),
-                      blockSlotState,
-                      bodyBuilder.isBlinded()));
-      builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
-      builderSetKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResultFuture);
+    // Pre-4844: Execution Payload / Execution Payload Header
+    if (!bodyBuilder.supportsKzgCommitments()) {
+      if (bodyBuilder.isBlinded()) {
+        builderSetPayloadHeader(
+            bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
+      } else {
+        builderSetPayload(
+            bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
+      }
       return;
     }
 
-    // Execution Payload / Execution Payload Header
-    if (bodyBuilder.isBlinded()) {
-      builderSetPayloadHeader(
-          bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
-    } else {
-      builderSetPayload(
-          bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
-    }
+    // Post-4844: Execution Payload / Execution Payload Header + KZG Commitments
+    SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
+        executionPayloadContextFuture.thenApply(
+            executionPayloadContextOptional ->
+                executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
+                    // kzg commitments are supported: we should have already merged by now, so we
+                    // can safely assume we have an executionPayloadContext
+                    executionPayloadContextOptional.orElseThrow(
+                        () ->
+                            new IllegalStateException(
+                                "Cannot provide kzg commitments before The Merge")),
+                    blockSlotState,
+                    bodyBuilder.isBlinded()));
+    builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
+    builderSetKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResultFuture);
   }
 
   private void builderSetPayloadPostMerge(

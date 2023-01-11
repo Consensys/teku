@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
-public class ExecutionLayerBlockManagerImpl
+public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
   // TODO: the will be Builder API where Payload will come together with Blobs, until this pack it
   // with dummy
@@ -46,7 +46,8 @@ public class ExecutionLayerBlockManagerImpl
 
   private final ExecutionLayerChannel executionLayerChannel;
 
-  public ExecutionLayerBlockManagerImpl(final ExecutionLayerChannel executionLayerChannel) {
+  public ExecutionLayerBlockProductionManagerImpl(
+      final ExecutionLayerChannel executionLayerChannel) {
     this.executionLayerChannel = executionLayerChannel;
   }
 

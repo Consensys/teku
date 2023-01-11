@@ -91,9 +91,8 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   public BlobsSidecarAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
-    try {
-      BeaconBlockBodyEip4844.required(block.getBeaconBlock().orElseThrow().getBody());
-    } catch (Exception ex) {
+    // Block is pre-4844, BlobsSidecar is not supported yet
+    if (block.getMessage().getBody().toVersionEip4844().isEmpty()) {
       return BlobsSidecarAvailabilityChecker.NOT_REQUIRED;
     }
 

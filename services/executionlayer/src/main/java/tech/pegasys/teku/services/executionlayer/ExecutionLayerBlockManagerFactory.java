@@ -14,7 +14,7 @@
 package tech.pegasys.teku.services.executionlayer;
 
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
-import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerBlockManagerImpl;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerBlockProductionManagerImpl;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -22,10 +22,10 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 public class ExecutionLayerBlockManagerFactory {
   public static ExecutionLayerBlockProductionManager create(
       final ExecutionLayerChannel executionLayerManager, final EventChannels eventChannels) {
-    final ExecutionLayerBlockManagerImpl executionLayerInitiator =
-        new ExecutionLayerBlockManagerImpl(executionLayerManager);
-    eventChannels.subscribe(SlotEventsChannel.class, executionLayerInitiator);
-    return executionLayerInitiator;
+    final ExecutionLayerBlockProductionManagerImpl executionLayerBlockProductionManager =
+        new ExecutionLayerBlockProductionManagerImpl(executionLayerManager);
+    eventChannels.subscribe(SlotEventsChannel.class, executionLayerBlockProductionManager);
+    return executionLayerBlockProductionManager;
   }
 
   public static ExecutionLayerBlockProductionManager createDummy() {
