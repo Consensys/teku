@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -328,7 +328,7 @@ public class PeerSync {
 
   private class CachingBlockResponseListener implements RpcResponseListener<SignedBeaconBlock> {
 
-    private final List<SignedBeaconBlock> blocks = new LinkedList<>();
+    private final List<SignedBeaconBlock> blocks = new ArrayList<>();
 
     @Override
     public SafeFuture<?> onResponse(final SignedBeaconBlock response) {
