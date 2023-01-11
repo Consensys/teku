@@ -87,7 +87,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         @Override
         public SafeFuture<ExecutionPayload> builderGetPayload(
             SignedBeaconBlock signedBlindedBeaconBlock,
-            Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
+            Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -139,7 +139,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    */
   SafeFuture<ExecutionPayload> builderGetPayload(
       SignedBeaconBlock signedBlindedBeaconBlock,
-      Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction);
+      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction);
 
   /**
    * This is low level method, use {@link

@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
+
 public class FallbackData {
   final ExecutionPayload executionPayload;
   final FallbackReason reason;
@@ -28,5 +31,30 @@ public class FallbackData {
 
   public FallbackReason getReason() {
     return reason;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final FallbackData that = (FallbackData) o;
+    return Objects.equals(executionPayload, that.executionPayload) && reason == that.reason;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(executionPayload, reason);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("executionPayload", executionPayload)
+        .add("reason", reason)
+        .toString();
   }
 }

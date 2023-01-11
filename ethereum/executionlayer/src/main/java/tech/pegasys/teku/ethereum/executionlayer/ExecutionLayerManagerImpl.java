@@ -286,9 +286,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   @Override
   public SafeFuture<ExecutionPayload> builderGetPayload(
       SignedBeaconBlock signedBlindedBeaconBlock,
-      Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
+      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
     return executionBuilderModule.builderGetPayload(
-        signedBlindedBeaconBlock, getPayloadResultFunction);
+        signedBlindedBeaconBlock, getCachedPayloadResultFunction);
   }
 
   @Override
