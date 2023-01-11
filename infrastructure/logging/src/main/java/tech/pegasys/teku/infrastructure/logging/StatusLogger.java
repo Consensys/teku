@@ -53,7 +53,7 @@ public class StatusLogger {
   }
 
   public void startupConfigurations(final StartupLogConfig config) {
-    config.report(log);
+    log.info(config.getReport());
   }
 
   public void reportOptimisedBlst() {

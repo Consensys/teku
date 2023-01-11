@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
-import org.apache.logging.log4j.Logger;
-
 public class StartupLogConfig {
   private final String network;
   private final String storageMode;
@@ -26,10 +24,9 @@ public class StartupLogConfig {
     this.restApiPort = restApiPort;
   }
 
-  public void report(final Logger log) {
-    log.info("Configuration"); // TODO clean up formatting here
-    log.info("Network: " + network);
-    log.info("Storage Mode: " + storageMode);
-    log.info("Rest API Port: " + restApiPort);
+  public String getReport() { // TODO clean up formatting here
+    return String.format(
+        "Configuration | Network: %s, Storage Mode: %s, Rest API Port: %s",
+        network, storageMode, restApiPort);
   }
 }
