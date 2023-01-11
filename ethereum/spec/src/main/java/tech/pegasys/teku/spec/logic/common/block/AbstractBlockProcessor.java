@@ -279,8 +279,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           "Block state root does NOT match the calculated state root!\n"
               + "Block state root: "
               + block.getMessage().getStateRoot().toHexString()
-              + "New state root: "
-              + postState.hashTreeRoot().toHexString());
+              + "\n  New state root: "
+              + postState.hashTreeRoot().toHexString()
+              + "\n block proposer: "
+              + block.getProposerIndex());
     } else {
       return BlockValidationResult.SUCCESSFUL;
     }
