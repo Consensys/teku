@@ -110,8 +110,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   /**
    * This is low level method, use {@link
-   * ExecutionLayerBlockManager#initiateBlockProduction(ExecutionPayloadContext, BeaconState,
-   * boolean)} instead
+   * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
    */
   @Deprecated
   SafeFuture<ExecutionPayload> engineGetPayload(
@@ -124,7 +124,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   /**
    * This is low level method, use {@link
-   * ExecutionLayerBlockManager#initiateBlockAndBlobsProduction(ExecutionPayloadContext,
+   * ExecutionLayerBlockProductionManager#initiateBlockAndBlobsProduction(ExecutionPayloadContext,
    * BeaconState, boolean)} instead
    */
   @Deprecated

@@ -1160,13 +1160,12 @@ public final class DataStructureUtil {
                     .voluntaryExits(
                         randomSszList(
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
-                    .syncAggregate(() -> this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayload(
-                        () ->
-                            SafeFuture.completedFuture(
-                                randomExecutionPayload(spec.getGenesisSpec())))
-                    .blsToExecutionChanges(this::randomSignedBlsToExecutionChangesList)
-                    .blobKzgCommitments(this::emptySszKzgCommitmentList))
+                        SafeFuture.completedFuture(randomExecutionPayload(spec.getGenesisSpec())))
+                    .blsToExecutionChanges(this.randomSignedBlsToExecutionChangesList())
+                    .blobKzgCommitments(
+                        SafeFuture.completedFuture(this.emptySszKzgCommitmentList())))
         .join();
   }
 

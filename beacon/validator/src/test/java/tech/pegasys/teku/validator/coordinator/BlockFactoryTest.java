@@ -58,7 +58,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockManager;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -82,7 +82,8 @@ class BlockFactoryTest {
   final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
       mock(OperationPool.class);
   final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  final ExecutionLayerBlockManager executionLayer = mock(ExecutionLayerBlockManager.class);
+  final ExecutionLayerBlockProductionManager executionLayer =
+      mock(ExecutionLayerBlockProductionManager.class);
   final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,9 +21,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 
 public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
@@ -49,11 +48,9 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock,
-      Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
-    // FIXME: no sense
-    LOG.debug("Block {}, circuit breaker {}", signedBlindedBeaconBlock, builderCircuitBreaker);
-    return SafeFuture.completedFuture(null);
+  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+      ExecutionPayloadContext executionPayloadContext, BeaconState state) {
+    LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreaker.isEngaged(state));
+    return super.builderGetHeader(executionPayloadContext, state);
   }
 }

@@ -47,8 +47,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockManager;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -69,7 +70,7 @@ public class BlockOperationSelectorFactory {
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
-  private final ExecutionLayerBlockManager executionLayerInitiator;
+  private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -83,7 +84,7 @@ public class BlockOperationSelectorFactory {
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionLayerBlockManager executionLayerInitiator) {
+      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -95,7 +96,7 @@ public class BlockOperationSelectorFactory {
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
     this.forkChoiceNotifier = forkChoiceNotifier;
-    this.executionLayerInitiator = executionLayerInitiator;
+    this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
@@ -104,6 +105,9 @@ public class BlockOperationSelectorFactory {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti) {
     return bodyBuilder -> {
+      final SchemaDefinitions schemaDefinitions =
+          spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
+
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
       final SszList<Attestation> attestations =
@@ -159,30 +163,48 @@ public class BlockOperationSelectorFactory {
             blsToExecutionChangePool.getItemsForBlock(blockSlotState));
       }
 
-      // Execution Payload / Execution Payload Header
+      // Execution Payload / Execution Payload Header / KZG Commitments
       if (bodyBuilder.supportsExecutionPayload()) {
-        final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
-            forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
-        if (!bodyBuilder.supportsKzgCommitments()) {
-          if (bodyBuilder.isBlinded()) {
-            builderSetPayloadHeader(bodyBuilder, blockSlotState, executionPayloadContextFuture);
-          } else {
-            builderSetPayload(bodyBuilder, blockSlotState, executionPayloadContextFuture);
-          }
-        } else {
-          // Execution Payload / Execution Payload Header + KZG Commitments
-          SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
-              executionPayloadContextFuture.thenApply(
-                  executionPayloadContextOptional ->
-                      executionLayerInitiator.initiateBlockAndBlobsProduction(
-                          executionPayloadContextOptional.orElseThrow(),
-                          blockSlotState,
-                          bodyBuilder.isBlinded()));
-          builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
-          builderSetKzgCommitments(bodyBuilder, executionPayloadResultFuture);
-        }
+        setExecutionData(bodyBuilder, schemaDefinitions, parentRoot, blockSlotState);
       }
     };
+  }
+
+  private void setExecutionData(
+      final BeaconBlockBodyBuilder bodyBuilder,
+      final SchemaDefinitions schemaDefinitions,
+      final Bytes32 parentRoot,
+      final BeaconState blockSlotState) {
+    final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
+        forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
+
+    if (bodyBuilder.supportsKzgCommitments()) {
+      // Execution Payload / Execution Payload Header + KZG Commitments
+      SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
+          executionPayloadContextFuture.thenApply(
+              executionPayloadContextOptional ->
+                  executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
+                      // kzg commitments are supported: we should have already merged by now, so we
+                      // can safely assume we have an executionPayloadContext
+                      executionPayloadContextOptional.orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "Cannot provide kzg commitments before The Merge")),
+                      blockSlotState,
+                      bodyBuilder.isBlinded()));
+      builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
+      builderSetKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResultFuture);
+      return;
+    }
+
+    // Execution Payload / Execution Payload Header
+    if (bodyBuilder.isBlinded()) {
+      builderSetPayloadHeader(
+          bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
+    } else {
+      builderSetPayload(
+          bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
+    }
   }
 
   private void builderSetPayloadPostMerge(
@@ -203,13 +225,13 @@ public class BlockOperationSelectorFactory {
 
   private void builderSetPayload(
       final BeaconBlockBodyBuilder bodyBuilder,
+      final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
-      SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
-    Supplier<SafeFuture<ExecutionPayload>> preMergePayload =
+      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
+    final Supplier<SafeFuture<ExecutionPayload>> preMergePayload =
         () ->
             SafeFuture.completedFuture(
-                SchemaDefinitionsBellatrix.required(
-                        spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                SchemaDefinitionsBellatrix.required(schemaDefinitions)
                     .getExecutionPayloadSchema()
                     .getDefault());
 
@@ -219,7 +241,7 @@ public class BlockOperationSelectorFactory {
               if (executionPayloadContext.isEmpty()) {
                 return preMergePayload.get();
               } else {
-                return executionLayerInitiator
+                return executionLayerBlockProductionManager
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, false)
                     .getExecutionPayloadFuture()
                     .orElseThrow();
@@ -229,13 +251,13 @@ public class BlockOperationSelectorFactory {
 
   private void builderSetPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
+      final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
       final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
-    Supplier<SafeFuture<ExecutionPayloadHeader>> preMergePayloadHeader =
+    final Supplier<SafeFuture<ExecutionPayloadHeader>> preMergePayloadHeader =
         () ->
             SafeFuture.completedFuture(
-                SchemaDefinitionsBellatrix.required(
-                        spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions())
+                SchemaDefinitionsBellatrix.required(schemaDefinitions)
                     .getExecutionPayloadHeaderSchema()
                     .getHeaderOfDefaultPayload());
 
@@ -245,7 +267,7 @@ public class BlockOperationSelectorFactory {
               if (executionPayloadContext.isEmpty()) {
                 return preMergePayloadHeader.get();
               } else {
-                return executionLayerInitiator
+                return executionLayerBlockProductionManager
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)
                     .getExecutionPayloadHeaderFuture()
                     .orElseThrow();
@@ -255,9 +277,10 @@ public class BlockOperationSelectorFactory {
 
   private void builderSetKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
+      final SchemaDefinitions schemaDefinitions,
       final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture) {
     final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
-        spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
+        SchemaDefinitionsEip4844.required(schemaDefinitions);
     final SafeFuture<SszList<SszKZGCommitment>> commitments =
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
@@ -298,7 +321,7 @@ public class BlockOperationSelectorFactory {
       } else {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
-                executionLayerInitiator.builderGetPayload(
+                executionLayerBlockProductionManager.builderGetPayload(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
     };
@@ -308,26 +331,33 @@ public class BlockOperationSelectorFactory {
       createSidecarSupplementSelector() {
     return signedBeaconBlock -> {
       final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
-          spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
-      return executionLayerInitiator
+          spec.atSlot(signedBeaconBlock.getSlot())
+              .getSchemaDefinitions()
+              .toVersionEip4844()
+              .orElseThrow();
+      return executionLayerBlockProductionManager
           .getPayloadResult(signedBeaconBlock.getSlot())
-          .orElseThrow()
+          .orElseThrow(() -> new IllegalStateException("payloadResult is required"))
           .getBlobs()
-          .orElseThrow()
+          .orElseThrow(() -> new IllegalStateException("blobs are required"))
           .thenApply(
               blobs ->
                   new SignedBeaconBlockAndBlobsSidecar(
                       schemaDefinitionsEip4844.getSignedBeaconBlockAndBlobsSidecarSchema(),
                       signedBeaconBlock,
                       createBlobsSidecar(
-                          signedBeaconBlock.getSlot(), signedBeaconBlock.getRoot(), blobs)));
+                          schemaDefinitionsEip4844,
+                          signedBeaconBlock.getSlot(),
+                          signedBeaconBlock.getRoot(),
+                          blobs)));
     };
   }
 
   private BlobsSidecar createBlobsSidecar(
-      final UInt64 slot, final Bytes32 beaconBlockRoot, final List<Blob> blobs) {
-    final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
-        spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow();
+      final SchemaDefinitionsEip4844 schemaDefinitionsEip4844,
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final List<Blob> blobs) {
     final MiscHelpersEip4844 miscHelpers =
         (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
     return new BlobsSidecar(

@@ -56,7 +56,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockManager;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
@@ -138,7 +138,8 @@ class BlockOperationSelectorFactoryTest {
   private final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
 
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  private final ExecutionLayerBlockManager executionLayer = mock(ExecutionLayerBlockManager.class);
+  private final ExecutionLayerBlockProductionManager executionLayer =
+      mock(ExecutionLayerBlockProductionManager.class);
 
   private final ExecutionPayload defaultExecutionPayload =
       SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())

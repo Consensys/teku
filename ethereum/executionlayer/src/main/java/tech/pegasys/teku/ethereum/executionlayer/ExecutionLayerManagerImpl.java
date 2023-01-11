@@ -298,7 +298,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @VisibleForTesting
-  public ExecutionBuilderModule getExecutionBuilderModule() {
+  ExecutionBuilderModule getExecutionBuilderModule() {
     return executionBuilderModule;
   }
 

@@ -28,18 +28,18 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockManager;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockManagerImpl
-    implements ExecutionLayerBlockManager, SlotEventsChannel {
+    implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
   // TODO: the will be Builder API where Payload will come together with Blobs, until this pack it
   // with dummy
   private static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_BUILDER_DUMMY =
       SafeFuture.completedFuture(
           new BlobsBundle(Bytes32.ZERO, Collections.emptyList(), Collections.emptyList()));
 
-  private static final UInt64 FALLBACK_DATA_RETENTION_SLOTS = UInt64.valueOf(2);
+  private static final UInt64 EXECUTION_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
 
   private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
       new ConcurrentSkipListMap<>();
@@ -52,7 +52,9 @@ public class ExecutionLayerBlockManagerImpl
 
   @Override
   public void onSlot(final UInt64 slot) {
-    executionResultCache.headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false).clear();
+    executionResultCache
+        .headMap(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS), false)
+        .clear();
   }
 
   @Override

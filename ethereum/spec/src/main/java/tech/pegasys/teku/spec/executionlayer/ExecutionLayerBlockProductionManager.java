@@ -26,9 +26,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
  * Always use this one instead of using {@link ExecutionLayerChannel} directly for block
  * production-related activities
  */
-public interface ExecutionLayerBlockManager {
-  ExecutionLayerBlockManager NOOP =
-      new ExecutionLayerBlockManager() {
+public interface ExecutionLayerBlockProductionManager {
+  ExecutionLayerBlockProductionManager NOOP =
+      new ExecutionLayerBlockProductionManager() {
 
         @Override
         public ExecutionPayloadResult builderGetHeader(

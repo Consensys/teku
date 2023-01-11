@@ -91,6 +91,12 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   public BlobsSidecarAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
+    try {
+      BeaconBlockBodyEip4844.required(block.getBeaconBlock().orElseThrow().getBody());
+    } catch (Exception ex) {
+      return BlobsSidecarAvailabilityChecker.NOT_REQUIRED;
+    }
+
     final Optional<BlobsSidecar> maybeValidatedBlobs =
         Optional.ofNullable(
             validatedPendingBlobs.getOrDefault(block.getSlot(), emptyMap()).get(block.getRoot()));
@@ -110,7 +116,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   public void onSlot(final UInt64 slot) {
-    validatedPendingBlobs.headMap(slot.decrement()).clear();
+    validatedPendingBlobs.headMap(slot.minusMinZero(1)).clear();
   }
 
   private void internalStoreUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
