@@ -102,7 +102,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-
+    if (executionPayload.getOptionalWithdrawals().isEmpty()) {
+      return super.engineNewPayload(executionPayload);
+    }
     LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);
     return executionEngineClient
         .newPayloadV2(ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload))
