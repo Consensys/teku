@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -410,7 +411,7 @@ class BlockOperationSelectorFactoryTest {
     final CapturingBeaconBlockUnblinder blockUnblinder =
         new CapturingBeaconBlockUnblinder(spec.getGenesisSchemaDefinitions(), blindedSignedBlock);
 
-    when(executionLayer.builderGetPayload(blindedSignedBlock))
+    when(executionLayer.getUnblindedPayload(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
     factory.createUnblinderSelector().accept(blockUnblinder);
@@ -428,7 +429,6 @@ class BlockOperationSelectorFactoryTest {
                 executionPayloadContext,
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.empty(),
-                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -441,8 +441,9 @@ class BlockOperationSelectorFactoryTest {
             new ExecutionPayloadResult(
                 executionPayloadContext,
                 Optional.empty(),
-                Optional.of(SafeFuture.completedFuture(executionPayloadHeader)),
-                Optional.empty(),
+                Optional.of(
+                    SafeFuture.completedFuture(
+                        HeaderWithFallbackData.create(executionPayloadHeader))),
                 Optional.empty()));
   }
 

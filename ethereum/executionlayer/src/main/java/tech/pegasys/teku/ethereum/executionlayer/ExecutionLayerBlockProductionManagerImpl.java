@@ -58,7 +58,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   @Override
-  public Optional<ExecutionPayloadResult> getPayloadResult(final UInt64 slot) {
+  public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
     return Optional.ofNullable(executionResultCache.get(slot));
   }
 
@@ -111,14 +111,13 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> builderGetPayload(
+  public SafeFuture<ExecutionPayload> getUnblindedPayload(
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     return executionLayerChannel.builderGetPayload(
-        signedBlindedBeaconBlock, this::getPayloadResult);
+        signedBlindedBeaconBlock, this::getCachedPayloadResult);
   }
 
-  @Override
-  public ExecutionPayloadResult builderGetHeader(
+  private ExecutionPayloadResult builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state) {
     final SafeFuture<HeaderWithFallbackData> executionPayloadHeaderFuture =
         executionLayerChannel.builderGetHeader(executionPayloadContext, state);

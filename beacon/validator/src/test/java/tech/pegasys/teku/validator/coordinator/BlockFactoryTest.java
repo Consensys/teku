@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -333,7 +334,6 @@ class BlockFactoryTest {
                     args.getArgument(0),
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
                     Optional.empty(),
-                    Optional.empty(),
                     Optional.empty()));
     when(executionLayer.initiateBlockProduction(any(), any(), eq(true)))
         .then(
@@ -341,8 +341,9 @@ class BlockFactoryTest {
                 new ExecutionPayloadResult(
                     args.getArgument(0),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(executionPayloadHeader)),
-                    Optional.empty(),
+                    Optional.of(
+                        SafeFuture.completedFuture(
+                            HeaderWithFallbackData.create(executionPayloadHeader))),
                     Optional.empty()));
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
@@ -394,7 +395,7 @@ class BlockFactoryTest {
       final SignedBeaconBlock beaconBlock, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
-    when(executionLayer.builderGetPayload(beaconBlock))
+    when(executionLayer.getUnblindedPayload(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
     final SignedBeaconBlock block =
@@ -403,7 +404,7 @@ class BlockFactoryTest {
     if (!beaconBlock.getMessage().getBody().isBlinded()) {
       verifyNoInteractions(executionLayer);
     } else {
-      verify(executionLayer).builderGetPayload(beaconBlock);
+      verify(executionLayer).getUnblindedPayload(beaconBlock);
     }
 
     assertThat(block).isNotNull();

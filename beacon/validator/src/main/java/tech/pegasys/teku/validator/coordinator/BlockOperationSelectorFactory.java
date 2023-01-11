@@ -325,7 +325,7 @@ public class BlockOperationSelectorFactory {
       } else {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
-                executionLayerBlockProductionManager.builderGetPayload(
+                executionLayerBlockProductionManager.getUnblindedPayload(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
     };
@@ -340,7 +340,7 @@ public class BlockOperationSelectorFactory {
               .toVersionEip4844()
               .orElseThrow();
       return executionLayerBlockProductionManager
-          .getPayloadResult(signedBeaconBlock.getSlot())
+          .getCachedPayloadResult(signedBeaconBlock.getSlot())
           .orElseThrow(() -> new IllegalStateException("payloadResult is required"))
           .getBlobs()
           .orElseThrow(() -> new IllegalStateException("blobs are required"))

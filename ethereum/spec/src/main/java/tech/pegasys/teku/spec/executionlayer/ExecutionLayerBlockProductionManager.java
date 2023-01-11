@@ -29,15 +29,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public interface ExecutionLayerBlockProductionManager {
   ExecutionLayerBlockProductionManager NOOP =
       new ExecutionLayerBlockProductionManager() {
-
         @Override
-        public ExecutionPayloadResult builderGetHeader(
-            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-          return null;
-        }
-
-        @Override
-        public Optional<ExecutionPayloadResult> getPayloadResult(UInt64 slot) {
+        public Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot) {
           return Optional.empty();
         }
 
@@ -54,20 +47,11 @@ public interface ExecutionLayerBlockProductionManager {
         }
 
         @Override
-        public SafeFuture<ExecutionPayload> builderGetPayload(
+        public SafeFuture<ExecutionPayload> getUnblindedPayload(
             SignedBeaconBlock signedBlindedBeaconBlock) {
           return SafeFuture.completedFuture(null);
         }
       };
-  /**
-   * This is low level method, use {@link #initiateBlockProduction(ExecutionPayloadContext,
-   * BeaconState, boolean)} instead
-   */
-  @Deprecated
-  ExecutionPayloadResult builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext, BeaconState state);
-
-  Optional<ExecutionPayloadResult> getPayloadResult(UInt64 slot);
 
   /**
    * Initiates block production flow with execution client or builder
@@ -92,5 +76,7 @@ public interface ExecutionLayerBlockProductionManager {
   ExecutionPayloadResult initiateBlockAndBlobsProduction(
       ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
 
-  SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
+  Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
+
+  SafeFuture<ExecutionPayload> getUnblindedPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 }
