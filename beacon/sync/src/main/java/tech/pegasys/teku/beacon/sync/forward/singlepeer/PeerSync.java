@@ -77,6 +77,8 @@ public class PeerSync {
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
+  private final Counter blobsSidecarImportSuccessResult;
+  private final Counter blobsSidecarImportFailureResult;
 
   private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
 
@@ -99,8 +101,16 @@ public class PeerSync {
             "block_import_total",
             "The number of block imports performed",
             "result");
+    final LabelledMetric<Counter> blobsSidecarImportCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "blobs_sidecar_import_total",
+            "The number of blobs sidecar imports performed",
+            "result");
     this.blockImportSuccessResult = blockImportCounter.labels("imported");
     this.blockImportFailureResult = blockImportCounter.labels("rejected");
+    this.blobsSidecarImportSuccessResult = blobsSidecarImportCounter.labels("imported");
+    this.blobsSidecarImportFailureResult = blobsSidecarImportCounter.labels("rejected");
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
@@ -349,10 +359,10 @@ public class PeerSync {
             (result) -> {
               LOG.trace("Block import result for block at {}: {}", block.getSlot(), result);
               if (!result.isSuccessful()) {
-                this.blockImportFailureResult.inc();
+                blockImportFailureResult.inc();
                 throw new FailedBlockImportException(block, result);
               } else {
-                this.blockImportSuccessResult.inc();
+                blockImportSuccessResult.inc();
               }
             });
   }
@@ -364,17 +374,21 @@ public class PeerSync {
     return SafeFuture.fromRunnable(
             () -> blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar))
         .whenSuccessOrException(
-            () ->
-                LOG.trace(
-                    "Blobs sidecar stored for slot {} with block root: {}",
-                    blobsSidecar.getBeaconBlockSlot(),
-                    blobsSidecar.getBeaconBlockRoot()),
-            throwable ->
-                LOG.trace(
-                    String.format(
-                        "Error while storing blobs sidecar for slot %s with block root: %s",
-                        blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
-                    throwable));
+            () -> {
+              LOG.trace(
+                  "Blobs sidecar stored for slot {} with block root: {}",
+                  blobsSidecar.getBeaconBlockSlot(),
+                  blobsSidecar.getBeaconBlockRoot());
+              blobsSidecarImportSuccessResult.inc();
+            },
+            throwable -> {
+              LOG.trace(
+                  String.format(
+                      "Error while storing blobs sidecar for slot %s with block root: %s",
+                      blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
+                  throwable);
+              blobsSidecarImportFailureResult.inc();
+            });
   }
 
   private void disconnectFromPeer(final Eth2Peer peer) {
