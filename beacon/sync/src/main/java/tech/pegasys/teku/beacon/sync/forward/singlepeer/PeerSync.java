@@ -225,8 +225,8 @@ public class PeerSync {
   }
 
   private PeerSyncResult handleFailedRequestToPeer(
-      Eth2Peer peer, final PeerStatus peerStatus, Throwable err) {
-    Throwable rootException = Throwables.getRootCause(err);
+      final Eth2Peer peer, final PeerStatus peerStatus, final Throwable err) {
+    final Throwable rootException = Throwables.getRootCause(err);
     if (rootException instanceof FailedBlockImportException) {
       final FailedBlockImportException importException = (FailedBlockImportException) rootException;
       final FailureReason reason = importException.getResult().getFailureReason();
@@ -323,7 +323,7 @@ public class PeerSync {
     @Override
     public SafeFuture<?> onResponse(final SignedBeaconBlock response) {
       if (stopped.get()) {
-        return SafeFuture.failedFuture(new CancellationException("Peer sync was cancelled"));
+        throw new CancellationException("Peer sync was cancelled");
       }
       blocks.add(response);
       return SafeFuture.COMPLETE;
@@ -359,7 +359,7 @@ public class PeerSync {
 
   private SafeFuture<?> blobsSidecarResponseListener(final BlobsSidecar blobsSidecar) {
     if (stopped.get()) {
-      return SafeFuture.failedFuture(new CancellationException("Peer sync was cancelled"));
+      throw new CancellationException("Peer sync was cancelled");
     }
     return SafeFuture.fromRunnable(
             () -> blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar))
@@ -377,7 +377,7 @@ public class PeerSync {
                     throwable));
   }
 
-  private void disconnectFromPeer(Eth2Peer peer) {
+  private void disconnectFromPeer(final Eth2Peer peer) {
     peer.disconnectCleanly(DisconnectReason.REMOTE_FAULT).ifExceptionGetsHereRaiseABug();
   }
 
