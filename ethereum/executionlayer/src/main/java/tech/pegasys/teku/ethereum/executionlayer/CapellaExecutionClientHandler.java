@@ -46,6 +46,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   @Override
   public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      return super.engineGetPayload(executionPayloadContext, slot);
+    }
     LOG.trace(
         "calling engineGetPayloadV2(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
