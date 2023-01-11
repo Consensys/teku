@@ -27,6 +27,7 @@ import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -196,9 +197,10 @@ public abstract class BeaconState implements State {
                   current_justified_checkpoint.asInternalCheckpoint());
               state.setFinalizedCheckpoint(finalized_checkpoint.asInternalCheckpoint());
 
-              applyAdditionalFields(state);
+              applyAdditionalFields(state, spec.atSlot(state.getSlot()));
             });
   }
 
-  protected abstract void applyAdditionalFields(final MutableBeaconState state);
+  protected abstract void applyAdditionalFields(
+      final MutableBeaconState state, final SpecVersion specVersion);
 }

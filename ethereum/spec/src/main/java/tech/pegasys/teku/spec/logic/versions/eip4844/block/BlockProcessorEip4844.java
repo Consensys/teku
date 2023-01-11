@@ -13,20 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.eip4844.block;
 
-import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -101,53 +94,6 @@ public class BlockProcessorEip4844 extends BlockProcessorCapella {
       throw new BlockProcessingException(
           "Blobs Sidecar availability check initiation has been rejected");
     }
-  }
-
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public void processBlsToExecutionChanges(
-      MutableBeaconState state, SszList<SignedBlsToExecutionChange> blsToExecutionChanges)
-      throws BlockProcessingException {
-    // NOOP
-  }
-
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public void processBlsToExecutionChangesNoValidation(
-      MutableBeaconStateCapella state,
-      SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges) {
-    // NOOP
-  }
-
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public void processWithdrawals(
-      MutableBeaconState genericState, ExecutionPayloadSummary payloadSummary)
-      throws BlockProcessingException {
-    // NOOP
-  }
-
-  /**
-   * See <a
-   * href=https://github.com/ethereum/consensus-specs/blob/4be8f7d669d785a184811776b3ff5ca18ae21e73/specs/eip4844/beacon-chain.md#disabling-withdrawals>Disabling
-   * Withdrawals</a>
-   */
-  @Override
-  public Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState) {
-    // NOOP
-    return Optional.empty();
   }
 
   @Override

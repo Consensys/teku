@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
@@ -34,11 +35,13 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 
 public class BeaconStateSchemaCapella
     extends AbstractBeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> {
   public static final int NEXT_WITHDRAWAL_INDEX = 25;
   public static final int NEXT_WITHDRAWAL_VALIDATOR_INDEX = 26;
+  public static final int HISTORICAL_SUMMARIES_INDEX = 27;
 
   @VisibleForTesting
   BeaconStateSchemaCapella(final SpecConfig specConfig) {
@@ -46,6 +49,8 @@ public class BeaconStateSchemaCapella
   }
 
   private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+    final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
+        new HistoricalSummary.HistoricalSummarySchema();
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
@@ -61,12 +66,21 @@ public class BeaconStateSchemaCapella
             NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             BeaconStateFields.NEXT_WITHDRAWAL_VALIDATOR_INDEX,
             () -> SszPrimitiveSchemas.UINT64_SCHEMA);
+
+    final SszField historicalSummariesField =
+        new SszField(
+            HISTORICAL_SUMMARIES_INDEX,
+            BeaconStateFields.HISTORICAL_SUMMARIES,
+            () ->
+                SszListSchema.create(
+                    historicalSummarySchema, specConfig.getHistoricalRootsLimit()));
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(
                 latestExecutionPayloadHeaderField,
                 nextWithdrawalIndexField,
-                nextWithdrawalValidatorIndexField))
+                nextWithdrawalValidatorIndexField,
+                historicalSummariesField))
         .collect(Collectors.toList());
   }
 
@@ -85,6 +99,12 @@ public class BeaconStateSchemaCapella
   public SszUInt64ListSchema<?> getInactivityScoresSchema() {
     return (SszUInt64ListSchema<?>)
         getChildSchema(getFieldIndex(BeaconStateFields.INACTIVITY_SCORES));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<HistoricalSummary, ?> getHistoricalSummariesSchema() {
+    return (SszListSchema<HistoricalSummary, ?>)
+        getChildSchema(getFieldIndex(BeaconStateFields.HISTORICAL_SUMMARIES));
   }
 
   public SyncCommittee.SyncCommitteeSchema getCurrentSyncCommitteeSchema() {

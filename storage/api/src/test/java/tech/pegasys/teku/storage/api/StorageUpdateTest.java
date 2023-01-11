@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.storage.api.StorageUpdate.NonUpdating;
 
 class StorageUpdateTest {
 
@@ -59,9 +60,16 @@ class StorageUpdateTest {
 
       try {
         final StorageUpdate storageUpdate = constructor.newInstance(values);
-        assertThat(storageUpdate.isEmpty())
-            .describedAs("isEmpty with parameter %s (%s) set", i, parameter)
-            .isFalse();
+        if (isNonUpdatingParameter(parameter)) {
+          assertThat(storageUpdate.isEmpty())
+              .describedAs(
+                  "isEmpty must be true with non-updating parameter %s (%s) set", i, parameter)
+              .isTrue();
+        } else {
+          assertThat(storageUpdate.isEmpty())
+              .describedAs("isEmpty must be false with parameter %s (%s) set", i, parameter)
+              .isFalse();
+        }
       } catch (final InvocationTargetException e) {
         if (!(e.getCause() instanceof IllegalArgumentException)) {
           throw e;
@@ -75,6 +83,10 @@ class StorageUpdateTest {
     assertThat(skippedConfigurations)
         .describedAs("Number of parameters that resulted in invalid argument exceptions")
         .isEqualTo(1);
+  }
+
+  private boolean isNonUpdatingParameter(final Parameter parameter) {
+    return parameter.getAnnotationsByType(NonUpdating.class).length > 0;
   }
 
   private Object createNonEmptyValue(final Parameter parameter) {

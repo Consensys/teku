@@ -58,5 +58,7 @@ public interface EpochProcessor {
 
   void processHistoricalRootsUpdate(MutableBeaconState state);
 
+  void processHistoricalSummariesUpdate(MutableBeaconState state);
+
   void processSyncCommitteeUpdates(MutableBeaconState state);
 }

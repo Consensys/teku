@@ -255,6 +255,16 @@ public class MiscHelpers {
     return false;
   }
 
+  /**
+   * Performs data availability by validating blobs and proof from Sidecar against blobs kzg
+   * commitments from the block. It will also make check slot and blockRoot consistency.
+   *
+   * @param slot
+   * @param beaconBlockRoot
+   * @param kzgCommitments
+   * @param blobsSidecar
+   * @return
+   */
   public boolean isDataAvailable(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,

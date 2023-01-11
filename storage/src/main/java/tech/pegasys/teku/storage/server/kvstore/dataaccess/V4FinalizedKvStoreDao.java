@@ -323,7 +323,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void removeUnconfirmedBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
+    public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.delete(
           schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
     }

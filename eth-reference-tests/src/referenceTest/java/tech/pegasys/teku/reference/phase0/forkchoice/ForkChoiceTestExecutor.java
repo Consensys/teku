@@ -60,7 +60,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.forkchoice.BlobsSidecarAvailabilityCheckerFactory;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -121,12 +121,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             spec,
             eventThread,
             recentChainData,
+            BlobsSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            BlobsSidecarAvailabilityCheckerFactory.NOOP);
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
     final ExecutionLayerChannelStub executionLayer =
         new ExecutionLayerChannelStub(spec, false, Optional.empty());
 
@@ -297,7 +297,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         block.getSlot(),
         block.getParentRoot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block, Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block, Optional.empty(), executionLayer);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = result.join();
     assertThat(importResult)

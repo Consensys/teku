@@ -17,8 +17,10 @@ import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDEC
 
 import java.util.Optional;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -33,7 +35,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   private SpecVersion specVersion;
   private RecentChainData recentChainData;
   private SignedBeaconBlock block;
-  private Optional<BlobsSidecar> blobsSidecar;
+  private BlobsSidecarProvider blobsSidecarProvider;
 
   private Optional<SafeFuture<BlobsSidecarAndValidationResult>> validationResult = Optional.empty();
 
@@ -41,16 +43,18 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
       final SpecVersion specVersion,
       final RecentChainData recentChainData,
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar) {
+      final BlobsSidecarProvider blobsSidecarProvider) {
     this.specVersion = specVersion;
     this.recentChainData = recentChainData;
     this.block = block;
-    this.blobsSidecar = blobsSidecar;
+    this.blobsSidecarProvider = blobsSidecarProvider;
   }
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    validationResult = Optional.of(SafeFuture.of(this::validateBlobsSidecar));
+    validationResult =
+        Optional.of(
+            blobsSidecarProvider.getBlobsSidecar(block).thenApply(this::validateBlobsSidecar));
     return true;
   }
 
@@ -59,7 +63,8 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
     return validationResult.orElse(NOT_REQUIRED_RESULT_FUTURE);
   }
 
-  private BlobsSidecarAndValidationResult validateBlobsSidecar() {
+  private BlobsSidecarAndValidationResult validateBlobsSidecar(
+      final Optional<BlobsSidecar> blobsSidecar) {
 
     // in the current 4844 specs, the blobsSidecar is immediately available with the block
     // so if we have it we do want to validate it regardless
@@ -97,9 +102,8 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
               blobsSidecar)) {
         return BlobsSidecarAndValidationResult.invalidResult(blobsSidecar);
       }
-    } catch (RuntimeException ex) {
-      // TODO we must revisit this once we plug the kzg library
-      return BlobsSidecarAndValidationResult.invalidResult(blobsSidecar);
+    } catch (KZGException ex) {
+      return BlobsSidecarAndValidationResult.invalidResult(blobsSidecar, ex);
     }
 
     return BlobsSidecarAndValidationResult.validResult(blobsSidecar);

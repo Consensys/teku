@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
 
 public class BeaconStateBuilderCapella
     extends AbstractBeaconStateBuilder<
@@ -40,6 +41,8 @@ public class BeaconStateBuilderCapella
   private SyncCommittee currentSyncCommittee;
   private SyncCommittee nextSyncCommittee;
   private ExecutionPayloadHeader latestExecutionPayloadHeader;
+
+  private SszList<HistoricalSummary> historicalSummaries;
 
   protected BeaconStateBuilderCapella(
       final SpecVersion spec,
@@ -64,6 +67,7 @@ public class BeaconStateBuilderCapella
     state.setLatestExecutionPayloadHeader(latestExecutionPayloadHeader);
     state.setNextWithdrawalIndex(nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(nextWithdrawalValidatorIndex);
+    state.setHistoricalSummaries(historicalSummaries);
   }
 
   public static BeaconStateBuilderCapella create(
@@ -88,6 +92,13 @@ public class BeaconStateBuilderCapella
       final UInt64 nextWithdrawalValidatorIndex) {
     checkNotNull(nextWithdrawalValidatorIndex);
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
+    return this;
+  }
+
+  public BeaconStateBuilderCapella historicalSummaries(final SszList<HistoricalSummary> summaries) {
+    checkNotNull(summaries);
+    this.historicalSummaries = summaries;
+
     return this;
   }
 
@@ -123,5 +134,11 @@ public class BeaconStateBuilderCapella
         defaultValidatorCount > 0
             ? dataStructureUtil.randomUInt64(defaultValidatorCount)
             : UInt64.ZERO;
+
+    this.historicalSummaries =
+        dataStructureUtil.randomSszList(
+            schema.getHistoricalSummariesSchema(),
+            defaultItemsInSSZLists,
+            dataStructureUtil::randomHistoricalSummary);
   }
 }
