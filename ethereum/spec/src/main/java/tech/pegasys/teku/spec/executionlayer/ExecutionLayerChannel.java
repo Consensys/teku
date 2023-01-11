@@ -25,8 +25,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -92,7 +92,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+        public SafeFuture<HeaderWithFallbackData> builderGetHeader(
             ExecutionPayloadContext executionPayloadContext, BeaconState state) {
           return SafeFuture.completedFuture(null);
         }
@@ -139,7 +139,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       SignedBeaconBlock signedBlindedBeaconBlock,
       Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction);
 
-  SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   enum Version {

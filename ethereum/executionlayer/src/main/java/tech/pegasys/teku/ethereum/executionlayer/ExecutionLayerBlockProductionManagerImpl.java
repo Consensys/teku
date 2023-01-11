@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -33,8 +33,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
-  // TODO: the will be Builder API where Payload will come together with Blobs, until this pack it
-  // with dummy
+  // TODO: Switch to actual Builder API when 4844 version is ready
   private static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_BUILDER_DUMMY =
       SafeFuture.completedFuture(
           new BlobsBundle(Bytes32.ZERO, Collections.emptyList(), Collections.emptyList()));
@@ -74,11 +73,7 @@ public class ExecutionLayerBlockProductionManagerImpl
           executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
       result =
           new ExecutionPayloadResult(
-              context,
-              Optional.of(executionPayloadFuture),
-              Optional.empty(),
-              Optional.empty(),
-              Optional.empty());
+              context, Optional.of(executionPayloadFuture), Optional.empty(), Optional.empty());
     } else {
       result = builderGetHeader(context, blockSlotState);
     }
@@ -107,7 +102,6 @@ public class ExecutionLayerBlockProductionManagerImpl
               context,
               Optional.of(executionPayloadFuture),
               Optional.empty(),
-              Optional.empty(),
               Optional.of(blobsBundleFuture));
     } else {
       result = builderGetHeader(context, blockSlotState);
@@ -126,14 +120,13 @@ public class ExecutionLayerBlockProductionManagerImpl
   @Override
   public ExecutionPayloadResult builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state) {
-    final SafeFuture<ExecutionPayloadHeader> executionPayloadHeaderFuture =
+    final SafeFuture<HeaderWithFallbackData> executionPayloadHeaderFuture =
         executionLayerChannel.builderGetHeader(executionPayloadContext, state);
 
     return new ExecutionPayloadResult(
         executionPayloadContext,
         Optional.empty(),
         Optional.of(executionPayloadHeaderFuture),
-        Optional.empty(),
         Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
   }
 }

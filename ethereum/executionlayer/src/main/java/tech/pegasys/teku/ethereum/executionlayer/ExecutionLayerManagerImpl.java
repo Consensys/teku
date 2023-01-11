@@ -51,9 +51,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -292,7 +292,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state) {
     return executionBuilderModule.builderGetHeader(executionPayloadContext, state);
   }

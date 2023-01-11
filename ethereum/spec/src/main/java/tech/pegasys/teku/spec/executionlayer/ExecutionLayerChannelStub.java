@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -322,7 +323,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
     LOG.info(
@@ -348,7 +349,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                       .createFromExecutionPayload(executionPayload);
                 });
 
-    return payloadHeaderFuture;
+    return payloadHeaderFuture.thenApply(HeaderWithFallbackData::create);
   }
 
   @Override

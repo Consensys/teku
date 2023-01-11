@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionBuilderModule {
@@ -71,7 +72,7 @@ public class ExecutionBuilderModule {
     this.eventLogger = eventLogger;
   }
 
-  private Optional<SafeFuture<ExecutionPayloadHeader>> validateBuilderGetHeader(
+  private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload) {
@@ -105,12 +106,12 @@ public class ExecutionBuilderModule {
     return Optional.empty();
   }
 
-  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
     final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload =
         executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
-    final Optional<SafeFuture<ExecutionPayloadHeader>> validationResult =
+    final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
         validateBuilderGetHeader(executionPayloadContext, state, localExecutionPayload);
     if (validationResult.isPresent()) {
       return validationResult.get();
@@ -176,14 +177,14 @@ public class ExecutionBuilderModule {
             });
   }
 
-  private SafeFuture<ExecutionPayloadHeader> getResultFromSignedBuilderBid(
+  private SafeFuture<HeaderWithFallbackData> getResultFromSignedBuilderBid(
       final SignedBuilderBid signedBuilderBid,
       final BeaconState state,
       final SignedValidatorRegistration validatorRegistration) {
     final ExecutionPayloadHeader executionPayloadHeader =
         builderBidValidator.validateAndGetPayloadHeader(
             spec, signedBuilderBid, validatorRegistration, state);
-    return SafeFuture.completedFuture(executionPayloadHeader);
+    return SafeFuture.completedFuture(HeaderWithFallbackData.create(executionPayloadHeader));
   }
 
   public SafeFuture<Void> builderRegisterValidators(
@@ -220,8 +221,10 @@ public class ExecutionBuilderModule {
 
     final UInt64 slot = signedBlindedBeaconBlock.getSlot();
 
-    final Optional<SafeFuture<Optional<FallbackData>>> maybeProcessedSlot =
-        getPayloadResultFunction.apply(slot).flatMap(ExecutionPayloadResult::getFallbackDataFuture);
+    final Optional<SafeFuture<HeaderWithFallbackData>> maybeProcessedSlot =
+        getPayloadResultFunction
+            .apply(slot)
+            .flatMap(ExecutionPayloadResult::getExecutionPayloadHeaderFuture);
 
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
@@ -229,9 +232,10 @@ public class ExecutionBuilderModule {
       return getPayloadFromBuilder(signedBlindedBeaconBlock);
     }
 
-    final SafeFuture<Optional<FallbackData>> optionalFallbackData = maybeProcessedSlot.get();
+    final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
+        maybeProcessedSlot.get();
 
-    return getPayloadFromFallbackData(signedBlindedBeaconBlock, optionalFallbackData);
+    return getPayloadFromFallbackData(signedBlindedBeaconBlock, headerWithFallbackDataFuture);
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
@@ -254,20 +258,23 @@ public class ExecutionBuilderModule {
     }
   }
 
-  private SafeFuture<ExecutionPayloadHeader> getResultFromLocalExecutionPayload(
+  private SafeFuture<HeaderWithFallbackData> getResultFromLocalExecutionPayload(
       final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload,
       final UInt64 slot,
       final FallbackReason reason) {
-    // FIXME: reason should be not here
-    LOG.debug("slot {}, reason {}", slot, reason);
     return localExecutionPayload.thenApply(
-        executionPayload ->
-            spec.atSlot(slot)
-                .getSchemaDefinitions()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getExecutionPayloadHeaderSchema()
-                .createFromExecutionPayload(executionPayload.getExecutionPayload()));
+        executionPayload -> {
+          ExecutionPayloadHeader executionPayloadHeader =
+              spec.atSlot(slot)
+                  .getSchemaDefinitions()
+                  .toVersionBellatrix()
+                  .orElseThrow()
+                  .getExecutionPayloadHeaderSchema()
+                  .createFromExecutionPayload(executionPayload.getExecutionPayload());
+          return HeaderWithFallbackData.create(
+              executionPayloadHeader,
+              new FallbackData(executionPayload.getExecutionPayload(), reason));
+        });
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
@@ -295,15 +302,16 @@ public class ExecutionBuilderModule {
 
   private SafeFuture<ExecutionPayload> getPayloadFromFallbackData(
       final SignedBeaconBlock signedBlindedBeaconBlock,
-      SafeFuture<Optional<FallbackData>> optionalFallbackData) {
+      final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
-    return optionalFallbackData.thenCompose(
-        fallbackDataOptional -> {
-          if (fallbackDataOptional.isEmpty()) {
+    return headerWithFallbackDataFuture.thenCompose(
+        headerWithFallbackData -> {
+          if (headerWithFallbackData.getFallbackDataOptional().isEmpty()) {
             return getPayloadFromBuilder(signedBlindedBeaconBlock);
           } else {
-            final FallbackData fallbackData = fallbackDataOptional.get();
+            final FallbackData fallbackData =
+                headerWithFallbackData.getFallbackDataOptional().get();
             logFallbackToLocalExecutionPayload(fallbackData);
             executionLayerManager.recordExecutionPayloadFallbackSource(
                 Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.getReason());

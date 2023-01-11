@@ -25,20 +25,17 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBun
 public class ExecutionPayloadResult {
   private final ExecutionPayloadContext executionPayloadContext;
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
-  private final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderFuture;
+  private final Optional<SafeFuture<HeaderWithFallbackData>> executionPayloadHeaderFuture;
   private final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture;
-  private final Optional<SafeFuture<Optional<FallbackData>>> fallbackDataFuture;
 
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
-      final Optional<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderFuture,
-      final Optional<SafeFuture<Optional<FallbackData>>> fallbackDataFuture,
+      final Optional<SafeFuture<HeaderWithFallbackData>> executionPayloadHeaderFuture,
       final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.executionPayloadHeaderFuture = executionPayloadHeaderFuture;
-    this.fallbackDataFuture = fallbackDataFuture;
     this.blobsBundleFuture = blobsBundleFuture;
   }
 
@@ -50,21 +47,8 @@ public class ExecutionPayloadResult {
     return executionPayloadFuture;
   }
 
-  public Optional<SafeFuture<ExecutionPayloadHeader>> getExecutionPayloadHeaderFuture() {
+  public Optional<SafeFuture<HeaderWithFallbackData>> getExecutionPayloadHeaderFuture() {
     return executionPayloadHeaderFuture;
-  }
-
-  /**
-   * if we serve unblind production, external optional is empty
-   *
-   * <p>if we serve builderGetHeader using local execution engine, we store fallback in internal
-   * optional
-   *
-   * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() in internal
-   * optional to signal that we must call the builder to serve builderGetPayload later
-   */
-  public Optional<SafeFuture<Optional<FallbackData>>> getFallbackDataFuture() {
-    return fallbackDataFuture;
   }
 
   public Optional<SafeFuture<BlobsBundle>> getBlobsBundleFuture() {
@@ -91,7 +75,6 @@ public class ExecutionPayloadResult {
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
         && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
         && Objects.equals(executionPayloadHeaderFuture, that.executionPayloadHeaderFuture)
-        && Objects.equals(fallbackDataFuture, that.fallbackDataFuture)
         && Objects.equals(blobsBundleFuture, that.blobsBundleFuture);
   }
 
@@ -101,7 +84,6 @@ public class ExecutionPayloadResult {
         executionPayloadContext,
         executionPayloadFuture,
         executionPayloadHeaderFuture,
-        fallbackDataFuture,
         blobsBundleFuture);
   }
 
@@ -111,7 +93,6 @@ public class ExecutionPayloadResult {
         .add("executionPayloadContext", executionPayloadContext)
         .add("executionPayloadFuture", executionPayloadFuture)
         .add("executionPayloadHeaderFuture", executionPayloadHeaderFuture)
-        .add("fallbackDataFuture", fallbackDataFuture)
         .add("blobsBundleFuture", blobsBundleFuture)
         .toString();
   }

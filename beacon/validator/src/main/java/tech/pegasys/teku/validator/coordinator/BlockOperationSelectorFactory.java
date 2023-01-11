@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -213,7 +214,10 @@ public class BlockOperationSelectorFactory {
       bodyBuilder.executionPayloadHeader(
           executionPayloadResultFuture.thenCompose(
               executionPayloadResult ->
-                  executionPayloadResult.getExecutionPayloadHeaderFuture().orElseThrow()));
+                  executionPayloadResult
+                      .getExecutionPayloadHeaderFuture()
+                      .orElseThrow()
+                      .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader)));
     } else {
       bodyBuilder.executionPayload(
           executionPayloadResultFuture.thenCompose(
@@ -269,7 +273,8 @@ public class BlockOperationSelectorFactory {
                 return executionLayerBlockProductionManager
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)
                     .getExecutionPayloadHeaderFuture()
-                    .orElseThrow();
+                    .orElseThrow()
+                    .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader);
               }
             }));
   }

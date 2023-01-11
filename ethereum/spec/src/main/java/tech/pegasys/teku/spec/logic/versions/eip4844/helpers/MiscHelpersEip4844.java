@@ -141,7 +141,6 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
     return transactionsVersionedHashes.equals(commitmentsVersionedHashes);
   }
 
-  // FIXME: should we move it to interface?
   public KZGCommitment blobToKzgCommitment(final Blob blob) {
     return kzg.blobToKzgCommitment(blob.getBytes());
   }
