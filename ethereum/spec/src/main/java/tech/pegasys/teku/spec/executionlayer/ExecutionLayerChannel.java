@@ -108,15 +108,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
-  /**
-   * This is low level method, use {@link
-   * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
-   * BeaconState, boolean)} instead
-   */
-  @Deprecated
-  SafeFuture<ExecutionPayload> engineGetPayload(
-      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
-
   SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);
 
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
@@ -124,10 +115,17 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   /**
    * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
+  SafeFuture<ExecutionPayload> engineGetPayload(
+      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
+
+  /**
+   * This is low level method, use {@link
    * ExecutionLayerBlockProductionManager#initiateBlockAndBlobsProduction(ExecutionPayloadContext,
    * BeaconState, boolean)} instead
    */
-  @Deprecated
   SafeFuture<BlobsBundle> engineGetBlobsBundle(
       UInt64 slot, final Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional);
 
@@ -135,10 +133,19 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<Void> builderRegisterValidators(
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
+  /**
+   * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock)}  instead
+   */
   SafeFuture<ExecutionPayload> builderGetPayload(
       SignedBeaconBlock signedBlindedBeaconBlock,
       Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction);
 
+  /**
+   * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
   SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
