@@ -1225,4 +1225,28 @@ public class SafeFutureTest {
     Thread.currentThread().setUncaughtExceptionHandler((t, e) -> caughtExceptions.add(e));
     return caughtExceptions;
   }
+
+  @Test
+  public void whenSuccessOrException_shouldRunSuccessActionIsRanWhenFutureIsCompleted() {
+    final AtomicBoolean successFlag = new AtomicBoolean(false);
+    final AtomicBoolean exceptionFlag = new AtomicBoolean(false);
+    final SafeFuture<String> future =
+        SafeFuture.completedFuture("foobar")
+            .whenSuccessOrException(() -> successFlag.set(true), __ -> exceptionFlag.set(true));
+    assertThat(future).isCompleted();
+    assertThat(successFlag).isTrue();
+    assertThat(exceptionFlag).isFalse();
+  }
+
+  @Test
+  public void whenSuccessOrException_shouldRunExceptionActionIsRanWhenFutureIsCompleted() {
+    final AtomicBoolean successFlag = new AtomicBoolean(false);
+    final AtomicBoolean exceptionFlag = new AtomicBoolean(false);
+    final SafeFuture<Object> future =
+        SafeFuture.failedFuture(new IllegalStateException("oopsy"))
+            .whenSuccessOrException(() -> successFlag.set(true), __ -> exceptionFlag.set(true));
+    assertThat(future).isCompletedExceptionally();
+    assertThat(successFlag).isFalse();
+    assertThat(exceptionFlag).isTrue();
+  }
 }

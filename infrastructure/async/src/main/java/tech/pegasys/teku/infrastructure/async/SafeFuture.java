@@ -648,6 +648,24 @@ public class SafeFuture<T> extends CompletableFuture<T> {
   }
 
   /**
+   * Returns the future which completes with the same result or exception. The successAction is run
+   * if this future completes successfully and the exceptionAction is run if this future completes
+   * exceptionally
+   */
+  public SafeFuture<T> whenSuccessOrException(
+      final Runnable successAction, final Consumer<Throwable> exceptionAction) {
+    return (SafeFuture<T>)
+        super.whenComplete(
+            (r, t) -> {
+              if (t != null) {
+                exceptionAction.accept(t);
+              } else {
+                successAction.run();
+              }
+            });
+  }
+
+  /**
    * Returns a void future that completes successfully with null result. The consumer is invoked if
    * this future completes exceptions and the returned future only completes once the consumer
    * returns.

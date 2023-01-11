@@ -31,6 +31,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -54,6 +55,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final StorageUpdateChannel storageUpdateChannel;
   private final Eth2P2PNetwork p2pNetwork;
   private final BlockImporter blockImporter;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
@@ -72,6 +74,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final StorageUpdateChannel storageUpdateChannel,
       final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
+      final BlobsSidecarManager blobsSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
@@ -88,6 +91,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.storageUpdateChannel = storageUpdateChannel;
     this.p2pNetwork = p2pNetwork;
     this.blockImporter = blockImporter;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.pendingBlocks = pendingBlocks;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
@@ -153,7 +157,13 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     } else {
       forwardSync =
           SinglePeerSyncServiceFactory.create(
-              metrics, asyncRunner, p2pNetwork, recentChainData, blockImporter, spec);
+              metrics,
+              asyncRunner,
+              p2pNetwork,
+              recentChainData,
+              blockImporter,
+              blobsSidecarManager,
+              spec);
     }
     return forwardSync;
   }

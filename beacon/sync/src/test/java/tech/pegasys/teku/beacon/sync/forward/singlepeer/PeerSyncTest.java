@@ -80,7 +80,13 @@ public class PeerSyncTest extends AbstractSyncTest {
     when(blockImporter.importBlock(any())).thenReturn(result);
     when(storageClient.getHeadSlot()).thenReturn(UInt64.ONE);
 
-    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
+    peerSync =
+        new PeerSync(
+            asyncRunner,
+            storageClient,
+            blockImporter,
+            blobsSidecarManager,
+            new NoOpMetricsSystem());
   }
 
   @Test
@@ -142,16 +148,10 @@ public class PeerSyncTest extends AbstractSyncTest {
     // Importing the returned block fails
     when(blockImporter.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(importResult.get()));
-    // Probably want to have a specific exception type to indicate bad data.
-    try {
-      responseListener.onResponse(block).join();
-      fail("Should have thrown an error to indicate the response was bad");
-    } catch (final Exception e) {
-      // RpcMessageHandler will consider the request complete if there's an error processing a
-      // response
-      assertThat(e).hasCauseInstanceOf(FailedBlockImportException.class);
-      requestFuture.completeExceptionally(e);
-    }
+    responseListener.onResponse(block).join();
+
+    // completing the peer request which triggers the block import
+    requestFuture.complete(null);
 
     assertThat(syncFuture).isCompleted();
     PeerSyncResult result = syncFuture.join();
@@ -218,17 +218,17 @@ public class PeerSyncTest extends AbstractSyncTest {
         responseListenerArgumentCaptor.getValue();
     final List<SignedBeaconBlock> blocks =
         respondWithBlocksAtSlots(responseListener, UInt64.ONE, PEER_HEAD_SLOT);
+
+    // completing the peer request which triggers the block import
+    requestFuture.complete(null);
+
     for (SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
-    assertThat(syncFuture).isNotDone();
 
     // Now that we've imported the block, our finalized epoch has updated but hasn't reached what
     // the peer claimed
     when(storageClient.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH.minus(UInt64.ONE));
-
-    // Signal the request for data from the peer is complete.
-    requestFuture.complete(null);
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();

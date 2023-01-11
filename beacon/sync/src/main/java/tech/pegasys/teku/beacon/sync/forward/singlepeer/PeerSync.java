@@ -14,9 +14,11 @@
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,9 +37,13 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -66,23 +72,27 @@ public class PeerSync {
   private final Spec spec;
   private final RecentChainData storageClient;
   private final BlockImporter blockImporter;
+  private final BlobsSidecarManager blobsSidecarManager;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
 
   private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
+
   private volatile UInt64 startingSlot = UInt64.valueOf(0);
 
   public PeerSync(
       final AsyncRunner asyncRunner,
       final RecentChainData storageClient,
       final BlockImporter blockImporter,
+      final BlobsSidecarManager blobsSidecarManager,
       final MetricsSystem metricsSystem) {
     this.spec = storageClient.getSpec();
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
+    this.blobsSidecarManager = blobsSidecarManager;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -128,6 +138,7 @@ public class PeerSync {
     }
 
     final PeerStatus status = peer.getStatus();
+
     final UInt64 count = calculateNumberOfBlocksToRequest(startSlot, status);
     if (count.longValue() == 0) {
       return completeSyncWithPeer(peer, status);
@@ -147,6 +158,7 @@ public class PeerSync {
               if (findCommonAncestor) {
                 LOG.trace("Start sync from slot {}, instead of {}", ancestorStartSlot, startSlot);
               }
+
               LOG.debug(
                   "Request {} blocks starting at {} from peer {}",
                   count,
@@ -154,13 +166,34 @@ public class PeerSync {
                   peer.getId());
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
+
+              final CachingBlockResponseListener cachingBlockResponseListener =
+                  new CachingBlockResponseListener();
+
               final PeerSyncBlockRequest request =
                   new PeerSyncBlockRequest(
                       readyForNextRequest,
                       ancestorStartSlot.plus(count),
-                      this::blockResponseListener);
-              return peer.requestBlocksByRange(ancestorStartSlot, count, request)
-                  .thenApply((res) -> request);
+                      cachingBlockResponseListener);
+
+              final SafeFuture<Void> blobsSidecarsRequest;
+              if (slotIsEip4844OrGreater(request.getActualEndSlot())) {
+                blobsSidecarsRequest =
+                    peer.requestBlobsSidecarsByRange(
+                        ancestorStartSlot, count, this::blobsSidecarResponseListener);
+              } else {
+                blobsSidecarsRequest = SafeFuture.COMPLETE;
+              }
+
+              return SafeFuture.allOf(
+                      peer.requestBlocksByRange(ancestorStartSlot, count, request),
+                      blobsSidecarsRequest)
+                  .thenCompose(__ -> importBlocks(cachingBlockResponseListener.getReceivedBlocks()))
+                  .thenApply(
+                      __ -> {
+                        cachingBlockResponseListener.clearReceivedBlocks();
+                        return request;
+                      });
             })
         .thenCompose(
             (blockRequest) -> {
@@ -261,21 +294,55 @@ public class PeerSync {
   }
 
   private UInt64 calculateNumberOfBlocksToRequest(final UInt64 nextSlot, final PeerStatus status) {
-    if (nextSlot.compareTo(status.getHeadSlot()) > 0) {
+    if (nextSlot.isGreaterThan(status.getHeadSlot())) {
       // We've synced the advertised head, nothing left to request
       return UInt64.ZERO;
     }
 
     final UInt64 diff = status.getHeadSlot().minus(nextSlot).plus(UInt64.ONE);
-    return diff.compareTo(MAX_BLOCK_BY_RANGE_REQUEST_SIZE) > 0
-        ? MAX_BLOCK_BY_RANGE_REQUEST_SIZE
-        : diff;
+    final UInt64 numberOfBlocksToRequest = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+
+    final UInt64 requestEndSlot = nextSlot.plus(numberOfBlocksToRequest).minus(1);
+
+    if (slotIsEip4844OrGreater(requestEndSlot)) {
+      return numberOfBlocksToRequest.min(MAX_REQUEST_BLOBS_SIDECARS);
+    }
+
+    return numberOfBlocksToRequest;
   }
 
-  private SafeFuture<?> blockResponseListener(final SignedBeaconBlock block) {
-    if (stopped.get()) {
-      throw new CancellationException("Peer sync was cancelled");
+  private boolean slotIsEip4844OrGreater(final UInt64 slot) {
+    final SpecMilestone slotMilestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
+    return slotMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844);
+  }
+
+  private class CachingBlockResponseListener implements RpcResponseListener<SignedBeaconBlock> {
+
+    private final List<SignedBeaconBlock> blocks = new LinkedList<>();
+
+    @Override
+    public SafeFuture<?> onResponse(final SignedBeaconBlock response) {
+      if (stopped.get()) {
+        return SafeFuture.failedFuture(new CancellationException("Peer sync was cancelled"));
+      }
+      blocks.add(response);
+      return SafeFuture.COMPLETE;
     }
+
+    public List<SignedBeaconBlock> getReceivedBlocks() {
+      return blocks;
+    }
+
+    public void clearReceivedBlocks() {
+      blocks.clear();
+    }
+  }
+
+  private SafeFuture<Void> importBlocks(final List<SignedBeaconBlock> blocks) {
+    return SafeFuture.allOf(blocks.stream().map(this::importBlock));
+  }
+
+  private SafeFuture<Void> importBlock(final SignedBeaconBlock block) {
     return blockImporter
         .importBlock(block)
         .thenAccept(
@@ -288,6 +355,26 @@ public class PeerSync {
                 this.blockImportSuccessResult.inc();
               }
             });
+  }
+
+  private SafeFuture<?> blobsSidecarResponseListener(final BlobsSidecar blobsSidecar) {
+    if (stopped.get()) {
+      return SafeFuture.failedFuture(new CancellationException("Peer sync was cancelled"));
+    }
+    return SafeFuture.fromRunnable(
+            () -> blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar))
+        .whenSuccessOrException(
+            () ->
+                LOG.trace(
+                    "Blobs sidecar stored for slot {} with block root: {}",
+                    blobsSidecar.getBeaconBlockSlot(),
+                    blobsSidecar.getBeaconBlockRoot()),
+            throwable ->
+                LOG.trace(
+                    String.format(
+                        "Error while storing blobs sidecar for slot %s with block root: %s",
+                        blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
+                    throwable));
   }
 
   private void disconnectFromPeer(Eth2Peer peer) {
