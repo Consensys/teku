@@ -135,4 +135,26 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
     }
     return withdrawals;
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("ExecutionPayloadV2{");
+    sb.append("withdrawals=").append(withdrawals);
+    sb.append(", transactions=").append(transactions);
+    sb.append(", parentHash=").append(parentHash);
+    sb.append(", feeRecipient=").append(feeRecipient);
+    sb.append(", stateRoot=").append(stateRoot);
+    sb.append(", receiptsRoot=").append(receiptsRoot);
+    sb.append(", logsBloom=").append(logsBloom);
+    sb.append(", prevRandao=").append(prevRandao);
+    sb.append(", blockNumber=").append(blockNumber);
+    sb.append(", gasLimit=").append(gasLimit);
+    sb.append(", gasUsed=").append(gasUsed);
+    sb.append(", timestamp=").append(timestamp);
+    sb.append(", extraData=").append(extraData);
+    sb.append(", baseFeePerGas=").append(baseFeePerGas);
+    sb.append(", blockHash=").append(blockHash);
+    sb.append('}');
+    return sb.toString();
+  }
 }

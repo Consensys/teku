@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -33,13 +32,20 @@ public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
   private static final ForkChoiceState DEFAULT_FORK_CHOICE_STATE =
       new ForkChoiceState(
-          Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
+          Bytes32.ZERO,
+          UInt64.ZERO,
+          Bytes32.ZERO,
+          Bytes32.ZERO,
+          Bytes32.ZERO,
+          false,
+          Optional.empty());
 
   private final ForkChoiceState forkChoiceState;
   private final Optional<PayloadBuildingAttributes> payloadBuildingAttributes;
   private final Optional<Bytes32> terminalBlockHash;
   private final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContext =
       new SafeFuture<>();
+  private final Optional<UInt64> genesisTime;
   private UInt64 toBeSentAtTime = UInt64.ZERO;
 
   private long payloadBuildingAttributesSequenceProducer = 0;
@@ -49,12 +55,14 @@ public class ForkChoiceUpdateData {
     this.forkChoiceState = DEFAULT_FORK_CHOICE_STATE;
     this.payloadBuildingAttributes = Optional.empty();
     this.terminalBlockHash = Optional.empty();
+    this.genesisTime = Optional.empty();
   }
 
-  public ForkChoiceUpdateData(
+  private ForkChoiceUpdateData(
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes,
-      final Optional<Bytes32> terminalBlockHash) {
+      final Optional<Bytes32> terminalBlockHash,
+      final Optional<UInt64> genesisTime) {
     if (terminalBlockHash.isPresent() && forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       this.forkChoiceState =
           new ForkChoiceState(
@@ -63,19 +71,22 @@ public class ForkChoiceUpdateData {
               terminalBlockHash.get(),
               Bytes32.ZERO,
               Bytes32.ZERO,
-              false);
+              false,
+              genesisTime);
     } else {
       this.forkChoiceState = forkChoiceState;
     }
     this.payloadBuildingAttributes = payloadBuildingAttributes;
     this.terminalBlockHash = terminalBlockHash;
+    this.genesisTime = genesisTime;
   }
 
   public ForkChoiceUpdateData withForkChoiceState(final ForkChoiceState forkChoiceState) {
     if (this.forkChoiceState.equals(forkChoiceState)) {
       return this;
     }
-    return new ForkChoiceUpdateData(forkChoiceState, Optional.empty(), terminalBlockHash);
+    return new ForkChoiceUpdateData(
+        forkChoiceState, Optional.empty(), terminalBlockHash, genesisTime);
   }
 
   public ForkChoiceUpdateData withPayloadBuildingAttributes(
@@ -83,7 +94,8 @@ public class ForkChoiceUpdateData {
     if (this.payloadBuildingAttributes.equals(payloadBuildingAttributes)) {
       return this;
     }
-    return new ForkChoiceUpdateData(forkChoiceState, payloadBuildingAttributes, terminalBlockHash);
+    return new ForkChoiceUpdateData(
+        forkChoiceState, payloadBuildingAttributes, terminalBlockHash, genesisTime);
   }
 
   public ForkChoiceUpdateData withTerminalBlockHash(final Bytes32 terminalBlockHash) {
@@ -92,7 +104,15 @@ public class ForkChoiceUpdateData {
       return this;
     }
     return new ForkChoiceUpdateData(
-        forkChoiceState, payloadBuildingAttributes, Optional.of(terminalBlockHash));
+        forkChoiceState, payloadBuildingAttributes, Optional.of(terminalBlockHash), genesisTime);
+  }
+
+  public ForkChoiceUpdateData withGenesisTime(final UInt64 genesisTime) {
+    return new ForkChoiceUpdateData(
+        forkChoiceState,
+        payloadBuildingAttributes,
+        terminalBlockHash,
+        Optional.ofNullable(genesisTime));
   }
 
   public SafeFuture<Optional<ForkChoiceUpdateData>> withPayloadBuildingAttributesAsync(
@@ -222,11 +242,13 @@ public class ForkChoiceUpdateData {
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("forkChoiceState", forkChoiceState)
-        .add("payloadBuildingAttributes", payloadBuildingAttributes)
-        .add("terminalBlockHash", terminalBlockHash)
-        .add("executionPayloadContext", executionPayloadContext)
-        .toString();
+    final StringBuilder sb = new StringBuilder("ForkChoiceUpdateData{");
+    sb.append("forkChoiceState=").append(forkChoiceState);
+    sb.append(", payloadBuildingAttributes=").append(payloadBuildingAttributes);
+    sb.append(", terminalBlockHash=").append(terminalBlockHash);
+    sb.append(", executionPayloadContext=").append(executionPayloadContext);
+    sb.append(", genesisTime=").append(genesisTime);
+    sb.append('}');
+    return sb.toString();
   }
 }

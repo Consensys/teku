@@ -1488,7 +1488,8 @@ public final class DataStructureUtil {
         randomBytes32(),
         randomBytes32(),
         finalizedBlockHash,
-        optimisticHead);
+        optimisticHead,
+        Optional.empty());
   }
 
   public BeaconState randomBeaconState() {

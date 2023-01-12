@@ -204,7 +204,8 @@ class Store implements UpdatableStore {
                 initialCheckpoint,
                 currentEpoch,
                 justifiedCheckpoint,
-                finalizedAnchor));
+                finalizedAnchor),
+            genesisTime);
 
     return new Store(
         metricsSystem,

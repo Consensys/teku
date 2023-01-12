@@ -66,6 +66,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     this.proposersDataManager = proposersDataManager;
     this.timeProvider = timeProvider;
     proposersDataManager.subscribeToProposersDataChanges(this);
+    forkChoiceUpdateData = forkChoiceUpdateData.withGenesisTime(recentChainData.getGenesisTime());
   }
 
   @Override

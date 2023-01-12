@@ -79,7 +79,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     for (ChainBuilder builder : additionalBuilders) {
       addBlocksFromBuilder(builder, protoArray);
     }
-    return ForkChoiceStrategy.initialize(spec, protoArray);
+    return ForkChoiceStrategy.initialize(
+        spec, protoArray, spec.getGenesisSpec().getConfig().getMinGenesisTime());
   }
 
   private void addBlocksFromBuilder(final ChainBuilder chainBuilder, final ProtoArray protoArray) {
@@ -101,7 +102,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   @Test
   void onPayloadExecution_shouldNotPenalizeNodeOnFailedExecution() {
     final ProtoArray protoArray = mock(ProtoArray.class);
-    final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
+    final ForkChoiceStrategy forkChoiceStrategy =
+        ForkChoiceStrategy.initialize(
+            spec, protoArray, spec.getGenesisSpec().getConfig().getMinGenesisTime());
     forkChoiceStrategy.onExecutionPayloadResult(
         dataStructureUtil.randomBytes32(), PayloadStatus.failedExecution(new Error()), true);
     verify(protoArray, never()).markNodeInvalid(any(), any());
@@ -111,7 +114,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
   @Test
   void onPayloadExecution_shouldPenalizeNodeOnInvalidExecutionWithoutTransition() {
     final ProtoArray protoArray = mock(ProtoArray.class);
-    final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
+    final ForkChoiceStrategy forkChoiceStrategy =
+        ForkChoiceStrategy.initialize(
+            spec, protoArray, spec.getGenesisSpec().getConfig().getMinGenesisTime());
     forkChoiceStrategy.onExecutionPayloadResult(
         dataStructureUtil.randomBytes32(),
         PayloadStatus.invalid(Optional.of(dataStructureUtil.randomBytes32()), Optional.empty()),
@@ -153,7 +158,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             anchor.getCheckpoint()),
         Bytes32.ZERO,
         false);
-    final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
+    final ForkChoiceStrategy forkChoiceStrategy =
+        ForkChoiceStrategy.initialize(
+            spec, protoArray, spec.getGenesisSpec().getConfig().getMinGenesisTime());
     TestStoreImpl store = new TestStoreFactory().createAnchorStore(anchor);
 
     assertThat(forkChoiceStrategy.getTotalTrackedNodeCount()).isEqualTo(1);

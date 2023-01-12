@@ -55,14 +55,19 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   private Optional<Bytes32> proposerBoostRoot = Optional.empty();
   private UInt64 proposerBoostAmount = UInt64.ZERO;
 
-  private ForkChoiceStrategy(Spec spec, ProtoArray protoArray, List<UInt64> balances) {
+  private final UInt64 genesisTime;
+
+  private ForkChoiceStrategy(
+      Spec spec, ProtoArray protoArray, List<UInt64> balances, final UInt64 genesisTime) {
     this.spec = spec;
     this.protoArray = protoArray;
     this.balances = balances;
+    this.genesisTime = genesisTime;
   }
 
-  public static ForkChoiceStrategy initialize(final Spec spec, final ProtoArray protoArray) {
-    return new ForkChoiceStrategy(spec, protoArray, new ArrayList<>());
+  public static ForkChoiceStrategy initialize(
+      final Spec spec, final ProtoArray protoArray, final UInt64 genesisTime) {
+    return new ForkChoiceStrategy(spec, protoArray, new ArrayList<>(), genesisTime);
   }
 
   public SlotAndBlockRoot findHead(
@@ -207,7 +212,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
           headExecutionBlockHash,
           justifiedExecutionHash,
           finalizedExecutionHash,
-          headNode.isOptimistic() || !protoArray.nodeIsViableForHead(headNode));
+          headNode.isOptimistic() || !protoArray.nodeIsViableForHead(headNode),
+          Optional.of(genesisTime));
     } finally {
       protoArrayLock.readLock().unlock();
     }

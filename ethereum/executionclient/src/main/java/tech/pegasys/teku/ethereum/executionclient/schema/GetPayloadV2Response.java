@@ -33,4 +33,13 @@ public class GetPayloadV2Response {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
   }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("GetPayloadV2Response{");
+    sb.append("executionPayload=").append(executionPayload);
+    sb.append(", blockValue=").append(blockValue);
+    sb.append('}');
+    return sb.toString();
+  }
 }

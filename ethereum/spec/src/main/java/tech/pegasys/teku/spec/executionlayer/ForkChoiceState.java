@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.executionlayer;
 
-import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -26,6 +26,7 @@ public class ForkChoiceState {
   private final Bytes32 safeExecutionBlockHash;
   private final Bytes32 finalizedExecutionBlockHash;
   private final boolean isHeadOptimistic;
+  private final Optional<UInt64> genesisTime;
 
   public ForkChoiceState(
       final Bytes32 headBlockRoot,
@@ -33,13 +34,15 @@ public class ForkChoiceState {
       final Bytes32 headExecutionBlockHash,
       final Bytes32 safeExecutionBlockHash,
       final Bytes32 finalizedExecutionBlockHash,
-      final boolean isHeadOptimistic) {
+      final boolean isHeadOptimistic,
+      final Optional<UInt64> genesisTime) {
     this.headBlockRoot = headBlockRoot;
     this.headBlockSlot = headBlockSlot;
     this.headExecutionBlockHash = headExecutionBlockHash;
     this.safeExecutionBlockHash = safeExecutionBlockHash;
     this.finalizedExecutionBlockHash = finalizedExecutionBlockHash;
     this.isHeadOptimistic = isHeadOptimistic;
+    this.genesisTime = genesisTime;
   }
 
   public Bytes32 getHeadBlockRoot() {
@@ -66,16 +69,22 @@ public class ForkChoiceState {
     return isHeadOptimistic;
   }
 
+  public Optional<UInt64> getGenesisTime() {
+    return genesisTime;
+  }
+
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("headBlockRoot", headBlockRoot)
-        .add("headBlockSlot", headBlockSlot)
-        .add("headExecutionBlockHash", headExecutionBlockHash)
-        .add("safeExecutionBlockHash", safeExecutionBlockHash)
-        .add("finalizedExecutionBlockHash", finalizedExecutionBlockHash)
-        .add("isHeadOptimistic", isHeadOptimistic)
-        .toString();
+    final StringBuilder sb = new StringBuilder("ForkChoiceState{");
+    sb.append("headBlockRoot=").append(headBlockRoot);
+    sb.append(", headBlockSlot=").append(headBlockSlot);
+    sb.append(", headExecutionBlockHash=").append(headExecutionBlockHash);
+    sb.append(", safeExecutionBlockHash=").append(safeExecutionBlockHash);
+    sb.append(", finalizedExecutionBlockHash=").append(finalizedExecutionBlockHash);
+    sb.append(", isHeadOptimistic=").append(isHeadOptimistic);
+    sb.append(", genesisTime=").append(genesisTime);
+    sb.append('}');
+    return sb.toString();
   }
 
   @Override
@@ -92,7 +101,8 @@ public class ForkChoiceState {
         && Objects.equals(headBlockSlot, that.headBlockSlot)
         && Objects.equals(headExecutionBlockHash, that.headExecutionBlockHash)
         && Objects.equals(safeExecutionBlockHash, that.safeExecutionBlockHash)
-        && Objects.equals(finalizedExecutionBlockHash, that.finalizedExecutionBlockHash);
+        && Objects.equals(finalizedExecutionBlockHash, that.finalizedExecutionBlockHash)
+        && Objects.equals(genesisTime, that.genesisTime);
   }
 
   @Override
@@ -103,6 +113,7 @@ public class ForkChoiceState {
         headExecutionBlockHash,
         safeExecutionBlockHash,
         finalizedExecutionBlockHash,
-        isHeadOptimistic);
+        isHeadOptimistic,
+        genesisTime);
   }
 }

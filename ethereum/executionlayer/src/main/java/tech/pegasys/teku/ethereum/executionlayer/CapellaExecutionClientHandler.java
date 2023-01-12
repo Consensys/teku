@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -37,10 +39,30 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandler
     implements ExecutionClientHandler {
   private static final Logger LOG = LogManager.getLogger();
+  private Optional<UInt64> firstCapellaSlot = Optional.empty();
+  private Optional<UInt64> capellaTimestamp = Optional.empty();
 
   public CapellaExecutionClientHandler(
       final Spec spec, final ExecutionEngineClient executionEngineClient) {
     super(spec, executionEngineClient);
+    final List<Fork> forks = spec.getForkSchedule().getForks();
+    for (Fork f : forks) {
+      if (spec.atEpoch(f.getEpoch()).getMilestone().equals(SpecMilestone.CAPELLA)) {
+        firstCapellaSlot = Optional.of(spec.computeStartSlotAtEpoch(f.getEpoch()));
+        LOG.trace("First capella slot={}", firstCapellaSlot.get());
+        break;
+      }
+    }
+  }
+
+  CapellaExecutionClientHandler(
+      final Spec spec,
+      final ExecutionEngineClient executionEngineClient,
+      final Optional<UInt64> firstCapellaSlot,
+      final Optional<UInt64> capellaTimestamp) {
+    super(spec, executionEngineClient);
+    this.capellaTimestamp = capellaTimestamp;
+    this.firstCapellaSlot = firstCapellaSlot;
   }
 
   @Override
@@ -79,9 +101,29 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
       engineForkChoiceUpdated(
           final ForkChoiceState forkChoiceState,
           final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
-    if (!spec.atSlot(forkChoiceState.getHeadBlockSlot().increment())
+    if (capellaTimestamp.isEmpty()
+        && firstCapellaSlot.isPresent()
+        && forkChoiceState.getGenesisTime().isPresent()) {
+      capellaTimestamp =
+          Optional.of(
+              forkChoiceState
+                  .getGenesisTime()
+                  .get()
+                  .plus(
+                      firstCapellaSlot
+                          .get()
+                          .times(spec.getSecondsPerSlot(firstCapellaSlot.get()))));
+      LOG.trace("Capella timestamp={}", capellaTimestamp.get());
+    }
+    if (payloadBuildingAttributes.isPresent() && capellaTimestamp.isPresent()) {
+      if (payloadBuildingAttributes.get().getTimestamp().isLessThan(capellaTimestamp.get())) {
+        LOG.trace("Calling v1 FCU, payload is prior to capella");
+        return super.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
+      }
+    } else if (!spec.atSlot(forkChoiceState.getHeadBlockSlot().increment())
         .getMilestone()
         .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      LOG.trace("Calling v1 FCU - no payload, looking at the head block from forkChoiceState");
       return super.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
     }
     LOG.trace(
@@ -105,7 +147,12 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    if (executionPayload.getOptionalWithdrawals().isEmpty()) {
+    if (capellaTimestamp.isEmpty()
+        || executionPayload.getTimestamp().isLessThan(capellaTimestamp.get())) {
+      LOG.trace(
+          "Calling v1 new payload, payload is prior to capella, {} vs capella stamp {}",
+          executionPayload.getTimestamp(),
+          capellaTimestamp.isPresent() ? capellaTimestamp.get() : "EMPTY");
       return super.engineNewPayload(executionPayload);
     }
     LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);

@@ -954,7 +954,8 @@ class ForkChoiceTest {
                 headExecutionHash,
                 justifiedExecutionHash,
                 finalizedExecutionHash,
-                optimisticHead),
+                optimisticHead,
+                Optional.of(blockAndState.getState().getGenesisTime())),
             Optional.empty());
   }
 

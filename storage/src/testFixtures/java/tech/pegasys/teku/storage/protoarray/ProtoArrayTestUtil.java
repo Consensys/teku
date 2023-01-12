@@ -47,7 +47,9 @@ public class ProtoArrayTestUtil {
             .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
 
-    ForkChoiceStrategy forkChoice = ForkChoiceStrategy.initialize(spec, protoArray);
+    ForkChoiceStrategy forkChoice =
+        ForkChoiceStrategy.initialize(
+            spec, protoArray, spec.getGenesisSpec().getConfig().getMinGenesisTime());
 
     forkChoice.processBlock(
         finalizedBlockSlot,

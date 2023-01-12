@@ -120,6 +120,10 @@ class ForkChoiceNotifierTest {
                 executionLayerChannel,
                 recentChainData,
                 doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
+    storageSystem
+        .chainUpdater()
+        .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
+    storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -133,10 +137,7 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
-    storageSystem
-        .chainUpdater()
-        .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
-    storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
+
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
 
     when(executionLayerChannel.builderRegisterValidators(any(), any()))
@@ -252,7 +253,13 @@ class ForkChoiceNotifierTest {
 
     notifyForkChoiceUpdated(
         new ForkChoiceState(
-            Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false));
+            Bytes32.ZERO,
+            UInt64.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            false,
+            Optional.empty()));
 
     verifyNoInteractions(executionLayerChannel);
   }
@@ -646,7 +653,13 @@ class ForkChoiceNotifierTest {
     // onForkChoiceUpdated before calling onTerminalBlock, so it will initialize ZEROED
     final ForkChoiceState forkChoiceState =
         new ForkChoiceState(
-            Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, Bytes32.ZERO, Bytes32.ZERO, false);
+            Bytes32.ZERO,
+            UInt64.ZERO,
+            terminalBlockHash,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            false,
+            Optional.empty());
 
     final PayloadBuildingAttributes payloadBuildingAttributes =
         withProposerForSlot(headState, blockSlot);
@@ -972,7 +985,8 @@ class ForkChoiceNotifierTest {
         headExecutionHash,
         headExecutionHash,
         finalizedExecutionHash,
-        false);
+        false,
+        Optional.empty());
   }
 
   private SignedValidatorRegistration createValidatorRegistration(
