@@ -205,10 +205,6 @@ public class PeerSync {
                     peer.requestBlobsSidecarsByRange(
                         ancestorStartSlot, count, this::blobsSidecarResponseListener);
               } else {
-                LOG.trace(
-                    "Blobs sidecars not required for {} slots starting at {}",
-                    count,
-                    ancestorStartSlot);
                 blobsSidecarsRequest = SafeFuture.COMPLETE;
               }
 
