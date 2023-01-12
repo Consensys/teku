@@ -158,7 +158,7 @@ public class PeerSync {
     final RequestContext requestContext = createRequestContext(startSlot, status);
 
     final UInt64 count = requestContext.getCount();
-    final boolean requiresSidecars = requestContext.getRequiresSidecars();
+    final boolean blobsSidecarsRequired = requestContext.areBlobsSidecarsRequired();
 
     readyForRequest.complete(null);
 
@@ -195,7 +195,7 @@ public class PeerSync {
                       cachingBlockResponseListener);
 
               final SafeFuture<Void> blobsSidecarsRequest;
-              if (requiresSidecars) {
+              if (blobsSidecarsRequired) {
                 LOG.debug(
                     "Request {} blobs sidecars starting at {} from peer {}",
                     count,
@@ -322,41 +322,43 @@ public class PeerSync {
     final UInt64 requestCount = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
     final UInt64 requestEndSlot = nextSlot.plus(requestCount).minus(1);
 
-    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(requestEndSlot);
-
-    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      final boolean requiresSidecars =
-          storageClient
-              .getCurrentEpoch()
-              .map(
-                  currentEpoch ->
-                      currentEpoch
-                          .minusMinZero(spec.computeEpochAtSlot(requestEndSlot))
-                          .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
-              .orElse(false);
-
-      return new RequestContext(
-          requiresSidecars ? requestCount.min(MAX_REQUEST_BLOBS_SIDECARS) : requestCount,
-          requiresSidecars);
+    if (blobsSidecarsAreRequired(requestEndSlot)) {
+      return new RequestContext(requestCount.min(MAX_REQUEST_BLOBS_SIDECARS), true);
     }
+
     return new RequestContext(requestCount, false);
+  }
+
+  private boolean blobsSidecarsAreRequired(final UInt64 slot) {
+    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
+    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      return false;
+    }
+    return storageClient
+        .getCurrentEpoch()
+        .map(
+            currentEpoch ->
+                currentEpoch
+                    .minusMinZero(spec.computeEpochAtSlot(slot))
+                    .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
+        .orElse(false);
   }
 
   private static class RequestContext {
     private final UInt64 count;
-    private final boolean requiresSidecars;
+    private final boolean blobsSidecarsRequired;
 
-    private RequestContext(final UInt64 count, final boolean requiresSidecars) {
+    private RequestContext(final UInt64 count, final boolean blobsSidecarsRequired) {
       this.count = count;
-      this.requiresSidecars = requiresSidecars;
+      this.blobsSidecarsRequired = blobsSidecarsRequired;
     }
 
     public UInt64 getCount() {
       return count;
     }
 
-    public boolean getRequiresSidecars() {
-      return requiresSidecars;
+    public boolean areBlobsSidecarsRequired() {
+      return blobsSidecarsRequired;
     }
   }
 
