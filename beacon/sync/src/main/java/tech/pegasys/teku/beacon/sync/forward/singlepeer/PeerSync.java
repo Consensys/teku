@@ -191,7 +191,10 @@ public class PeerSync {
 
               if (blobsSidecarsRequired) {
                 final BlockAndBlobsSidecarMatcher blockAndBlobsSidecarMatcher =
-                    new BlockAndBlobsSidecarMatcher(this::storeBlobsSidecarAndImportBlock);
+                    new BlockAndBlobsSidecarMatcher(
+                        blobsSidecarManager,
+                        this::storeBlobsSidecarAndImportBlock,
+                        this::importBlock);
                 blockListener = blockAndBlobsSidecarMatcher::recordBlock;
                 maybeBlockAndBlobsSidecarMatcher = Optional.of(blockAndBlobsSidecarMatcher);
                 LOG.debug(

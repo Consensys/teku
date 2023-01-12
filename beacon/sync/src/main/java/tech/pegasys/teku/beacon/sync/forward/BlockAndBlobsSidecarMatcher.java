@@ -16,12 +16,15 @@ package tech.pegasys.teku.beacon.sync.forward;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class BlockAndBlobsSidecarMatcher {
 
@@ -30,15 +33,25 @@ public class BlockAndBlobsSidecarMatcher {
   private final Map<UInt64, SignedBeaconBlock> blocksBySlot = Maps.newConcurrentMap();
   private final Map<UInt64, BlobsSidecar> blobsSidecarsBySlot = Maps.newConcurrentMap();
 
+  private final BlobsSidecarManager blobsSidecarManager;
   private final BiFunction<SignedBeaconBlock, BlobsSidecar, SafeFuture<Void>> actionOnMatching;
+  private final Function<SignedBeaconBlock, SafeFuture<Void>> actionOnMatchingNotRequired;
 
   public BlockAndBlobsSidecarMatcher(
-      final BiFunction<SignedBeaconBlock, BlobsSidecar, SafeFuture<Void>> actionOnMatching) {
+      final BlobsSidecarManager blobsSidecarManager,
+      final BiFunction<SignedBeaconBlock, BlobsSidecar, SafeFuture<Void>> actionOnMatching,
+      final Function<SignedBeaconBlock, SafeFuture<Void>> actionOnMatchingNotRequired) {
+    this.blobsSidecarManager = blobsSidecarManager;
     this.actionOnMatching = actionOnMatching;
+    this.actionOnMatchingNotRequired = actionOnMatchingNotRequired;
   }
 
   public SafeFuture<Void> recordBlock(final SignedBeaconBlock block) {
     final UInt64 slot = block.getSlot();
+    if (!isSidecarRequired(block, slot)) {
+      LOG.debug("Block for slot {} does not require sidecar", slot);
+      return actionOnMatchingNotRequired.apply(block);
+    }
     blocksBySlot.put(slot, block);
     final BlobsSidecar blobsSidecar = blobsSidecarsBySlot.remove(slot);
     if (blobsSidecar != null) {
@@ -57,6 +70,16 @@ public class BlockAndBlobsSidecarMatcher {
       return actionOnMatching.apply(block, blobsSidecarsBySlot.remove(slot));
     }
     return SafeFuture.COMPLETE;
+  }
+
+  private boolean isSidecarRequired(final SignedBeaconBlock block, final UInt64 slot) {
+    final boolean blockHasEmptyKzgCommitments =
+        BeaconBlockBodyEip4844.required(block.getMessage().getBody())
+            .getBlobKzgCommitments()
+            .isEmpty();
+
+    return !blockHasEmptyKzgCommitments
+        && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot);
   }
 
   public void clearCache() {
