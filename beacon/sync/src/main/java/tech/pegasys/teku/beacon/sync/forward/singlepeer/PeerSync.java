@@ -15,6 +15,7 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
@@ -149,10 +150,17 @@ public class PeerSync {
 
     final PeerStatus status = peer.getStatus();
 
-    final UInt64 count = calculateNumberOfBlocksToRequest(startSlot, status);
-    if (count.longValue() == 0) {
+    if (startSlot.isGreaterThan(status.getHeadSlot())) {
+      // We've synced the advertised head, nothing left to request
       return completeSyncWithPeer(peer, status);
     }
+
+    final RequestContext requestContext = createRequestContext(startSlot, status);
+
+    final UInt64 count = requestContext.getCount();
+    final boolean requiresSidecars = requestContext.getRequiresSidecars();
+
+    readyForRequest.complete(null);
 
     return readyForRequest
         .thenCompose(
@@ -187,15 +195,24 @@ public class PeerSync {
                       cachingBlockResponseListener);
 
               final SafeFuture<Void> blobsSidecarsRequest;
-              if (slotIsEip4844OrGreater(request.getActualEndSlot())) {
+              if (requiresSidecars) {
+                LOG.debug(
+                    "Request {} blobs sidecars starting at {} from peer {}",
+                    count,
+                    ancestorStartSlot,
+                    peer.getId());
                 blobsSidecarsRequest =
                     peer.requestBlobsSidecarsByRange(
                         ancestorStartSlot, count, this::blobsSidecarResponseListener);
               } else {
+                LOG.trace(
+                    "Blobs sidecars not required for {} slots starting at {}",
+                    count,
+                    ancestorStartSlot);
                 blobsSidecarsRequest = SafeFuture.COMPLETE;
               }
 
-              return SafeFuture.allOf(
+              return SafeFuture.allOfFailFast(
                       peer.requestBlocksByRange(ancestorStartSlot, count, request),
                       blobsSidecarsRequest)
                   .thenCompose(__ -> importBlocks(cachingBlockResponseListener.getReceivedBlocks()))
@@ -210,7 +227,7 @@ public class PeerSync {
               final UInt64 nextSlot = blockRequest.getActualEndSlot().plus(UInt64.ONE);
               LOG.trace(
                   "Completed request for {} slots from peer {}. Next request starts from {}",
-                  count,
+                  requestContext.count,
                   peer.getId(),
                   nextSlot);
               if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
@@ -291,7 +308,7 @@ public class PeerSync {
 
   private SafeFuture<PeerSyncResult> completeSyncWithPeer(
       final Eth2Peer peer, final PeerStatus status) {
-    if (storageClient.getFinalizedEpoch().compareTo(status.getFinalizedEpoch()) >= 0) {
+    if (storageClient.getFinalizedEpoch().isGreaterThanOrEqualTo(status.getFinalizedEpoch())) {
       return SafeFuture.completedFuture(PeerSyncResult.SUCCESSFUL_SYNC);
     } else {
       LOG.debug(
@@ -303,27 +320,48 @@ public class PeerSync {
     }
   }
 
-  private UInt64 calculateNumberOfBlocksToRequest(final UInt64 nextSlot, final PeerStatus status) {
-    if (nextSlot.isGreaterThan(status.getHeadSlot())) {
-      // We've synced the advertised head, nothing left to request
-      return UInt64.ZERO;
-    }
+  private RequestContext createRequestContext(final UInt64 nextSlot, final PeerStatus status) {
 
     final UInt64 diff = status.getHeadSlot().minus(nextSlot).plus(UInt64.ONE);
-    final UInt64 numberOfBlocksToRequest = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final UInt64 requestCount = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final UInt64 requestEndSlot = nextSlot.plus(requestCount).minus(1);
 
-    final UInt64 requestEndSlot = nextSlot.plus(numberOfBlocksToRequest).minus(1);
+    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(requestEndSlot);
 
-    if (slotIsEip4844OrGreater(requestEndSlot)) {
-      return numberOfBlocksToRequest.min(MAX_REQUEST_BLOBS_SIDECARS);
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      final boolean requiresSidecars =
+          storageClient
+              .getCurrentEpoch()
+              .map(
+                  currentEpoch ->
+                      currentEpoch
+                          .minusMinZero(spec.computeEpochAtSlot(requestEndSlot))
+                          .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
+              .orElse(false);
+
+      return new RequestContext(
+          requiresSidecars ? requestCount.min(MAX_REQUEST_BLOBS_SIDECARS) : requestCount,
+          requiresSidecars);
     }
-
-    return numberOfBlocksToRequest;
+    return new RequestContext(requestCount, false);
   }
 
-  private boolean slotIsEip4844OrGreater(final UInt64 slot) {
-    final SpecMilestone slotMilestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
-    return slotMilestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844);
+  private static class RequestContext {
+    private final UInt64 count;
+    private final boolean requiresSidecars;
+
+    private RequestContext(final UInt64 count, final boolean requiresSidecars) {
+      this.count = count;
+      this.requiresSidecars = requiresSidecars;
+    }
+
+    public UInt64 getCount() {
+      return count;
+    }
+
+    public boolean getRequiresSidecars() {
+      return requiresSidecars;
+    }
   }
 
   private class CachingBlockResponseListener implements RpcResponseListener<SignedBeaconBlock> {
