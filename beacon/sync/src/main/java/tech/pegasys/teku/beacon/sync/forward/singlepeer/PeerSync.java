@@ -226,8 +226,8 @@ public class PeerSync {
                   requestContext.count,
                   peer.getId(),
                   nextSlot);
-              if (count.compareTo(MIN_SLOTS_TO_PROGRESS_PER_REQUEST) > 0
-                  && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).compareTo(nextSlot) > 0) {
+              if (count.isGreaterThan(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
+                  && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).isGreaterThan(nextSlot)) {
                 final int throttledRequests = throttledRequestCount.incrementAndGet();
                 LOG.debug(
                     "Received {} consecutive excessively throttled response from {}",
