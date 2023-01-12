@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
   // TODO: Switch to actual Builder API when 4844 version is ready
-  private static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_BUILDER_DUMMY =
+  protected static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_BUILDER_DUMMY =
       SafeFuture.completedFuture(
           new BlobsBundle(Bytes32.ZERO, Collections.emptyList(), Collections.emptyList()));
 
@@ -75,7 +75,7 @@ public class ExecutionLayerBlockProductionManagerImpl
           new ExecutionPayloadResult(
               context, Optional.of(executionPayloadFuture), Optional.empty(), Optional.empty());
     } else {
-      result = builderGetHeader(context, blockSlotState);
+      result = builderGetHeader(context, blockSlotState, false);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -104,7 +104,7 @@ public class ExecutionLayerBlockProductionManagerImpl
               Optional.empty(),
               Optional.of(blobsBundleFuture));
     } else {
-      result = builderGetHeader(context, blockSlotState);
+      result = builderGetHeader(context, blockSlotState, true);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -118,7 +118,9 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   private ExecutionPayloadResult builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext, BeaconState state) {
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final boolean post4844) {
     final SafeFuture<HeaderWithFallbackData> executionPayloadHeaderFuture =
         executionLayerChannel.builderGetHeader(executionPayloadContext, state);
 
@@ -126,6 +128,6 @@ public class ExecutionLayerBlockProductionManagerImpl
         executionPayloadContext,
         Optional.empty(),
         Optional.of(executionPayloadHeaderFuture),
-        Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY));
+        post4844 ? Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY) : Optional.empty());
   }
 }
