@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS
 import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -159,8 +158,6 @@ public class PeerSync {
     final UInt64 count = requestContext.getCount();
     final boolean blobsSidecarsRequired = requestContext.areBlobsSidecarsRequired();
 
-    readyForRequest.complete(null);
-
     return readyForRequest
         .thenCompose(
             __ -> {
@@ -185,18 +182,17 @@ public class PeerSync {
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
 
+              final BlockAndBlobsSidecarMatcher blockAndBlobsSidecarMatcher =
+                  new BlockAndBlobsSidecarMatcher(
+                      blobsSidecarManager,
+                      this::storeBlobsSidecarAndImportBlock,
+                      this::importBlock);
+
               final RpcResponseListener<SignedBeaconBlock> blockListener;
-              final Optional<BlockAndBlobsSidecarMatcher> maybeBlockAndBlobsSidecarMatcher;
               final SafeFuture<Void> blobsSidecarsRequest;
 
               if (blobsSidecarsRequired) {
-                final BlockAndBlobsSidecarMatcher blockAndBlobsSidecarMatcher =
-                    new BlockAndBlobsSidecarMatcher(
-                        blobsSidecarManager,
-                        this::storeBlobsSidecarAndImportBlock,
-                        this::importBlock);
                 blockListener = blockAndBlobsSidecarMatcher::recordBlock;
-                maybeBlockAndBlobsSidecarMatcher = Optional.of(blockAndBlobsSidecarMatcher);
                 LOG.debug(
                     "Request {} blobs sidecars starting at {} from peer {}",
                     count,
@@ -206,7 +202,6 @@ public class PeerSync {
                     peer.requestBlobsSidecarsByRange(
                         ancestorStartSlot, count, blockAndBlobsSidecarMatcher::recordBlobsSidecar);
               } else {
-                maybeBlockAndBlobsSidecarMatcher = Optional.empty();
                 blockListener = this::importBlock;
                 blobsSidecarsRequest = SafeFuture.COMPLETE;
               }
@@ -220,8 +215,7 @@ public class PeerSync {
                       blobsSidecarsRequest)
                   .thenApply(
                       __ -> {
-                        maybeBlockAndBlobsSidecarMatcher.ifPresent(
-                            BlockAndBlobsSidecarMatcher::clearCache);
+                        blockAndBlobsSidecarMatcher.clearCache();
                         return request;
                       });
             })
