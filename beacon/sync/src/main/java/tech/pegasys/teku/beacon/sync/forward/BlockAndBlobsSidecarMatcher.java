@@ -49,7 +49,7 @@ public class BlockAndBlobsSidecarMatcher {
   public SafeFuture<Void> recordBlock(final SignedBeaconBlock block) {
     final UInt64 slot = block.getSlot();
     if (!isSidecarRequired(block, slot)) {
-      LOG.debug("Block for slot {} does not require sidecar", slot);
+      LOG.trace("Block for slot {} does not require sidecar", slot);
       return actionOnMatchingNotRequired.apply(block);
     }
     blocksBySlot.put(slot, block);
