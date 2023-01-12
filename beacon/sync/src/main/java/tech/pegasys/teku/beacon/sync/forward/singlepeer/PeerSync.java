@@ -410,14 +410,15 @@ public class PeerSync {
     }
     return SafeFuture.fromRunnable(
             () -> blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar))
-        .whenSuccessOrException(
+        .whenSuccess(
             () -> {
               LOG.trace(
                   "Blobs sidecar stored for slot {} with block root: {}",
                   blobsSidecar.getBeaconBlockSlot(),
                   blobsSidecar.getBeaconBlockRoot());
               blobsSidecarImportSuccessResult.inc();
-            },
+            })
+        .whenException(
             throwable -> {
               LOG.trace(
                   String.format(
