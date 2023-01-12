@@ -58,11 +58,26 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
       final RecentChainData recentChainData,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel) {
-
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.storageUpdateChannel = storageUpdateChannel;
     this.storageQueryChannel = storageQueryChannel;
+  }
+
+  @Override
+  public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
+    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
+    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      return false;
+    }
+    return recentChainData
+        .getCurrentEpoch()
+        .map(
+            currentEpoch ->
+                currentEpoch
+                    .minusMinZero(spec.computeEpochAtSlot(slot))
+                    .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
+        .orElse(false);
   }
 
   @Override
@@ -89,22 +104,6 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
         .onBlobsSidecarRemoval(blobsAtSlotAndBlockRoot)
         .thenRun(() -> LOG.debug("BlobsSidecar discarded for {}", blobsAtSlotAndBlockRoot))
         .ifExceptionGetsHereRaiseABug();
-  }
-
-  @Override
-  public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
-    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
-    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      return false;
-    }
-    return recentChainData
-        .getCurrentEpoch()
-        .map(
-            currentEpoch ->
-                currentEpoch
-                    .minusMinZero(spec.computeEpochAtSlot(slot))
-                    .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
-        .orElse(false);
   }
 
   @Override

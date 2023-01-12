@@ -22,6 +22,11 @@ public interface BlobsSidecarManager {
   BlobsSidecarManager NOOP =
       new BlobsSidecarManager() {
         @Override
+        public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
+          return false;
+        }
+
+        @Override
         public void storeUnconfirmedValidatedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
         @Override
@@ -31,24 +36,19 @@ public interface BlobsSidecarManager {
         public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {}
 
         @Override
-        public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
-          return false;
-        }
-
-        @Override
         public BlobsSidecarAvailabilityChecker createAvailabilityChecker(
             final SignedBeaconBlock block) {
           return BlobsSidecarAvailabilityChecker.NOOP;
         }
       };
 
+  boolean isStorageOfBlobsSidecarRequired(UInt64 slot);
+
   void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
 
   void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
 
   void discardBlobsSidecarByBlock(SignedBeaconBlock block);
-
-  boolean isStorageOfBlobsSidecarRequired(UInt64 slot);
 
   BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 }
