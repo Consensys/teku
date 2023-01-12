@@ -57,12 +57,12 @@ public class ExecutionBuilderModule {
   private final EventLogger eventLogger;
 
   public ExecutionBuilderModule(
-      Spec spec,
-      ExecutionLayerManagerImpl executionLayerManager,
-      BuilderBidValidator builderBidValidator,
-      BuilderCircuitBreaker builderCircuitBreaker,
-      Optional<BuilderClient> builderClient,
-      EventLogger eventLogger) {
+      final Spec spec,
+      final ExecutionLayerManagerImpl executionLayerManager,
+      final BuilderBidValidator builderBidValidator,
+      final BuilderCircuitBreaker builderCircuitBreaker,
+      final Optional<BuilderClient> builderClient,
+      final EventLogger eventLogger) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
