@@ -8,23 +8,23 @@
 
 Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. See the [Changelog](https://github.com/ConsenSys/teku/releases) for details of the latest releases and upcoming breaking changes.
 
-## Useful links 
+## Useful links
 
-* [Ethereum 2.0 Beacon Chain specification](https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md) 
+* [Ethereum 2.0 Beacon Chain specification](https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md)
 * [Teku user documentation](https://docs.teku.consensys.net/)
 * [Teku REST API reference documentation](https://consensys.github.io/teku/)
 * [Teku issues](https://github.com/ConsenSys/teku/issues)
 * [Contribution guidelines](CONTRIBUTING.md)
 * [Teku Changelog](https://github.com/ConsenSys/teku/releases)
 
-## Teku users 
+## Teku users
 
-See our [user documentation](https://docs.teku.consensys.net/). 
+See our [user documentation](https://docs.teku.consensys.net/).
 
-Raise a [documentation issue](https://github.com/ConsenSys/doc.teku/issues) or get in touch in 
-the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questions or feedback. 
+Raise a [documentation issue](https://github.com/ConsenSys/doc.teku/issues) or get in touch in
+the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questions or feedback.
 
-## Teku developers 
+## Teku developers
 
 * [Contribution Guidelines](CONTRIBUTING.md)
 * [Coding Conventions](https://wiki.hyperledger.org/display/BESU/Coding+Conventions)
@@ -32,18 +32,18 @@ the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questio
 ## Binary Releases
 
 Binary releases are available from the [releases page](https://github.com/ConsenSys/teku/releases).
-Binary builds that track the latest changes on the master branch are available on 
+Binary builds that track the latest changes on the master branch are available on
 [Dockerhub](https://hub.docker.com/r/consensys/teku) using the `develop` version or as binary
-downloads ([tar.gz format](https://artifacts.consensys.net/public/teku/raw/names/teku.tar.gz/versions/develop/teku-develop.tar.gz) 
+downloads ([tar.gz format](https://artifacts.consensys.net/public/teku/raw/names/teku.tar.gz/versions/develop/teku-develop.tar.gz)
 or [zip format](https://artifacts.consensys.net/public/teku/raw/names/teku.zip/versions/develop/teku-develop.zip)).
 
-We recommend only using release versions for Mainnet, but `develop` builds are useful for testing 
+We recommend only using release versions for Mainnet, but `develop` builds are useful for testing
 the latest changes on testnets.
 
 Release notifications are available via:
 * Sign up to our [release announcements](https://pages.consensys.net/teku-sign-up) email list (release and important announcements only, no marketing)
 * Follow us on [Twitter](https://twitter.com/Teku_ConsenSys)
-* `teku` in [Consensys Discord](https://discord.gg/7hPv2T6), 
+* `teku` in [Consensys Discord](https://discord.gg/7hPv2T6),
 * Subscribe to release notifications on github for [teku](https://github.com/ConsenSys/teku)
 
 ## Build Instructions
@@ -52,7 +52,7 @@ Release notifications are available via:
 
 * Java 11+
 
-Note: Official builds of Teku are performed with Java 11. 
+Note: Official builds of Teku are performed with Java 11.
 Building on a more recent version of Java is supported, but the resulting build will not work on earlier versions of Java.
 
 
@@ -92,9 +92,9 @@ After a successful build, distribution packages are available in `build/distribu
 
 ## Code Style
 
-We use Google's Java coding conventions for the project. To reformat code, run: 
+We use Google's Java coding conventions for the project. To reformat code, run:
 
-```shell script 
+```shell script
 ./gradlew spotlessApply
 ```
 
@@ -104,12 +104,12 @@ Code style is checked automatically during a build.
 
 All the unit tests are run as part of the build, but can be explicitly triggered with:
 
-```shell script 
+```shell script
 ./gradlew test
 ```
 
 ## Special thanks
-YourKit for providing us with a free profiler open source license. 
+YourKit for providing us with a free profiler open source license.
 
 YourKit supports open source projects with innovative and intelligent tools
 for monitoring and profiling Java and .NET applications.

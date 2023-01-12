@@ -119,7 +119,7 @@ The benevolent dictator, or project lead, is self-appointed. However, because th
 ## Attribution
 
 This document is adapted from the following sources:
-- Kubernetes community-membership.md, available at [kub community membership].  
+- Kubernetes community-membership.md, available at [kub community membership].
 - OSSWatch Benevolent Dictator Governance Model, available at [oss watch benevolent dictator].  
 
 [CLA.md]: CLA.md
