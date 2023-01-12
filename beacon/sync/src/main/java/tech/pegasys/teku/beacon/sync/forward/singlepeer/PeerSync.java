@@ -316,21 +316,22 @@ public class PeerSync {
     }
   }
 
-  private RequestContext createRequestContext(final UInt64 nextSlot, final PeerStatus status) {
+  private RequestContext createRequestContext(final UInt64 startSlot, final PeerStatus status) {
 
-    final UInt64 diff = status.getHeadSlot().minus(nextSlot).plus(UInt64.ONE);
+    final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
     final UInt64 requestCount = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
-    final UInt64 requestEndSlot = nextSlot.plus(requestCount).minus(1);
 
-    if (blobsSidecarsAreRequired(requestEndSlot)) {
+    if (blobsSidecarsAreRequired(startSlot, requestCount)) {
       return new RequestContext(requestCount.min(MAX_REQUEST_BLOBS_SIDECARS), true);
     }
 
     return new RequestContext(requestCount, false);
   }
 
-  private boolean blobsSidecarsAreRequired(final UInt64 slot) {
-    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
+  private boolean blobsSidecarsAreRequired(final UInt64 startSlot, final UInt64 requestCount) {
+    final UInt64 requestEndSlot =
+        startSlot.plus(requestCount.min(MAX_REQUEST_BLOBS_SIDECARS)).minusMinZero(1);
+    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(requestEndSlot);
     if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
       return false;
     }
@@ -339,7 +340,7 @@ public class PeerSync {
         .map(
             currentEpoch ->
                 currentEpoch
-                    .minusMinZero(spec.computeEpochAtSlot(slot))
+                    .minusMinZero(spec.computeEpochAtSlot(requestEndSlot))
                     .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
         .orElse(false);
   }
