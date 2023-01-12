@@ -84,10 +84,10 @@ public abstract class AbstractSyncTest {
 
     final List<SignedBeaconBlock> blocks =
         respondWithBlocksAtSlots(responseListener, lastBlockSlot);
-    request.complete(null);
     for (SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
+    request.complete(null);
     asyncRunner.executeQueuedActions();
   }
 
@@ -142,12 +142,12 @@ public abstract class AbstractSyncTest {
               respondWithBlocksAtSlots(blockListener, slotToRespond);
           final List<BlobsSidecar> blobsSidecars =
               respondWithBlobsSidecarsAtSlots(blobsSidecarListener, slotToRespond);
-          blockRequest.complete(null);
-          blobsSidecarRequest.complete(null);
-          asyncRunner.executeQueuedActions();
           blocks.forEach(block -> verify(blockImporter).importBlock(block));
           blobsSidecars.forEach(
               sidecar -> verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(sidecar));
+          blockRequest.complete(null);
+          blobsSidecarRequest.complete(null);
+          asyncRunner.executeQueuedActions();
         });
   }
 

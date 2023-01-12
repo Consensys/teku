@@ -18,8 +18,8 @@ import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.beacon.sync.forward.BlockAndBlobsSidecarMatcher;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -180,20 +181,19 @@ public class PeerSync {
                   count,
                   ancestorStartSlot,
                   peer.getId());
+
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
 
-              final CachingBlockResponseListener cachingBlockResponseListener =
-                  new CachingBlockResponseListener();
-
-              final PeerSyncBlockRequest request =
-                  new PeerSyncBlockRequest(
-                      readyForNextRequest,
-                      ancestorStartSlot.plus(count),
-                      cachingBlockResponseListener);
-
+              final RpcResponseListener<SignedBeaconBlock> blockListener;
+              final Optional<BlockAndBlobsSidecarMatcher> maybeBlockAndBlobsSidecarMatcher;
               final SafeFuture<Void> blobsSidecarsRequest;
+
               if (blobsSidecarsRequired) {
+                final BlockAndBlobsSidecarMatcher blockAndBlobsSidecarMatcher =
+                    new BlockAndBlobsSidecarMatcher(this::storeBlobsSidecarAndImportBlock);
+                blockListener = blockAndBlobsSidecarMatcher::recordBlock;
+                maybeBlockAndBlobsSidecarMatcher = Optional.of(blockAndBlobsSidecarMatcher);
                 LOG.debug(
                     "Request {} blobs sidecars starting at {} from peer {}",
                     count,
@@ -201,18 +201,24 @@ public class PeerSync {
                     peer.getId());
                 blobsSidecarsRequest =
                     peer.requestBlobsSidecarsByRange(
-                        ancestorStartSlot, count, this::blobsSidecarResponseListener);
+                        ancestorStartSlot, count, blockAndBlobsSidecarMatcher::recordBlobsSidecar);
               } else {
+                maybeBlockAndBlobsSidecarMatcher = Optional.empty();
+                blockListener = this::importBlock;
                 blobsSidecarsRequest = SafeFuture.COMPLETE;
               }
+
+              final PeerSyncBlockRequest request =
+                  new PeerSyncBlockRequest(
+                      readyForNextRequest, ancestorStartSlot.plus(count), blockListener);
 
               return SafeFuture.allOfFailFast(
                       peer.requestBlocksByRange(ancestorStartSlot, count, request),
                       blobsSidecarsRequest)
-                  .thenCompose(__ -> importBlocks(cachingBlockResponseListener.getReceivedBlocks()))
                   .thenApply(
                       __ -> {
-                        cachingBlockResponseListener.clearReceivedBlocks();
+                        maybeBlockAndBlobsSidecarMatcher.ifPresent(
+                            BlockAndBlobsSidecarMatcher::clearCache);
                         return request;
                       });
             })
@@ -350,33 +356,15 @@ public class PeerSync {
     }
   }
 
-  private class CachingBlockResponseListener implements RpcResponseListener<SignedBeaconBlock> {
-
-    private final List<SignedBeaconBlock> blocks = new ArrayList<>();
-
-    @Override
-    public SafeFuture<?> onResponse(final SignedBeaconBlock response) {
-      if (stopped.get()) {
-        throw new CancellationException("Peer sync was cancelled");
-      }
-      blocks.add(response);
-      return SafeFuture.COMPLETE;
-    }
-
-    public List<SignedBeaconBlock> getReceivedBlocks() {
-      return blocks;
-    }
-
-    public void clearReceivedBlocks() {
-      blocks.clear();
-    }
-  }
-
-  private SafeFuture<Void> importBlocks(final List<SignedBeaconBlock> blocks) {
-    return SafeFuture.allOf(blocks.stream().map(this::importBlock));
+  private SafeFuture<Void> storeBlobsSidecarAndImportBlock(
+      final SignedBeaconBlock block, final BlobsSidecar blobsSidecar) {
+    return storeBlobsSidecar(blobsSidecar).thenCompose(__ -> importBlock(block));
   }
 
   private SafeFuture<Void> importBlock(final SignedBeaconBlock block) {
+    if (stopped.get()) {
+      throw new CancellationException("Peer sync was cancelled");
+    }
     return blockImporter
         .importBlock(block)
         .thenAccept(
@@ -391,7 +379,7 @@ public class PeerSync {
             });
   }
 
-  private SafeFuture<?> blobsSidecarResponseListener(final BlobsSidecar blobsSidecar) {
+  private SafeFuture<Void> storeBlobsSidecar(final BlobsSidecar blobsSidecar) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
