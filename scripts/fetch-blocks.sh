@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-START=${1:?Must specify a start slot to downlaod initial state from}
+START=${1:?Must specify a start slot to download initial state from}
 END=${2:?Must specify an end slot to stop downloading blocks at}
 OUT=${3:-block-${START}-${END}}
 PORT=${4:-5051}
