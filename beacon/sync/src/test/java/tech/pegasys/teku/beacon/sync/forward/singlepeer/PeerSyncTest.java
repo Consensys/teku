@@ -71,6 +71,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @BeforeEach
   public void setUp() {
     super.setup();
+    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(false);
     when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
@@ -524,6 +525,8 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   @Test
   void sync_withEip4844BlobsSidecars() {
+    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(true);
+
     // peer has finalized 35 epochs after the EIP-4844 fork epoch
     final UInt64 peerFinalizedEpoch = eip4844ForkEpoch.plus(35);
     withPeerFinalizedEpoch(peerFinalizedEpoch);

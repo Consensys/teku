@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
@@ -30,6 +31,11 @@ public interface BlobsSidecarManager {
         public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {}
 
         @Override
+        public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
+          return false;
+        }
+
+        @Override
         public BlobsSidecarAvailabilityChecker createAvailabilityChecker(
             final SignedBeaconBlock block) {
           return BlobsSidecarAvailabilityChecker.NOOP;
@@ -41,6 +47,8 @@ public interface BlobsSidecarManager {
   void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
 
   void discardBlobsSidecarByBlock(SignedBeaconBlock block);
+
+  boolean isStorageOfBlobsSidecarRequired(UInt64 slot);
 
   BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
@@ -40,7 +39,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -331,18 +329,7 @@ public class PeerSync {
   private boolean blobsSidecarsAreRequired(final UInt64 startSlot, final UInt64 requestCount) {
     final UInt64 requestEndSlot =
         startSlot.plus(requestCount.min(MAX_REQUEST_BLOBS_SIDECARS)).minusMinZero(1);
-    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(requestEndSlot);
-    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-      return false;
-    }
-    return storageClient
-        .getCurrentEpoch()
-        .map(
-            currentEpoch ->
-                currentEpoch
-                    .minusMinZero(spec.computeEpochAtSlot(requestEndSlot))
-                    .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
-        .orElse(false);
+    return blobsSidecarManager.isStorageOfBlobsSidecarRequired(requestEndSlot);
   }
 
   private static class RequestContext {
