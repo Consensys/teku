@@ -194,7 +194,7 @@ public class BeaconStateUtilTest {
   /**
    * Since every active validator attests once per epoch, the total sum of attester effective
    * balances across each epoch in the slot should be equal to the total active balance for the
-   * sate.
+   * state.
    */
   private void assertAttestersBalancesSumToTotalBalancesOverEpoch(final BeaconState state) {
     final UInt64 expectedTotalBalance =

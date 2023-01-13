@@ -190,7 +190,13 @@ public class TransitionCommand implements Runnable {
   }
 
   private SignedBeaconBlock readBlock(final Spec spec, final String path) throws IOException {
-    final byte[] blockDataBytesArray = Files.readAllBytes(Path.of(path));
+    final byte[] blockDataBytesArray;
+    if (path.endsWith(".hex")) {
+      final String str = Files.readString(Path.of(path)).trim();
+      blockDataBytesArray = Bytes.fromHexString(str).toArrayUnsafe();
+    } else {
+      blockDataBytesArray = Files.readAllBytes(Path.of(path));
+    }
     try {
       return spec.deserializeSignedBeaconBlock(Bytes.wrap(blockDataBytesArray));
     } catch (final RuntimeException e) {

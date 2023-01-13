@@ -25,7 +25,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -46,9 +45,6 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   @Override
   public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      return super.engineGetPayload(executionPayloadContext, slot);
-    }
     LOG.trace(
         "calling engineGetPayloadV2(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
@@ -79,12 +75,6 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
       engineForkChoiceUpdated(
           final ForkChoiceState forkChoiceState,
           final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
-
-    if (!spec.atSlot(forkChoiceState.getHeadBlockSlot().increment())
-        .getMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      return super.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
-    }
     LOG.trace(
         "calling engineForkChoiceUpdatedV2(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
@@ -106,9 +96,6 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    if (executionPayload.getOptionalWithdrawals().isEmpty()) {
-      return super.engineNewPayload(executionPayload);
-    }
     LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);
     return executionEngineClient
         .newPayloadV2(ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload))
