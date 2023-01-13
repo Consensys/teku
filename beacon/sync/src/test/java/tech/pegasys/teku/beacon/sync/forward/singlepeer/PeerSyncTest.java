@@ -176,7 +176,7 @@ public class PeerSyncTest extends AbstractSyncTest {
               any(), any(), blobsSidecarResponseListenerArgumentCaptor.capture());
       final RpcResponseListener<BlobsSidecar> sidecarResponseListener =
           blobsSidecarResponseListenerArgumentCaptor.getValue();
-      sidecarResponseListener.onResponse(blobsSidecar);
+      sidecarResponseListener.onResponse(blobsSidecar).join();
       sidecarRequestFuture.complete(null);
     }
 
