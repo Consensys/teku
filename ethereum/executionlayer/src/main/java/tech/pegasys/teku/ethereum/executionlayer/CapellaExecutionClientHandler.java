@@ -17,14 +17,17 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -45,6 +48,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   @Override
   public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      return super.engineGetPayload(executionPayloadContext, slot);
+    }
     LOG.trace(
         "calling engineGetPayloadV2(payloadId={}, slot={})",
         executionPayloadContext.getPayloadId(),
@@ -75,14 +81,24 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
       engineForkChoiceUpdated(
           final ForkChoiceState forkChoiceState,
           final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+
+    final Optional<PayloadAttributesV1> maybePayloadAttributes =
+        payloadBuildingAttributes.flatMap(
+            attributes ->
+                spec.atSlot(attributes.getBlockSlot())
+                        .getMilestone()
+                        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)
+                    ? PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(
+                        payloadBuildingAttributes)
+                    : PayloadAttributesV1.fromInternalPayloadBuildingAttributes(
+                        payloadBuildingAttributes));
     LOG.trace(
         "calling engineForkChoiceUpdatedV2(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
-        payloadBuildingAttributes);
+        maybePayloadAttributes);
     return executionEngineClient
         .forkChoiceUpdatedV2(
-            ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
-            PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(payloadBuildingAttributes))
+            ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState), maybePayloadAttributes)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
         .thenPeek(
@@ -98,7 +114,10 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
     LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);
     return executionEngineClient
-        .newPayloadV2(ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload))
+        .newPayloadV2(
+            executionPayload.toVersionCapella().isPresent()
+                ? ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload)
+                : ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

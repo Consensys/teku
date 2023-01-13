@@ -954,7 +954,8 @@ class ForkChoiceNotifierTest {
         random,
         feeRecipient,
         validatorRegistration,
-        dataStructureUtil.randomWithdrawalList());
+        dataStructureUtil.randomWithdrawalList(),
+        blockSlot);
   }
 
   private ForkChoiceState getCurrentForkChoiceState() {

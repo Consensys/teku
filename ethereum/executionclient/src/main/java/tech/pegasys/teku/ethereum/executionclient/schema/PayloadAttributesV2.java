@@ -37,7 +37,7 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
     this.withdrawals = withdrawals;
   }
 
-  public static Optional<PayloadAttributesV2> fromInternalPayloadBuildingAttributesV2(
+  public static Optional<PayloadAttributesV1> fromInternalPayloadBuildingAttributesV2(
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
         (payloadAttributes) ->
