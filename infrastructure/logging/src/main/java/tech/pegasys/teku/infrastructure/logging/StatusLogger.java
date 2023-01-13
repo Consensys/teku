@@ -181,10 +181,10 @@ public class StatusLogger {
     log.info(
         "Doppelganger detection check finished. Stopping doppelganger detection for public keys {}.",
         String.join(", ", publicKeys));
-    if (!doppelgangersInfo.isEmpty()) {
-      validatorsDoppelgangersDetected(doppelgangersInfo);
-    } else {
+    if (doppelgangersInfo.isEmpty()) {
       log.info("No validators doppelganger detected.");
+    } else {
+      validatorsDoppelgangersDetected(doppelgangersInfo);
     }
   }
 
