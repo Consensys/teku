@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
@@ -44,7 +42,6 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class MultipeerSyncService extends Service implements ForwardSyncService {
-  private static final Logger LOG = LogManager.getLogger();
   private final SyncStallDetector syncStallDetector;
   private final EventThread eventThread;
   private final RecentChainData recentChainData;
