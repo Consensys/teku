@@ -15,6 +15,8 @@ package tech.pegasys.teku.beacon.sync;
 
 import java.time.Duration;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
@@ -44,6 +46,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * might be changed in any version in backward incompatible way
  */
 public class DefaultSyncServiceFactory implements SyncServiceFactory {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final SyncConfig syncConfig;
   private final Optional<String> genesisStateResource;
   private final MetricsSystem metrics;
@@ -143,6 +148,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   protected ForwardSyncService createForwardSyncService() {
     final ForwardSyncService forwardSync;
     if (syncConfig.isMultiPeerSyncEnabled()) {
+      LOG.info("Using multipeer sync");
       forwardSync =
           MultipeerSyncService.create(
               metrics,
@@ -155,6 +161,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               spec);
     } else {
+      LOG.info("Using single peer sync");
       forwardSync =
           SinglePeerSyncServiceFactory.create(
               metrics,

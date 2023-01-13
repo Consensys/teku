@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.forward;
+package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
 import com.google.common.collect.Maps;
 import java.util.Map;

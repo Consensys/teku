@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.beacon.sync.forward.BlockAndBlobsSidecarMatcher;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -62,7 +61,8 @@ public class PeerSync {
       List.of(
           FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS,
           FailureReason.FAILED_STATE_TRANSITION,
-          FailureReason.UNKNOWN_PARENT);
+          FailureReason.UNKNOWN_PARENT,
+          FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK);
 
   private static final Logger LOG = LogManager.getLogger();
   static final int MAX_THROTTLED_REQUESTS = 10;

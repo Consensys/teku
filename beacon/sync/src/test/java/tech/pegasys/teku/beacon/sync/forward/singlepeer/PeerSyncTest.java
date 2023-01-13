@@ -44,6 +44,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedE
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -126,22 +127,58 @@ public class PeerSyncTest extends AbstractSyncTest {
     testFailedBlockImport(() -> BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE, false);
   }
 
+  @Test
+  void sync_failedImport_failedBlobsAvailabilityChecks() {
+    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(true);
+    testFailedBlockImport(() -> BlockImportResult.FAILED_BLOBS_AVAILABILITY_CHECK, true, true);
+  }
+
+  void testFailedBlockImport(
+      final Supplier<BlockImportResult> importResult,
+      final boolean shouldDisconnect,
+      final boolean shouldMakeSidecarRequest) {
+    testFailedBlockImport(importResult, shouldDisconnect, block, shouldMakeSidecarRequest);
+  }
+
   void testFailedBlockImport(
       final Supplier<BlockImportResult> importResult, final boolean shouldDisconnect) {
-    testFailedBlockImport(importResult, shouldDisconnect, block);
+    testFailedBlockImport(importResult, shouldDisconnect, block, false);
   }
 
   void testFailedBlockImport(
       final Supplier<BlockImportResult> importResult,
       final boolean shouldDisconnect,
       final SignedBeaconBlock block) {
+    testFailedBlockImport(importResult, shouldDisconnect, block, false);
+  }
+
+  void testFailedBlockImport(
+      final Supplier<BlockImportResult> importResult,
+      final boolean shouldDisconnect,
+      final SignedBeaconBlock block,
+      final boolean shouldMakeSidecarRequest) {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
+    final SafeFuture<Void> sidecarRequestFuture = new SafeFuture<>();
+
+    final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecarForBlock(block);
+
     when(peer.requestBlocksByRange(any(), any(), any())).thenReturn(requestFuture);
+    when(peer.requestBlobsSidecarsByRange(any(), any(), any())).thenReturn(sidecarRequestFuture);
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer).requestBlocksByRange(any(), any(), blockResponseListenerArgumentCaptor.capture());
+
+    if (shouldMakeSidecarRequest) {
+      verify(peer)
+          .requestBlobsSidecarsByRange(
+              any(), any(), blobsSidecarResponseListenerArgumentCaptor.capture());
+      final RpcResponseListener<BlobsSidecar> sidecarResponseListener =
+          blobsSidecarResponseListenerArgumentCaptor.getValue();
+      sidecarResponseListener.onResponse(blobsSidecar);
+      sidecarRequestFuture.complete(null);
+    }
 
     // Respond with blocks and check they're passed to the block importer.
     final RpcResponseListener<SignedBeaconBlock> responseListener =
@@ -159,6 +196,10 @@ public class PeerSyncTest extends AbstractSyncTest {
       // response
       assertThat(e).hasCauseInstanceOf(FailedBlockImportException.class);
       requestFuture.completeExceptionally(e);
+    }
+
+    if (shouldMakeSidecarRequest) {
+      verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar);
     }
 
     assertThat(syncFuture).isCompleted();

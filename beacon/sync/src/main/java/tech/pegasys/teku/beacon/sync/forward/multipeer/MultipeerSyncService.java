@@ -74,7 +74,6 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final BlockImporter blockImporter,
       final Spec spec) {
-    LOG.info("Using multipeer sync");
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
     final SettableLabelledGauge targetChainCountGauge =
         SettableLabelledGauge.create(
