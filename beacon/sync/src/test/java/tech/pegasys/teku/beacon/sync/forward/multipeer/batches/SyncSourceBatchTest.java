@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class SyncSourceBatchTest {
 
@@ -51,6 +52,7 @@ public class SyncSourceBatchTest {
   private final InlineEventThread eventThread = new InlineEventThread();
   private final ConflictResolutionStrategy conflictResolutionStrategy =
       mock(ConflictResolutionStrategy.class);
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private final Map<Batch, List<StubSyncSource>> syncSources = new HashMap<>();
 
   @Test
@@ -194,6 +196,7 @@ public class SyncSourceBatchTest {
             emptySourceSelector,
             conflictResolutionStrategy,
             targetChain,
+            blobsSidecarManager,
             UInt64.ONE,
             UInt64.ONE);
 
@@ -222,6 +225,7 @@ public class SyncSourceBatchTest {
             syncSourceProvider,
             conflictResolutionStrategy,
             targetChain,
+            blobsSidecarManager,
             UInt64.valueOf(startSlot),
             UInt64.valueOf(count));
     this.syncSources.put(batch, syncSources);

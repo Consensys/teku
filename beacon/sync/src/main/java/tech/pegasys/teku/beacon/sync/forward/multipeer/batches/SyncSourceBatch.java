@@ -19,7 +19,9 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,6 +36,8 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class SyncSourceBatch implements Batch {
   private static final Logger LOG = LogManager.getLogger();
@@ -42,6 +46,7 @@ public class SyncSourceBatch implements Batch {
   private final SyncSourceSelector syncSourceProvider;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
   private final TargetChain targetChain;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final UInt64 firstSlot;
   private final UInt64 count;
 
@@ -51,13 +56,16 @@ public class SyncSourceBatch implements Batch {
   private boolean firstBlockConfirmed = false;
   private boolean lastBlockConfirmed = false;
   private boolean awaitingBlocks = false;
+
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
+  private final Map<UInt64, BlobsSidecar> blobsSidecarsBySlot = new HashMap<>();
 
   SyncSourceBatch(
       final EventThread eventThread,
       final SyncSourceSelector syncSourceProvider,
       final ConflictResolutionStrategy conflictResolutionStrategy,
       final TargetChain targetChain,
+      final BlobsSidecarManager blobsSidecarManager,
       final UInt64 firstSlot,
       final UInt64 count) {
     checkArgument(
@@ -66,6 +74,7 @@ public class SyncSourceBatch implements Batch {
     this.syncSourceProvider = syncSourceProvider;
     this.conflictResolutionStrategy = conflictResolutionStrategy;
     this.targetChain = targetChain;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.firstSlot = firstSlot;
     this.count = count;
   }
@@ -98,6 +107,11 @@ public class SyncSourceBatch implements Batch {
   @Override
   public List<SignedBeaconBlock> getBlocks() {
     return blocks;
+  }
+
+  @Override
+  public Map<UInt64, BlobsSidecar> getBlobsSidecarsBySlot() {
+    return blobsSidecarsBySlot;
   }
 
   @Override
@@ -182,10 +196,12 @@ public class SyncSourceBatch implements Batch {
   public void requestMoreBlocks(final Runnable callback) {
     checkState(
         !isComplete() || isContested(), "Attempting to request more blocks from a complete batch");
-    final RequestHandler requestHandler = new RequestHandler();
+    final BlockRequestHandler blockRequestHandler = new BlockRequestHandler();
     final UInt64 startSlot =
         getLastBlock().map(SignedBeaconBlock::getSlot).map(UInt64::increment).orElse(firstSlot);
     final UInt64 remainingSlots = count.minus(startSlot.minus(firstSlot));
+    final UInt64 lastSlot = startSlot.plus(remainingSlots).decrement();
+
     checkState(
         remainingSlots.isGreaterThan(UInt64.ZERO),
         "Attempting to request more blocks when block for last slot already present.");
@@ -200,9 +216,28 @@ public class SyncSourceBatch implements Batch {
     final SyncSource syncSource = currentSyncSource.orElseThrow();
     LOG.debug(
         "Requesting {} slots starting at {} from peer {}", remainingSlots, startSlot, syncSource);
-    syncSource
-        .requestBlocksByRange(startSlot, remainingSlots, requestHandler)
-        .thenRunAsync(() -> onRequestComplete(requestHandler), eventThread)
+
+    final SafeFuture<Void> blocksRequest =
+        syncSource.requestBlocksByRange(startSlot, remainingSlots, blockRequestHandler);
+
+    final SafeFuture<Void> blobsSidecarsRequest;
+    if (blobsSidecarManager.isStorageOfBlobsSidecarRequired(lastSlot)) {
+      LOG.trace(
+          "Requesting {} blobs sidecars starting at {} from peer {}",
+          remainingSlots,
+          startSlot,
+          syncSource);
+      final BlobsSidecarRequestHandler blobsSidecarRequestHandler =
+          new BlobsSidecarRequestHandler();
+      blobsSidecarsRequest =
+          syncSource.requestBlobsSidecarsByRange(
+              startSlot, remainingSlots, blobsSidecarRequestHandler);
+    } else {
+      blobsSidecarsRequest = SafeFuture.COMPLETE;
+    }
+
+    SafeFuture.allOfFailFast(blocksRequest, blobsSidecarsRequest)
+        .thenRunAsync(() -> onRequestComplete(blockRequestHandler), eventThread)
         .handleAsync(
             (__, error) -> {
               if (error != null) {
@@ -244,11 +279,12 @@ public class SyncSourceBatch implements Batch {
     firstBlockConfirmed = false;
     lastBlockConfirmed = false;
     blocks.clear();
+    blobsSidecarsBySlot.clear();
   }
 
-  private void onRequestComplete(final RequestHandler requestHandler) {
+  private void onRequestComplete(final BlockRequestHandler blockRequestHandler) {
     eventThread.checkOnEventThread();
-    final List<SignedBeaconBlock> newBlocks = requestHandler.complete();
+    final List<SignedBeaconBlock> newBlocks = blockRequestHandler.complete();
 
     awaitingBlocks = false;
     if (!blocks.isEmpty() && !newBlocks.isEmpty()) {
@@ -299,7 +335,7 @@ public class SyncSourceBatch implements Batch {
         + ")";
   }
 
-  private static class RequestHandler implements RpcResponseListener<SignedBeaconBlock> {
+  private static class BlockRequestHandler implements RpcResponseListener<SignedBeaconBlock> {
     private final List<SignedBeaconBlock> blocks = new ArrayList<>();
 
     @Override
@@ -310,6 +346,15 @@ public class SyncSourceBatch implements Batch {
 
     public List<SignedBeaconBlock> complete() {
       return blocks;
+    }
+  }
+
+  private class BlobsSidecarRequestHandler implements RpcResponseListener<BlobsSidecar> {
+
+    @Override
+    public SafeFuture<?> onResponse(final BlobsSidecar response) {
+      blobsSidecarsBySlot.put(response.getBeaconBlockSlot(), response);
+      return SafeFuture.COMPLETE;
     }
   }
 }
