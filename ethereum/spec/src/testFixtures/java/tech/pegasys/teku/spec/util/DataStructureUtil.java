@@ -75,7 +75,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListS
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
@@ -183,26 +182,18 @@ public final class DataStructureUtil {
       CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob;
   private static final Random RND = new Random(RANDOM_SEED);
 
-  private KZG kzg;
   private final Spec spec;
 
   private int seed;
   private Supplier<BLSPublicKey> pubKeyGenerator = () -> BLSTestUtil.randomPublicKey(nextSeed());
 
-  public DataStructureUtil(final Spec spec, final KZG kzg) {
-    this(spec);
-    this.kzg = kzg;
-  }
-
   public DataStructureUtil(final Spec spec) {
     this(92892824, spec);
-    this.kzg = KZG.NOOP;
   }
 
   public DataStructureUtil(final int seed, final Spec spec) {
     this.seed = seed;
     this.spec = spec;
-    this.kzg = KZG.NOOP;
   }
 
   public DataStructureUtil withPubKeyGenerator(Supplier<BLSPublicKey> pubKeyGenerator) {
@@ -1856,12 +1847,6 @@ public final class DataStructureUtil {
     return IntStream.range(0, count).mapToObj(__ -> getSampleBlob()).collect(Collectors.toList());
   }
 
-  public List<KZGCommitment> randomKzgCommitments(final int count) {
-    return IntStream.range(0, count)
-        .mapToObj(__ -> getSampleCommitment())
-        .collect(Collectors.toList());
-  }
-
   public Blob randomBlob() {
     final BlobSchema blobSchema =
         SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
@@ -2050,9 +2035,5 @@ public final class DataStructureUtil {
         return UInt256.valueOf(attempt);
       }
     }
-  }
-
-  private KZGCommitment getSampleCommitment() {
-    return kzg.blobToKzgCommitment(getSampleBlob());
   }
 }
