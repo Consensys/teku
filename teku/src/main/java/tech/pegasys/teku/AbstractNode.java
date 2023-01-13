@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import oshi.SystemInfo;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -71,7 +72,8 @@ public abstract class AbstractNode implements Node {
     final int restApiPort = tekuConfig.beaconChain().beaconRestApiConfig().getRestApiPort();
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
-    STATUS_LOG.startupConfigurations(new StartupLogConfig(network, storageMode, restApiPort));
+    STATUS_LOG.startupConfigurations(
+        new StartupLogConfig(network, storageMode, restApiPort, new SystemInfo().getHardware()));
 
     reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);

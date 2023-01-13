@@ -14,14 +14,28 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+import oshi.hardware.CentralProcessor;
+import oshi.hardware.GlobalMemory;
+import oshi.hardware.HardwareAbstractionLayer;
 
 public class StartupLogConfigTest {
 
   @Test
   void checkReport() {
-    final StartupLogConfig config = new StartupLogConfig("mainnet", "PRUNE", 5678);
+    final HardwareAbstractionLayer hardwareInfo = mock(HardwareAbstractionLayer.class);
+    final GlobalMemory memory = mock(GlobalMemory.class);
+    when(hardwareInfo.getMemory()).thenReturn(memory);
+    when(memory.getTotal()).thenReturn(Long.valueOf("17179869184"));
+
+    final CentralProcessor centralProcessor = mock(CentralProcessor.class);
+    when(hardwareInfo.getProcessor()).thenReturn(centralProcessor);
+    when(centralProcessor.getLogicalProcessorCount()).thenReturn(10);
+
+    final StartupLogConfig config = new StartupLogConfig("mainnet", "PRUNE", 5678, hardwareInfo);
     assertThat(config.getReport())
         .containsExactly(
             "Configuration | Network: mainnet, Storage Mode: PRUNE, Rest API Port: 5678",

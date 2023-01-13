@@ -14,7 +14,6 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import java.util.List;
-import oshi.SystemInfo;
 import oshi.hardware.HardwareAbstractionLayer;
 
 public class StartupLogConfig {
@@ -26,12 +25,15 @@ public class StartupLogConfig {
   private final String memory;
   private final int cpuCores;
 
-  public StartupLogConfig(final String network, final String storageMode, final int restApiPort) {
+  public StartupLogConfig(
+      final String network,
+      final String storageMode,
+      final int restApiPort,
+      final HardwareAbstractionLayer hardwareInfo) {
     this.network = network;
     this.storageMode = storageMode;
     this.restApiPort = restApiPort;
 
-    final HardwareAbstractionLayer hardwareInfo = new SystemInfo().getHardware();
     this.maxHeapSize = normalizeSize(Runtime.getRuntime().maxMemory());
     this.memory = normalizeSize(hardwareInfo.getMemory().getTotal());
     this.cpuCores = hardwareInfo.getProcessor().getLogicalProcessorCount();
