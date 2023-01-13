@@ -13,20 +13,43 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import java.util.List;
+import oshi.SystemInfo;
+import oshi.hardware.HardwareAbstractionLayer;
+
 public class StartupLogConfig {
   private final String network;
   private final String storageMode;
   private final int restApiPort;
 
+  private final String maxHeapSize;
+  private final String memory;
+  private final int cpuCores;
+
   public StartupLogConfig(final String network, final String storageMode, final int restApiPort) {
     this.network = network;
     this.storageMode = storageMode;
     this.restApiPort = restApiPort;
+
+    final HardwareAbstractionLayer hardwareInfo = new SystemInfo().getHardware();
+    this.maxHeapSize = normalizeSize(Runtime.getRuntime().maxMemory());
+    this.memory = normalizeSize(hardwareInfo.getMemory().getTotal());
+    this.cpuCores = hardwareInfo.getProcessor().getLogicalProcessorCount();
   }
 
-  public String getReport() { // TODO clean up formatting here
-    return String.format(
-        "Configuration | Network: %s, Storage Mode: %s, Rest API Port: %s",
-        network, storageMode, restApiPort);
+  private String normalizeSize(final long size) {
+    return String.format("%.02f", (double) (size) / 1024 / 1024 / 1024) + " GB";
+  }
+
+  public List<String> getReport() { // TODO clean up formatting here
+    final String general =
+        String.format(
+            "Configuration | Network: %s, Storage Mode: %s, Rest API Port: %s",
+            network, storageMode, restApiPort);
+    final String host =
+        String.format(
+            "Host Configuration | Maximum Heap Size: %s, Total Memory: %s, CPU Cores: %d",
+            maxHeapSize, memory, cpuCores);
+    return List.of(general, host);
   }
 }
