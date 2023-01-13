@@ -47,6 +47,7 @@ dependencies {
     testFixturesImplementation 'org.hyperledger.besu:evm'
     testFixturesImplementation 'org.hyperledger.besu:plugin-api'
     testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testFixturesImplementation 'tech.pegasys:jc-kzg-4844'
     testFixturesImplementation project(':ethereum:execution-types')
     testFixturesImplementation project(':infrastructure:async')
     testFixturesImplementation project(':infrastructure:bls')
