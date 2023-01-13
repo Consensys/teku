@@ -23,6 +23,8 @@ public class StartupLogConfigTest {
   void checkReport() {
     final StartupLogConfig config = new StartupLogConfig("mainnet", "PRUNE", 5678);
     assertThat(config.getReport())
-        .isEqualTo("Configuration | Network: mainnet, Storage Mode: PRUNE, Rest API Port: 5678");
+        .containsExactly(
+            "Configuration | Network: mainnet, Storage Mode: PRUNE, Rest API Port: 5678",
+            "Host Configuration | Maximum Heap Size: 4.00 GB, Total Memory: 16.00 GB, CPU Cores: 10");
   }
 }

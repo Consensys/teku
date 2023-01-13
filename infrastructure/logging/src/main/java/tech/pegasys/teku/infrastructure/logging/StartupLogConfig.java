@@ -38,7 +38,7 @@ public class StartupLogConfig {
   }
 
   private String normalizeSize(final long size) {
-    return String.format("%.02f", (double) (size) / 1024 / 1024 / 1024) + " GB";
+    return String.format("%.02f", (double) size / 1024 / 1024 / 1024) + " GB";
   }
 
   public List<String> getReport() { // TODO clean up formatting here
