@@ -21,6 +21,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
@@ -55,15 +56,7 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
     return executionEngineClient
         .getPayloadV2(executionPayloadContext.getPayloadId())
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(
-            response -> {
-              final ExecutionPayloadSchema<?> payloadSchema =
-                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                      .getExecutionPayloadSchema();
-              return new ExecutionPayloadWithValue(
-                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
-                  response.blockValue);
-            })
+        .thenApply(response -> getExecutionPayloadWithValue(response, slot))
         .thenPeek(
             payloadAndValue ->
                 LOG.trace(
@@ -71,6 +64,20 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
                     executionPayloadContext.getPayloadId(),
                     slot,
                     payloadAndValue));
+  }
+
+  private ExecutionPayloadWithValue getExecutionPayloadWithValue(
+      final GetPayloadV2Response response, final UInt64 slot) {
+    final ExecutionPayloadSchema<?> payloadSchema =
+        SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getExecutionPayloadSchema();
+
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      return new ExecutionPayloadWithValue(
+          response.executionPayload.asInternalExecutionPayload(payloadSchema), response.blockValue);
+    }
+    return new ExecutionPayloadWithValue(
+        response.executionPayload.asInternalExecutionPayload(payloadSchema), response.blockValue);
   }
 
   @Override

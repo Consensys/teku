@@ -21,14 +21,14 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDese
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
 
 public class GetPayloadV2Response {
-  public final ExecutionPayloadV1 executionPayload;
+  public final ExecutionPayloadV2 executionPayload;
 
   @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = UInt256AsHexDeserializer.class)
   public final UInt256 blockValue;
 
   public GetPayloadV2Response(
-      @JsonProperty("executionPayload") final ExecutionPayloadV1 executionPayload,
+      @JsonProperty("executionPayload") final ExecutionPayloadV2 executionPayload,
       @JsonProperty("blockValue") final UInt256 blockValue) {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
