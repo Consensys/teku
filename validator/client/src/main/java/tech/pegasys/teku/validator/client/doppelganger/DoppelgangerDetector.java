@@ -314,6 +314,13 @@ public class DoppelgangerDetector {
             doppelganger ->
                 detectedDoppelgangers.putIfAbsent(
                     doppelganger.getRight().getIndex(), doppelganger.getLeft()));
+        if (allKeysAreActive()) {
+          statusLog.doppelgangerDetectionEnd(
+              mapToAbbreviatedKeys(pubKeys).collect(Collectors.toSet()),
+              detectedDoppelgangers.entrySet().stream()
+                  .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString())));
+          stopDoppelgangerDetectorTask(detectedDoppelgangers).ifExceptionGetsHereRaiseABug();
+        }
       }
     }
 
