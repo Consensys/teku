@@ -1,7 +1,7 @@
 {
   "title" : "BeaconStateCapella",
   "type" : "object",
-  "required" : [ "genesis_time", "genesis_validators_root", "slot", "fork", "latest_block_header", "block_roots", "state_roots", "historical_roots", "eth1_data", "eth1_data_votes", "eth1_deposit_index", "validators", "balances", "randao_mixes", "slashings", "previous_epoch_participation", "current_epoch_participation", "justification_bits", "previous_justified_checkpoint", "current_justified_checkpoint", "finalized_checkpoint", "inactivity_scores", "current_sync_committee", "next_sync_committee", "latest_execution_payload_header", "next_withdrawal_index", "next_withdrawal_validator_index" ],
+  "required" : [ "genesis_time", "genesis_validators_root", "slot", "fork", "latest_block_header", "block_roots", "state_roots", "historical_roots", "eth1_data", "eth1_data_votes", "eth1_deposit_index", "validators", "balances", "randao_mixes", "slashings", "previous_epoch_participation", "current_epoch_participation", "justification_bits", "previous_justified_checkpoint", "current_justified_checkpoint", "finalized_checkpoint", "inactivity_scores", "current_sync_committee", "next_sync_committee", "latest_execution_payload_header", "next_withdrawal_index", "next_withdrawal_validator_index", "historical_summaries" ],
   "properties" : {
     "genesis_time" : {
       "type" : "string",
@@ -164,6 +164,12 @@
       "description" : "unsigned 64 bit integer",
       "example" : "1",
       "format" : "uint64"
+    },
+    "historical_summaries" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/HistoricalSummary"
+      }
     }
   }
 }

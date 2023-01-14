@@ -90,6 +90,11 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
                   subscribeEpochsPriorToNextSyncPeriod));
     }
 
+    if (isFirstSlotOfEpoch(slot)) {
+      this.currentSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
+      this.nextSyncCommitteePeriod.ifPresent(SyncCommitteePeriod::requestSubnetSubscription);
+    }
+
     final SyncCommitteePeriod nextSyncCommitteePeriod = this.nextSyncCommitteePeriod.get();
     if (dutiesEpoch.isGreaterThanOrEqualTo(nextSyncCommitteePeriod.subscribeEpoch)) {
       nextSyncCommitteePeriod.calculateDuties();
@@ -98,6 +103,12 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
       this.currentSyncCommitteePeriod = this.nextSyncCommitteePeriod;
       this.nextSyncCommitteePeriod = Optional.empty();
     }
+  }
+
+  private boolean isFirstSlotOfEpoch(final UInt64 slot) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
+    final UInt64 startSlotAtEpoch = spec.computeStartSlotAtEpoch(currentEpoch);
+    return startSlotAtEpoch.equals(slot);
   }
 
   private SyncCommitteePeriod createSyncCommitteePeriod(
@@ -203,6 +214,13 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
                   Optional.of(
                       PendingDuties.calculateDuties(
                           metricsSystem, dutyLoader, nextPeriodStartEpoch.minusMinZero(1))));
+    }
+
+    public void requestSubnetSubscription() {
+      duties
+          .flatMap(PendingDuties::getScheduledDuties)
+          .map(SyncCommitteeScheduledDuties.class::cast)
+          .ifPresent(SyncCommitteeScheduledDuties::subscribeToSubnets);
     }
 
     public void recalculate() {

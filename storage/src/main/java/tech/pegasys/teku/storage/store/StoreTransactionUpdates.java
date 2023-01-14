@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -38,9 +38,10 @@ class StoreTransactionUpdates {
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
-  private final Set<Bytes32> prunedHotBlockRoots;
+  private final Map<Bytes32, UInt64> prunedHotBlockRoots;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
+  private final boolean blobsSidecarEnabled;
 
   StoreTransactionUpdates(
       final StoreTransaction tx,
@@ -48,10 +49,11 @@ class StoreTransactionUpdates {
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
-      final Set<Bytes32> prunedHotBlockRoots,
+      final Map<Bytes32, UInt64> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
-      final Optional<Bytes32> optimisticTransitionBlockRoot) {
+      final Optional<Bytes32> optimisticTransitionBlockRoot,
+      final boolean blobsSidecarEnabled) {
     checkNotNull(tx, "Transaction is required");
     checkNotNull(finalizedChainData, "Finalized data is required");
     checkNotNull(hotBlocks, "Hot blocks are required");
@@ -69,6 +71,7 @@ class StoreTransactionUpdates {
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
     this.optimisticTransitionBlockRoot = optimisticTransitionBlockRoot;
+    this.blobsSidecarEnabled = blobsSidecarEnabled;
   }
 
   public StorageUpdate createStorageUpdate() {
@@ -82,7 +85,8 @@ class StoreTransactionUpdates {
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,
-        optimisticTransitionBlockRoot);
+        optimisticTransitionBlockRoot,
+        blobsSidecarEnabled);
   }
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
@@ -105,14 +109,16 @@ class StoreTransactionUpdates {
         finalizedData -> store.finalizedAnchor = finalizedData.getLatestFinalized());
 
     // Prune blocks and states
-    prunedHotBlockRoots.forEach(
-        (root) -> {
-          store.blocks.remove(root);
-          store.states.remove(root);
-        });
+    prunedHotBlockRoots
+        .keySet()
+        .forEach(
+            (root) -> {
+              store.blocks.remove(root);
+              store.states.remove(root);
+            });
 
     store.checkpointStates.removeIf(
-        slotAndBlockRoot -> prunedHotBlockRoots.contains(slotAndBlockRoot.getBlockRoot()));
+        slotAndBlockRoot -> prunedHotBlockRoots.containsKey(slotAndBlockRoot.getBlockRoot()));
 
     if (tx.proposerBoostRootSet) {
       store.proposerBoostRoot = tx.proposerBoostRoot;

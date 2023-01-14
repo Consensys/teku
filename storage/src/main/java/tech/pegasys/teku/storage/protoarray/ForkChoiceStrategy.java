@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -455,7 +455,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public void applyUpdate(
       final Collection<BlockAndCheckpoints> newBlocks,
       final Collection<Bytes32> pulledUpBlocks,
-      final Set<Bytes32> removedBlockRoots,
+      final Map<Bytes32, UInt64> removedBlockRoots,
       final Checkpoint finalizedCheckpoint) {
     protoArrayLock.writeLock().lock();
     try {
@@ -470,7 +470,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getBlock().getStateRoot(),
                       block.getBlockCheckpoints(),
                       block.getExecutionBlockHash().orElse(Bytes32.ZERO)));
-      removedBlockRoots.forEach(protoArray::removeBlockRoot);
+      removedBlockRoots.forEach((root, uInt64) -> protoArray.removeBlockRoot(root));
       pulledUpBlocks.forEach(protoArray::pullUpBlockCheckpoints);
       protoArray.maybePrune(finalizedCheckpoint.getRoot());
     } finally {

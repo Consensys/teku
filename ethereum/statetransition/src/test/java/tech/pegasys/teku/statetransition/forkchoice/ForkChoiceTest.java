@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
+import static tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.validResult;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import java.util.List;
@@ -56,6 +57,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -63,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
@@ -79,7 +82,10 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -93,8 +99,11 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalEip4844();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  private final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
+      mock(BlobsSidecarAvailabilityChecker.class);
   private final AttestationSchema attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final StorageSystem storageSystem =
@@ -122,12 +131,12 @@ class ForkChoiceTest {
           spec,
           eventThread,
           recentChainData,
+          blobsSidecarManager,
           forkChoiceNotifier,
           new ForkChoiceStateProvider(eventThread, recentChainData),
           new TickProcessor(spec, recentChainData),
           transitionBlockValidator,
-          DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-          ForkChoiceBlobsSidecarAvailabilityCheckerFactory.NOOP);
+          DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
   @BeforeEach
   public void setup() {
@@ -145,6 +154,16 @@ class ForkChoiceTest {
         .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
 
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(optimisticSyncStateTracker);
+
+    // blobs always available
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
+      when(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).thenReturn(true);
+      when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
+          .thenReturn(SafeFuture.completedFuture(validResult(blobsSidecar)));
+      when(blobsSidecarManager.createAvailabilityChecker(any()))
+          .thenReturn(blobsSidecarAvailabilityChecker);
+    }
   }
 
   @Test
@@ -163,12 +182,53 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onBlock_shouldCheckBlobsAvailability() {
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
+
+    importBlock(blockAndState);
+
+    verify(blobsSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobsSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobsSidecarAvailabilityChecker).getAvailabilityCheckResult();
+  }
+
+  @Test
+  void onBlock_shouldFailIfBlobsAreNotAvailable() {
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
+
+    when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE));
+
+    importBlockWithError(blockAndState, FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK);
+
+    verify(blobsSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobsSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobsSidecarAvailabilityChecker).getAvailabilityCheckResult();
+  }
+
+  @Test
+  void onBlock_shouldImportIfBlobsAreNotRequired() {
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
+
+    when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_REQUIRED));
+
+    importBlock(blockAndState);
+
+    verify(blobsSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobsSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobsSidecarAvailabilityChecker).getAvailabilityCheckResult();
+  }
+
+  @Test
   void onBlock_shouldImmediatelyMakeChildOfCurrentHeadTheNewHead() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -185,8 +245,7 @@ class ForkChoiceTest {
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -214,12 +273,12 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
+            BlobsSidecarManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            ForkChoiceBlobsSidecarAvailabilityCheckerFactory.NOOP);
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
@@ -496,8 +555,7 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertForkChoiceUpdateNotification(blockAndState, false);
@@ -621,6 +679,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setCurrentSlot(forkSlot.plus(1));
     importBlock(chainBuilder.generateBlockAtSlot(forkSlot.plus(1)));
 
+    processHead(forkSlot.plus(1));
+
     // make EL returning SYNCING
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
 
@@ -741,8 +801,7 @@ class ForkChoiceTest {
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
 
     assertForkChoiceUpdateNotification(blockAndState, true);
@@ -1092,14 +1151,14 @@ class ForkChoiceTest {
   private void importBlock(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, false);
   }
 
   private void importBlockOptimistically(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
   }
 
@@ -1113,7 +1172,7 @@ class ForkChoiceTest {
   private void importBlockWithError(final SignedBlockAndState block, FailureReason failureReason) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
     assertBlockImportFailure(result, failureReason);
   }
 

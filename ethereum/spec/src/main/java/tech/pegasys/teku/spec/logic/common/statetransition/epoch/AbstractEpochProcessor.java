@@ -112,6 +112,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processSlashingsReset(state);
     processRandaoMixesReset(state);
     processHistoricalRootsUpdate(state);
+    processHistoricalSummariesUpdate(state);
     processParticipationUpdates(state);
     processSyncCommitteeUpdates(state);
 

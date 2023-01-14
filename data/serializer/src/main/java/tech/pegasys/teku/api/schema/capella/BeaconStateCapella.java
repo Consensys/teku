@@ -18,6 +18,7 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Checkpoint;
@@ -27,7 +28,9 @@ import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.altair.SyncCommittee;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -47,6 +50,9 @@ public class BeaconStateCapella extends BeaconStateAltair {
   @JsonProperty("next_withdrawal_validator_index")
   @Schema(type = "string", example = EXAMPLE_UINT64)
   public final UInt64 nextWithdrawalValidatorIndex;
+
+  @JsonProperty("historical_summaries")
+  public final List<HistoricalSummary> historicalSummaries;
 
   public BeaconStateCapella(
       @JsonProperty("genesis_time") final UInt64 genesisTime,
@@ -76,7 +82,8 @@ public class BeaconStateCapella extends BeaconStateAltair {
       @JsonProperty("latest_execution_payload_header")
           final ExecutionPayloadHeaderCapella latestExecutionPayloadHeader,
       @JsonProperty("next_withdrawal_index") final UInt64 nextWithdrawalIndex,
-      @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex) {
+      @JsonProperty("next_withdrawal_validator_index") final UInt64 nextWithdrawalValidatorIndex,
+      @JsonProperty("historical_summaries") final List<HistoricalSummary> historicalSummaries) {
     super(
         genesisTime,
         genesisValidatorsRoot,
@@ -105,6 +112,7 @@ public class BeaconStateCapella extends BeaconStateAltair {
     this.latestExecutionPayloadHeader = latestExecutionPayloadHeader;
     this.nextWithdrawalIndex = nextWithdrawalIndex;
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
+    this.historicalSummaries = historicalSummaries;
   }
 
   public BeaconStateCapella(BeaconState beaconState) {
@@ -116,15 +124,21 @@ public class BeaconStateCapella extends BeaconStateAltair {
         new ExecutionPayloadHeaderCapella(capella.getLatestExecutionPayloadHeader());
     this.nextWithdrawalIndex = capella.getNextWithdrawalIndex();
     this.nextWithdrawalValidatorIndex = capella.getNextWithdrawalValidatorIndex();
+    this.historicalSummaries =
+        capella.getHistoricalSummaries().stream()
+            .map(HistoricalSummary::new)
+            .collect(Collectors.toList());
   }
 
   @Override
-  protected void applyAdditionalFields(MutableBeaconState state) {
+  protected void applyAdditionalFields(
+      final MutableBeaconState state, final SpecVersion specVersion) {
     state
         .toMutableVersionCapella()
         .ifPresent(
             mutableBeaconStateCapella ->
                 applyCapellaFields(
+                    specVersion,
                     mutableBeaconStateCapella,
                     BeaconStateSchemaCapella.required(
                             mutableBeaconStateCapella.getBeaconStateSchema())
@@ -132,13 +146,20 @@ public class BeaconStateCapella extends BeaconStateAltair {
                     BeaconStateSchemaCapella.required(
                             mutableBeaconStateCapella.getBeaconStateSchema())
                         .getLastExecutionPayloadHeaderSchema(),
+                    BeaconStateSchemaCapella.required(
+                            mutableBeaconStateCapella.getBeaconStateSchema())
+                        .getHistoricalSummariesSchema(),
                     this));
   }
 
-  public static void applyCapellaFields(
+  protected static void applyCapellaFields(
+      final SpecVersion specVersion,
       MutableBeaconStateCapella state,
       SyncCommitteeSchema syncCommitteeSchema,
       ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchema,
+      SszListSchema<
+              tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
+          historicalSummariesSchema,
       BeaconStateCapella instance) {
 
     BeaconStateAltair.applyAltairFields(state, syncCommitteeSchema, instance);
@@ -165,5 +186,11 @@ public class BeaconStateCapella extends BeaconStateAltair {
 
     state.setNextWithdrawalIndex(instance.nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(instance.nextWithdrawalValidatorIndex);
+    state.setHistoricalSummaries(
+        historicalSummariesSchema.createFromElements(
+            instance.historicalSummaries.stream()
+                .map(
+                    historicalSummary -> historicalSummary.asInternalHistoricalSummary(specVersion))
+                .collect(Collectors.toList())));
   }
 }

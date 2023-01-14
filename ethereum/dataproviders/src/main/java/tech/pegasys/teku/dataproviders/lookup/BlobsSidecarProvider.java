@@ -11,22 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.forkchoice;
+package tech.pegasys.teku.dataproviders.lookup;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
-public interface BlobsSidecarAvailabilityCheckerFactory {
-  BlobsSidecarAvailabilityCheckerFactory NOOP =
-      (specVersion, recentChainData, block, blobsSidecar) -> BlobsSidecarAvailabilityChecker.NOOP;
+@FunctionalInterface
+public interface BlobsSidecarProvider {
 
-  BlobsSidecarAvailabilityChecker create(
-      SpecVersion specVersion,
-      RecentChainData recentChainData,
-      SignedBeaconBlock block,
-      Optional<BlobsSidecar> blobsSidecar);
+  default SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(SignedBeaconBlock block) {
+    return getBlobsSidecar(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
+  }
+
+  SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 }

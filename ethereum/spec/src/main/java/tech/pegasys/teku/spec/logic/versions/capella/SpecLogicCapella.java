@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellat
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SpecLogicCapella extends AbstractSpecLogic {
@@ -120,8 +121,8 @@ public class SpecLogicCapella extends AbstractSpecLogic {
             predicates,
             miscHelpers,
             beaconStateAccessors);
-    final EpochProcessorBellatrix epochProcessor =
-        new EpochProcessorBellatrix(
+    final EpochProcessorCapella epochProcessor =
+        new EpochProcessorCapella(
             config,
             miscHelpers,
             beaconStateAccessors,

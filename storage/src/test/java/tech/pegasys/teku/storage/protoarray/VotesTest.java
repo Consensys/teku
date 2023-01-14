@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.protoarray;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -508,7 +509,7 @@ public class VotesTest {
 
     // Ensure that pruning below the prune threshold does not prune.
     forkChoice.setPruneThreshold(Integer.MAX_VALUE);
-    forkChoice.applyUpdate(emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, getHash(5)));
+    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(5)));
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
@@ -534,7 +535,7 @@ public class VotesTest {
     //         / \
     //        9  10
     forkChoice.setPruneThreshold(1);
-    forkChoice.applyUpdate(emptyList(), emptySet(), emptySet(), new Checkpoint(ONE, getHash(5)));
+    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(5)));
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(6);
 
     // Run find-head, ensure the prune didn't change the head.

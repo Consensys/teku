@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -64,7 +66,7 @@ abstract class AbstractBlockMetadataStoreTest {
     final BlockAndCheckpoints block3 =
         BlockAndCheckpoints.fromBlockAndState(spec, chainBuilder.generateBlockAtSlot(3));
 
-    store.applyUpdate(List.of(block1, block2, block3), emptySet(), emptySet(), genesisCheckpoint);
+    store.applyUpdate(List.of(block1, block2, block3), emptySet(), emptyMap(), genesisCheckpoint);
 
     chainBuilder
         .streamBlocksAndStates()
@@ -84,7 +86,7 @@ abstract class AbstractBlockMetadataStoreTest {
     store.applyUpdate(
         List.of(block1, block2, block3),
         emptySet(),
-        Set.of(genesis.getRoot(), block1.getRoot()),
+        Map.of(genesis.getRoot(), UInt64.ZERO, block1.getRoot(), block1.getSlot()),
         new Checkpoint(UInt64.ONE, block2.getRoot()));
 
     assertThat(store.contains(genesis.getRoot())).isFalse();
@@ -127,7 +129,7 @@ abstract class AbstractBlockMetadataStoreTest {
             .map(blockAndState -> BlockAndCheckpoints.fromBlockAndState(spec, blockAndState))
             .collect(toList()),
         emptySet(),
-        emptySet(),
+        emptyMap(),
         genesisCheckpoint);
 
     final Set<Bytes32> seenBlocks = new HashSet<>();
@@ -176,7 +178,7 @@ abstract class AbstractBlockMetadataStoreTest {
             .map(blockAndState -> BlockAndCheckpoints.fromBlockAndState(spec, blockAndState))
             .collect(toList()),
         emptySet(),
-        emptySet(),
+        emptyMap(),
         genesisCheckpoint);
 
     verifyHashesInChain(

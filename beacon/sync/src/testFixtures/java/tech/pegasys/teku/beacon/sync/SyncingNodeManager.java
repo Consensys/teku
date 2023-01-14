@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -107,6 +108,7 @@ public class SyncingNodeManager {
             spec,
             new InlineEventThread(),
             recentChainData,
+            BlobsSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             transitionBlockValidator);
     BlockImporter blockImporter =
@@ -127,6 +129,7 @@ public class SyncingNodeManager {
         new BlockManager(
             recentChainData,
             blockImporter,
+            BlobsSidecarManager.NOOP,
             pendingBlocks,
             futureBlocks,
             blockValidator,
@@ -158,6 +161,7 @@ public class SyncingNodeManager {
             eth2P2PNetwork,
             recentChainData,
             blockImporter,
+            BlobsSidecarManager.NOOP,
             new NoOpMetricsSystem(),
             spec);
     ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
