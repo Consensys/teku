@@ -212,7 +212,7 @@ public class StatusLogger {
 
   public void doppelgangerDetectionAlert(final Set<String> doppelgangerPublicKeys) {
     log.error(
-        "Detected {} validators that appear to be already active. The following keys have been ignored: {}",
+        "Detected {} active validators doppelganger. The following keys have been ignored: {}",
         doppelgangerPublicKeys.size(),
         String.join(", ", doppelgangerPublicKeys));
   }

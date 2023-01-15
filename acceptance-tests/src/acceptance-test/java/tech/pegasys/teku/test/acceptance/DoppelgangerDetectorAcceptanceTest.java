@@ -109,7 +109,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     secondValidatorClient.waitForLogMessageContaining("Doppelganger detection check finished");
     secondValidatorClient.waitForLogMessageContaining("Detected 8 validators doppelganger");
     secondValidatorClient.waitForLogMessageContaining(
-        "Detected 8 validators that appear to be already active. The following keys have been ignored");
+        "Detected 8 active validators doppelganger. The following keys have been ignored");
 
     firstValidatorClient.stop();
     secondValidatorClient.stop();
@@ -183,6 +183,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     secondNode.waitForLogMessageContaining("Detected 2 validators doppelganger");
     secondNode.waitForLogMessageContaining(
         "Doppelganger detection check finished. Stopping doppelganger detection");
+    secondNode.waitForLogMessageContaining("Detected 2 validators doppelganger");
     secondNode.waitForLogMessageContaining("Shutting down...");
 
     secondNode.stop();
