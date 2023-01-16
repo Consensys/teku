@@ -91,32 +91,39 @@ public class BlockProposalTestUtil {
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
             parentBlockSigningRoot,
-            builder ->
-                builder
-                    .randaoReveal(randaoReveal)
-                    .eth1Data(eth1Data)
-                    .graffiti(Bytes32.ZERO)
-                    .attestations(attestations)
-                    .proposerSlashings(proposerSlashings)
-                    .attesterSlashings(attesterSlashings)
-                    .deposits(deposits)
-                    .voluntaryExits(exits)
-                    .syncAggregate(
-                        () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
-                    .executionPayload(
-                        () ->
-                            SafeFuture.completedFuture(
-                                executionPayload.orElseGet(
-                                    () ->
-                                        createExecutionPayload(
-                                            newSlot, blockSlotState, transactions, terminalBlock))))
-                    .blsToExecutionChanges(
-                        () ->
-                            blsToExecutionChange.orElseGet(
-                                dataStructureUtil::emptySignedBlsToExecutionChangesList))
-                    .blobKzgCommitments(
-                        () ->
-                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)),
+            builder -> {
+              builder
+                  .randaoReveal(randaoReveal)
+                  .eth1Data(eth1Data)
+                  .graffiti(Bytes32.ZERO)
+                  .attestations(attestations)
+                  .proposerSlashings(proposerSlashings)
+                  .attesterSlashings(attesterSlashings)
+                  .deposits(deposits)
+                  .voluntaryExits(exits);
+              if (builder.supportsSyncAggregate()) {
+                builder.syncAggregate(
+                    dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState));
+              }
+              if (builder.supportsExecutionPayload()) {
+                builder.executionPayload(
+                    SafeFuture.completedFuture(
+                        executionPayload.orElseGet(
+                            () ->
+                                createExecutionPayload(
+                                    newSlot, blockSlotState, transactions, terminalBlock))));
+              }
+              if (builder.supportsBlsToExecutionChanges()) {
+                builder.blsToExecutionChanges(
+                    blsToExecutionChange.orElseGet(
+                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+              }
+              if (builder.supportsKzgCommitments()) {
+                builder.blobKzgCommitments(
+                    SafeFuture.completedFuture(
+                        kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)));
+              }
+            },
             false)
         .thenApply(
             newBlockAndState -> {
@@ -159,32 +166,39 @@ public class BlockProposalTestUtil {
         .getSchemaDefinitions()
         .getBeaconBlockBodySchema()
         .createBlockBody(
-            builder ->
-                builder
-                    .randaoReveal(randaoReveal)
-                    .eth1Data(eth1Data)
-                    .graffiti(Bytes32.ZERO)
-                    .attestations(attestations)
-                    .proposerSlashings(proposerSlashings)
-                    .attesterSlashings(attesterSlashings)
-                    .deposits(deposits)
-                    .voluntaryExits(exits)
-                    .syncAggregate(
-                        () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
-                    .executionPayload(
-                        () ->
-                            SafeFuture.completedFuture(
-                                executionPayload.orElseGet(
-                                    () ->
-                                        createExecutionPayload(
-                                            newSlot, state, transactions, terminalBlock))))
-                    .blsToExecutionChanges(
-                        () ->
-                            blsToExecutionChange.orElseGet(
-                                dataStructureUtil::emptySignedBlsToExecutionChangesList))
-                    .blobKzgCommitments(
-                        () ->
-                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)))
+            builder -> {
+              builder
+                  .randaoReveal(randaoReveal)
+                  .eth1Data(eth1Data)
+                  .graffiti(Bytes32.ZERO)
+                  .attestations(attestations)
+                  .proposerSlashings(proposerSlashings)
+                  .attesterSlashings(attesterSlashings)
+                  .deposits(deposits)
+                  .voluntaryExits(exits);
+              if (builder.supportsSyncAggregate()) {
+                builder.syncAggregate(
+                    dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState));
+              }
+              if (builder.supportsExecutionPayload()) {
+                builder.executionPayload(
+                    SafeFuture.completedFuture(
+                        executionPayload.orElseGet(
+                            () ->
+                                createExecutionPayload(
+                                    newSlot, state, transactions, terminalBlock))));
+              }
+              if (builder.supportsBlsToExecutionChanges()) {
+                builder.blsToExecutionChanges(
+                    blsToExecutionChange.orElseGet(
+                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+              }
+              if (builder.supportsKzgCommitments()) {
+                builder.blobKzgCommitments(
+                    SafeFuture.completedFuture(
+                        kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)));
+              }
+            })
         .thenApply(
             blockBody -> {
               final BeaconBlock block =

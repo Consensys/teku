@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -48,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -56,7 +59,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -80,7 +83,8 @@ class BlockFactoryTest {
   final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
       mock(OperationPool.class);
   final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
-  final ExecutionLayerChannel executionLayer = mock(ExecutionLayerChannel.class);
+  final ExecutionLayerBlockProductionManager executionLayer =
+      mock(ExecutionLayerBlockProductionManager.class);
   final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   final DepositProvider depositProvider = mock(DepositProvider.class);
@@ -323,10 +327,24 @@ class BlockFactoryTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(dataStructureUtil.randomPayloadExecutionContext(false))));
-    when(executionLayer.engineGetPayload(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(executionPayload));
-    when(executionLayer.builderGetHeader(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(executionPayloadHeader));
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(false)))
+        .then(
+            args ->
+                new ExecutionPayloadResult(
+                    args.getArgument(0),
+                    Optional.of(SafeFuture.completedFuture(executionPayload)),
+                    Optional.empty(),
+                    Optional.empty()));
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(true)))
+        .then(
+            args ->
+                new ExecutionPayloadResult(
+                    args.getArgument(0),
+                    Optional.empty(),
+                    Optional.of(
+                        SafeFuture.completedFuture(
+                            HeaderWithFallbackData.create(executionPayloadHeader))),
+                    Optional.empty()));
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final Bytes32 bestBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
@@ -377,7 +395,7 @@ class BlockFactoryTest {
       final SignedBeaconBlock beaconBlock, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
-    when(executionLayer.builderGetPayload(beaconBlock))
+    when(executionLayer.getUnblindedPayload(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
     final SignedBeaconBlock block =
@@ -386,7 +404,7 @@ class BlockFactoryTest {
     if (!beaconBlock.getMessage().getBody().isBlinded()) {
       verifyNoInteractions(executionLayer);
     } else {
-      verify(executionLayer).builderGetPayload(beaconBlock);
+      verify(executionLayer).getUnblindedPayload(beaconBlock);
     }
 
     assertThat(block).isNotNull();

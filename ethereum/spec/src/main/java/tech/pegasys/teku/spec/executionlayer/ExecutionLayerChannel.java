@@ -14,8 +14,10 @@
 package tech.pegasys.teku.spec.executionlayer;
 
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -23,8 +25,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface ExecutionLayerChannel extends ChannelInterface {
@@ -68,6 +72,12 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<BlobsBundle> engineGetBlobsBundle(
+            UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
+          return SafeFuture.completedFuture(null);
+        }
+
+        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -75,14 +85,15 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+        public SafeFuture<ExecutionPayload> builderGetPayload(
+            SignedBeaconBlock signedBlindedBeaconBlock,
+            Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
           return SafeFuture.completedFuture(null);
         }
 
         @Override
-        public SafeFuture<ExecutionPayload> builderGetPayload(
-            SignedBeaconBlock signedBlindedBeaconBlock) {
+        public SafeFuture<HeaderWithFallbackData> builderGetHeader(
+            ExecutionPayloadContext executionPayloadContext, BeaconState state) {
           return SafeFuture.completedFuture(null);
         }
       };
@@ -97,22 +108,46 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
-  SafeFuture<ExecutionPayload> engineGetPayload(
-      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
-
   SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);
 
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration);
 
+  /**
+   * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
+  SafeFuture<ExecutionPayload> engineGetPayload(
+      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
+
+  /**
+   * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#initiateBlockAndBlobsProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
+  SafeFuture<BlobsBundle> engineGetBlobsBundle(
+      UInt64 slot, final Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional);
+
   // builder namespace
   SafeFuture<Void> builderRegisterValidators(
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
-  SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext, BeaconState state);
+  /**
+   * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock)} instead
+   */
+  SafeFuture<ExecutionPayload> builderGetPayload(
+      SignedBeaconBlock signedBlindedBeaconBlock,
+      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction);
 
-  SafeFuture<ExecutionPayload> builderGetPayload(SignedBeaconBlock signedBlindedBeaconBlock);
+  /**
+   * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
+   * BeaconState, boolean)} instead
+   */
+  SafeFuture<HeaderWithFallbackData> builderGetHeader(
+      ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   enum Version {
     KILNV2;
