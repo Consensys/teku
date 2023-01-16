@@ -4,7 +4,7 @@
   "required" : [ "header", "current_sync_committee", "current_sync_committee_branch" ],
   "properties" : {
     "header" : {
-      "$ref" : "#/components/schemas/BeaconBlockHeader"
+      "$ref" : "#/components/schemas/LightClientHeader"
     },
     "current_sync_committee" : {
       "$ref" : "#/components/schemas/SyncCommittee"

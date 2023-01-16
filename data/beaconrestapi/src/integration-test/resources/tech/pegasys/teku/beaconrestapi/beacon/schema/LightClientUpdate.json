@@ -4,7 +4,7 @@
   "required" : [ "attested_header", "next_sync_committee", "next_sync_committee_branch", "finalized_header", "finality_branch", "sync_aggregate", "signature_slot" ],
   "properties" : {
     "attested_header" : {
-      "$ref" : "#/components/schemas/BeaconBlockHeader"
+      "$ref" : "#/components/schemas/LightClientHeader"
     },
     "next_sync_committee" : {
       "$ref" : "#/components/schemas/SyncCommittee"
@@ -19,7 +19,7 @@
       }
     },
     "finalized_header" : {
-      "$ref" : "#/components/schemas/BeaconBlockHeader"
+      "$ref" : "#/components/schemas/LightClientHeader"
     },
     "finality_branch" : {
       "type" : "array",
