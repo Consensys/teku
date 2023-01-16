@@ -161,6 +161,7 @@ public class SyncingNodeManager {
             eth2P2PNetwork,
             recentChainData,
             blockImporter,
+            BlobsSidecarManager.NOOP,
             new NoOpMetricsSystem(),
             spec);
     ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);

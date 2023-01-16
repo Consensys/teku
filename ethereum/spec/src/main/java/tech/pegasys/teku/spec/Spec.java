@@ -140,7 +140,7 @@ public class Spec {
     return specVersions.get(forkSchedule.getSpecMilestoneAtSlot(slot));
   }
 
-  private SpecVersion atTime(final UInt64 genesisTime, final UInt64 currentTime) {
+  public SpecVersion atTime(final UInt64 genesisTime, final UInt64 currentTime) {
     return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
   }
 
@@ -596,8 +596,7 @@ public class Spec {
       final BLSSignatureVerifier signatureVerifier) {
     return atState(state)
         .operationSignatureVerifier()
-        .verifyBlsToExecutionChangeSignature(
-            state.getFork(), state, signedBlsToExecutionChange, signatureVerifier);
+        .verifyBlsToExecutionChangeSignature(state, signedBlsToExecutionChange, signatureVerifier);
   }
 
   public boolean isBlockProcessorOptimistic(final UInt64 slot) {
