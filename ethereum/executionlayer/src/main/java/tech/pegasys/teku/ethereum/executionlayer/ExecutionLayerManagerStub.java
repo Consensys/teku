@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 
@@ -48,7 +48,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state) {
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreaker.isEngaged(state));
     return super.builderGetHeader(executionPayloadContext, state);

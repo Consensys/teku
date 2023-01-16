@@ -45,7 +45,7 @@ public enum SpecMilestone {
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones preceding the supplied milestone
    */
-  static List<SpecMilestone> getAllPriorMilestones(SpecMilestone milestone) {
+  public static List<SpecMilestone> getAllPriorMilestones(SpecMilestone milestone) {
     final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
     final int milestoneIndex = allMilestones.indexOf(milestone);
     return allMilestones.subList(0, milestoneIndex);

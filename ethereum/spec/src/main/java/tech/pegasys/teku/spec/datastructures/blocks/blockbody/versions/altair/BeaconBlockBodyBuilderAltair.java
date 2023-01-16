@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -34,8 +33,13 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
   }
 
   @Override
-  public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
-    this.syncAggregate = syncAggregateSupplier.get();
+  public Boolean supportsSyncAggregate() {
+    return true;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder syncAggregate(final SyncAggregate syncAggregate) {
+    this.syncAggregate = syncAggregate;
     return this;
   }
 

@@ -159,6 +159,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               pendingBlocks,
               p2pNetwork,
               blockImporter,
+              blobsSidecarManager,
               spec);
     } else {
       LOG.info("Using single peer sync");

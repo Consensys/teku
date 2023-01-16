@@ -87,13 +87,12 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
         (builder) -> {
           builderRef.accept(builder);
           builder.syncAggregate(
-              () ->
-                  syncAggregateSchema.create(
-                      syncAggregateSchema
-                          .getSyncCommitteeBitsSchema()
-                          .fromBytes(syncAggregate.syncCommitteeBits)
-                          .getAllSetBits(),
-                      syncAggregate.syncCommitteeSignature.asInternalBLSSignature()));
+              syncAggregateSchema.create(
+                  syncAggregateSchema
+                      .getSyncCommitteeBitsSchema()
+                      .fromBytes(syncAggregate.syncCommitteeBits)
+                      .getAllSetBits(),
+                  syncAggregate.syncCommitteeSignature.asInternalBLSSignature()));
         });
   }
 }

@@ -132,21 +132,19 @@ public class BlindedBeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
         spec,
         (builder) -> {
           builder.executionPayloadHeader(
-              () ->
-                  SafeFuture.completedFuture(
-                      executionPayloadHeader.asInternalExecutionPayloadHeader(
-                          executionPayloadHeaderSchema)));
+              SafeFuture.completedFuture(
+                  executionPayloadHeader.asInternalExecutionPayloadHeader(
+                      executionPayloadHeaderSchema)));
           builder.blsToExecutionChanges(
-              () ->
-                  this.blsToExecutionChanges.stream()
-                      .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
-                      .collect(blsToExecutionChangesSchema.collector()));
+              this.blsToExecutionChanges.stream()
+                  .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
+                  .collect(blsToExecutionChangesSchema.collector()));
           builder.blobKzgCommitments(
-              () ->
+              SafeFuture.completedFuture(
                   this.blobKZGCommitments.stream()
                       .map(KZGCommitment::asInternalKZGCommitment)
                       .map(SszKZGCommitment::new)
-                      .collect(blobKZGCommitmentsSchema.collector()));
+                      .collect(blobKZGCommitmentsSchema.collector())));
         });
   }
 }

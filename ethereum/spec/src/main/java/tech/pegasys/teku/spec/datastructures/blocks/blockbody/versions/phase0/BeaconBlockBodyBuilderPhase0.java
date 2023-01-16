@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -103,35 +102,34 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   }
 
   @Override
-  public BeaconBlockBodyBuilder syncAggregate(final Supplier<SyncAggregate> syncAggregateSupplier) {
+  public BeaconBlockBodyBuilder syncAggregate(final SyncAggregate syncAggregate) {
     // No sync aggregate in phase 0
     return this;
   }
 
   @Override
-  public BeaconBlockBodyBuilder executionPayload(
-      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
+  public BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload) {
     // No execution payload in phase 0
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
-      Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
+      SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
     // No execution payload in phase 0
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder blsToExecutionChanges(
-      final Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     // No BlsToExecutionChange in phase 0
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
-      Supplier<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
     // No BlobKzgCommitments in phase 0
     return this;
   }
