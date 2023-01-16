@@ -133,6 +133,19 @@ public class TestSpecFactory {
   }
 
   /**
+   * Create a spec that forks to Capella at the provided slot (bellatrix genesis)
+   *
+   * @param capellaForkEpoch The Capella fork epoch
+   * @return A spec with Altair, Bellatrix and Capella enabled, forking to Capella at the given
+   *     epoch
+   */
+  public static Spec createMinimalWithCapellaForkEpoch(final UInt64 capellaForkEpoch) {
+    final SpecConfigCapella config =
+        getCapellaSpecConfig(Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, capellaForkEpoch);
+    return create(config, SpecMilestone.CAPELLA);
+  }
+
+  /**
    * Create a spec that forks to EIP4844 at the provided epoch
    *
    * @param eip4844ForkEpoch The eip4844 fork epoch

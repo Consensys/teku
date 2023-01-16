@@ -54,7 +54,7 @@ public class GetLightClientBootstrap extends RestApiEndpoint {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getLightClientBootstrap")
-            .summary("Get light client boostrap data for the requested block root.")
+            .summary("Get light client bootstrap data for the requested block root.")
             .description(
                 "Requests the LightClientBootstrap structure corresponding to a given post-Altair beacon block root. Depending on the `Accept` header it can be returned either as JSON or SSZ-serialized bytes.")
             .tags(TAG_BEACON, TAG_EXPERIMENTAL)

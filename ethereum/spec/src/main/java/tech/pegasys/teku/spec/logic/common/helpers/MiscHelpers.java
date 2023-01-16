@@ -237,13 +237,13 @@ public class MiscHelpers {
     return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
   }
 
+  public Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 genesisValidatorsRoot) {
+    return computeDomain(domainType, specConfig.getGenesisForkVersion(), genesisValidatorsRoot);
+  }
+
   public Bytes32 computeDomain(
       Bytes4 domainType, Bytes4 forkVersion, Bytes32 genesisValidatorsRoot) {
     final Bytes32 forkDataRoot = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
-    return computeDomain(domainType, forkDataRoot);
-  }
-
-  private Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 forkDataRoot) {
     return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
   }
 
