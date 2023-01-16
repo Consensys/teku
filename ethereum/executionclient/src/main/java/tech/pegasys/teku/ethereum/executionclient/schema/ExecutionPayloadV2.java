@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -114,7 +113,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
             withdrawalV1.index,
             withdrawalV1.validatorIndex,
             withdrawalV1.address,
-            EthConstants.weiToGwei(withdrawalV1.amount));
+            withdrawalV1.amount);
   }
 
   public static List<WithdrawalV1> getWithdrawals(
@@ -127,11 +126,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
 
     for (Withdrawal w : maybeWithdrawals.get()) {
       withdrawals.add(
-          new WithdrawalV1(
-              w.getIndex(),
-              w.getValidatorIndex(),
-              w.getAddress(),
-              EthConstants.gweiToWei(w.getAmount())));
+          new WithdrawalV1(w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()));
     }
     return withdrawals;
   }

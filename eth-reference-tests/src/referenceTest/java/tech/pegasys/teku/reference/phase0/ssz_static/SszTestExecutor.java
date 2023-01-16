@@ -137,6 +137,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                           .getSyncAggregatorSelectionDataSchema()))
           .put("ssz_static/LightClientBootstrap", IGNORE_TESTS)
           .put("ssz_static/LightClientFinalityUpdate", IGNORE_TESTS)
+          .put("ssz_static/LightClientHeader", IGNORE_TESTS)
           .put("ssz_static/LightClientOptimisticUpdate", IGNORE_TESTS)
           .put("ssz_static/LightClientStore", IGNORE_TESTS)
           .put("ssz_static/LightClientSnapshot", IGNORE_TESTS)

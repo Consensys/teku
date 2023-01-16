@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class BlsToExecutionChangeCreator {
@@ -63,9 +62,10 @@ public class BlsToExecutionChangeCreator {
 
   private Bytes signingRootForBlsToExecutionChanges(
       final BlsToExecutionChange blsToExecutionChange, final UInt64 epoch) {
-    final Fork fork = spec.getForkSchedule().getFork(epoch);
     final Bytes32 domain =
-        spec.getDomain(Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE, epoch, fork, genesisValidatorRoot);
+        spec.atEpoch(epoch)
+            .miscHelpers()
+            .computeDomain(Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE, genesisValidatorRoot);
     final SpecVersion specVersion = spec.atEpoch(epoch);
     return specVersion.miscHelpers().computeSigningRoot(blsToExecutionChange, domain);
   }
