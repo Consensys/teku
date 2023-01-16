@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
@@ -21,19 +22,27 @@ public interface BlobsSidecarManager {
   BlobsSidecarManager NOOP =
       new BlobsSidecarManager() {
         @Override
-        public void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar) {}
+        public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
+          return false;
+        }
 
         @Override
-        public void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar) {}
+        public void storeUnconfirmedValidatedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
         @Override
-        public void discardBlobsSidecarByBlock(SignedBeaconBlock block) {}
+        public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
         @Override
-        public BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block) {
+        public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {}
+
+        @Override
+        public BlobsSidecarAvailabilityChecker createAvailabilityChecker(
+            final SignedBeaconBlock block) {
           return BlobsSidecarAvailabilityChecker.NOOP;
         }
       };
+
+  boolean isStorageOfBlobsSidecarRequired(UInt64 slot);
 
   void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
 

@@ -97,11 +97,11 @@ public class CommonAncestorTest extends AbstractSyncTest {
         .requestBlocksByRange(
             eq(syncStartSlot),
             eq(CommonAncestor.BLOCK_COUNT),
-            responseListenerArgumentCaptor.capture());
+            blockResponseListenerArgumentCaptor.capture());
 
     assertThat(futureSlot.isDone()).isFalse();
     final RpcResponseListener<SignedBeaconBlock> responseListener =
-        responseListenerArgumentCaptor.getValue();
+        blockResponseListenerArgumentCaptor.getValue();
     respondWithBlocksAtSlots(
         responseListener, currentLocalHead.minus(2850), currentLocalHead.minus(2250));
     requestFuture1.complete(null);
