@@ -450,7 +450,7 @@ public class ChainBuilder {
     blocksByHash.put(block.getRoot(), block);
   }
 
-  private void trackBobsSidecar(final BlobsSidecar blobsSidecar) {
+  private void trackBlobsSidecar(final BlobsSidecar blobsSidecar) {
     blobsSidecars.put(blobsSidecar.getBeaconBlockSlot(), blobsSidecar);
     blobsSidecarsByHash.put(blobsSidecar.getBeaconBlockRoot(), blobsSidecar);
   }
@@ -518,7 +518,7 @@ public class ChainBuilder {
             new BlobsSidecar(
                 blobsSidecarSchema, nextBlockAndState.getRoot(), slot, randomBlobs, kzgProof);
 
-        trackBobsSidecar(blobsSidecar);
+        trackBlobsSidecar(blobsSidecar);
       } else if (eip4844MilestoneReached(slot)) {
         nextBlockAndState =
             SafeFutureAssert.safeJoin(
@@ -553,7 +553,7 @@ public class ChainBuilder {
                 options.getBlobs().orElse(List.of()),
                 options.getKzgProof().orElse(KZGProof.infinity()));
 
-        trackBobsSidecar(blobsSidecar);
+        trackBlobsSidecar(blobsSidecar);
       } else {
         nextBlockAndState =
             SafeFutureAssert.safeJoin(
