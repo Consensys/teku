@@ -530,7 +530,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initSignedBlsToExecutionChangePool() {
     LOG.debug("BeaconChainController.initSignedBlsToExecutionChangePool()");
     final SignedBlsToExecutionChangeValidator validator =
-        new SignedBlsToExecutionChangeValidator(spec, recentChainData);
+        new SignedBlsToExecutionChangeValidator(spec, timeProvider, recentChainData);
 
     blsToExecutionChangePool =
         new OperationPool<>(
@@ -988,6 +988,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         storageUpdateChannel,
         p2pNetwork,
         blockImporter,
+        blobsSidecarManager,
         pendingBlocks,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
