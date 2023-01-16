@@ -332,7 +332,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
 
       boolean signatureValid =
           operationSignatureVerifier.verifyBlsToExecutionChangeSignature(
-              genericState.getFork(), genericState, signedBlsToExecutionChange, signatureVerifier);
+              genericState, signedBlsToExecutionChange, signatureVerifier);
       if (!signatureValid) {
         return BlockValidationResult.failed(
             "BlsToExecutionChange signature is invalid: " + signedBlsToExecutionChange);
