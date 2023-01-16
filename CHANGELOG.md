@@ -35,4 +35,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Bug Fixes
 - Fixed issue which could cause command line options to be parsed incorrectly
 - Fixed issue where the voluntary-exit subcommand did not exit immediately after completion
-- Fixed reported security issue on Netty
+- Fixed reported security issue on Netty, updating to version 4.1.87.Final (addressing [CVE-2022-41881](https://avd.aquasec.com/nvd/2022/cve-2022-41881/))
