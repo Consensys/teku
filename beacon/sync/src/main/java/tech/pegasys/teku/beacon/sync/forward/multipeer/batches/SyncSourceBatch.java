@@ -214,16 +214,20 @@ public class SyncSourceBatch implements Batch {
     }
     awaitingBlocks = true;
     final SyncSource syncSource = currentSyncSource.orElseThrow();
+
     LOG.debug(
-        "Requesting {} slots starting at {} from peer {}", remainingSlots, startSlot, syncSource);
+        "Requesting blocks for {} slots starting at {} from peer {}",
+        remainingSlots,
+        startSlot,
+        syncSource);
 
     final SafeFuture<Void> blocksRequest =
         syncSource.requestBlocksByRange(startSlot, remainingSlots, blockRequestHandler);
 
     final SafeFuture<Void> blobsSidecarsRequest;
     if (blobsSidecarManager.isStorageOfBlobsSidecarRequired(lastSlot)) {
-      LOG.trace(
-          "Requesting {} blobs sidecars starting at {} from peer {}",
+      LOG.debug(
+          "Requesting blobs sidecars for {} slots starting at {} from peer {}",
           remainingSlots,
           startSlot,
           syncSource);
