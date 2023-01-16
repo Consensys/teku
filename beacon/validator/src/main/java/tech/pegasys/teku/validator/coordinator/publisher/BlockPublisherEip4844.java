@@ -38,9 +38,8 @@ public class BlockPublisherEip4844 extends AbstractBlockPublisher {
   }
 
   @Override
-  protected SafeFuture<BlockImportResult> importUnblindedSignedBlock(
+  protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
       final SignedBeaconBlock block) {
-    performanceTracker.saveProducedBlock(block);
     final SafeFuture<SignedBeaconBlockAndBlobsSidecar> blockAndBlobsSidecarSafeFuture =
         blockFactory.supplementBlockWithSidecar(block);
     return blockAndBlobsSidecarSafeFuture
