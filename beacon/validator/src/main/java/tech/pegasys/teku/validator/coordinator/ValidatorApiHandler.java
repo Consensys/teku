@@ -92,7 +92,8 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
-import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisherFactory;
+import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
@@ -121,7 +122,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
-  private final BlockPublisherFactory blockImporterFactory;
+  private final BlockPublisher blockPublisher;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -161,8 +162,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
-    this.blockImporterFactory =
-        new BlockPublisherFactory(
+    this.blockPublisher =
+        new MilestoneBasedBlockPublisher(
             spec,
             blockFactory,
             blockImportChannel,
@@ -554,7 +555,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
-    return blockImporterFactory
+    return blockPublisher
         .sendSignedBlock(maybeBlindedBlock)
         .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
   }

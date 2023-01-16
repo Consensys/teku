@@ -29,12 +29,12 @@ import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
-public class BlockPublisherFactory {
+public class MilestoneBasedBlockPublisher implements BlockPublisher {
 
   private final Spec spec;
   private final Map<SpecMilestone, BlockPublisher> registeredPublishers = new HashMap<>();
 
-  public BlockPublisherFactory(
+  public MilestoneBasedBlockPublisher(
       final Spec spec,
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
@@ -75,6 +75,7 @@ public class BlockPublisherFactory {
             });
   }
 
+  @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
     SpecMilestone blockMilestone = spec.atSlot(maybeBlindedBlock.getSlot()).getMilestone();
