@@ -29,12 +29,10 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -130,7 +128,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
-      final ExecutionPayloadV2 executionPayload) {
+      final ExecutionPayloadV1 executionPayload) {
     Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV2",
@@ -155,7 +153,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV2(
       final ForkChoiceStateV1 forkChoiceState,
-      final Optional<PayloadAttributesV2> payloadAttributes) {
+      final Optional<PayloadAttributesV1> payloadAttributes) {
     Request<?, ForkChoiceUpdatedResultWeb3jResponse> web3jRequest =
         new Request<>(
             "engine_forkchoiceUpdatedV2",
@@ -182,9 +180,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class GetPayloadV2Web3jResponse
       extends org.web3j.protocol.core.Response<GetPayloadV2Response> {}
-
-  static class ExecutionPayloadV2Web3jResponse
-      extends org.web3j.protocol.core.Response<ExecutionPayloadV2> {}
 
   static class BlobsBundleV1Web3jResponse extends org.web3j.protocol.core.Response<BlobsBundleV1> {}
 
