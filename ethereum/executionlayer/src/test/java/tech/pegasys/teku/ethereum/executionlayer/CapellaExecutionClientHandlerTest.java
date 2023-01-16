@@ -13,14 +13,19 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -31,12 +36,16 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTest {
@@ -47,9 +56,37 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     dataStructureUtil = new DataStructureUtil(spec);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Test
-  void engineGetPayload_shouldCallGetPayloadV2() {
+  void engineGetPayload_bellatrixFork() throws ExecutionException, InterruptedException {
+    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
+    DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
+    final ExecutionClientHandler handler =
+        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
+    final UInt64 slot = data.randomUInt64(1_000_000);
+    final ExecutionPayloadContext context =
+        new ExecutionPayloadContext(
+            data.randomBytes8(),
+            data.randomForkChoiceState(false),
+            data.randomPayloadBuildingAttributes(false));
+
+    final SafeFuture<Response<GetPayloadV2Response>> dummyResponse =
+        SafeFuture.completedFuture(
+            new Response<>(
+                new GetPayloadV2Response(
+                    ExecutionPayloadV2.fromInternalExecutionPayload(data.randomExecutionPayload()),
+                    data.randomUInt256())));
+    when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
+
+    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
+    verify(executionEngineClient).getPayloadV2(context.getPayloadId());
+    verify(executionEngineClient, never()).getPayloadV1(any());
+
+    assertThat(future).isCompleted();
+    assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadBellatrix.class);
+  }
+
+  @Test
+  void engineGetPayload_capellaFork() throws ExecutionException, InterruptedException {
     final ExecutionClientHandler handler = getHandler();
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
     final ExecutionPayloadContext context =
@@ -67,13 +104,14 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                     UInt256.MAX_VALUE)));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
-    handler.engineGetPayload(context, slot);
+    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
+    assertThat(future).isCompleted();
+    assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadCapella.class);
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Test
-  void engineNewPayload_shouldCallNewPayloadV2() {
+  void engineNewPayload_capellaFork() throws ExecutionException, InterruptedException {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);
@@ -83,13 +121,32 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
     when(executionEngineClient.newPayloadV2(payloadV2)).thenReturn(dummyResponse);
-    handler.engineNewPayload(payload);
+    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(payload);
     verify(executionEngineClient).newPayloadV2(payloadV2);
+    assertThat(future).isCompleted();
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
   @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV2() {
+  void engineNewPayload_bellatrixFork() {
+    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
+    DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
+    final ExecutionClientHandler handler =
+        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
+    final ExecutionPayload payload = data.randomExecutionPayload();
+    final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
+    final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
+        SafeFuture.completedFuture(
+            new Response<>(
+                new PayloadStatusV1(ExecutionPayloadStatus.ACCEPTED, data.randomBytes32(), null)));
+    when(executionEngineClient.newPayloadV2(payloadV1)).thenReturn(dummyResponse);
+    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(payload);
+    verify(executionEngineClient).newPayloadV2(payloadV1);
+    verify(executionEngineClient, never()).newPayloadV1(payloadV1);
+    assertThat(future).isCompleted();
+  }
+
+  @Test
+  void engineForkChoiceUpdated_capellaFork() {
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
@@ -113,8 +170,46 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                     dataStructureUtil.randomBytes8())));
     when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
-    handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
+    final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
+        handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
+    assertThat(future).isCompleted();
+  }
+
+  @Test
+  void engineForkChoiceUpdated_bellatrixFork() {
+    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
+    DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
+    final ExecutionClientHandler handler =
+        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
+
+    final ForkChoiceState forkChoiceState = data.randomForkChoiceState(false);
+    final ForkChoiceStateV1 forkChoiceStateV1 =
+        ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final PayloadBuildingAttributes attributes =
+        new PayloadBuildingAttributes(
+            data.randomUInt64(),
+            data.randomBytes32(),
+            data.randomEth1Address(),
+            Optional.empty(),
+            Optional.empty(),
+            UInt64.ZERO);
+    final Optional<PayloadAttributesV1> payloadAttributes =
+        PayloadAttributesV1.fromInternalPayloadBuildingAttributes(Optional.of(attributes));
+    final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
+        SafeFuture.completedFuture(
+            new Response<>(
+                new ForkChoiceUpdatedResult(
+                    new PayloadStatusV1(ExecutionPayloadStatus.ACCEPTED, data.randomBytes32(), ""),
+                    data.randomBytes8())));
+    when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes))
+        .thenReturn(dummyResponse);
+    final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
+        handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
+    verify(executionEngineClient, never())
+        .forkChoiceUpdatedV1(forkChoiceStateV1, payloadAttributes);
+    verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
+    assertThat(future).isCompleted();
   }
 
   @Override
