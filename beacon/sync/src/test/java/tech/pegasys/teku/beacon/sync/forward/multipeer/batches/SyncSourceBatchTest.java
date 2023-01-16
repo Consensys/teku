@@ -20,6 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.batches.BatchAssert.assertThatBatch;
 import static tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChainTestUtil.chainWith;
 
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,17 +42,20 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class SyncSourceBatchTest {
 
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+      new DataStructureUtil(TestSpecFactory.createMinimalEip4844());
   private final TargetChain targetChain =
       chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), Bytes32.ZERO));
   private final InlineEventThread eventThread = new InlineEventThread();
   private final ConflictResolutionStrategy conflictResolutionStrategy =
       mock(ConflictResolutionStrategy.class);
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private final Map<Batch, List<StubSyncSource>> syncSources = new HashMap<>();
 
   @Test
@@ -117,6 +122,43 @@ public class SyncSourceBatchTest {
     final StubSyncSource secondSyncSource = getSyncSource(batch);
     assertThat(secondSyncSource).isNotSameAs(firstSyncSource);
     secondSyncSource.assertRequestedBlocks(70, 50);
+  }
+
+  @Test
+  void requestMoreBlocks_shouldRequestSidecarsIfRequired() {
+    final Runnable callback = mock(Runnable.class);
+    final ArgumentCaptor<UInt64> lastSlotArgumentCaptor = ArgumentCaptor.forClass(UInt64.class);
+    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(lastSlotArgumentCaptor.capture()))
+        .thenReturn(true);
+
+    final Batch batch = createBatch(70, 50);
+
+    batch.requestMoreBlocks(callback);
+    verifyNoInteractions(callback);
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(75);
+    final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecarForBlock(block);
+
+    receiveBlocks(batch, block);
+    receiveBlobsSidecars(batch, blobsSidecar);
+
+    verify(callback).run();
+    batch.markFirstBlockConfirmed();
+    batch.markAsContested();
+
+    final Map<UInt64, BlobsSidecar> blobsSidecars = batch.getBlobsSidecarsBySlot();
+
+    // verify sidecars are cached
+    assertThat(blobsSidecars).hasSize(1);
+    assertThat(blobsSidecars.get(UInt64.valueOf(75))).isEqualTo(blobsSidecar);
+    assertThat(batch.getBlocks()).containsExactly(block);
+
+    batch.requestMoreBlocks(callback);
+    getSyncSource(batch).assertRequestedBlocks(76, 44);
+    getSyncSource(batch).assertRequestedBlobsSidecars(76, 44);
+
+    assertThat(lastSlotArgumentCaptor.getAllValues())
+        .containsExactly(UInt64.valueOf(119), UInt64.valueOf(119));
   }
 
   @Test
@@ -194,6 +236,7 @@ public class SyncSourceBatchTest {
             emptySourceSelector,
             conflictResolutionStrategy,
             targetChain,
+            blobsSidecarManager,
             UInt64.ONE,
             UInt64.ONE);
 
@@ -222,6 +265,7 @@ public class SyncSourceBatchTest {
             syncSourceProvider,
             conflictResolutionStrategy,
             targetChain,
+            blobsSidecarManager,
             UInt64.valueOf(startSlot),
             UInt64.valueOf(count));
     this.syncSources.put(batch, syncSources);
@@ -230,6 +274,10 @@ public class SyncSourceBatchTest {
 
   protected void receiveBlocks(final Batch batch, final SignedBeaconBlock... blocks) {
     getSyncSource(batch).receiveBlocks(blocks);
+  }
+
+  protected void receiveBlobsSidecars(final Batch batch, final BlobsSidecar... blobsSidecars) {
+    getSyncSource(batch).receiveBlobsSidecars(blobsSidecars);
   }
 
   protected void requestError(final Batch batch, final Throwable error) {
