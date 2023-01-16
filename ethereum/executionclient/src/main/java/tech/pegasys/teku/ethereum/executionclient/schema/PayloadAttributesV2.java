@@ -20,7 +20,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
@@ -58,11 +57,7 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
 
     for (Withdrawal w : maybeWithdrawals.get()) {
       withdrawals.add(
-          new WithdrawalV1(
-              w.getIndex(),
-              w.getValidatorIndex(),
-              w.getAddress(),
-              EthConstants.gweiToWei(w.getAmount())));
+          new WithdrawalV1(w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()));
     }
     return withdrawals;
   }
