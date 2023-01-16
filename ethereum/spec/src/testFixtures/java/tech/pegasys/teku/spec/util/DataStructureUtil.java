@@ -1898,7 +1898,12 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar() {
-    final SignedBeaconBlock randomBlock = randomSignedBeaconBlock();
+    return randomConsistentSignedBeaconBlockAndBlobsSidecar(randomUInt64());
+  }
+
+  public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar(
+      final UInt64 slot) {
+    final SignedBeaconBlock randomBlock = randomSignedBeaconBlock(slot);
     return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
         .getSignedBeaconBlockAndBlobsSidecarSchema()
         .create(

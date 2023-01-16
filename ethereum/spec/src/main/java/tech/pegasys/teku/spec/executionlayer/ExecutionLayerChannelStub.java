@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.executionlayer;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -50,8 +51,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
@@ -64,7 +67,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
+  private final BlobsUtil blobsUtil;
+
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
+  private int blobsToGenerate = 2;
 
   // transition emulation
   private static final int TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION = 10;
@@ -94,6 +100,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.transitionEmulationEnabled = enableTransitionEmulation;
     this.terminalBlockHashInTTDMode =
         terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
+    this.blobsUtil = new BlobsUtil(spec);
   }
 
   public ExecutionLayerChannelStub(
@@ -235,8 +242,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .extraData(Bytes.EMPTY)
                         .baseFeePerGas(UInt256.ONE)
                         .blockHash(Bytes32.random())
-                        .transactions(
-                            List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")))
+                        .transactions(generateTransactions(slot, headAndAttrs))
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .excessDataGas(() -> UInt256.ZERO));
     // we assume all blocks are produced locally
@@ -247,6 +253,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                 executionPayload.getParentHash(),
                 UInt256.ZERO,
                 payloadAttributes.getTimestamp()));
+
+    maybeHeadAndAttrs.get().currentExecutionPayload = Optional.of(executionPayload);
 
     LOG.info(
         "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
@@ -305,11 +313,25 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
               "getBlobsBundle not supported for pre-EIP4844 milestones"));
     }
 
+    final Optional<HeadAndAttributes> maybeHeadAndAttrs =
+        payloadIdToHeadAndAttrsCache.getCached(payloadId);
+    if (maybeHeadAndAttrs.isEmpty()) {
+      return SafeFuture.failedFuture(new RuntimeException("payloadId not found in cache"));
+    }
+
+    final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
+
+    if (headAndAttrs.currentExecutionPayload.isEmpty()
+        || headAndAttrs.currentKzgCommitments.isEmpty()
+        || headAndAttrs.currentBlobs.isEmpty()) {
+      return SafeFuture.failedFuture(new RuntimeException("missing required data from cache"));
+    }
+
     final BlobsBundle blobsBundle =
         new BlobsBundle(
-            lastValidBlock.orElseThrow().getBlockHash(),
-            Collections.emptyList(),
-            Collections.emptyList());
+            headAndAttrs.currentExecutionPayload.orElseThrow().getBlockHash(),
+            headAndAttrs.currentKzgCommitments.orElseThrow(),
+            headAndAttrs.currentBlobs.orElseThrow());
 
     LOG.info("getBlobsBundle: slot: {} -> blobsBundle: {}", slot, blobsBundle);
 
@@ -402,6 +424,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.payloadStatus = payloadStatus;
   }
 
+  public void setBlobsToGenerate(final int blobsToGenerate) {
+    this.blobsToGenerate = blobsToGenerate;
+  }
+
   public Set<Bytes32> getRequestedPowBlocks() {
     return requestedPowBlocks;
   }
@@ -409,6 +435,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static class HeadAndAttributes {
     private final Bytes32 head;
     private final PayloadBuildingAttributes attributes;
+    private Optional<ExecutionPayload> currentExecutionPayload = Optional.empty();
+    private Optional<List<Blob>> currentBlobs = Optional.empty();
+    private Optional<List<KZGCommitment>> currentKzgCommitments = Optional.empty();
 
     private HeadAndAttributes(Bytes32 head, PayloadBuildingAttributes attributes) {
       this.head = head;
@@ -469,5 +498,31 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     terminalBlock =
         new PowBlock(
             terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, terminalTotalDifficulty, transitionTime);
+  }
+
+  private List<Bytes> generateTransactions(
+      final UInt64 slot, final HeadAndAttributes headAndAttrs) {
+    final List<Bytes> transactions = new ArrayList<>();
+    transactions.add(Bytes.fromHexString("0x0edf"));
+
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      transactions.add(generateBlobsAndTransaction(slot, headAndAttrs));
+    }
+
+    transactions.add(Bytes.fromHexString("0xedf0"));
+    return transactions;
+  }
+
+  private Bytes generateBlobsAndTransaction(
+      final UInt64 slot, final HeadAndAttributes headAndAttrs) {
+
+    final List<Blob> blobs = blobsUtil.generateBlobs(slot, blobsToGenerate);
+
+    final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
+
+    headAndAttrs.currentBlobs = Optional.of(blobs);
+    headAndAttrs.currentKzgCommitments = Optional.of(kzgCommitments);
+
+    return blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments);
   }
 }

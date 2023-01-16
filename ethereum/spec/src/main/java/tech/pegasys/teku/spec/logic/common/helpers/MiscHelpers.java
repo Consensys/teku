@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
@@ -276,5 +278,9 @@ public class MiscHelpers {
   public boolean verifyKZGCommitmentsAgainstTransactions(
       final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
     return false;
+  }
+
+  public Optional<KZG> getKzg() {
+    return Optional.empty();
   }
 }
