@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -29,6 +30,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -113,6 +115,18 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
         .thenReturn(dummyResponse);
     handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
+  }
+
+  @Test
+  public void engineGetBlobsBundle_throwsNotYetSupported() {
+    final ExecutionClientHandler handler = getHandler();
+    assertThatThrownBy(
+            () ->
+                handler.engineGetBlobsBundle(
+                    Bytes8.fromHexString("abcd1234abcd1234"), UInt64.valueOf(123)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Pre-EIP4844 execution client handler is called to get EIP-4844 BlobsBundleV1 for payload `0xabcd1234abcd1234`, slot 123");
   }
 
   @Override
