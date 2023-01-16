@@ -13,29 +13,18 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
-import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
-
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
-public class BlockPublisherPhase0 implements BlockPublisher {
-  private static final Logger LOG = LogManager.getLogger();
-
-  private final BlockFactory blockFactory;
+public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   private final BlockGossipChannel blockGossipChannel;
-  private final BlockImportChannel blockImportChannel;
-  private final PerformanceTracker performanceTracker;
-  private final DutyMetrics dutyMetrics;
 
   public BlockPublisherPhase0(
       final BlockFactory blockFactory,
@@ -43,47 +32,15 @@ public class BlockPublisherPhase0 implements BlockPublisher {
       final BlockImportChannel blockImportChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
-    this.blockFactory = blockFactory;
+    super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
     this.blockGossipChannel = blockGossipChannel;
-    this.blockImportChannel = blockImportChannel;
-    this.performanceTracker = performanceTracker;
-    this.dutyMetrics = dutyMetrics;
   }
 
   @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock maybeBlindedBlock) {
-    return blockFactory
-        .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
-        .thenCompose(this::sendUnblindedSignedBlock);
-  }
-
-  private SafeFuture<SendSignedBlockResult> sendUnblindedSignedBlock(
+  protected SafeFuture<BlockImportResult> importUnblindedSignedBlock(
       final SignedBeaconBlock block) {
     performanceTracker.saveProducedBlock(block);
     blockGossipChannel.publishBlock(block);
-    return blockImportChannel
-        .importBlock(block, Optional.empty())
-        .thenApply(
-            result -> {
-              if (result.isSuccessful()) {
-                LOG.trace("Successfully imported proposed block: {}", block::toLogString);
-                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-                return SendSignedBlockResult.success(block.getRoot());
-              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-                LOG.debug(
-                    "Delayed processing proposed block {} because it is from the future",
-                    block::toLogString);
-                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
-              } else {
-                VALIDATOR_LOGGER.proposedBlockImportFailed(
-                    result.getFailureReason().toString(),
-                    block.getSlot(),
-                    block.getRoot(),
-                    result.getFailureCause());
-
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
-              }
-            });
+    return blockImportChannel.importBlock(block, Optional.empty());
   }
 }
