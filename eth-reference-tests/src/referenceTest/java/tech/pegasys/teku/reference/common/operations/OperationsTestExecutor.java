@@ -384,7 +384,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         break;
       case BLS_TO_EXECUTION_CHANGE:
         final SignedBlsToExecutionChangeValidator blsToExecutionChangeValidator =
-            new SignedBlsToExecutionChangeValidator(spec, null);
+            new SignedBlsToExecutionChangeValidator(spec, null, null);
         final SignedBlsToExecutionChange blsToExecutionChange =
             loadBlsToExecutionChange(testDefinition);
         checkValidationForBlockInclusion(
