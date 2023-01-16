@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class OperationSignatureVerifier {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpers miscHelpers;
@@ -111,18 +112,14 @@ public class OperationSignatureVerifier {
   }
 
   public boolean verifyBlsToExecutionChangeSignature(
-      final Fork fork,
       final BeaconState state,
       final SignedBlsToExecutionChange signedBlsToExecutionChange,
       final BLSSignatureVerifier signatureVerifier) {
     final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
 
     final Bytes32 domain =
-        beaconStateAccessors.getDomain(
-            Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE,
-            miscHelpers.computeEpochAtSlot(state.getSlot()),
-            fork,
-            state.getGenesisValidatorsRoot());
+        miscHelpers.computeDomain(
+            Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE, state.getGenesisValidatorsRoot());
     final Bytes signingRoot = miscHelpers.computeSigningRoot(addressChange, domain);
     return signatureVerifier.verify(
         addressChange.getFromBlsPubkey(), signingRoot, signedBlsToExecutionChange.getSignature());
