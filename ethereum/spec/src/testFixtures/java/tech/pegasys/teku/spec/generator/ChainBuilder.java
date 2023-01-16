@@ -80,7 +80,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class ChainBuilder {
   private static final List<BLSKeyPair> DEFAULT_VALIDATOR_KEYS =
       Collections.unmodifiableList(new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 3));
-  private static final int RANDOM_BLOBS_COUNT = 10;
+  private static final int RANDOM_BLOBS_COUNT = 2;
   private final Spec spec;
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
