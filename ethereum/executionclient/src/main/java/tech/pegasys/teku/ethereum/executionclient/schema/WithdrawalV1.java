@@ -16,11 +16,8 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
-import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
-import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -39,15 +36,15 @@ public class WithdrawalV1 {
   @JsonDeserialize(using = Bytes20Deserializer.class)
   public final Bytes20 address;
 
-  @JsonSerialize(using = UInt256AsHexSerializer.class)
-  @JsonDeserialize(using = UInt256AsHexDeserializer.class)
-  public final UInt256 amount;
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
+  public final UInt64 amount;
 
   public WithdrawalV1(
       @JsonProperty("index") final UInt64 index,
       @JsonProperty("validatorIndex") final UInt64 validatorIndex,
       @JsonProperty("address") final Bytes20 address,
-      @JsonProperty("amount") final UInt256 amount) {
+      @JsonProperty("amount") final UInt64 amount) {
     this.index = index;
     this.validatorIndex = validatorIndex;
     this.address = address;
