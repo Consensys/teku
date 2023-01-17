@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.util;
 
 import static com.google.common.base.Preconditions.checkState;
-import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -23,10 +22,7 @@ import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTR
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
-import ethereum.ckzg4844.CKZG4844JNI;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.math.BigInteger;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -176,11 +172,6 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
-
-  private static final int RANDOM_SEED = 5566;
-  private static final int FIELD_ELEMENTS_PER_BLOB =
-      CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob;
-  private static final Random RND = new Random(RANDOM_SEED);
 
   private final Spec spec;
 
@@ -1835,18 +1826,6 @@ public final class DataStructureUtil {
             randomEth1Address().getWrappedBytes()));
   }
 
-  public List<Blob> randomBlobs(int count) {
-    final BlobSchema blobSchema =
-        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
-    return IntStream.range(0, count)
-        .mapToObj(__ -> blobSchema.create(randomBytes(blobSchema.getLength())))
-        .collect(toList());
-  }
-
-  public List<Bytes> randomBlobsBytes(int count) {
-    return IntStream.range(0, count).mapToObj(__ -> getSampleBlob()).collect(Collectors.toList());
-  }
-
   public Blob randomBlob() {
     final BlobSchema blobSchema =
         SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
@@ -2018,22 +1997,5 @@ public final class DataStructureUtil {
 
   private <T> T getConstant(final Function<SpecConfig, T> getter) {
     return getter.apply(spec.getGenesisSpec().getConfig());
-  }
-
-  private Bytes getSampleBlob() {
-    return IntStream.range(0, FIELD_ELEMENTS_PER_BLOB)
-        .mapToObj(__ -> randomBLSFieldElement())
-        .map(fieldElement -> Bytes.wrap(fieldElement.toArray(ByteOrder.LITTLE_ENDIAN)))
-        .reduce(Bytes::wrap)
-        .orElse(Bytes.EMPTY);
-  }
-
-  private UInt256 randomBLSFieldElement() {
-    while (true) {
-      final BigInteger attempt = new BigInteger(BLS_MODULUS.bitLength(), RND);
-      if (attempt.compareTo(BLS_MODULUS) < 0) {
-        return UInt256.valueOf(attempt);
-      }
-    }
   }
 }

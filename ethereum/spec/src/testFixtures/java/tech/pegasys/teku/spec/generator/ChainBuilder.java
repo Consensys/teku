@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
@@ -66,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
+import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -74,7 +74,6 @@ import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 /** A utility for building small, valid chains of blocks with states for testing */
 public class ChainBuilder {
@@ -90,7 +89,7 @@ public class ChainBuilder {
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
   private final Map<Bytes32, BlobsSidecar> blobsSidecarsByHash = new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
-  private final DataStructureUtil dataStructureUtil;
+  private final BlobsUtil blobsUtil;
 
   private ChainBuilder(
       final Spec spec,
@@ -99,7 +98,7 @@ public class ChainBuilder {
       final Map<UInt64, BlobsSidecar> existingBlobsSidecars) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
-    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.blobsUtil = new BlobsUtil(spec);
     attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     blockProposalTestUtil = new BlockProposalTestUtil(spec);
@@ -476,7 +475,7 @@ public class ChainBuilder {
                   options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
 
       if (eip4844MilestoneReached(slot) && options.getGenerateRandomBlobs()) {
-        List<Bytes> randomBlobsBytes = dataStructureUtil.randomBlobsBytes(RANDOM_BLOBS_COUNT);
+        List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
 
         nextBlockAndState =
             SafeFutureAssert.safeJoin(
@@ -494,7 +493,7 @@ public class ChainBuilder {
                     options.getTerminalBlockHash(),
                     options.getExecutionPayload(),
                     options.getBlsToExecutionChange(),
-                    randomBlobsBytes,
+                    randomBlobs,
                     options.getSkipStateTransition()));
 
         final BlobsSidecarSchema blobsSidecarSchema =
@@ -503,16 +502,11 @@ public class ChainBuilder {
                 .orElseThrow()
                 .getBlobsSidecarSchema();
 
-        final BlobSchema blobSchema =
-            spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobSchema();
-        List<Blob> randomBlobs =
-            randomBlobsBytes.stream()
-                .map(blobBytes -> new Blob(blobSchema, blobBytes))
-                .collect(Collectors.toList());
-
         final MiscHelpersEip4844 miscHelpers =
             (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
-        KZGProof kzgProof = miscHelpers.getKzg().computeAggregateKzgProof(randomBlobsBytes);
+        KZGProof kzgProof =
+            miscHelpers.computeAggregatedKzgProof(
+                randomBlobs.stream().map(Blob::getBytes).collect(Collectors.toList()));
 
         BlobsSidecar blobsSidecar =
             new BlobsSidecar(

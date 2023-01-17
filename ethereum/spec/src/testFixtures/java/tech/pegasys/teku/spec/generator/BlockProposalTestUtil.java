@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodySchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -341,7 +342,7 @@ public class BlockProposalTestUtil {
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
-      final List<Bytes> blobs,
+      final List<Blob> blobs,
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
@@ -349,9 +350,7 @@ public class BlockProposalTestUtil {
     final MiscHelpersEip4844 miscHelpers =
         (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
     List<KZGCommitment> generatedBlobsKzgCommitments =
-        blobs.stream()
-            .map(blob -> miscHelpers.getKzg().blobToKzgCommitment(blob))
-            .collect(Collectors.toList());
+        blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
 
     final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
         ((BeaconBlockBodySchemaEip4844<?>)
