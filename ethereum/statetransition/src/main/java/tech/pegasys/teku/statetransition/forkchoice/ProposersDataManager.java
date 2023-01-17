@@ -232,7 +232,8 @@ public class ProposersDataManager implements SlotEventsChannel {
             random,
             getFeeRecipient(proposerInfo, blockSlot),
             validatorRegistration,
-            spec.getExpectedWithdrawals(state)));
+            spec.getExpectedWithdrawals(state),
+            blockSlot));
   }
 
   // this function MUST return a fee recipient.

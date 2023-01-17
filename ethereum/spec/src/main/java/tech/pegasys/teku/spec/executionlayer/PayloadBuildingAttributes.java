@@ -32,17 +32,21 @@ public class PayloadBuildingAttributes {
 
   private final Optional<List<Withdrawal>> maybeWithdrawals;
 
+  private final UInt64 blockSlot;
+
   public PayloadBuildingAttributes(
       final UInt64 timestamp,
       final Bytes32 prevRandao,
       final Eth1Address feeRecipient,
       final Optional<SignedValidatorRegistration> validatorRegistration,
-      final Optional<List<Withdrawal>> maybeWithdrawals) {
+      final Optional<List<Withdrawal>> maybeWithdrawals,
+      final UInt64 blockSlot) {
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
     this.validatorRegistration = validatorRegistration;
     this.maybeWithdrawals = maybeWithdrawals;
+    this.blockSlot = blockSlot;
   }
 
   public UInt64 getTimestamp() {
@@ -55,6 +59,10 @@ public class PayloadBuildingAttributes {
 
   public Eth1Address getFeeRecipient() {
     return feeRecipient;
+  }
+
+  public UInt64 getBlockSlot() {
+    return blockSlot;
   }
 
   public Optional<SignedValidatorRegistration> getValidatorRegistration() {

@@ -1464,7 +1464,8 @@ public final class DataStructureUtil {
         withValidatorRegistration
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
-        randomWithdrawalList());
+        randomWithdrawalList(),
+        randomUInt64());
   }
 
   public BeaconPreparableProposer randomBeaconPreparableProposer() {
