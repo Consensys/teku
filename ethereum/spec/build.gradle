@@ -14,6 +14,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-units'
+    implementation 'tech.pegasys:jc-kzg-4844'
     implementation project(':ethereum:execution-types')
     implementation project(':ethereum:pow:api')
     implementation project(':ethereum:signingrecord')

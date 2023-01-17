@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -149,7 +150,8 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
     return kzg.computeAggregateKzgProof(blobs);
   }
 
-  public KZG getKzg() {
-    return kzg;
+  @Override
+  public Optional<MiscHelpersEip4844> toVersionEip4844() {
+    return Optional.of(this);
   }
 }

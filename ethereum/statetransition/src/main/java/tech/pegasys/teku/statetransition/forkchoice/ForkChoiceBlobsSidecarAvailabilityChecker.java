@@ -95,7 +95,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
           .miscHelpers()
           .isDataAvailable(
               block.getSlot(),
-              block.getBodyRoot(),
+              block.getRoot(),
               blockBody.getBlobKzgCommitments().stream()
                   .map(SszKZGCommitment::getKZGCommitment)
                   .collect(Collectors.toUnmodifiableList()),
