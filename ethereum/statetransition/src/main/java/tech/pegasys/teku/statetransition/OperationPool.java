@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -41,15 +43,30 @@ import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class OperationPool<T extends SszData> {
-  private static final int OPERATION_POOL_SIZE = 1000;
+  private static final int DEFAULT_OPERATION_POOL_SIZE = 1000;
   private static final String OPERATION_POOL_SIZE_METRIC = "operation_pool_size_";
   private static final String OPERATION_POOL_SIZE_VALIDATION_REASON = "operation_pool_validation_";
-  private final Set<T> operations = LimitedSet.createIterable(OPERATION_POOL_SIZE);
+  private final Set<T> operations;
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
   private final Optional<Comparator<T>> priorityOrderComparator;
   private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
   private final LabelledMetric<Counter> validationReasonCounter;
+
+  public OperationPool(
+      final String metricType,
+      final MetricsSystem metricsSystem,
+      final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      final OperationValidator<T> operationValidator,
+      final int poolSize) {
+    this(
+        metricType,
+        metricsSystem,
+        slotToSszListSchemaSupplier,
+        operationValidator,
+        Optional.empty(),
+        poolSize);
+  }
 
   public OperationPool(
       final String metricType,
@@ -61,7 +78,8 @@ public class OperationPool<T extends SszData> {
         metricsSystem,
         slotToSszListSchemaSupplier,
         operationValidator,
-        Optional.empty());
+        Optional.empty(),
+        DEFAULT_OPERATION_POOL_SIZE);
   }
 
   public OperationPool(
@@ -75,7 +93,8 @@ public class OperationPool<T extends SszData> {
         metricsSystem,
         slotToSszListSchemaSupplier,
         operationValidator,
-        Optional.of(priorityOrderComparator));
+        Optional.of(priorityOrderComparator),
+        DEFAULT_OPERATION_POOL_SIZE);
   }
 
   private OperationPool(
@@ -83,7 +102,9 @@ public class OperationPool<T extends SszData> {
       final MetricsSystem metricsSystem,
       final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
       final OperationValidator<T> operationValidator,
-      final Optional<Comparator<T>> priorityOrderComparator) {
+      final Optional<Comparator<T>> priorityOrderComparator,
+      final int operationPoolSize) {
+    this.operations = LimitedSet.createIterable(operationPoolSize);
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
     this.operationValidator = operationValidator;
     this.priorityOrderComparator = priorityOrderComparator;
@@ -183,7 +204,8 @@ public class OperationPool<T extends SszData> {
         T operation, InternalValidationResult validationStatus, boolean fromNetwork);
   }
 
-  private int size() {
+  @VisibleForTesting
+  int size() {
     return operations.size();
   }
 }
