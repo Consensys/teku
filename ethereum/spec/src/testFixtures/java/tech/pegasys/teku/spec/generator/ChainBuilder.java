@@ -475,104 +475,141 @@ public class ChainBuilder {
                   options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
 
       if (eip4844MilestoneReached(slot) && options.getGenerateRandomBlobs()) {
-        List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
-
         nextBlockAndState =
-            SafeFutureAssert.safeJoin(
-                blockProposalTestUtil.createBlockWithBlobs(
-                    signer,
-                    slot,
-                    preState,
-                    parentRoot,
-                    Optional.of(attestations),
-                    Optional.empty(),
-                    Optional.of(attesterSlashings),
-                    Optional.empty(),
-                    options.getEth1Data(),
-                    options.getTransactions(),
-                    options.getTerminalBlockHash(),
-                    options.getExecutionPayload(),
-                    options.getBlsToExecutionChange(),
-                    randomBlobs,
-                    options.getSkipStateTransition()));
-
-        final BlobsSidecarSchema blobsSidecarSchema =
-            spec.getGenesisSchemaDefinitions()
-                .toVersionEip4844()
-                .orElseThrow()
-                .getBlobsSidecarSchema();
-
-        final MiscHelpersEip4844 miscHelpers =
-            (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
-        KZGProof kzgProof =
-            miscHelpers.computeAggregatedKzgProof(
-                randomBlobs.stream().map(Blob::getBytes).collect(Collectors.toList()));
-
-        BlobsSidecar blobsSidecar =
-            new BlobsSidecar(
-                blobsSidecarSchema, nextBlockAndState.getRoot(), slot, randomBlobs, kzgProof);
-
-        trackBlobsSidecar(blobsSidecar);
+            generateBlockWithRandomBlobsSidecar(
+                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else if (eip4844MilestoneReached(slot)) {
         nextBlockAndState =
-            SafeFutureAssert.safeJoin(
-                blockProposalTestUtil.createBlock(
-                    signer,
-                    slot,
-                    preState,
-                    parentRoot,
-                    Optional.of(attestations),
-                    Optional.empty(),
-                    Optional.of(attesterSlashings),
-                    Optional.empty(),
-                    options.getEth1Data(),
-                    options.getTransactions(),
-                    options.getTerminalBlockHash(),
-                    options.getExecutionPayload(),
-                    options.getBlsToExecutionChange(),
-                    options.getKzgCommitments(),
-                    options.getSkipStateTransition()));
-
-        final BlobsSidecarSchema blobsSidecarSchema =
-            spec.getGenesisSchemaDefinitions()
-                .toVersionEip4844()
-                .orElseThrow()
-                .getBlobsSidecarSchema();
-
-        BlobsSidecar blobsSidecar =
-            new BlobsSidecar(
-                blobsSidecarSchema,
-                nextBlockAndState.getRoot(),
-                slot,
-                options.getBlobs().orElse(List.of()),
-                options.getKzgProof().orElse(KZGProof.infinity()));
-
-        trackBlobsSidecar(blobsSidecar);
+            generateBlockWithBlobsSidecar(
+                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else {
         nextBlockAndState =
-            SafeFutureAssert.safeJoin(
-                blockProposalTestUtil.createBlock(
-                    signer,
-                    slot,
-                    preState,
-                    parentRoot,
-                    Optional.of(attestations),
-                    Optional.empty(),
-                    Optional.of(attesterSlashings),
-                    Optional.empty(),
-                    options.getEth1Data(),
-                    options.getTransactions(),
-                    options.getTerminalBlockHash(),
-                    options.getExecutionPayload(),
-                    options.getBlsToExecutionChange(),
-                    options.getKzgCommitments(),
-                    options.getSkipStateTransition()));
+            generateBlock(
+                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       }
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
     } catch (EpochProcessingException | SlotProcessingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private SignedBlockAndState generateBlock(
+      final UInt64 slot,
+      final BlockOptions options,
+      final BeaconState preState,
+      final Bytes32 parentRoot,
+      final Signer signer,
+      final SszList<Attestation> attestations,
+      final SszList<AttesterSlashing> attesterSlashings)
+      throws EpochProcessingException, SlotProcessingException {
+    return SafeFutureAssert.safeJoin(
+        blockProposalTestUtil.createBlock(
+            signer,
+            slot,
+            preState,
+            parentRoot,
+            Optional.of(attestations),
+            Optional.empty(),
+            Optional.of(attesterSlashings),
+            Optional.empty(),
+            options.getEth1Data(),
+            options.getTransactions(),
+            options.getTerminalBlockHash(),
+            options.getExecutionPayload(),
+            options.getBlsToExecutionChange(),
+            options.getKzgCommitments(),
+            options.getSkipStateTransition()));
+  }
+
+  private SignedBlockAndState generateBlockWithBlobsSidecar(
+      final UInt64 slot,
+      final BlockOptions options,
+      final BeaconState preState,
+      final Bytes32 parentRoot,
+      final Signer signer,
+      final SszList<Attestation> attestations,
+      final SszList<AttesterSlashing> attesterSlashings)
+      throws EpochProcessingException, SlotProcessingException {
+    final SignedBlockAndState nextBlockAndState =
+        SafeFutureAssert.safeJoin(
+            blockProposalTestUtil.createBlock(
+                signer,
+                slot,
+                preState,
+                parentRoot,
+                Optional.of(attestations),
+                Optional.empty(),
+                Optional.of(attesterSlashings),
+                Optional.empty(),
+                options.getEth1Data(),
+                options.getTransactions(),
+                options.getTerminalBlockHash(),
+                options.getExecutionPayload(),
+                options.getBlsToExecutionChange(),
+                options.getKzgCommitments(),
+                options.getSkipStateTransition()));
+
+    final BlobsSidecarSchema blobsSidecarSchema =
+        spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
+
+    BlobsSidecar blobsSidecar =
+        new BlobsSidecar(
+            blobsSidecarSchema,
+            nextBlockAndState.getRoot(),
+            slot,
+            options.getBlobs().orElse(List.of()),
+            options.getKzgProof().orElse(KZGProof.infinity()));
+
+    trackBlobsSidecar(blobsSidecar);
+    return nextBlockAndState;
+  }
+
+  private SignedBlockAndState generateBlockWithRandomBlobsSidecar(
+      final UInt64 slot,
+      final BlockOptions options,
+      final BeaconState preState,
+      final Bytes32 parentRoot,
+      final Signer signer,
+      final SszList<Attestation> attestations,
+      final SszList<AttesterSlashing> attesterSlashings)
+      throws EpochProcessingException, SlotProcessingException {
+    List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
+
+    final SignedBlockAndState nextBlockAndState =
+        SafeFutureAssert.safeJoin(
+            blockProposalTestUtil.createBlockWithBlobs(
+                signer,
+                slot,
+                preState,
+                parentRoot,
+                Optional.of(attestations),
+                Optional.empty(),
+                Optional.of(attesterSlashings),
+                Optional.empty(),
+                options.getEth1Data(),
+                options.getTransactions(),
+                options.getTerminalBlockHash(),
+                options.getExecutionPayload(),
+                options.getBlsToExecutionChange(),
+                randomBlobs,
+                options.getSkipStateTransition()));
+
+    final BlobsSidecarSchema blobsSidecarSchema =
+        spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
+
+    final MiscHelpersEip4844 miscHelpers =
+        (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
+    KZGProof kzgProof =
+        miscHelpers.computeAggregatedKzgProof(
+            randomBlobs.stream().map(Blob::getBytes).collect(Collectors.toList()));
+
+    BlobsSidecar blobsSidecar =
+        new BlobsSidecar(
+            blobsSidecarSchema, nextBlockAndState.getRoot(), slot, randomBlobs, kzgProof);
+
+    trackBlobsSidecar(blobsSidecar);
+    return nextBlockAndState;
   }
 
   private BeaconState resultToState(final SignedBlockAndState result) {
