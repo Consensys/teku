@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -73,6 +74,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockProvider blockProvider;
+  private final BlobsSidecarProvider blobsSidecarProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
@@ -100,6 +102,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
+      final BlobsSidecarProvider blobsSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -110,6 +113,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
+    this.blobsSidecarProvider = blobsSidecarProvider;
     this.stateProvider = stateProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
@@ -144,6 +148,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .metricsSystem(metricsSystem)
             .specProvider(spec)
             .blockProvider(blockProvider)
+            .blobsSidecarProvider(blobsSidecarProvider)
             .stateProvider(stateProvider)
             .storeConfig(storeConfig)
             .build();

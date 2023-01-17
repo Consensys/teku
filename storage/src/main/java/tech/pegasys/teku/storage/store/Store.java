@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -53,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -61,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -84,6 +88,7 @@ class Store implements UpdatableStore {
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
+  private final BlobsSidecarProvider blobsSidecarProvider;
   final ForkChoiceStrategy forkChoiceStrategy;
 
   private final Optional<Checkpoint> initialCheckpoint;
@@ -105,6 +110,7 @@ class Store implements UpdatableStore {
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
+      final BlobsSidecarProvider blobsSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
@@ -163,6 +169,8 @@ class Store implements UpdatableStore {
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
             blockProvider);
+
+    this.blobsSidecarProvider = blobsSidecarProvider;
   }
 
   public static UpdatableStore create(
@@ -170,6 +178,7 @@ class Store implements UpdatableStore {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
+      final BlobsSidecarProvider blobsSidecarProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -211,6 +220,7 @@ class Store implements UpdatableStore {
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
+        blobsSidecarProvider,
         stateAndBlockProvider,
         stateTaskQueue,
         initialCheckpoint,
@@ -461,10 +471,59 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  @SuppressWarnings("unused")
   public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> retrieveSignedBlockAndBlobsSidecar(
       final Bytes32 blockRoot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+
+    return retrieveSignedBlock(blockRoot)
+        .thenCompose(
+            signedBeaconBlock -> {
+              if (signedBeaconBlock.isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              return retrieveSignedBlockAndBlobsSidecar(signedBeaconBlock.get())
+                  .thenApply(Optional::of);
+            });
+  }
+
+  private SafeFuture<SignedBeaconBlockAndBlobsSidecar> retrieveSignedBlockAndBlobsSidecar(
+      final SignedBeaconBlock signedBeaconBlock) {
+    return blobsSidecarProvider
+        .getBlobsSidecar(signedBeaconBlock)
+        .thenApply(
+            blobsSidecar ->
+                createSignedBeaconBlockAndBlobsSidecar(signedBeaconBlock, blobsSidecar));
+  }
+
+  private SignedBeaconBlockAndBlobsSidecar createSignedBeaconBlockAndBlobsSidecar(
+      final SignedBeaconBlock signedBeaconBlock, final Optional<BlobsSidecar> maybeBlobsSidecar) {
+    checkState(
+        maybeBlobsSidecar.map(BlobsSidecar::getBlobs).map(List::size).orElse(0)
+            == signedBeaconBlock
+                .getBeaconBlock()
+                .orElseThrow()
+                .getBody()
+                .toVersionEip4844()
+                .orElseThrow()
+                .getBlobKzgCommitments()
+                .size(),
+        "Inconsistent number of blobs from sidecar and commitments from block");
+
+    final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
+        spec.atSlot(signedBeaconBlock.getSlot())
+            .getSchemaDefinitions()
+            .toVersionEip4844()
+            .orElseThrow();
+
+    final BlobsSidecar blobsSidecar =
+        maybeBlobsSidecar.orElseGet(
+            () ->
+                schemaDefinitionsEip4844
+                    .getBlobsSidecarSchema()
+                    .createEmpty(signedBeaconBlock.getRoot(), signedBeaconBlock.getSlot()));
+
+    return schemaDefinitionsEip4844
+        .getSignedBeaconBlockAndBlobsSidecarSchema()
+        .create(signedBeaconBlock, blobsSidecar);
   }
 
   @Override

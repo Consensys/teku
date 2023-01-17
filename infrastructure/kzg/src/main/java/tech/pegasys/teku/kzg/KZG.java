@@ -32,7 +32,7 @@ public interface KZG {
 
         @Override
         public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
-          return KZGProof.infinity();
+          return KZGProof.INFINITY;
         }
 
         @Override
