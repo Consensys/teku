@@ -49,6 +49,7 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     startRestAPIAtGenesis();
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 6, 11, 16));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -57,6 +58,21 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     assertThat(syncingResponse.data)
         // 0 sync distance because we're not syncing.
         .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.ZERO, false));
+  }
+
+  @Test
+  public void shouldGetSyncStatusWhenExecutionLayerIsUnavailable() throws IOException {
+    startRestAPIAtGenesis();
+    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(false);
+    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 6, 11, 16));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+
+    final Response response = get();
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final SyncingResponse syncingResponse =
+        jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
+    assertThat(syncingResponse.data)
+        .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.valueOf(5), true));
   }
 
   private Response get() throws IOException {
