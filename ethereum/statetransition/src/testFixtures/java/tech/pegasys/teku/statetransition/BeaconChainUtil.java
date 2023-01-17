@@ -308,23 +308,25 @@ public class BeaconChainUtil {
         withValidProposer ? correctProposerIndex : getWrongProposerIndex(correctProposerIndex);
 
     final Signer signer = getSigner(proposerIndex);
-    return safeJoin(
-        blockCreator.createBlock(
-            signer,
-            slot,
-            preState,
-            bestBlockRoot,
-            attestations,
-            deposits,
-            Optional.empty(),
-            exits,
-            eth1Data,
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            Optional.empty(),
-            false));
+    final SignedBlockAndState block =
+        safeJoin(
+            blockCreator.createBlock(
+                signer,
+                slot,
+                preState,
+                bestBlockRoot,
+                attestations,
+                deposits,
+                Optional.empty(),
+                exits,
+                eth1Data,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                false));
+    return block;
   }
 
   public void finalizeChainAtEpoch(final UInt64 epoch) throws Exception {

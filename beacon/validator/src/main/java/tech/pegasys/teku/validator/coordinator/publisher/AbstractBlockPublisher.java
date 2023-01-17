@@ -50,7 +50,8 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock maybeBlindedBlock) {
     return blockFactory
         .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
-        .thenCompose(this::importUnblindedSignedBlock)
+        .thenPeek(performanceTracker::saveProducedBlock)
+        .thenCompose(this::gossipAndImportUnblindedSignedBlock)
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
@@ -76,5 +77,6 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
             });
   }
 
-  abstract SafeFuture<BlockImportResult> importUnblindedSignedBlock(final SignedBeaconBlock block);
+  abstract SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
+      final SignedBeaconBlock block);
 }
