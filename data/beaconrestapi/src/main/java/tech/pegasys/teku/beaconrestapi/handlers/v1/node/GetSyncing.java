@@ -88,7 +88,7 @@ public class GetSyncing extends RestApiEndpoint {
     public SyncStatusData(final SyncDataProvider syncProvider) {
       final SyncingStatus status = syncProvider.getSyncingStatus();
       final SyncState syncState = syncProvider.getCurrentSyncState();
-      this.isSyncing = !syncState.isInSync();
+      this.isSyncing = syncState.isSyncing();
       this.isOptimistic = Optional.of(syncState.isOptimistic());
       this.currentSlot = status.getCurrentSlot();
       // do this last, after isSyncing is calculated
