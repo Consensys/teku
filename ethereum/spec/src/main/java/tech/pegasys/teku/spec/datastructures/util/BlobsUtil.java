@@ -26,16 +26,18 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 
 public class BlobsUtil {
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
+  // the following are raw bytes of a SignedBlobTransaction ssz object. These bytes precede the
+  // actual list of versioned hashes representing the commitments
   private static final Bytes MAGIC_BLOB_TRANSACTION_PREFIX =
       Bytes.fromHexString(
           "0x05450000000000000000000000000000000000000000000000000000000000000000"
@@ -69,12 +71,10 @@ public class BlobsUtil {
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final UInt64 slot, final List<Blob> blobs) {
-    final KZG kzg = spec.atSlot(slot).miscHelpers().getKzg().orElseThrow();
+    final MiscHelpersEip4844 miscHelpersEip4844 =
+        spec.atSlot(slot).miscHelpers().toVersionEip4844().orElseThrow();
 
-    return blobs.stream()
-        .map(Blob::getBytes)
-        .map(kzg::blobToKzgCommitment)
-        .collect(Collectors.toList());
+    return blobs.stream().map(miscHelpersEip4844::blobToKzgCommitment).collect(Collectors.toList());
   }
 
   public List<Blob> generateBlobs(final UInt64 slot, final int count) {

@@ -151,7 +151,7 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
   }
 
   @Override
-  public Optional<KZG> getKzg() {
-    return Optional.of(kzg);
+  public Optional<MiscHelpersEip4844> toVersionEip4844() {
+    return Optional.of(this);
   }
 }
