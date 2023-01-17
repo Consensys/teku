@@ -348,7 +348,7 @@ public class BlockProposalTestUtil {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
 
     final MiscHelpersEip4844 miscHelpers =
-        (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
+        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
     List<KZGCommitment> generatedBlobsKzgCommitments =
         blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
 

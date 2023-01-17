@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -42,7 +43,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
 public abstract class AbstractStoreTest {
-  protected final Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected final Spec spec = TestSpecFactory.createMinimalEip4844();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 
@@ -168,5 +169,10 @@ public abstract class AbstractStoreTest {
                 .map(chainBuilder::getBlock)
                 .flatMap(Optional::stream)
                 .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
+  }
+
+  protected BlobsSidecarProvider blobsSidecarFromChainBuilder() {
+    return (block) ->
+        SafeFuture.completedFuture(chainBuilder.getBlobsSidecar(block.getBlockRoot()));
   }
 }

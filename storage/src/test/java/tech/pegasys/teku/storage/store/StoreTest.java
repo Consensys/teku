@@ -56,6 +56,7 @@ class StoreTest extends AbstractStoreTest {
                     new StubMetricsSystem(),
                     spec,
                     blockProviderFromChainBuilder(),
+                    blobsSidecarFromChainBuilder(),
                     StateAndBlockSummaryProvider.NOOP,
                     Optional.empty(),
                     genesisTime.minus(1),
@@ -123,6 +124,13 @@ class StoreTest extends AbstractStoreTest {
               .describedAs("State at %s", blockAndState.getSlot())
               .isCompletedWithValue(Optional.of(blockAndState.getState()));
         });
+  }
+
+  @Test
+  public void retrieveSignedBlockAndBlobsSidecar() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState finalizedBlockAndState =
+            chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(UInt64.ZERO) - 1);
   }
 
   @Test

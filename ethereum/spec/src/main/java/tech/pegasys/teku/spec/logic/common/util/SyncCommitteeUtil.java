@@ -378,6 +378,11 @@ public class SyncCommitteeUtil {
   public void setGenesisStateSyncCommittees(final MutableBeaconState state) {
     final MutableBeaconStateAltair stateAltair = MutableBeaconStateAltair.required(state);
 
+    // avoid failures in case of empty validators
+    if(state.getValidators().size() == 0) {
+      return;
+    }
+
     // Note: A duplicate committee is assigned for the current and next committee at the fork
     // boundary
     final SyncCommittee syncCommittee = beaconStateAccessors.getNextSyncCommittee(state);

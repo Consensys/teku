@@ -559,7 +559,7 @@ public class ChainBuilder {
             nextBlockAndState.getRoot(),
             slot,
             options.getBlobs().orElse(List.of()),
-            options.getKzgProof().orElse(KZGProof.infinity()));
+            options.getKzgProof().orElse(KZGProof.INFINITY));
 
     trackBlobsSidecar(blobsSidecar);
     return nextBlockAndState;
@@ -599,7 +599,7 @@ public class ChainBuilder {
         spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
 
     final MiscHelpersEip4844 miscHelpers =
-        (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
+        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
     KZGProof kzgProof =
         miscHelpers.computeAggregatedKzgProof(
             randomBlobs.stream().map(Blob::getBytes).collect(Collectors.toList()));
