@@ -58,6 +58,18 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
+  public void shouldGetSyncStatusSyncingWhenExecutionLayerIsOffline() throws Exception {
+    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(false);
+
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new GetSyncing.SyncStatusData(true, false, 10, 1));
+  }
+
+  @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
   }
