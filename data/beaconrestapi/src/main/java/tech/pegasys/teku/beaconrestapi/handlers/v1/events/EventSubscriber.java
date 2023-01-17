@@ -157,7 +157,7 @@ public class EventSubscriber {
                 if (rootException instanceof IllegalStateException) {
                   // this might fail due to https://github.com/eclipse/jetty.project/issues/4461 but
                   // ultimately isn't important because it has a retry mechanism
-                  LOG.warn(
+                  LOG.debug(
                       "Error sending keep-alive SSE comment. Retrying in {} seconds.",
                       retryInSeconds);
                   return null;
