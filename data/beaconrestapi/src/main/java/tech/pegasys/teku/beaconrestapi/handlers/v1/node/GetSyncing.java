@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
@@ -54,12 +55,16 @@ public class GetSyncing extends RestApiEndpoint {
           .build();
 
   private final SyncDataProvider syncProvider;
+  private final ExecutionClientDataProvider executionClientDataProvider;
 
-  public GetSyncing(final DataProvider provider) {
-    this(provider.getSyncDataProvider());
+  public GetSyncing(
+      final DataProvider provider, ExecutionClientDataProvider executionClientDataProvider) {
+    this(provider.getSyncDataProvider(), executionClientDataProvider);
   }
 
-  GetSyncing(final SyncDataProvider syncProvider) {
+  GetSyncing(
+      final SyncDataProvider syncProvider,
+      ExecutionClientDataProvider executionClientDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getNodeSyncingStatus")
@@ -71,12 +76,13 @@ public class GetSyncing extends RestApiEndpoint {
             .response(SC_OK, "Request successful", SYNCING_RESPONSE_TYPE)
             .build());
     this.syncProvider = syncProvider;
+    this.executionClientDataProvider = executionClientDataProvider;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    request.respondOk(new SyncStatusData(syncProvider));
+    request.respondOk(new SyncStatusData(syncProvider, executionClientDataProvider));
   }
 
   static class SyncStatusData {
@@ -85,10 +91,13 @@ public class GetSyncing extends RestApiEndpoint {
     private final UInt64 currentSlot;
     private final UInt64 slotsBehind;
 
-    public SyncStatusData(final SyncDataProvider syncProvider) {
+    public SyncStatusData(
+        final SyncDataProvider syncProvider,
+        ExecutionClientDataProvider executionClientDataProvider) {
       final SyncingStatus status = syncProvider.getSyncingStatus();
       final SyncState syncState = syncProvider.getCurrentSyncState();
-      this.isSyncing = syncState.isSyncing();
+      this.isSyncing =
+          syncState.isSyncing() || !executionClientDataProvider.isExecutionClientAvailable();
       this.isOptimistic = Optional.of(syncState.isOptimistic());
       this.currentSlot = status.getCurrentSlot();
       // do this last, after isSyncing is calculated

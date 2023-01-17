@@ -256,7 +256,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetPeers(dataProvider))
             .endpoint(new GetPeerCount(dataProvider))
             .endpoint(new GetPeerById(dataProvider))
-            .endpoint(new GetSyncing(dataProvider))
+            .endpoint(new GetSyncing(dataProvider, executionClientDataProvider))
             .endpoint(new GetVersion())
             // Validator Handlers
             .endpoint(new PostAttesterDuties(dataProvider))
