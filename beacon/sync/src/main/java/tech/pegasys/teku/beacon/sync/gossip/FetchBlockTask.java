@@ -15,7 +15,6 @@ package tech.pegasys.teku.beacon.sync.gossip;
 
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,14 +23,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTask.FetchBlockResult.Status;
+import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-class FetchBlockTask {
+public class FetchBlockTask {
   private static final Logger LOG = LogManager.getLogger();
   private static final Comparator<Eth2Peer> SHUFFLING_COMPARATOR =
       Comparator.comparing(p -> Math.random());
@@ -85,12 +83,8 @@ class FetchBlockTask {
 
     numberOfRuns.incrementAndGet();
     queriedPeers.add(peer.getId());
-    return peer.requestBlockByRoot(blockRoot)
-        .thenApply(
-            maybeBlock ->
-                maybeBlock
-                    .map(FetchBlockResult::createSuccessful)
-                    .orElseGet(() -> FetchBlockResult.createFailed(Status.FETCH_FAILED)))
+
+    return fetchBlock(peer, blockRoot)
         .exceptionally(
             err -> {
               LOG.debug("Failed to fetch block " + blockRoot, err);
@@ -98,40 +92,12 @@ class FetchBlockTask {
             });
   }
 
-  static final class FetchBlockResult {
-    public enum Status {
-      SUCCESSFUL,
-      NO_AVAILABLE_PEERS,
-      CANCELLED,
-      FETCH_FAILED
-    }
-
-    private final Status status;
-    private final Optional<SignedBeaconBlock> block;
-
-    private FetchBlockResult(final Status status, final Optional<SignedBeaconBlock> block) {
-      this.status = status;
-      this.block = block;
-    }
-
-    public static FetchBlockResult createSuccessful(SignedBeaconBlock block) {
-      return new FetchBlockResult(Status.SUCCESSFUL, Optional.of(block));
-    }
-
-    public static FetchBlockResult createFailed(Status failureStatus) {
-      return new FetchBlockResult(failureStatus, Optional.empty());
-    }
-
-    public boolean isSuccessful() {
-      return status == Status.SUCCESSFUL;
-    }
-
-    public SignedBeaconBlock getBlock() throws NoSuchElementException {
-      return block.orElseThrow();
-    }
-
-    public Status getStatus() {
-      return status;
-    }
+  protected SafeFuture<FetchBlockResult> fetchBlock(final Eth2Peer peer, final Bytes32 blockRoot) {
+    return peer.requestBlockByRoot(blockRoot)
+        .thenApply(
+            maybeBlock ->
+                maybeBlock
+                    .map(FetchBlockResult::createSuccessful)
+                    .orElseGet(() -> FetchBlockResult.createFailed(Status.FETCH_FAILED)));
   }
 }

@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.RetryDelayFunction;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTask.FetchBlockResult;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -75,13 +74,14 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
-      final ForwardSync forwardSync) {
+      final ForwardSync forwardSync,
+      final FetchBlockTaskFactory fetchBlockTaskFactory) {
     return new FetchRecentBlocksService(
         asyncRunner,
         eth2Network,
         pendingBlocksPool,
         forwardSync,
-        FetchBlockTask::create,
+        fetchBlockTaskFactory,
         MAX_CONCURRENT_REQUESTS);
   }
 
@@ -253,7 +253,7 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
     return allTasks.size();
   }
 
-  interface FetchBlockTaskFactory {
+  public interface FetchBlockTaskFactory {
     FetchBlockTask create(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot);
   }
 
