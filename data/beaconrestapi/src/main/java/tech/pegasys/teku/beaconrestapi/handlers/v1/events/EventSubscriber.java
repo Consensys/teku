@@ -138,6 +138,7 @@ public class EventSubscriber {
                     "Failed to process event queue for client " + sseClient.hashCode(), error));
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
   private void keepAlive() {
     final int retryInSeconds = 30;
     if (!stopped.get()) {
