@@ -46,9 +46,6 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldGetSyncingStatusPreGenesis() {}
-
-  @Test
   public void shouldGetSyncStatusInSync() throws Exception {
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
