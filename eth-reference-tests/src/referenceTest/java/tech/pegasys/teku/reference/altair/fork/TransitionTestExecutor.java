@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import java.util.Optional;
 import org.assertj.core.api.Assertions;
-import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,6 +26,7 @@ import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -43,26 +43,46 @@ public class TransitionTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final MetaData metadata = TestDataUtils.loadYaml(testDefinition, "meta.yaml", MetaData.class);
-
-    if (metadata.postFork.equals("altair")) {
-      processAltairUpgrade(testDefinition, metadata);
-    } else {
-      throw new TestAbortedException(
-          "Unhandled fork upgrade for test "
-              + testDefinition.getDisplayName()
-              + ": "
-              + metadata.postFork);
-    }
+    processUpgrade(testDefinition, metadata);
   }
 
-  private void processAltairUpgrade(final TestDefinition testDefinition, final MetaData metadata)
-      throws Exception {
-
+  private void processUpgrade(final TestDefinition testDefinition, final MetaData metadata) {
+    final SpecMilestone milestone = SpecMilestone.valueOf(metadata.postFork.toUpperCase());
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
             testDefinition.getConfigName(),
-            c -> c.altairBuilder(a -> a.altairForkEpoch(forkEpoch)));
+            builder -> {
+              switch (milestone) {
+                case ALTAIR:
+                  builder.altairBuilder(a -> a.altairForkEpoch(forkEpoch));
+                  break;
+                case BELLATRIX:
+                  builder
+                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(forkEpoch));
+                  break;
+                case CAPELLA:
+                  builder
+                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                      .capellaBuilder(c -> c.capellaForkEpoch(forkEpoch));
+                  break;
+                case EIP4844:
+                  builder
+                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                      .eip4844Builder(d -> d.eip4844ForkEpoch(forkEpoch).kzgNoop(true));
+                  break;
+                default:
+                  throw new IllegalStateException(
+                      "Unhandled fork transition for test "
+                          + testDefinition.getDisplayName()
+                          + ": "
+                          + milestone);
+              }
+            });
     final Spec spec = SpecFactory.create(config);
     final BeaconState preState =
         TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", spec::deserializeBeaconState);
