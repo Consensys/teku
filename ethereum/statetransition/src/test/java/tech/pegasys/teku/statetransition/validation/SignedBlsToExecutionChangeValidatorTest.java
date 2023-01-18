@@ -192,14 +192,16 @@ class SignedBlsToExecutionChangeValidatorTest {
   private void mockSpecValidationSucceeded(final Spec spec) {
     doReturn(Optional.empty())
         .when(spec)
-        .validateBlsToExecutionChange(any(BeaconState.class), any(BlsToExecutionChange.class));
+        .validateBlsToExecutionChange(
+            any(BeaconState.class), any(), any(BlsToExecutionChange.class));
   }
 
   private void mockSpecValidationFailed(final String expectedDescription) {
     final OperationInvalidReason expectedInvalidReason = () -> expectedDescription;
     doReturn(Optional.of(expectedInvalidReason))
         .when(spec)
-        .validateBlsToExecutionChange(any(BeaconState.class), any(BlsToExecutionChange.class));
+        .validateBlsToExecutionChange(
+            any(BeaconState.class), any(), any(BlsToExecutionChange.class));
   }
 
   private void mockSignatureVerificationSucceeded(final Spec spec) {
