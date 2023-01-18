@@ -32,8 +32,8 @@ public class LightClientUpdateResponseSchema
   }
 
   public LightClientUpdateResponse create(
-      SszUInt64 responseChunkLen, SszBytes4 context, LightClientUpdate lightClientUpdate) {
-    return new LightClientUpdateResponse(this, responseChunkLen, context, lightClientUpdate);
+      SszUInt64 responseChunkLen, SszBytes4 context, LightClientUpdate payload) {
+    return new LightClientUpdateResponse(this, responseChunkLen, context, payload);
   }
 
   @Override

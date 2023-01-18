@@ -25,8 +25,8 @@ public class LightClientUpdateResponse
       final LightClientUpdateResponseSchema schema,
       final SszUInt64 responseChunkLen,
       final SszBytes4 context,
-      final LightClientUpdate lightClientUpdate) {
-    super(schema, responseChunkLen, context, lightClientUpdate);
+      final LightClientUpdate payload) {
+    super(schema, responseChunkLen, context, payload);
   }
 
   protected LightClientUpdateResponse(

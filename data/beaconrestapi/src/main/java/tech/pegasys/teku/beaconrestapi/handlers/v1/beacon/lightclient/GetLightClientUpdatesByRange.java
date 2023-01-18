@@ -23,20 +23,16 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIM
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
 import java.util.List;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
-import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -57,8 +53,7 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
             .response(
                 SC_OK,
                 "Request successful",
-                getResponseType(schemaDefinitionCache),
-                getSszResponseType(schemaDefinitionCache))
+                List.of(getJsonResponseType(schemaDefinitionCache), getSszResponseType()))
             .withNotAcceptedResponse()
             .withNotImplementedResponse()
             .build());
@@ -69,8 +64,8 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
     request.respondError(501, "Not implemented");
   }
 
-  private static SerializableTypeDefinition<List<ObjectAndMetaData<LightClientUpdate>>>
-      getResponseType(SchemaDefinitionCache schemaDefinitionCache) {
+  private static ResponseContentTypeDefinition<List<ObjectAndMetaData<LightClientUpdate>>>
+      getJsonResponseType(SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<LightClientUpdate> lightClientUpdateType =
         SchemaDefinitionsAltair.required(
                 schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))
@@ -84,42 +79,16 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
                 .withField("data", lightClientUpdateType, ObjectAndMetaData::getData)
                 .build();
 
-    return SerializableTypeDefinition.listOf(lightClientUpdateObjectType);
+    return new JsonResponseContentTypeDefinition<>(
+        SerializableTypeDefinition.listOf(lightClientUpdateObjectType));
   }
 
-  private static ResponseContentTypeDefinition<List<ObjectAndMetaData<LightClientUpdate>>>
-      getSszResponseType(SchemaDefinitionCache schemaDefinitionCache) {
-    OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<
-            List<ObjectAndMetaData<LightClientUpdate>>>
+  private static ResponseContentTypeDefinition<List<LightClientUpdateResponse>>
+      getSszResponseType() {
+    OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<List<LightClientUpdateResponse>>
         serializer =
-            (data, out) -> {
-              LightClientUpdateResponseSchema schema =
-                  SchemaDefinitionsAltair.required(
-                          schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))
-                      .getLightClientUpdateResponseSchema();
-
-              data.stream()
-                  .forEach(
-                      lightClientUpdateObjectAndMetaData -> {
-                        // Get the fork version for the slot of `update.attested_header`
-                        Bytes4 forkDigest = Bytes4.fromHexString("TODO");
-
-                        LightClientUpdate lightClientUpdate =
-                            lightClientUpdateObjectAndMetaData.getData();
-
-                        UInt64 responseChunkLength =
-                            UInt64.valueOf(
-                                forkDigest.getWrappedBytes().size() + lightClientUpdate.size());
-
-                        LightClientUpdateResponse response =
-                            schema.create(
-                                SszUInt64.of(responseChunkLength),
-                                SszBytes4.of(forkDigest),
-                                lightClientUpdate);
-
-                        response.sszSerialize(out);
-                      });
-            };
+            (data, out) ->
+                data.stream().forEachOrdered(lcuResponse -> lcuResponse.sszSerialize(out));
 
     return new OctetStreamResponseContentTypeDefinition<>(serializer, __ -> Collections.emptyMap());
   }
