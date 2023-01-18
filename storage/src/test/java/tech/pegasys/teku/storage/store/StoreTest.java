@@ -32,11 +32,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -127,10 +129,76 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveSignedBlockAndBlobsSidecar() {
+  public void retrieveSignedBlockAndBlobsSidecar_withBlobs() {
     final UpdatableStore store = createGenesisStore();
-    final SignedBlockAndState finalizedBlockAndState =
-            chainBuilder.generateBlockAtSlot(spec.slotsPerEpoch(UInt64.ZERO) - 1);
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateBlockAtSlot(1, BlockOptions.create().setGenerateRandomBlobs(true));
+
+    addBlock(store, blockAndState);
+
+    final SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> signedBlockAndBlobsSidecar =
+        store.retrieveSignedBlockAndBlobsSidecar(blockAndState.getRoot());
+
+    assertThat(signedBlockAndBlobsSidecar)
+        .isCompletedWithValueMatching(Optional::isPresent, "Result must be present")
+        .isCompletedWithValueMatching(
+            signedBeaconBlockAndBlobsSidecar ->
+                signedBeaconBlockAndBlobsSidecar
+                    .orElseThrow()
+                    .getSignedBeaconBlock()
+                    .equals(blockAndState.getBlock()),
+            " Block must match")
+        .isCompletedWithValueMatching(
+            signedBeaconBlockAndBlobsSidecar ->
+                !signedBeaconBlockAndBlobsSidecar
+                    .orElseThrow()
+                    .getBlobsSidecar()
+                    .getBlobs()
+                    .isEmpty(),
+            "Blobs must be present");
+  }
+
+  @Test
+  public void retrieveSignedBlockAndBlobsSidecar_withEmptyBlobs() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateBlockAtSlot(1, BlockOptions.create().setGenerateRandomBlobs(false));
+
+    addBlock(store, blockAndState);
+
+    final SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> signedBlockAndBlobsSidecar =
+        store.retrieveSignedBlockAndBlobsSidecar(blockAndState.getRoot());
+
+    assertThat(signedBlockAndBlobsSidecar)
+        .isCompletedWithValueMatching(Optional::isPresent, "Result must be present")
+        .isCompletedWithValueMatching(
+            signedBeaconBlockAndBlobsSidecar ->
+                signedBeaconBlockAndBlobsSidecar
+                    .orElseThrow()
+                    .getSignedBeaconBlock()
+                    .equals(blockAndState.getBlock()),
+            " Block must match")
+        .isCompletedWithValueMatching(
+            signedBeaconBlockAndBlobsSidecar ->
+                signedBeaconBlockAndBlobsSidecar
+                    .orElseThrow()
+                    .getBlobsSidecar()
+                    .getBlobs()
+                    .isEmpty(),
+            "Blobs must be empty");
+  }
+
+  @Test
+  public void retrieveSignedBlockAndBlobsSidecar_shouldReturnEmptyIfBlockNotPresent() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateBlockAtSlot(1, BlockOptions.create().setGenerateRandomBlobs(true));
+
+    final SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> signedBlockAndBlobsSidecar =
+        store.retrieveSignedBlockAndBlobsSidecar(blockAndState.getRoot());
+
+    assertThat(signedBlockAndBlobsSidecar)
+        .isCompletedWithValueMatching(Optional::isEmpty, "Result must be empty");
   }
 
   @Test

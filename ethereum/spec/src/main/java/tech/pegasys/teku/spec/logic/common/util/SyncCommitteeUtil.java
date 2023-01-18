@@ -379,7 +379,7 @@ public class SyncCommitteeUtil {
     final MutableBeaconStateAltair stateAltair = MutableBeaconStateAltair.required(state);
 
     // avoid failures in case of empty validators
-    if(state.getValidators().size() == 0) {
+    if (state.getValidators().size() == 0) {
       return;
     }
 
