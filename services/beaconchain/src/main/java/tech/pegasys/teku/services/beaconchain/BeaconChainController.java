@@ -1001,6 +1001,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initSyncService()");
     syncService = createSyncServiceFactory().create();
 
+    eventChannels.subscribe(SlotEventsChannel.class, syncService.getRecentBlockFetcher());
+
     // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);
 

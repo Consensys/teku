@@ -26,7 +26,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.RetryDelayFunction;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -38,8 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
-public class FetchRecentBlocksService extends Service
-    implements RecentBlockFetcherService, SlotEventsChannel {
+public class FetchRecentBlocksService extends Service implements RecentBlockFetcherService {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;
