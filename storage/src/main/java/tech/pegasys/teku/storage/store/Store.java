@@ -497,16 +497,21 @@ class Store implements UpdatableStore {
   private SignedBeaconBlockAndBlobsSidecar createSignedBeaconBlockAndBlobsSidecar(
       final SignedBeaconBlock signedBeaconBlock, final Optional<BlobsSidecar> maybeBlobsSidecar) {
     checkState(
-        maybeBlobsSidecar.map(BlobsSidecar::getBlobs).map(List::size).orElse(0)
-            == signedBeaconBlock
-                .getBeaconBlock()
-                .orElseThrow()
-                .getBody()
-                .toVersionEip4844()
-                .orElseThrow()
-                .getBlobKzgCommitments()
-                .size(),
-        "Inconsistent number of blobs from sidecar and commitments from block");
+        maybeBlobsSidecar
+            .map(
+                blobsSidecar ->
+                    blobsSidecar.getBeaconBlockRoot().equals(signedBeaconBlock.getRoot()))
+            .orElseGet(
+                () ->
+                    signedBeaconBlock
+                        .getBeaconBlock()
+                        .orElseThrow()
+                        .getBody()
+                        .toVersionEip4844()
+                        .orElseThrow()
+                        .getBlobKzgCommitments()
+                        .isEmpty()),
+        "BlobsSidecar is inconsistent with the BeaconBlock");
 
     final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
         spec.atSlot(signedBeaconBlock.getSlot())
