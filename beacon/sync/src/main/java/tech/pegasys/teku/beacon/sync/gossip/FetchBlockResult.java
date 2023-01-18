@@ -53,7 +53,7 @@ public final class FetchBlockResult {
         Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
   }
 
-  public static FetchBlockResult createFailed(final FetchBlockResult.Status failureStatus) {
+  public static FetchBlockResult createFailed(final Status failureStatus) {
     return new FetchBlockResult(failureStatus, Optional.empty(), Optional.empty());
   }
 
