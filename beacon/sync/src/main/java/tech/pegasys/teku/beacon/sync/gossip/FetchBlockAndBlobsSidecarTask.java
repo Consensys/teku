@@ -24,16 +24,12 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 
-public class Eip4844FetchBlockTask extends FetchBlockTask {
+public class FetchBlockAndBlobsSidecarTask extends FetchBlockTask {
   private static final Logger LOG = LogManager.getLogger();
 
-  Eip4844FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
-    super(eth2Network, blockRoot);
-  }
-
-  public static Eip4844FetchBlockTask create(
+  public FetchBlockAndBlobsSidecarTask(
       final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
-    return new Eip4844FetchBlockTask(eth2Network, blockRoot);
+    super(eth2Network, blockRoot);
   }
 
   @Override
@@ -53,7 +49,7 @@ public class Eip4844FetchBlockTask extends FetchBlockTask {
                 // https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/p2p-interface.md#beaconblocksbyroot-v2
                 if (rpcException.getResponseCode() == RpcResponseStatus.RESOURCE_UNAVAILABLE) {
                   LOG.trace(
-                      "Block root may reference a block and blobs sidecar earlier than the minimum_request_epoch. Will attempt requesting via the old RPC method.");
+                      "Block root may reference a block earlier than the minimum_request_epoch. Will attempt requesting via the old RPC method.");
                   return super.fetchBlock(peer, blockRoot);
                 }
               }

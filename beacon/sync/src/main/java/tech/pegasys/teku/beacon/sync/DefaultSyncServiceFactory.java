@@ -24,17 +24,15 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
-import tech.pegasys.teku.beacon.sync.gossip.Eip4844FetchBlockTask;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTask;
+import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
-import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFactory;
+import tech.pegasys.teku.beacon.sync.gossip.MilestoneBasedFetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
@@ -115,12 +113,10 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     }
 
     final ForwardSyncService forwardSyncService = createForwardSyncService();
-    final FetchBlockTaskFactory fetchBlockTaskFactory;
-    if (currentMilestoneIsEip4844OrGreater()) {
-      fetchBlockTaskFactory = Eip4844FetchBlockTask::create;
-    } else {
-      fetchBlockTaskFactory = FetchBlockTask::create;
-    }
+
+    final FetchBlockTaskFactory fetchBlockTaskFactory =
+        new MilestoneBasedFetchBlockTaskFactory(spec);
+
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(
             asyncRunner, p2pNetwork, pendingBlocks, forwardSyncService, fetchBlockTaskFactory);
@@ -130,14 +126,6 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     return new DefaultSyncService(
         forwardSyncService, recentBlockFetcher, syncStateTracker, historicalBlockSyncService);
-  }
-
-  private boolean currentMilestoneIsEip4844OrGreater() {
-    return recentChainData
-        .getCurrentEpoch()
-        .map(epoch -> spec.getForkSchedule().getSpecMilestoneAtEpoch(epoch))
-        .map(milestone -> milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844))
-        .orElse(false);
   }
 
   protected HistoricalBlockSyncService createHistoricalSyncService(

@@ -286,9 +286,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     syncService
         .getRecentBlockFetcher()
         .subscribeBlockFetched(
-            (block) ->
+            (block, blobsSidecar) ->
                 blockManager
-                    .importBlock(block, Optional.empty())
+                    .importBlock(block, blobsSidecar)
                     .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->

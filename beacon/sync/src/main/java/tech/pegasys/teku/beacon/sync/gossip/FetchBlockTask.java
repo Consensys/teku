@@ -41,18 +41,13 @@ public class FetchBlockTask {
   private final AtomicInteger numberOfRuns = new AtomicInteger(0);
   private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
-  FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
+  public FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
     this.eth2Network = eth2Network;
     this.blockRoot = blockRoot;
   }
 
   public void cancel() {
     cancelled.set(true);
-  }
-
-  public static FetchBlockTask create(
-      final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
-    return new FetchBlockTask(eth2Network, blockRoot);
   }
 
   public Bytes32 getBlockRoot() {

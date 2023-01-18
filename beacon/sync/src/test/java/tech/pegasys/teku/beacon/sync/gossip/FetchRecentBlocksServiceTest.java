@@ -33,12 +33,12 @@ import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
-import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService.FetchBlockTaskFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
@@ -61,6 +61,7 @@ public class FetchRecentBlocksServiceTest {
   private final List<FetchBlockTask> tasks = new ArrayList<>();
   private final List<SafeFuture<FetchBlockResult>> taskFutures = new ArrayList<>();
   private final List<SignedBeaconBlock> importedBlocks = new ArrayList<>();
+  private final List<BlobsSidecar> importedBlobsSidecars = new ArrayList<>();
 
   private FetchRecentBlocksService recentBlockFetcher;
 
@@ -75,8 +76,14 @@ public class FetchRecentBlocksServiceTest {
             fetchBlockTaskFactory,
             maxConcurrentRequests);
 
-    lenient().when(fetchBlockTaskFactory.create(any(), any())).thenAnswer(this::createMockTask);
-    recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
+    lenient()
+        .when(fetchBlockTaskFactory.create(any(), any(), any()))
+        .thenAnswer(this::createMockTask);
+    recentBlockFetcher.subscribeBlockFetched(
+        ((block, blobsSidecar) -> {
+          blobsSidecar.ifPresent(importedBlobsSidecars::add);
+          importedBlocks.add(block);
+        }));
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
