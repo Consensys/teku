@@ -80,10 +80,10 @@ public class FetchRecentBlocksServiceTest {
         .when(fetchBlockTaskFactory.create(any(), any(), any()))
         .thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(
-        ((block, blobsSidecar) -> {
+        (block, blobsSidecar) -> {
           blobsSidecar.ifPresent(importedBlobsSidecars::add);
           importedBlocks.add(block);
-        }));
+        });
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
