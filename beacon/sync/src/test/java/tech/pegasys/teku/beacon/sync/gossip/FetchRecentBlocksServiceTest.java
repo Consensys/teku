@@ -87,7 +87,7 @@ public class FetchRecentBlocksServiceTest {
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
-    Bytes32 blockRoot = invocationOnMock.getArgument(1);
+    Bytes32 blockRoot = invocationOnMock.getArgument(2);
     final FetchBlockTask task = mock(FetchBlockTask.class);
 
     lenient().when(task.getBlockRoot()).thenReturn(blockRoot);
