@@ -14,35 +14,17 @@
 package tech.pegasys.teku.beacon.sync.gossip;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class FetchBlockTaskTest {
-
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-  final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
-  final List<Eth2Peer> peers = new ArrayList<>();
-
-  @BeforeEach
-  public void setup() {
-    when(eth2P2PNetwork.streamPeers()).thenAnswer((invocation) -> peers.stream());
-  }
+public class FetchBlockTaskTest extends AbstractFetchBlockTask {
 
   @Test
   public void run_successful() {
@@ -60,6 +42,7 @@ public class FetchBlockTaskTest {
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
     assertThat(fetchBlockResult.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult.getBlobsSidecar()).isEmpty();
   }
 
   @Test
@@ -129,6 +112,7 @@ public class FetchBlockTaskTest {
     final FetchBlockResult fetchBlockResult2 = result2.getNow(null);
     assertThat(fetchBlockResult2.isSuccessful()).isTrue();
     assertThat(fetchBlockResult2.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult2.getBlobsSidecar()).isEmpty();
     assertThat(task.getNumberOfRetries()).isEqualTo(1);
   }
 
@@ -154,6 +138,7 @@ public class FetchBlockTaskTest {
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
     assertThat(fetchBlockResult.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult.getBlobsSidecar()).isEmpty();
   }
 
   @Test
@@ -172,14 +157,5 @@ public class FetchBlockTaskTest {
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isFalse();
     assertThat(fetchBlockResult.getStatus()).isEqualTo(Status.CANCELLED);
-  }
-
-  private Eth2Peer registerNewPeer(final int id) {
-    final Eth2Peer peer = mock(Eth2Peer.class);
-    when(peer.getOutstandingRequests()).thenReturn(0);
-    when(peer.getId()).thenReturn(new MockNodeId(id));
-
-    peers.add(peer);
-    return peer;
   }
 }
