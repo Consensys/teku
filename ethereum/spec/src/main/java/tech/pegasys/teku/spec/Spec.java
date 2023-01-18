@@ -584,8 +584,10 @@ public class Spec {
   }
 
   public Optional<OperationInvalidReason> validateBlsToExecutionChange(
-      final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
-    return atState(state)
+      final BeaconState state,
+      final UInt64 currentTime,
+      final BlsToExecutionChange blsToExecutionChange) {
+    return atTime(state.getGenesisTime(), currentTime)
         .getOperationValidator()
         .validateBlsToExecutionChange(state.getFork(), state, blsToExecutionChange);
   }

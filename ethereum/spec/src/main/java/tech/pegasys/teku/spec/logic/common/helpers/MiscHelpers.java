@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 
 public class MiscHelpers {
 
@@ -276,5 +278,9 @@ public class MiscHelpers {
   public boolean verifyKZGCommitmentsAgainstTransactions(
       final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
     return false;
+  }
+
+  public Optional<MiscHelpersEip4844> toVersionEip4844() {
+    return Optional.empty();
   }
 }
