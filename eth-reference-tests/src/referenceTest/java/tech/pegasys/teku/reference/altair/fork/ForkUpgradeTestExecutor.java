@@ -17,16 +17,17 @@ import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszDa
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import org.opentest4j.TestAbortedException;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateSchemaAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 
 public class ForkUpgradeTestExecutor implements TestExecutor {
@@ -37,24 +38,35 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final MetaData metadata = TestDataUtils.loadYaml(testDefinition, "meta.yaml", MetaData.class);
-
-    if (metadata.fork.equals("altair")) {
-      processAltairUpgrade(testDefinition);
-    } else {
-      throw new TestAbortedException(
-          "Unhandled fork upgrade for test "
-              + testDefinition.getDisplayName()
-              + ": "
-              + metadata.fork);
-    }
+    final SpecMilestone specMilestone = SpecMilestone.valueOf(metadata.fork.toUpperCase());
+    processUpgrade(testDefinition, specMilestone);
   }
 
-  private void processAltairUpgrade(final TestDefinition testDefinition) {
+  private void processUpgrade(final TestDefinition testDefinition, final SpecMilestone milestone) {
     final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
-    final BeaconStateSchema<BeaconStatePhase0, MutableBeaconStatePhase0> phase0Schema =
-        BeaconStateSchemaPhase0.create(spec.getConfig());
+    final BeaconStateSchema<?, ?> fromMilestoneSchema;
+    switch (milestone) {
+      case ALTAIR:
+        fromMilestoneSchema = BeaconStateSchemaPhase0.create(spec.getConfig());
+        break;
+      case BELLATRIX:
+        fromMilestoneSchema = BeaconStateSchemaAltair.create(spec.getConfig());
+        break;
+      case CAPELLA:
+        fromMilestoneSchema = BeaconStateSchemaBellatrix.create(spec.getConfig());
+        break;
+      case EIP4844:
+        fromMilestoneSchema = BeaconStateSchemaCapella.create(spec.getConfig());
+        break;
+      default:
+        throw new IllegalStateException(
+            "Unhandled fork upgrade for test "
+                + testDefinition.getDisplayName()
+                + ": "
+                + milestone);
+    }
     final BeaconState preState =
-        TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", phase0Schema);
+        TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", fromMilestoneSchema);
     final BeaconState postState = TestDataUtils.loadStateFromSsz(testDefinition, "post.ssz_snappy");
 
     final StateUpgrade<?> stateUpgrade =
