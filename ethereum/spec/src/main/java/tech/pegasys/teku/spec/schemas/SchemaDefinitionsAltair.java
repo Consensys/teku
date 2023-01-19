@@ -22,6 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltairImpl;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProofSchema;
@@ -43,6 +44,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final ContributionAndProofSchema contributionAndProofSchema;
   private final SignedContributionAndProofSchema signedContributionAndProofSchema;
   private final MetadataMessageSchemaAltair metadataMessageSchema;
+  private final LightClientHeaderSchema lightClientHeaderSchema;
   private final LightClientBootstrapSchema lightClientBootstrapSchema;
   private final LightClientUpdateSchema lightClientUpdateSchema;
 
@@ -61,6 +63,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
     this.signedContributionAndProofSchema =
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
     this.metadataMessageSchema = new MetadataMessageSchemaAltair();
+    this.lightClientHeaderSchema = new LightClientHeaderSchema();
     this.lightClientBootstrapSchema = new LightClientBootstrapSchema(specConfig);
     this.lightClientUpdateSchema = new LightClientUpdateSchema(specConfig);
   }
@@ -138,6 +141,10 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
 
   public SyncAggregatorSelectionDataSchema getSyncAggregatorSelectionDataSchema() {
     return SyncAggregatorSelectionDataSchema.INSTANCE;
+  }
+
+  public LightClientHeaderSchema getLightClientHeaderSchema() {
+    return lightClientHeaderSchema;
   }
 
   public LightClientBootstrapSchema getLightClientBootstrapSchema() {
