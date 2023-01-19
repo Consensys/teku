@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
@@ -28,10 +27,10 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 public class LightClientUpdateSchema
     extends ContainerSchema7<
         LightClientUpdate,
-        BeaconBlockHeader,
+        LightClientHeader,
         SyncCommittee,
         SszBytes32Vector,
-        BeaconBlockHeader,
+        LightClientHeader,
         SszBytes32Vector,
         SyncAggregate,
         SszUInt64> {
@@ -39,12 +38,12 @@ public class LightClientUpdateSchema
   public LightClientUpdateSchema(final SpecConfigAltair specConfigAltair) {
     super(
         "LightClientUpdate",
-        namedSchema("attested_header", BeaconBlockHeader.SSZ_SCHEMA),
+        namedSchema("attested_header", new LightClientHeaderSchema()),
         namedSchema("next_sync_committee", new SyncCommittee.SyncCommitteeSchema(specConfigAltair)),
         namedSchema(
             "next_sync_committee_branch",
             SszBytes32VectorSchema.create(specConfigAltair.getSyncCommitteeBranchLength())),
-        namedSchema("finalized_header", BeaconBlockHeader.SSZ_SCHEMA),
+        namedSchema("finalized_header", new LightClientHeaderSchema()),
         namedSchema(
             "finality_branch",
             SszBytes32VectorSchema.create(specConfigAltair.getFinalityBranchLength())),
@@ -54,10 +53,10 @@ public class LightClientUpdateSchema
   }
 
   public LightClientUpdate create(
-      BeaconBlockHeader attestedHeader,
+      LightClientHeader attestedHeader,
       SyncCommittee nextSyncCommittee,
       SszBytes32Vector nextSyncCommitteeBranch,
-      BeaconBlockHeader finalizedHeader,
+      LightClientHeader finalizedHeader,
       SszBytes32Vector finalityBranch,
       SyncAggregate syncAggregate,
       SszUInt64 signatureSlot) {

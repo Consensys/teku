@@ -1,0 +1,10 @@
+{
+  "title" : "LightClientHeader",
+  "type" : "object",
+  "required" : [ "beacon" ],
+  "properties" : {
+    "beacon" : {
+      "$ref" : "#/components/schemas/BeaconBlockHeader"
+    }
+  }
+}

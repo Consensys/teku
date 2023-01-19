@@ -16,18 +16,17 @@ package tech.pegasys.teku.spec.datastructures.lightclient;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 
 public class LightClientBootstrap
-    extends Container3<LightClientBootstrap, BeaconBlockHeader, SyncCommittee, SszBytes32Vector> {
+    extends Container3<LightClientBootstrap, LightClientHeader, SyncCommittee, SszBytes32Vector> {
 
   public LightClientBootstrap(
       final LightClientBootstrapSchema schema,
-      final BeaconBlockHeader beaconBlockHeader,
+      final LightClientHeader lightClientHeader,
       final SyncCommittee syncCommittee,
       final SszBytes32Vector syncCommitteeBranch) {
-    super(schema, beaconBlockHeader, syncCommittee, syncCommitteeBranch);
+    super(schema, lightClientHeader, syncCommittee, syncCommitteeBranch);
   }
 
   protected LightClientBootstrap(
@@ -35,7 +34,7 @@ public class LightClientBootstrap
     super(type, backingNode);
   }
 
-  public BeaconBlockHeader getBeaconBlockHeader() {
+  public LightClientHeader getLightClientHeader() {
     return getField0();
   }
 
