@@ -22,7 +22,6 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.gossip.BlockSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.RecentBlockFetcher;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 
 public class NoopSyncService
@@ -90,11 +89,6 @@ public class NoopSyncService
 
   @Override
   public void onOptimisticHeadChanged(boolean isSyncingOptimistically) {
-    // No-op
-  }
-
-  @Override
-  public void onSlot(final UInt64 slot) {
     // No-op
   }
 

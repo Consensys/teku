@@ -994,14 +994,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
-        spec);
+        spec,
+        eventChannels);
   }
 
   public void initSyncService() {
     LOG.debug("BeaconChainController.initSyncService()");
     syncService = createSyncServiceFactory().create();
-
-    eventChannels.subscribe(SlotEventsChannel.class, syncService.getRecentBlockFetcher());
 
     // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);

@@ -28,8 +28,10 @@ import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.beacon.sync.gossip.MilestoneBasedFetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -68,6 +70,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
   private final Spec spec;
+  private final EventChannels eventChannels;
 
   public DefaultSyncServiceFactory(
       final SyncConfig syncConfig,
@@ -86,7 +89,8 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
-      final Spec spec) {
+      final Spec spec,
+      final EventChannels eventChannels) {
     this.syncConfig = syncConfig;
     this.genesisStateResource = genesisStateResource;
     this.metrics = metrics;
@@ -104,6 +108,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
     this.spec = spec;
+    this.eventChannels = eventChannels;
   }
 
   @Override
@@ -120,6 +125,9 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(
             asyncRunner, p2pNetwork, pendingBlocks, forwardSyncService, fetchBlockTaskFactory);
+
+    eventChannels.subscribe(SlotEventsChannel.class, recentBlockFetcher);
+
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
     final HistoricalBlockSyncService historicalBlockSyncService =
         createHistoricalSyncService(syncStateTracker);
