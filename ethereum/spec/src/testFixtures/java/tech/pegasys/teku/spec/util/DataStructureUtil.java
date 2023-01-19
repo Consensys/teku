@@ -113,6 +113,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSid
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
@@ -1721,23 +1722,28 @@ public final class DataStructureUtil {
   }
 
   public LightClientBootstrap randomLightClientBoostrap(final UInt64 slot) {
-    LightClientBootstrapSchema schema =
+    LightClientBootstrapSchema bootstrapSchema =
         getAltairSchemaDefinitions(slot).getLightClientBootstrapSchema();
+    LightClientHeaderSchema headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
-    return schema.create(
-        randomBeaconBlockHeader(),
+    return bootstrapSchema.create(
+        headerSchema.create(randomBeaconBlockHeader()),
         randomSyncCommittee(),
-        randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32));
+        randomSszBytes32Vector(
+            bootstrapSchema.getSyncCommitteeBranchSchema(), this::randomBytes32));
   }
 
   public LightClientUpdate randomLightClientUpdate(final UInt64 slot) {
     LightClientUpdateSchema schema = getAltairSchemaDefinitions(slot).getLightClientUpdateSchema();
+    LightClientHeaderSchema headerSchema =
+        getAltairSchemaDefinitions(slot).getLightClientHeaderSchema();
 
     return schema.create(
-        randomBeaconBlockHeader(),
+        headerSchema.create(randomBeaconBlockHeader()),
         randomSyncCommittee(),
         randomSszBytes32Vector(schema.getSyncCommitteeBranchSchema(), this::randomBytes32),
-        randomBeaconBlockHeader(),
+        headerSchema.create(randomBeaconBlockHeader()),
         randomSszBytes32Vector(schema.getFinalityBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));

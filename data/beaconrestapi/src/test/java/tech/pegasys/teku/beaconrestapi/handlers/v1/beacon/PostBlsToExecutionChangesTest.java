@@ -38,7 +38,6 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -54,7 +53,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
   public void setup() {
     spec = TestSpecFactory.createMinimalCapella();
     dataStructureUtil = new DataStructureUtil(spec);
-    setHandler(new PostBlsToExecutionChanges(provider, chainDataProvider, schemaDefinitionCache));
+    setHandler(new PostBlsToExecutionChanges(provider, schemaDefinitionCache));
   }
 
   @Test
@@ -91,22 +90,6 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
         new ErrorListBadRequest(
             "Some items failed to publish, refer to errors for details",
             List.of(new SubmitDataError(UInt64.ZERO, "Operation invalid")));
-    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(request.getResponseBody()).isEqualTo(expectedBody);
-  }
-
-  @Test
-  void shouldRejectPostBlsToExecutionChangesBeforeCapellaFork() throws JsonProcessingException {
-    final SignedBlsToExecutionChange blsToExecutionChange =
-        dataStructureUtil.randomSignedBlsToExecutionChange();
-    request.setRequestBody(blsToExecutionChange);
-    when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.BELLATRIX);
-
-    handler.handleRequest(request);
-    final HttpErrorResponse expectedBody =
-        new HttpErrorResponse(
-            SC_BAD_REQUEST,
-            "The beacon node is not currently ready to accept bls_to_execution_change operations.");
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }
