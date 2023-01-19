@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
-import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
@@ -38,20 +37,16 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 public class PostBlsToExecutionChanges extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/bls_to_execution_changes";
   private final NodeDataProvider nodeDataProvider;
-  private final ChainDataProvider chainDataProvider;
 
   public PostBlsToExecutionChanges(
-      final NodeDataProvider provider,
-      final ChainDataProvider chainDataProvider,
-      final SchemaDefinitionCache schemaCache) {
+      final NodeDataProvider provider, final SchemaDefinitionCache schemaCache) {
     super(createEndpointMetadata(schemaCache));
     this.nodeDataProvider = provider;
-    this.chainDataProvider = chainDataProvider;
   }
 
   public PostBlsToExecutionChanges(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaCache) {
-    this(dataProvider.getNodeDataProvider(), dataProvider.getChainDataProvider(), schemaCache);
+    this(dataProvider.getNodeDataProvider(), schemaCache);
   }
 
   private static EndpointMetadata createEndpointMetadata(final SchemaDefinitionCache schemaCache) {
@@ -80,12 +75,6 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    if (!chainDataProvider.getMilestoneAtHead().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      request.respondError(
-          SC_BAD_REQUEST,
-          "The beacon node is not currently ready to accept bls_to_execution_change operations.");
-      return;
-    }
     final List<SignedBlsToExecutionChange> blsToExecutionChanges = request.getRequestBody();
     final SafeFuture<List<SubmitDataError>> future =
         nodeDataProvider.postBlsToExecutionChanges(blsToExecutionChanges);
