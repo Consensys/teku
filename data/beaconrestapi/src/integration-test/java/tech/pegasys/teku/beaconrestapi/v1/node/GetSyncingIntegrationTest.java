@@ -60,21 +60,6 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
         .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.ZERO, false));
   }
 
-  @Test
-  public void shouldGetSyncStatusWhenExecutionLayerIsUnavailable() throws IOException {
-    startRestAPIAtGenesis();
-    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(false);
-    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 6, 11, 16));
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-
-    final Response response = get();
-    assertThat(response.code()).isEqualTo(SC_OK);
-    final SyncingResponse syncingResponse =
-        jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
-    assertThat(syncingResponse.data)
-        .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.valueOf(5), true));
-  }
-
   private Response get() throws IOException {
     return getResponse(GetSyncing.ROUTE);
   }

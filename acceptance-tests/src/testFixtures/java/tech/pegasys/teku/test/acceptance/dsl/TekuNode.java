@@ -71,6 +71,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
+import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
@@ -317,6 +318,13 @@ public class TekuNode extends Node {
           assertThat(blsToExecutionChanges.stream())
               .anyMatch(m -> UInt64.valueOf(validatorIndex).equals(m.message.validatorIndex));
         });
+  }
+
+  private SyncingResponse fetchSyncStatus() throws IOException {
+    String syncingData = httpClient.get(getRestApiUrl(), "/eth/v1/node/syncing");
+    SyncingResponse syncingResponse =
+        JSON_PROVIDER.jsonToObject(syncingData, SyncingResponse.class);
+    return syncingResponse;
   }
 
   private <T> List<T> getEventsOfTypeFromEventStream(
@@ -756,6 +764,14 @@ public class TekuNode extends Node {
         withNameEqualsTo("libp2p_gossip_messages_total"),
         withLabelValueSubstring("topic", "beacon_aggregate_and_proof"),
         withValueGreaterThan(0));
+  }
+
+  public void expectNodeNotSyncing() throws IOException {
+    assertThat(fetchSyncStatus().data.isSyncing).isFalse();
+  }
+
+  public void expectNodeSyncing() throws IOException {
+    assertThat(fetchSyncStatus().data.isSyncing).isTrue();
   }
 
   public static class Config {

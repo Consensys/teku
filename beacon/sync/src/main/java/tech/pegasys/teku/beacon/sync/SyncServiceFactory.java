@@ -20,6 +20,5 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
  * might be changed in any version in backward incompatible way
  */
 public interface SyncServiceFactory {
-
   SyncService create(EventChannels eventChannels);
 }

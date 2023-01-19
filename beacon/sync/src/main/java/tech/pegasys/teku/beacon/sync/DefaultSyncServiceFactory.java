@@ -29,6 +29,7 @@ import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.beacon.sync.gossip.MilestoneBasedFetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -126,6 +127,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     eventChannels.subscribe(SlotEventsChannel.class, recentBlockFetcher);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
+    eventChannels.subscribe(ExecutionClientEventsChannel.class, syncStateTracker);
     final HistoricalBlockSyncService historicalBlockSyncService =
         createHistoricalSyncService(syncStateTracker);
 

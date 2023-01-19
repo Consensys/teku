@@ -31,7 +31,7 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
-    setHandler(new GetSyncing(syncDataProvider, executionClientDataProvider));
+    setHandler(new GetSyncing(syncDataProvider));
   }
 
   @Test
@@ -55,18 +55,6 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())
         .isEqualTo(new GetSyncing.SyncStatusData(false, false, 10, 0));
-  }
-
-  @Test
-  public void shouldGetSyncStatusSyncingWhenExecutionLayerIsOffline() throws Exception {
-    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(false);
-    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-
-    handler.handleRequest(request);
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody())
-        .isEqualTo(new GetSyncing.SyncStatusData(true, false, 10, 1));
   }
 
   @Test
