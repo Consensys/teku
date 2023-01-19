@@ -204,25 +204,6 @@ public class BeaconChainMethods {
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA;
     final boolean expectResponseToRequest = true;
 
-    // V1 request only deal with Phase0 blocks
-    final SignedBeaconBlockSchema phase0BlockSchema =
-        spec.forMilestone(SpecMilestone.PHASE0).getSchemaDefinitions().getSignedBeaconBlockSchema();
-    final RpcContextCodec<Bytes, SignedBeaconBlock> noContextCodec =
-        RpcContextCodec.noop(phase0BlockSchema);
-
-    final SingleProtocolEth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
-        v1Method =
-            new SingleProtocolEth2RpcMethod<>(
-                asyncRunner,
-                BeaconChainMethodIds.BEACON_BLOCKS_BY_ROOT,
-                1,
-                rpcEncoding,
-                requestType,
-                expectResponseToRequest,
-                noContextCodec,
-                beaconBlocksByRootHandler,
-                peerLookup);
-
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final RpcContextCodec<Bytes4, SignedBeaconBlock> forkDigestContextCodec =
           RpcContextCodec.forkDigest(
@@ -242,9 +223,10 @@ public class BeaconChainMethods {
                   peerLookup);
 
       return VersionedEth2RpcMethod.create(
-          rpcEncoding, requestType, expectResponseToRequest, List.of(v2Method, v1Method));
+          rpcEncoding, requestType, expectResponseToRequest, List.of(v2Method));
     } else {
-      return v1Method;
+      return VersionedEth2RpcMethod.create(
+          rpcEncoding, requestType, expectResponseToRequest, List.of());
     }
   }
 

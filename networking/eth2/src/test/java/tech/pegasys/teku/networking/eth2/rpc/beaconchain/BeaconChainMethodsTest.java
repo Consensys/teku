@@ -111,17 +111,14 @@ public class BeaconChainMethodsTest {
     final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalAltair());
 
     assertThat(methods.beaconBlocksByRoot().getIds())
-        .containsExactly(
-            "/eth2/beacon_chain/req/beacon_blocks_by_root/2/ssz_snappy",
-            "/eth2/beacon_chain/req/beacon_blocks_by_root/1/ssz_snappy");
+        .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_root/2/ssz_snappy");
   }
 
   @Test
   public void shouldCreateUnversionedBlocksByRootMethodWithAltairDisabled() {
     final BeaconChainMethods methods = getMethods();
 
-    assertThat(methods.beaconBlocksByRoot().getIds())
-        .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_root/1/ssz_snappy");
+    assertThat(methods.beaconBlocksByRoot().getIds()).isEmpty();
   }
 
   @Test
