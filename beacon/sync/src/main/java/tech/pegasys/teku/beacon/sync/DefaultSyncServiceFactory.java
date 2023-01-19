@@ -70,7 +70,6 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
   private final Spec spec;
-  private final EventChannels eventChannels;
 
   public DefaultSyncServiceFactory(
       final SyncConfig syncConfig,
@@ -89,8 +88,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
-      final Spec spec,
-      final EventChannels eventChannels) {
+      final Spec spec) {
     this.syncConfig = syncConfig;
     this.genesisStateResource = genesisStateResource;
     this.metrics = metrics;
@@ -108,11 +106,10 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
     this.spec = spec;
-    this.eventChannels = eventChannels;
   }
 
   @Override
-  public SyncService create() {
+  public SyncService create(final EventChannels eventChannels) {
     if (!syncConfig.isSyncEnabled()) {
       return new NoopSyncService();
     }
