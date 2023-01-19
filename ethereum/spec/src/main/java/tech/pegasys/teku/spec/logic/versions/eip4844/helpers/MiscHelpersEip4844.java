@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.eip4844.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.config.SpecConfigEip4844.BLOB_TX_TYPE;
 import static tech.pegasys.teku.spec.config.SpecConfigEip4844.VERSIONED_HASH_VERSION_KZG;
 
@@ -68,17 +69,19 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
       final BlobsSidecar blobsSidecar) {
     checkArgument(
         slot.equals(blobsSidecar.getBeaconBlockSlot()),
-        "Block slot should match blobsSidecar slot");
+        "Block slot should match blobs sidecar slot");
     checkArgument(
         beaconBlockRoot.equals(blobsSidecar.getBeaconBlockRoot()),
-        "Block root should match blobsSidecar beacon block root");
+        "Block root should match blobs sidecar beacon block root");
     checkArgument(
         kzgCommitments.size() == blobsSidecar.getBlobs().size(),
-        "Number of kzgCommitments should match number of blobs");
-    kzg.verifyAggregateKzgProof(
-        blobsSidecar.getBlobs().stream().map(Blob::getBytes).collect(Collectors.toList()),
-        kzgCommitments,
-        blobsSidecar.getKZGAggregatedProof());
+        "Number of KZG commitments should match number of blobs");
+    final boolean isValidProof =
+        kzg.verifyAggregateKzgProof(
+            blobsSidecar.getBlobs().stream().map(Blob::getBytes).collect(Collectors.toList()),
+            kzgCommitments,
+            blobsSidecar.getKZGAggregatedProof());
+    checkState(isValidProof, "Invalid aggregate KZG proof for the given blobs and commitments");
   }
 
   @Override
