@@ -24,6 +24,8 @@
               "$ref" : "#/components/schemas/SignedBlindedBlockBellatrix"
             }, {
               "$ref" : "#/components/schemas/SignedBlindedBlockCapella"
+            }, {
+              "$ref" : "#/components/schemas/SignedBlindedBlockEip4844"
             } ]
           }
         }

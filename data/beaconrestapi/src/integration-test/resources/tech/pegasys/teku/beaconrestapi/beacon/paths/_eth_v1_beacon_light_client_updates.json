@@ -42,7 +42,8 @@
                       "phase0",
                       "altair",
                       "bellatrix",
-                      "capella"
+                      "capella",
+                      "eip4844"
                     ]
                   },
                   "data": {
