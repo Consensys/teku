@@ -62,8 +62,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
-  private static final String V1_PROTOCOL_ID =
-      BeaconChainMethodIds.getBlocksByRangeMethodId(1, RPC_ENCODING);
   private static final String V2_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRangeMethodId(2, RPC_ENCODING);
 
@@ -89,7 +87,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
       mock(CombinedChainDataClient.class);
 
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
-  private final String protocolId = BeaconChainMethodIds.getBlocksByRangeMethodId(1, RPC_ENCODING);
+  private final String protocolId = BeaconChainMethodIds.getBlocksByRangeMethodId(2, RPC_ENCODING);
   private final BeaconBlocksByRangeMessageHandler handler =
       new BeaconBlocksByRangeMessageHandler(
           spec, metricsSystem, combinedChainDataClient, maxRequestSize);
@@ -103,66 +101,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
-  public void validateRequest_phase0Spec_v1Request() {
-    final Optional<RpcException> result =
-        handler.validateRequest(
-            V1_PROTOCOL_ID, new BeaconBlocksByRangeRequestMessage(ZERO, ONE, ONE));
-
-    assertThat(result).isEmpty();
-  }
-
-  @Test
   public void validateRequest_phase0Spec_v2Request() {
     final Optional<RpcException> result =
         handler.validateRequest(
             V2_PROTOCOL_ID, new BeaconBlocksByRangeRequestMessage(ZERO, ONE, ONE));
 
     assertThat(result).isEmpty();
-  }
-
-  @Test
-  public void validateRequest_altairSpec_v1RequestForPhase0Block() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
-    final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
-
-    final Optional<RpcException> result =
-        handler.validateRequest(
-            V1_PROTOCOL_ID, new BeaconBlocksByRangeRequestMessage(ZERO, ONE, ONE));
-
-    assertThat(result).isEmpty();
-  }
-
-  @Test
-  public void validateRequest_altairSpec_v1RequestForAltairBlock() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
-    final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
-
-    final Optional<RpcException> result =
-        handler.validateRequest(
-            V1_PROTOCOL_ID, new BeaconBlocksByRangeRequestMessage(UInt64.valueOf(32), ONE, ONE));
-
-    assertThat(result)
-        .contains(new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
-  }
-
-  @Test
-  public void validateRequest_altairSpec_v1RequestForRangeOfBlocksAcrossForkBoundary() {
-    final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
-    final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
-
-    final Optional<RpcException> result =
-        handler.validateRequest(
-            V1_PROTOCOL_ID,
-            new BeaconBlocksByRangeRequestMessage(UInt64.valueOf(30), UInt64.valueOf(10), ONE));
-
-    assertThat(result)
-        .contains(new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
   }
 
   @Test
