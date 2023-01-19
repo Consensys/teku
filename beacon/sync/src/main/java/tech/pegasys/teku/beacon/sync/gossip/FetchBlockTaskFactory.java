@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync;
+package tech.pegasys.teku.beacon.sync.gossip;
 
-import tech.pegasys.teku.infrastructure.events.EventChannels;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 
-/**
- * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
- * might be changed in any version in backward incompatible way
- */
-public interface SyncServiceFactory {
+public interface FetchBlockTaskFactory {
 
-  SyncService create(EventChannels eventChannels);
+  FetchBlockTask create(P2PNetwork<Eth2Peer> eth2Network, UInt64 currentSlot, Bytes32 blockRoot);
 }

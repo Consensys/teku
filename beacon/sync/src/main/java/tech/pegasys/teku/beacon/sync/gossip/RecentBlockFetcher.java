@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beacon.sync.gossip;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService.BlockSubscriber;
 
 public interface RecentBlockFetcher {
 

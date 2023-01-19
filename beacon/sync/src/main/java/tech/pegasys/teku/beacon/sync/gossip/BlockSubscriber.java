@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync;
+package tech.pegasys.teku.beacon.sync.gossip;
 
-import tech.pegasys.teku.infrastructure.events.EventChannels;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 
-/**
- * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
- * might be changed in any version in backward incompatible way
- */
-public interface SyncServiceFactory {
+public interface BlockSubscriber {
 
-  SyncService create(EventChannels eventChannels);
+  void onBlockAndBlobsSidecar(SignedBeaconBlock block, Optional<BlobsSidecar> blobsSidecar);
 }

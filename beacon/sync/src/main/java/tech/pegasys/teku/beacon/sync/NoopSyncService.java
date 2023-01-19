@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
-import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.BlockSubscriber;
 import tech.pegasys.teku.beacon.sync.gossip.RecentBlockFetcher;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
@@ -73,7 +73,7 @@ public class NoopSyncService
   public void unsubscribeFromSyncChanges(final long subscriberId) {}
 
   @Override
-  public long subscribeBlockFetched(final FetchRecentBlocksService.BlockSubscriber subscriber) {
+  public long subscribeBlockFetched(final BlockSubscriber subscriber) {
     return 0;
   }
 
