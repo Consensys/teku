@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class MilestoneDependentTypesUtil {
 
-  private static final Set<SpecMilestone> IGNORED_MILESTONES = Set.of(SpecMilestone.EIP4844);
+  private static final Set<SpecMilestone> IGNORED_MILESTONES = Set.of();
 
   public static <T extends SszData>
       SerializableOneOfTypeDefinition<T> getSchemaDefinitionForAllMilestones(
