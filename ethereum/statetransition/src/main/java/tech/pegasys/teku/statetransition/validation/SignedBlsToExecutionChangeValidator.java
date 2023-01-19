@@ -131,7 +131,8 @@ public class SignedBlsToExecutionChangeValidator
   private Optional<OperationInvalidReason> getMaybeFailureReason(
       final BeaconState state, final SignedBlsToExecutionChange signedBlsToExecutionChange) {
     final Optional<OperationInvalidReason> invalidReason =
-        spec.validateBlsToExecutionChange(state, signedBlsToExecutionChange.getMessage());
+        spec.validateBlsToExecutionChange(
+            state, timeProvider.getTimeInSeconds(), signedBlsToExecutionChange.getMessage());
     if (invalidReason.isPresent()) {
       return invalidReason;
     }
