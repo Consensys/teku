@@ -81,7 +81,7 @@ public class MiscHelpersEip4844 extends MiscHelpersBellatrix {
             blobsSidecar.getBlobs().stream().map(Blob::getBytes).collect(Collectors.toList()),
             kzgCommitments,
             blobsSidecar.getKZGAggregatedProof());
-    checkState(isValidProof, "Invalid KZG proof for the given blobs and commitments");
+    checkState(isValidProof, "Invalid aggregate KZG proof for the given blobs and commitments");
   }
 
   @Override
