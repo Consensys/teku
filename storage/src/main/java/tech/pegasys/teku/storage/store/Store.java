@@ -510,7 +510,7 @@ class Store implements UpdatableStore {
               .orElseThrow()
               .getBlobKzgCommitments()
               .isEmpty(),
-          "BeaconBlock KzgCommitments must be empty when BlobsSidecar is not present");
+          "BeaconBlock contains kzg commitments but BlobsSidecar is not present");
     }
 
     final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =

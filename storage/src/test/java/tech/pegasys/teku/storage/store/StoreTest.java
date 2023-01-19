@@ -27,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -186,6 +187,25 @@ class StoreTest extends AbstractStoreTest {
                     .getBlobs()
                     .isEmpty(),
             "Blobs must be empty");
+  }
+
+  @Test
+  public void retrieveSignedBlockAndBlobsSidecar_withInconsistentSidecar() {
+    final UpdatableStore store = createGenesisStore();
+
+    // generate block with commitments but skip blob storage
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateBlockAtSlot(
+            1, BlockOptions.create().setGenerateRandomBlobs(true).setStoreBlobsSidecar(false));
+
+    addBlock(store, blockAndState);
+
+    final SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> signedBlockAndBlobsSidecar =
+        store.retrieveSignedBlockAndBlobsSidecar(blockAndState.getRoot());
+
+    SafeFutureAssert.assertThatSafeFuture(signedBlockAndBlobsSidecar)
+        .isCompletedExceptionallyWithMessage(
+            "BeaconBlock contains kzg commitments but BlobsSidecar is not present");
   }
 
   @Test
