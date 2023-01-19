@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_ACCEPTABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseSszFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
@@ -34,6 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -48,7 +50,7 @@ public class GetLightClientUpdatesByRangeTest extends AbstractMigratedBeaconHand
   }
 
   @Test
-  void metadata_shouldHandle200() throws IOException {
+  void metadata_shouldHandleJson200() throws IOException {
     LightClientUpdate lightClientUpdate = dataStructureUtil.randomLightClientUpdate(UInt64.ONE);
     ObjectAndMetaData<LightClientUpdate> responseData =
         new ObjectAndMetaData<>(lightClientUpdate, SpecMilestone.ALTAIR, false, true, false);
@@ -61,6 +63,18 @@ public class GetLightClientUpdatesByRangeTest extends AbstractMigratedBeaconHand
                 GetLightClientBootstrapTest.class, "getLightClientUpdatesByRange.json"),
             StandardCharsets.UTF_8);
     assertThat(data).isEqualTo(expected);
+  }
+
+  @Test
+  void metadata_shouldHandleSsz200() throws IOException {
+    LightClientUpdateResponse responseData =
+        dataStructureUtil.randomLightClientUpdateResponse(UInt64.ONE);
+    List<LightClientUpdateResponse> response = List.of(responseData);
+
+    final byte[] actual = getResponseSszFromMetadata(handler, SC_OK, response);
+    final byte[] expected = responseData.sszSerialize().toArray();
+
+    assertThat(actual).isEqualTo(expected);
   }
 
   @Test
