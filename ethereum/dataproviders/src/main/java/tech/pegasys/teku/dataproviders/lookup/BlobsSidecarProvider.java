@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSid
 
 @FunctionalInterface
 public interface BlobsSidecarProvider {
+  BlobsSidecarProvider NOOP = (block) -> SafeFuture.completedFuture(Optional.empty());
 
   default SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(SignedBeaconBlock block) {
     return getBlobsSidecar(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));

@@ -553,15 +553,19 @@ public class ChainBuilder {
     final BlobsSidecarSchema blobsSidecarSchema =
         spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
 
-    BlobsSidecar blobsSidecar =
-        new BlobsSidecar(
-            blobsSidecarSchema,
-            nextBlockAndState.getRoot(),
-            slot,
-            options.getBlobs().orElse(List.of()),
-            options.getKzgProof().orElse(KZGProof.infinity()));
+    if (options.isStoreBlobsSidecarEnabled()) {
+      final BlobsSidecar blobsSidecar =
+          options.blobsSidecar.orElseGet(
+              () ->
+                  new BlobsSidecar(
+                      blobsSidecarSchema,
+                      nextBlockAndState.getRoot(),
+                      slot,
+                      options.getBlobs().orElse(List.of()),
+                      options.getKzgProof().orElse(KZGProof.INFINITY)));
+      trackBlobsSidecar(blobsSidecar);
+    }
 
-    trackBlobsSidecar(blobsSidecar);
     return nextBlockAndState;
   }
 
@@ -599,16 +603,18 @@ public class ChainBuilder {
         spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
 
     final MiscHelpersEip4844 miscHelpers =
-        (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
+        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
     KZGProof kzgProof =
         miscHelpers.computeAggregatedKzgProof(
             randomBlobs.stream().map(Blob::getBytes).collect(Collectors.toList()));
 
-    BlobsSidecar blobsSidecar =
-        new BlobsSidecar(
-            blobsSidecarSchema, nextBlockAndState.getRoot(), slot, randomBlobs, kzgProof);
+    if (options.isStoreBlobsSidecarEnabled()) {
+      final BlobsSidecar blobsSidecar =
+          new BlobsSidecar(
+              blobsSidecarSchema, nextBlockAndState.getRoot(), slot, randomBlobs, kzgProof);
 
-    trackBlobsSidecar(blobsSidecar);
+      trackBlobsSidecar(blobsSidecar);
+    }
     return nextBlockAndState;
   }
 
@@ -732,7 +738,9 @@ public class ChainBuilder {
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
     private Optional<KZGProof> kzgProof = Optional.empty();
+    private Optional<BlobsSidecar> blobsSidecar = Optional.empty();
     private boolean generateRandomBlobs = false;
+    private boolean storeBlobsSidecar = true;
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
 
@@ -773,6 +781,21 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setBlobs(final List<Blob> blobs) {
+      this.blobs = Optional.of(blobs);
+      return this;
+    }
+
+    public BlockOptions setKzgProof(final KZGProof kzgProof) {
+      this.kzgProof = Optional.of(kzgProof);
+      return this;
+    }
+
+    public BlockOptions setBlobsSidecar(final BlobsSidecar blobsSidecar) {
+      this.blobsSidecar = Optional.of(blobsSidecar);
+      return this;
+    }
+
     public BlockOptions setKzgCommitments(final SszList<SszKZGCommitment> kzgCommitments) {
       this.kzgCommitments = Optional.of(kzgCommitments);
       return this;
@@ -780,6 +803,11 @@ public class ChainBuilder {
 
     public BlockOptions setGenerateRandomBlobs(final boolean generateRandomBlobs) {
       this.generateRandomBlobs = generateRandomBlobs;
+      return this;
+    }
+
+    public BlockOptions setStoreBlobsSidecar(final boolean storeBlobsSidecar) {
+      this.storeBlobsSidecar = storeBlobsSidecar;
       return this;
     }
 
@@ -828,6 +856,14 @@ public class ChainBuilder {
 
     public Optional<List<Blob>> getBlobs() {
       return blobs;
+    }
+
+    public Optional<BlobsSidecar> getBlobsSidecar() {
+      return blobsSidecar;
+    }
+
+    public boolean isStoreBlobsSidecarEnabled() {
+      return storeBlobsSidecar;
     }
 
     public Optional<KZGProof> getKzgProof() {
