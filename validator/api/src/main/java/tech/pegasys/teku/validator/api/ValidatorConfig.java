@@ -56,6 +56,8 @@ public class ValidatorConfig {
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
 
+  public static final int DEFAULT_RUNNER_THREAD_NUM = 5;
+
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
@@ -87,6 +89,8 @@ public class ValidatorConfig {
   private final int executorMaxQueueSize;
   private final Optional<String> sentryNodeConfigurationFile;
 
+  private final int runnerThreadNum;
+
   private ValidatorConfig(
       final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeySources,
@@ -117,7 +121,8 @@ public class ValidatorConfig {
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
-      final Optional<String> sentryNodeConfigurationFile) {
+      final Optional<String> sentryNodeConfigurationFile,
+      final int runnerThreadNum) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -151,6 +156,7 @@ public class ValidatorConfig {
     this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
+    this.runnerThreadNum = runnerThreadNum;
   }
 
   public static Builder builder() {
@@ -276,6 +282,10 @@ public class ValidatorConfig {
     return sentryNodeConfigurationFile;
   }
 
+  public int getRunnerThreadNum() {
+    return runnerThreadNum;
+  }
+
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
     if (proposerDefaultFeeRecipient.isEmpty()
         && proposerConfigSource.isEmpty()
@@ -325,6 +335,8 @@ public class ValidatorConfig {
     private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
+
+    private int runnerThreadNum = DEFAULT_RUNNER_THREAD_NUM;
 
     private Builder() {}
 
@@ -472,6 +484,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder runnerThreadNum(final int runnerThreadNum) {
+      this.runnerThreadNum = runnerThreadNum;
+      return this;
+    }
+
     public Builder failoversSendSubnetSubscriptionsEnabled(
         final boolean failoversSendSubnetSubscriptionsEnabled) {
       this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
@@ -557,7 +574,8 @@ public class ValidatorConfig {
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
-          sentryNodeConfigurationFile);
+          sentryNodeConfigurationFile,
+          runnerThreadNum);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

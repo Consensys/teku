@@ -39,6 +39,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -71,6 +72,8 @@ public abstract class AbstractNode implements Node {
         AsyncRunnerFactory.createDefault(
             new MetricTrackingExecutorFactory(metricsSystem, rejectedExecutionCounter));
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(tekuConfig.dataConfig());
+    ValidatorConfig validatorConfig = tekuConfig.validatorClient().getValidatorConfig();
+
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
@@ -78,7 +81,8 @@ public abstract class AbstractNode implements Node {
             eventChannels,
             metricsSystem,
             dataDirLayout,
-            rejectedExecutionCounter::getTotalCount);
+            rejectedExecutionCounter::getTotalCount,
+            validatorConfig.getRunnerThreadNum());
     this.metricsPublisher =
         new MetricsPublisherManager(
             asyncRunnerFactory,

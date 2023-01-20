@@ -111,6 +111,15 @@ public class ValidatorOptions {
       fallbackValue = "true")
   private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
 
+  @Option(
+      names = {"--Xvalidator-client-runner-threads"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Set the number of threads for the validator runner",
+      hidden = true,
+      arity = "1")
+  private int runnerThreadNum = ValidatorConfig.DEFAULT_RUNNER_THREAD_NUM;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -124,7 +133,8 @@ public class ValidatorOptions {
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
                 .generateEarlyAttestations(generateEarlyAttestations)
                 .executorMaxQueueSize(executorMaxQueueSize)
-                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled));
+                .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
+                .runnerThreadNum(runnerThreadNum));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
