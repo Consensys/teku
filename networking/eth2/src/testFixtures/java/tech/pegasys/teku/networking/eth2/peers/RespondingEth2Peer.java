@@ -290,7 +290,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   private <T> SafeFuture<T> createPendingBlockRequest(
-      PendingRequestHandler<T, SignedBeaconBlock> handler) {
+      final PendingRequestHandler<T, SignedBeaconBlock> handler) {
     final PendingRequestHandler<T, SignedBeaconBlock> filteredHandler =
         PendingRequestHandler.filterRequest(handler, blockRequestFilter);
     final PendingRequest<T, SignedBeaconBlock> request = new PendingRequest<>(filteredHandler);
@@ -300,7 +300,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   private <T> SafeFuture<T> createPendingBlockAndBlobsSidecarRequest(
-      PendingRequestHandler<T, SignedBeaconBlockAndBlobsSidecar> handler) {
+      final PendingRequestHandler<T, SignedBeaconBlockAndBlobsSidecar> handler) {
     final PendingRequest<T, SignedBeaconBlockAndBlobsSidecar> request =
         new PendingRequest<>(handler);
     pendingRequests.add(request);
@@ -308,7 +308,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   private <T> SafeFuture<T> createPendingBlobsSidecarRequest(
-      PendingRequestHandler<T, BlobsSidecar> handler) {
+      final PendingRequestHandler<T, BlobsSidecar> handler) {
     final PendingRequest<T, BlobsSidecar> request = new PendingRequest<>(handler);
     pendingRequests.add(request);
     return request.getFuture();
@@ -456,22 +456,22 @@ public class RespondingEth2Peer implements Eth2Peer {
     return findObjectByRoot(root, ChainBuilder::getBlockAndBlobsSidecar);
   }
 
-  public static class PendingRequest<T, S> {
-    private final SafeFuture<T> future = new SafeFuture<>();
-    private final PendingRequestHandler<T, S> requestHandler;
+  public static class PendingRequest<ResponseT, HandlerT> {
+    private final SafeFuture<ResponseT> future = new SafeFuture<>();
+    private final PendingRequestHandler<ResponseT, HandlerT> requestHandler;
 
-    public PendingRequest(final PendingRequestHandler<T, S> requestHandler) {
+    public PendingRequest(final PendingRequestHandler<ResponseT, HandlerT> requestHandler) {
       this.requestHandler = requestHandler;
     }
 
-    public SafeFuture<T> getFuture() {
+    public SafeFuture<ResponseT> getFuture() {
       return future;
     }
 
     public void complete() {
       if (!future.isDone()) {
         try {
-          List<S> objects = requestHandler.getObjectsToReturn();
+          List<HandlerT> objects = requestHandler.getObjectsToReturn();
           requestHandler.handle(future, objects);
         } catch (Exception e) {
           future.completeExceptionally(e);
@@ -485,24 +485,25 @@ public class RespondingEth2Peer implements Eth2Peer {
     }
   }
 
-  private interface PendingRequestHandler<T, S> {
+  private interface PendingRequestHandler<ResponseT, HandlerT> {
 
-    List<S> getObjectsToReturn();
+    List<HandlerT> getObjectsToReturn();
 
-    void handle(SafeFuture<T> responseFuture, List<S> objects);
+    void handle(SafeFuture<ResponseT> responseFuture, List<HandlerT> objects);
 
-    static <T, S> PendingRequestHandler<T, S> filterRequest(
-        final PendingRequestHandler<T, S> originalRequest,
-        final Function<List<S>, List<S>> filter) {
+    static <ResponseT, HandlerT> PendingRequestHandler<ResponseT, HandlerT> filterRequest(
+        final PendingRequestHandler<ResponseT, HandlerT> originalRequest,
+        final Function<List<HandlerT>, List<HandlerT>> filter) {
       return new PendingRequestHandler<>() {
 
         @Override
-        public List<S> getObjectsToReturn() {
+        public List<HandlerT> getObjectsToReturn() {
           return filter.apply(originalRequest.getObjectsToReturn());
         }
 
         @Override
-        public void handle(final SafeFuture<T> responseFuture, final List<S> objects) {
+        public void handle(
+            final SafeFuture<ResponseT> responseFuture, final List<HandlerT> objects) {
           originalRequest.handle(responseFuture, objects);
         }
       };
