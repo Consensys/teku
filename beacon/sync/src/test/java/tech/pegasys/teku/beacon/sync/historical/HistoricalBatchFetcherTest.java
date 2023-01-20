@@ -29,10 +29,14 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -40,6 +44,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -48,10 +54,16 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class HistoricalBatchFetcherTest {
-  private final Spec spec = TestSpecFactory.createDefault();
+  private final Spec spec = TestSpecFactory.createMinimalEip4844();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
+  private final FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
+
+  @SuppressWarnings("unchecked")
+  private final P2PNetwork<Eth2Peer> eth2Network = mock(P2PNetwork.class);
+
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private ChainBuilder forkBuilder;
 
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
@@ -104,7 +116,16 @@ public class HistoricalBatchFetcherTest {
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
-            maxRequests);
+            maxRequests,
+            fetchBlockTaskFactory,
+            blobsSidecarManager);
+
+    // pre EIP-4844 stubbing/mocking
+    when(fetchBlockTaskFactory.create(any(), any()))
+        .thenAnswer(i -> new FetchBlockTask(eth2Network, i.getArgument(1)));
+    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(false);
+    when(blobsSidecarManager.createAvailabilityChecker(any()))
+        .thenReturn(BlobsSidecarAvailabilityChecker.NOT_REQUIRED);
 
     when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
@@ -184,7 +205,9 @@ public class HistoricalBatchFetcherTest {
             latestBlock.getSlot(),
             latestBlock.getRoot(),
             UInt64.valueOf(batchSize),
-            maxRequests);
+            maxRequests,
+            fetchBlockTaskFactory,
+            blobsSidecarManager);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
@@ -212,7 +235,9 @@ public class HistoricalBatchFetcherTest {
             lastBlockInBatch.getSlot().plus(batchSize * 2),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(batchSize),
-            maxRequests);
+            maxRequests,
+            fetchBlockTaskFactory,
+            blobsSidecarManager);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
@@ -245,7 +270,9 @@ public class HistoricalBatchFetcherTest {
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
             UInt64.valueOf(blockBatch.size()),
-            maxRequests);
+            maxRequests,
+            fetchBlockTaskFactory,
+            blobsSidecarManager);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
