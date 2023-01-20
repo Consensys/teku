@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -63,6 +65,8 @@ public class HistoricalBlockSyncService extends Service {
   private final AsyncRunner asyncRunner;
   private final P2PNetwork<Eth2Peer> network;
   private final CombinedChainDataClient chainData;
+  private final FetchBlockTaskFactory fetchBlockTaskFactory;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final SyncStateProvider syncStateProvider;
   private final UInt64 batchSize;
 
@@ -88,7 +92,9 @@ public class HistoricalBlockSyncService extends Service {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final UInt64 batchSize,
       final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService,
-      final boolean fetchAllHistoricBlocks) {
+      final boolean fetchAllHistoricBlocks,
+      final FetchBlockTaskFactory fetchBlockTaskFactory,
+      final BlobsSidecarManager blobsSidecarManager) {
     this.spec = spec;
     this.storageUpdateChannel = storageUpdateChannel;
 
@@ -100,6 +106,8 @@ public class HistoricalBlockSyncService extends Service {
     this.signatureVerifier = signatureVerifier;
     this.reconstructHistoricalStatesService = reconstructHistoricalStatesService;
     this.fetchAllHistoricBlocks = fetchAllHistoricBlocks;
+    this.fetchBlockTaskFactory = fetchBlockTaskFactory;
+    this.blobsSidecarManager = blobsSidecarManager;
 
     this.badPeerCache =
         Collections.newSetFromMap(
@@ -130,7 +138,9 @@ public class HistoricalBlockSyncService extends Service {
       final SyncStateProvider syncStateProvider,
       final boolean reconstructHistoricStatesEnabled,
       final Optional<String> genesisStateResource,
-      final boolean fetchAllHistoricBlocks) {
+      final boolean fetchAllHistoricBlocks,
+      final FetchBlockTaskFactory fetchBlockTaskFactory,
+      final BlobsSidecarManager blobsSidecarManager) {
     Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService =
         reconstructHistoricStatesEnabled
             ? Optional.of(
@@ -154,7 +164,9 @@ public class HistoricalBlockSyncService extends Service {
         signatureVerifier,
         BATCH_SIZE,
         reconstructHistoricalStatesService,
-        fetchAllHistoricBlocks);
+        fetchAllHistoricBlocks,
+        fetchBlockTaskFactory,
+        blobsSidecarManager);
   }
 
   @Override
@@ -288,7 +300,9 @@ public class HistoricalBlockSyncService extends Service {
         peer,
         params.getMaxSlot(),
         params.getBlockRoot(),
-        batchSize);
+        batchSize,
+        fetchBlockTaskFactory,
+        blobsSidecarManager);
   }
 
   private boolean isSyncDone() {

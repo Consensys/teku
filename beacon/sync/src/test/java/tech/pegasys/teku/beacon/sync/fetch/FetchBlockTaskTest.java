@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -41,7 +41,7 @@ public class FetchBlockTaskTest extends AbstractFetchBlockTask {
     assertThat(result).isDone();
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
-    assertThat(fetchBlockResult.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult.getBlock()).hasValue(block);
     assertThat(fetchBlockResult.getBlobsSidecar()).isEmpty();
   }
 
@@ -111,7 +111,7 @@ public class FetchBlockTaskTest extends AbstractFetchBlockTask {
     assertThat(result).isDone();
     final FetchBlockResult fetchBlockResult2 = result2.getNow(null);
     assertThat(fetchBlockResult2.isSuccessful()).isTrue();
-    assertThat(fetchBlockResult2.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult2.getBlock()).hasValue(block);
     assertThat(fetchBlockResult2.getBlobsSidecar()).isEmpty();
     assertThat(task.getNumberOfRetries()).isEqualTo(1);
   }
@@ -137,7 +137,7 @@ public class FetchBlockTaskTest extends AbstractFetchBlockTask {
     assertThat(result).isDone();
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
-    assertThat(fetchBlockResult.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult.getBlock()).hasValue(block);
     assertThat(fetchBlockResult.getBlobsSidecar()).isEmpty();
   }
 
