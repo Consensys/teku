@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -31,7 +32,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -73,7 +73,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   private PeerStatus status;
   private boolean disconnected = false;
 
-  private final List<PendingBlockRequest<?>> pendingRequests = new ArrayList<>();
+  private final List<PendingRequest<?, ?>> pendingRequests = new ArrayList<>();
   private Function<List<SignedBeaconBlock>, List<SignedBeaconBlock>> blockRequestFilter =
       Function.identity();
 
@@ -125,9 +125,9 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   public void completePendingRequests() {
-    final List<PendingBlockRequest<?>> requests = new ArrayList<>(pendingRequests);
+    final List<PendingRequest<?, ?>> requests = new ArrayList<>(pendingRequests);
 
-    for (PendingBlockRequest<?> request : requests) {
+    for (PendingRequest<?, ?> request : requests) {
       request.complete();
       pendingRequests.remove(request);
     }
@@ -199,15 +199,15 @@ public class RespondingEth2Peer implements Eth2Peer {
       final RpcResponseListener<SignedBeaconBlock> listener) {
     final long lastSlotExclusive = startSlot.longValue() + count.longValue();
 
-    final PendingBlockRequestHandler<Void> handler =
-        PendingBlockRequestHandler.createForBatchRequest(
+    final PendingRequestHandler<Void, SignedBeaconBlock> handler =
+        PendingRequestHandler.createForBatchBlockRequest(
             listener,
             () ->
                 chain
                     .streamBlocksAndStates(startSlot.longValue(), lastSlotExclusive + 1)
                     .map(SignedBlockAndState::getBlock)
                     .collect(Collectors.toList()));
-    return createPendingRequest(handler);
+    return createPendingBlockRequest(handler);
   }
 
   @Override
@@ -215,15 +215,23 @@ public class RespondingEth2Peer implements Eth2Peer {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<BlobsSidecar> listener) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    final long lastSlotExclusive = startSlot.longValue() + count.longValue();
+
+    final PendingRequestHandler<Void, BlobsSidecar> handler =
+        PendingRequestHandler.createForBatchBlobsSidecarRequest(
+            listener,
+            () ->
+                chain
+                    .streamBlobsSidecars(startSlot.longValue(), lastSlotExclusive + 1)
+                    .collect(Collectors.toList()));
+    return createPendingBlobsSidecarRequest(handler);
   }
 
   @Override
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener)
-      throws RpcException {
-    final PendingBlockRequestHandler<Void> handler =
-        PendingBlockRequestHandler.createForBatchRequest(
+      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener) {
+    final PendingRequestHandler<Void, SignedBeaconBlock> handler =
+        PendingRequestHandler.createForBatchBlockRequest(
             listener,
             () ->
                 blockRoots.stream()
@@ -231,7 +239,7 @@ public class RespondingEth2Peer implements Eth2Peer {
                     .flatMap(Optional::stream)
                     .collect(Collectors.toList()));
 
-    return createPendingRequest(handler);
+    return createPendingBlockRequest(handler);
   }
 
   @Override
@@ -239,38 +247,69 @@ public class RespondingEth2Peer implements Eth2Peer {
   public SafeFuture<Void> requestBlockAndBlobsSidecarByRoot(
       final List<Bytes32> blockRoots,
       final RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    final PendingRequestHandler<Void, SignedBeaconBlockAndBlobsSidecar> handler =
+        PendingRequestHandler.createForBatchBlockAndBlobsSidecarRequest(
+            listener,
+            () ->
+                blockRoots.stream()
+                    .map(this::findBlockAndBlobsSidecarByRoot)
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toList()));
+
+    return createPendingBlockAndBlobsSidecarRequest(handler);
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
-    final PendingBlockRequestHandler<Optional<SignedBeaconBlock>> handler =
-        PendingBlockRequestHandler.createForSingleBlockRequest(
+    final PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock> handler =
+        PendingRequestHandler.createForSingleBlockRequest(
             () -> Optional.ofNullable(chain.getBlockAtSlot(slot)));
 
-    return createPendingRequest(handler);
+    return createPendingBlockRequest(handler);
   }
 
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(final Bytes32 blockRoot) {
-    final PendingBlockRequestHandler<Optional<SignedBeaconBlock>> handler =
-        PendingBlockRequestHandler.createForSingleBlockRequest(() -> findBlockByRoot(blockRoot));
+    final PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock> handler =
+        PendingRequestHandler.createForSingleBlockRequest(() -> findBlockByRoot(blockRoot));
 
-    return createPendingRequest(handler);
+    return createPendingBlockRequest(handler);
   }
 
   @Override
   @SuppressWarnings("unused")
   public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
       final Bytes32 blockRoot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    final PendingRequestHandler<
+            Optional<SignedBeaconBlockAndBlobsSidecar>, SignedBeaconBlockAndBlobsSidecar>
+        handler =
+            PendingRequestHandler.createForSingleBlockAndBlobsSidecarRequest(
+                () -> findBlockAndBlobsSidecarByRoot(blockRoot));
+
+    return createPendingBlockAndBlobsSidecarRequest(handler);
   }
 
-  private <T> SafeFuture<T> createPendingRequest(PendingBlockRequestHandler<T> handler) {
-    final PendingBlockRequestHandler<T> filteredHandler =
-        PendingBlockRequestHandler.filterRequest(handler, blockRequestFilter);
-    final PendingBlockRequest<T> request = new PendingBlockRequest<>(filteredHandler);
+  private <T> SafeFuture<T> createPendingBlockRequest(
+      PendingRequestHandler<T, SignedBeaconBlock> handler) {
+    final PendingRequestHandler<T, SignedBeaconBlock> filteredHandler =
+        PendingRequestHandler.filterRequest(handler, blockRequestFilter);
+    final PendingRequest<T, SignedBeaconBlock> request = new PendingRequest<>(filteredHandler);
 
+    pendingRequests.add(request);
+    return request.getFuture();
+  }
+
+  private <T> SafeFuture<T> createPendingBlockAndBlobsSidecarRequest(
+      PendingRequestHandler<T, SignedBeaconBlockAndBlobsSidecar> handler) {
+    final PendingRequest<T, SignedBeaconBlockAndBlobsSidecar> request =
+        new PendingRequest<>(handler);
+    pendingRequests.add(request);
+    return request.getFuture();
+  }
+
+  private <T> SafeFuture<T> createPendingBlobsSidecarRequest(
+      PendingRequestHandler<T, BlobsSidecar> handler) {
+    final PendingRequest<T, BlobsSidecar> request = new PendingRequest<>(handler);
     pendingRequests.add(request);
     return request.getFuture();
   }
@@ -396,22 +435,32 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public void adjustReputation(final ReputationAdjustment adjustment) {}
 
-  private Optional<SignedBeaconBlock> findBlockByRoot(final Bytes32 root) {
-    Optional<SignedBeaconBlock> block = chain.getBlock(root);
+  private <T> Optional<T> findObjectByRoot(
+      final Bytes32 root, final BiFunction<ChainBuilder, Bytes32, Optional<T>> findMethod) {
+    Optional<T> object = findMethod.apply(chain, root);
     for (ChainBuilder fork : forks) {
-      if (block.isPresent()) {
+      if (object.isPresent()) {
         break;
       }
-      block = fork.getBlock(root);
+      object = findMethod.apply(fork, root);
     }
-    return block;
+    return object;
   }
 
-  public static class PendingBlockRequest<T> {
-    private final SafeFuture<T> future = new SafeFuture<>();
-    private final PendingBlockRequestHandler<T> requestHandler;
+  private Optional<SignedBeaconBlock> findBlockByRoot(final Bytes32 root) {
+    return findObjectByRoot(root, ChainBuilder::getBlock);
+  }
 
-    public PendingBlockRequest(final PendingBlockRequestHandler<T> requestHandler) {
+  private Optional<SignedBeaconBlockAndBlobsSidecar> findBlockAndBlobsSidecarByRoot(
+      final Bytes32 root) {
+    return findObjectByRoot(root, ChainBuilder::getBlockAndBlobsSidecar);
+  }
+
+  public static class PendingRequest<T, S> {
+    private final SafeFuture<T> future = new SafeFuture<>();
+    private final PendingRequestHandler<T, S> requestHandler;
+
+    public PendingRequest(final PendingRequestHandler<T, S> requestHandler) {
       this.requestHandler = requestHandler;
     }
 
@@ -422,8 +471,8 @@ public class RespondingEth2Peer implements Eth2Peer {
     public void complete() {
       if (!future.isDone()) {
         try {
-          List<SignedBeaconBlock> blocks = requestHandler.getBlocksToReturn();
-          requestHandler.handle(future, blocks);
+          List<S> objects = requestHandler.getObjectsToReturn();
+          requestHandler.handle(future, objects);
         } catch (Exception e) {
           future.completeExceptionally(e);
         }
@@ -436,67 +485,97 @@ public class RespondingEth2Peer implements Eth2Peer {
     }
   }
 
-  private interface PendingBlockRequestHandler<T> {
+  private interface PendingRequestHandler<T, S> {
 
-    List<SignedBeaconBlock> getBlocksToReturn();
+    List<S> getObjectsToReturn();
 
-    void handle(SafeFuture<T> responseFuture, List<SignedBeaconBlock> blocks);
+    void handle(SafeFuture<T> responseFuture, List<S> objects);
 
-    static <T> PendingBlockRequestHandler<T> filterRequest(
-        PendingBlockRequestHandler<T> originalRequest,
-        final Function<List<SignedBeaconBlock>, List<SignedBeaconBlock>> filter) {
-      return new PendingBlockRequestHandler<T>() {
+    static <T, S> PendingRequestHandler<T, S> filterRequest(
+        final PendingRequestHandler<T, S> originalRequest,
+        final Function<List<S>, List<S>> filter) {
+      return new PendingRequestHandler<>() {
+
         @Override
-        public List<SignedBeaconBlock> getBlocksToReturn() {
-          return filter.apply(originalRequest.getBlocksToReturn());
+        public List<S> getObjectsToReturn() {
+          return filter.apply(originalRequest.getObjectsToReturn());
         }
 
         @Override
-        public void handle(
-            final SafeFuture<T> responseFuture, final List<SignedBeaconBlock> blocks) {
-          originalRequest.handle(responseFuture, blocks);
-        }
-      };
-    }
-
-    static PendingBlockRequestHandler<Optional<SignedBeaconBlock>> createForSingleBlockRequest(
-        Supplier<Optional<SignedBeaconBlock>> blockSupplier) {
-      return new PendingBlockRequestHandler<Optional<SignedBeaconBlock>>() {
-        @Override
-        public List<SignedBeaconBlock> getBlocksToReturn() {
-          return blockSupplier.get().map(List::of).orElse(Collections.emptyList());
-        }
-
-        @Override
-        public void handle(
-            final SafeFuture<Optional<SignedBeaconBlock>> responseFuture,
-            final List<SignedBeaconBlock> blocks) {
-          final Optional<SignedBeaconBlock> block =
-              blocks.isEmpty() ? Optional.empty() : Optional.of(blocks.get(0));
-          responseFuture.complete(block);
+        public void handle(final SafeFuture<T> responseFuture, final List<S> objects) {
+          originalRequest.handle(responseFuture, objects);
         }
       };
     }
 
-    static PendingBlockRequestHandler<Void> createForBatchRequest(
-        final RpcResponseListener<SignedBeaconBlock> listener,
-        final Supplier<List<SignedBeaconBlock>> blocksSupplier) {
-      return new PendingBlockRequestHandler<Void>() {
+    static <T> PendingRequestHandler<Optional<T>, T> createForSingleRequest(
+        final Supplier<Optional<T>> objectSupplier) {
+      return new PendingRequestHandler<>() {
+
         @Override
-        public List<SignedBeaconBlock> getBlocksToReturn() {
-          return blocksSupplier.get();
+        public List<T> getObjectsToReturn() {
+          return objectSupplier.get().map(List::of).orElse(Collections.emptyList());
         }
 
         @Override
-        public void handle(
-            final SafeFuture<Void> responseFuture, final List<SignedBeaconBlock> blocks) {
+        public void handle(final SafeFuture<Optional<T>> responseFuture, final List<T> objects) {
+          final Optional<T> object =
+              objects.isEmpty() ? Optional.empty() : Optional.of(objects.get(0));
+          responseFuture.complete(object);
+        }
+      };
+    }
+
+    static PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock>
+        createForSingleBlockRequest(final Supplier<Optional<SignedBeaconBlock>> blockSupplier) {
+      return createForSingleRequest(blockSupplier);
+    }
+
+    static PendingRequestHandler<
+            Optional<SignedBeaconBlockAndBlobsSidecar>, SignedBeaconBlockAndBlobsSidecar>
+        createForSingleBlockAndBlobsSidecarRequest(
+            final Supplier<Optional<SignedBeaconBlockAndBlobsSidecar>>
+                blockAndBlobsSidecarSupplier) {
+      return createForSingleRequest(blockAndBlobsSidecarSupplier);
+    }
+
+    static <T> PendingRequestHandler<Void, T> createForBatchRequest(
+        final RpcResponseListener<T> listener, final Supplier<List<T>> objectsSupplier) {
+      return new PendingRequestHandler<>() {
+
+        @Override
+        public List<T> getObjectsToReturn() {
+          return objectsSupplier.get();
+        }
+
+        @Override
+        public void handle(final SafeFuture<Void> responseFuture, final List<T> objects) {
           SafeFuture<?> future = SafeFuture.COMPLETE;
-          for (SignedBeaconBlock block : blocks) {
-            future = future.thenCompose(__ -> listener.onResponse(block));
+          for (T object : objects) {
+            future = future.thenCompose(__ -> listener.onResponse(object));
           }
           future.finish(() -> responseFuture.complete(null), responseFuture::completeExceptionally);
         }
       };
+    }
+
+    static PendingRequestHandler<Void, SignedBeaconBlock> createForBatchBlockRequest(
+        final RpcResponseListener<SignedBeaconBlock> listener,
+        final Supplier<List<SignedBeaconBlock>> blocksSupplier) {
+      return createForBatchRequest(listener, blocksSupplier);
+    }
+
+    static PendingRequestHandler<Void, BlobsSidecar> createForBatchBlobsSidecarRequest(
+        final RpcResponseListener<BlobsSidecar> listener,
+        final Supplier<List<BlobsSidecar>> blobsSidecarsSupplier) {
+      return createForBatchRequest(listener, blobsSidecarsSupplier);
+    }
+
+    static PendingRequestHandler<Void, SignedBeaconBlockAndBlobsSidecar>
+        createForBatchBlockAndBlobsSidecarRequest(
+            final RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener,
+            final Supplier<List<SignedBeaconBlockAndBlobsSidecar>> blocksAndBlobsSidecarsSupplier) {
+      return createForBatchRequest(listener, blocksAndBlobsSidecarsSupplier);
     }
   }
 }
