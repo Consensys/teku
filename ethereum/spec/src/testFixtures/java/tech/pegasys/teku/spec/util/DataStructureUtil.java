@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
@@ -115,6 +116,8 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -1747,6 +1750,14 @@ public final class DataStructureUtil {
         randomSszBytes32Vector(schema.getFinalityBranchSchema(), this::randomBytes32),
         randomSyncAggregate(),
         SszUInt64.of(randomUInt64()));
+  }
+
+  public LightClientUpdateResponse randomLightClientUpdateResponse(final UInt64 slot) {
+    LightClientUpdateResponseSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientUpdateResponseSchema();
+
+    return schema.create(
+        SszUInt64.of(randomUInt64()), SszBytes4.of(randomBytes4()), randomLightClientUpdate(slot));
   }
 
   public Withdrawal randomWithdrawal() {
