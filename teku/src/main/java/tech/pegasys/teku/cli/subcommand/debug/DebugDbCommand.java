@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.subcommand.debug;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -352,6 +354,66 @@ public class DebugDbCommand implements Runnable {
       }
     }
     System.out.println("Wrote " + index + " blocks to " + outputFile.toAbsolutePath());
+    return 0;
+  }
+
+  @Command(
+      name = "dump-blobs-sidecar",
+      description = "Writes all blobs sidecars in the database as a zip of SSZ files",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int dumpBlobsSidecar(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              required = true,
+              names = {"--output", "-o"},
+              description = "File to write blobs sidecars to")
+          final Path outputFile)
+      throws Exception {
+    int index = 0;
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions);
+        final ZipOutputStream out =
+            new ZipOutputStream(
+                Files.newOutputStream(
+                    outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
+
+      try (final Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarAsSsz =
+          database.streamBlobsSidecarsAsSsz(UInt64.ZERO, UInt64.MAX_VALUE)) {
+        for (final Iterator<Map.Entry<SlotAndBlockRoot, Bytes>> iterator =
+                streamBlobsSidecarAsSsz.iterator();
+            iterator.hasNext(); ) {
+          final Map.Entry<SlotAndBlockRoot, Bytes> entryData = iterator.next();
+          out.putNextEntry(
+              new ZipEntry(
+                  entryData.getKey().getSlot() + "_" + entryData.getKey().getBlockRoot() + ".ssz"));
+          out.write(entryData.getValue().toArrayUnsafe());
+          index++;
+        }
+      }
+
+      try (final Stream<SlotAndBlockRoot> unconfirmedBlobs =
+          database.streamUnconfirmedBlobsSidecars(UInt64.ZERO, UInt64.MAX_VALUE)) {
+        out.putNextEntry(new ZipEntry("unconfirmed.txt"));
+        for (final Iterator<SlotAndBlockRoot> iterator = unconfirmedBlobs.iterator();
+            iterator.hasNext(); ) {
+          final SlotAndBlockRoot entryData = iterator.next();
+          out.write(entryData.toLogString().getBytes(StandardCharsets.UTF_8));
+          if (iterator.hasNext()) {
+            out.write("\n".getBytes(StandardCharsets.UTF_8));
+          }
+          index++;
+        }
+      }
+    }
+    System.out.println("Wrote " + index + " blobs sidecars to " + outputFile.toAbsolutePath());
     return 0;
   }
 
