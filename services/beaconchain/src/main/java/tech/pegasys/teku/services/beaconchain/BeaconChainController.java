@@ -286,9 +286,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     syncService
         .getRecentBlockFetcher()
         .subscribeBlockFetched(
-            (block) ->
+            (block, blobsSidecar) ->
                 blockManager
-                    .importBlock(block, Optional.empty())
+                    .importBlock(block, blobsSidecar)
                     .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->
@@ -999,7 +999,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initSyncService() {
     LOG.debug("BeaconChainController.initSyncService()");
-    syncService = createSyncServiceFactory().create();
+    syncService = createSyncServiceFactory().create(eventChannels);
 
     // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);

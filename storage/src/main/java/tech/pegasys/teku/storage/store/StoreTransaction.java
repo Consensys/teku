@@ -334,7 +334,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   @Override
   public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> retrieveSignedBlockAndBlobsSidecar(
       Bytes32 blockRoot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return store.retrieveSignedBlockAndBlobsSidecar(blockRoot);
   }
 
   @Override

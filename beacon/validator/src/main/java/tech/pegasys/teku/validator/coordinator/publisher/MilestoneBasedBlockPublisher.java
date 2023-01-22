@@ -47,7 +47,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
         new BlockPublisherPhase0(
             blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
 
-    // Not needed for all networks
+    // Not needed for all milestones
     final Supplier<BlockPublisherEip4844> blockAndBlobsSidecarPublisherSupplier =
         Suppliers.memoize(
             () ->
@@ -62,15 +62,11 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
-              if (forkAndSpecMilestone
-                  .getSpecMilestone()
-                  .isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
-                registeredPublishers.put(
-                    forkAndSpecMilestone.getSpecMilestone(),
-                    blockAndBlobsSidecarPublisherSupplier.get());
+              final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+                registeredPublishers.put(milestone, blockAndBlobsSidecarPublisherSupplier.get());
               } else {
-                registeredPublishers.put(
-                    forkAndSpecMilestone.getSpecMilestone(), blockPublisherPhase0);
+                registeredPublishers.put(milestone, blockPublisherPhase0);
               }
             });
   }
@@ -78,7 +74,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
-    SpecMilestone blockMilestone = spec.atSlot(maybeBlindedBlock.getSlot()).getMilestone();
+    final SpecMilestone blockMilestone = spec.atSlot(maybeBlindedBlock.getSlot()).getMilestone();
     return registeredPublishers.get(blockMilestone).sendSignedBlock(maybeBlindedBlock);
   }
 }

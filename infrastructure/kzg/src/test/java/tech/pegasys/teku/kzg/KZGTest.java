@@ -95,7 +95,7 @@ public final class KZGTest {
                 KZGException.class,
                 () ->
                     kzg.verifyAggregateKzgProof(
-                        Collections.emptyList(), Collections.emptyList(), KZGProof.infinity())),
+                        Collections.emptyList(), Collections.emptyList(), KZGProof.INFINITY)),
             assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY)),
             assertThrows(
                 KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList())));

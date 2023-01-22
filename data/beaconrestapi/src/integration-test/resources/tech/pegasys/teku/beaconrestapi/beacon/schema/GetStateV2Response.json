@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "eip4844" ]
     },
     "execution_optimistic" : {
       "type" : "boolean"
@@ -24,6 +24,8 @@
         "$ref" : "#/components/schemas/BeaconStateBellatrix"
       }, {
         "$ref" : "#/components/schemas/BeaconStateCapella"
+      }, {
+        "$ref" : "#/components/schemas/BeaconStateEip4844"
       } ]
     }
   }

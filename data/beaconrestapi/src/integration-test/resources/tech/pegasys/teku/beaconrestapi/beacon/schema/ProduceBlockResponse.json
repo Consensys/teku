@@ -14,6 +14,8 @@
         "$ref" : "#/components/schemas/BeaconBlockBellatrix"
       }, {
         "$ref" : "#/components/schemas/BeaconBlockCapella"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockEip4844"
       }  ]
     }
   }
