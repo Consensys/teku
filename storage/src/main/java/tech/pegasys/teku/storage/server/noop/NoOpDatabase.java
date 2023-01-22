@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -274,7 +275,13 @@ public class NoOpDatabase implements Database {
   public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
-  public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
+  public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarsAsSsz(
+      final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
   }
 
@@ -294,13 +301,13 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(
       final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
   }
 
   @Override
-  public boolean pruneOldestUnconfirmedBlobsSidecar(
+  public boolean pruneOldestUnconfirmedBlobsSidecars(
       final UInt64 lastSlotToPrune, final int pruneLimit) {
     return false;
   }
