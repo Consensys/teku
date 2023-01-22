@@ -250,7 +250,7 @@ public class DatabaseTest {
     assertBlobsStream(blobsSidecar1, blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune unconfirmed with limit to 1
-    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(UInt64.MAX_VALUE, 1)).isTrue();
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecars(UInt64.MAX_VALUE, 1)).isTrue();
     assertUnconfirmedBlobsStream(
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
@@ -259,7 +259,7 @@ public class DatabaseTest {
     assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune unconfirmed up to slot 1 (nothing will be pruned)
-    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(ONE, 10)).isFalse();
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecars(ONE, 10)).isFalse();
     assertUnconfirmedBlobsStream(
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2),
         blobsSidecarToSlotAndBlockRoot(blobsSidecar2bis),
@@ -268,7 +268,7 @@ public class DatabaseTest {
     assertBlobsStream(blobsSidecar2, blobsSidecar2bis, blobsSidecar3, blobsSidecar4);
 
     // let's prune all unconfirmed
-    assertThat(database.pruneOldestUnconfirmedBlobsSidecar(UInt64.valueOf(3), 10)).isFalse();
+    assertThat(database.pruneOldestUnconfirmedBlobsSidecars(UInt64.valueOf(3), 10)).isFalse();
     assertUnconfirmedBlobsStream();
     // we have blobsSidecar4
     assertBlobsStream(blobsSidecar4);
@@ -2275,7 +2275,7 @@ public class DatabaseTest {
   private void assertUnconfirmedBlobsStream(
       UInt64 startSlot, UInt64 endSlot, SlotAndBlockRoot... slotAndBlockRoots) {
     try (Stream<SlotAndBlockRoot> blobsSidecarStream =
-        database.streamUnconfirmedBlobsSidecar(startSlot, endSlot)) {
+        database.streamUnconfirmedBlobsSidecars(startSlot, endSlot)) {
       final List<SlotAndBlockRoot> allSlotAndBlockRoots = blobsSidecarStream.collect(toList());
       assertThat(allSlotAndBlockRoots).containsExactly(slotAndBlockRoots);
     }
@@ -2287,7 +2287,7 @@ public class DatabaseTest {
 
   private void assertBlobsStream(UInt64 startSlot, UInt64 endSlot, BlobsSidecar... blobsSidecars) {
     try (Stream<BlobsSidecar> blobsSidecarStream =
-        database.streamBlobsSidecar(startSlot, endSlot)) {
+        database.streamBlobsSidecars(startSlot, endSlot)) {
       final List<BlobsSidecar> allBlobs = blobsSidecarStream.collect(toList());
       assertThat(allBlobs).containsExactly(blobsSidecars);
     }

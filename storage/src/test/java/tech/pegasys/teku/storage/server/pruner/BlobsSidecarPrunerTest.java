@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.Database;
 
-public class BlobsPrunerTest {
+public class BlobsSidecarPrunerTest {
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(5);
   public static final int PRUNE_LIMIT = 10;
 
@@ -48,8 +48,9 @@ public class BlobsPrunerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
 
-  private final BlobsPruner blobsPruner =
-      new BlobsPruner(spec, database, asyncRunner, timeProvider, PRUNE_INTERVAL, PRUNE_LIMIT);
+  private final BlobsSidecarPruner blobsPruner =
+      new BlobsSidecarPruner(
+          spec, database, asyncRunner, timeProvider, PRUNE_INTERVAL, PRUNE_LIMIT);
 
   @BeforeEach
   void setUp() {
@@ -95,7 +96,7 @@ public class BlobsPrunerTest {
   void shouldNotPruneUnconfirmedBlobsWithoutFinalizedCheckpoint() {
     asyncRunner.executeDueActions();
 
-    verify(database, never()).pruneOldestUnconfirmedBlobsSidecar(any(), anyInt());
+    verify(database, never()).pruneOldestUnconfirmedBlobsSidecars(any(), anyInt());
   }
 
   @Test
@@ -106,12 +107,12 @@ public class BlobsPrunerTest {
     final UInt64 expectedLastSlotToPrune =
         UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerEpoch());
 
-    verify(database).pruneOldestUnconfirmedBlobsSidecar(expectedLastSlotToPrune, PRUNE_LIMIT);
+    verify(database).pruneOldestUnconfirmedBlobsSidecars(expectedLastSlotToPrune, PRUNE_LIMIT);
 
     timeProvider.advanceTimeBy(PRUNE_INTERVAL);
     asyncRunner.executeDueActions();
 
     verify(database, times(1))
-        .pruneOldestUnconfirmedBlobsSidecar(expectedLastSlotToPrune, PRUNE_LIMIT);
+        .pruneOldestUnconfirmedBlobsSidecars(expectedLastSlotToPrune, PRUNE_LIMIT);
   }
 }

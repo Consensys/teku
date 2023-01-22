@@ -738,10 +738,10 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public boolean pruneOldestUnconfirmedBlobsSidecar(
+  public boolean pruneOldestUnconfirmedBlobsSidecars(
       final UInt64 lastSlotToPrune, final int pruneLimit) {
     try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
-            streamUnconfirmedBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
+            streamUnconfirmedBlobsSidecars(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
       final long pruned =
           prunableUnconfirmed
@@ -760,13 +760,20 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   @Override
-  public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
+  public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobsSidecar(startSlot, endSlot)
         .map(
             slotAndBlockRootBytesEntry ->
                 spec.deserializeBlobsSidecar(
                     slotAndBlockRootBytesEntry.getValue(),
                     slotAndBlockRootBytesEntry.getKey().getSlot()));
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarsAsSsz(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamBlobsSidecar(startSlot, endSlot);
   }
 
   @MustBeClosed
@@ -778,7 +785,7 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   @Override
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
   }

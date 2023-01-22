@@ -33,7 +33,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
-public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
+public class BlobsSidecarPruner extends Service implements FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -49,7 +49,7 @@ public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
   private AtomicReference<Optional<UInt64>> latestFinalizedSlot =
       new AtomicReference<>(Optional.empty());
 
-  public BlobsPruner(
+  public BlobsSidecarPruner(
       final Spec spec,
       final Database database,
       final AsyncRunner asyncRunner,
@@ -102,7 +102,7 @@ public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
     try {
       final long start = System.currentTimeMillis();
       final boolean limitReached =
-          database.pruneOldestUnconfirmedBlobsSidecar(maybeLatestFinalizedSlot.get(), pruneLimit);
+          database.pruneOldestUnconfirmedBlobsSidecars(maybeLatestFinalizedSlot.get(), pruneLimit);
       LOG.debug(
           "Unconfirmed blobs pruning finished in {} ms. Limit reached: {}",
           () -> System.currentTimeMillis() - start,
