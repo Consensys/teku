@@ -37,7 +37,8 @@ public interface BlobsSidecarAvailabilityChecker {
         }
 
         @Override
-        public SafeFuture<BlobsSidecarAndValidationResult> validate(BlobsSidecar blobsSidecar) {
+        public SafeFuture<BlobsSidecarAndValidationResult> validate(
+            final BlobsSidecar blobsSidecar) {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
       };
