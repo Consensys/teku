@@ -18,7 +18,7 @@ import ethereum.ckzg4844.CKZG4844JNI.Preset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -73,7 +73,7 @@ public final class CKZG4844 implements KZG {
                         fieldElementsPerBlob)));
   }
 
-  private final AtomicReference<String> loadedTrustedSetup = new AtomicReference<>();
+  private Optional<String> loadedTrustedSetup = Optional.empty();
 
   private CKZG4844(final Preset preset) {
     try {
@@ -85,15 +85,15 @@ public final class CKZG4844 implements KZG {
   }
 
   @Override
-  public void loadTrustedSetup(final String trustedSetup) throws KZGException {
-    if (Objects.equals(loadedTrustedSetup.get(), trustedSetup)) {
+  public synchronized void loadTrustedSetup(final String trustedSetup) throws KZGException {
+    if (loadedTrustedSetup.isPresent() && Objects.equals(loadedTrustedSetup.get(), trustedSetup)) {
       LOG.trace("Trusted setup {} is already loaded.", trustedSetup);
       return;
     }
     try {
       final String file = CKZG4844Utils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
       CKZG4844JNI.loadTrustedSetup(file);
-      loadedTrustedSetup.set(trustedSetup);
+      loadedTrustedSetup = Optional.of(trustedSetup);
       LOG.debug("Loaded trusted setup from {}", file);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load trusted setup from " + trustedSetup, ex);
@@ -101,10 +101,11 @@ public final class CKZG4844 implements KZG {
   }
 
   @Override
-  public void freeTrustedSetup() throws KZGException {
-    loadedTrustedSetup.set(null);
+  public synchronized void freeTrustedSetup() throws KZGException {
     try {
       CKZG4844JNI.freeTrustedSetup();
+      loadedTrustedSetup = Optional.empty();
+      LOG.debug("Trusted setup was freed");
     } catch (final Exception ex) {
       throw new KZGException("Failed to free trusted setup", ex);
     }
