@@ -20,7 +20,6 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -63,13 +62,24 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
     return validationResult.orElse(NOT_REQUIRED_RESULT_FUTURE);
   }
 
+  @Override
+  public SafeFuture<BlobsSidecarAndValidationResult> validate(final BlobsSidecar blobsSidecar) {
+    return SafeFuture.of(
+        () -> {
+          if (!isBlockInDataAvailabilityWindow()) {
+            return BlobsSidecarAndValidationResult.NOT_REQUIRED;
+          }
+          return validateBlobsSidecar(blobsSidecar);
+        });
+  }
+
   private BlobsSidecarAndValidationResult validateBlobsSidecar(
       final Optional<BlobsSidecar> blobsSidecar) {
 
     // in the current 4844 specs, the blobsSidecar is immediately available with the block
     // so if we have it we do want to validate it regardless
     if (blobsSidecar.isPresent()) {
-      return validate(blobsSidecar.get());
+      return validateBlobsSidecar(blobsSidecar.get());
     }
 
     // when blobs are not available, we check if it is ok to not have them based on
@@ -82,14 +92,13 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
     return BlobsSidecarAndValidationResult.NOT_REQUIRED;
   }
 
-  private BlobsSidecarAndValidationResult validate(final BlobsSidecar blobsSidecar) {
+  private BlobsSidecarAndValidationResult validateBlobsSidecar(final BlobsSidecar blobsSidecar) {
     final BeaconBlockBodyEip4844 blockBody =
         block
             .getBeaconBlock()
             .map(BeaconBlock::getBody)
             .flatMap(BeaconBlockBody::toVersionEip4844)
             .orElseThrow();
-
     try {
       if (!specVersion
           .miscHelpers()
@@ -102,7 +111,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
               blobsSidecar)) {
         return BlobsSidecarAndValidationResult.invalidResult(blobsSidecar);
       }
-    } catch (KZGException ex) {
+    } catch (final Exception ex) {
       return BlobsSidecarAndValidationResult.invalidResult(blobsSidecar, ex);
     }
 
