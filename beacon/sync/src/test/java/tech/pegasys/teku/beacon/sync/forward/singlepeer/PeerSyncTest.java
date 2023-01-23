@@ -130,7 +130,8 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_failedImport_failedBlobsAvailabilityChecks() {
     when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(true);
-    testFailedBlockImport(() -> BlockImportResult.FAILED_BLOBS_AVAILABILITY_CHECK, true, true);
+    testFailedBlockImport(
+        () -> BlockImportResult.failedBlobsAvailabilityCheck(Optional.empty()), true, true);
   }
 
   void testFailedBlockImport(
