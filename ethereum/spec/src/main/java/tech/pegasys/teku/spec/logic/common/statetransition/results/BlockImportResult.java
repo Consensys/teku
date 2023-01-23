@@ -80,14 +80,10 @@ public interface BlockImportResult {
 
   boolean isSuccessful();
 
-  /**
-   * @return If successful, returns a {@code SignedBeaconBlock}, otherwise returns null.
-   */
+  /** @return If successful, returns a {@code SignedBeaconBlock}, otherwise returns null. */
   SignedBeaconBlock getBlock();
 
-  /**
-   * @return If failed, returns a non-null failure reason, otherwise returns null.
-   */
+  /** @return If failed, returns a non-null failure reason, otherwise returns null. */
   FailureReason getFailureReason();
 
   /**
