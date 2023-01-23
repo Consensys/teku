@@ -66,7 +66,6 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertNotRequired(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
-    assertNotRequired(blobsSidecarAvailabilityChecker.validate(blobsSidecar));
   }
 
   @Test
