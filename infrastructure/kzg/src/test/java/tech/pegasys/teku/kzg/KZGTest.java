@@ -75,9 +75,16 @@ public final class KZGTest {
   }
 
   @Test
-  public void testKzgLoadTrustedSetupTwice_shouldThrowException() {
+  public void testKzgLoadSameTrustedSetupTwice_shouldNotThrowException() {
     loadTrustedSetup();
-    assertThrows(KZGException.class, this::loadTrustedSetup);
+    loadTrustedSetup();
+  }
+
+  @Test
+  public void testKzLoadDifferentTrustedSetupTwice_shouldThrowException() {
+    loadTrustedSetup();
+    assertThrows(
+        KZGException.class, () -> kzg.loadTrustedSetup("mainnet/trusted_setup-not-existing.txt"));
   }
 
   @Test
