@@ -17,7 +17,6 @@ import ethereum.ckzg4844.CKZG4844JNI;
 import ethereum.ckzg4844.CKZG4844JNI.Preset;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -86,7 +85,7 @@ public final class CKZG4844 implements KZG {
 
   @Override
   public synchronized void loadTrustedSetup(final String trustedSetup) throws KZGException {
-    if (loadedTrustedSetup.isPresent() && Objects.equals(loadedTrustedSetup.get(), trustedSetup)) {
+    if (loadedTrustedSetup.isPresent() && loadedTrustedSetup.get().equals(trustedSetup)) {
       LOG.trace("Trusted setup {} is already loaded.", trustedSetup);
       return;
     }
