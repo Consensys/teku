@@ -267,14 +267,20 @@ public class HistoricalBatchFetcher {
   private SafeFuture<Void> importBatch() {
     final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
 
+    // send to signature and blobs sidecars verification then store blobs sidecars and blocks if all
+    // pass, or if one fails we reject the entire response
     return batchVerifyHistoricalBlockSignatures(blocksToImport)
+        .thenCompose(__ -> validateBlobsSidecars(blocksToImport, blobsSidecarsBySlotToImport))
         .thenCompose(
-            __ -> validateAndImportBlobsSidecars(blocksToImport, blobsSidecarsBySlotToImport))
+            __ -> {
+              final Stream<SafeFuture<?>> blobsSidecarsImporting =
+                  blobsSidecarsBySlotToImport.values().stream()
+                      .map(storageUpdateChannel::onBlobsSidecar);
+              return SafeFuture.allOfFailFast(blobsSidecarsImporting);
+            })
         .thenCompose(
             __ ->
                 storageUpdateChannel
-                    // send to signature verification then store
-                    // all pass, or if one fails we reject the entire response
                     .onFinalizedBlocks(blocksToImport)
                     .thenRun(
                         () -> {
@@ -333,7 +339,7 @@ public class HistoricalBatchFetcher {
             });
   }
 
-  private SafeFuture<Void> validateAndImportBlobsSidecars(
+  private SafeFuture<Void> validateBlobsSidecars(
       final Collection<SignedBeaconBlock> blocks,
       final Map<UInt64, BlobsSidecar> blobsSidecarsBySlot) {
     final Stream<SafeFuture<?>> validatingAndImportingBlobsSidecars =
@@ -353,23 +359,20 @@ public class HistoricalBatchFetcher {
 
                   return availabilityChecker
                       .validate(blobsSidecar)
-                      .thenCompose(
+                      .thenAccept(
                           blobsSidecarAndValidationResult -> {
                             if (blobsSidecarAndValidationResult.isFailure()) {
-                              return SafeFuture.failedFuture(
-                                  new IllegalStateException(
-                                      String.format(
-                                          "Blobs sidecar for slot %s received from peer %s has failed the validation check: %s",
-                                          slot,
-                                          peer.getId(),
-                                          blobsSidecarAndValidationResult.getValidationResult())));
+                              throw new IllegalStateException(
+                                  String.format(
+                                      "Blobs sidecar for slot %s received from peer %s has failed the validation check: %s",
+                                      slot,
+                                      peer.getId(),
+                                      blobsSidecarAndValidationResult.getValidationResult()));
                             }
-                            LOG.trace("Importing blobs sidecar for slot {}", slot);
-                            return storageUpdateChannel.onBlobsSidecar(blobsSidecar);
                           });
                 });
 
-    return SafeFuture.allOf(validatingAndImportingBlobsSidecars);
+    return SafeFuture.allOfFailFast(validatingAndImportingBlobsSidecars);
   }
 
   private SafeFuture<Void> handleNotReceivedBlobsSidecar(final UInt64 slot) {

@@ -61,8 +61,9 @@ public class FetchBlockTask {
   }
 
   /**
-   * Selects random {@link Eth2Peer} from the network and fetches a block by root. It also tracks
-   * the number of runs and the already queried peers.
+   * Selects random {@link Eth2Peer} from the network and fetches a block by root using the
+   * implementation of {@link #fetchBlock(Eth2Peer)}. It also tracks the number of runs and the
+   * already queried peers.
    */
   public SafeFuture<FetchBlockResult> run() {
     if (cancelled.get()) {
