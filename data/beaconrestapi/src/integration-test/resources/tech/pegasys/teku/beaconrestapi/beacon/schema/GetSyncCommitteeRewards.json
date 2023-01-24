@@ -1,0 +1,34 @@
+{
+  "title" : "GetSyncCommitteeRewards",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "type" : "object",
+        "required" : [ "validator_index", "reward" ],
+        "properties" : {
+          "validator_index" : {
+            "type" : "string",
+            "description" : "integer string",
+            "example" : "1",
+            "format" : "integer"
+          },
+          "reward" : {
+            "type" : "string",
+            "description" : "unsigned 64 bit integer",
+            "example" : "1",
+            "format" : "uint64"
+          }
+        }
+      }
+    }
+  }
+}
