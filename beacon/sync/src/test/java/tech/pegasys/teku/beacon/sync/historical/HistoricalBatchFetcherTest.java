@@ -17,9 +17,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.Collection;
@@ -29,9 +32,11 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockAndBlobsSidecarTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
@@ -42,9 +47,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -63,6 +70,9 @@ public class HistoricalBatchFetcherTest {
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Eth2Peer> eth2Network = mock(P2PNetwork.class);
 
+  private final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
+      mock(BlobsSidecarAvailabilityChecker.class);
+
   private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private ChainBuilder forkBuilder;
 
@@ -72,10 +82,14 @@ public class HistoricalBatchFetcherTest {
   private final ArgumentCaptor<Collection<SignedBeaconBlock>> blockCaptor =
       ArgumentCaptor.forClass(Collection.class);
 
+  private final ArgumentCaptor<BlobsSidecar> blobsSidecarCaptor =
+      ArgumentCaptor.forClass(BlobsSidecar.class);
+
   private CombinedChainDataClient chainDataClient;
 
   private final int maxRequests = 5;
   private List<SignedBeaconBlock> blockBatch;
+  private List<BlobsSidecar> blobsSidecarBatch;
   private SignedBeaconBlock firstBlockInBatch;
   private SignedBeaconBlock lastBlockInBatch;
   private HistoricalBatchFetcher fetcher;
@@ -85,6 +99,7 @@ public class HistoricalBatchFetcherTest {
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
     when(storageUpdateChannel.onFinalizedBlocks(any())).thenReturn(SafeFuture.COMPLETE);
+    when(storageUpdateChannel.onBlobsSidecar(any())).thenReturn(SafeFuture.COMPLETE);
 
     // Set up main chain and fork chain
     chainBuilder.generateGenesis();
@@ -99,6 +114,7 @@ public class HistoricalBatchFetcherTest {
             .streamBlocksAndStates(10, 20)
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
+    blobsSidecarBatch = chainBuilder.streamBlobsSidecars(10, 20).collect(Collectors.toList());
     lastBlockInBatch = chainBuilder.getLatestBlockAndState().getBlock();
     firstBlockInBatch = blockBatch.get(0);
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
@@ -120,12 +136,7 @@ public class HistoricalBatchFetcherTest {
             fetchBlockTaskFactory,
             blobsSidecarManager);
 
-    // pre EIP-4844 stubbing/mocking
-    when(fetchBlockTaskFactory.create(any(), any()))
-        .thenAnswer(i -> new FetchBlockTask(eth2Network, i.getArgument(1)));
-    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(false);
-    when(blobsSidecarManager.createAvailabilityChecker(any()))
-        .thenReturn(BlobsSidecarAvailabilityChecker.NOT_REQUIRED);
+    mockBlockAndBlobsSidecarsRelatedMethods(false);
 
     when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
@@ -154,6 +165,70 @@ public class HistoricalBatchFetcherTest {
 
     verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
+  }
+
+  @Test
+  public void run_returnAllBlocksAndBlobsSidecarsOnFirstRequest() {
+    mockBlockAndBlobsSidecarsRelatedMethods(true);
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(2);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    assertThat(future).isCompletedWithValue(firstBlockInBatch);
+
+    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture());
+    verify(storageUpdateChannel, atLeastOnce()).onBlobsSidecar(blobsSidecarCaptor.capture());
+    assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
+    assertThat(blobsSidecarCaptor.getAllValues()).containsAll(blobsSidecarBatch);
+  }
+
+  @Test
+  public void run_failingOnBlobsSidecarValidation() {
+    mockBlockAndBlobsSidecarsRelatedMethods(true);
+
+    doAnswer(
+            i ->
+                SafeFuture.completedFuture(
+                    BlobsSidecarAndValidationResult.invalidResult(
+                        i.getArgument(0), new IllegalStateException("oopsy"))))
+        .when(blobsSidecarAvailabilityChecker)
+        .validate(any());
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(2);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+
+    SafeFutureAssert.assertThatSafeFuture(future)
+        .isCompletedExceptionallyWithMessage(
+            String.format(
+                "Blobs sidecar for slot 10 received from peer %s has failed the validation check: INVALID",
+                peer.getId()));
+
+    verifyNoInteractions(storageUpdateChannel);
+  }
+
+  @Test
+  public void run_failingOnBlobsSidecarNotReceived() {
+    mockBlockAndBlobsSidecarsRelatedMethods(true);
+
+    // discarding blobs sidecar for slot 10
+    chainBuilder.discardBlobsSidecar(UInt64.valueOf(10));
+
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    peer.completePendingRequests();
+
+    SafeFutureAssert.assertThatSafeFuture(future)
+        .isCompletedExceptionallyWithMessage(
+            "Blobs sidecar for slot 10 was not received from peer " + peer.getId());
+
+    verifyNoInteractions(storageUpdateChannel);
   }
 
   @Test
@@ -411,5 +486,27 @@ public class HistoricalBatchFetcherTest {
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Expected first block to descend from last received block");
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any());
+  }
+
+  private void mockBlockAndBlobsSidecarsRelatedMethods(final boolean eip4844) {
+    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(eip4844);
+    if (eip4844) {
+      when(fetchBlockTaskFactory.create(any(), any()))
+          .thenAnswer(i -> new FetchBlockAndBlobsSidecarTask(eth2Network, i.getArgument(1)));
+      when(blobsSidecarManager.createAvailabilityChecker(any()))
+          .thenReturn(blobsSidecarAvailabilityChecker);
+      // make all blobs sidecars valid
+      doAnswer(
+              i ->
+                  SafeFuture.completedFuture(
+                      BlobsSidecarAndValidationResult.validResult(i.getArgument(0))))
+          .when(blobsSidecarAvailabilityChecker)
+          .validate(any());
+    } else {
+      when(fetchBlockTaskFactory.create(any(), any()))
+          .thenAnswer(i -> new FetchBlockTask(eth2Network, i.getArgument(1)));
+      when(blobsSidecarManager.createAvailabilityChecker(any()))
+          .thenReturn(BlobsSidecarAvailabilityChecker.NOT_REQUIRED);
+    }
   }
 }
