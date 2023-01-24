@@ -267,8 +267,8 @@ public class HistoricalBatchFetcher {
   private SafeFuture<Void> importBatch() {
     final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
 
-    // send to signature and blobs sidecars verification then store blobs sidecars and blocks if all
-    // pass, or if one fails we reject the entire response
+    // send to signature verification and blobs sidecars validation and only store blocks and blobs
+    // sidecars if all checks pass, or if one fails we reject the entire response
     return batchVerifyHistoricalBlockSignatures(blocksToImport)
         .thenCompose(__ -> validateBlobsSidecars(blocksToImport, blobsSidecarsBySlotToImport))
         .thenCompose(
