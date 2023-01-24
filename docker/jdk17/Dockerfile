@@ -9,7 +9,7 @@ RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/
          --compress=2 \
          --output /javaruntime
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
