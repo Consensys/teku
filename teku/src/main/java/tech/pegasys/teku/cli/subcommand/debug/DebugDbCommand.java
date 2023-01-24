@@ -359,7 +359,7 @@ public class DebugDbCommand implements Runnable {
 
   @Command(
       name = "dump-blobs-sidecar",
-      description = "Writes all non-finalized blocks in the database as a zip of SSZ files",
+      description = "Writes all blobs sidecars in the database as a zip of SSZ files",
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
@@ -375,7 +375,7 @@ public class DebugDbCommand implements Runnable {
       @Option(
               required = true,
               names = {"--output", "-o"},
-              description = "File to write blocks to")
+              description = "File to write blobs sidecars to")
           final Path outputFile)
       throws Exception {
     int index = 0;
