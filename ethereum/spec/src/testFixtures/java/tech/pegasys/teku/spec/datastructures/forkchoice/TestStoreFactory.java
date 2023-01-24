@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -70,6 +71,7 @@ public class TestStoreFactory {
         new HashMap<>(),
         new HashMap<>(),
         new HashMap<>(),
+        new HashMap<>(),
         new HashMap<>());
   }
 
@@ -87,6 +89,7 @@ public class TestStoreFactory {
     final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
 
     Map<Bytes32, SignedBeaconBlock> blocks = new HashMap<>();
+    Map<Bytes32, BlobsSidecar> blobsSidecars = new HashMap<>();
     Map<Bytes32, BlockCheckpoints> blockCheckpoints = new HashMap<>();
     Map<Bytes32, BeaconState> blockStates = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
@@ -110,6 +113,7 @@ public class TestStoreFactory {
         anchorCheckpoint,
         blocks,
         blockStates,
+        blobsSidecars,
         blockCheckpoints,
         checkpointStates,
         votes);

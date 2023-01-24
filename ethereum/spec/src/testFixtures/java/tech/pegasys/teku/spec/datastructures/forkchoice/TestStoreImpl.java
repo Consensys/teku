@@ -32,12 +32,16 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class TestStoreImpl implements MutableStore, VoteUpdater {
   private final Spec spec;
@@ -49,12 +53,18 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Checkpoint bestJustifiedCheckpoint;
   protected Map<Bytes32, SignedBeaconBlock> blocks;
   protected Map<Bytes32, BeaconState> blockStates;
+  protected Map<Bytes32, BlobsSidecar> blobsSidecars;
   protected Map<Bytes32, BlockCheckpoints> blockCheckpoints;
   protected Map<Checkpoint, BeaconState> checkpointStates;
   protected Map<UInt64, VoteTracker> votes;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
+
+  private final DataStructureUtil dataStructureUtil;
+
+  private Optional<SignedBeaconBlockAndBlobsSidecarSchema>
+      maybeSignedBeaconBlockAndBlobsSidecarSchema = Optional.empty();
 
   TestStoreImpl(
       final Spec spec,
@@ -66,6 +76,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final Map<Bytes32, BeaconState> blockStates,
+      final Map<Bytes32, BlobsSidecar> blobsSidecars,
       final Map<Bytes32, BlockCheckpoints> blockCheckpoints,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UInt64, VoteTracker> votes) {
@@ -78,9 +89,20 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
     this.blockStates = blockStates;
+    this.blobsSidecars = blobsSidecars;
     this.blockCheckpoints = blockCheckpoints;
     this.checkpointStates = checkpointStates;
     this.votes = votes;
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    final SchemaDefinitions schemaDefinitions =
+        dataStructureUtil.getSpec().getGenesisSchemaDefinitions();
+    schemaDefinitions
+        .toVersionEip4844()
+        .ifPresent(
+            schemaDefinitionsEip4844 ->
+                this.maybeSignedBeaconBlockAndBlobsSidecarSchema =
+                    Optional.of(
+                        schemaDefinitionsEip4844.getSignedBeaconBlockAndBlobsSidecarSchema()));
   }
 
   // Readonly methods
@@ -154,6 +176,23 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return Optional.of(new SignedBlockAndState(block, state));
   }
 
+  private Optional<SignedBeaconBlockAndBlobsSidecar> getSignedBlockAndBlobsSidecar(
+      final Bytes32 blockRoot) {
+
+    if (maybeSignedBeaconBlockAndBlobsSidecarSchema.isEmpty()) {
+      throw new UnsupportedOperationException(
+          "Eip4844 milestone not reached to retrieve BlobsSidecars");
+    }
+
+    final SignedBeaconBlock block = getSignedBlock(blockRoot);
+    final BlobsSidecar blobsSidecar = getBlobsSidecar(blockRoot);
+    if (block == null || blobsSidecar == null) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        maybeSignedBeaconBlockAndBlobsSidecarSchema.get().create(block, blobsSidecar));
+  }
+
   @Override
   public boolean containsBlock(final Bytes32 blockRoot) {
     return blocks.containsKey(blockRoot);
@@ -169,6 +208,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   private BeaconState getBlockState(final Bytes32 blockRoot) {
     return blockStates.get(blockRoot);
+  }
+
+  private BlobsSidecar getBlobsSidecar(final Bytes32 blockRoot) {
+    return blobsSidecars.get(blockRoot);
   }
 
   private Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
@@ -199,7 +242,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   @Override
   public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> retrieveSignedBlockAndBlobsSidecar(
       Bytes32 blockRoot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return SafeFuture.completedFuture(getSignedBlockAndBlobsSidecar(blockRoot));
   }
 
   @Override
