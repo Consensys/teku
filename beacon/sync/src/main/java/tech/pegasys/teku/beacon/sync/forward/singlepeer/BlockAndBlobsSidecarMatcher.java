@@ -22,7 +22,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
@@ -74,9 +73,12 @@ public class BlockAndBlobsSidecarMatcher {
 
   private boolean isSidecarRequired(final SignedBeaconBlock block, final UInt64 slot) {
     final boolean blockHasEmptyKzgCommitments =
-        BeaconBlockBodyEip4844.required(block.getMessage().getBody())
-            .getBlobKzgCommitments()
-            .isEmpty();
+        block
+            .getMessage()
+            .getBody()
+            .toVersionEip4844()
+            .map(beaconBlockBodyEip4844 -> beaconBlockBodyEip4844.getBlobKzgCommitments().isEmpty())
+            .orElse(true);
 
     return !blockHasEmptyKzgCommitments
         && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot);
