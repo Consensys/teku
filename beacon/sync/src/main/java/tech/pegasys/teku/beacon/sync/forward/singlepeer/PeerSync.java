@@ -191,16 +191,23 @@ public class PeerSync {
               final RpcResponseListener<SignedBeaconBlock> blockListener;
               final SafeFuture<Void> blobsSidecarsRequest;
 
+              final UInt64 lastSlot = startSlot.plus(count).decrement();
+
               if (blobsSidecarsRequired) {
                 blockListener = blockAndBlobsSidecarMatcher::recordBlock;
+                final UInt64 blobsSidecarStartSlot = getFirstSlotInEip4844(startSlot, count);
+                final UInt64 blobsSidecarCount =
+                    lastSlot.minusMinZero(blobsSidecarStartSlot).plus(1);
                 LOG.debug(
                     "Request {} blobs sidecars starting at {} from peer {}",
-                    count,
-                    ancestorStartSlot,
+                    blobsSidecarCount,
+                    blobsSidecarStartSlot,
                     peer.getId());
                 blobsSidecarsRequest =
                     peer.requestBlobsSidecarsByRange(
-                        ancestorStartSlot, count, blockAndBlobsSidecarMatcher::recordBlobsSidecar);
+                        blobsSidecarStartSlot,
+                        blobsSidecarCount,
+                        blockAndBlobsSidecarMatcher::recordBlobsSidecar);
               } else {
                 blockListener = this::importBlock;
                 blobsSidecarsRequest = SafeFuture.COMPLETE;
@@ -246,6 +253,14 @@ public class PeerSync {
               return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest(), false);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, status, err));
+  }
+
+  // TODO: refactor very ugly
+  private UInt64 getFirstSlotInEip4844(final UInt64 startSlot, final UInt64 count) {
+    return UInt64.range(startSlot, startSlot.plus(count))
+        .filter(blobsSidecarManager::isStorageOfBlobsSidecarRequired)
+        .findFirst()
+        .orElseThrow();
   }
 
   private PeerSyncResult handleFailedRequestToPeer(

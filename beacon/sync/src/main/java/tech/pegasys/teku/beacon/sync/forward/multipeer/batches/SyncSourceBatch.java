@@ -226,16 +226,18 @@ public class SyncSourceBatch implements Batch {
 
     final SafeFuture<Void> blobsSidecarsRequest;
     if (blobsSidecarManager.isStorageOfBlobsSidecarRequired(lastSlot)) {
+      final UInt64 blobsSidecarStartSlot = getFirstSlotInEip4844(startSlot, remainingSlots);
+      final UInt64 blobsSidecarCount = lastSlot.minusMinZero(blobsSidecarStartSlot).plus(1);
       LOG.debug(
           "Requesting blobs sidecars for {} slots starting at {} from peer {}",
-          remainingSlots,
-          startSlot,
+          blobsSidecarCount,
+          blobsSidecarStartSlot,
           syncSource);
       final BlobsSidecarRequestHandler blobsSidecarRequestHandler =
           new BlobsSidecarRequestHandler();
       blobsSidecarsRequest =
           syncSource.requestBlobsSidecarsByRange(
-              startSlot, remainingSlots, blobsSidecarRequestHandler);
+              blobsSidecarStartSlot, blobsSidecarCount, blobsSidecarRequestHandler);
     } else {
       blobsSidecarsRequest = SafeFuture.COMPLETE;
     }
@@ -254,6 +256,14 @@ public class SyncSourceBatch implements Batch {
             },
             eventThread)
         .ifExceptionGetsHereRaiseABug();
+  }
+
+  // TODO: refactor very ugly
+  private UInt64 getFirstSlotInEip4844(final UInt64 startSlot, final UInt64 count) {
+    return UInt64.range(startSlot, startSlot.plus(count))
+        .filter(blobsSidecarManager::isStorageOfBlobsSidecarRequired)
+        .findFirst()
+        .orElseThrow();
   }
 
   private void handleRequestErrors(final Throwable error) {
