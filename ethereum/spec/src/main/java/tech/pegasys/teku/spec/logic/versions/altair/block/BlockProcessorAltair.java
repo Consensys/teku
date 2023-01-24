@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -218,19 +219,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     final List<BLSPublicKey> participantPubkeys = new ArrayList<>();
 
     // Compute participant and proposer rewards
-    final UInt64 totalActiveIncrements =
-        beaconStateAccessors
-            .getTotalActiveBalance(state)
-            .dividedBy(specConfig.getEffectiveBalanceIncrement());
-    final UInt64 totalBaseRewards =
-        beaconStateAccessorsAltair.getBaseRewardPerIncrement(state).times(totalActiveIncrements);
-    final UInt64 maxParticipantRewards =
-        totalBaseRewards
-            .times(SYNC_REWARD_WEIGHT)
-            .dividedBy(WEIGHT_DENOMINATOR)
-            .dividedBy(specConfig.getSlotsPerEpoch());
-    final UInt64 participantReward =
-        maxParticipantRewards.dividedBy(specConfigAltair.getSyncCommitteeSize());
+    final UInt64 participantReward = computeParticipantReward(state);
     final UInt64 proposerReward =
         participantReward
             .times(PROPOSER_WEIGHT)
@@ -272,6 +261,24 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         aggregate.getSyncCommitteeSignature().getSignature())) {
       throw new BlockProcessingException("Invalid sync committee signature in " + aggregate);
     }
+  }
+
+  @Override
+  public UInt64 computeParticipantReward(final BeaconStateAltair state) {
+    final UInt64 totalActiveIncrements =
+        beaconStateAccessors
+            .getTotalActiveBalance(state)
+            .dividedBy(specConfig.getEffectiveBalanceIncrement());
+    final UInt64 totalBaseRewards =
+        beaconStateAccessorsAltair.getBaseRewardPerIncrement(state).times(totalActiveIncrements);
+    final UInt64 maxParticipantRewards =
+        totalBaseRewards
+            .times(SYNC_REWARD_WEIGHT)
+            .dividedBy(WEIGHT_DENOMINATOR)
+            .dividedBy(specConfig.getSlotsPerEpoch());
+    final UInt64 participantReward =
+        maxParticipantRewards.dividedBy(specConfigAltair.getSyncCommitteeSize());
+    return participantReward;
   }
 
   @Override

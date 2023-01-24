@@ -74,6 +74,7 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateInvariants;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.genesis.GenesisGenerator;
@@ -728,6 +729,11 @@ public class Spec {
   public Optional<OperationInvalidReason> validateAttestation(
       final BeaconState state, final AttestationData data) {
     return atState(state).getBlockProcessor().validateAttestation(state, data);
+  }
+
+  public UInt64 getSyncCommitteeParticipantReward(final BeaconState state) {
+    final BeaconStateAltair beaconStateAltair = BeaconStateAltair.required(state);
+    return atState(state).getBlockProcessor().computeParticipantReward(beaconStateAltair);
   }
 
   public boolean isEnoughVotesToUpdateEth1Data(

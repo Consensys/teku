@@ -42,6 +42,7 @@ import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -539,6 +540,34 @@ public class ChainDataProvider {
         committeeIndices,
         Lists.partition(
             committeeIndices, spec.atEpoch(epoch).getConfig().getTargetCommitteeSize()));
+  }
+
+  public SyncCommitteeRewardData getSyncCommitteeRewardsFromBlock(
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    // FIXME - handle only certain validators
+    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
+
+    final Optional<SyncCommittee> maybeCommittee =
+        spec.getSyncCommitteeUtil(slot).map(util -> util.getSyncCommittee(state, epoch));
+
+    if (maybeCommittee.isEmpty()) {
+      return new SyncCommitteeRewardData();
+    }
+
+    final List<Integer> committeeIndices =
+        maybeCommittee.get().getPubkeys().stream()
+            .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey.getBLSPublicKey()).stream())
+            .collect(toList());
+
+    return calculateRewards(committeeIndices, spec.getSyncCommitteeParticipantReward(state));
+  }
+
+  private SyncCommitteeRewardData calculateRewards(
+      final List<Integer> committeeIndices, final UInt64 participantReward) {
+    final SyncCommitteeRewardData data = new SyncCommitteeRewardData();
+    committeeIndices.forEach(i -> data.updateReward(i, participantReward));
+    return data;
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
