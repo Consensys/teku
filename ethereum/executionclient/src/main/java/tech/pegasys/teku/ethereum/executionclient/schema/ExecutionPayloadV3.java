@@ -16,11 +16,15 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -30,6 +34,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadEip4844;
 
 public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
+  @JsonSerialize(using = UInt256AsHexSerializer.class)
+  @JsonDeserialize(using = UInt256AsHexDeserializer.class)
   public final UInt256 excessDataGas;
 
   public ExecutionPayloadV3(
