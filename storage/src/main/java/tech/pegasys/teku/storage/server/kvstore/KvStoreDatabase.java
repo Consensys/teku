@@ -461,6 +461,11 @@ public class KvStoreDatabase implements Database {
             "Blocks must be contiguous with the earliest known block.");
       }
       expectedRoot = block.getParentRoot();
+      final SlotAndBlockRoot slotAndBlockRoot =
+          new SlotAndBlockRoot(block.getSlot(), block.getRoot());
+      // we only store finalized blocks when we have validated the sidecar and stored it as
+      // unconfirmed, so we can safely confirm it now
+      confirmBlobsSidecar(slotAndBlockRoot);
     }
 
     storeFinalizedBlocksToDao(blocks);
