@@ -272,16 +272,9 @@ public class HistoricalBatchFetcher {
     return batchVerifyHistoricalBlockSignatures(blocksToImport)
         .thenCompose(__ -> validateBlobsSidecars(blocksToImport, blobsSidecarsBySlotToImport))
         .thenCompose(
-            __ -> {
-              final Stream<SafeFuture<?>> blobsSidecarsImporting =
-                  blobsSidecarsBySlotToImport.values().stream()
-                      .map(storageUpdateChannel::onBlobsSidecar);
-              return SafeFuture.allOfFailFast(blobsSidecarsImporting);
-            })
-        .thenCompose(
             __ ->
                 storageUpdateChannel
-                    .onFinalizedBlocks(blocksToImport)
+                    .onFinalizedBlocks(blocksToImport, blobsSidecarsBySlotToImport)
                     .thenRun(
                         () -> {
                           LOG.trace(

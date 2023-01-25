@@ -300,9 +300,16 @@ public class KvStoreDatabase implements Database {
     return dao.getNonCanonicalBlocksAtSlot(slot);
   }
 
-  protected void storeFinalizedBlocksToDao(final Collection<SignedBeaconBlock> blocks) {
+  protected void storeFinalizedBlocksToDao(
+      final Collection<SignedBeaconBlock> blocks,
+      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      blocks.forEach(updater::addFinalizedBlock);
+      blocks.forEach(
+          block -> {
+            updater.addFinalizedBlock(block);
+            Optional.ofNullable(blobsSidecarBySlot.get(block.getSlot()))
+                .ifPresent(updater::addBlobsSidecar);
+          });
       updater.commit();
     }
   }
@@ -438,7 +445,9 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {
+  public void storeFinalizedBlocks(
+      final Collection<SignedBeaconBlock> blocks,
+      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
     if (blocks.isEmpty()) {
       return;
     }
@@ -461,14 +470,9 @@ public class KvStoreDatabase implements Database {
             "Blocks must be contiguous with the earliest known block.");
       }
       expectedRoot = block.getParentRoot();
-      final SlotAndBlockRoot slotAndBlockRoot =
-          new SlotAndBlockRoot(block.getSlot(), block.getRoot());
-      // we only store finalized blocks when we have validated the sidecar and stored it as
-      // unconfirmed, so we can safely confirm it now
-      confirmBlobsSidecar(slotAndBlockRoot);
     }
 
-    storeFinalizedBlocksToDao(blocks);
+    storeFinalizedBlocksToDao(blocks, blobsSidecarBySlot);
   }
 
   @Override
