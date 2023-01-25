@@ -96,7 +96,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int proposerScoreBoost;
 
   // Deposit Contract
-  private final int depositChainId;
+  private final long depositChainId;
   private final int depositNetworkId;
   private final Eth1Address depositContractAddress;
 
@@ -150,7 +150,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int secondsPerEth1Block,
       final int safeSlotsToUpdateJustified,
       final int proposerScoreBoost,
-      final int depositChainId,
+      final long depositChainId,
       final int depositNetworkId,
       final Eth1Address depositContractAddress,
       final ProgressiveBalancesMode progressiveBalancesMode) {
@@ -469,7 +469,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getDepositChainId() {
+  public long getDepositChainId() {
     return depositChainId;
   }
 

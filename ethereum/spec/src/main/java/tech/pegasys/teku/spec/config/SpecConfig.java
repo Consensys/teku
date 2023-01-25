@@ -136,7 +136,7 @@ public interface SpecConfig {
 
   int getProposerScoreBoost();
 
-  int getDepositChainId();
+  long getDepositChainId();
 
   int getDepositNetworkId();
 

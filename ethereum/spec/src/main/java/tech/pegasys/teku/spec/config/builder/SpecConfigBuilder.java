@@ -98,7 +98,7 @@ public class SpecConfigBuilder {
   private int proposerScoreBoost = 0;
 
   // Deposit Contract
-  private Integer depositChainId;
+  private Long depositChainId;
   private Integer depositNetworkId;
   private Eth1Address depositContractAddress;
 
@@ -518,7 +518,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder depositChainId(final Integer depositChainId) {
+  public SpecConfigBuilder depositChainId(final Long depositChainId) {
     checkNotNull(depositChainId);
     this.depositChainId = depositChainId;
     return this;
