@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage.BeaconBlockAndBlobsSidecarByRootRequestMessageSchema;
@@ -66,7 +65,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessag
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -231,7 +229,7 @@ public class BeaconChainMethods {
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final RpcContextCodec<Bytes4, SignedBeaconBlock> forkDigestContextCodec =
           RpcContextCodec.forkDigest(
-              spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACONBLOCK);
+              spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACON_BLOCK);
 
       final SingleProtocolEth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock>
           v2Method =
@@ -292,7 +290,7 @@ public class BeaconChainMethods {
     if (spec.isMilestoneSupported(SpecMilestone.ALTAIR)) {
       final RpcContextCodec<Bytes4, SignedBeaconBlock> forkDigestContextCodec =
           RpcContextCodec.forkDigest(
-              spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACONBLOCK);
+              spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACON_BLOCK);
 
       final SingleProtocolEth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
           v2Method =
@@ -331,13 +329,9 @@ public class BeaconChainMethods {
     final BeaconBlockAndBlobsSidecarByRootRequestMessageSchema requestType =
         BeaconBlockAndBlobsSidecarByRootRequestMessage.SSZ_SCHEMA;
 
-    final SignedBeaconBlockAndBlobsSidecarSchema beaconBlockAndBlobsSidecarSchema =
-        SchemaDefinitionsEip4844.required(
-                spec.forMilestone(SpecMilestone.EIP4844).getSchemaDefinitions())
-            .getSignedBeaconBlockAndBlobsSidecarSchema();
-
-    final RpcContextCodec<Bytes, SignedBeaconBlockAndBlobsSidecar> noContextCodec =
-        RpcContextCodec.noop(beaconBlockAndBlobsSidecarSchema);
+    final RpcContextCodec<Bytes4, SignedBeaconBlockAndBlobsSidecar> forkDigestContextCodec =
+        RpcContextCodec.forkDigest(
+            spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACON_BLOCK_AND_BLOBS_SIDECAR);
 
     final BeaconBlockAndBlobsSidecarByRootMessageHandler messageHandler =
         new BeaconBlockAndBlobsSidecarByRootMessageHandler(
@@ -351,7 +345,7 @@ public class BeaconChainMethods {
             rpcEncoding,
             requestType,
             true,
-            noContextCodec,
+            forkDigestContextCodec,
             messageHandler,
             peerLookup));
   }
