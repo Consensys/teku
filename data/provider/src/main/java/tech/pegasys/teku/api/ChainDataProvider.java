@@ -547,20 +547,19 @@ public class ChainDataProvider {
   public SafeFuture<Optional<SyncCommitteeRewardData>> getSyncCommitteeRewardsFromBlockId(
       final String blockId) {
     return getBlockAndMetaData(blockId)
-        .thenApply(
+        .thenCompose(
             result -> {
               if (result.isEmpty() || result.get().getData().getBeaconBlock().isEmpty()) {
-                return Optional.empty();
+                return SafeFuture.completedFuture(Optional.empty());
               }
 
               final BlockAndMetaData blockAndMetaData = result.get();
               final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
-
               final SyncCommitteeRewardData data =
                   new SyncCommitteeRewardData(
                       blockAndMetaData.isExecutionOptimistic(), blockAndMetaData.isFinalized());
 
-              combinedChainDataClient
+              return combinedChainDataClient
                   .getStateByBlockRoot(block.getRoot())
                   .thenApply(
                       maybeState -> {
@@ -578,7 +577,7 @@ public class ChainDataProvider {
                             spec.getSyncCommitteeUtil(slot)
                                 .map(util -> util.getSyncCommittee(state, epoch));
                         if (maybeCommittee.isEmpty()) {
-                          return data;
+                          return Optional.of(data);
                         }
 
                         final List<Integer> committeeIndices =
@@ -589,15 +588,13 @@ public class ChainDataProvider {
                                             .getValidatorIndex(state, pubkey.getBLSPublicKey())
                                             .stream())
                                 .collect(toList());
-                        return calculateRewards(
-                            committeeIndices,
-                            spec.getSyncCommitteeParticipantReward(state),
-                            block,
-                            data);
+                        return Optional.of(
+                            calculateRewards(
+                                committeeIndices,
+                                spec.getSyncCommitteeParticipantReward(state),
+                                block,
+                                data));
                       });
-
-              // TODO resolve getting value out of future
-              return Optional.empty();
             });
   }
 
