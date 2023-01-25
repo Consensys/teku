@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage.BeaconBlockAndBlobsSidecarByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -144,7 +143,13 @@ public class BeaconChainMethods {
         createBeaconBlockAndBlobsSidecarByRoot(
             spec, metricsSystem, asyncRunner, recentChainData, peerLookup, rpcEncoding),
         createBlobsSidecarsByRange(
-            spec, metricsSystem, asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding),
+            spec,
+            metricsSystem,
+            asyncRunner,
+            combinedChainDataClient,
+            peerLookup,
+            rpcEncoding,
+            recentChainData),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -358,7 +363,8 @@ public class BeaconChainMethods {
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
           final PeerLookup peerLookup,
-          final RpcEncoding rpcEncoding) {
+          final RpcEncoding rpcEncoding,
+          final RecentChainData recentChainData) {
 
     if (!spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
       return Optional.empty();
@@ -367,13 +373,8 @@ public class BeaconChainMethods {
     final BlobsSidecarsByRangeRequestMessageSchema requestType =
         BlobsSidecarsByRangeRequestMessage.SSZ_SCHEMA;
 
-    final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsEip4844.required(
-                spec.forMilestone(SpecMilestone.EIP4844).getSchemaDefinitions())
-            .getBlobsSidecarSchema();
-
-    final RpcContextCodec<Bytes, BlobsSidecar> noContextCodec =
-        RpcContextCodec.noop(blobsSidecarSchema);
+    final RpcContextCodec<Bytes4, BlobsSidecar> forkDigestContextCodec =
+        RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOBS_SIDECAR);
 
     final BlobsSidecarsByRangeMessageHandler blobsSidecarsByRangeHandler =
         new BlobsSidecarsByRangeMessageHandler(
@@ -391,7 +392,7 @@ public class BeaconChainMethods {
             rpcEncoding,
             requestType,
             true,
-            noContextCodec,
+            forkDigestContextCodec,
             blobsSidecarsByRangeHandler,
             peerLookup));
   }
