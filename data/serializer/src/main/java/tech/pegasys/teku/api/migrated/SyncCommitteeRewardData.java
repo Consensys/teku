@@ -20,15 +20,27 @@ import java.util.Map;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncCommitteeRewardData {
+  final boolean executionOptimistic;
+  final boolean finalized;
   final Map<Integer, UInt64> rewardData;
 
-  public SyncCommitteeRewardData() {
+  public SyncCommitteeRewardData(final boolean executionOptimistic, final boolean finalized) {
+    this.executionOptimistic = executionOptimistic;
+    this.finalized = finalized;
     this.rewardData = new HashMap<>();
   }
 
   public void updateReward(final int validatorIndex, final UInt64 amount) {
     final UInt64 balance = rewardData.getOrDefault(validatorIndex, UInt64.ZERO);
     rewardData.put(validatorIndex, balance.plus(amount));
+  }
+
+  public boolean isExecutionOptimistic() {
+    return executionOptimistic;
+  }
+
+  public boolean isFinalized() {
+    return finalized;
   }
 
   public List<Map.Entry<Integer, UInt64>> getRewardData() {

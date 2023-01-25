@@ -37,8 +37,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
 public class GetSyncCommitteeRewards extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/rewards/sync_committee/{block_id}";
@@ -50,18 +48,17 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
           .withField("reward", UINT64_TYPE, Map.Entry::getValue)
           .build();
 
-  private static final SerializableTypeDefinition<ObjectAndMetaData<SyncCommitteeRewardData>>
-      RESPONSE_TYPE =
-          SerializableTypeDefinition.<ObjectAndMetaData<SyncCommitteeRewardData>>object()
-              .name("GetSyncCommitteeRewards")
-              .withField(
-                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-              .withField(
-                  "data",
-                  SerializableTypeDefinition.listOf(DATA_TYPE),
-                  objectAndMetaData -> objectAndMetaData.getData().getRewardData())
-              .build();
+  private static final SerializableTypeDefinition<SyncCommitteeRewardData> RESPONSE_TYPE =
+      SerializableTypeDefinition.object(SyncCommitteeRewardData.class)
+          .name("GetSyncCommitteeRewards")
+          .withField(
+              EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, SyncCommitteeRewardData::isExecutionOptimistic)
+          .withField(FINALIZED, BOOLEAN_TYPE, SyncCommitteeRewardData::isFinalized)
+          .withField(
+              "data",
+              SerializableTypeDefinition.listOf(DATA_TYPE),
+              SyncCommitteeRewardData::getRewardData)
+          .build();
 
   public GetSyncCommitteeRewards(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
@@ -91,20 +88,13 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
     // TODO handle request body Bytes48 or int array
     // final List<String> requestBody = request.getRequestBody();
 
-    final String blockId = request.getPathParameter(PARAMETER_BLOCK_ID);
     request.respondAsync(
         chainDataProvider
-            .getBeaconStateAndMetadata(blockId)
+            .getSyncCommitteeRewardsFromBlockId(request.getPathParameter(PARAMETER_BLOCK_ID))
             .thenApply(
-                maybeStateAndMetaData -> {
-                  if (maybeStateAndMetaData.isEmpty()) {
-                    return AsyncApiResponse.respondNotFound();
-                  }
-
-                  final StateAndMetaData stateAndMetaData = maybeStateAndMetaData.get();
-                  final ObjectAndMetaData<SyncCommitteeRewardData> data =
-                      stateAndMetaData.map(chainDataProvider::getSyncCommitteeRewardsFromBlock);
-                  return AsyncApiResponse.respondOk(data);
-                }));
+                result ->
+                    result
+                        .map(AsyncApiResponse::respondOk)
+                        .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

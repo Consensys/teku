@@ -57,7 +57,9 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -542,31 +544,78 @@ public class ChainDataProvider {
             committeeIndices, spec.atEpoch(epoch).getConfig().getTargetCommitteeSize()));
   }
 
-  public SyncCommitteeRewardData getSyncCommitteeRewardsFromBlock(
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    // FIXME - handle only certain validators
-    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
-    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
+  public SafeFuture<Optional<SyncCommitteeRewardData>> getSyncCommitteeRewardsFromBlockId(
+      final String blockId) {
+    return getBlockAndMetaData(blockId)
+        .thenApply(
+            result -> {
+              if (result.isEmpty() || result.get().getData().getBeaconBlock().isEmpty()) {
+                return Optional.empty();
+              }
 
-    final Optional<SyncCommittee> maybeCommittee =
-        spec.getSyncCommitteeUtil(slot).map(util -> util.getSyncCommittee(state, epoch));
+              final BlockAndMetaData blockAndMetaData = result.get();
+              final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
 
-    if (maybeCommittee.isEmpty()) {
-      return new SyncCommitteeRewardData();
-    }
+              final SyncCommitteeRewardData data =
+                  new SyncCommitteeRewardData(
+                      blockAndMetaData.isExecutionOptimistic(), blockAndMetaData.isFinalized());
 
-    final List<Integer> committeeIndices =
-        maybeCommittee.get().getPubkeys().stream()
-            .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey.getBLSPublicKey()).stream())
-            .collect(toList());
+              combinedChainDataClient
+                  .getStateByBlockRoot(block.getRoot())
+                  .thenApply(
+                      maybeState -> {
+                        if (maybeState.isEmpty()) {
+                          return Optional.empty();
+                        }
 
-    return calculateRewards(committeeIndices, spec.getSyncCommitteeParticipantReward(state));
+                        final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState
+                            state = maybeState.get();
+
+                        final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
+                        final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
+
+                        final Optional<SyncCommittee> maybeCommittee =
+                            spec.getSyncCommitteeUtil(slot)
+                                .map(util -> util.getSyncCommittee(state, epoch));
+                        if (maybeCommittee.isEmpty()) {
+                          return data;
+                        }
+
+                        final List<Integer> committeeIndices =
+                            maybeCommittee.get().getPubkeys().stream()
+                                .flatMap(
+                                    pubkey ->
+                                        spec
+                                            .getValidatorIndex(state, pubkey.getBLSPublicKey())
+                                            .stream())
+                                .collect(toList());
+                        return calculateRewards(
+                            committeeIndices,
+                            spec.getSyncCommitteeParticipantReward(state),
+                            block,
+                            data);
+                      });
+
+              // TODO resolve getting value out of future
+              return Optional.empty();
+            });
   }
 
   private SyncCommitteeRewardData calculateRewards(
-      final List<Integer> committeeIndices, final UInt64 participantReward) {
-    final SyncCommitteeRewardData data = new SyncCommitteeRewardData();
-    committeeIndices.forEach(i -> data.updateReward(i, participantReward));
+      final List<Integer> committeeIndices,
+      final UInt64 participantReward,
+      final BeaconBlock block,
+      final SyncCommitteeRewardData data) {
+    final Optional<SyncAggregate> aggregate = block.getBody().getOptionalSyncAggregate();
+    if (aggregate.isEmpty()) {
+      return data;
+    }
+
+    for (int i = 0; i < committeeIndices.size(); i++) {
+      if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
+        data.updateReward(committeeIndices.get(i), participantReward);
+      }
+    }
     return data;
   }
 
