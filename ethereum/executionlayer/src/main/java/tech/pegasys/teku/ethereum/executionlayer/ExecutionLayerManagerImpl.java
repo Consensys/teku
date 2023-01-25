@@ -13,26 +13,20 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
-import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.logging.log4j.Level;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.ThrottlingBuilderClient;
@@ -44,7 +38,7 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -54,13 +48,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
-import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -71,28 +66,12 @@ import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final UInt64 FALLBACK_DATA_RETENTION_SLOTS = UInt64.valueOf(2);
 
-  /**
-   * slotToLocalElFallbackPayload usage:
-   *
-   * <p>if we serve builderGetHeader using local execution engine, we store slot->executionPayload
-   * to be able to serve builderGetPayload later
-   *
-   * <p>if we serve builderGetHeader using builder, we store slot->Optional.empty() to signal that
-   * we must call the builder to serve builderGetPayload later
-   */
-  private final NavigableMap<UInt64, Optional<FallbackData>> slotToLocalElFallbackData =
-      new ConcurrentSkipListMap<>();
-
-  private final Optional<BuilderClient> builderClient;
-  private final AtomicBoolean latestBuilderAvailability;
   private final Spec spec;
-  private final EventLogger eventLogger;
-  private final BuilderBidValidator builderBidValidator;
-  private final BuilderCircuitBreaker builderCircuitBreaker;
-  private final LabelledMetric<Counter> executionPayloadSourceCounter;
   private final ExecutionClientHandler executionClientHandler;
+  private final BlobsBundleValidator blobsBundleValidator;
+  private final ExecutionBuilderModule executionBuilderModule;
+  private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
   public static ExecutionLayerManagerImpl create(
       final EventLogger eventLogger,
@@ -101,7 +80,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
-      final BuilderCircuitBreaker builderCircuitBreaker) {
+      final BuilderCircuitBreaker builderCircuitBreaker,
+      final BlobsBundleValidator blobsBundleValidator) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -128,7 +108,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         eventLogger,
         builderBidValidator,
         builderCircuitBreaker,
-        executionPayloadSourceCounter);
+        executionPayloadSourceCounter,
+        blobsBundleValidator);
   }
 
   public static ExecutionLayerManagerImpl create(
@@ -138,11 +119,17 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final Spec spec,
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
-      final BuilderCircuitBreaker builderCircuitBreaker) {
-    final ExecutionClientHandler executionClientHandler =
-        spec.isMilestoneSupported(SpecMilestone.CAPELLA)
-            ? new CapellaExecutionClientHandler(spec, executionEngineClient)
-            : new BellatrixExecutionClientHandler(spec, executionEngineClient);
+      final BuilderCircuitBreaker builderCircuitBreaker,
+      final BlobsBundleValidator blobsBundleValidator) {
+    final ExecutionClientHandler executionClientHandler;
+
+    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+      executionClientHandler = new Eip4844ExecutionClientHandler(spec, executionEngineClient);
+    } else if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
+      executionClientHandler = new CapellaExecutionClientHandler(spec, executionEngineClient);
+    } else {
+      executionClientHandler = new BellatrixExecutionClientHandler(spec, executionEngineClient);
+    }
 
     return create(
         eventLogger,
@@ -151,7 +138,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         spec,
         metricsSystem,
         builderBidValidator,
-        builderCircuitBreaker);
+        builderCircuitBreaker,
+        blobsBundleValidator);
   }
 
   public static ExecutionEngineClient createEngineClient(
@@ -191,23 +179,20 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final EventLogger eventLogger,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
-      final LabelledMetric<Counter> executionPayloadSourceCounter) {
+      final LabelledMetric<Counter> executionPayloadSourceCounter,
+      final BlobsBundleValidator blobsBundleValidator) {
     this.executionClientHandler = executionClientHandler;
-    this.builderClient = builderClient;
-    this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.spec = spec;
-    this.eventLogger = eventLogger;
-    this.builderBidValidator = builderBidValidator;
-    this.builderCircuitBreaker = builderCircuitBreaker;
+    this.blobsBundleValidator = blobsBundleValidator;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
+    this.executionBuilderModule =
+        new ExecutionBuilderModule(
+            spec, this, builderBidValidator, builderCircuitBreaker, builderClient, eventLogger);
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
-    updateBuilderAvailability();
-    slotToLocalElFallbackData
-        .headMap(slot.minusMinZero(FALLBACK_DATA_RETENTION_SLOTS), false)
-        .clear();
+    executionBuilderModule.updateBuilderAvailability();
   }
 
   @Override
@@ -238,10 +223,15 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, false)
         .thenApply(ExecutionPayloadWithValue::getExecutionPayload)
-        .thenPeek(__ -> recordExecutionPayloadSource(Source.LOCAL_EL, FallbackReason.NONE));
+        .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
-  public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
+  SafeFuture<ExecutionPayloadWithValue> engineGetPayloadForFallback(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    return engineGetPayload(executionPayloadContext, slot, true);
+  }
+
+  private SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt64 slot,
       final boolean isFallbackCall) {
@@ -250,7 +240,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         executionPayloadContext.getPayloadId(),
         slot);
     if (!isFallbackCall
-        && isBuilderAvailable()
+        && executionBuilderModule.isBuilderAvailable()
         && spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
       LOG.warn("Builder endpoint is available but a non-blinded block has been requested");
     }
@@ -270,287 +260,51 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<Void> builderRegisterValidators(
-      final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
+  public SafeFuture<BlobsBundle> engineGetBlobsBundle(
+      final UInt64 slot,
+      final Bytes8 payloadId,
+      Optional<ExecutionPayload> executionPayloadOptional) {
     LOG.trace(
-        "calling builderRegisterValidator(slot={},signedValidatorRegistrations={})",
+        "calling engineGetBlobsBundle(slot={}, executionPayloadOptional={})",
         slot,
-        signedValidatorRegistrations);
-
-    if (!isBuilderAvailable()) {
-      return SafeFuture.failedFuture(
-          new RuntimeException("Unable to register validators: builder not available"));
-    }
-
-    return builderClient
-        .orElseThrow()
-        .registerValidators(slot, signedValidatorRegistrations)
-        .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
-        .thenPeek(
-            __ ->
-                LOG.trace(
-                    "builderRegisterValidator(slot={},signedValidatorRegistrations={}) -> success",
-                    slot,
-                    signedValidatorRegistrations));
+        executionPayloadOptional);
+    return executionClientHandler
+        .engineGetBlobsBundle(payloadId, slot)
+        .thenApplyChecked(
+            blobsBundle -> {
+              blobsBundleValidator.validate(blobsBundle, executionPayloadOptional);
+              return blobsBundle;
+            });
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    final UInt64 slot = state.getSlot();
-
-    final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload =
-        engineGetPayload(executionPayloadContext, slot, true);
-
-    final Optional<SignedValidatorRegistration> validatorRegistration =
-        executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
-
-    // fallback conditions
-    final FallbackReason fallbackReason;
-    if (builderClient.isEmpty() && validatorRegistration.isEmpty()) {
-      fallbackReason = FallbackReason.NOT_NEEDED;
-    } else if (isTransitionNotFinalized(executionPayloadContext)) {
-      fallbackReason = FallbackReason.TRANSITION_NOT_FINALIZED;
-    } else if (isCircuitBreakerEngaged(state)) {
-      fallbackReason = FallbackReason.CIRCUIT_BREAKER_ENGAGED;
-    } else if (builderClient.isEmpty()) {
-      fallbackReason = FallbackReason.BUILDER_NOT_CONFIGURED;
-    } else if (!isBuilderAvailable()) {
-      fallbackReason = FallbackReason.BUILDER_NOT_AVAILABLE;
-    } else if (validatorRegistration.isEmpty()) {
-      fallbackReason = FallbackReason.VALIDATOR_NOT_REGISTERED;
-    } else {
-      fallbackReason = null;
-    }
-
-    if (fallbackReason != null) {
-      return getHeaderFromLocalExecutionPayload(localExecutionPayload, slot, fallbackReason);
-    }
-
-    final BLSPublicKey validatorPublicKey = validatorRegistration.get().getMessage().getPublicKey();
-
-    LOG.trace(
-        "calling builderGetHeader(slot={}, pubKey={}, parentHash={})",
-        slot,
-        validatorPublicKey,
-        executionPayloadContext.getParentHash());
-
-    // Treat the local block value as zero if getPayload fails so any builder bid will beat it
-    // Ensures we can still propose a builder block even if the local payload is unavailable
-    final SafeFuture<UInt256> localExecutionPayloadValue =
-        localExecutionPayload
-            .thenApply(ExecutionPayloadWithValue::getValue)
-            .exceptionally(__ -> UInt256.ZERO);
-    return builderClient
-        .orElseThrow()
-        .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
-        .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
-        .thenPeek(
-            signedBuilderBidMaybe ->
-                LOG.trace(
-                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                    slot,
-                    validatorPublicKey,
-                    executionPayloadContext.getParentHash(),
-                    signedBuilderBidMaybe))
-        .thenComposeCombined(
-            localExecutionPayloadValue,
-            (signedBuilderBidMaybe, localPayloadValue) -> {
-              if (signedBuilderBidMaybe.isEmpty()) {
-                return getHeaderFromLocalExecutionPayload(
-                    localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
-              }
-              final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
-              logReceivedBuilderBid(signedBuilderBid.getMessage());
-              if (signedBuilderBid.getMessage().getValue().compareTo(localPayloadValue) <= 0) {
-                return getHeaderFromLocalExecutionPayload(
-                    localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER);
-              }
-              final ExecutionPayloadHeader executionPayloadHeader =
-                  builderBidValidator.validateAndGetPayloadHeader(
-                      spec, signedBuilderBid, validatorRegistration.get(), state);
-              slotToLocalElFallbackData.put(slot, Optional.empty());
-              return SafeFuture.completedFuture(executionPayloadHeader);
-            })
-        .exceptionallyCompose(
-            error -> {
-              LOG.error(
-                  "Unable to obtain a valid bid from builder. Falling back to local execution engine.",
-                  error);
-              return getHeaderFromLocalExecutionPayload(
-                  localExecutionPayload, slot, FallbackReason.BUILDER_ERROR);
-            });
+  public SafeFuture<Void> builderRegisterValidators(
+      final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
+    return executionBuilderModule.builderRegisterValidators(signedValidatorRegistrations, slot);
   }
 
   @Override
   public SafeFuture<ExecutionPayload> builderGetPayload(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-
-    checkArgument(
-        signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
-        "SignedBeaconBlock must be blind");
-
-    final UInt64 slot = signedBlindedBeaconBlock.getSlot();
-
-    final Optional<Optional<FallbackData>> maybeProcessedSlot =
-        Optional.ofNullable(slotToLocalElFallbackData.get(slot));
-
-    if (maybeProcessedSlot.isEmpty()) {
-      LOG.warn(
-          "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBlindedBeaconBlock);
-    }
-
-    final Optional<FallbackData> maybeLocalElFallbackData = maybeProcessedSlot.get();
-
-    return maybeLocalElFallbackData
-        .map(this::getPayloadFromFallbackData)
-        .orElseGet(() -> getPayloadFromBuilder(signedBlindedBeaconBlock));
+      SignedBeaconBlock signedBlindedBeaconBlock,
+      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+    return executionBuilderModule.builderGetPayload(
+        signedBlindedBeaconBlock, getCachedPayloadResultFunction);
   }
 
-  private SafeFuture<ExecutionPayloadHeader> getHeaderFromLocalExecutionPayload(
-      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload,
-      final UInt64 slot,
-      final FallbackReason reason) {
-
-    return localExecutionPayload
-        .thenApply(ExecutionPayloadWithValue::getExecutionPayload)
-        .thenApply(
-            executionPayload -> {
-              // store the fallback payload for this slot
-              slotToLocalElFallbackData.put(
-                  slot, Optional.of(new FallbackData(executionPayload, reason)));
-
-              return spec.atSlot(slot)
-                  .getSchemaDefinitions()
-                  .toVersionBellatrix()
-                  .orElseThrow()
-                  .getExecutionPayloadHeaderSchema()
-                  .createFromExecutionPayload(executionPayload);
-            });
+  @Override
+  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
+      ExecutionPayloadContext executionPayloadContext, BeaconState state) {
+    return executionBuilderModule.builderGetHeader(executionPayloadContext, state);
   }
 
-  private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
-
-    return builderClient
-        .orElseThrow(
-            () ->
-                new RuntimeException(
-                    "Unable to get payload from builder: builder endpoint not available"))
-        .getPayload(signedBlindedBeaconBlock)
-        .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
-        .thenPeek(
-            executionPayload -> {
-              logReceivedBuilderExecutionPayload(executionPayload);
-              recordExecutionPayloadSource(Source.BUILDER, FallbackReason.NONE);
-              LOG.trace(
-                  "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
-                  signedBlindedBeaconBlock,
-                  executionPayload);
-            });
+  @VisibleForTesting
+  ExecutionBuilderModule getExecutionBuilderModule() {
+    return executionBuilderModule;
   }
 
-  private SafeFuture<ExecutionPayload> getPayloadFromFallbackData(final FallbackData fallbackData) {
-    // note: we don't do any particular consistency check here.
-    // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
-
-    logFallbackToLocalExecutionPayload(fallbackData);
-    recordExecutionPayloadSource(Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.reason);
-
-    return SafeFuture.completedFuture(fallbackData.executionPayload);
-  }
-
-  boolean isBuilderAvailable() {
-    return latestBuilderAvailability.get();
-  }
-
-  private void updateBuilderAvailability() {
-    if (builderClient.isEmpty()) {
-      return;
-    }
-    builderClient
-        .get()
-        .status()
-        .finish(
-            statusResponse -> {
-              if (statusResponse.isFailure()) {
-                markBuilderAsNotAvailable(statusResponse.getErrorMessage());
-              } else {
-                if (latestBuilderAvailability.compareAndSet(false, true)) {
-                  eventLogger.builderIsAvailable();
-                }
-              }
-            },
-            throwable -> markBuilderAsNotAvailable(getMessageOrSimpleName(throwable)));
-  }
-
-  private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
-    return executionPayloadContext.getForkChoiceState().getFinalizedExecutionBlockHash().isZero();
-  }
-
-  private boolean isCircuitBreakerEngaged(final BeaconState state) {
-    try {
-      return builderCircuitBreaker.isEngaged(state);
-    } catch (Exception e) {
-      if (ExceptionUtil.hasCause(e, InterruptedException.class)) {
-        LOG.debug("Shutting down");
-      } else {
-        LOG.error(
-            "Builder circuit breaker engagement failure at slot {}. Acting like it has been engaged.",
-            state.getSlot(),
-            e);
-      }
-      return true;
-    }
-  }
-
-  private void markBuilderAsNotAvailable(final String errorMessage) {
-    latestBuilderAvailability.set(false);
-    eventLogger.builderIsNotAvailable(errorMessage);
-  }
-
-  private void logFallbackToLocalExecutionPayload(final FallbackData fallbackData) {
-    LOG.log(
-        fallbackData.reason == FallbackReason.NOT_NEEDED ? Level.DEBUG : Level.INFO,
-        "Falling back to locally produced execution payload (Block Number {}, Block Hash = {}, Fallback Reason = {})",
-        fallbackData.executionPayload.getBlockNumber(),
-        fallbackData.executionPayload.getBlockHash(),
-        fallbackData.reason);
-  }
-
-  private void logReceivedBuilderExecutionPayload(final ExecutionPayload executionPayload) {
-    LOG.info(
-        "Received execution payload from Builder (Block Number {}, Block Hash = {})",
-        executionPayload.getBlockNumber(),
-        executionPayload.getBlockHash());
-  }
-
-  private void logReceivedBuilderBid(final BuilderBid builderBid) {
-    final ExecutionPayloadHeader payloadHeader = builderBid.getExecutionPayloadHeader();
-    LOG.info(
-        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (wei) = {}, Gas Limit = {}, Gas Used = {})",
-        payloadHeader.getBlockNumber(),
-        payloadHeader.getBlockHash(),
-        builderBid.getValue().toDecimalString(),
-        payloadHeader.getGasLimit(),
-        payloadHeader.getGasUsed());
-  }
-
-  private void recordExecutionPayloadSource(
+  void recordExecutionPayloadFallbackSource(
       final Source source, final FallbackReason fallbackReason) {
     executionPayloadSourceCounter.labels(source.toString(), fallbackReason.toString()).inc();
-  }
-
-  private static class FallbackData {
-    final ExecutionPayload executionPayload;
-    final FallbackReason reason;
-
-    public FallbackData(final ExecutionPayload executionPayload, final FallbackReason reason) {
-      this.executionPayload = executionPayload;
-      this.reason = reason;
-    }
   }
 
   // Metric - execution payload "source" label values
@@ -562,31 +316,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
     private final String displayName;
 
     Source(final String displayName) {
-      this.displayName = displayName;
-    }
-
-    @Override
-    public String toString() {
-      return displayName;
-    }
-  }
-
-  // Metric - fallback "reason" label values
-  protected enum FallbackReason {
-    NOT_NEEDED("not_needed"),
-    VALIDATOR_NOT_REGISTERED("validator_not_registered"),
-    TRANSITION_NOT_FINALIZED("transition_not_finalized"),
-    CIRCUIT_BREAKER_ENGAGED("circuit_breaker_engaged"),
-    BUILDER_NOT_AVAILABLE("builder_not_available"),
-    BUILDER_NOT_CONFIGURED("builder_not_configured"),
-    BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),
-    LOCAL_BLOCK_VALUE_HIGHER("local_block_value_higher"),
-    BUILDER_ERROR("builder_error"),
-    NONE("");
-
-    private final String displayName;
-
-    FallbackReason(final String displayName) {
       this.displayName = displayName;
     }
 

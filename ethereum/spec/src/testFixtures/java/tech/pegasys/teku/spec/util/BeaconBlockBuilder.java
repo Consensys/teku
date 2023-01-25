@@ -60,18 +60,23 @@ public class BeaconBlockBuilder {
     }
     return bodySchema
         .createBlockBody(
-            builder ->
-                builder
-                    .randaoReveal(dataStructureUtil.randomSignature())
-                    .eth1Data(dataStructureUtil.randomEth1Data())
-                    .graffiti(dataStructureUtil.randomBytes32())
-                    .attestations(bodySchema.getAttestationsSchema().getDefault())
-                    .proposerSlashings(bodySchema.getProposerSlashingsSchema().getDefault())
-                    .attesterSlashings(bodySchema.getAttesterSlashingsSchema().getDefault())
-                    .deposits(bodySchema.getDepositsSchema().getDefault())
-                    .voluntaryExits(bodySchema.getVoluntaryExitsSchema().getDefault())
-                    .syncAggregate(() -> syncAggregate)
-                    .executionPayload(() -> SafeFuture.completedFuture(executionPayload)))
+            builder -> {
+              builder
+                  .randaoReveal(dataStructureUtil.randomSignature())
+                  .eth1Data(dataStructureUtil.randomEth1Data())
+                  .graffiti(dataStructureUtil.randomBytes32())
+                  .attestations(bodySchema.getAttestationsSchema().getDefault())
+                  .proposerSlashings(bodySchema.getProposerSlashingsSchema().getDefault())
+                  .attesterSlashings(bodySchema.getAttesterSlashingsSchema().getDefault())
+                  .deposits(bodySchema.getDepositsSchema().getDefault())
+                  .voluntaryExits(bodySchema.getVoluntaryExitsSchema().getDefault());
+              if (builder.supportsSyncAggregate()) {
+                builder.syncAggregate(syncAggregate);
+              }
+              if (builder.supportsExecutionPayload()) {
+                builder.executionPayload(SafeFuture.completedFuture(executionPayload));
+              }
+            })
         .thenApply(
             blockBody ->
                 spec.getSchemaDefinitions()

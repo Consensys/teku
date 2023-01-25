@@ -140,7 +140,7 @@ public class Spec {
     return specVersions.get(forkSchedule.getSpecMilestoneAtSlot(slot));
   }
 
-  private SpecVersion atTime(final UInt64 genesisTime, final UInt64 currentTime) {
+  public SpecVersion atTime(final UInt64 genesisTime, final UInt64 currentTime) {
     return specVersions.get(forkSchedule.getSpecMilestoneAtTime(genesisTime, currentTime));
   }
 
@@ -584,8 +584,10 @@ public class Spec {
   }
 
   public Optional<OperationInvalidReason> validateBlsToExecutionChange(
-      final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
-    return atState(state)
+      final BeaconState state,
+      final UInt64 currentTime,
+      final BlsToExecutionChange blsToExecutionChange) {
+    return atTime(state.getGenesisTime(), currentTime)
         .getOperationValidator()
         .validateBlsToExecutionChange(state.getFork(), state, blsToExecutionChange);
   }
@@ -596,8 +598,7 @@ public class Spec {
       final BLSSignatureVerifier signatureVerifier) {
     return atState(state)
         .operationSignatureVerifier()
-        .verifyBlsToExecutionChangeSignature(
-            state.getFork(), state, signedBlsToExecutionChange, signatureVerifier);
+        .verifyBlsToExecutionChangeSignature(state, signedBlsToExecutionChange, signatureVerifier);
   }
 
   public boolean isBlockProcessorOptimistic(final UInt64 slot) {

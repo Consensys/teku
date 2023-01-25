@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.generator;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
@@ -25,16 +26,21 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodySchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -47,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -91,32 +98,39 @@ public class BlockProposalTestUtil {
             spec.getBeaconProposerIndex(blockSlotState, newSlot),
             blockSlotState,
             parentBlockSigningRoot,
-            builder ->
-                builder
-                    .randaoReveal(randaoReveal)
-                    .eth1Data(eth1Data)
-                    .graffiti(Bytes32.ZERO)
-                    .attestations(attestations)
-                    .proposerSlashings(proposerSlashings)
-                    .attesterSlashings(attesterSlashings)
-                    .deposits(deposits)
-                    .voluntaryExits(exits)
-                    .syncAggregate(
-                        () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
-                    .executionPayload(
-                        () ->
-                            SafeFuture.completedFuture(
-                                executionPayload.orElseGet(
-                                    () ->
-                                        createExecutionPayload(
-                                            newSlot, blockSlotState, transactions, terminalBlock))))
-                    .blsToExecutionChanges(
-                        () ->
-                            blsToExecutionChange.orElseGet(
-                                dataStructureUtil::emptySignedBlsToExecutionChangesList))
-                    .blobKzgCommitments(
-                        () ->
-                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)),
+            builder -> {
+              builder
+                  .randaoReveal(randaoReveal)
+                  .eth1Data(eth1Data)
+                  .graffiti(Bytes32.ZERO)
+                  .attestations(attestations)
+                  .proposerSlashings(proposerSlashings)
+                  .attesterSlashings(attesterSlashings)
+                  .deposits(deposits)
+                  .voluntaryExits(exits);
+              if (builder.supportsSyncAggregate()) {
+                builder.syncAggregate(
+                    dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState));
+              }
+              if (builder.supportsExecutionPayload()) {
+                builder.executionPayload(
+                    SafeFuture.completedFuture(
+                        executionPayload.orElseGet(
+                            () ->
+                                createExecutionPayload(
+                                    newSlot, blockSlotState, transactions, terminalBlock))));
+              }
+              if (builder.supportsBlsToExecutionChanges()) {
+                builder.blsToExecutionChanges(
+                    blsToExecutionChange.orElseGet(
+                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+              }
+              if (builder.supportsKzgCommitments()) {
+                builder.blobKzgCommitments(
+                    SafeFuture.completedFuture(
+                        kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)));
+              }
+            },
             false)
         .thenApply(
             newBlockAndState -> {
@@ -159,32 +173,39 @@ public class BlockProposalTestUtil {
         .getSchemaDefinitions()
         .getBeaconBlockBodySchema()
         .createBlockBody(
-            builder ->
-                builder
-                    .randaoReveal(randaoReveal)
-                    .eth1Data(eth1Data)
-                    .graffiti(Bytes32.ZERO)
-                    .attestations(attestations)
-                    .proposerSlashings(proposerSlashings)
-                    .attesterSlashings(attesterSlashings)
-                    .deposits(deposits)
-                    .voluntaryExits(exits)
-                    .syncAggregate(
-                        () -> dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState))
-                    .executionPayload(
-                        () ->
-                            SafeFuture.completedFuture(
-                                executionPayload.orElseGet(
-                                    () ->
-                                        createExecutionPayload(
-                                            newSlot, state, transactions, terminalBlock))))
-                    .blsToExecutionChanges(
-                        () ->
-                            blsToExecutionChange.orElseGet(
-                                dataStructureUtil::emptySignedBlsToExecutionChangesList))
-                    .blobKzgCommitments(
-                        () ->
-                            kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)))
+            builder -> {
+              builder
+                  .randaoReveal(randaoReveal)
+                  .eth1Data(eth1Data)
+                  .graffiti(Bytes32.ZERO)
+                  .attestations(attestations)
+                  .proposerSlashings(proposerSlashings)
+                  .attesterSlashings(attesterSlashings)
+                  .deposits(deposits)
+                  .voluntaryExits(exits);
+              if (builder.supportsSyncAggregate()) {
+                builder.syncAggregate(
+                    dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState));
+              }
+              if (builder.supportsExecutionPayload()) {
+                builder.executionPayload(
+                    SafeFuture.completedFuture(
+                        executionPayload.orElseGet(
+                            () ->
+                                createExecutionPayload(
+                                    newSlot, state, transactions, terminalBlock))));
+              }
+              if (builder.supportsBlsToExecutionChanges()) {
+                builder.blsToExecutionChanges(
+                    blsToExecutionChange.orElseGet(
+                        dataStructureUtil::emptySignedBlsToExecutionChangesList));
+              }
+              if (builder.supportsKzgCommitments()) {
+                builder.blobKzgCommitments(
+                    SafeFuture.completedFuture(
+                        kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)));
+              }
+            })
         .thenApply(
             blockBody -> {
               final BeaconBlock block =
@@ -305,6 +326,77 @@ public class BlockProposalTestUtil {
         executionPayload,
         blsToExecutionChange,
         kzgCommitments);
+  }
+
+  public SafeFuture<SignedBlockAndState> createBlockWithBlobs(
+      final Signer signer,
+      final UInt64 newSlot,
+      final BeaconState previousState,
+      final Bytes32 parentBlockSigningRoot,
+      final Optional<SszList<Attestation>> attestations,
+      final Optional<SszList<Deposit>> deposits,
+      final Optional<SszList<AttesterSlashing>> attesterSlashings,
+      final Optional<SszList<SignedVoluntaryExit>> exits,
+      final Optional<Eth1Data> eth1Data,
+      final Optional<List<Bytes>> transactions,
+      final Optional<Bytes32> terminalBlock,
+      final Optional<ExecutionPayload> executionPayload,
+      final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
+      final List<Blob> blobs,
+      final boolean skipStateTransition)
+      throws EpochProcessingException, SlotProcessingException {
+    final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
+
+    final MiscHelpersEip4844 miscHelpers =
+        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
+    List<KZGCommitment> generatedBlobsKzgCommitments =
+        blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+
+    final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
+        ((BeaconBlockBodySchemaEip4844<?>)
+                spec.atSlot(newSlot).getSchemaDefinitions().getBeaconBlockBodySchema())
+            .getBlobKzgCommitmentsSchema();
+
+    SszList<SszKZGCommitment> kzgCommitments =
+        generatedBlobsKzgCommitments.stream()
+            .map(SszKZGCommitment::new)
+            .collect(blobKZGCommitmentsSchema.collector());
+
+    if (skipStateTransition) {
+      return createNewBlockSkippingStateTransition(
+          signer,
+          newSlot,
+          previousState,
+          parentBlockSigningRoot,
+          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
+          attestations.orElse(blockBodyLists.createAttestations()),
+          blockBodyLists.createProposerSlashings(),
+          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
+          deposits.orElse(blockBodyLists.createDeposits()),
+          exits.orElse(blockBodyLists.createVoluntaryExits()),
+          transactions,
+          terminalBlock,
+          executionPayload,
+          blsToExecutionChange,
+          Optional.of(kzgCommitments));
+    } else {
+      return createNewBlock(
+          signer,
+          newSlot,
+          previousState,
+          parentBlockSigningRoot,
+          eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
+          attestations.orElse(blockBodyLists.createAttestations()),
+          blockBodyLists.createProposerSlashings(),
+          attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
+          deposits.orElse(blockBodyLists.createDeposits()),
+          exits.orElse(blockBodyLists.createVoluntaryExits()),
+          transactions,
+          terminalBlock,
+          executionPayload,
+          blsToExecutionChange,
+          Optional.of(kzgCommitments));
+    }
   }
 
   private Eth1Data getEth1DataStub(BeaconState state, UInt64 currentEpoch) {

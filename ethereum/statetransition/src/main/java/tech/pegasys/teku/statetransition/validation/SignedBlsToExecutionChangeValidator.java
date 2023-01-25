@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -38,12 +39,17 @@ public class SignedBlsToExecutionChangeValidator
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+
+  private final TimeProvider timeProvider;
+
   private final RecentChainData recentChainData;
   private final Set<UInt64> seenBlsToExecutionChangeMessageFromValidators =
       LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
 
-  public SignedBlsToExecutionChangeValidator(final Spec spec, RecentChainData recentChainData) {
+  public SignedBlsToExecutionChangeValidator(
+      final Spec spec, final TimeProvider timeProvider, RecentChainData recentChainData) {
     this.spec = spec;
+    this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;
   }
 
@@ -55,12 +61,9 @@ public class SignedBlsToExecutionChangeValidator
     final UInt64 validatorIndex = blsToExecutionChange.getValidatorIndex();
 
     /*
-     [IGNORE] The signed_bls_to_execution_change is the first valid signed bls to execution change received for the
-     validator with index signed_bls_to_execution_change.message.validator_index.
+     [IGNORE] current_epoch >= CAPELLA_FORK_EPOCH
     */
-    if (!spec.atSlot(recentChainData.getHeadSlot())
-        .getMilestone()
-        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+    if (!isCapellaActive()) {
       final String logMessage =
           String.format(
               "BlsToExecutionChange arrived before Capella and was ignored for validator %s.",
@@ -69,6 +72,10 @@ public class SignedBlsToExecutionChangeValidator
       return SafeFuture.completedFuture(InternalValidationResult.create(IGNORE, logMessage));
     }
 
+    /*
+     [IGNORE] The signed_bls_to_execution_change is the first valid signed bls to execution change received for the
+     validator with index signed_bls_to_execution_change.message.validator_index.
+    */
     if (!isFirstBlsToExecutionChangeForValidator(blsToExecutionChange)) {
       final String logMessage =
           String.format(
@@ -102,6 +109,14 @@ public class SignedBlsToExecutionChangeValidator
             });
   }
 
+  private boolean isCapellaActive() {
+    final UInt64 genesisTime = recentChainData.getGenesisTime();
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    return spec.atTime(genesisTime, currentTime)
+        .getMilestone()
+        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA);
+  }
+
   @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState state, final SignedBlsToExecutionChange operation) {
@@ -116,7 +131,8 @@ public class SignedBlsToExecutionChangeValidator
   private Optional<OperationInvalidReason> getMaybeFailureReason(
       final BeaconState state, final SignedBlsToExecutionChange signedBlsToExecutionChange) {
     final Optional<OperationInvalidReason> invalidReason =
-        spec.validateBlsToExecutionChange(state, signedBlsToExecutionChange.getMessage());
+        spec.validateBlsToExecutionChange(
+            state, timeProvider.getTimeInSeconds(), signedBlsToExecutionChange.getMessage());
     if (invalidReason.isPresent()) {
       return invalidReason;
     }

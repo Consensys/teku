@@ -52,7 +52,6 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
 
   @Override
   protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
-    return super.createContentProvider()
-        .andThen(builder -> builder.syncAggregate(() -> syncAggregate));
+    return super.createContentProvider().andThen(builder -> builder.syncAggregate(syncAggregate));
   }
 }

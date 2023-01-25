@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -51,11 +52,14 @@ public class GetLightClientBootstrapIntegrationTest
         safeJoin(dataProvider.getChainDataProvider().getBeaconStateAtHead())
             .orElseThrow()
             .getData();
-    BeaconBlockHeader expectedHeader = BeaconBlockHeader.fromState(state);
+    LightClientHeader expectedHeader =
+        SchemaDefinitionsAltair.required(spec.getGenesisSchemaDefinitions())
+            .getLightClientHeaderSchema()
+            .create(BeaconBlockHeader.fromState(state));
     SyncCommittee expectedSyncCommittee =
         BeaconStateAltair.required(state).getCurrentSyncCommittee();
 
-    final Response response = get(expectedHeader.getRoot());
+    final Response response = get(expectedHeader.getBeacon().getRoot());
     assertThat(response.code()).isEqualTo(SC_OK);
 
     final LightClientBootstrapSchema lightClientBootstrapSchema =
@@ -65,7 +69,7 @@ public class GetLightClientBootstrapIntegrationTest
         JsonUtil.parse(
             response.body().string(), SharedApiTypes.withDataWrapper(lightClientBootstrapSchema));
 
-    assertThat(parsedBootstrapResponse.getBeaconBlockHeader()).isEqualTo(expectedHeader);
+    assertThat(parsedBootstrapResponse.getLightClientHeader()).isEqualTo(expectedHeader);
     assertThat(parsedBootstrapResponse.getCurrentSyncCommittee()).isEqualTo(expectedSyncCommittee);
   }
 

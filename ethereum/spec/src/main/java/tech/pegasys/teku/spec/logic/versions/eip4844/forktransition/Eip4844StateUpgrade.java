@@ -98,6 +98,7 @@ public class Eip4844StateUpgrade implements StateUpgrade<BeaconStateEip4844> {
               state.setNextWithdrawalValidatorIndex(
                   preStateCapella.getNextWithdrawalValidatorIndex());
               state.setNextWithdrawalIndex(preStateCapella.getNextWithdrawalIndex());
+              state.setHistoricalSummaries(preStateCapella.getHistoricalSummaries());
             });
   }
 }

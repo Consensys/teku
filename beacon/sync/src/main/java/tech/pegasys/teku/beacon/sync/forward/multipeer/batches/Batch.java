@@ -14,11 +14,13 @@
 package tech.pegasys.teku.beacon.sync.forward.multipeer.batches;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 
 /** A section of a particular target chain that can be downloaded in parallel. */
 public interface Batch {
@@ -33,6 +35,8 @@ public interface Batch {
   Optional<SignedBeaconBlock> getLastBlock();
 
   List<SignedBeaconBlock> getBlocks();
+
+  Map<UInt64, BlobsSidecar> getBlobsSidecarsBySlot();
 
   Optional<SyncSource> getSource();
 

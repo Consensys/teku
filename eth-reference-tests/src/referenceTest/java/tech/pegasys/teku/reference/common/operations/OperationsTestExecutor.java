@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Optional;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
@@ -384,7 +385,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         break;
       case BLS_TO_EXECUTION_CHANGE:
         final SignedBlsToExecutionChangeValidator blsToExecutionChangeValidator =
-            new SignedBlsToExecutionChangeValidator(spec, null);
+            new SignedBlsToExecutionChangeValidator(spec, new SystemTimeProvider(), null);
         final SignedBlsToExecutionChange blsToExecutionChange =
             loadBlsToExecutionChange(testDefinition);
         checkValidationForBlockInclusion(

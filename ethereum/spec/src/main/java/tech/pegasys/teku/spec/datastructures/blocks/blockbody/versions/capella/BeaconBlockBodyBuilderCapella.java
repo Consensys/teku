@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -53,9 +52,14 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
   }
 
   @Override
+  public Boolean supportsBlsToExecutionChanges() {
+    return true;
+  }
+
+  @Override
   public BeaconBlockBodyBuilder blsToExecutionChanges(
-      final Supplier<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
-    this.blsToExecutionChanges = blsToExecutionChanges.get();
+      final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
+    this.blsToExecutionChanges = blsToExecutionChanges;
     return this;
   }
 
