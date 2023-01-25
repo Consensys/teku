@@ -138,7 +138,7 @@ public interface SpecConfig {
 
   long getDepositChainId();
 
-  int getDepositNetworkId();
+  long getDepositNetworkId();
 
   Eth1Address getDepositContractAddress();
 
