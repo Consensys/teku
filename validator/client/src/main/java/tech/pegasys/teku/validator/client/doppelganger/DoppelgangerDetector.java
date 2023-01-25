@@ -286,7 +286,7 @@ public class DoppelgangerDetector {
     }
 
     private void logMissingIndices(
-        Set<BLSPublicKey> pubKeys, Map<BLSPublicKey, UInt64> validatorIndicesByPubKey) {
+        final Set<BLSPublicKey> pubKeys, Map<BLSPublicKey, UInt64> validatorIndicesByPubKey) {
       Set<BLSPublicKey> publicKeysWithoutIndices =
           pubKeys.stream()
               .filter(publicKey -> !validatorIndicesByPubKey.containsKey(publicKey))
