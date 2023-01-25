@@ -265,29 +265,26 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> importBatch() {
-    final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
-
-    // send to signature and blobs sidecars verification then store blobs sidecars and blocks if all
-    // pass, or if one fails we reject the entire response
+    // send to signature verification and blobs sidecars validation and only store blocks and blobs
+    // sidecars if all checks pass, or if one fails we reject the entire response
     return batchVerifyHistoricalBlockSignatures(blocksToImport)
-        .thenCompose(__ -> validateBlobsSidecars(blocksToImport, blobsSidecarsBySlotToImport))
         .thenCompose(
             __ -> {
-              final Stream<SafeFuture<?>> blobsSidecarsImporting =
-                  blobsSidecarsBySlotToImport.values().stream()
-                      .map(storageUpdateChannel::onBlobsSidecar);
-              return SafeFuture.allOfFailFast(blobsSidecarsImporting);
+              final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
+              return validateBlobsSidecars(
+                  latestSlotInBatch, blocksToImport, blobsSidecarsBySlotToImport);
             })
         .thenCompose(
-            __ ->
-                storageUpdateChannel
-                    .onFinalizedBlocks(blocksToImport)
-                    .thenRun(
-                        () -> {
-                          LOG.trace(
-                              "Earliest block is now from slot {}", newEarliestBlock.getSlot());
-                          future.complete(newEarliestBlock);
-                        }))
+            __ -> {
+              final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
+              return storageUpdateChannel
+                  .onFinalizedBlocks(blocksToImport, blobsSidecarsBySlotToImport)
+                  .thenRun(
+                      () -> {
+                        LOG.trace("Earliest block is now from slot {}", newEarliestBlock.getSlot());
+                        future.complete(newEarliestBlock);
+                      });
+            })
         // always clear the blobs sidecars batch cache
         .alwaysRun(blobsSidecarsBySlotToImport::clear);
   }
@@ -340,9 +337,16 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobsSidecars(
+      final UInt64 latestSlotInBatch,
       final Collection<SignedBeaconBlock> blocks,
       final Map<UInt64, BlobsSidecar> blobsSidecarsBySlot) {
-    final Stream<SafeFuture<?>> validatingAndImportingBlobsSidecars =
+    if (!blobsSidecarManager.isStorageOfBlobsSidecarRequired(latestSlotInBatch)) {
+      LOG.trace(
+          "Latest slot in batch does not require blobs sidecars to be available. No validation is needed.");
+      return SafeFuture.COMPLETE;
+    }
+    LOG.trace("Validating blobs sidecars for a batch");
+    final Stream<SafeFuture<?>> validatingBlobsSidecars =
         blocks.stream()
             .map(
                 signedBlock -> {
@@ -372,7 +376,7 @@ public class HistoricalBatchFetcher {
                           });
                 });
 
-    return SafeFuture.allOfFailFast(validatingAndImportingBlobsSidecars);
+    return SafeFuture.allOfFailFast(validatingBlobsSidecars);
   }
 
   private SafeFuture<Void> handleNotReceivedBlobsSidecar(final UInt64 slot) {

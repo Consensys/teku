@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 
 public interface BlobsSidecarAvailabilityChecker {
   BlobsSidecarAvailabilityChecker NOOP =
@@ -80,6 +81,7 @@ public interface BlobsSidecarAvailabilityChecker {
 
   SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult();
 
+  /** Only perform the {@link MiscHelpersEip4844#isDataAvailable} check */
   SafeFuture<BlobsSidecarAndValidationResult> validate(BlobsSidecar blobsSidecar);
 
   enum BlobsSidecarValidationResult {
