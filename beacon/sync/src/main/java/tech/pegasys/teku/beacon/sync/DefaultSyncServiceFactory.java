@@ -24,10 +24,14 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
+import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.MilestoneBasedFetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -105,14 +109,22 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   }
 
   @Override
-  public SyncService create() {
+  public SyncService create(final EventChannels eventChannels) {
     if (!syncConfig.isSyncEnabled()) {
       return new NoopSyncService();
     }
 
     final ForwardSyncService forwardSyncService = createForwardSyncService();
+
+    final FetchBlockTaskFactory fetchBlockTaskFactory =
+        new MilestoneBasedFetchBlockTaskFactory(spec);
+
     final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks, forwardSyncService);
+        FetchRecentBlocksService.create(
+            asyncRunner, p2pNetwork, pendingBlocks, forwardSyncService, fetchBlockTaskFactory);
+
+    eventChannels.subscribe(SlotEventsChannel.class, recentBlockFetcher);
+
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
     final HistoricalBlockSyncService historicalBlockSyncService =
         createHistoricalSyncService(syncStateTracker);

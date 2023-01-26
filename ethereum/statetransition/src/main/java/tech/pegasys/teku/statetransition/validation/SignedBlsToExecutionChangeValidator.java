@@ -14,6 +14,8 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.spec.config.Constants.VALID_VALIDATOR_SET_SIZE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 
 import java.util.Optional;
@@ -31,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class SignedBlsToExecutionChangeValidator
@@ -43,14 +46,21 @@ public class SignedBlsToExecutionChangeValidator
   private final TimeProvider timeProvider;
 
   private final RecentChainData recentChainData;
+
+  private final AsyncBLSSignatureVerifier blsSignatureVerifier;
+
   private final Set<UInt64> seenBlsToExecutionChangeMessageFromValidators =
       LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
 
   public SignedBlsToExecutionChangeValidator(
-      final Spec spec, final TimeProvider timeProvider, RecentChainData recentChainData) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final RecentChainData recentChainData,
+      final AsyncBLSSignatureVerifier blsSignatureVerifier) {
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;
+    this.blsSignatureVerifier = blsSignatureVerifier;
   }
 
   @Override
@@ -77,35 +87,68 @@ public class SignedBlsToExecutionChangeValidator
      validator with index signed_bls_to_execution_change.message.validator_index.
     */
     if (!isFirstBlsToExecutionChangeForValidator(blsToExecutionChange)) {
-      final String logMessage =
-          String.format(
-              "BlsToExecutionChange is not the first one for validator %s.", validatorIndex);
-      LOG.trace(logMessage);
-      return SafeFuture.completedFuture(InternalValidationResult.create(IGNORE, logMessage));
+      return SafeFuture.completedFuture(rejectForDuplicatedMessage(validatorIndex));
     }
 
     /*
      [REJECT] All of the conditions within process_bls_to_execution_change pass validation.
     */
-    return getMaybeFailureReason(operation)
-        .thenApply(
-            maybeFailureReason -> {
-              if (maybeFailureReason.isPresent()) {
-                return InternalValidationResult.reject(
-                    "BlsToExecutionChange for validator %s is invalid: %s",
-                    validatorIndex, maybeFailureReason.get().describe());
-              }
+    return getState()
+        .thenCompose(
+            state -> {
+              final SafeFuture<InternalValidationResult> messageValidation =
+                  validateBlsMessage(state, blsToExecutionChange);
+              final SafeFuture<InternalValidationResult> signatureValidation =
+                  validateBlsMessageSignature(state, operation);
 
-              if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
-                return InternalValidationResult.ACCEPT;
-              } else {
-                final String logMessage =
-                    String.format(
-                        "BlsToExecutionChange is not the first one for validator %s.",
-                        validatorIndex);
-                LOG.trace(logMessage);
-                return InternalValidationResult.create(IGNORE, logMessage);
+              return SafeFuture.collectAll(messageValidation, signatureValidation)
+                  .thenApply(
+                      results -> {
+                        if (results.stream().allMatch(InternalValidationResult::isAccept)) {
+                          if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
+                            return InternalValidationResult.ACCEPT;
+                          } else {
+                            return rejectForDuplicatedMessage(validatorIndex);
+                          }
+                        }
+
+                        return results.stream()
+                            .filter(r -> !r.equals(InternalValidationResult.ACCEPT))
+                            .findFirst()
+                            .orElse(reject("Rejected for unknown reason"));
+                      });
+            });
+  }
+
+  private static InternalValidationResult rejectForDuplicatedMessage(final UInt64 validatorIndex) {
+    final String logMessage =
+        String.format(
+            "BlsToExecutionChange is not the first one for validator %s.", validatorIndex);
+    LOG.trace(logMessage);
+    return InternalValidationResult.create(IGNORE, logMessage);
+  }
+
+  @SuppressWarnings("FormatStringAnnotation")
+  private SafeFuture<InternalValidationResult> validateBlsMessage(
+      BeaconState state, BlsToExecutionChange operation) {
+    return spec.validateBlsToExecutionChange(state, timeProvider.getTimeInSeconds(), operation)
+        .map(reason -> reject(reason.describe()))
+        .map(SafeFuture::completedFuture)
+        .orElse(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+  }
+
+  private SafeFuture<InternalValidationResult> validateBlsMessageSignature(
+      BeaconState state, SignedBlsToExecutionChange operation) {
+    return spec.atSlot(state.getSlot())
+        .operationSignatureVerifier()
+        .verifyBlsToExecutionChangeSignatureAsync(state, operation, blsSignatureVerifier)
+        .thenApply(
+            signatureValid -> {
+              if (!signatureValid) {
+                return reject(
+                    "Rejecting bls_to_execution_change message because the signature is invalid");
               }
+              return InternalValidationResult.create(ACCEPT);
             });
   }
 
@@ -120,25 +163,15 @@ public class SignedBlsToExecutionChangeValidator
   @Override
   public Optional<OperationInvalidReason> validateForBlockInclusion(
       final BeaconState state, final SignedBlsToExecutionChange operation) {
-    return getMaybeFailureReason(state, operation);
-  }
 
-  private SafeFuture<Optional<OperationInvalidReason>> getMaybeFailureReason(
-      final SignedBlsToExecutionChange signedBlsToExecutionChange) {
-    return getState().thenApply(state -> getMaybeFailureReason(state, signedBlsToExecutionChange));
-  }
-
-  private Optional<OperationInvalidReason> getMaybeFailureReason(
-      final BeaconState state, final SignedBlsToExecutionChange signedBlsToExecutionChange) {
     final Optional<OperationInvalidReason> invalidReason =
         spec.validateBlsToExecutionChange(
-            state, timeProvider.getTimeInSeconds(), signedBlsToExecutionChange.getMessage());
+            state, timeProvider.getTimeInSeconds(), operation.getMessage());
     if (invalidReason.isPresent()) {
       return invalidReason;
     }
 
-    if (!spec.verifyBlsToExecutionChangeSignature(
-        state, signedBlsToExecutionChange, BLSSignatureVerifier.SIMPLE)) {
+    if (!spec.verifyBlsToExecutionChangeSignature(state, operation, BLSSignatureVerifier.SIMPLE)) {
       return Optional.of(() -> "Signature is invalid");
     }
     return Optional.empty();

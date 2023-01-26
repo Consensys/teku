@@ -286,9 +286,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     syncService
         .getRecentBlockFetcher()
         .subscribeBlockFetched(
-            (block) ->
+            (block, blobsSidecar) ->
                 blockManager
-                    .importBlock(block, Optional.empty())
+                    .importBlock(block, blobsSidecar)
                     .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->
@@ -394,6 +394,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initForkChoice();
     initBlockImporter();
     initCombinedChainDataClient();
+    initSignatureVerificationService();
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
@@ -402,7 +403,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initEth1DataCache();
     initDepositProvider();
     initGenesisHandler();
-    initSignatureVerificationService();
     initAttestationManager();
     initPendingBlocks();
     initBlockManager();
@@ -530,7 +530,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initSignedBlsToExecutionChangePool() {
     LOG.debug("BeaconChainController.initSignedBlsToExecutionChangePool()");
     final SignedBlsToExecutionChangeValidator validator =
-        new SignedBlsToExecutionChangeValidator(spec, timeProvider, recentChainData);
+        new SignedBlsToExecutionChangeValidator(
+            spec, timeProvider, recentChainData, signatureVerificationService);
 
     blsToExecutionChangePool =
         new OperationPool<>(
@@ -541,7 +542,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
             validator,
-            300_000);
+            16_384);
   }
 
   protected void initDataProvider() {
@@ -999,7 +1000,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initSyncService() {
     LOG.debug("BeaconChainController.initSyncService()");
-    syncService = createSyncServiceFactory().create();
+    syncService = createSyncServiceFactory().create(eventChannels);
 
     // chainHeadChannel subscription
     syncService.getForwardSync().subscribeToSyncChanges(coalescingChainHeadChannel);

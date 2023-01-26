@@ -173,6 +173,8 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
               "ssz_static/Withdrawal",
               new SszTestExecutor<>(
                   schemas -> SchemaDefinitionsCapella.required(schemas).getWithdrawalSchema()))
+
+          // EIP-4844 types
           .put(
               "ssz_static/BlobsSidecar",
               new SszTestExecutor<>(

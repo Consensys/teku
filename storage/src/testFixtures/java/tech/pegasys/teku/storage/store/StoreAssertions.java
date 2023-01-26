@@ -31,6 +31,7 @@ public class StoreAssertions {
             "lock",
             "readLock",
             "blockProvider",
+            "blobsSidecarProvider",
             "blocks",
             "blockMetadata",
             "stateRequestCachedCounter",

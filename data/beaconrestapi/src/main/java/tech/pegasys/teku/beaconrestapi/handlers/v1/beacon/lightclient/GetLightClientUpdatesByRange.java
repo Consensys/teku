@@ -21,13 +21,18 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -45,7 +50,10 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
             .tags(TAG_BEACON, TAG_EXPERIMENTAL)
             .queryParamRequired(START_PERIOD_PARAMETER)
             .queryParamRequired(COUNT_PARAMETER)
-            .response(SC_OK, "Request successful", getResponseType(schemaDefinitionCache))
+            .response(
+                SC_OK,
+                "Request successful",
+                List.of(getJsonResponseType(schemaDefinitionCache), getSszResponseType()))
             .withNotAcceptedResponse()
             .withNotImplementedResponse()
             .build());
@@ -56,8 +64,8 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
     request.respondError(501, "Not implemented");
   }
 
-  private static SerializableTypeDefinition<List<ObjectAndMetaData<LightClientUpdate>>>
-      getResponseType(SchemaDefinitionCache schemaDefinitionCache) {
+  private static ResponseContentTypeDefinition<List<ObjectAndMetaData<LightClientUpdate>>>
+      getJsonResponseType(SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<LightClientUpdate> lightClientUpdateType =
         SchemaDefinitionsAltair.required(
                 schemaDefinitionCache.getSchemaDefinition(SpecMilestone.ALTAIR))
@@ -71,6 +79,17 @@ public class GetLightClientUpdatesByRange extends RestApiEndpoint {
                 .withField("data", lightClientUpdateType, ObjectAndMetaData::getData)
                 .build();
 
-    return SerializableTypeDefinition.listOf(lightClientUpdateObjectType);
+    return new JsonResponseContentTypeDefinition<>(
+        SerializableTypeDefinition.listOf(lightClientUpdateObjectType));
+  }
+
+  private static ResponseContentTypeDefinition<List<LightClientUpdateResponse>>
+      getSszResponseType() {
+    OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<List<LightClientUpdateResponse>>
+        serializer =
+            (data, out) ->
+                data.stream().forEachOrdered(lcuResponse -> lcuResponse.sszSerialize(out));
+
+    return new OctetStreamResponseContentTypeDefinition<>(serializer, __ -> Collections.emptyMap());
   }
 }

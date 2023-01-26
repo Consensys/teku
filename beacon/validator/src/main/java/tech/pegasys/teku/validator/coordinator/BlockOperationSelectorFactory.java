@@ -363,7 +363,7 @@ public class BlockOperationSelectorFactory {
       final Bytes32 beaconBlockRoot,
       final List<Blob> blobs) {
     final MiscHelpersEip4844 miscHelpers =
-        (MiscHelpersEip4844) spec.forMilestone(SpecMilestone.EIP4844).miscHelpers();
+        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
     return new BlobsSidecar(
         schemaDefinitionsEip4844.getBlobsSidecarSchema(),
         beaconBlockRoot,

@@ -21,6 +21,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -33,10 +35,11 @@ public class LightClientUtilTest {
   @Test
   public void getBoostrap_shouldReturnValidBootstrap() {
     BeaconState state = dataStructureUtil.stateBuilderAltair().build();
-    BeaconBlockHeader expectedHeader = BeaconBlockHeader.fromState(state);
+    LightClientHeader expectedHeader =
+        new LightClientHeaderSchema().create(BeaconBlockHeader.fromState(state));
     LightClientBootstrap bootstrap = lightClientUtil.getLightClientBootstrap(state);
 
-    assertThat(bootstrap.getBeaconBlockHeader()).isEqualTo(expectedHeader);
+    assertThat(bootstrap.getLightClientHeader()).isEqualTo(expectedHeader);
     assertThat(bootstrap.getCurrentSyncCommittee())
         .isEqualTo(BeaconStateAltair.required(state).getCurrentSyncCommittee());
   }

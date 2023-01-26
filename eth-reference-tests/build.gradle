@@ -9,6 +9,7 @@ dependencies {
   referenceTestImplementation project(':ethereum:statetransition')
   referenceTestImplementation project(':eth-tests')
   referenceTestImplementation project(':infrastructure:bls')
+  referenceTestImplementation project(':infrastructure:serviceutils')
   referenceTestImplementation project(':infrastructure:ssz')
   referenceTestImplementation testFixtures(project(':infrastructure:ssz'))
   referenceTestImplementation project(':storage')

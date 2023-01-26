@@ -70,9 +70,7 @@ public class EthereumTypes {
 
   public static final DeserializableTypeDefinition<SpecMilestone> MILESTONE_TYPE =
       DeserializableTypeDefinition.enumOf(
-          SpecMilestone.class,
-          milestone -> milestone.name().toLowerCase(Locale.ROOT),
-          Set.of(SpecMilestone.EIP4844));
+          SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
       ResponseContentTypeDefinition<T> sszResponseType() {

@@ -17,27 +17,26 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container7;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 
 public class LightClientUpdate
     extends Container7<
         LightClientUpdate,
-        BeaconBlockHeader,
+        LightClientHeader,
         SyncCommittee,
         SszBytes32Vector,
-        BeaconBlockHeader,
+        LightClientHeader,
         SszBytes32Vector,
         SyncAggregate,
         SszUInt64> {
 
   public LightClientUpdate(
       final LightClientUpdateSchema schema,
-      final BeaconBlockHeader attestedHeader,
+      final LightClientHeader attestedHeader,
       final SyncCommittee nextSyncCommittee,
       final SszBytes32Vector nextSyncCommitteeBranch,
-      final BeaconBlockHeader finalizedHeader,
+      final LightClientHeader finalizedHeader,
       final SszBytes32Vector finalityBranch,
       final SyncAggregate syncAggregate,
       final SszUInt64 signatureSlot) {

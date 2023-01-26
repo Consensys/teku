@@ -17,12 +17,21 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class Eip4844ExecutionClientHandler extends CapellaExecutionClientHandler
@@ -32,6 +41,58 @@ public class Eip4844ExecutionClientHandler extends CapellaExecutionClientHandler
   public Eip4844ExecutionClientHandler(
       final Spec spec, final ExecutionEngineClient executionEngineClient) {
     super(spec, executionEngineClient);
+  }
+
+  @Override
+  public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    LOG.trace(
+        "calling engineGetPayloadV3(payloadId={}, slot={})",
+        executionPayloadContext.getPayloadId(),
+        slot);
+    return executionEngineClient
+        .getPayloadV3(executionPayloadContext.getPayloadId())
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            response -> {
+              final ExecutionPayloadSchema<?> payloadSchema =
+                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                      .getExecutionPayloadSchema();
+              return new ExecutionPayloadWithValue(
+                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
+                  response.blockValue);
+            })
+        .thenPeek(
+            payloadAndValue ->
+                LOG.trace(
+                    "engineGetPayloadV3(payloadId={}, slot={}) -> {}",
+                    executionPayloadContext.getPayloadId(),
+                    slot,
+                    payloadAndValue));
+  }
+
+  @Override
+  public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
+    LOG.trace("calling engineNewPayloadV3(executionPayload={})", executionPayload);
+    final ExecutionPayloadV1 executionPayloadV1;
+    if (executionPayload.toVersionEip4844().isPresent()) {
+      executionPayloadV1 = ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
+    } else if (executionPayload.toVersionCapella().isPresent()) {
+      executionPayloadV1 = ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
+    } else {
+      executionPayloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
+    }
+    return executionEngineClient
+        .newPayloadV3(executionPayloadV1)
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
+        .thenPeek(
+            payloadStatus ->
+                LOG.trace(
+                    "engineNewPayloadV3(executionPayload={}) -> {}",
+                    executionPayload,
+                    payloadStatus))
+        .exceptionally(PayloadStatus::failedExecution);
   }
 
   @Override
