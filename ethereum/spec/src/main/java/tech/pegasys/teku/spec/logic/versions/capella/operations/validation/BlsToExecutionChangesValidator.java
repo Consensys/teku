@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationStateT
 public class BlsToExecutionChangesValidator
     implements OperationStateTransitionValidator<BlsToExecutionChange> {
 
-  public BlsToExecutionChangesValidator() {}
+  BlsToExecutionChangesValidator() {}
 
   @Override
   public Optional<OperationInvalidReason> validate(
