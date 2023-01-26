@@ -93,9 +93,7 @@ public class BeaconChainMethodsTest {
     final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalAltair());
 
     assertThat(methods.beaconBlocksByRange().getIds())
-        .containsExactly(
-            "/eth2/beacon_chain/req/beacon_blocks_by_range/2/ssz_snappy",
-            "/eth2/beacon_chain/req/beacon_blocks_by_range/1/ssz_snappy");
+        .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_range/2/ssz_snappy");
   }
 
   @Test
@@ -103,7 +101,7 @@ public class BeaconChainMethodsTest {
     final BeaconChainMethods methods = getMethods();
 
     assertThat(methods.beaconBlocksByRange().getIds())
-        .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_range/1/ssz_snappy");
+        .containsExactly("/eth2/beacon_chain/req/beacon_blocks_by_range/2/ssz_snappy");
   }
 
   @Test
@@ -115,7 +113,7 @@ public class BeaconChainMethodsTest {
   }
 
   @Test
-  public void shouldCreateUnversionedBlocksByRootMethodWithAltairDisabled() {
+  public void shouldCreateUnversionedBlocksByRootMethodWithAltairDisabled() { // TODO remove test?
     final BeaconChainMethods methods = getMethods();
 
     assertThat(methods.beaconBlocksByRoot().getIds()).isEmpty();
