@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.doppelganger;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -23,11 +24,12 @@ public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionActio
   private static final Logger LOG = LogManager.getLogger();
 
   @Override
-  public void shutDown() {
-    LOG.info("Validator doppelganger detected. Shutting down...");
+  public void perform(final List<BLSPublicKey> doppelgangers) {
+    LOG.info(
+        "Validator doppelganger detected. Public keys: {}. Shutting down...",
+        doppelgangers.stream()
+            .map(BLSPublicKey::toAbbreviatedString)
+            .collect(Collectors.joining(", ")));
     System.exit(1);
   }
-
-  @Override
-  public void alert(final List<BLSPublicKey> doppelgangers) {}
 }

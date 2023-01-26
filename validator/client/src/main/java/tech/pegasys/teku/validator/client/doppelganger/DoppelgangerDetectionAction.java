@@ -18,7 +18,5 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 
 public interface DoppelgangerDetectionAction {
 
-  void shutDown();
-
-  void alert(final List<BLSPublicKey> doppelgangers);
+  void perform(final List<BLSPublicKey> doppelgangers);
 }
