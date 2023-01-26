@@ -32,15 +32,24 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationStateT
 public class BlsToExecutionChangesValidator
     implements OperationStateTransitionValidator<BlsToExecutionChange> {
 
-  BlsToExecutionChangesValidator() {}
+  public BlsToExecutionChangesValidator() {}
 
   @Override
   public Optional<OperationInvalidReason> validate(
       final Fork fork, final BeaconState state, final BlsToExecutionChange blsToExecutionChange) {
+    final Optional<OperationInvalidReason> indexCheckResult =
+        verifyValidatorIndex(state, blsToExecutionChange);
+    if (indexCheckResult.isPresent()) {
+      return indexCheckResult;
+    }
+
+    final int validatorIndex = blsToExecutionChange.getValidatorIndex().intValue();
+    final Bytes32 withdrawalCredentials =
+        getWithdrawalCredentialsForValidatorIndex(state, validatorIndex);
+
     return firstOf(
-        () -> verifyValidatorIndex(state, blsToExecutionChange),
-        () -> verifyWithdrawalCredentialPrefix(state, blsToExecutionChange),
-        () -> verifyBlsPubKeyMatches(state, blsToExecutionChange));
+        () -> verifyWithdrawalCredentialPrefix(validatorIndex, withdrawalCredentials),
+        () -> verifyBlsPubKeyMatches(blsToExecutionChange, validatorIndex, withdrawalCredentials));
   }
 
   private Optional<OperationInvalidReason> verifyValidatorIndex(
@@ -51,10 +60,7 @@ public class BlsToExecutionChangesValidator
   }
 
   private Optional<OperationInvalidReason> verifyWithdrawalCredentialPrefix(
-      final BeaconState beaconState, final BlsToExecutionChange operation) {
-    final int validatorIndex = operation.getValidatorIndex().intValue();
-    final Bytes32 withdrawalCredentials =
-        getWithdrawalCredentialsForValidatorIndex(beaconState, validatorIndex);
+      final int validatorIndex, final Bytes32 withdrawalCredentials) {
 
     return check(
         withdrawalCredentials.get(0) == WithdrawalPrefixes.BLS_WITHDRAWAL_PREFIX.get(0),
@@ -62,18 +68,18 @@ public class BlsToExecutionChangesValidator
   }
 
   private Optional<OperationInvalidReason> verifyBlsPubKeyMatches(
-      final BeaconState beaconState, final BlsToExecutionChange operation) {
-
-    final int validatorIndex = operation.getValidatorIndex().intValue();
-    final Bytes32 withdrawalCredentials =
-        getWithdrawalCredentialsForValidatorIndex(beaconState, validatorIndex);
+      final BlsToExecutionChange blsToExecutionChange,
+      final int validatorIndex,
+      final Bytes32 withdrawalCredentials) {
 
     boolean matchingBlsPubKey =
         withdrawalCredentials
             .slice(1)
-            .equals(Hash.sha256(operation.getFromBlsPubkey().toBytesCompressed()).slice(1));
+            .equals(
+                Hash.sha256(blsToExecutionChange.getFromBlsPubkey().toBytesCompressed()).slice(1));
 
-    return check(matchingBlsPubKey, publicKeyNotMatchingCredentials(validatorIndex, operation));
+    return check(
+        matchingBlsPubKey, publicKeyNotMatchingCredentials(validatorIndex, blsToExecutionChange));
   }
 
   private static Bytes32 getWithdrawalCredentialsForValidatorIndex(
