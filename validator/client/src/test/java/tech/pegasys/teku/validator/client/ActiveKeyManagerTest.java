@@ -355,8 +355,7 @@ class ActiveKeyManagerTest {
     verify(channel, times(1)).onValidatorsAdded();
     verify(doppelgangerDetector)
         .performDoppelgangerDetection(Set.of(validatorPublicKey, doppelgangerPublicKey));
-    verify(doppelgangerDetectionAction, never()).shutDown();
-    verify(doppelgangerDetectionAction).alert(List.of(doppelgangerPublicKey));
+    verify(doppelgangerDetectionAction).perform(List.of(doppelgangerPublicKey));
     verify(validatorLoader, times(1))
         .addValidator(validatorKeyStoreData, validatorPassword, validatorPublicKey);
     verify(validatorLoader, never())
@@ -393,8 +392,7 @@ class ActiveKeyManagerTest {
     verify(validatorLoader, times(1))
         .addValidator(any(), eq(doppelgangerPassword), eq(doppelgangerPublicKey));
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
-    verify(doppelgangerDetectionAction, never()).shutDown();
-    verify(doppelgangerDetectionAction, never()).alert(any());
+    verify(doppelgangerDetectionAction, never()).perform(any());
     logCaptor.assertErrorLog(
         String.format(
             "Failed to perform doppelganger detection for public keys %s",
@@ -451,8 +449,7 @@ class ActiveKeyManagerTest {
     verify(channel, times(1)).onValidatorsAdded();
     verify(doppelgangerDetector)
         .performDoppelgangerDetection(Set.of(validatorPublicKey, doppelgangerPublicKey));
-    verify(doppelgangerDetectionAction, never()).shutDown();
-    verify(doppelgangerDetectionAction).alert(List.of(doppelgangerPublicKey));
+    verify(doppelgangerDetectionAction).perform(List.of(doppelgangerPublicKey));
     verify(validatorLoader, never()).addExternalValidator(signerUrl, doppelgangerPublicKey);
     verify(validatorLoader, times(1)).addExternalValidator(signerUrl, validatorPublicKey);
   }
@@ -489,8 +486,7 @@ class ActiveKeyManagerTest {
 
     verify(channel).onValidatorsAdded();
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
-    verify(doppelgangerDetectionAction, never()).shutDown();
-    verify(doppelgangerDetectionAction, never()).alert(any());
+    verify(doppelgangerDetectionAction, never()).perform(any());
     verify(validatorLoader, times(1)).addExternalValidator(signerUrl, doppelgangerPublicKey);
     logCaptor.assertErrorLog(
         String.format(
