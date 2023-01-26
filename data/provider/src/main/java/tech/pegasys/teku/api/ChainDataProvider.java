@@ -15,6 +15,7 @@ package tech.pegasys.teku.api;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -23,7 +24,9 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -69,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -545,7 +549,7 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<SyncCommitteeRewardData>> getSyncCommitteeRewardsFromBlockId(
-      final String blockId) {
+      final String blockId, final Set<String> validators) {
     return getBlockAndMetaData(blockId)
         .thenCompose(
             result -> {
@@ -580,26 +584,51 @@ public class ChainDataProvider {
                           return Optional.of(data);
                         }
 
-                        final List<Integer> committeeIndices =
-                            maybeCommittee.get().getPubkeys().stream()
-                                .flatMap(
-                                    pubkey ->
-                                        spec
-                                            .getValidatorIndex(state, pubkey.getBLSPublicKey())
-                                            .stream())
-                                .collect(toList());
+                        final Map<Integer, Integer> committeeIndices =
+                            getCommitteeIndices(
+                                maybeCommittee.get().getPubkeys().stream()
+                                    .map(SszPublicKey::getBLSPublicKey)
+                                    .collect(toList()),
+                                validators,
+                                state);
+                        final UInt64 participantReward =
+                            spec.getSyncCommitteeParticipantReward(state);
                         return Optional.of(
-                            calculateRewards(
-                                committeeIndices,
-                                spec.getSyncCommitteeParticipantReward(state),
-                                block,
-                                data));
+                            calculateRewards(committeeIndices, participantReward, block, data));
                       });
             });
   }
 
+  private Map<Integer, Integer> getCommitteeIndices(
+      final List<BLSPublicKey> committeeKeys,
+      final Set<String> validators,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    if (validators.isEmpty()) {
+      final List<Integer> result =
+          committeeKeys.stream()
+              .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey).stream())
+              .collect(toList());
+      return IntStream.range(0, result.size()).boxed().collect(toMap(result::get, i -> i));
+    }
+
+    final Map<Integer, Integer> output = new HashMap<>();
+    int i = 0;
+    for (BLSPublicKey key : committeeKeys) {
+      final Optional<Integer> validatorIndex = spec.getValidatorIndex(state, key);
+      if (validatorIndex.isEmpty()) {
+        continue;
+      }
+      if (validators.contains(key.toHexString())
+          || validators.contains(validatorIndex.toString())) {
+        output.put(i++, validatorIndex.get());
+      }
+    }
+
+    return output;
+  }
+
   private SyncCommitteeRewardData calculateRewards(
-      final List<Integer> committeeIndices,
+      final Map<Integer, Integer> committeeIndices,
       final UInt64 participantReward,
       final BeaconBlock block,
       final SyncCommitteeRewardData data) {
@@ -608,11 +637,13 @@ public class ChainDataProvider {
       return data;
     }
 
-    for (int i = 0; i < committeeIndices.size(); i++) {
-      if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
-        data.updateReward(committeeIndices.get(i), participantReward);
-      }
-    }
+    committeeIndices.forEach(
+        (i, key) -> {
+          if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
+            data.updateReward(key, participantReward);
+          }
+        });
+
     return data;
   }
 

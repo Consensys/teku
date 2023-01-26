@@ -26,6 +26,8 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
@@ -85,12 +87,11 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    // TODO handle request body Bytes48 or int array
-    // final List<String> requestBody = request.getRequestBody();
-
+    final List<String> requestBody = request.getRequestBody();
     request.respondAsync(
         chainDataProvider
-            .getSyncCommitteeRewardsFromBlockId(request.getPathParameter(PARAMETER_BLOCK_ID))
+            .getSyncCommitteeRewardsFromBlockId(
+                request.getPathParameter(PARAMETER_BLOCK_ID), new HashSet<>(requestBody))
             .thenApply(
                 result ->
                     result
