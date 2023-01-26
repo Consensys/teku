@@ -45,13 +45,12 @@ public class StartupLogConfig {
 
   public List<String> getReport() { // TODO clean up formatting here
     final String general =
-        String.format(
-            "Configuration | Network: %s, Storage Mode: %s, Rest API Port: %s",
-            network, storageMode, restApiPort);
+        String.format("Configuration | Network: %s, Storage Mode: %s", network, storageMode);
     final String host =
         String.format(
             "Host Configuration | Maximum Heap Size: %s, Total Memory: %s, CPU Cores: %d",
             maxHeapSize, memory, cpuCores);
-    return List.of(general, host);
+    final String restApi = String.format("Rest Api Configuration | Port: %s", restApiPort);
+    return List.of(general, host, restApi);
   }
 }
