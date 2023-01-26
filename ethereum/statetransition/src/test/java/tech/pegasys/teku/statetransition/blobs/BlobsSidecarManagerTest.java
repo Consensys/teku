@@ -28,7 +28,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.ForkSchedule;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -46,6 +48,7 @@ public class BlobsSidecarManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Spec mockedSpec = mock(Spec.class);
   private final SpecVersion mockedSpecVersion = mock(SpecVersion.class);
+  private final ForkSchedule mockedForkSchedule = mock(ForkSchedule.class);
   private final MiscHelpers mockedMiscHelpers = mock(MiscHelpers.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
@@ -59,6 +62,7 @@ public class BlobsSidecarManagerTest {
     when(storageUpdateChannel.onBlobsSidecar(any())).thenReturn(SafeFuture.COMPLETE);
     when(mockedSpec.atSlot(any())).thenReturn(mockedSpecVersion);
     when(mockedSpecVersion.miscHelpers()).thenReturn(mockedMiscHelpers);
+    when(mockedSpec.getForkSchedule()).thenReturn(mockedForkSchedule);
   }
 
   @Test
@@ -161,5 +165,47 @@ public class BlobsSidecarManagerTest {
 
     assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE)).isEmpty();
     assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2))).isEmpty();
+  }
+
+  @Test
+  void isStorageOfBlobsSidecarRequired_shouldReturnTrueIfWithinRange() {
+    when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.EIP4844);
+
+    final UInt64 currentEpoch = UInt64.valueOf(10000);
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(currentEpoch));
+
+    // 10000 - 8000 < 4096
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    when(mockedSpec.computeEpochAtSlot(slot)).thenReturn(UInt64.valueOf(8000));
+
+    final boolean result = blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot);
+
+    assertThat(result).isTrue();
+  }
+
+  @Test
+  void isStorageOfBlobsSidecarRequired_shouldReturnFalseIfNotWithinRange() {
+    when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.EIP4844);
+
+    final UInt64 currentEpoch = UInt64.valueOf(10000);
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(currentEpoch));
+
+    // 10000 - 4000 > 4096
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+    when(mockedSpec.computeEpochAtSlot(slot)).thenReturn(UInt64.valueOf(4000));
+
+    final boolean result = blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot);
+
+    assertThat(result).isFalse();
+  }
+
+  @Test
+  void isStorageOfBlobsSidecarRequired_shouldReturnFalseIfPreEip4844() {
+    when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.BELLATRIX);
+
+    final boolean result =
+        blobsSidecarManager.isStorageOfBlobsSidecarRequired(dataStructureUtil.randomUInt64());
+
+    assertThat(result).isFalse();
   }
 }

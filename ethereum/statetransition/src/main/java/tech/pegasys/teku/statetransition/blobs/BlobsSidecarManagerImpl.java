@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 import static tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.ALREADY_CHECKED;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
@@ -56,11 +58,26 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
       final RecentChainData recentChainData,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel) {
-
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.storageUpdateChannel = storageUpdateChannel;
     this.storageQueryChannel = storageQueryChannel;
+  }
+
+  @Override
+  public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
+    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
+    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      return false;
+    }
+    return recentChainData
+        .getCurrentEpoch()
+        .map(
+            currentEpoch ->
+                currentEpoch
+                    .minusMinZero(spec.computeEpochAtSlot(slot))
+                    .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
+        .orElse(false);
   }
 
   @Override
@@ -91,6 +108,11 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   public BlobsSidecarAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
+    // Block is pre-4844, BlobsSidecar is not supported yet
+    if (block.getMessage().getBody().toVersionEip4844().isEmpty()) {
+      return BlobsSidecarAvailabilityChecker.NOT_REQUIRED;
+    }
+
     final Optional<BlobsSidecar> maybeValidatedBlobs =
         Optional.ofNullable(
             validatedPendingBlobs.getOrDefault(block.getSlot(), emptyMap()).get(block.getRoot()));
@@ -110,7 +132,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   public void onSlot(final UInt64 slot) {
-    validatedPendingBlobs.headMap(slot.decrement()).clear();
+    validatedPendingBlobs.headMap(slot.minusMinZero(1)).clear();
   }
 
   private void internalStoreUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {

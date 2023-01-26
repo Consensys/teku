@@ -46,6 +46,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
@@ -68,7 +69,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validate
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -92,6 +92,8 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
+import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
+import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
 
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
@@ -108,8 +110,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final CombinedChainDataClient combinedChainDataClient;
   private final SyncStateProvider syncStateProvider;
   private final BlockFactory blockFactory;
-  private final BlockImportChannel blockImportChannel;
-  private final BlockGossipChannel blockGossipChannel;
   private final AggregatingAttestationPool attestationPool;
   private final AttestationManager attestationManager;
   private final AttestationTopicSubscriber attestationTopicSubscriber;
@@ -122,6 +122,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
+  private final BlockPublisher blockPublisher;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -131,6 +132,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
+      final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
@@ -148,8 +150,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.combinedChainDataClient = combinedChainDataClient;
     this.syncStateProvider = syncStateProvider;
     this.blockFactory = blockFactory;
-    this.blockImportChannel = blockImportChannel;
-    this.blockGossipChannel = blockGossipChannel;
     this.attestationPool = attestationPool;
     this.attestationManager = attestationManager;
     this.attestationTopicSubscriber = attestationTopicSubscriber;
@@ -162,6 +162,15 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.syncCommitteeSubscriptionManager = syncCommitteeSubscriptionManager;
     this.proposersDataManager = proposersDataManager;
+    this.blockPublisher =
+        new MilestoneBasedBlockPublisher(
+            spec,
+            blockFactory,
+            blockImportChannel,
+            blockGossipChannel,
+            blockAndBlobsSidecarGossipChannel,
+            performanceTracker,
+            dutyMetrics);
   }
 
   @Override
@@ -546,39 +555,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBeaconBlock maybeBlindedBlock) {
-    return blockFactory
-        .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
-        .thenCompose(this::sendUnblindedSignedBlock);
-  }
-
-  private SafeFuture<SendSignedBlockResult> sendUnblindedSignedBlock(
-      final SignedBeaconBlock block) {
-    performanceTracker.saveProducedBlock(block);
-    blockGossipChannel.publishBlock(block);
-    return blockImportChannel
-        .importBlock(block)
-        .thenApply(
-            result -> {
-              if (result.isSuccessful()) {
-                LOG.trace("Successfully imported proposed block: {}", block::toLogString);
-                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-                return SendSignedBlockResult.success(block.getRoot());
-              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-                LOG.debug(
-                    "Delayed processing proposed block {} because it is from the future",
-                    block::toLogString);
-                dutyMetrics.onBlockPublished(block.getMessage().getSlot());
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
-              } else {
-                VALIDATOR_LOGGER.proposedBlockImportFailed(
-                    result.getFailureReason().toString(),
-                    block.getSlot(),
-                    block.getRoot(),
-                    result.getFailureCause());
-
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
-              }
-            });
+    return blockPublisher
+        .sendSignedBlock(maybeBlindedBlock)
+        .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
   }
 
   @Override

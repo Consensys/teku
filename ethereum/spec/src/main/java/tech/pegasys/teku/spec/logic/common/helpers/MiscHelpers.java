@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 
 public class MiscHelpers {
 
@@ -237,13 +239,13 @@ public class MiscHelpers {
     return computeDomain(domainType, specConfig.getGenesisForkVersion(), Bytes32.ZERO);
   }
 
+  public Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 genesisValidatorsRoot) {
+    return computeDomain(domainType, specConfig.getGenesisForkVersion(), genesisValidatorsRoot);
+  }
+
   public Bytes32 computeDomain(
       Bytes4 domainType, Bytes4 forkVersion, Bytes32 genesisValidatorsRoot) {
     final Bytes32 forkDataRoot = computeForkDataRoot(forkVersion, genesisValidatorsRoot);
-    return computeDomain(domainType, forkDataRoot);
-  }
-
-  private Bytes32 computeDomain(final Bytes4 domainType, final Bytes32 forkDataRoot) {
     return Bytes32.wrap(Bytes.concatenate(domainType.getWrappedBytes(), forkDataRoot.slice(0, 28)));
   }
 
@@ -258,12 +260,6 @@ public class MiscHelpers {
   /**
    * Performs data availability by validating blobs and proof from Sidecar against blobs kzg
    * commitments from the block. It will also make check slot and blockRoot consistency.
-   *
-   * @param slot
-   * @param beaconBlockRoot
-   * @param kzgCommitments
-   * @param blobsSidecar
-   * @return
    */
   public boolean isDataAvailable(
       final UInt64 slot,
@@ -276,5 +272,9 @@ public class MiscHelpers {
   public boolean verifyKZGCommitmentsAgainstTransactions(
       final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
     return false;
+  }
+
+  public Optional<MiscHelpersEip4844> toVersionEip4844() {
+    return Optional.empty();
   }
 }

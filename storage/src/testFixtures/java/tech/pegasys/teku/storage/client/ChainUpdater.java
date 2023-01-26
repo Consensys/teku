@@ -24,21 +24,25 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
 
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
+  public final BlobsSidecarManager blobsSidecarManager;
   public final Spec spec;
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
+    this.blobsSidecarManager = BlobsSidecarManager.NOOP;
     this.spec = TestSpecFactory.createMinimalPhase0();
   }
 
@@ -47,6 +51,18 @@ public class ChainUpdater {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.spec = spec;
+    this.blobsSidecarManager = BlobsSidecarManager.NOOP;
+  }
+
+  public ChainUpdater(
+      final RecentChainData recentChainData,
+      final ChainBuilder chainBuilder,
+      final BlobsSidecarManager blobsSidecarManager,
+      final Spec spec) {
+    this.recentChainData = recentChainData;
+    this.chainBuilder = chainBuilder;
+    this.spec = spec;
+    this.blobsSidecarManager = blobsSidecarManager;
   }
 
   public UInt64 getHeadSlot() {
@@ -218,6 +234,8 @@ public class ChainUpdater {
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
+    Optional<BlobsSidecar> maybeBlobsSideCar = chainBuilder.getBlobsSidecar(block.getRoot());
+    maybeBlobsSideCar.ifPresent(blobsSidecarManager::storeUnconfirmedBlobsSidecar);
     saveBlock(block);
     return block;
   }

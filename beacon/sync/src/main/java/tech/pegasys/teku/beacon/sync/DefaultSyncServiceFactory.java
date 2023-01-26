@@ -15,6 +15,8 @@ package tech.pegasys.teku.beacon.sync;
 
 import java.time.Duration;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
@@ -22,15 +24,20 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
+import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.MilestoneBasedFetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -43,6 +50,9 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  * might be changed in any version in backward incompatible way
  */
 public class DefaultSyncServiceFactory implements SyncServiceFactory {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final SyncConfig syncConfig;
   private final Optional<String> genesisStateResource;
   private final MetricsSystem metrics;
@@ -54,6 +64,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final StorageUpdateChannel storageUpdateChannel;
   private final Eth2P2PNetwork p2pNetwork;
   private final BlockImporter blockImporter;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
@@ -72,6 +83,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final StorageUpdateChannel storageUpdateChannel,
       final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
+      final BlobsSidecarManager blobsSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
@@ -88,6 +100,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.storageUpdateChannel = storageUpdateChannel;
     this.p2pNetwork = p2pNetwork;
     this.blockImporter = blockImporter;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.pendingBlocks = pendingBlocks;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
@@ -96,14 +109,22 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   }
 
   @Override
-  public SyncService create() {
+  public SyncService create(final EventChannels eventChannels) {
     if (!syncConfig.isSyncEnabled()) {
       return new NoopSyncService();
     }
 
     final ForwardSyncService forwardSyncService = createForwardSyncService();
+
+    final FetchBlockTaskFactory fetchBlockTaskFactory =
+        new MilestoneBasedFetchBlockTaskFactory(spec);
+
     final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(asyncRunner, p2pNetwork, pendingBlocks, forwardSyncService);
+        FetchRecentBlocksService.create(
+            asyncRunner, p2pNetwork, pendingBlocks, forwardSyncService, fetchBlockTaskFactory);
+
+    eventChannels.subscribe(SlotEventsChannel.class, recentBlockFetcher);
+
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
     final HistoricalBlockSyncService historicalBlockSyncService =
         createHistoricalSyncService(syncStateTracker);
@@ -139,6 +160,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   protected ForwardSyncService createForwardSyncService() {
     final ForwardSyncService forwardSync;
     if (syncConfig.isMultiPeerSyncEnabled()) {
+      LOG.info("Using multipeer sync");
       forwardSync =
           MultipeerSyncService.create(
               metrics,
@@ -149,11 +171,19 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               pendingBlocks,
               p2pNetwork,
               blockImporter,
+              blobsSidecarManager,
               spec);
     } else {
+      LOG.info("Using single peer sync");
       forwardSync =
           SinglePeerSyncServiceFactory.create(
-              metrics, asyncRunner, p2pNetwork, recentChainData, blockImporter, spec);
+              metrics,
+              asyncRunner,
+              p2pNetwork,
+              recentChainData,
+              blockImporter,
+              blobsSidecarManager,
+              spec);
     }
     return forwardSync;
   }

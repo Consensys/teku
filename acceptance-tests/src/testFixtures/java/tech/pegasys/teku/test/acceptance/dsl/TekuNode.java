@@ -830,6 +830,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withDoppelgangerDetectionEnabled() {
+      configMap.put("Xdoppelganger-detection-enabled", true);
+      return this;
+    }
+
     public Config withInteropNumberOfValidators(final int validatorCount) {
       configMap.put("Xinterop-number-of-validators", validatorCount);
       return this;

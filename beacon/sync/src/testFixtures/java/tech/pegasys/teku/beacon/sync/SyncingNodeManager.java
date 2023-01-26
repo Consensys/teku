@@ -25,7 +25,9 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SyncManager;
+import tech.pegasys.teku.beacon.sync.gossip.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.MilestoneBasedFetchBlockTaskFactory;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -161,12 +163,18 @@ public class SyncingNodeManager {
             eth2P2PNetwork,
             recentChainData,
             blockImporter,
+            BlobsSidecarManager.NOOP,
             new NoOpMetricsSystem(),
             spec);
+
     ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
+    final FetchBlockTaskFactory fetchBlockTaskFactory =
+        new MilestoneBasedFetchBlockTaskFactory(spec);
+
     final FetchRecentBlocksService recentBlockFetcher =
-        FetchRecentBlocksService.create(asyncRunner, eth2P2PNetwork, pendingBlocks, syncService);
+        FetchRecentBlocksService.create(
+            asyncRunner, eth2P2PNetwork, pendingBlocks, syncService, fetchBlockTaskFactory);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->

@@ -42,7 +42,10 @@ public interface ExecutionClientHandler {
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
   default SafeFuture<BlobsBundle> engineGetBlobsBundle(Bytes8 payloadId, UInt64 slot) {
-    return SafeFuture.failedFuture(new RuntimeException("Not implemented"));
+    throw new IllegalArgumentException(
+        String.format(
+            "Pre-EIP4844 execution client handler is called to get EIP-4844 BlobsBundleV1 for payload `%s`, slot %s",
+            payloadId, slot));
   }
 
   SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);

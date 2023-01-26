@@ -63,7 +63,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
         .andThen(
             builder ->
                 builder
-                    .syncAggregate(() -> syncAggregate)
-                    .executionPayload(() -> SafeFuture.completedFuture(executionPayload)));
+                    .syncAggregate(syncAggregate)
+                    .executionPayload(SafeFuture.completedFuture(executionPayload)));
   }
 }

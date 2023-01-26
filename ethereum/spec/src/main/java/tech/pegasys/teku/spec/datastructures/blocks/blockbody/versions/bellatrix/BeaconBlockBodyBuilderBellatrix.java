@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -48,19 +47,23 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   }
 
   @Override
-  public BeaconBlockBodyBuilder executionPayload(
-      Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
+  public Boolean supportsExecutionPayload() {
+    return true;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload) {
     if (!isBlinded()) {
-      this.executionPayload = executionPayloadSupplier.get();
+      this.executionPayload = executionPayload;
     }
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
-      Supplier<SafeFuture<ExecutionPayloadHeader>> executionPayloadHeaderSupplier) {
+      SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
     if (isBlinded()) {
-      this.executionPayloadHeader = executionPayloadHeaderSupplier.get();
+      this.executionPayloadHeader = executionPayloadHeader;
     }
     return this;
   }

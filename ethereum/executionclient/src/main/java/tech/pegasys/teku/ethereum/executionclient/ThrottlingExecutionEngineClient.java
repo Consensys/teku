@@ -18,12 +18,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -71,6 +70,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
+  public SafeFuture<Response<GetPayloadV3Response>> getPayloadV3(final Bytes8 payloadId) {
+    return taskQueue.queueTask(() -> delegate.getPayloadV3(payloadId));
+  }
+
+  @Override
   public SafeFuture<Response<BlobsBundleV1>> getBlobsBundleV1(final Bytes8 payloadId) {
     return taskQueue.queueTask(() -> delegate.getBlobsBundleV1(payloadId));
   }
@@ -83,8 +87,14 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
-      final ExecutionPayloadV2 executionPayload) {
+      final ExecutionPayloadV1 executionPayload) {
     return taskQueue.queueTask(() -> delegate.newPayloadV2(executionPayload));
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
+      final ExecutionPayloadV1 executionPayload) {
+    return taskQueue.queueTask(() -> delegate.newPayloadV3(executionPayload));
   }
 
   @Override
@@ -98,7 +108,7 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   @Override
   public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV2(
       final ForkChoiceStateV1 forkChoiceState,
-      final Optional<PayloadAttributesV2> payloadAttributes) {
+      final Optional<PayloadAttributesV1> payloadAttributes) {
     return taskQueue.queueTask(
         () -> delegate.forkChoiceUpdatedV2(forkChoiceState, payloadAttributes));
   }

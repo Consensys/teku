@@ -31,18 +31,31 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSid
 
 public class StubSyncSource implements SyncSource {
 
-  private final List<Request> requests = new ArrayList<>();
-  private Optional<SafeFuture<Void>> currentRequest = Optional.empty();
-  private Optional<RpcResponseListener<SignedBeaconBlock>> currentListener = Optional.empty();
+  private final List<Request> blocksRequests = new ArrayList<>();
+  private final List<Request> blobsSidecarsRequests = new ArrayList<>();
+
+  private Optional<SafeFuture<Void>> currentBlockRequest = Optional.empty();
+  private Optional<RpcResponseListener<SignedBeaconBlock>> currentBlockListener = Optional.empty();
+
+  private Optional<SafeFuture<Void>> currentBlobsSidecarRequest = Optional.empty();
+  private Optional<RpcResponseListener<BlobsSidecar>> currentBlobsSidecarListener =
+      Optional.empty();
 
   public void receiveBlocks(final SignedBeaconBlock... blocks) {
-    final RpcResponseListener<SignedBeaconBlock> listener = currentListener.orElseThrow();
+    final RpcResponseListener<SignedBeaconBlock> listener = currentBlockListener.orElseThrow();
     Stream.of(blocks).forEach(response -> assertThat(listener.onResponse(response)).isCompleted());
-    currentRequest.orElseThrow().complete(null);
+    currentBlockRequest.orElseThrow().complete(null);
+  }
+
+  public void receiveBlobsSidecars(final BlobsSidecar... blobsSidecars) {
+    final RpcResponseListener<BlobsSidecar> listener = currentBlobsSidecarListener.orElseThrow();
+    Stream.of(blobsSidecars)
+        .forEach(response -> assertThat(listener.onResponse(response)).isCompleted());
+    currentBlobsSidecarRequest.orElseThrow().complete(null);
   }
 
   public void failRequest(final Throwable error) {
-    currentRequest.orElseThrow().completeExceptionally(error);
+    currentBlockRequest.orElseThrow().completeExceptionally(error);
   }
 
   @Override
@@ -51,10 +64,10 @@ public class StubSyncSource implements SyncSource {
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
     checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
-    requests.add(new Request(startSlot, count));
+    blocksRequests.add(new Request(startSlot, count));
     final SafeFuture<Void> request = new SafeFuture<>();
-    currentRequest = Optional.of(request);
-    currentListener = Optional.of(listener);
+    currentBlockRequest = Optional.of(request);
+    currentBlockListener = Optional.of(listener);
     return request;
   }
 
@@ -63,7 +76,12 @@ public class StubSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<BlobsSidecar> listener) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
+    blobsSidecarsRequests.add(new Request(startSlot, count));
+    final SafeFuture<Void> request = new SafeFuture<>();
+    currentBlobsSidecarRequest = Optional.of(request);
+    currentBlobsSidecarListener = Optional.of(listener);
+    return request;
   }
 
   @Override
@@ -72,7 +90,13 @@ public class StubSyncSource implements SyncSource {
   }
 
   public void assertRequestedBlocks(final long startSlot, final long count) {
-    assertThat(requests).contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
+    assertThat(blocksRequests)
+        .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
+  }
+
+  public void assertRequestedBlobsSidecars(final long startSlot, final long count) {
+    assertThat(blobsSidecarsRequests)
+        .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
   }
 
   @Override

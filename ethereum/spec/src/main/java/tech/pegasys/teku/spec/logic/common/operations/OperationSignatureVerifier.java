@@ -19,7 +19,9 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
@@ -31,8 +33,10 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 
 public class OperationSignatureVerifier {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpers miscHelpers;
@@ -111,20 +115,34 @@ public class OperationSignatureVerifier {
   }
 
   public boolean verifyBlsToExecutionChangeSignature(
-      final Fork fork,
       final BeaconState state,
       final SignedBlsToExecutionChange signedBlsToExecutionChange,
       final BLSSignatureVerifier signatureVerifier) {
     final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
+    final BLSPublicKey publicKey = addressChange.getFromBlsPubkey();
+    final Bytes signingRoot = calculateBlsToExecutionChangeSigningRoot(state, addressChange);
+    final BLSSignature signature = signedBlsToExecutionChange.getSignature();
 
+    return signatureVerifier.verify(publicKey, signingRoot, signature);
+  }
+
+  public SafeFuture<Boolean> verifyBlsToExecutionChangeSignatureAsync(
+      final BeaconState state,
+      final SignedBlsToExecutionChange signedBlsToExecutionChange,
+      final AsyncBLSSignatureVerifier signatureVerifier) {
+    final BlsToExecutionChange addressChange = signedBlsToExecutionChange.getMessage();
+    final BLSPublicKey publicKey = addressChange.getFromBlsPubkey();
+    final Bytes signingRoot = calculateBlsToExecutionChangeSigningRoot(state, addressChange);
+    final BLSSignature signature = signedBlsToExecutionChange.getSignature();
+
+    return signatureVerifier.verify(publicKey, signingRoot, signature);
+  }
+
+  private Bytes calculateBlsToExecutionChangeSigningRoot(
+      final BeaconState state, final BlsToExecutionChange addressChange) {
     final Bytes32 domain =
-        beaconStateAccessors.getDomain(
-            Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE,
-            miscHelpers.computeEpochAtSlot(state.getSlot()),
-            fork,
-            state.getGenesisValidatorsRoot());
-    final Bytes signingRoot = miscHelpers.computeSigningRoot(addressChange, domain);
-    return signatureVerifier.verify(
-        addressChange.getFromBlsPubkey(), signingRoot, signedBlsToExecutionChange.getSignature());
+        miscHelpers.computeDomain(
+            Domain.DOMAIN_BLS_TO_EXECUTION_CHANGE, state.getGenesisValidatorsRoot());
+    return miscHelpers.computeSigningRoot(addressChange, domain);
   }
 }

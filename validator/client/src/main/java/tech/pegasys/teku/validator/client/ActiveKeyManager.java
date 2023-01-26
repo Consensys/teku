@@ -269,7 +269,7 @@ public class ActiveKeyManager implements KeyManager {
       final Map<UInt64, BLSPublicKey> doppelgangers) {
     final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
     if (!doppelgangerList.isEmpty()) {
-      doppelgangerDetectionAction.alert(doppelgangerList);
+      doppelgangerDetectionAction.perform(doppelgangerList);
     }
     importEligibleLocalValidators(importResults, doppelgangerList);
     validatorTimingChannel.onValidatorsAdded();
@@ -457,7 +457,7 @@ public class ActiveKeyManager implements KeyManager {
       final Map<UInt64, BLSPublicKey> doppelgangers) {
     final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
     if (!doppelgangerList.isEmpty()) {
-      doppelgangerDetectionAction.alert(doppelgangerList);
+      doppelgangerDetectionAction.perform(doppelgangerList);
     }
     importEligibleExternalValidators(importResults, doppelgangerList);
     validatorTimingChannel.onValidatorsAdded();

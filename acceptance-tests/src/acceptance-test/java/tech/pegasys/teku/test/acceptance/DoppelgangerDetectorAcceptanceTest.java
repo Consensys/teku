@@ -31,7 +31,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  void shouldDetectDoppelgangerAndAlert() throws Exception {
+  void shouldDetectDoppelgangersViaKeyManagerAPI() throws Exception {
     final String networkName = "less-swift";
     final BesuNode eth1Node =
         createBesuNode(
@@ -84,7 +84,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     api.addLocalValidatorsAndExpect(validatorKeystores, "imported");
     firstValidatorClient.waitForLogMessageContaining("No validators doppelganger detected");
 
-    beaconNode.waitForEpochAtOrAbove(3);
+    beaconNode.waitForEpochAtOrAbove(4);
 
     final TekuValidatorNode secondValidatorClient =
         createValidatorNode(
@@ -106,12 +106,87 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     secondApi.addLocalValidatorsAndExpect(validatorKeystores, "imported");
 
     secondValidatorClient.waitForLogMessageContaining("Validator doppelganger detected...");
+    secondValidatorClient.waitForLogMessageContaining("Doppelganger detection check finished");
     secondValidatorClient.waitForLogMessageContaining("Detected 8 validators doppelganger");
+    secondValidatorClient.waitForLogMessageContaining(
+        "Detected 8 active validators doppelganger. The following keys have been ignored");
 
     firstValidatorClient.stop();
     secondValidatorClient.stop();
 
     beaconNode.stop();
+    eth1Node.stop();
+  }
+
+  @Test
+  void shouldDetectDoppelgangersAtStartUp() throws Exception {
+    final String networkName = "less-swift";
+
+    final ValidatorKeystores initialKeystores =
+        createTekuDepositSender(networkName).generateValidatorKeys(2);
+
+    final ValidatorKeystores additionalKeystores =
+        createTekuDepositSender(networkName).generateValidatorKeys(2);
+
+    final GenesisGenerator.InitialStateData genesis =
+        createGenesisGenerator()
+            .network(networkName)
+            .validatorKeys(initialKeystores, additionalKeystores)
+            .generate();
+
+    final BesuNode eth1Node =
+        createBesuNode(
+            config ->
+                config
+                    .withMiningEnabled(true)
+                    .withMergeSupport(true)
+                    .withGenesisFile("besu/preMergeGenesis.json")
+                    .withJwtTokenAuthorization(JWT_FILE));
+    eth1Node.start();
+
+    final TekuNode firstNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withInitialState(genesis)
+                    .withDepositsFrom(eth1Node)
+                    .withExecutionEngine(eth1Node)
+                    .withRealNetwork()
+                    .withValidatorKeystores(initialKeystores));
+    firstNode.start();
+
+    firstNode.waitForOwnedValidatorCount(2);
+    firstNode.waitForGenesis();
+
+    firstNode.addValidators(additionalKeystores);
+    firstNode.waitForOwnedValidatorCount(4);
+    firstNode.waitForEpochAtOrAbove(2);
+
+    final TekuNode secondNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withInitialState(genesis)
+                    .withValidatorKeystores(initialKeystores)
+                    .withDepositsFrom(eth1Node)
+                    .withExecutionEngine(eth1Node)
+                    .withValidatorLivenessTracking()
+                    .withPeers(firstNode)
+                    .withRealNetwork()
+                    .withDoppelgangerDetectionEnabled());
+
+    secondNode.start();
+
+    secondNode.waitForLogMessageContaining("Validator doppelganger detected...");
+    secondNode.waitForLogMessageContaining("Detected 2 validators doppelganger");
+    secondNode.waitForLogMessageContaining(
+        "Doppelganger detection check finished. Stopping doppelganger detection");
+    secondNode.waitForLogMessageContaining("Detected 2 validators doppelganger");
+    secondNode.waitForLogMessageContaining("Shutting down...");
+
+    secondNode.stop();
     eth1Node.stop();
   }
 }

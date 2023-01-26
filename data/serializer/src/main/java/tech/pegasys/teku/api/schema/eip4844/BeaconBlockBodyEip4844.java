@@ -122,18 +122,17 @@ public class BeaconBlockBodyEip4844 extends BeaconBlockBodyAltair {
         spec,
         (builder) -> {
           builder.executionPayload(
-              () -> SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
+              SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
           builder.blsToExecutionChanges(
-              () ->
-                  this.blsToExecutionChanges.stream()
-                      .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
-                      .collect(blsToExecutionChangesSchema.collector()));
+              this.blsToExecutionChanges.stream()
+                  .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
+                  .collect(blsToExecutionChangesSchema.collector()));
           builder.blobKzgCommitments(
-              () ->
+              SafeFuture.completedFuture(
                   this.blobKZGCommitments.stream()
                       .map(KZGCommitment::asInternalKZGCommitment)
                       .map(SszKZGCommitment::new)
-                      .collect(blobKZGCommitmentsSchema.collector()));
+                      .collect(blobKZGCommitmentsSchema.collector())));
         });
   }
 }

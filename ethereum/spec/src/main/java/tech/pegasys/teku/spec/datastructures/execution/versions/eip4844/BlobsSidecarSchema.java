@@ -69,6 +69,10 @@ public class BlobsSidecarSchema
         KZGProof.fromBytesCompressed(kzgAggregatedProof));
   }
 
+  public BlobsSidecar createEmpty(final Bytes32 beaconBlockRoot, final UInt64 beaconBlockSlot) {
+    return new BlobsSidecar(this, beaconBlockRoot, beaconBlockSlot, List.of(), KZGProof.INFINITY);
+  }
+
   public static BlobsSidecarSchema create(
       final SpecConfigEip4844 specConfig, final BlobSchema blobSchema) {
     return new BlobsSidecarSchema(specConfig, blobSchema);

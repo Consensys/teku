@@ -23,44 +23,59 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class SignedBlsToExecutionChangeValidatorTest {
 
   private final Spec spec = spy(TestSpecFactory.createMinimalCapella());
+  private final TimeProvider timeProvider = new SystemTimeProvider();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-
+  private final SignatureVerificationService signatureVerificationService =
+      mock(SignatureVerificationService.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
   private SignedBlsToExecutionChangeValidator validator;
 
   @BeforeEach
   public void beforeEach() {
     Mockito.reset(spec, recentChainData);
+    when(recentChainData.getGenesisTime()).thenReturn(UInt64.ZERO);
     when(recentChainData.getHeadSlot()).thenReturn(UInt64.ONE);
+    final BeaconState beaconState = mock(BeaconState.class);
+    when(beaconState.getSlot()).thenReturn(UInt64.ZERO);
     when(recentChainData.getBestState())
-        .thenReturn(Optional.of(SafeFuture.completedFuture(mock(BeaconState.class))));
-    validator = new SignedBlsToExecutionChangeValidator(spec, recentChainData);
+        .thenReturn(Optional.of(SafeFuture.completedFuture(beaconState)));
+    validator =
+        new SignedBlsToExecutionChangeValidator(
+            spec, timeProvider, recentChainData, signatureVerificationService);
   }
 
   @Test
   public void validateFullyShouldAcceptValidMessage() {
     final SignedBlsToExecutionChange message = dataStructureUtil.randomSignedBlsToExecutionChange();
-    mockSpecValidationSucceeded();
-    mockSignatureVerificationSucceeded();
+    mockSpecValidationSucceeded(spec);
+    mockSignatureVerificationSucceeded(spec);
 
     final SafeFuture<InternalValidationResult> validationResult =
         validator.validateForGossip(message);
@@ -71,8 +86,8 @@ class SignedBlsToExecutionChangeValidatorTest {
   @Test
   public void validateFullyShouldIgnoreSubsequentMessagesForSameValidator() {
     final SignedBlsToExecutionChange message = dataStructureUtil.randomSignedBlsToExecutionChange();
-    mockSpecValidationSucceeded();
-    mockSignatureVerificationSucceeded();
+    mockSpecValidationSucceeded(spec);
+    mockSignatureVerificationSucceeded(spec);
 
     final SafeFuture<InternalValidationResult> firstValidationResult =
         validator.validateForGossip(message);
@@ -92,6 +107,7 @@ class SignedBlsToExecutionChangeValidatorTest {
         dataStructureUtil.randomSignedBlsToExecutionChange();
     final String expectedFailureDescription = "Spec validation failed";
     mockSpecValidationFailed(expectedFailureDescription);
+    mockSignatureVerificationSucceeded(spec);
 
     final SafeFuture<InternalValidationResult> validationResult =
         validator.validateForGossip(signedBlsToExecutionChange);
@@ -118,8 +134,8 @@ class SignedBlsToExecutionChangeValidatorTest {
   public void validateForBlockInclusionShouldReturnEmptyIfSpecValidationSucceeds() {
     final SignedBlsToExecutionChange signedBlsToExecutionChange =
         dataStructureUtil.randomSignedBlsToExecutionChange();
-    mockSpecValidationSucceeded();
-    mockSignatureVerificationSucceeded();
+    mockSpecValidationSucceeded(spec);
+    mockSignatureVerificationSucceeded(spec);
 
     final Optional<OperationInvalidReason> maybeOperationInvalidReason =
         validator.validateForBlockInclusion(mock(BeaconState.class), signedBlsToExecutionChange);
@@ -130,7 +146,9 @@ class SignedBlsToExecutionChangeValidatorTest {
   @Test
   void validateForGossipShouldIgnoreGossipBeforeCapella() {
     final Spec localSpec = TestSpecFactory.createMinimalBellatrix();
-    validator = new SignedBlsToExecutionChangeValidator(localSpec, recentChainData);
+    validator =
+        new SignedBlsToExecutionChangeValidator(
+            localSpec, timeProvider, recentChainData, signatureVerificationService);
     SignedBlsToExecutionChange change = dataStructureUtil.randomSignedBlsToExecutionChange();
 
     final SafeFuture<InternalValidationResult> future = validator.validateForGossip(change);
@@ -139,6 +157,34 @@ class SignedBlsToExecutionChangeValidatorTest {
             InternalValidationResult.create(
                 IGNORE,
                 "BlsToExecutionChange arrived before Capella and was ignored for validator 272337."));
+  }
+
+  @Test
+  void validateForGossipShouldStartAcceptingGossipAfterCapellaUpgrade() {
+    final UInt64 capellaActivationEpoch = UInt64.ONE;
+    final Spec localSpec =
+        spy(TestSpecFactory.createMinimalWithCapellaForkEpoch(capellaActivationEpoch));
+    final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(0);
+
+    validator =
+        new SignedBlsToExecutionChangeValidator(
+            localSpec, stubTimeProvider, recentChainData, signatureVerificationService);
+    final SignedBlsToExecutionChange change = dataStructureUtil.randomSignedBlsToExecutionChange();
+
+    // Ignore message because Capella has not activated yet
+    assertValidationResult(validator.validateForGossip(change), IGNORE);
+
+    // Advance clock to Capella activation epoch
+    final long slotsPerEpoch = localSpec.getSlotsPerEpoch(UInt64.ZERO);
+    final long secondsPerSlot = localSpec.getSecondsPerSlot(UInt64.valueOf(slotsPerEpoch));
+    stubTimeProvider.advanceTimeBySeconds(
+        capellaActivationEpoch.times(slotsPerEpoch * secondsPerSlot).longValue());
+
+    mockSpecValidationSucceeded(localSpec);
+    mockSignatureVerificationSucceeded(localSpec);
+
+    // Accept message now that Capella has activated
+    assertValidationResult(validator.validateForGossip(change), ValidationResultCode.ACCEPT);
   }
 
   private void assertValidationResult(
@@ -159,25 +205,39 @@ class SignedBlsToExecutionChangeValidatorTest {
                     && result.getDescription().orElseThrow().contains(expectedDescription));
   }
 
-  private void mockSpecValidationSucceeded() {
+  private void mockSpecValidationSucceeded(final Spec spec) {
     doReturn(Optional.empty())
         .when(spec)
-        .validateBlsToExecutionChange(any(BeaconState.class), any(BlsToExecutionChange.class));
+        .validateBlsToExecutionChange(
+            any(BeaconState.class), any(), any(BlsToExecutionChange.class));
   }
 
   private void mockSpecValidationFailed(final String expectedDescription) {
     final OperationInvalidReason expectedInvalidReason = () -> expectedDescription;
     doReturn(Optional.of(expectedInvalidReason))
         .when(spec)
-        .validateBlsToExecutionChange(any(BeaconState.class), any(BlsToExecutionChange.class));
+        .validateBlsToExecutionChange(
+            any(BeaconState.class), any(), any(BlsToExecutionChange.class));
   }
 
-  private void mockSignatureVerificationSucceeded() {
+  private void mockSignatureVerificationSucceeded(final Spec spec) {
     doReturn(true)
         .when(spec)
         .verifyBlsToExecutionChangeSignature(
             any(BeaconState.class),
             any(SignedBlsToExecutionChange.class),
             eq(BLSSignatureVerifier.SIMPLE));
+
+    final SpecVersion specVersion = spy(spec.atSlot(UInt64.ZERO));
+    final OperationSignatureVerifier signatureVerifier = mock(OperationSignatureVerifier.class);
+
+    doReturn(specVersion).when(spec).atSlot(eq(UInt64.ZERO));
+    when(specVersion.operationSignatureVerifier()).thenReturn(signatureVerifier);
+    when(signatureVerifier.verifyBlsToExecutionChangeSignatureAsync(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(true));
+
+    doReturn(SafeFuture.completedFuture(true))
+        .when(signatureVerificationService)
+        .verify(any(BLSPublicKey.class), any(Bytes.class), any(BLSSignature.class));
   }
 }

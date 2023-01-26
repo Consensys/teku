@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.executionlayer;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -45,9 +48,15 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -58,7 +67,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final AtomicLong payloadIdCounter = new AtomicLong(0);
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
+  private final BlobsUtil blobsUtil;
+
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
+  private int blobsToGenerate = 2;
 
   // transition emulation
   private static final int TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION = 10;
@@ -88,6 +100,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.transitionEmulationEnabled = enableTransitionEmulation;
     this.terminalBlockHashInTTDMode =
         terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
+    this.blobsUtil = new BlobsUtil(spec);
   }
 
   public ExecutionLayerChannelStub(
@@ -229,8 +242,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .extraData(Bytes.EMPTY)
                         .baseFeePerGas(UInt256.ONE)
                         .blockHash(Bytes32.random())
-                        .transactions(
-                            List.of(Bytes.fromHexString("0x0edf"), Bytes.fromHexString("0xedf0")))
+                        .transactions(generateTransactions(slot, headAndAttrs))
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .excessDataGas(() -> UInt256.ZERO));
     // we assume all blocks are produced locally
@@ -241,6 +253,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                 executionPayload.getParentHash(),
                 UInt256.ZERO,
                 payloadAttributes.getTimestamp()));
+
+    maybeHeadAndAttrs.get().currentExecutionPayload = Optional.of(executionPayload);
 
     LOG.info(
         "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
@@ -288,13 +302,50 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
+  public SafeFuture<BlobsBundle> engineGetBlobsBundle(
+      UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
+    final Optional<SchemaDefinitionsEip4844> schemaDefinitionsEip4844 =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionEip4844();
+
+    if (schemaDefinitionsEip4844.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new UnsupportedOperationException(
+              "getBlobsBundle not supported for pre-EIP4844 milestones"));
+    }
+
+    final Optional<HeadAndAttributes> maybeHeadAndAttrs =
+        payloadIdToHeadAndAttrsCache.getCached(payloadId);
+    if (maybeHeadAndAttrs.isEmpty()) {
+      return SafeFuture.failedFuture(new RuntimeException("payloadId not found in cache"));
+    }
+
+    final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
+
+    if (headAndAttrs.currentExecutionPayload.isEmpty()
+        || headAndAttrs.currentKzgCommitments.isEmpty()
+        || headAndAttrs.currentBlobs.isEmpty()) {
+      return SafeFuture.failedFuture(new RuntimeException("missing required data from cache"));
+    }
+
+    final BlobsBundle blobsBundle =
+        new BlobsBundle(
+            headAndAttrs.currentExecutionPayload.orElseThrow().getBlockHash(),
+            headAndAttrs.currentKzgCommitments.orElseThrow(),
+            headAndAttrs.currentBlobs.orElseThrow());
+
+    LOG.info("getBlobsBundle: slot: {} -> blobsBundle: {}", slot, blobsBundle);
+
+    return SafeFuture.completedFuture(blobsBundle);
+  }
+
+  @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadHeader> builderGetHeader(
+  public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
     LOG.info(
@@ -302,27 +353,31 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         executionPayloadContext,
         slot);
 
-    return engineGetPayload(executionPayloadContext, slot)
-        .thenApply(
-            executionPayload -> {
-              LOG.info(
-                  "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
-                  executionPayloadContext,
-                  slot,
-                  executionPayload.getBlockHash());
-              lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
-              return spec.atSlot(slot)
-                  .getSchemaDefinitions()
-                  .toVersionBellatrix()
-                  .orElseThrow()
-                  .getExecutionPayloadHeaderSchema()
-                  .createFromExecutionPayload(executionPayload);
-            });
+    SafeFuture<ExecutionPayloadHeader> payloadHeaderFuture =
+        engineGetPayload(executionPayloadContext, slot)
+            .thenApply(
+                executionPayload -> {
+                  LOG.info(
+                      "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
+                      executionPayloadContext,
+                      slot,
+                      executionPayload.getBlockHash());
+                  lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
+                  return spec.atSlot(slot)
+                      .getSchemaDefinitions()
+                      .toVersionBellatrix()
+                      .orElseThrow()
+                      .getExecutionPayloadHeaderSchema()
+                      .createFromExecutionPayload(executionPayload);
+                });
+
+    return payloadHeaderFuture.thenApply(HeaderWithFallbackData::create);
   }
 
   @Override
   public SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock) {
+      SignedBeaconBlock signedBlindedBeaconBlock,
+      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
         spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions().toVersionBellatrix();
 
@@ -369,6 +424,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.payloadStatus = payloadStatus;
   }
 
+  public void setBlobsToGenerate(final int blobsToGenerate) {
+    this.blobsToGenerate = blobsToGenerate;
+  }
+
   public Set<Bytes32> getRequestedPowBlocks() {
     return requestedPowBlocks;
   }
@@ -376,6 +435,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static class HeadAndAttributes {
     private final Bytes32 head;
     private final PayloadBuildingAttributes attributes;
+    private Optional<ExecutionPayload> currentExecutionPayload = Optional.empty();
+    private Optional<List<Blob>> currentBlobs = Optional.empty();
+    private Optional<List<KZGCommitment>> currentKzgCommitments = Optional.empty();
 
     private HeadAndAttributes(Bytes32 head, PayloadBuildingAttributes attributes) {
       this.head = head;
@@ -436,5 +498,31 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     terminalBlock =
         new PowBlock(
             terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, terminalTotalDifficulty, transitionTime);
+  }
+
+  private List<Bytes> generateTransactions(
+      final UInt64 slot, final HeadAndAttributes headAndAttrs) {
+    final List<Bytes> transactions = new ArrayList<>();
+    transactions.add(Bytes.fromHexString("0x0edf"));
+
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+      transactions.add(generateBlobsAndTransaction(slot, headAndAttrs));
+    }
+
+    transactions.add(Bytes.fromHexString("0xedf0"));
+    return transactions;
+  }
+
+  private Bytes generateBlobsAndTransaction(
+      final UInt64 slot, final HeadAndAttributes headAndAttrs) {
+
+    final List<Blob> blobs = blobsUtil.generateBlobs(slot, blobsToGenerate);
+
+    final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
+
+    headAndAttrs.currentBlobs = Optional.of(blobs);
+    headAndAttrs.currentKzgCommitments = Optional.of(kzgCommitments);
+
+    return blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments);
   }
 }

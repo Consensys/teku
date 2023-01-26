@@ -37,6 +37,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -78,6 +79,22 @@ public class OperationPoolTest {
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
     assertThat(pool.getItemsForBlock(state)).isEmpty();
+  }
+
+  @Test
+  void shouldAddMaxItemsInBigPool() {
+    final int largePoolSize = 16_384;
+    OperationValidator<SszBytes4> validator = mock(OperationValidator.class);
+    OperationPool<SszBytes4> pool =
+        new OperationPool<>("Bytes4Pool", metricsSystem, (a) -> null, validator, largePoolSize);
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+    final int loopSanityCounter = largePoolSize + 10_000;
+    // because the loop de-duplicates, we can require more than the pool size of adds, so
+    // the sanity counter will ensure we can go past the loop limit without going too far
+    for (int i = 0; pool.size() < largePoolSize && i < loopSanityCounter; i++) {
+      pool.addLocal(SszBytes4.of(dataStructureUtil.randomBytes4()));
+    }
+    assertThat(pool.size()).isEqualTo(largePoolSize);
   }
 
   @Test

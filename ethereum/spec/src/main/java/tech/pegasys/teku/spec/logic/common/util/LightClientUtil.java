@@ -17,6 +17,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeader;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -43,7 +44,10 @@ public class LightClientUtil {
 
     // Requires rehashing the state. See
     // https://github.com/ethereum/consensus-specs/blob/dev/specs/altair/light-client/full-node.md#create_light_client_bootstrap
-    final BeaconBlockHeader bootstrapBlockHeader = BeaconBlockHeader.fromState(state);
+    final LightClientHeader lightClientHeader =
+        schemaDefinitionsAltair
+            .getLightClientHeaderSchema()
+            .create(BeaconBlockHeader.fromState(state));
 
     final SyncCommittee currentSyncCommittee =
         syncCommitteeUtil.getSyncCommittee(state, currentEpoch);
@@ -53,6 +57,6 @@ public class LightClientUtil {
 
     return schemaDefinitionsAltair
         .getLightClientBootstrapSchema()
-        .create(bootstrapBlockHeader, currentSyncCommittee, currentSyncCommitteeProof);
+        .create(lightClientHeader, currentSyncCommittee, currentSyncCommitteeProof);
   }
 }
