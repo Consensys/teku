@@ -20,7 +20,7 @@ RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku
 
 RUN git clone --depth 1 https://github.com/ConsenSys/teku.git --branch 4844-interop && \
-    (cd teku && ./gradlew dockerDistUntar)
+    (cd teku && ./gradlew installDist)
 
 # Default to UTF-8 locale
 ENV LANG C.UTF-8
@@ -36,4 +36,4 @@ EXPOSE 8008 5051 9000 9000/udp
 USER teku
 
 # specify default command
-ENTRYPOINT ["/teku/build/docker-teku/teku/bin/teku"]
+ENTRYPOINT ["/teku/build/install/teku/bin/teku"]
