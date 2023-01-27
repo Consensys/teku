@@ -17,7 +17,8 @@ COPY --from=jre-build /javaruntime $JAVA_HOME
 RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl
 RUN rm -rf /var/lib/api/lists/*
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
-    chown teku:teku /opt/teku
+    chown teku:teku /opt/teku && \
+    chmod 0775 /opt/teku
 
 USER teku
 WORKDIR /opt/teku
