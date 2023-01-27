@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import oshi.hardware.CentralProcessor;
 import oshi.hardware.GlobalMemory;
@@ -35,11 +36,22 @@ public class StartupLogConfigTest {
     when(hardwareInfo.getProcessor()).thenReturn(centralProcessor);
     when(centralProcessor.getLogicalProcessorCount()).thenReturn(10);
 
-    final StartupLogConfig config = new StartupLogConfig("mainnet", "PRUNE", 5678, hardwareInfo);
+    final StartupLogConfig config =
+        new StartupLogConfig(
+            "mainnet",
+            "PRUNE",
+            hardwareInfo,
+            "127.0.0.1",
+            5678,
+            List.of("127.0.0.1", "localhost"),
+            "127.0.0.1",
+            6789,
+            List.of("127.0.0.1", "localhost"));
     assertThat(config.getReport())
         .containsExactly(
             "Configuration | Network: mainnet, Storage Mode: PRUNE",
             "Host Configuration | Maximum Heap Size: 4.00 GB, Total Memory: 16.00 GB, CPU Cores: 10",
-            "Rest Api Configuration | Port: 5678");
+            "Rest Api Configuration | Listen address: 127.0.0.1, Port: 5678, Allow: [127.0.0.1, localhost]",
+            "Validator Api Configuration | Listen address: 127.0.0.1, Port 6789, Allow: [127.0.0.1, localhost]");
   }
 }

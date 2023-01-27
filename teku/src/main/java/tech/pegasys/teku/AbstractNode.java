@@ -26,6 +26,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import oshi.SystemInfo;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -69,11 +71,22 @@ public abstract class AbstractNode implements Node {
             .map(Eth2Network::configName)
             .orElse("empty");
     final String storageMode = tekuConfig.storageConfiguration().getDataStorageMode().name();
-    final int restApiPort = tekuConfig.beaconChain().beaconRestApiConfig().getRestApiPort();
+    final BeaconRestApiConfig beaconChainRestApiConfig =
+        tekuConfig.beaconChain().beaconRestApiConfig();
+    final ValidatorRestApiConfig validatorRestApiPort = tekuConfig.validatorRestApiConfig();
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
     STATUS_LOG.startupConfigurations(
-        new StartupLogConfig(network, storageMode, restApiPort, new SystemInfo().getHardware()));
+        new StartupLogConfig(
+            network,
+            storageMode,
+            new SystemInfo().getHardware(),
+            beaconChainRestApiConfig.getRestApiInterface(),
+            beaconChainRestApiConfig.getRestApiPort(),
+            beaconChainRestApiConfig.getRestApiHostAllowlist(),
+            validatorRestApiPort.getRestApiInterface(),
+            validatorRestApiPort.getRestApiPort(),
+            validatorRestApiPort.getRestApiHostAllowlist()));
 
     reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);

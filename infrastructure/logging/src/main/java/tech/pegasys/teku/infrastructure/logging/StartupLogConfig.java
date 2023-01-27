@@ -19,38 +19,64 @@ import oshi.hardware.HardwareAbstractionLayer;
 public class StartupLogConfig {
   private final String network;
   private final String storageMode;
-  private final int restApiPort;
 
   private final String maxHeapSize;
   private final String memory;
   private final int cpuCores;
 
+  private final int beaconChainRestApiPort;
+  private final String beaconChainRestApiInterface;
+  private final List<String> beaconChainRestApiAllow;
+
+  private final String validatorRestApiInterface;
+  private final int validatorRestApiPort;
+  private final List<String> validatorRestApiAllow;
+
   public StartupLogConfig(
       final String network,
       final String storageMode,
-      final int restApiPort,
-      final HardwareAbstractionLayer hardwareInfo) {
+      final HardwareAbstractionLayer hardwareInfo,
+      final String beaconChainRestApiInterface,
+      final int beaconChainRestApiPort,
+      final List<String> beaconChainRestApiAllow,
+      final String validatorRestApiInterface,
+      final int validatorRestApiPort,
+      final List<String> validatorRestApiAllow) {
     this.network = network;
     this.storageMode = storageMode;
-    this.restApiPort = restApiPort;
 
     this.maxHeapSize = normalizeSize(Runtime.getRuntime().maxMemory());
     this.memory = normalizeSize(hardwareInfo.getMemory().getTotal());
     this.cpuCores = hardwareInfo.getProcessor().getLogicalProcessorCount();
+
+    this.beaconChainRestApiInterface = beaconChainRestApiInterface;
+    this.beaconChainRestApiPort = beaconChainRestApiPort;
+    this.beaconChainRestApiAllow = beaconChainRestApiAllow;
+
+    this.validatorRestApiInterface = validatorRestApiInterface;
+    this.validatorRestApiPort = validatorRestApiPort;
+    this.validatorRestApiAllow = validatorRestApiAllow;
   }
 
   private String normalizeSize(final long size) {
     return String.format("%.02f", (double) size / 1024 / 1024 / 1024) + " GB";
   }
 
-  public List<String> getReport() { // TODO clean up formatting here
+  public List<String> getReport() {
     final String general =
         String.format("Configuration | Network: %s, Storage Mode: %s", network, storageMode);
     final String host =
         String.format(
             "Host Configuration | Maximum Heap Size: %s, Total Memory: %s, CPU Cores: %d",
             maxHeapSize, memory, cpuCores);
-    final String restApi = String.format("Rest Api Configuration | Port: %s", restApiPort);
-    return List.of(general, host, restApi);
+    final String restApi =
+        String.format(
+            "Rest Api Configuration | Listen address: %s, Port: %s, Allow: %s",
+            beaconChainRestApiInterface, beaconChainRestApiPort, beaconChainRestApiAllow);
+    final String validatorApi =
+        String.format(
+            "Validator Api Configuration | Listen address: %s, Port %s, Allow: %s",
+            validatorRestApiInterface, validatorRestApiPort, validatorRestApiAllow);
+    return List.of(general, host, restApi, validatorApi);
   }
 }
