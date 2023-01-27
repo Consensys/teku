@@ -18,7 +18,7 @@ RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl
 RUN rm -rf /var/lib/api/lists/*
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku && \
-    chmod 0775 /opt/teku
+    chmod 0755 /opt/teku
 
 USER teku
 WORKDIR /opt/teku
