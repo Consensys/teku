@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.rewards;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
@@ -76,9 +75,8 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
                     + "or validator index. If no array is provided, return reward info for every committee member.")
             .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(PARAMETER_BLOCK_ID)
-            .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE)) // TODO not working
+            .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .response(SC_BAD_REQUEST, "Invalid request to retrieve sync committee rewards info")
             .withNotFoundResponse()
             .withInternalErrorResponse()
             .build());
