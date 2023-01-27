@@ -93,6 +93,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                         new BlobsSidecarPruner(
                             config.getSpec(),
                             database,
+                            serviceConfig.getMetricsSystem(),
                             storagePrunerAsyncRunner,
                             serviceConfig.getTimeProvider(),
                             config.getBlobsPruningInterval(),
