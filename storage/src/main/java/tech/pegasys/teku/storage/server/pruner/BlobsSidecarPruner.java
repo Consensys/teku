@@ -16,14 +16,19 @@ package tech.pegasys.teku.storage.server.pruner;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -49,9 +54,12 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
   private AtomicReference<Optional<UInt64>> latestFinalizedSlot =
       new AtomicReference<>(Optional.empty());
 
+  private final Map<String, Long> blobsColumnsSize = new ConcurrentHashMap<>();
+
   public BlobsSidecarPruner(
       final Spec spec,
       final Database database,
+      final MetricsSystem metricsSystem,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final Duration pruneInterval,
@@ -62,6 +70,25 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
     this.pruneInterval = pruneInterval;
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
+
+    LabelledGauge labelledGauge =
+        metricsSystem.createLabelledGauge(
+            TekuMetricCategory.STORAGE,
+            "blobs_sidecar_counts",
+            "Number of blobs sidecars stored",
+            "type");
+
+    labelledGauge.labels(
+        () ->
+            Optional.ofNullable(blobsColumnsSize.get("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
+                .orElse(0L),
+        "total");
+    labelledGauge.labels(
+        () ->
+            Optional.ofNullable(
+                    blobsColumnsSize.get("UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
+                .orElse(0L),
+        "unconfirmed");
   }
 
   @Override
@@ -85,6 +112,8 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
   private void pruneBlobs() {
     pruneBlobsPriorToAvailabilityWindow();
     pruneUnconfirmedBlobs();
+
+    blobsColumnsSize.putAll(database.getBlobsSidecarColumnCounts());
   }
 
   private void pruneUnconfirmedBlobs() {

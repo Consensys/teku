@@ -113,7 +113,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   @Override
   public long size(final KvStoreColumn<?, ?> column) {
     assertOpen();
-    try (final Stream<?> rawStream = streamRaw(column)) {
+    try (final Stream<?> rawStream = streamKeysRaw(column)) {
       return rawStream.count();
     }
   }
@@ -241,6 +241,13 @@ public class LevelDbInstance implements KvStoreAccessor {
   public Stream<ColumnEntry<Bytes, Bytes>> streamRaw(final KvStoreColumn<?, ?> column) {
     return streamRaw(column, column.getId().toArrayUnsafe(), getKeyAfterColumn(column))
         .map(entry -> ColumnEntry.create(Bytes.wrap(entry.getKey()), Bytes.wrap(entry.getValue())));
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<Bytes> streamKeysRaw(final KvStoreColumn<?, ?> column) {
+    return streamKeysRaw(column, column.getId().toArrayUnsafe(), getKeyAfterColumn(column))
+        .map(Bytes::wrap);
   }
 
   @Override

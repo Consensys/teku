@@ -324,6 +324,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Map<String, Long> getBlobsSidecarColumnCounts() {
+    return dao.getBlobsSidecarColumnCounts();
+  }
+
+  @Override
   public void migrate() {}
 
   @Override
