@@ -235,10 +235,11 @@ public class ForkChoiceUtil {
     }
 
     // Update store.justified_checkpoint if a better checkpoint is known
-    if (store
-        .getBestJustifiedCheckpoint()
-        .getEpoch()
-        .isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
+    if (!specConfig.getProgressiveBalancesMode().isFull()
+        && store
+            .getBestJustifiedCheckpoint()
+            .getEpoch()
+            .isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
       store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
     }
 
@@ -260,21 +261,30 @@ public class ForkChoiceUtil {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final boolean isBlockOptimistic) {
-    if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
-      if (justifiedCheckpoint
-          .getEpoch()
-          .isGreaterThan(store.getBestJustifiedCheckpoint().getEpoch())) {
-        store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-      }
-      if (shouldUpdateJustifiedCheckpoint(
-          store, justifiedCheckpoint, store.getForkChoiceStrategy())) {
+    if (specConfig.getProgressiveBalancesMode().isFull()) {
+      if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
         store.setJustifiedCheckpoint(justifiedCheckpoint);
       }
-    }
+      if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
+        store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
+      }
+    } else {
+      if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
+        if (justifiedCheckpoint
+            .getEpoch()
+            .isGreaterThan(store.getBestJustifiedCheckpoint().getEpoch())) {
+          store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+        }
+        if (shouldUpdateJustifiedCheckpoint(
+            store, justifiedCheckpoint, store.getForkChoiceStrategy())) {
+          store.setJustifiedCheckpoint(justifiedCheckpoint);
+        }
+      }
 
-    if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
-      store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
-      store.setJustifiedCheckpoint(justifiedCheckpoint);
+      if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
+        store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
+        store.setJustifiedCheckpoint(justifiedCheckpoint);
+      }
     }
   }
 
