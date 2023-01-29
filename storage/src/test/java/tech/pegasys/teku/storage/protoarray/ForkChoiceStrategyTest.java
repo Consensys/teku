@@ -161,7 +161,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         dataStructureUtil
             .getSpec()
             .getBeaconStateUtil(anchor.getState().getSlot())
-            .getEffectiveBalances(anchor.getState());
+            .getEffectiveActiveUnslashedBalances(anchor.getState());
     final Bytes32 head =
         forkChoiceStrategy.applyPendingVotes(
             store,
@@ -375,7 +375,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         dataStructureUtil
             .getSpec()
             .getBeaconStateUtil(block3State.getSlot())
-            .getEffectiveBalances(block3State);
+            .getEffectiveActiveUnslashedBalances(block3State);
     final Bytes32 bestHead =
         strategy.applyPendingVotes(
             transaction,
@@ -449,7 +449,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         dataStructureUtil
             .getSpec()
             .getBeaconStateUtil(block2State.getSlot())
-            .getEffectiveBalances(block2State);
+            .getEffectiveActiveUnslashedBalances(block2State);
     final Bytes32 bestHead =
         strategy.applyPendingVotes(
             transaction3,
