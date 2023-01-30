@@ -17,11 +17,13 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public interface ForkDigestPayloadContext<TPayload extends SszData> {
 
-  ForkDigestPayloadContext<SignedBeaconBlock> SIGNED_BEACONBLOCK =
+  ForkDigestPayloadContext<SignedBeaconBlock> SIGNED_BEACON_BLOCK =
       new ForkDigestPayloadContext<>() {
         @Override
         public UInt64 getSlotFromPayload(final SignedBeaconBlock responsePayload) {
@@ -32,6 +34,37 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         public SszSchema<SignedBeaconBlock> getSchemaFromSchemaDefinitions(
             final SchemaDefinitions schemaDefinitions) {
           return schemaDefinitions.getSignedBeaconBlockSchema();
+        }
+      };
+
+  ForkDigestPayloadContext<BlobsSidecar> BLOBS_SIDECAR =
+      new ForkDigestPayloadContext<>() {
+        @Override
+        public UInt64 getSlotFromPayload(final BlobsSidecar responsePayload) {
+          return responsePayload.getBeaconBlockSlot();
+        }
+
+        @Override
+        public SszSchema<BlobsSidecar> getSchemaFromSchemaDefinitions(
+            final SchemaDefinitions schemaDefinitions) {
+          return schemaDefinitions.toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
+        }
+      };
+
+  ForkDigestPayloadContext<SignedBeaconBlockAndBlobsSidecar> SIGNED_BEACON_BLOCK_AND_BLOBS_SIDECAR =
+      new ForkDigestPayloadContext<>() {
+        @Override
+        public UInt64 getSlotFromPayload(final SignedBeaconBlockAndBlobsSidecar responsePayload) {
+          return responsePayload.getSignedBeaconBlock().getSlot();
+        }
+
+        @Override
+        public SszSchema<SignedBeaconBlockAndBlobsSidecar> getSchemaFromSchemaDefinitions(
+            final SchemaDefinitions schemaDefinitions) {
+          return schemaDefinitions
+              .toVersionEip4844()
+              .orElseThrow()
+              .getSignedBeaconBlockAndBlobsSidecarSchema();
         }
       };
 
