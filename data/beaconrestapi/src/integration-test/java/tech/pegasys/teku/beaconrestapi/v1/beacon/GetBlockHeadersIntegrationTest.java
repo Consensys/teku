@@ -83,7 +83,7 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
     final SignedBeaconBlock forked = nonCanonicalBlockAndStateList.get(1).getBlock();
     assertThat(forked.getSlot()).isEqualTo(canonical.getSlot());
     if (isFinalized) {
-      chainUpdater.finalizeCurrentChain();
+      chainUpdater.finalizeEpoch(2);
     }
     final GetBlockHeadersResponse body = get(nonCanonicalBlockAndStateList.get(1).getSlot());
 

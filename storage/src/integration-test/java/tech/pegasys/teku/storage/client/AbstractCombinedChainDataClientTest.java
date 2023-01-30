@@ -45,7 +45,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public abstract class AbstractCombinedChainDataClientTest {
 
-  private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(8);
+  private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(2);
 
   protected final Spec spec = TestSpecFactory.createMinimalPhase0();
   protected StorageSystem storageSystem;

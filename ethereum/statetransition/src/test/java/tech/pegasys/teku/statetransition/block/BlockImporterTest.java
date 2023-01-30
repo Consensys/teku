@@ -258,7 +258,6 @@ public class BlockImporterTest {
     final UInt64 bestEpoch = spec.computeEpochAtSlot(recentChainData.getHeadSlot());
     assertThat(bestEpoch).isEqualTo(SpecConfig.GENESIS_EPOCH.plus(1));
     final Checkpoint finalized = new Checkpoint(bestEpoch, bestRoot);
-    tx.setJustifiedCheckpoint(finalized);
     tx.setFinalizedCheckpoint(finalized, false);
     tx.commit().join();
 
@@ -347,7 +346,7 @@ public class BlockImporterTest {
         otherChain.createAndImportBlockAtSlotWithAttestations(currentSlot, List.of(attestation));
 
     final BlockImportResult result = blockImporter.importBlock(block).get();
-    assertImportFailed(result, FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED);
+    assertImportFailed(result, FailureReason.UNKNOWN_PARENT);
   }
 
   @Test

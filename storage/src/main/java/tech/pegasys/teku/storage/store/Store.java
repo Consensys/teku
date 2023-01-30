@@ -425,16 +425,6 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
-    readLock.lock();
-    try {
-      return forkChoiceStrategy.blockSlot(blockRoot);
-    } finally {
-      readLock.unlock();
-    }
-  }
-
-  @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
     readLock.lock();
     try {

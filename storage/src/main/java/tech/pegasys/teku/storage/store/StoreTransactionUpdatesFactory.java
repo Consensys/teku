@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -193,33 +194,21 @@ class StoreTransactionUpdatesFactory {
   }
 
   private boolean shouldPrune(
-      final SlotAndBlockRoot finalizedBlock,
+      final BeaconBlockSummary finalizedBlock,
       final Bytes32 blockRoot,
       final UInt64 slot,
       final Bytes32 parentRoot) {
     return (slot.isLessThanOrEqualTo(finalizedBlock.getSlot())
             || prunedHotBlockRoots.containsKey(parentRoot))
         // Keep the actual finalized block
-        && !blockRoot.equals(finalizedBlock.getBlockRoot());
+        && !blockRoot.equals(finalizedBlock.getRoot());
   }
 
   private void calculatePrunedHotBlockRoots() {
-    // Choose earlier of finalized or justified block root (based on its slot not the checkpoint
-    // epoch). It's possible for pulled tips to wind up with a finalized block that is after the
-    // justified block (but with the epochs still in the right order)
-    final Checkpoint finalizedCheckpoint = tx.getFinalizedCheckpoint();
-    final UInt64 finalizedBlockSlot =
-        tx.getSlotForBlockRoot(finalizedCheckpoint.getRoot()).orElseThrow();
-    final Checkpoint justifiedCheckpoint = tx.getJustifiedCheckpoint();
-    final UInt64 justifiedBlockSlot =
-        tx.getSlotForBlockRoot(justifiedCheckpoint.getRoot()).orElseThrow();
-    final SlotAndBlockRoot pruningRoot =
-        justifiedBlockSlot.isLessThan(finalizedBlockSlot)
-            ? new SlotAndBlockRoot(justifiedBlockSlot, justifiedCheckpoint.getRoot())
-            : new SlotAndBlockRoot(finalizedBlockSlot, finalizedCheckpoint.getRoot());
+    final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
     baseStore.forkChoiceStrategy.processAllInOrder(
         (blockRoot, slot, parentRoot) -> {
-          if (shouldPrune(pruningRoot, blockRoot, slot, parentRoot)) {
+          if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
             prunedHotBlockRoots.put(blockRoot, slot);
           }
         });
@@ -230,7 +219,7 @@ class StoreTransactionUpdatesFactory {
         .filter(
             newBlockAndState ->
                 shouldPrune(
-                    pruningRoot,
+                    finalizedBlock,
                     newBlockAndState.getRoot(),
                     newBlockAndState.getSlot(),
                     newBlockAndState.getParentRoot()))

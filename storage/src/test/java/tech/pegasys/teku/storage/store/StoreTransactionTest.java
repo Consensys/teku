@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -362,24 +361,21 @@ public class StoreTransactionTest extends AbstractStoreTest {
     // Start tx finalizing epoch 1
     final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
-    tx.setJustifiedCheckpoint(finalizedCheckpoint);
 
     // Finalize epoch 2
     final StoreTransaction otherTx = store.startTransaction(new StubStorageUpdateChannel());
     otherTx.putBlockAndState(
         newerFinalizedBlockAndState,
         spec.calculateBlockCheckpoints(newerFinalizedBlockAndState.getState()));
-    otherTx.setJustifiedCheckpoint(newerFinalizedCheckpoint);
     otherTx.setFinalizedCheckpoint(newerFinalizedCheckpoint, false);
     assertThat(otherTx.commit()).isCompleted();
 
     // Check response from tx1 for finalized value
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
-    final CheckpointState checkpointState = assertThatSafeFuture(result).joinsImmediately();
-    assertThat(checkpointState.getCheckpoint()).isEqualTo(newerFinalizedCheckpoint);
-    assertThat(checkpointState.getRoot()).isEqualTo(newerFinalizedBlockAndState.getRoot());
-    assertThat(checkpointState.getState()).isEqualTo(newerFinalizedBlockAndState.getState());
+    assertThat(result.join().getCheckpoint()).isEqualTo(newerFinalizedCheckpoint);
+    assertThat(result.join().getRoot()).isEqualTo(newerFinalizedBlockAndState.getRoot());
+    assertThat(result.join().getState()).isEqualTo(newerFinalizedBlockAndState.getState());
   }
 
   @Test

@@ -897,8 +897,6 @@ class RecentChainDataTest {
     // Add blocks and finalize epoch 1, so that blocks will be pruned
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     final Checkpoint finalizedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(1);
-    final Checkpoint justifiedCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(2);
-    tx.setJustifiedCheckpoint(justifiedCheckpoint);
     tx.setFinalizedCheckpoint(finalizedCheckpoint, false);
     newBlocks.forEach(
         blockAndState ->
