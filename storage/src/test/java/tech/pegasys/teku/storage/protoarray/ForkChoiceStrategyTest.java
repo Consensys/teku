@@ -69,6 +69,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     final BeaconState latestState = chainBuilder.getLatestBlockAndState().getState();
     final ProtoArray protoArray =
         ProtoArray.builder()
+            .spec(spec)
             .currentEpoch(ZERO)
             .finalizedCheckpoint(latestState.getFinalizedCheckpoint())
             .justifiedCheckpoint(latestState.getCurrentJustifiedCheckpoint())
@@ -135,6 +136,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     AnchorPoint anchor = dataStructureUtil.createAnchorFromState(anchorState);
     final ProtoArray protoArray =
         ProtoArray.builder()
+            .spec(spec)
             .initialCheckpoint(Optional.of(anchor.getCheckpoint()))
             .currentEpoch(anchor.getEpoch())
             .justifiedCheckpoint(anchorState.getCurrentJustifiedCheckpoint())

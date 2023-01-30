@@ -205,6 +205,10 @@ class StoreTransactionUpdatesFactory {
   }
 
   private void calculatePrunedHotBlockRoots() {
+    // TODO: Ideally shouldn't need the block summary hear and can just get block root and slot
+    // That should come from protoarray without needing the actual block in memory
+    // Will need to choose earlier of finalized or justified block root (based on its slot not the
+    // checkpoint epoch). May need to keep two forks if finalized doesn't descend from justified
     final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
     baseStore.forkChoiceStrategy.processAllInOrder(
         (blockRoot, slot, parentRoot) -> {
