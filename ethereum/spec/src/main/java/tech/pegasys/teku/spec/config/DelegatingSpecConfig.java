@@ -282,12 +282,12 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getDepositChainId() {
+  public long getDepositChainId() {
     return specConfig.getDepositChainId();
   }
 
   @Override
-  public int getDepositNetworkId() {
+  public long getDepositNetworkId() {
     return specConfig.getDepositNetworkId();
   }
 
