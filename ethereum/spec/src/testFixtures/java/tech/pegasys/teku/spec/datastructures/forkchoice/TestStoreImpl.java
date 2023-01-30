@@ -160,6 +160,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blocks.get(blockRoot)).map(SignedBeaconBlock::getSlot);
+  }
+
+  @Override
   public List<Bytes32> getOrderedBlockRoots() {
     return blocks.values().stream()
         .sorted(Comparator.comparing(SignedBeaconBlock::getSlot))

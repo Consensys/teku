@@ -294,6 +294,14 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public Optional<UInt64> getSlotForBlockRoot(final Bytes32 blockRoot) {
+    final TransactionBlockData updatedBlock = blockData.get(blockRoot);
+    return updatedBlock != null
+        ? Optional.of(updatedBlock.getSlot())
+        : store.getSlotForBlockRoot(blockRoot);
+  }
+
+  @Override
   public Collection<Bytes32> getOrderedBlockRoots() {
     if (this.blockData.isEmpty()) {
       return store.getOrderedBlockRoots();
