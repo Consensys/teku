@@ -96,8 +96,7 @@ public class TestDefinition {
         TestSpecFactory.create(
             highestSupportedMilestone,
             network,
-            // TODO: Likely need to make this `CHECKED` to work with the latest reftest release
-            builder -> builder.progressiveBalancesMode(ProgressiveBalancesMode.FULL));
+            builder -> builder.progressiveBalancesMode(ProgressiveBalancesMode.CHECKED));
   }
 
   public String getTestType() {
