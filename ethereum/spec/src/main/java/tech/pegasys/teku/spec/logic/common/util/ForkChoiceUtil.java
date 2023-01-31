@@ -222,7 +222,7 @@ public class ForkChoiceUtil {
     // Update store time
     store.setTimeMillis(timeMillis);
 
-    UInt64 currentSlot = getCurrentSlot(store);
+    final UInt64 currentSlot = getCurrentSlot(store);
 
     if (currentSlot.isGreaterThan(previousSlot)) {
       store.removeProposerBoostRoot();
