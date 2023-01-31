@@ -32,6 +32,8 @@ public class StartupLogConfig {
   private final int validatorRestApiPort;
   private final List<String> validatorRestApiAllow;
 
+  private final String executionEngineEndpoint;
+
   public StartupLogConfig(
       final String network,
       final String storageMode,
@@ -41,7 +43,8 @@ public class StartupLogConfig {
       final List<String> beaconChainRestApiAllow,
       final String validatorRestApiInterface,
       final int validatorRestApiPort,
-      final List<String> validatorRestApiAllow) {
+      final List<String> validatorRestApiAllow,
+      final String executionEngineEndpoint) {
     this.network = network;
     this.storageMode = storageMode;
 
@@ -56,6 +59,8 @@ public class StartupLogConfig {
     this.validatorRestApiInterface = validatorRestApiInterface;
     this.validatorRestApiPort = validatorRestApiPort;
     this.validatorRestApiAllow = validatorRestApiAllow;
+
+    this.executionEngineEndpoint = executionEngineEndpoint;
   }
 
   private String normalizeSize(final long size) {
@@ -71,12 +76,15 @@ public class StartupLogConfig {
             maxHeapSize, memory, cpuCores);
     final String restApi =
         String.format(
-            "Rest Api Configuration | Listen address: %s, Port: %s, Allow: %s",
+            "Rest Api Configuration | Listen Address: %s, Port: %s, Allow: %s",
             beaconChainRestApiInterface, beaconChainRestApiPort, beaconChainRestApiAllow);
     final String validatorApi =
         String.format(
-            "Validator Api Configuration | Listen address: %s, Port %s, Allow: %s",
+            "Validator Api Configuration | Listen Address: %s, Port %s, Allow: %s",
             validatorRestApiInterface, validatorRestApiPort, validatorRestApiAllow);
-    return List.of(general, host, restApi, validatorApi);
+    final String executionLayer =
+        String.format(
+            "Execution Layer Configuration | Execution Endpoint: %s", executionEngineEndpoint);
+    return List.of(general, host, restApi, validatorApi, executionLayer);
   }
 }
