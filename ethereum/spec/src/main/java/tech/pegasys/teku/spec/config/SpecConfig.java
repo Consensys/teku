@@ -136,9 +136,9 @@ public interface SpecConfig {
 
   int getProposerScoreBoost();
 
-  int getDepositChainId();
+  long getDepositChainId();
 
-  int getDepositNetworkId();
+  long getDepositNetworkId();
 
   Eth1Address getDepositContractAddress();
 
