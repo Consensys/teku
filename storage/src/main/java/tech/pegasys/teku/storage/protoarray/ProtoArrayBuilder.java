@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 public class ProtoArrayBuilder {
 
   private StatusLogger statusLog = StatusLogger.STATUS_LOG;
+  private Spec spec;
   private int pruneThreshold = Constants.PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD;
   private UInt64 currentEpoch;
   private Checkpoint justifiedCheckpoint;
@@ -34,11 +36,13 @@ public class ProtoArrayBuilder {
   private ProgressiveBalancesMode progressiveBalancesMode;
 
   public ProtoArray build() {
+    checkNotNull(spec, "Spec must be supplied");
     checkNotNull(progressiveBalancesMode, "Progressive balances mode must be supplied");
     checkNotNull(currentEpoch, "Current epoch must be supplied");
     checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
     checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
     return new ProtoArray(
+        spec,
         pruneThreshold,
         currentEpoch,
         justifiedCheckpoint,
@@ -50,6 +54,11 @@ public class ProtoArrayBuilder {
 
   public ProtoArrayBuilder statusLog(final StatusLogger statusLog) {
     this.statusLog = statusLog;
+    return this;
+  }
+
+  public ProtoArrayBuilder spec(final Spec spec) {
+    this.spec = spec;
     return this;
   }
 
