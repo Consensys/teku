@@ -174,7 +174,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void executorThreadsShouldBeDefaultValue() {
+  public void clientRunnerThreadsShouldBeDefaultValue() {
 
     final String[] args = {"vc", "--network", "minimal"};
 
@@ -184,7 +184,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void executorThreadsShouldBeSetValue() {
+  public void clientRunnerThreadsShouldBeSetValue() {
 
     final String[] args = {
       "vc", "--network", "minimal", "--Xvalidator-client-runner-threads", "1000"
