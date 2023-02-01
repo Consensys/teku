@@ -150,30 +150,6 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void executorThreadsShouldBeDefaultValue() {
-
-    final String[] args = {"vc", "--network", "minimal"};
-
-    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
-
-    assertThat(tekuConfig.validatorClient().getValidatorConfig().getRunnerThreadNum())
-            .isEqualTo(5);
-  }
-
-  @Test
-  public void executorThreadsShouldBeSetValue() {
-
-    final String[] args = {
-            "vc", "--network", "minimal", "--Xvalidator-client-runner-threads", "1000"
-    };
-
-    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
-
-    assertThat(tekuConfig.validatorClient().getValidatorConfig().getRunnerThreadNum())
-            .isEqualTo(1000);
-  }
-
-  @Test
   public void doppelgangerDetectionShouldBeDisabledByDefault() {
 
     final String[] args = {"vc", "--network", "minimal"};
@@ -195,6 +171,29 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
     assertThat(tekuConfig.validatorClient().getValidatorConfig().isDoppelgangerDetectionEnabled())
         .isTrue();
+  }
+
+  @Test
+  public void executorThreadsShouldBeDefaultValue() {
+
+    final String[] args = {"vc", "--network", "minimal"};
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getRunnerThreadNum()).isEqualTo(5);
+  }
+
+  @Test
+  public void executorThreadsShouldBeSetValue() {
+
+    final String[] args = {
+      "vc", "--network", "minimal", "--Xvalidator-client-runner-threads", "1000"
+    };
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getRunnerThreadNum())
+        .isEqualTo(1000);
   }
 
   private String pathFor(final String filename) {

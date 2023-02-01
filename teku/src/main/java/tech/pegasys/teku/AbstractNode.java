@@ -82,7 +82,7 @@ public abstract class AbstractNode implements Node {
             metricsSystem,
             dataDirLayout,
             rejectedExecutionCounter::getTotalCount,
-            validatorConfig.getRunnerThreadNum());
+            validatorConfig::getRunnerThreadNum);
     this.metricsPublisher =
         new MetricsPublisherManager(
             asyncRunnerFactory,

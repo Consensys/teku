@@ -30,8 +30,7 @@ public class ServiceConfig {
   private final DataDirLayout dataDirLayout;
 
   private final IntSupplier rejectedExecutionsSupplier;
-
-  private final int runnerThreadNum;
+  private final IntSupplier runnerThreadNum;
 
   public ServiceConfig(
       final AsyncRunnerFactory asyncRunnerFactory,
@@ -40,7 +39,7 @@ public class ServiceConfig {
       final MetricsSystem metricsSystem,
       final DataDirLayout dataDirLayout,
       final IntSupplier rejectedExecutionsSupplier,
-      final int runnerThreadNum) {
+      final IntSupplier runnerThreadNum) {
     this.asyncRunnerFactory = asyncRunnerFactory;
     this.timeProvider = timeProvider;
     this.eventChannels = eventChannels;
@@ -99,6 +98,6 @@ public class ServiceConfig {
   private int calculateMaxThreads() {
     // We use a bunch of blocking calls so need to ensure the thread pool is reasonably large
     // as many threads may be blocked.
-    return Math.max(Runtime.getRuntime().availableProcessors(), runnerThreadNum);
+    return Math.max(Runtime.getRuntime().availableProcessors(), runnerThreadNum.getAsInt());
   }
 }

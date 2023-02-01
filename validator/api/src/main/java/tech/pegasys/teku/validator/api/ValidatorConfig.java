@@ -121,8 +121,8 @@ public class ValidatorConfig {
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
-      final Optional<String> sentryNodeConfigurationFile,
-      final int runnerThreadNum) {
+      final int runnerThreadNum,
+      final Optional<String> sentryNodeConfigurationFile) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -155,8 +155,8 @@ public class ValidatorConfig {
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
     this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
-    this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
     this.runnerThreadNum = runnerThreadNum;
+    this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
   }
 
   public static Builder builder() {
@@ -278,12 +278,12 @@ public class ValidatorConfig {
     return executorMaxQueueSize;
   }
 
-  public Optional<String> getSentryNodeConfigurationFile() {
-    return sentryNodeConfigurationFile;
-  }
-
   public int getRunnerThreadNum() {
     return runnerThreadNum;
+  }
+
+  public Optional<String> getSentryNodeConfigurationFile() {
+    return sentryNodeConfigurationFile;
   }
 
   private void validateProposerDefaultFeeRecipientOrProposerConfigSource() {
@@ -574,8 +574,8 @@ public class ValidatorConfig {
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
-          sentryNodeConfigurationFile,
-          runnerThreadNum);
+          runnerThreadNum,
+          sentryNodeConfigurationFile);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
