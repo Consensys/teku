@@ -102,9 +102,9 @@ public class CommonAncestorTest extends AbstractSyncTest {
     assertThat(futureSlot.isDone()).isFalse();
     final RpcResponseListener<SignedBeaconBlock> responseListener =
         blockResponseListenerArgumentCaptor.getValue();
-    respondWithBlocksAtSlots(
-        responseListener, currentLocalHead.minus(2850), currentLocalHead.minus(2250));
+    respondWithBlocksAtSlots(responseListener, syncStartSlot, CommonAncestor.BLOCK_COUNT);
     requestFuture1.complete(null);
-    assertThat(futureSlot.get()).isEqualTo(currentLocalHead.minus(2250));
+    // last received slot is the best slot
+    assertThat(futureSlot.get()).isEqualTo(syncStartSlot.plus(CommonAncestor.BLOCK_COUNT).minus(1));
   }
 }

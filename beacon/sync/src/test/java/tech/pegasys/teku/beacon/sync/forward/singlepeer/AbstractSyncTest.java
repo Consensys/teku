@@ -44,6 +44,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractSyncTest {
+
   protected final UInt64 eip4844ForkEpoch = UInt64.valueOf(112260);
   protected final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(eip4844ForkEpoch);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
@@ -51,6 +52,7 @@ public abstract class AbstractSyncTest {
   protected final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   protected final RecentChainData storageClient = mock(RecentChainData.class);
 
+  private final DataStructureUtil preEip4844DataStructureUtil = new DataStructureUtil(spec);
   protected final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalEip4844());
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -92,24 +94,44 @@ public abstract class AbstractSyncTest {
   }
 
   protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
-      final RpcResponseListener<SignedBeaconBlock> responseListener, UInt64... slots) {
+      final RpcResponseListener<SignedBeaconBlock> responseListener, final UInt64... slots) {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     for (final UInt64 slot : slots) {
-      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+      final SignedBeaconBlock block;
+      if (spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(eip4844ForkEpoch)) {
+        block = dataStructureUtil.randomSignedBeaconBlock(slot);
+      } else {
+        block = preEip4844DataStructureUtil.randomSignedBeaconBlock(slot);
+      }
+
       blocks.add(block);
       responseListener.onResponse(block).join();
     }
     return blocks;
   }
 
+  protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
+      final RpcResponseListener<SignedBeaconBlock> responseListener,
+      final UInt64 startSlot,
+      final UInt64 count) {
+    return respondWithBlocksAtSlots(responseListener, getSlotsRange(startSlot, count));
+  }
+
   protected List<BlobsSidecar> respondWithBlobsSidecarsAtSlots(
-      final RpcResponseListener<BlobsSidecar> responseListener, UInt64... slots) {
+      final RpcResponseListener<BlobsSidecar> responseListener, final UInt64... slots) {
     final List<BlobsSidecar> blobsSidecars = new ArrayList<>();
     for (final UInt64 slot : slots) {
       final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar(slot);
       responseListener.onResponse(blobsSidecar).join();
     }
     return blobsSidecars;
+  }
+
+  protected List<BlobsSidecar> respondWithBlobsSidecarsAtSlots(
+      final RpcResponseListener<BlobsSidecar> responseListener,
+      final UInt64 startSlot,
+      final UInt64 count) {
+    return respondWithBlobsSidecarsAtSlots(responseListener, getSlotsRange(startSlot, count));
   }
 
   protected void completeRequestsWithBlocksAndBlobsSidecars(
@@ -120,28 +142,39 @@ public abstract class AbstractSyncTest {
         blocksRequests.stream(),
         blobsSidecarsRequests.stream(),
         (blockRequest, blobsSidecarRequest) -> {
-          final ArgumentCaptor<UInt64> startSlotArgumentCaptor =
+          final ArgumentCaptor<UInt64> blocksByRangeStartSlotArgumentCaptor =
               ArgumentCaptor.forClass(UInt64.class);
-          final ArgumentCaptor<UInt64> countArgumentCaptor = ArgumentCaptor.forClass(UInt64.class);
+          final ArgumentCaptor<UInt64> blocksByRangeCountArgumentCaptor =
+              ArgumentCaptor.forClass(UInt64.class);
           verify(peer, atLeastOnce())
               .requestBlocksByRange(
-                  startSlotArgumentCaptor.capture(),
-                  countArgumentCaptor.capture(),
+                  blocksByRangeStartSlotArgumentCaptor.capture(),
+                  blocksByRangeCountArgumentCaptor.capture(),
                   blockResponseListenerArgumentCaptor.capture());
+          final ArgumentCaptor<UInt64> sidecarsByRangeStartSlotArgumentCaptor =
+              ArgumentCaptor.forClass(UInt64.class);
+          final ArgumentCaptor<UInt64> sidecarsByRangeCountArgumentCaptor =
+              ArgumentCaptor.forClass(UInt64.class);
           verify(peer, atLeastOnce())
               .requestBlobsSidecarsByRange(
-                  any(), any(), blobsSidecarResponseListenerArgumentCaptor.capture());
-          // only responding with block and sidecars for the last slot of the request
-          final UInt64 slotToRespond =
-              startSlotArgumentCaptor.getValue().plus(countArgumentCaptor.getValue()).minus(1);
+                  sidecarsByRangeStartSlotArgumentCaptor.capture(),
+                  sidecarsByRangeCountArgumentCaptor.capture(),
+                  blobsSidecarResponseListenerArgumentCaptor.capture());
+          // responding with blocks and sidecars for the requested slots
           final RpcResponseListener<SignedBeaconBlock> blockListener =
               blockResponseListenerArgumentCaptor.getValue();
           final RpcResponseListener<BlobsSidecar> blobsSidecarListener =
               blobsSidecarResponseListenerArgumentCaptor.getValue();
           final List<SignedBeaconBlock> blocks =
-              respondWithBlocksAtSlots(blockListener, slotToRespond);
+              respondWithBlocksAtSlots(
+                  blockListener,
+                  blocksByRangeStartSlotArgumentCaptor.getValue(),
+                  blocksByRangeCountArgumentCaptor.getValue());
           final List<BlobsSidecar> blobsSidecars =
-              respondWithBlobsSidecarsAtSlots(blobsSidecarListener, slotToRespond);
+              respondWithBlobsSidecarsAtSlots(
+                  blobsSidecarListener,
+                  sidecarsByRangeStartSlotArgumentCaptor.getValue(),
+                  sidecarsByRangeCountArgumentCaptor.getValue());
           blocks.forEach(block -> verify(blockImporter).importBlock(block));
           blobsSidecars.forEach(
               sidecar -> verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(sidecar));
@@ -164,5 +197,9 @@ public abstract class AbstractSyncTest {
 
     when(peer.getStatus()).thenReturn(peerStatus);
     return peerStatus;
+  }
+
+  private UInt64[] getSlotsRange(final UInt64 startSlot, final UInt64 count) {
+    return UInt64.range(startSlot, startSlot.plus(count)).toArray(UInt64[]::new);
   }
 }
