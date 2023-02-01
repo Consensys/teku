@@ -150,6 +150,8 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     firstNode.waitForOwnedValidatorCount(2);
     firstNode.waitForGenesis();
 
+    firstNode.waitForEpochAtOrAbove(2);
+
     final TekuNode secondNode =
         createTekuNode(
             config ->
