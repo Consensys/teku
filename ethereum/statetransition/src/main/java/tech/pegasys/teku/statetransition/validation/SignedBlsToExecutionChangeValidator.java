@@ -100,13 +100,13 @@ public class SignedBlsToExecutionChangeValidator
                     .thenCombine(
                         validateBlsMessageSignature(state, operation),
                         (messageValidationResult, signatureValidationResult) ->
-                            processValidationResult(
+                            processValidationResults(
                                 validatorIndex,
                                 messageValidationResult,
                                 signatureValidationResult)));
   }
 
-  private InternalValidationResult processValidationResult(
+  private InternalValidationResult processValidationResults(
       final UInt64 validatorIndex,
       final InternalValidationResult messageValidationResult,
       final InternalValidationResult signatureValidationResult) {
