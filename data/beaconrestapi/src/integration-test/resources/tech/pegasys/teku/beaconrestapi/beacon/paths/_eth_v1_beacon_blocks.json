@@ -24,6 +24,8 @@
               "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
             }, {
               "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockEip4844"
             } ]
           }
         }

@@ -56,6 +56,7 @@ class ProtoArrayTest {
 
   private ProtoArray protoArray =
       new ProtoArrayBuilder()
+          .spec(dataStructureUtil.getSpec())
           .statusLog(statusLog)
           .currentEpoch(ZERO)
           .justifiedCheckpoint(GENESIS_CHECKPOINT)
@@ -77,6 +78,7 @@ class ProtoArrayTest {
     final Checkpoint finalizedCheckpoint = new Checkpoint(UInt64.ONE, justifiedRoot);
     protoArray =
         new ProtoArrayBuilder()
+            .spec(dataStructureUtil.getSpec())
             .currentEpoch(ZERO)
             .justifiedCheckpoint(justifiedCheckpoint)
             .finalizedCheckpoint(finalizedCheckpoint)

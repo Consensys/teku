@@ -138,7 +138,7 @@ public class BeaconStateUtil {
         forkChoiceStrategy, block.getRoot(), miscHelpers.computeEpochAtSlot(block.getSlot()));
   }
 
-  public List<UInt64> getEffectiveBalances(final BeaconState state) {
+  public List<UInt64> getEffectiveActiveUnslashedBalances(final BeaconState state) {
     return BeaconStateCache.getTransitionCaches(state)
         .getEffectiveBalances()
         .get(
@@ -147,7 +147,7 @@ public class BeaconStateUtil {
                 state.getValidators().stream()
                     .map(
                         validator ->
-                            predicates.isActiveValidator(validator, epoch)
+                            predicates.isActiveValidator(validator, epoch) && !validator.isSlashed()
                                 ? validator.getEffectiveBalance()
                                 : UInt64.ZERO)
                     .collect(toUnmodifiableList()));

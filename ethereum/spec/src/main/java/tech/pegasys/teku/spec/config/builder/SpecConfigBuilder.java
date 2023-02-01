@@ -98,8 +98,8 @@ public class SpecConfigBuilder {
   private int proposerScoreBoost = 0;
 
   // Deposit Contract
-  private Integer depositChainId;
-  private Integer depositNetworkId;
+  private Long depositChainId;
+  private Long depositNetworkId;
   private Eth1Address depositContractAddress;
 
   private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.USED;
@@ -518,13 +518,13 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder depositChainId(final Integer depositChainId) {
+  public SpecConfigBuilder depositChainId(final Long depositChainId) {
     checkNotNull(depositChainId);
     this.depositChainId = depositChainId;
     return this;
   }
 
-  public SpecConfigBuilder depositNetworkId(final Integer depositNetworkId) {
+  public SpecConfigBuilder depositNetworkId(final Long depositNetworkId) {
     checkNotNull(depositNetworkId);
     this.depositNetworkId = depositNetworkId;
     return this;

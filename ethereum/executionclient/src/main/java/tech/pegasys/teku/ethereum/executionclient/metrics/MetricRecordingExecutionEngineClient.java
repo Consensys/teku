@@ -24,6 +24,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -46,11 +47,13 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_METHOD =
       "forkchoice_updated_with_attributes";
   public static final String GET_PAYLOAD_V2_METHOD = "get_payloadV2";
-  public static final String GET_BLOBS_BUNDLE_V1_METHOD = "engine_getBlobsBundleV1";
   public static final String NEW_PAYLOAD_V2_METHOD = "new_payloadV2";
   public static final String FORKCHOICE_UPDATED_V2_METHOD = "forkchoice_updatedV2";
   public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V2_METHOD =
       "forkchoice_updated_with_attributesV2";
+  public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
+  public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
+  public static final String GET_BLOBS_BUNDLE_V1_METHOD = "engine_getBlobsBundleV1";
 
   private final ExecutionEngineClient delegate;
 
@@ -91,6 +94,11 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   }
 
   @Override
+  public SafeFuture<Response<GetPayloadV3Response>> getPayloadV3(final Bytes8 payloadId) {
+    return countRequest(() -> delegate.getPayloadV3(payloadId), GET_PAYLOAD_V3_METHOD);
+  }
+
+  @Override
   public SafeFuture<Response<BlobsBundleV1>> getBlobsBundleV1(final Bytes8 payloadId) {
     return countRequest(() -> delegate.getBlobsBundleV1(payloadId), GET_BLOBS_BUNDLE_V1_METHOD);
   }
@@ -105,6 +113,12 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
       final ExecutionPayloadV1 executionPayload) {
     return countRequest(() -> delegate.newPayloadV2(executionPayload), NEW_PAYLOAD_V2_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
+      final ExecutionPayloadV1 executionPayload) {
+    return countRequest(() -> delegate.newPayloadV3(executionPayload), NEW_PAYLOAD_V3_METHOD);
   }
 
   @Override

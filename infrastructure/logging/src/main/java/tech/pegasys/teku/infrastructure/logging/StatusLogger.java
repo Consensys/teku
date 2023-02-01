@@ -176,17 +176,22 @@ public class StatusLogger {
         String.join(", ", publicKeys));
   }
 
-  public void doppelgangerDetectionEnd(final Set<String> publicKeys) {
+  public void doppelgangerDetectionEnd(
+      final Set<String> publicKeys, final Map<UInt64, String> doppelgangersInfo) {
     log.info(
-        "No validators doppelganger detected after 2 epochs. Stopping doppelganger detection for public keys {}.",
+        "Doppelganger detection check finished. Stopping doppelganger detection for public keys {}.",
         String.join(", ", publicKeys));
+    if (doppelgangersInfo.isEmpty()) {
+      log.info("No validators doppelganger detected.");
+    } else {
+      validatorsDoppelgangersDetected(doppelgangersInfo);
+    }
   }
 
-  public void doppelgangerCheck(long epoch, long slot, Set<String> publicKeys) {
+  public void doppelgangerCheck(long epoch, Set<String> publicKeys) {
     log.info(
-        "Performing doppelganger check. Epoch {}, Slot {}, Public keys {}",
+        "Performing doppelganger check. Epoch {}, Public keys {}",
         epoch,
-        slot,
         String.join(", ", publicKeys));
   }
 
@@ -207,8 +212,8 @@ public class StatusLogger {
 
   public void doppelgangerDetectionAlert(final Set<String> doppelgangerPublicKeys) {
     log.error(
-        "Detected {} validators that appear to be already active. The following keys have been ignored: {}",
-        doppelgangerPublicKeys.stream(),
+        "Detected {} active validators doppelganger. The following keys have been ignored: {}",
+        doppelgangerPublicKeys.size(),
         String.join(", ", doppelgangerPublicKeys));
   }
 
@@ -382,7 +387,8 @@ public class StatusLogger {
     log.info(performance);
   }
 
-  public void eth1DepositChainIdMismatch(int expectedChainId, int eth1ChainId, String endpointId) {
+  public void eth1DepositChainIdMismatch(
+      long expectedChainId, long eth1ChainId, String endpointId) {
     log.log(
         Level.ERROR,
         "PLEASE CHECK YOUR ETH1 NODE (endpoint {})| Wrong Eth1 chain id (expected={}, actual={})",

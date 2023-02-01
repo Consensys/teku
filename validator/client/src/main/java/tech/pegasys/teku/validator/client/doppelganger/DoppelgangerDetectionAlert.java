@@ -31,10 +31,7 @@ public class DoppelgangerDetectionAlert implements DoppelgangerDetectionAction {
   }
 
   @Override
-  public void shutDown() {}
-
-  @Override
-  public void alert(final List<BLSPublicKey> doppelgangers) {
+  public void perform(final List<BLSPublicKey> doppelgangers) {
     statusLog.doppelgangerDetectionAlert(
         doppelgangers.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
   }
