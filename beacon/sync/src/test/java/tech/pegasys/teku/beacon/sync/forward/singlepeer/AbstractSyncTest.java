@@ -22,6 +22,7 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.Streams;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -200,6 +201,9 @@ public abstract class AbstractSyncTest {
   }
 
   private UInt64[] getSlotsRange(final UInt64 startSlot, final UInt64 count) {
-    return UInt64.range(startSlot, startSlot.plus(count)).toArray(UInt64[]::new);
+    final UInt64[] slotsRange = new UInt64[count.intValue()];
+    Stream.iterate(0, i -> i < slotsRange.length, i -> i + 1)
+        .forEach(i -> slotsRange[i] = startSlot.plus(i));
+    return slotsRange;
   }
 }
