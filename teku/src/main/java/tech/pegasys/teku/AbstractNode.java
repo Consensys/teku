@@ -74,7 +74,7 @@ public abstract class AbstractNode implements Node {
     final String storageMode = tekuConfig.storageConfiguration().getDataStorageMode().name();
     final BeaconRestApiConfig beaconChainRestApiConfig =
         tekuConfig.beaconChain().beaconRestApiConfig();
-    final ValidatorRestApiConfig validatorRestApiPort = tekuConfig.validatorRestApiConfig();
+    final ValidatorRestApiConfig validatorRestApiConfig = tekuConfig.validatorRestApiConfig();
     final ExecutionLayerConfiguration executionLayerConfig = tekuConfig.executionLayer();
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
@@ -86,9 +86,9 @@ public abstract class AbstractNode implements Node {
             beaconChainRestApiConfig.getRestApiInterface(),
             beaconChainRestApiConfig.getRestApiPort(),
             beaconChainRestApiConfig.getRestApiHostAllowlist(),
-            validatorRestApiPort.getRestApiInterface(),
-            validatorRestApiPort.getRestApiPort(),
-            validatorRestApiPort.getRestApiHostAllowlist(),
+            validatorRestApiConfig.getRestApiInterface(),
+            validatorRestApiConfig.getRestApiPort(),
+            validatorRestApiConfig.getRestApiHostAllowlist(),
             executionLayerConfig.getEngineEndpoint()));
 
     reportOverrides(tekuConfig);
