@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.infrastructure.logging;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.List;
 import oshi.hardware.HardwareAbstractionLayer;
 
@@ -24,8 +26,8 @@ public class StartupLogConfig {
   private final String memory;
   private final int cpuCores;
 
-  private final int beaconChainRestApiPort;
   private final String beaconChainRestApiInterface;
+  private final int beaconChainRestApiPort;
   private final List<String> beaconChainRestApiAllow;
 
   private final String validatorRestApiInterface;
@@ -86,5 +88,96 @@ public class StartupLogConfig {
         String.format(
             "Execution Layer Configuration | Execution Endpoint: %s", executionEngineEndpoint);
     return List.of(general, host, restApi, validatorApi, executionLayer);
+  }
+
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private String network;
+    private String storageMode;
+    private HardwareAbstractionLayer hardwareInfo;
+    private String beaconChainRestApiInterface;
+    private int beaconChainRestApiPort;
+    private List<String> beaconChainRestApiAllow;
+    private String validatorRestApiInterface;
+    private int validatorRestApiPort;
+    private List<String> validatorRestApiAllow;
+    private String executionEngineEndpoint;
+
+    private Builder() {}
+
+    public StartupLogConfig build() {
+      return new StartupLogConfig(
+          network,
+          storageMode,
+          hardwareInfo,
+          beaconChainRestApiInterface,
+          beaconChainRestApiPort,
+          beaconChainRestApiAllow,
+          validatorRestApiInterface,
+          validatorRestApiPort,
+          validatorRestApiAllow,
+          executionEngineEndpoint);
+    }
+
+    public Builder network(String network) {
+      checkNotNull(network);
+      this.network = network;
+      return this;
+    }
+
+    public Builder storageMode(String storageMode) {
+      checkNotNull(storageMode);
+      this.storageMode = storageMode;
+      return this;
+    }
+
+    public Builder hardwareInfo(HardwareAbstractionLayer hardwareInfo) {
+      checkNotNull(hardwareInfo);
+      this.hardwareInfo = hardwareInfo;
+      return this;
+    }
+
+    public Builder beaconChainRestApiInterface(String beaconChainRestApiInterface) {
+      checkNotNull(beaconChainRestApiInterface);
+      this.beaconChainRestApiInterface = beaconChainRestApiInterface;
+      return this;
+    }
+
+    public Builder beaconChainRestApiPort(int beaconChainRestApiPort) {
+      this.beaconChainRestApiPort = beaconChainRestApiPort;
+      return this;
+    }
+
+    public Builder beaconChainRestApiAllow(List<String> beaconChainRestApiAllow) {
+      checkNotNull(beaconChainRestApiAllow);
+      this.beaconChainRestApiAllow = beaconChainRestApiAllow;
+      return this;
+    }
+
+    public Builder validatorRestApiInterface(String validatorRestApiInterface) {
+      checkNotNull(validatorRestApiInterface);
+      this.validatorRestApiInterface = validatorRestApiInterface;
+      return this;
+    }
+
+    public Builder validatorRestApiPort(int validatorRestApiPort) {
+      this.validatorRestApiPort = validatorRestApiPort;
+      return this;
+    }
+
+    public Builder validatorRestApiAllow(List<String> validatorRestApiAllow) {
+      checkNotNull(validatorRestApiAllow);
+      this.validatorRestApiAllow = validatorRestApiAllow;
+      return this;
+    }
+
+    public Builder executionEngineEndpoint(String executionEngineEndpoint) {
+      checkNotNull(executionEngineEndpoint);
+      this.executionEngineEndpoint = executionEngineEndpoint;
+      return this;
+    }
   }
 }

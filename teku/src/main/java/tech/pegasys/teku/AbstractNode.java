@@ -79,17 +79,18 @@ public abstract class AbstractNode implements Node {
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
     STATUS_LOG.startupConfigurations(
-        new StartupLogConfig(
-            network,
-            storageMode,
-            new SystemInfo().getHardware(),
-            beaconChainRestApiConfig.getRestApiInterface(),
-            beaconChainRestApiConfig.getRestApiPort(),
-            beaconChainRestApiConfig.getRestApiHostAllowlist(),
-            validatorRestApiConfig.getRestApiInterface(),
-            validatorRestApiConfig.getRestApiPort(),
-            validatorRestApiConfig.getRestApiHostAllowlist(),
-            executionLayerConfig.getEngineEndpoint()));
+        StartupLogConfig.builder()
+            .network(network)
+            .storageMode(storageMode)
+            .hardwareInfo(new SystemInfo().getHardware())
+            .beaconChainRestApiInterface(beaconChainRestApiConfig.getRestApiInterface())
+            .beaconChainRestApiPort(beaconChainRestApiConfig.getRestApiPort())
+            .beaconChainRestApiAllow(beaconChainRestApiConfig.getRestApiHostAllowlist())
+            .validatorRestApiInterface(validatorRestApiConfig.getRestApiInterface())
+            .validatorRestApiPort(validatorRestApiConfig.getRestApiPort())
+            .validatorRestApiAllow(validatorRestApiConfig.getRestApiHostAllowlist())
+            .executionEngineEndpoint(executionLayerConfig.getEngineEndpoint())
+            .build());
 
     reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);

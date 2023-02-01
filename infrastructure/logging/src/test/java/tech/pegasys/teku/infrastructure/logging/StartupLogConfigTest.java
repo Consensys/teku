@@ -37,17 +37,19 @@ public class StartupLogConfigTest {
     when(centralProcessor.getLogicalProcessorCount()).thenReturn(10);
 
     final StartupLogConfig config =
-        new StartupLogConfig(
-            "mainnet",
-            "PRUNE",
-            hardwareInfo,
-            "127.0.0.1",
-            5678,
-            List.of("127.0.0.1", "localhost"),
-            "127.0.0.1",
-            6789,
-            List.of("127.0.0.1", "localhost"),
-            "http://localhost:6000/");
+        StartupLogConfig.builder()
+            .network("mainnet")
+            .storageMode("PRUNE")
+            .hardwareInfo(hardwareInfo)
+            .beaconChainRestApiInterface("127.0.0.1")
+            .beaconChainRestApiPort(5678)
+            .beaconChainRestApiAllow(List.of("127.0.0.1", "localhost"))
+            .validatorRestApiInterface("127.0.0.1")
+            .validatorRestApiPort(6789)
+            .validatorRestApiAllow(List.of("127.0.0.1", "localhost"))
+            .executionEngineEndpoint("http://localhost:6000/")
+            .build();
+
     assertThat(config.getReport())
         .containsExactly(
             "Configuration | Network: mainnet, Storage Mode: PRUNE",
