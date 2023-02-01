@@ -171,7 +171,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     verify(peer).requestBlocksByRange(any(), any(), blockResponseListenerArgumentCaptor.capture());
 
-    Supplier<BlobsSidecar> blobsSidecar =
+    final Supplier<BlobsSidecar> blobsSidecar =
         Suppliers.memoize(() -> dataStructureUtil.randomBlobsSidecarForBlock(block));
 
     if (shouldMakeSidecarRequest) {
@@ -207,7 +207,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     }
 
     assertThat(syncFuture).isCompleted();
-    PeerSyncResult result = syncFuture.join();
+    final PeerSyncResult result = syncFuture.join();
     if (shouldDisconnect) {
       verify(peer).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
       assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
@@ -219,7 +219,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   @Test
   void sync_stoppedBeforeBlockImport() {
-    UInt64 startHere = UInt64.ONE;
+    final UInt64 startHere = UInt64.ONE;
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
     when(peer.requestBlocksByRange(any(), any(), any())).thenReturn(requestFuture);
 
@@ -252,8 +252,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     assertThat(result).isEqualByComparingTo(PeerSyncResult.CANCELLED);
 
     // check startingSlot
-    UInt64 startingSlot = peerSync.getStartingSlot();
-    assertThat(startingSlot).isEqualTo(startHere);
+    assertThat(peerSync.getStartingSlot()).isEqualTo(startHere);
   }
 
   @Test
@@ -291,7 +290,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_longSyncWithTwoRequests() {
     final UInt64 secondRequestSize = UInt64.ONE;
-    UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    final UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -377,7 +376,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_handleEmptyResponse() {
     final UInt64 secondRequestSize = UInt64.valueOf(5);
-    UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    final UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -455,7 +454,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_failSyncIfPeerThrottlesTooAggressively() {
     final UInt64 startSlot = UInt64.ONE;
-    UInt64 minPeerSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    final UInt64 minPeerSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
     withPeerFinalizedEpoch(spec.computeEpochAtSlot(minPeerSlot));
 
     final List<SafeFuture<Void>> requestFutures = new ArrayList<>();
