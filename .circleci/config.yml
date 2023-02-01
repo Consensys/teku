@@ -243,7 +243,7 @@ jobs:
             for FILE in $(ls docker)
             do
               docker pull -q "consensys/teku:develop-$FILE"
-              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL --ignorefile "gradle/trivyignore.txt" "consensys/teku:develop-$FILE" 
+              trivy -q image --exit-code 1 --no-progress --severity HIGH,CRITICAL --ignorefile "gradle/trivyignore.txt" --timeout 10m "consensys/teku:develop-$FILE" 
             done
       - notify
 

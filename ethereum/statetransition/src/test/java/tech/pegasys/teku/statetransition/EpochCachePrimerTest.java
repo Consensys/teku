@@ -172,7 +172,7 @@ class EpochCachePrimerTest {
     final BeaconState justifiedState =
         safeJoin(recentChainData.retrieveCheckpointState(state.getCurrentJustifiedCheckpoint()))
             .orElseThrow();
-    verify(beaconStateUtil).getEffectiveBalances(justifiedState);
+    verify(beaconStateUtil).getEffectiveActiveUnslashedBalances(justifiedState);
   }
 
   private void forEachSlotInEpoch(final UInt64 epoch, final Consumer<UInt64> action) {

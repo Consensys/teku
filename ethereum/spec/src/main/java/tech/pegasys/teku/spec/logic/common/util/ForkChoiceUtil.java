@@ -222,7 +222,7 @@ public class ForkChoiceUtil {
     // Update store time
     store.setTimeMillis(timeMillis);
 
-    UInt64 currentSlot = getCurrentSlot(store);
+    final UInt64 currentSlot = getCurrentSlot(store);
 
     if (currentSlot.isGreaterThan(previousSlot)) {
       store.removeProposerBoostRoot();
@@ -235,10 +235,11 @@ public class ForkChoiceUtil {
     }
 
     // Update store.justified_checkpoint if a better checkpoint is known
-    if (store
-        .getBestJustifiedCheckpoint()
-        .getEpoch()
-        .isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
+    if (!specConfig.getProgressiveBalancesMode().isFull()
+        && store
+            .getBestJustifiedCheckpoint()
+            .getEpoch()
+            .isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
       store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
     }
 
@@ -260,21 +261,30 @@ public class ForkChoiceUtil {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final boolean isBlockOptimistic) {
-    if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
-      if (justifiedCheckpoint
-          .getEpoch()
-          .isGreaterThan(store.getBestJustifiedCheckpoint().getEpoch())) {
-        store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-      }
-      if (shouldUpdateJustifiedCheckpoint(
-          store, justifiedCheckpoint, store.getForkChoiceStrategy())) {
+    if (specConfig.getProgressiveBalancesMode().isFull()) {
+      if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
         store.setJustifiedCheckpoint(justifiedCheckpoint);
       }
-    }
+      if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
+        store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
+      }
+    } else {
+      if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
+        if (justifiedCheckpoint
+            .getEpoch()
+            .isGreaterThan(store.getBestJustifiedCheckpoint().getEpoch())) {
+          store.setBestJustifiedCheckpoint(justifiedCheckpoint);
+        }
+        if (shouldUpdateJustifiedCheckpoint(
+            store, justifiedCheckpoint, store.getForkChoiceStrategy())) {
+          store.setJustifiedCheckpoint(justifiedCheckpoint);
+        }
+      }
 
-    if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
-      store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
-      store.setJustifiedCheckpoint(justifiedCheckpoint);
+      if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
+        store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
+        store.setJustifiedCheckpoint(justifiedCheckpoint);
+      }
     }
   }
 
@@ -398,35 +408,14 @@ public class ForkChoiceUtil {
       blockCheckpoints = blockCheckpoints.realizeNextEpoch();
     }
 
-    final UInt64 previousJustifiedEpoch = store.getJustifiedCheckpoint().getEpoch();
-
     updateCheckpoints(
         store,
         blockCheckpoints.getJustifiedCheckpoint(),
         blockCheckpoints.getFinalizedCheckpoint(),
         isBlockOptimistic);
 
-    if (specConfig.getProgressiveBalancesMode().isFull()) {
-      // If previous epoch is justified, pull up all current tips to previous epoch
-      if (isPreviousEpochJustified(store)) {
-        blockCheckpoints = blockCheckpoints.realizeNextEpoch();
-        // Only need to pull up all existing blocks if this block updated justification
-        if (!previousJustifiedEpoch.equals(store.getJustifiedCheckpoint().getEpoch())) {
-          for (ProtoNodeData nodeData : store.getForkChoiceStrategy().getChainHeads(true)) {
-            store.pullUpBlockCheckpoints(nodeData.getRoot());
-          }
-        }
-      }
-    }
-
     // Add new block to store
     store.putBlockAndState(signedBlock, postState, blockCheckpoints);
-  }
-
-  private boolean isPreviousEpochJustified(final ReadOnlyStore store) {
-    final UInt64 currentSlot = getCurrentSlot(store);
-    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
-    return store.getJustifiedCheckpoint().getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch);
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {
