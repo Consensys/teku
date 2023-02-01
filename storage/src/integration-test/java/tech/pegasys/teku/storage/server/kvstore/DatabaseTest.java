@@ -370,6 +370,9 @@ public class DatabaseTest {
     // Add base blocks
     addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
 
+    // add blobs sidecars
+    addBlobsSidecars(chainBuilder.streamBlobsSidecars().collect(toList()));
+
     // Set target slot at which to create duplicate blocks
     // and generate block options to make each block unique
     final List<BlockOptions> blockOptions =
@@ -392,6 +395,11 @@ public class DatabaseTest {
     add(List.of(blockB));
     add(List.of(blockC));
 
+    // Add corresponding blobs sidecars
+    addBlobsSidecars(List.of(forkA.getBlobsSidecar(blockA.getRoot()).orElseThrow()));
+    addBlobsSidecars(List.of(forkB.getBlobsSidecar(blockB.getRoot()).orElseThrow()));
+    addBlobsSidecars(List.of(chainBuilder.getBlobsSidecar(blockC.getRoot()).orElseThrow()));
+
     // Verify all blocks are available
     assertThat(store.retrieveBlock(blockA.getRoot()))
         .isCompletedWithValue(Optional.of(blockA.getBlock().getMessage()));
@@ -400,9 +408,23 @@ public class DatabaseTest {
     assertThat(store.retrieveBlock(blockC.getRoot()))
         .isCompletedWithValue(Optional.of(blockC.getBlock().getMessage()));
 
+    // verify we have all blobs sidecar are available
+    final List<SignedBeaconBlock> blocksWithAvailableSidecars =
+        Stream.concat(
+                Stream.concat(
+                    chainBuilder.streamBlocksAndStates(ONE),
+                    forkA.streamBlocksAndStates(targetSlot)),
+                forkB.streamBlocksAndStates(targetSlot))
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList());
+
+    assertBlobsSidecarAvailabilityExceptPruned(blocksWithAvailableSidecars, List.of());
+
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
     add(List.of(finalBlock));
+    addBlobsSidecars(List.of(chainBuilder.getBlobsSidecar(finalBlock.getRoot()).orElseThrow()));
+
     final UInt64 finalEpoch = chainBuilder.getLatestEpoch().plus(ONE);
     final SignedBlockAndState finalizedBlock =
         chainBuilder.getLatestBlockAndStateAtEpochBoundary(finalEpoch);
@@ -413,6 +435,17 @@ public class DatabaseTest {
     rootsToPrune.add(genesisBlockAndState.getRoot());
     // Check that all blocks at slot 10 were pruned
     assertRecentDataWasPruned(store, rootsToPrune);
+
+    // verify we have all canonical and finalized sidecars and blockA and blockB sidecars have been
+    // pruned
+    final List<SignedBeaconBlock> canonicalBlocksWithAvailableSidecars =
+        chainBuilder
+            .streamBlocksAndStates(ONE)
+            .map(SignedBlockAndState::getBlock)
+            .collect(toList());
+
+    assertBlobsSidecarAvailabilityExceptPruned(
+        canonicalBlocksWithAvailableSidecars, List.of(blockA.getBlock(), blockB.getBlock()));
   }
 
   @TestTemplate
@@ -2150,6 +2183,23 @@ public class DatabaseTest {
     }
   }
 
+  private void assertBlobsSidecarAvailabilityExceptPruned(
+      final Collection<SignedBeaconBlock> availableBlocksSidecars,
+      final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
+    availableBlocksSidecars.forEach(
+        block ->
+            assertThat(
+                    database.getBlobsSidecar(
+                        new SlotAndBlockRoot(block.getSlot(), block.getRoot())))
+                .isPresent());
+    prunedBlocksSidecars.forEach(
+        block ->
+            assertThat(
+                    database.getBlobsSidecar(
+                        new SlotAndBlockRoot(block.getSlot(), block.getRoot())))
+                .isEmpty());
+  }
+
   private void addBlocks(final SignedBlockAndState... blocks) {
     addBlocks(Arrays.asList(blocks));
   }
@@ -2160,6 +2210,16 @@ public class DatabaseTest {
       transaction.putBlockAndState(block, spec.calculateBlockCheckpoints(block.getState()));
     }
     commit(transaction);
+  }
+
+  private void addBlobsSidecars(final List<BlobsSidecar> blobsSidecars) {
+    blobsSidecars.forEach(
+        blobsSidecar -> {
+          database.storeUnconfirmedBlobsSidecar(blobsSidecar);
+          database.confirmBlobsSidecar(
+              new SlotAndBlockRoot(
+                  blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()));
+        });
   }
 
   private void add(final Collection<SignedBlockAndState> blocks) {
