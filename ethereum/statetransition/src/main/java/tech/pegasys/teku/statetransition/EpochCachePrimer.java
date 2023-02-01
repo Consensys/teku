@@ -111,7 +111,7 @@ public class EpochCachePrimer {
               }
               final BeaconState justifiedState = maybeJustifiedState.get();
               spec.getBeaconStateUtil(justifiedState.getSlot())
-                  .getEffectiveBalances(justifiedState);
+                  .getEffectiveActiveUnslashedBalances(justifiedState);
             })
         .finish(error -> LOG.warn("Failed to prime justified state caches"));
   }
