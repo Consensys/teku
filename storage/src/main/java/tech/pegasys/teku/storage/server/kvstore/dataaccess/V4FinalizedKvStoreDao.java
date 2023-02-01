@@ -20,8 +20,10 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -202,6 +204,17 @@ public class V4FinalizedKvStoreDao {
   public Map<String, Long> getColumnCounts() {
     final Map<String, Long> columnCounts = new HashMap<>();
     schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    return columnCounts;
+  }
+
+  public Map<String, Long> getBlobsSidecarColumnCounts() {
+    final Map<String, Long> columnCounts = new LinkedHashMap<>();
+
+    schema.getColumnMap().entrySet().stream()
+        .filter(
+            stringKvStoreColumnEntry -> stringKvStoreColumnEntry.getKey().contains("BLOBS_SIDECAR"))
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue))
+        .forEach((k, v) -> columnCounts.put(k, db.size(v)));
     return columnCounts;
   }
 
