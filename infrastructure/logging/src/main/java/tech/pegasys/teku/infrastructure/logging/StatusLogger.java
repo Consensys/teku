@@ -391,7 +391,8 @@ public class StatusLogger {
     log.info(performance);
   }
 
-  public void eth1DepositChainIdMismatch(int expectedChainId, int eth1ChainId, String endpointId) {
+  public void eth1DepositChainIdMismatch(
+      long expectedChainId, long eth1ChainId, String endpointId) {
     log.log(
         Level.ERROR,
         "PLEASE CHECK YOUR ETH1 NODE (endpoint {})| Wrong Eth1 chain id (expected={}, actual={})",

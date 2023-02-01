@@ -41,6 +41,7 @@ public class ProtoArrayTestUtil {
 
     final ProtoArray protoArray =
         ProtoArray.builder()
+            .spec(spec)
             .currentEpoch(ZERO)
             .justifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO))
             .finalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO))

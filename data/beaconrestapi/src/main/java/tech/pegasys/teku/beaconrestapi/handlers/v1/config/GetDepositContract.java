@@ -65,7 +65,7 @@ public class GetDepositContract extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final int depositChainId = configProvider.getGenesisSpecConfig().getDepositChainId();
+    final long depositChainId = configProvider.getGenesisSpecConfig().getDepositChainId();
     request.respondOk(new DepositContractData(depositChainId, depositContractAddress));
   }
 
@@ -73,7 +73,7 @@ public class GetDepositContract extends RestApiEndpoint {
     final UInt64 chainId;
     final Eth1Address address;
 
-    DepositContractData(int chainId, Eth1Address address) {
+    DepositContractData(long chainId, Eth1Address address) {
       this.chainId = UInt64.valueOf(chainId);
       this.address = address;
     }
