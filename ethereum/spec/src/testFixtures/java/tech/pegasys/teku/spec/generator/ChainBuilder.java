@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
@@ -72,6 +73,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
@@ -128,6 +130,26 @@ public class ChainBuilder {
     return Optional.ofNullable(blobsSidecarsByHash.get(blockRoot));
   }
 
+  public Optional<SignedBeaconBlockAndBlobsSidecar> getBlockAndBlobsSidecar(
+      final Bytes32 blockRoot) {
+    return getBlock(blockRoot)
+        .map(
+            block -> {
+              final UInt64 slot = block.getSlot();
+              final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
+                  SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions());
+              final BlobsSidecar blobsSidecar =
+                  getBlobsSidecar(blockRoot)
+                      .orElse(
+                          schemaDefinitionsEip4844
+                              .getBlobsSidecarSchema()
+                              .createEmpty(blockRoot, slot));
+              return schemaDefinitionsEip4844
+                  .getSignedBeaconBlockAndBlobsSidecarSchema()
+                  .create(block, blobsSidecar);
+            });
+  }
+
   /**
    * Create an independent {@code ChainBuilder} with the same history as the current builder. This
    * independent copy can now create a divergent chain.
@@ -172,8 +194,8 @@ public class ChainBuilder {
   public Stream<SignedBlockAndState> streamBlocksAndStates(
       final UInt64 fromSlot, final UInt64 toSlot) {
     return blocks.values().stream()
-        .filter(b -> b.getBlock().getSlot().compareTo(fromSlot) >= 0)
-        .filter(b -> b.getBlock().getSlot().compareTo(toSlot) <= 0);
+        .filter(b -> b.getBlock().getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(b -> b.getBlock().getSlot().isLessThanOrEqualTo(toSlot));
   }
 
   public Stream<SignedBlockAndState> streamBlocksAndStatesUpTo(final long toSlot) {
@@ -182,6 +204,24 @@ public class ChainBuilder {
 
   public Stream<SignedBlockAndState> streamBlocksAndStatesUpTo(final UInt64 toSlot) {
     return blocks.values().stream().filter(b -> b.getBlock().getSlot().compareTo(toSlot) <= 0);
+  }
+
+  public Stream<BlobsSidecar> streamBlobsSidecars(final long fromSlot, final long toSlot) {
+    return streamBlobsSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
+  }
+
+  public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 fromSlot, final UInt64 toSlot) {
+    return blobsSidecars.values().stream()
+        .filter(s -> s.getBeaconBlockSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(s -> s.getBeaconBlockSlot().isLessThanOrEqualTo(toSlot));
+  }
+
+  public Stream<BlobsSidecar> streamBlobsSidecars() {
+    return blobsSidecars.values().stream();
+  }
+
+  public void discardBlobsSidecar(final UInt64 slot) {
+    blobsSidecars.remove(slot);
   }
 
   public SignedBlockAndState getGenesis() {

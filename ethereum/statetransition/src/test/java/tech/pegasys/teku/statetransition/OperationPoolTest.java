@@ -83,7 +83,7 @@ public class OperationPoolTest {
 
   @Test
   void shouldAddMaxItemsInBigPool() {
-    final int largePoolSize = 300_000;
+    final int largePoolSize = 16_384;
     OperationValidator<SszBytes4> validator = mock(OperationValidator.class);
     OperationPool<SszBytes4> pool =
         new OperationPool<>("Bytes4Pool", metricsSystem, (a) -> null, validator, largePoolSize);

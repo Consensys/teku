@@ -212,7 +212,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       final BeaconState justifiedState = justifiedCheckpointState.orElseThrow();
                       final List<UInt64> justifiedEffectiveBalances =
                           spec.getBeaconStateUtil(justifiedState.getSlot())
-                              .getEffectiveBalances(justifiedState);
+                              .getEffectiveActiveUnslashedBalances(justifiedState);
 
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(
@@ -378,7 +378,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       LOG.error(
           "blobsSidecar validation result: {}",
           blobsSidecarAndValidationResult.getValidationResult());
-      return BlockImportResult.FAILED_BLOBS_AVAILABILITY_CHECK;
+      return BlockImportResult.failedBlobsAvailabilityCheck(
+          blobsSidecarAndValidationResult.getCause());
     } else if (blobsSidecarAndValidationResult.isNotRequired()) {
       LOG.debug(
           "blobsSidecar validation result: {}",

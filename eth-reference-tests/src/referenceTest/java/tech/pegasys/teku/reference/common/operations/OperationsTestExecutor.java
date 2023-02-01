@@ -55,6 +55,7 @@ import tech.pegasys.teku.statetransition.validation.OperationValidator;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
+import tech.pegasys.teku.statetransition.validation.signatures.SimpleSignatureVerificationService;
 
 public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
@@ -385,7 +386,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
         break;
       case BLS_TO_EXECUTION_CHANGE:
         final SignedBlsToExecutionChangeValidator blsToExecutionChangeValidator =
-            new SignedBlsToExecutionChangeValidator(spec, new SystemTimeProvider(), null);
+            new SignedBlsToExecutionChangeValidator(
+                spec, new SystemTimeProvider(), null, new SimpleSignatureVerificationService());
         final SignedBlsToExecutionChange blsToExecutionChange =
             loadBlsToExecutionChange(testDefinition);
         checkValidationForBlockInclusion(

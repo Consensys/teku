@@ -34,8 +34,9 @@ public interface BlockImportResult {
   BlockImportResult FAILED_DESCENDANT_OF_INVALID_BLOCK =
       new FailedBlockImportResult(FailureReason.DESCENDANT_OF_INVALID_BLOCK, Optional.empty());
 
-  BlockImportResult FAILED_BLOBS_AVAILABILITY_CHECK =
-      new FailedBlockImportResult(FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK, Optional.empty());
+  static BlockImportResult failedBlobsAvailabilityCheck(final Optional<Throwable> cause) {
+    return new FailedBlockImportResult(FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK, cause);
+  }
 
   static BlockImportResult failedExecutionPayloadExecution(final Throwable cause) {
     return new FailedBlockImportResult(
