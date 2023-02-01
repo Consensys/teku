@@ -194,8 +194,6 @@ public class ValidatorClientService extends Service {
             services.getMetricsSystem(),
             doppelgangerDetectionAction);
 
-    validatorClientService.initializeValidators(validatorApiChannel, asyncRunner);
-
     asyncRunner
         .runAsync(
             () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
