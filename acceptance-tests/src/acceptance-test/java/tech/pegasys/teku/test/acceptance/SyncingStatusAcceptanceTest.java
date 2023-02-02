@@ -72,7 +72,7 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
 
     beaconNode.waitForLogMessageContaining("Make sure the Execution Client is online");
 
-    beaconNode.expectNodeSyncing();
+    beaconNode.expectElOffline();
 
     beaconNode.stop();
   }
