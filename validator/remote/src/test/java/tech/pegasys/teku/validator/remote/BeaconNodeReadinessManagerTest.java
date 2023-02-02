@@ -30,13 +30,16 @@ import tech.pegasys.teku.validator.api.required.SyncingStatus;
 public class BeaconNodeReadinessManagerTest {
 
   private static final SyncingStatus SYNCED_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.empty());
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.empty(), false);
 
   private static final SyncingStatus SYNCING_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.empty());
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.empty(), false);
 
   private static final SyncingStatus OPTIMISTICALLY_SYNCING_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true));
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true), false);
+
+  private static final SyncingStatus EL_OFFLINE_STATUS =
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true), true);
 
   private final RemoteValidatorApiChannel beaconNodeApi = mock(RemoteValidatorApiChannel.class);
   private final RemoteValidatorApiChannel failoverBeaconNodeApi =
@@ -96,6 +99,28 @@ public class BeaconNodeReadinessManagerTest {
 
     verify(validatorLogger).primaryBeaconNodeIsBackAndReady(true);
     verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeBackInSync();
+  }
+
+  @Test
+  public void shouldFallbackToFailoverNodeWhenElGoesOffline() {
+    // default to true if never ran
+    assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
+    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
+
+    verifyNoInteractions(validatorLogger, remoteBeaconNodeSyncingChannel);
+
+    when(beaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(EL_OFFLINE_STATUS));
+    when(failoverBeaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
+
+    advanceToNextQueryPeriod(beaconNodeReadinessManager);
+
+    assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isFalse();
+    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
+
+    verify(validatorLogger).primaryBeaconNodeNotReady(true);
+    verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeNotInSync();
   }
 
   @Test
