@@ -216,6 +216,14 @@ public class ChainBuilder {
         .filter(s -> s.getBeaconBlockSlot().isLessThanOrEqualTo(toSlot));
   }
 
+  public Stream<BlobsSidecar> streamBlobsSidecars() {
+    return blobsSidecars.values().stream();
+  }
+
+  public void discardBlobsSidecar(final UInt64 slot) {
+    blobsSidecars.remove(slot);
+  }
+
   public SignedBlockAndState getGenesis() {
     return Optional.ofNullable(blocks.firstEntry()).map(Map.Entry::getValue).orElse(null);
   }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Collections;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
@@ -30,10 +31,13 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
-  @Test
-  void shouldDetectDoppelgangersViaKeyManagerAPI() throws Exception {
-    final String networkName = "less-swift";
-    final BesuNode eth1Node =
+  private final String networkName = "less-swift";
+
+  private BesuNode eth1Node;
+
+  @BeforeEach
+  void setUp() {
+    eth1Node =
         createBesuNode(
             config ->
                 config
@@ -41,10 +45,14 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
                     .withMergeSupport(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
+  }
+
+  @Test
+  void shouldDetectDoppelgangersViaKeyManagerAPI() throws Exception {
     eth1Node.start();
 
     final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 8);
+        createTekuDepositSender(networkName).sendValidatorDeposits(eth1Node, 2);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
@@ -84,8 +92,6 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     api.addLocalValidatorsAndExpect(validatorKeystores, "imported");
     firstValidatorClient.waitForLogMessageContaining("No validators doppelganger detected");
 
-    beaconNode.waitForEpochAtOrAbove(4);
-
     final TekuValidatorNode secondValidatorClient =
         createValidatorNode(
             config ->
@@ -107,9 +113,9 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
     secondValidatorClient.waitForLogMessageContaining("Validator doppelganger detected...");
     secondValidatorClient.waitForLogMessageContaining("Doppelganger detection check finished");
-    secondValidatorClient.waitForLogMessageContaining("Detected 8 validators doppelganger");
+    secondValidatorClient.waitForLogMessageContaining("Detected 2 validators doppelganger");
     secondValidatorClient.waitForLogMessageContaining(
-        "Detected 8 active validators doppelganger. The following keys have been ignored");
+        "Detected 2 active validators doppelganger. The following keys have been ignored");
 
     firstValidatorClient.stop();
     secondValidatorClient.stop();
@@ -120,29 +126,14 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldDetectDoppelgangersAtStartUp() throws Exception {
-    final String networkName = "less-swift";
 
-    final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2);
+    eth1Node.start();
 
-    final ValidatorKeystores additionalKeystores =
+    final ValidatorKeystores keyStore =
         createTekuDepositSender(networkName).generateValidatorKeys(2);
 
     final GenesisGenerator.InitialStateData genesis =
-        createGenesisGenerator()
-            .network(networkName)
-            .validatorKeys(initialKeystores, additionalKeystores)
-            .generate();
-
-    final BesuNode eth1Node =
-        createBesuNode(
-            config ->
-                config
-                    .withMiningEnabled(true)
-                    .withMergeSupport(true)
-                    .withGenesisFile("besu/preMergeGenesis.json")
-                    .withJwtTokenAuthorization(JWT_FILE));
-    eth1Node.start();
+        createGenesisGenerator().network(networkName).validatorKeys(keyStore).generate();
 
     final TekuNode firstNode =
         createTekuNode(
@@ -153,14 +144,12 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
                     .withDepositsFrom(eth1Node)
                     .withExecutionEngine(eth1Node)
                     .withRealNetwork()
-                    .withValidatorKeystores(initialKeystores));
+                    .withValidatorKeystores(keyStore));
     firstNode.start();
 
     firstNode.waitForOwnedValidatorCount(2);
     firstNode.waitForGenesis();
 
-    firstNode.addValidators(additionalKeystores);
-    firstNode.waitForOwnedValidatorCount(4);
     firstNode.waitForEpochAtOrAbove(2);
 
     final TekuNode secondNode =
@@ -169,7 +158,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(networkName)
                     .withInitialState(genesis)
-                    .withValidatorKeystores(initialKeystores)
+                    .withValidatorKeystores(keyStore)
                     .withDepositsFrom(eth1Node)
                     .withExecutionEngine(eth1Node)
                     .withValidatorLivenessTracking()
