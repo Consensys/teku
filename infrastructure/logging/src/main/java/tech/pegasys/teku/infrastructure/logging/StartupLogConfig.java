@@ -26,6 +26,7 @@ public class StartupLogConfig {
   private final String memory;
   private final int cpuCores;
 
+  private final boolean beaconChainRestApiEnabled;
   private final String beaconChainRestApiInterface;
   private final int beaconChainRestApiPort;
   private final List<String> beaconChainRestApiAllow;
@@ -38,6 +39,7 @@ public class StartupLogConfig {
       final String network,
       final String storageMode,
       final HardwareAbstractionLayer hardwareInfo,
+      final boolean beaconChainRestApiEnabled,
       final String beaconChainRestApiInterface,
       final int beaconChainRestApiPort,
       final List<String> beaconChainRestApiAllow,
@@ -51,6 +53,7 @@ public class StartupLogConfig {
     this.memory = normalizeSize(hardwareInfo.getMemory().getTotal());
     this.cpuCores = hardwareInfo.getProcessor().getLogicalProcessorCount();
 
+    this.beaconChainRestApiEnabled = beaconChainRestApiEnabled;
     this.beaconChainRestApiInterface = beaconChainRestApiInterface;
     this.beaconChainRestApiPort = beaconChainRestApiPort;
     this.beaconChainRestApiAllow = beaconChainRestApiAllow;
@@ -72,9 +75,11 @@ public class StartupLogConfig {
             "Host Configuration | Maximum Heap Size: %s, Total Memory: %s, CPU Cores: %d",
             maxHeapSize, memory, cpuCores);
     final String restApi =
-        String.format(
-            "Rest Api Configuration | Listen Address: %s, Port: %s, Allow: %s",
-            beaconChainRestApiInterface, beaconChainRestApiPort, beaconChainRestApiAllow);
+        beaconChainRestApiEnabled
+            ? String.format(
+                "Rest Api Configuration | Enabled: true, Listen Address: %s, Port: %s, Allow: %s",
+                beaconChainRestApiInterface, beaconChainRestApiPort, beaconChainRestApiAllow)
+            : "Rest Api Configuration | Enabled: false";
     final String validatorApi =
         String.format(
             "Validator Api Configuration | Listen Address: %s, Port %s, Allow: %s",
@@ -90,6 +95,7 @@ public class StartupLogConfig {
     private String network;
     private String storageMode;
     private HardwareAbstractionLayer hardwareInfo;
+    private boolean beaconChainRestApiEnabled;
     private String beaconChainRestApiInterface;
     private int beaconChainRestApiPort;
     private List<String> beaconChainRestApiAllow;
@@ -104,6 +110,7 @@ public class StartupLogConfig {
           network,
           storageMode,
           hardwareInfo,
+          beaconChainRestApiEnabled,
           beaconChainRestApiInterface,
           beaconChainRestApiPort,
           beaconChainRestApiAllow,
@@ -127,6 +134,11 @@ public class StartupLogConfig {
     public Builder hardwareInfo(HardwareAbstractionLayer hardwareInfo) {
       checkNotNull(hardwareInfo);
       this.hardwareInfo = hardwareInfo;
+      return this;
+    }
+
+    public Builder beaconChainRestApiEnabled(boolean beaconChainRestApiEnabled) {
+      this.beaconChainRestApiEnabled = beaconChainRestApiEnabled;
       return this;
     }
 

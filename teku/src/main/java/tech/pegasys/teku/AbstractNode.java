@@ -81,6 +81,7 @@ public abstract class AbstractNode implements Node {
             .network(network)
             .storageMode(storageMode)
             .hardwareInfo(new SystemInfo().getHardware())
+            .beaconChainRestApiEnabled(beaconChainRestApiConfig.isRestApiEnabled())
             .beaconChainRestApiInterface(beaconChainRestApiConfig.getRestApiInterface())
             .beaconChainRestApiPort(beaconChainRestApiConfig.getRestApiPort())
             .beaconChainRestApiAllow(beaconChainRestApiConfig.getRestApiHostAllowlist())

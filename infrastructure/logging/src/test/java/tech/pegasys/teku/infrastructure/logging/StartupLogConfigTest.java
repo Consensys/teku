@@ -26,7 +26,18 @@ import oshi.hardware.HardwareAbstractionLayer;
 public class StartupLogConfigTest {
 
   @Test
-  void checkReport() {
+  void checkReportWithRestApiEnabled() {
+    testReport(
+        true,
+        "Rest Api Configuration | Enabled: true, Listen Address: 127.0.0.1, Port: 5678, Allow: [127.0.0.1, localhost]");
+  }
+
+  @Test
+  void checkReportWithRestApiNotEnabled() {
+    testReport(false, "Rest Api Configuration | Enabled: false");
+  }
+
+  private void testReport(final boolean restApiEnabled, final String restApiReport) {
     final HardwareAbstractionLayer hardwareInfo = mock(HardwareAbstractionLayer.class);
     final GlobalMemory memory = mock(GlobalMemory.class);
     when(hardwareInfo.getMemory()).thenReturn(memory);
@@ -41,6 +52,7 @@ public class StartupLogConfigTest {
             .network("mainnet")
             .storageMode("PRUNE")
             .hardwareInfo(hardwareInfo)
+            .beaconChainRestApiEnabled(restApiEnabled)
             .beaconChainRestApiInterface("127.0.0.1")
             .beaconChainRestApiPort(5678)
             .beaconChainRestApiAllow(List.of("127.0.0.1", "localhost"))
@@ -53,7 +65,7 @@ public class StartupLogConfigTest {
         .containsExactly(
             "Configuration | Network: mainnet, Storage Mode: PRUNE",
             "Host Configuration | Maximum Heap Size: 4.00 GB, Total Memory: 16.00 GB, CPU Cores: 10",
-            "Rest Api Configuration | Listen Address: 127.0.0.1, Port: 5678, Allow: [127.0.0.1, localhost]",
+            restApiReport,
             "Validator Api Configuration | Listen Address: 127.0.0.1, Port 6789, Allow: [127.0.0.1, localhost]");
   }
 }
