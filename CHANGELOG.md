@@ -21,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Changed color of block production duty to cyan, rather than dark blue.
 
 ### Bug Fixes
+- Fixed issue which was causing validator keys to be loaded twice, which, in some cases, was causing beacon node to initialize slower.
