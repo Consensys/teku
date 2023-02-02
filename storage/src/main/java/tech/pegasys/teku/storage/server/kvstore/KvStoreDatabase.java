@@ -832,7 +832,8 @@ public class KvStoreDatabase implements Database {
             update.getOptimisticTransitionBlockRoot());
 
     if (update.isBlobsSidecarEnabled()) {
-      updateBlobsSidecars(update.getHotBlocks(), update.getDeletedHotBlocks());
+      updateBlobsSidecars(
+          update.getHotBlocks(), update.getFinalizedBlocks(), update.getDeletedHotBlocks());
     }
 
     LOG.trace("Applying hot updates");
@@ -917,6 +918,7 @@ public class KvStoreDatabase implements Database {
 
   private void updateBlobsSidecars(
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, UInt64> deletedHotBlocks) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       LOG.trace("Confirming blobs sidecars for new hot blocks");
@@ -927,8 +929,11 @@ public class KvStoreDatabase implements Database {
                       blockAndCheckpoints.getSlot(), blockAndCheckpoints.getRoot()))
           .forEach(updater::confirmBlobsSidecar);
 
+      final Set<Bytes32> finalizedBlockRoots = finalizedBlocks.keySet();
+
       LOG.trace("Removing blobs sidecars for deleted hot blocks");
       deletedHotBlocks.entrySet().stream()
+          .filter(entry -> !finalizedBlockRoots.contains(entry.getKey()))
           .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
           .forEach(updater::removeBlobsSidecar);
 

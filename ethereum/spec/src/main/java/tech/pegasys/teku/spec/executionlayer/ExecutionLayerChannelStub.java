@@ -333,7 +333,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             headAndAttrs.currentKzgCommitments.orElseThrow(),
             headAndAttrs.currentBlobs.orElseThrow());
 
-    LOG.info("getBlobsBundle: slot: {} -> blobsBundle: {}", slot, blobsBundle);
+    LOG.info("getBlobsBundle: slot: {} -> blobsBundle: {}", slot, blobsBundle.toBriefBlobsString());
 
     return SafeFuture.completedFuture(blobsBundle);
   }

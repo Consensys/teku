@@ -9,7 +9,7 @@ RUN JAVA_TOOL_OPTIONS="-Djdk.lang.Process.launchMechanism=vfork" $JAVA_HOME/bin/
          --compress=2 \
          --output /javaruntime
 
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
@@ -17,7 +17,8 @@ COPY --from=jre-build /javaruntime $JAVA_HOME
 RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl
 RUN rm -rf /var/lib/api/lists/*
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
-    chown teku:teku /opt/teku
+    chown teku:teku /opt/teku && \
+    chmod 0755 /opt/teku
 
 USER teku
 WORKDIR /opt/teku

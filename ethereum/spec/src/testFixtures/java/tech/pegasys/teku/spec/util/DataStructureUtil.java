@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszPrimitiveVector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
@@ -115,6 +116,8 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
+import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -1749,6 +1752,14 @@ public final class DataStructureUtil {
         SszUInt64.of(randomUInt64()));
   }
 
+  public LightClientUpdateResponse randomLightClientUpdateResponse(final UInt64 slot) {
+    LightClientUpdateResponseSchema schema =
+        getAltairSchemaDefinitions(slot).getLightClientUpdateResponseSchema();
+
+    return schema.create(
+        SszUInt64.of(randomUInt64()), SszBytes4.of(randomBytes4()), randomLightClientUpdate(slot));
+  }
+
   public Withdrawal randomWithdrawal() {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getWithdrawalSchema()
@@ -1790,10 +1801,10 @@ public final class DataStructureUtil {
         .create(randomValidatorIndex(), randomPublicKey(), randomBytes20());
   }
 
-  public BlsToExecutionChange randomBlsToExecutionChange(final int validatorIdex) {
+  public BlsToExecutionChange randomBlsToExecutionChange(final int validatorIndex) {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
-        .create(UInt64.valueOf(validatorIdex), randomPublicKey(), randomBytes20());
+        .create(UInt64.valueOf(validatorIndex), randomPublicKey(), randomBytes20());
   }
 
   public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
@@ -1861,7 +1872,7 @@ public final class DataStructureUtil {
 
   public BlobsSidecar randomBlobsSidecar(final Bytes32 blockRoot, final UInt64 slot) {
     final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     return randomBlobsSidecar(
@@ -1871,7 +1882,7 @@ public final class DataStructureUtil {
   public BlobsSidecar randomBlobsSidecar(
       final Bytes32 blockRoot, final UInt64 slot, final int numberOfBlobs) {
     final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     return blobsSidecarSchema.create(
@@ -1911,7 +1922,7 @@ public final class DataStructureUtil {
   public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar(
       final UInt64 slot) {
     final SignedBeaconBlock randomBlock = randomSignedBeaconBlock(slot);
-    return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions())
         .getSignedBeaconBlockAndBlobsSidecarSchema()
         .create(
             randomBlock,

@@ -35,23 +35,38 @@ public interface BlobsSidecarAvailabilityChecker {
         public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
+
+        @Override
+        public SafeFuture<BlobsSidecarAndValidationResult> validate(
+            final BlobsSidecar blobsSidecar) {
+          return NOT_REQUIRED_RESULT_FUTURE;
+        }
       };
 
   BlobsSidecarAvailabilityChecker NOT_REQUIRED = NOOP;
 
   Function<BlobsSidecar, BlobsSidecarAvailabilityChecker> ALREADY_CHECKED =
-      (blobsSidecar) ->
-          new BlobsSidecarAvailabilityChecker() {
-            @Override
-            public boolean initiateDataAvailabilityCheck() {
-              return true;
-            }
+      (blobsSidecar) -> {
+        final SafeFuture<BlobsSidecarAndValidationResult> blobsSidecarValidResult =
+            SafeFuture.completedFuture(validResult(blobsSidecar));
+        return new BlobsSidecarAvailabilityChecker() {
+          @Override
+          public boolean initiateDataAvailabilityCheck() {
+            return true;
+          }
 
-            @Override
-            public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
-              return SafeFuture.completedFuture(validResult(blobsSidecar));
-            }
-          };
+          @Override
+          public SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult() {
+            return blobsSidecarValidResult;
+          }
+
+          @Override
+          public SafeFuture<BlobsSidecarAndValidationResult> validate(
+              final BlobsSidecar blobsSidecar) {
+            return blobsSidecarValidResult;
+          }
+        };
+      };
 
   /**
    * Similar to {@link
@@ -64,6 +79,8 @@ public interface BlobsSidecarAvailabilityChecker {
   boolean initiateDataAvailabilityCheck();
 
   SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult();
+
+  SafeFuture<BlobsSidecarAndValidationResult> validate(BlobsSidecar blobsSidecar);
 
   enum BlobsSidecarValidationResult {
     NOT_REQUIRED,
