@@ -23,16 +23,19 @@ public class SyncingStatus {
   private final UInt64 syncDistance;
   private final boolean isSyncing;
   private final Optional<Boolean> isOptimistic;
+  private final boolean elOffline;
 
   public SyncingStatus(
       final UInt64 headSlot,
       final UInt64 syncDistance,
       final boolean isSyncing,
-      final Optional<Boolean> isOptimistic) {
+      final Optional<Boolean> isOptimistic,
+      final boolean elOffline) {
     this.headSlot = headSlot;
     this.syncDistance = syncDistance;
     this.isSyncing = isSyncing;
     this.isOptimistic = isOptimistic;
+    this.elOffline = elOffline;
   }
 
   public UInt64 getHeadSlot() {
@@ -51,6 +54,10 @@ public class SyncingStatus {
     return isOptimistic;
   }
 
+  public boolean isElOffline() {
+    return elOffline;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -63,12 +70,13 @@ public class SyncingStatus {
     return isSyncing == that.isSyncing
         && Objects.equals(headSlot, that.headSlot)
         && Objects.equals(syncDistance, that.syncDistance)
-        && Objects.equals(isOptimistic, that.isOptimistic);
+        && Objects.equals(isOptimistic, that.isOptimistic)
+        && elOffline == that.elOffline;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headSlot, syncDistance, isSyncing, isOptimistic);
+    return Objects.hash(headSlot, syncDistance, isSyncing, isOptimistic, elOffline);
   }
 
   @Override
@@ -82,6 +90,8 @@ public class SyncingStatus {
         + isSyncing
         + ", isOptimistic="
         + isOptimistic
+        + ", elOffline="
+        + elOffline
         + '}';
   }
 
@@ -91,6 +101,7 @@ public class SyncingStatus {
     private UInt64 syncDistance;
     private boolean isSyncing;
     private Optional<Boolean> isOptimistic;
+    private boolean elOffline;
 
     private Builder() {}
 
@@ -118,8 +129,13 @@ public class SyncingStatus {
       return this;
     }
 
+    public Builder elOffline(final boolean elOffline) {
+      this.elOffline = elOffline;
+      return this;
+    }
+
     public SyncingStatus build() {
-      return new SyncingStatus(headSlot, syncDistance, isSyncing, isOptimistic);
+      return new SyncingStatus(headSlot, syncDistance, isSyncing, isOptimistic, elOffline);
     }
   }
 }
