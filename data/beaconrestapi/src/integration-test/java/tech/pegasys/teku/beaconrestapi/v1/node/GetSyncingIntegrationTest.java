@@ -41,7 +41,7 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     final SyncingResponse syncingResponse =
         jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
     assertThat(syncingResponse.data)
-        .isEqualTo(new Syncing(UInt64.valueOf(10), UInt64.valueOf(5), true));
+        .isEqualTo(new Syncing(UInt64.valueOf(10), UInt64.valueOf(5), true, false));
   }
 
   @Test
@@ -57,7 +57,21 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
         jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
     assertThat(syncingResponse.data)
         // 0 sync distance because we're not syncing.
-        .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.ZERO, false));
+        .isEqualTo(new Syncing(UInt64.valueOf(11), UInt64.ZERO, false, false));
+  }
+
+  @Test
+  public void shouldGetSyncStatusWhenElOffline() throws IOException {
+    startRestAPIAtGenesis();
+    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 15));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.EL_OFFLINE);
+
+    final Response response = get();
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final SyncingResponse syncingResponse =
+        jsonProvider.jsonToObject(response.body().string(), SyncingResponse.class);
+    assertThat(syncingResponse.data)
+        .isEqualTo(new Syncing(UInt64.valueOf(10), UInt64.valueOf(0), false, true));
   }
 
   private Response get() throws IOException {
