@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import com.google.common.base.Throwables;
+import io.libp2p.core.SemiDuplexNoOutboundStreamException;
 import io.libp2p.pubsub.MessageAlreadySeenException;
 import io.libp2p.pubsub.NoPeersForOutboundMessageException;
 import org.apache.logging.log4j.Level;
@@ -46,7 +47,8 @@ public class GossipFailureLogger {
           "Failed to publish {}(s) for slot {} because the message has already been seen",
           messageType,
           lastErroredSlot);
-    } else if (lastRootCause instanceof NoPeersForOutboundMessageException) {
+    } else if (lastRootCause instanceof NoPeersForOutboundMessageException
+        || lastRootCause instanceof SemiDuplexNoOutboundStreamException) {
       LOG.log(
           suppress ? Level.DEBUG : Level.WARN,
           "Failed to publish {}(s) for slot {} because no peers were available on the required gossip topic",
