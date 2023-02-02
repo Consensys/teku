@@ -41,7 +41,6 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
-import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
@@ -75,7 +74,6 @@ public abstract class AbstractNode implements Node {
     final BeaconRestApiConfig beaconChainRestApiConfig =
         tekuConfig.beaconChain().beaconRestApiConfig();
     final ValidatorRestApiConfig validatorRestApiConfig = tekuConfig.validatorRestApiConfig();
-    final ExecutionLayerConfiguration executionLayerConfig = tekuConfig.executionLayer();
 
     STATUS_LOG.onStartup(VersionProvider.VERSION);
     STATUS_LOG.startupConfigurations(
@@ -89,7 +87,6 @@ public abstract class AbstractNode implements Node {
             .validatorRestApiInterface(validatorRestApiConfig.getRestApiInterface())
             .validatorRestApiPort(validatorRestApiConfig.getRestApiPort())
             .validatorRestApiAllow(validatorRestApiConfig.getRestApiHostAllowlist())
-            .executionEngineEndpoint(executionLayerConfig.getEngineEndpoint())
             .build());
 
     reportOverrides(tekuConfig);

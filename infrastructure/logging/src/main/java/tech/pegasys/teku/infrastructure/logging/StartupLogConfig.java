@@ -34,8 +34,6 @@ public class StartupLogConfig {
   private final int validatorRestApiPort;
   private final List<String> validatorRestApiAllow;
 
-  private final String executionEngineEndpoint;
-
   public StartupLogConfig(
       final String network,
       final String storageMode,
@@ -45,8 +43,7 @@ public class StartupLogConfig {
       final List<String> beaconChainRestApiAllow,
       final String validatorRestApiInterface,
       final int validatorRestApiPort,
-      final List<String> validatorRestApiAllow,
-      final String executionEngineEndpoint) {
+      final List<String> validatorRestApiAllow) {
     this.network = network;
     this.storageMode = storageMode;
 
@@ -61,8 +58,6 @@ public class StartupLogConfig {
     this.validatorRestApiInterface = validatorRestApiInterface;
     this.validatorRestApiPort = validatorRestApiPort;
     this.validatorRestApiAllow = validatorRestApiAllow;
-
-    this.executionEngineEndpoint = executionEngineEndpoint;
   }
 
   private String normalizeSize(final long size) {
@@ -84,10 +79,7 @@ public class StartupLogConfig {
         String.format(
             "Validator Api Configuration | Listen Address: %s, Port %s, Allow: %s",
             validatorRestApiInterface, validatorRestApiPort, validatorRestApiAllow);
-    final String executionLayer =
-        String.format(
-            "Execution Layer Configuration | Execution Endpoint: %s", executionEngineEndpoint);
-    return List.of(general, host, restApi, validatorApi, executionLayer);
+    return List.of(general, host, restApi, validatorApi);
   }
 
   public static Builder builder() {
@@ -104,7 +96,6 @@ public class StartupLogConfig {
     private String validatorRestApiInterface;
     private int validatorRestApiPort;
     private List<String> validatorRestApiAllow;
-    private String executionEngineEndpoint;
 
     private Builder() {}
 
@@ -118,8 +109,7 @@ public class StartupLogConfig {
           beaconChainRestApiAllow,
           validatorRestApiInterface,
           validatorRestApiPort,
-          validatorRestApiAllow,
-          executionEngineEndpoint);
+          validatorRestApiAllow);
     }
 
     public Builder network(String network) {
@@ -171,12 +161,6 @@ public class StartupLogConfig {
     public Builder validatorRestApiAllow(List<String> validatorRestApiAllow) {
       checkNotNull(validatorRestApiAllow);
       this.validatorRestApiAllow = validatorRestApiAllow;
-      return this;
-    }
-
-    public Builder executionEngineEndpoint(String executionEngineEndpoint) {
-      checkNotNull(executionEngineEndpoint);
-      this.executionEngineEndpoint = executionEngineEndpoint;
       return this;
     }
   }

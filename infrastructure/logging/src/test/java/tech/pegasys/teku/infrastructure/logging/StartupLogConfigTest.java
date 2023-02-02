@@ -47,7 +47,6 @@ public class StartupLogConfigTest {
             .validatorRestApiInterface("127.0.0.1")
             .validatorRestApiPort(6789)
             .validatorRestApiAllow(List.of("127.0.0.1", "localhost"))
-            .executionEngineEndpoint("http://localhost:6000/")
             .build();
 
     assertThat(config.getReport())
@@ -55,7 +54,6 @@ public class StartupLogConfigTest {
             "Configuration | Network: mainnet, Storage Mode: PRUNE",
             "Host Configuration | Maximum Heap Size: 4.00 GB, Total Memory: 16.00 GB, CPU Cores: 10",
             "Rest Api Configuration | Listen Address: 127.0.0.1, Port: 5678, Allow: [127.0.0.1, localhost]",
-            "Validator Api Configuration | Listen Address: 127.0.0.1, Port 6789, Allow: [127.0.0.1, localhost]",
-            "Execution Layer Configuration | Execution Endpoint: http://localhost:6000/");
+            "Validator Api Configuration | Listen Address: 127.0.0.1, Port 6789, Allow: [127.0.0.1, localhost]");
   }
 }
