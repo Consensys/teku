@@ -125,7 +125,7 @@ public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
     final UInt64 latestPrunableSlot = getLatestPrunableSlot(currentSlot);
 
     if (latestPrunableSlot.isZero()) {
-      LOG.debug("Not pruning as slots to keep includes genesis.");
+      LOG.debug("Not pruning as slots to keep include genesis.");
       return;
     }
     LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
