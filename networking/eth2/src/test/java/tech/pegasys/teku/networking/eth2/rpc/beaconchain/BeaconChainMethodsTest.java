@@ -113,13 +113,6 @@ public class BeaconChainMethodsTest {
   }
 
   @Test
-  public void shouldCreateUnversionedBlocksByRootMethodWithAltairDisabled() { // TODO remove test?
-    final BeaconChainMethods methods = getMethods();
-
-    assertThat(methods.beaconBlocksByRoot().getIds()).isEmpty();
-  }
-
-  @Test
   public void shouldNotCreateBlobsSidecarsByRangeWithEip4844Disabled() {
     final BeaconChainMethods methods = getMethods();
 
