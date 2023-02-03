@@ -49,7 +49,6 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldGetSyncStatusInSync() throws Exception {
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
@@ -59,14 +58,13 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldGetSyncStatusElOffline() throws Exception {
-    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 11));
+    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 11));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.EL_OFFLINE);
-    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())
-        .isEqualTo(new GetSyncing.SyncStatusData(false, false, true, 10, 0));
+        .isEqualTo(new GetSyncing.SyncStatusData(true, false, true, 10, 1));
   }
 
   @Test
