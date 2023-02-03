@@ -223,9 +223,9 @@ public class HistoricalBlockSyncService extends Service {
   }
 
   private void updateSyncMetrics() {
-    if (earliestBlock.getBeaconBlock().isPresent()) {
-      historicSyncGauge.set(earliestBlock.getSlot().doubleValue());
-    }
+    earliestBlock
+        .getBeaconBlock()
+        .ifPresent(__ -> historicSyncGauge.set(earliestBlock.getSlot().doubleValue()));
   }
 
   private void fetchBlocks() {
@@ -308,7 +308,7 @@ public class HistoricalBlockSyncService extends Service {
   private boolean isSyncDone() {
     return earliestBlock
         .getBeaconBlock()
-        .map(b -> b.getSlot().isLessThanOrEqualTo(getTerminalSlot()))
+        .map(block -> block.getSlot().isLessThanOrEqualTo(getTerminalSlot()))
         .orElse(false);
   }
 
