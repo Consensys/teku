@@ -17,6 +17,9 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Introduces [Doppelganger Detection feature](https://docs.teku.consensys.net/en/latest/HowTo/Doppelganger-Detection/) 
+- Introduced [Doppelganger Detection feature](https://docs.teku.consensys.net/en/latest/HowTo/Doppelganger-Detection/) 
+- Changed color of block production duty to cyan, rather than dark blue.
+- Introduced a configuration overview printed during start up.
 
 ### Bug Fixes
+- Fixed issue which was causing validator keys to be loaded twice, which, in some cases, was causing beacon node to initialize slower.
