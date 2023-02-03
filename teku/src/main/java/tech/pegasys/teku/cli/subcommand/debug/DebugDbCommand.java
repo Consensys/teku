@@ -42,6 +42,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -373,11 +374,27 @@ public class DebugDbCommand implements Runnable {
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
+              names = {"--from-slot"},
+              description = "Dump blobs sidecars starting from a given slot (inclusive)")
+          final Long fromSlot,
+      @Option(
+              names = {"--to-slot"},
+              description = "Dump blobs sidecars up to a given slot (inclusive)")
+          final Long toSlot,
+      @Option(
               required = true,
               names = {"--output", "-o"},
               description = "File to write blobs sidecars to")
           final Path outputFile)
       throws Exception {
+
+    final UInt64 from = Optional.ofNullable(fromSlot).map(UInt64::valueOf).orElse(UInt64.ZERO);
+    final UInt64 to = Optional.ofNullable(toSlot).map(UInt64::valueOf).orElse(UInt64.MAX_VALUE);
+
+    if (from.isGreaterThan(to)) {
+      throw new InvalidConfigurationException("--from-slot must less then or equal to --to-slot");
+    }
+
     int index = 0;
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions);
         final ZipOutputStream out =
@@ -386,7 +403,7 @@ public class DebugDbCommand implements Runnable {
                     outputFile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
 
       try (final Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarAsSsz =
-          database.streamBlobsSidecarsAsSsz(UInt64.ZERO, UInt64.MAX_VALUE)) {
+          database.streamBlobsSidecarsAsSsz(from, to)) {
         for (final Iterator<Map.Entry<SlotAndBlockRoot, Bytes>> iterator =
                 streamBlobsSidecarAsSsz.iterator();
             iterator.hasNext(); ) {
@@ -399,8 +416,11 @@ public class DebugDbCommand implements Runnable {
         }
       }
 
+      System.out.println("Wrote " + index + " blobs sidecars to " + outputFile.toAbsolutePath());
+
+      index = 0;
       try (final Stream<SlotAndBlockRoot> unconfirmedBlobs =
-          database.streamUnconfirmedBlobsSidecars(UInt64.ZERO, UInt64.MAX_VALUE)) {
+          database.streamUnconfirmedBlobsSidecars(from, to)) {
         out.putNextEntry(new ZipEntry("unconfirmed.txt"));
         for (final Iterator<SlotAndBlockRoot> iterator = unconfirmedBlobs.iterator();
             iterator.hasNext(); ) {
@@ -413,7 +433,9 @@ public class DebugDbCommand implements Runnable {
         }
       }
     }
-    System.out.println("Wrote " + index + " blobs sidecars to " + outputFile.toAbsolutePath());
+
+    System.out.println(
+        "Wrote " + index + " unconfirmed blobs sidecars to " + outputFile.toAbsolutePath());
     return 0;
   }
 
