@@ -69,12 +69,11 @@ public class BlockPropagationIntegrationTest {
 
     // Setup node 2
     SyncingNodeManager node2 =
-        SyncingNodeManager
-            .create( // FIXME minimal phase0 so going to get empty result for blocks (line 99)
-                asyncRunner,
-                networkFactory,
-                validatorKeys,
-                c -> c.rpcEncoding(rpcEncoding).gossipEncoding(gossipEncoding));
+        SyncingNodeManager.create(
+            asyncRunner,
+            networkFactory,
+            validatorKeys,
+            c -> c.rpcEncoding(rpcEncoding).gossipEncoding(gossipEncoding));
 
     // Connect networks
     Waiter.waitFor(node1.connect(node2));
