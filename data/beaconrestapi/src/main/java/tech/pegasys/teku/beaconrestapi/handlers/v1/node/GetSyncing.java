@@ -45,7 +45,7 @@ public class GetSyncing extends RestApiEndpoint {
           .withField("sync_distance", UINT64_TYPE, SyncStatusData::getSlotsBehind)
           .withField("is_syncing", BOOLEAN_TYPE, SyncStatusData::isSyncing)
           .withOptionalField("is_optimistic", BOOLEAN_TYPE, SyncStatusData::isOptimistic)
-          .withOptionalField("el_offline", BOOLEAN_TYPE, SyncStatusData::isElOffline)
+          .withOptionalField("el_offline", BOOLEAN_TYPE, SyncStatusData::elOffline)
           .build();
 
   private static final SerializableTypeDefinition<SyncStatusData> SYNCING_RESPONSE_TYPE =
@@ -119,7 +119,7 @@ public class GetSyncing extends RestApiEndpoint {
       return isOptimistic;
     }
 
-    public Optional<Boolean> isElOffline() {
+    public Optional<Boolean> elOffline() {
       return elOffline;
     }
 
