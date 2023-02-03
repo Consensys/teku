@@ -285,7 +285,7 @@ public class HistoricalBatchFetcher {
                         future.complete(newEarliestBlock);
                       });
             })
-        // always clear the blobs sidecars batch cache
+        // always clear the blobs sidecars
         .alwaysRun(blobsSidecarsBySlotToImport::clear);
   }
 
@@ -300,9 +300,9 @@ public class HistoricalBatchFetcher {
 
   private SafeFuture<Void> batchVerifyHistoricalBlockSignature(
       final Collection<SignedBeaconBlock> blocks, final BeaconState bestState) {
-    List<BLSSignature> signatures = new ArrayList<>();
-    List<Bytes> signingRoots = new ArrayList<>();
-    List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();
+    final List<BLSSignature> signatures = new ArrayList<>();
+    final List<Bytes> signingRoots = new ArrayList<>();
+    final List<List<BLSPublicKey>> proposerPublicKeys = new ArrayList<>();
 
     final Bytes32 genesisValidatorsRoot = bestState.getForkInfo().getGenesisValidatorsRoot();
 
@@ -316,7 +316,7 @@ public class HistoricalBatchFetcher {
                 spec.getDomain(Domain.BEACON_PROPOSER, epoch, fork, genesisValidatorsRoot);
             signatures.add(signedBlock.getSignature());
             signingRoots.add(spec.computeSigningRoot(block, domain));
-            BLSPublicKey proposerPublicKey =
+            final BLSPublicKey proposerPublicKey =
                 spec.getValidatorPubKey(bestState, block.getProposerIndex())
                     .orElseThrow(
                         () ->
@@ -407,14 +407,14 @@ public class HistoricalBatchFetcher {
     return Optional.ofNullable(blocksToImport.peekLast());
   }
 
-  private boolean latestBlockCompletesBatch(Optional<SignedBeaconBlock> latestBlock) {
+  private boolean latestBlockCompletesBatch(final Optional<SignedBeaconBlock> latestBlock) {
     return latestBlock
         .map(SignedBeaconBlock::getRoot)
         .map(r -> r.equals(lastBlockRoot))
         .orElse(false);
   }
 
-  private boolean latestBlockShouldCompleteBatch(Optional<SignedBeaconBlock> latestBlock) {
+  private boolean latestBlockShouldCompleteBatch(final Optional<SignedBeaconBlock> latestBlock) {
     return latestBlock
         .map(SignedBeaconBlock::getSlot)
         .map(s -> s.isGreaterThanOrEqualTo(maxSlot))
