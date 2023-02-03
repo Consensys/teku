@@ -29,6 +29,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
@@ -100,7 +103,10 @@ public class HistoricalBatchFetcherTest {
     // Set up main chain and fork chain
     chainBuilder.generateGenesis();
     forkBuilder = chainBuilder.fork();
-    chainBuilder.generateBlocksUpToSlot(20);
+    // blocks up to slot 19 will have empty sidecars
+    chainBuilder.generateBlocksUpToSlot(19);
+    // slot 20 sidecar will have kzg commitments
+    chainBuilder.generateBlockAtSlot(20, BlockOptions.create().setGenerateRandomBlobs(true));
     // Fork skips one block then creates a chain of the same size
     forkBuilder.generateBlockAtSlot(2);
     forkBuilder.generateBlocksUpToSlot(20);
@@ -213,8 +219,8 @@ public class HistoricalBatchFetcherTest {
   public void run_failingOnBlobsSidecarNotReceived() {
     mockBlockAndBlobsSidecarsRelatedMethods(true);
 
-    // discarding blobs sidecar for slot 10
-    chainBuilder.discardBlobsSidecar(UInt64.valueOf(10));
+    // discard sidecar for slot 20
+    chainBuilder.discardBlobsSidecar(UInt64.valueOf(20));
 
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
 
@@ -222,9 +228,29 @@ public class HistoricalBatchFetcherTest {
 
     SafeFutureAssert.assertThatSafeFuture(future)
         .isCompletedExceptionallyWithMessage(
-            "Blobs sidecar for slot 10 was not received from peer " + peer.getId());
+            "Blobs sidecar for slot 20 was not received from peer " + peer.getId());
 
     verifyNoInteractions(storageUpdateChannel);
+  }
+
+  @Test
+  public void run_doesNotFailIfBlobsSidecarNotReceivedAndNoKzgCommitments() {
+    mockBlockAndBlobsSidecarsRelatedMethods(
+        true,
+        Optional.of(
+            finalizedBlobsSidecars ->
+                assertThat(finalizedBlobsSidecars)
+                    .hasSize(blockBatch.size() - 1)
+                    .doesNotContainKeys(UInt64.valueOf(19))));
+
+    // discard sidecar for slot 19 (no kzg commitments)
+    chainBuilder.discardBlobsSidecar(UInt64.valueOf(19));
+
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    peer.completePendingRequests();
+
+    SafeFutureAssert.assertThatSafeFuture(future).isNotCompletedExceptionally();
   }
 
   @Test
@@ -484,8 +510,14 @@ public class HistoricalBatchFetcherTest {
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
   }
 
-  @SuppressWarnings("unchecked")
   private void mockBlockAndBlobsSidecarsRelatedMethods(final boolean eip4844) {
+    mockBlockAndBlobsSidecarsRelatedMethods(eip4844, Optional.empty());
+  }
+
+  @SuppressWarnings("unchecked")
+  private void mockBlockAndBlobsSidecarsRelatedMethods(
+      final boolean eip4844,
+      final Optional<Consumer<Map<UInt64, BlobsSidecar>>> customFinalizedBlobsSidecarsAssertion) {
     when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(eip4844);
     if (eip4844) {
       when(fetchBlockTaskFactory.create(any(), any()))
@@ -501,8 +533,13 @@ public class HistoricalBatchFetcherTest {
           .validate(any());
       doAnswer(
               i -> {
-                assertThat((Map<UInt64, BlobsSidecar>) i.getArgument(1))
-                    .containsValues(blobsSidecarBatch.toArray(BlobsSidecar[]::new));
+                final Map<UInt64, BlobsSidecar> finalizedBlobsSidecars = i.getArgument(1);
+                if (customFinalizedBlobsSidecarsAssertion.isPresent()) {
+                  customFinalizedBlobsSidecarsAssertion.get().accept(finalizedBlobsSidecars);
+                } else {
+                  assertThat(finalizedBlobsSidecars)
+                      .containsValues(blobsSidecarBatch.toArray(BlobsSidecar[]::new));
+                }
                 return SafeFuture.COMPLETE;
               })
           .when(storageUpdateChannel)

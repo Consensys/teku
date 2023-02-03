@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -356,7 +357,7 @@ public class HistoricalBatchFetcher {
                   final UInt64 slot = signedBlock.getSlot();
 
                   if (!blobsSidecarsBySlot.containsKey(slot)) {
-                    return handleNotReceivedBlobsSidecar(slot);
+                    return handleNotReceivedBlobsSidecar(signedBlock, slot);
                   }
 
                   final BlobsSidecar blobsSidecar = blobsSidecarsBySlot.get(slot);
@@ -379,14 +380,26 @@ public class HistoricalBatchFetcher {
     return SafeFuture.allOfFailFast(validatingBlobsSidecars);
   }
 
-  private SafeFuture<Void> handleNotReceivedBlobsSidecar(final UInt64 slot) {
-    if (blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot)) {
+  private SafeFuture<Void> handleNotReceivedBlobsSidecar(
+      final SignedBeaconBlock block, final UInt64 slot) {
+    if (blockHasKzgCommitments(block)
+        && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot)) {
       return SafeFuture.failedFuture(
           new IllegalArgumentException(
               String.format(
                   "Blobs sidecar for slot %s was not received from peer %s", slot, peer.getId())));
     }
     return SafeFuture.COMPLETE;
+  }
+
+  private boolean blockHasKzgCommitments(final SignedBeaconBlock block) {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionEip4844()
+        .map(BeaconBlockBodyEip4844::getBlobKzgCommitments)
+        .map(kzgCommitments -> !kzgCommitments.isEmpty())
+        .orElse(false);
   }
 
   private RequestParameters calculateRequestParams() {
