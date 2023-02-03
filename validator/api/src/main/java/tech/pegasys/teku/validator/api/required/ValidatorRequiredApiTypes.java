@@ -44,7 +44,7 @@ public class ValidatorRequiredApiTypes {
               CoreTypes.BOOLEAN_TYPE,
               SyncingStatus::getIsOptimistic,
               SyncingStatus.Builder::isOptimistic)
-          .withField(
+          .withOptionalField(
               "el_offline",
               CoreTypes.BOOLEAN_TYPE,
               SyncingStatus::isElOffline,

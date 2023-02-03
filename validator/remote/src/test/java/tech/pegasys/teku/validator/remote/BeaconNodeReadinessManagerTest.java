@@ -30,16 +30,16 @@ import tech.pegasys.teku.validator.api.required.SyncingStatus;
 public class BeaconNodeReadinessManagerTest {
 
   private static final SyncingStatus SYNCED_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.empty(), false);
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, false, Optional.empty(), Optional.empty());
 
   private static final SyncingStatus SYNCING_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.empty(), false);
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.empty(), Optional.empty());
 
   private static final SyncingStatus OPTIMISTICALLY_SYNCING_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true), false);
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true), Optional.empty());
 
   private static final SyncingStatus EL_OFFLINE_STATUS =
-      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true), true);
+      new SyncingStatus(UInt64.ONE, UInt64.ZERO, true, Optional.of(true), Optional.of(true));
 
   private final RemoteValidatorApiChannel beaconNodeApi = mock(RemoteValidatorApiChannel.class);
   private final RemoteValidatorApiChannel failoverBeaconNodeApi =

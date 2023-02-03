@@ -23,14 +23,14 @@ public class SyncingStatus {
   private final UInt64 syncDistance;
   private final boolean isSyncing;
   private final Optional<Boolean> isOptimistic;
-  private final boolean elOffline;
+  private final Optional<Boolean> elOffline;
 
   public SyncingStatus(
       final UInt64 headSlot,
       final UInt64 syncDistance,
       final boolean isSyncing,
       final Optional<Boolean> isOptimistic,
-      final boolean elOffline) {
+      final Optional<Boolean> elOffline) {
     this.headSlot = headSlot;
     this.syncDistance = syncDistance;
     this.isSyncing = isSyncing;
@@ -54,7 +54,7 @@ public class SyncingStatus {
     return isOptimistic;
   }
 
-  public boolean isElOffline() {
+  public Optional<Boolean> isElOffline() {
     return elOffline;
   }
 
@@ -71,7 +71,7 @@ public class SyncingStatus {
         && Objects.equals(headSlot, that.headSlot)
         && Objects.equals(syncDistance, that.syncDistance)
         && Objects.equals(isOptimistic, that.isOptimistic)
-        && elOffline == that.elOffline;
+        && Objects.equals(elOffline, that.elOffline);
   }
 
   @Override
@@ -101,7 +101,7 @@ public class SyncingStatus {
     private UInt64 syncDistance;
     private boolean isSyncing;
     private Optional<Boolean> isOptimistic;
-    private boolean elOffline;
+    private Optional<Boolean> elOffline;
 
     private Builder() {}
 
@@ -129,7 +129,7 @@ public class SyncingStatus {
       return this;
     }
 
-    public Builder elOffline(final boolean elOffline) {
+    public Builder elOffline(final Optional<Boolean> elOffline) {
       this.elOffline = elOffline;
       return this;
     }
