@@ -23,16 +23,20 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -90,14 +94,54 @@ public class ChainStorageTest {
     testOnFinalizedBlocks(storageSystemSupplier, true, true);
   }
 
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void onFinalizedBlocksAndBlobsSidecars_shouldAcceptValidBlocks_startFromAnchorWithBlock(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, false, false);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void onFinalizedBlocksAndBlobsSidecars_shouldAcceptValidBlocks_startFromAnchorWithoutBlock(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, true, false);
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void onFinalizedBlocksAndBlobsSidecars_shouldAcceptValidBlocks_inBatches(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, true, true);
+  }
+
   public void testOnFinalizedBlocks(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
       final boolean initializeWithAnchorStateAlone,
       final boolean executeInBatches) {
+    testOnFinalized(storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, false);
+  }
+
+  public void testOnFinalizedBlocksAndBlobsSidecars(
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
+      final boolean initializeWithAnchorStateAlone,
+      final boolean executeInBatches) {
+    testOnFinalized(storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, true);
+  }
+
+  public void testOnFinalized(
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
+      final boolean initializeWithAnchorStateAlone,
+      final boolean executeInBatches,
+      final boolean testBlobsSidecars) {
     setup(storageSystemSupplier);
 
     // Build small chain
-    chainBuilder.generateBlocksUpToSlot(spec.slotsPerEpoch(ZERO) * 3);
+    chainBuilder.generateBlocksUpToSlot(spec.slotsPerEpoch(ZERO) * 3L);
+
     // Retrieve anchor data
     final Checkpoint anchorCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(3);
     final SignedBlockAndState anchorBlockAndState =
@@ -118,39 +162,65 @@ public class ChainStorageTest {
       firstMissingBlockSlot = anchorBlockAndState.getSlot().minus(1).longValue();
     }
 
-    // Now try to store missing historical blocks
+    // Now try to store missing historical blocks and blobs sidecars
     final List<SignedBeaconBlock> missingHistoricalBlocks =
         chainBuilder
             .streamBlocksAndStates(0, firstMissingBlockSlot)
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
-    // Sanity check - blocks should be unavailable initially
+    final Map<UInt64, BlobsSidecar> missingHistoricalBlobsSidecars =
+        chainBuilder
+            .streamBlobsSidecars(0, firstMissingBlockSlot)
+            .collect(Collectors.toMap(BlobsSidecar::getBeaconBlockSlot, Function.identity()));
+
+    // Sanity check - blocks and blobs sidecars should be unavailable initially
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
-      final SafeFuture<Optional<SignedBeaconBlock>> result =
+      final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
           chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
-      assertThatSafeFuture(result).isCompletedWithEmptyOptional();
+      assertThatSafeFuture(blockResult).isCompletedWithEmptyOptional();
+      final SafeFuture<Optional<BlobsSidecar>> sidecarResult =
+          chainStorage.getBlobsSidecar(
+              new SlotAndBlockRoot(
+                  missingHistoricalBlock.getSlot(), missingHistoricalBlock.getRoot()));
+      assertThatSafeFuture(sidecarResult).isCompletedWithEmptyOptional();
     }
 
+    final Map<UInt64, BlobsSidecar> finalizedBlobsSidecars =
+        testBlobsSidecars ? missingHistoricalBlobsSidecars : Map.of();
     if (executeInBatches) {
       final int batchSize = missingHistoricalBlocks.size() / 3;
       final List<List<SignedBeaconBlock>> batches =
           Lists.partition(missingHistoricalBlocks, batchSize);
       for (int i = batches.size() - 1; i >= 0; i--) {
         final List<SignedBeaconBlock> batch = batches.get(i);
-        chainStorage.onFinalizedBlocks(batch, Map.of()).ifExceptionGetsHereRaiseABug();
+        chainStorage
+            .onFinalizedBlocks(batch, finalizedBlobsSidecars)
+            .ifExceptionGetsHereRaiseABug();
       }
     } else {
       chainStorage
-          .onFinalizedBlocks(missingHistoricalBlocks, Map.of())
+          .onFinalizedBlocks(missingHistoricalBlocks, finalizedBlobsSidecars)
           .ifExceptionGetsHereRaiseABug();
     }
 
     // Verify blocks are now available
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
-      final SafeFuture<Optional<SignedBeaconBlock>> result =
+      final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
           chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
-      assertThatSafeFuture(result).isCompletedWithOptionalContaining(missingHistoricalBlock);
+      assertThatSafeFuture(blockResult).isCompletedWithOptionalContaining(missingHistoricalBlock);
+      final SafeFuture<Optional<BlobsSidecar>> sidecarResult =
+          chainStorage.getBlobsSidecar(
+              new SlotAndBlockRoot(
+                  missingHistoricalBlock.getSlot(), missingHistoricalBlock.getRoot()));
+      if (testBlobsSidecars) {
+        // verify blobs sidecar for a block is available
+        assertThatSafeFuture(sidecarResult)
+            .isCompletedWithOptionalContaining(
+                missingHistoricalBlobsSidecars.get(missingHistoricalBlock.getSlot()));
+      } else {
+        assertThatSafeFuture(sidecarResult).isCompletedWithEmptyOptional();
+      }
     }
   }
 

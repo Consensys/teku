@@ -158,7 +158,7 @@ public class HistoricalBatchFetcherTest {
     peer.completePendingRequests();
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     assertThat(future).isCompletedWithValue(firstBlockInBatch);
-
+    // finalizedBlobsSidecar assertion is done in mockBlockAndBlobsSidecarsRelatedMethods()
     verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), anyMap());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     // verify no availability checker is triggered

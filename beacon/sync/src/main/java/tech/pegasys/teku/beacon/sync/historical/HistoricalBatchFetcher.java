@@ -366,7 +366,7 @@ public class HistoricalBatchFetcher {
                       .thenAccept(
                           blobsSidecarAndValidationResult -> {
                             if (blobsSidecarAndValidationResult.isFailure()) {
-                              throw new IllegalStateException(
+                              throw new IllegalArgumentException(
                                   String.format(
                                       "Blobs sidecar for slot %s received from peer %s has failed the validation check: %s",
                                       slot,
@@ -382,7 +382,7 @@ public class HistoricalBatchFetcher {
   private SafeFuture<Void> handleNotReceivedBlobsSidecar(final UInt64 slot) {
     if (blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot)) {
       return SafeFuture.failedFuture(
-          new IllegalStateException(
+          new IllegalArgumentException(
               String.format(
                   "Blobs sidecar for slot %s was not received from peer %s", slot, peer.getId())));
     }

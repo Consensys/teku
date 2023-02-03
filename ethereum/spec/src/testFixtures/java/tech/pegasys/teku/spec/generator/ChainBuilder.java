@@ -323,6 +323,19 @@ public class ChainBuilder {
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
+
+    // add an empty blobs sidecar to the genesis block if genesis is in the EIP-4844 milestone
+    spec.getGenesisSchemaDefinitions()
+        .toVersionEip4844()
+        .ifPresent(
+            schemaDefinitions -> {
+              final BlobsSidecarSchema blobsSidecarSchema =
+                  schemaDefinitions.getBlobsSidecarSchema();
+              final BlobsSidecar blobsSidecar =
+                  blobsSidecarSchema.createEmpty(blockAndState.getRoot(), blockAndState.getSlot());
+              trackBlobsSidecar(blobsSidecar);
+            });
+
     return blockAndState;
   }
 
