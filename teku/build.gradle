@@ -57,6 +57,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.xerial.snappy:snappy-java'
+  implementation 'com.github.oshi:oshi-core'
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 

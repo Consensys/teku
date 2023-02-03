@@ -95,29 +95,34 @@ public class SignedBlsToExecutionChangeValidator
     */
     return getState()
         .thenCompose(
-            state -> {
-              final SafeFuture<InternalValidationResult> messageValidation =
-                  validateBlsMessage(state, blsToExecutionChange);
-              final SafeFuture<InternalValidationResult> signatureValidation =
-                  validateBlsMessageSignature(state, operation);
+            state ->
+                validateBlsMessage(state, blsToExecutionChange)
+                    .thenCombine(
+                        validateBlsMessageSignature(state, operation),
+                        (messageValidationResult, signatureValidationResult) ->
+                            processValidationResults(
+                                validatorIndex,
+                                messageValidationResult,
+                                signatureValidationResult)));
+  }
 
-              return SafeFuture.collectAll(messageValidation, signatureValidation)
-                  .thenApply(
-                      results -> {
-                        if (results.stream().allMatch(InternalValidationResult::isAccept)) {
-                          if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
-                            return InternalValidationResult.ACCEPT;
-                          } else {
-                            return rejectForDuplicatedMessage(validatorIndex);
-                          }
-                        }
+  private InternalValidationResult processValidationResults(
+      final UInt64 validatorIndex,
+      final InternalValidationResult messageValidationResult,
+      final InternalValidationResult signatureValidationResult) {
+    if (messageValidationResult.isAccept() && signatureValidationResult.isAccept()) {
+      if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
+        return InternalValidationResult.ACCEPT;
+      } else {
+        return rejectForDuplicatedMessage(validatorIndex);
+      }
+    }
 
-                        return results.stream()
-                            .filter(r -> !r.equals(InternalValidationResult.ACCEPT))
-                            .findFirst()
-                            .orElse(reject("Rejected for unknown reason"));
-                      });
-            });
+    if (!messageValidationResult.isAccept()) {
+      return messageValidationResult;
+    } else {
+      return signatureValidationResult;
+    }
   }
 
   private static InternalValidationResult rejectForDuplicatedMessage(final UInt64 validatorIndex) {

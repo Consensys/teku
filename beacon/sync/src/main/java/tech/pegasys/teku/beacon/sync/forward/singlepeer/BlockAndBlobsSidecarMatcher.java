@@ -73,13 +73,15 @@ public class BlockAndBlobsSidecarMatcher {
   }
 
   private boolean isSidecarRequired(final SignedBeaconBlock block, final UInt64 slot) {
-    final boolean blockHasEmptyKzgCommitments =
-        BeaconBlockBodyEip4844.required(block.getMessage().getBody())
-            .getBlobKzgCommitments()
-            .isEmpty();
-
-    return !blockHasEmptyKzgCommitments
-        && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot);
+    final boolean blockHasKzgCommitments =
+        block
+            .getMessage()
+            .getBody()
+            .toVersionEip4844()
+            .map(BeaconBlockBodyEip4844::getBlobKzgCommitments)
+            .map(kzgCommitments -> !kzgCommitments.isEmpty())
+            .orElse(false);
+    return blockHasKzgCommitments && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot);
   }
 
   public void clearCache() {

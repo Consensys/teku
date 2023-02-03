@@ -29,7 +29,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 
 class GetDepositContractTest extends AbstractMigratedBeaconHandlerTest {
   final Eth1Address eth1Address = dataStructureUtil.randomEth1Address();
-  final int chainId = spec.getGenesisSpecConfig().getDepositChainId();
+  final long chainId = spec.getGenesisSpecConfig().getDepositChainId();
   private final GetDepositContract.DepositContractData contractData =
       new GetDepositContract.DepositContractData(chainId, eth1Address);
 

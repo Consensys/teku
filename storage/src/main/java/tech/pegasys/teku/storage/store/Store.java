@@ -247,6 +247,7 @@ class Store implements UpdatableStore {
     blocks.sort(Comparator.comparing(StoredBlockMetadata::getBlockSlot));
     final ProtoArray protoArray =
         ProtoArray.builder()
+            .spec(spec)
             .currentEpoch(currentEpoch)
             .initialCheckpoint(initialCheckpoint)
             .justifiedCheckpoint(justifiedCheckpoint)

@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -43,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 public class ProtoArray {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private int pruneThreshold;
 
   private UInt64 currentEpoch;
@@ -73,6 +75,7 @@ public class ProtoArray {
   private final ProtoArrayIndices indices = new ProtoArrayIndices();
 
   ProtoArray(
+      final Spec spec,
       final int pruneThreshold,
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
@@ -80,6 +83,7 @@ public class ProtoArray {
       final UInt64 initialEpoch,
       final ProgressiveBalancesMode progressiveBalancesMode,
       final StatusLogger statusLog) {
+    this.spec = spec;
     this.pruneThreshold = pruneThreshold;
     this.currentEpoch = currentEpoch;
     this.justifiedCheckpoint = justifiedCheckpoint;
@@ -620,19 +624,29 @@ public class ProtoArray {
     }
 
     if (progressiveBalancesMode.isFull()) {
-      final boolean correctJustified =
-          node.getJustifiedCheckpoint()
-              .getEpoch()
-              .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch());
-      final boolean correctFinalized;
-      if (isPreviousEpochJustified()) {
-        correctFinalized =
-            node.getFinalizedCheckpoint()
-                .getEpoch()
-                .isGreaterThanOrEqualTo(finalizedCheckpoint.getEpoch());
-      } else {
-        correctFinalized = doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
+      // The voting source should be at the same height as the store's justified checkpoint
+      boolean correctJustified =
+          doesCheckpointEpochMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint);
+
+      // If this is a pulled-up block from the current epoch, also check that the unrealized
+      // justification is higher than the store's justified checkpoint, and the voting source is not
+      // more than two epochs ago.
+      if (!correctJustified
+          && !node.getUnrealizedJustifiedCheckpoint().equals(node.getJustifiedCheckpoint())) {
+        correctJustified =
+            node.getUnrealizedJustifiedCheckpoint()
+                    .getEpoch()
+                    .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch())
+                && node.getJustifiedCheckpoint()
+                    .getEpoch()
+                    .plus(2)
+                    .isGreaterThanOrEqualTo(currentEpoch);
       }
+
+      final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch());
+      final boolean correctFinalized =
+          node.getFinalizedCheckpoint().getEpoch().equals(initialEpoch)
+              || hasAncestorAtSlot(node, finalizedSlot, finalizedCheckpoint.getRoot());
       return correctJustified && correctFinalized;
     } else {
       return doesCheckpointMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint)
@@ -640,14 +654,31 @@ public class ProtoArray {
     }
   }
 
-  private boolean isPreviousEpochJustified() {
-    return justifiedCheckpoint.getEpoch().plus(1).isGreaterThanOrEqualTo(currentEpoch);
+  /**
+   * This is similar to the <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/fork-choice.md#get_ancestor">get_ancestor</a>
+   * function in the eth2 spec.
+   *
+   * <p>The difference is that this is checking if the ancestor at slot is the required one.
+   */
+  private boolean hasAncestorAtSlot(
+      final ProtoNode start, final UInt64 finalizedSlot, final Bytes32 requiredRoot) {
+    ProtoNode node = start;
+    while (node != null && node.getBlockSlot().isGreaterThan(finalizedSlot)) {
+      node = node.getParentIndex().map(this::getNodeByIndex).orElse(null);
+    }
+    return node != null && requiredRoot.equals(node.getBlockRoot());
   }
 
   private boolean doesCheckpointMatch(final Checkpoint actual, final Checkpoint required) {
     return required.getEpoch().equals(initialEpoch)
         || (actual.getEpoch().equals(required.getEpoch())
             && (actual.getRoot().isZero() || actual.getRoot().equals(required.getRoot())));
+  }
+
+  private boolean doesCheckpointEpochMatch(final Checkpoint actual, final Checkpoint required) {
+    return required.getEpoch().equals(initialEpoch)
+        || actual.getEpoch().equals(required.getEpoch());
   }
 
   public Checkpoint getJustifiedCheckpoint() {

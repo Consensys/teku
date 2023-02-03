@@ -52,6 +52,10 @@ public class StatusLogger {
             + "You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0");
   }
 
+  public void startupConfigurations(final StartupLogConfig config) {
+    config.getReport().forEach(log::info);
+  }
+
   public void reportOptimisedBlst() {
     log.info("Using optimized BLST library");
   }
@@ -387,7 +391,8 @@ public class StatusLogger {
     log.info(performance);
   }
 
-  public void eth1DepositChainIdMismatch(int expectedChainId, int eth1ChainId, String endpointId) {
+  public void eth1DepositChainIdMismatch(
+      long expectedChainId, long eth1ChainId, String endpointId) {
     log.log(
         Level.ERROR,
         "PLEASE CHECK YOUR ETH1 NODE (endpoint {})| Wrong Eth1 chain id (expected={}, actual={})",

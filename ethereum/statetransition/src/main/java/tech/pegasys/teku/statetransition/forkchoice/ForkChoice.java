@@ -212,7 +212,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       final BeaconState justifiedState = justifiedCheckpointState.orElseThrow();
                       final List<UInt64> justifiedEffectiveBalances =
                           spec.getBeaconStateUtil(justifiedState.getSlot())
-                              .getEffectiveBalances(justifiedState);
+                              .getEffectiveActiveUnslashedBalances(justifiedState);
 
                       Bytes32 headBlockRoot =
                           transaction.applyForkChoiceScoreChanges(

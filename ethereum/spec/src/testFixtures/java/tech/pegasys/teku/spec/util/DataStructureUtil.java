@@ -1801,10 +1801,10 @@ public final class DataStructureUtil {
         .create(randomValidatorIndex(), randomPublicKey(), randomBytes20());
   }
 
-  public BlsToExecutionChange randomBlsToExecutionChange(final int validatorIdex) {
+  public BlsToExecutionChange randomBlsToExecutionChange(final int validatorIndex) {
     return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
-        .create(UInt64.valueOf(validatorIdex), randomPublicKey(), randomBytes20());
+        .create(UInt64.valueOf(validatorIndex), randomPublicKey(), randomBytes20());
   }
 
   public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
@@ -1872,7 +1872,7 @@ public final class DataStructureUtil {
 
   public BlobsSidecar randomBlobsSidecar(final Bytes32 blockRoot, final UInt64 slot) {
     final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     return randomBlobsSidecar(
@@ -1882,7 +1882,7 @@ public final class DataStructureUtil {
   public BlobsSidecar randomBlobsSidecar(
       final Bytes32 blockRoot, final UInt64 slot, final int numberOfBlobs) {
     final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+        SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     return blobsSidecarSchema.create(
@@ -1922,7 +1922,7 @@ public final class DataStructureUtil {
   public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar(
       final UInt64 slot) {
     final SignedBeaconBlock randomBlock = randomSignedBeaconBlock(slot);
-    return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions())
         .getSignedBeaconBlockAndBlobsSidecarSchema()
         .create(
             randomBlock,
