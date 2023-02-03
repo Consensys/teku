@@ -37,7 +37,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.storage.server.pruner.BlobsPruner;
+import tech.pegasys.teku.storage.server.pruner.BlobsSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
@@ -47,7 +47,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Database database;
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
-  private volatile Optional<BlobsPruner> blobsPruner = Optional.empty();
+  private volatile Optional<BlobsSidecarPruner> blobsPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
 
   public StorageService(
@@ -90,7 +90,7 @@ public class StorageService extends Service implements StorageServiceFacade {
               if (config.getSpec().isMilestoneSupported(SpecMilestone.EIP4844)) {
                 blobsPruner =
                     Optional.of(
-                        new BlobsPruner(
+                        new BlobsSidecarPruner(
                             config.getSpec(),
                             database,
                             storagePrunerAsyncRunner,
@@ -136,7 +136,7 @@ public class StorageService extends Service implements StorageServiceFacade {
         .thenCompose(
             __ ->
                 blobsPruner
-                    .map(BlobsPruner::start)
+                    .map(BlobsSidecarPruner::start)
                     .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 
