@@ -43,6 +43,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
 public abstract class AbstractNode implements Node {
@@ -101,6 +102,8 @@ public abstract class AbstractNode implements Node {
         AsyncRunnerFactory.createDefault(
             new MetricTrackingExecutorFactory(metricsSystem, rejectedExecutionCounter));
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(tekuConfig.dataConfig());
+    ValidatorConfig validatorConfig = tekuConfig.validatorClient().getValidatorConfig();
+
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
@@ -108,7 +111,8 @@ public abstract class AbstractNode implements Node {
             eventChannels,
             metricsSystem,
             dataDirLayout,
-            rejectedExecutionCounter::getTotalCount);
+            rejectedExecutionCounter::getTotalCount,
+            validatorConfig::getexecutorThreads);
     this.metricsPublisher =
         new MetricsPublisherManager(
             asyncRunnerFactory,
