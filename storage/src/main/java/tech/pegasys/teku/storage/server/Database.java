@@ -84,16 +84,20 @@ public interface Database extends AutoCloseable {
    * @param pruneLimit
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
-  boolean pruneOldestUnconfirmedBlobsSidecar(UInt64 lastSlotToPrune, int pruneLimit);
+  boolean pruneOldestUnconfirmedBlobsSidecars(UInt64 lastSlotToPrune, int pruneLimit);
 
   @MustBeClosed
-  Stream<BlobsSidecar> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+  Stream<BlobsSidecar> streamBlobsSidecars(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarsAsSsz(
+      UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
   Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
-  Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+  Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(UInt64 startSlot, UInt64 endSlot);
 
   Optional<UInt64> getEarliestBlobsSidecarSlot();
 
