@@ -56,7 +56,7 @@ public class ValidatorConfig {
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
 
-  public static final int DEFAULT_RUNNER_THREAD_NUM = 5;
+  public static final int DEFAULT_EXECUTOR_THREADS = 5;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -89,7 +89,7 @@ public class ValidatorConfig {
   private final int executorMaxQueueSize;
   private final Optional<String> sentryNodeConfigurationFile;
 
-  private final int runnerThreadNum;
+  private final int executorThreads;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -121,7 +121,7 @@ public class ValidatorConfig {
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
-      final int runnerThreadNum,
+      final int executorThreads,
       final Optional<String> sentryNodeConfigurationFile) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
@@ -155,7 +155,7 @@ public class ValidatorConfig {
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
     this.builderRegistrationPublicKeyOverride = builderRegistrationPublicKeyOverride;
     this.executorMaxQueueSize = executorMaxQueueSize;
-    this.runnerThreadNum = runnerThreadNum;
+    this.executorThreads = executorThreads;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
   }
 
@@ -278,8 +278,8 @@ public class ValidatorConfig {
     return executorMaxQueueSize;
   }
 
-  public int getRunnerThreadNum() {
-    return runnerThreadNum;
+  public int getexecutorThreads() {
+    return executorThreads;
   }
 
   public Optional<String> getSentryNodeConfigurationFile() {
@@ -336,7 +336,7 @@ public class ValidatorConfig {
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
-    private int runnerThreadNum = DEFAULT_RUNNER_THREAD_NUM;
+    private int executorThreads = DEFAULT_EXECUTOR_THREADS;
 
     private Builder() {}
 
@@ -484,8 +484,13 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder runnerThreadNum(final int runnerThreadNum) {
-      this.runnerThreadNum = runnerThreadNum;
+    public Builder executorThreads(final int executorThreads) {
+      if (executorThreads < 1 || executorThreads > 5_000) {
+        throw new InvalidConfigurationException(
+            "Invalid configuration. --Xvalidator-client-executor-threads must be greater than 0 and less than 5000.");
+      }
+
+      this.executorThreads = executorThreads;
       return this;
     }
 
@@ -574,7 +579,7 @@ public class ValidatorConfig {
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
-          runnerThreadNum,
+          executorThreads,
           sentryNodeConfigurationFile);
     }
 
