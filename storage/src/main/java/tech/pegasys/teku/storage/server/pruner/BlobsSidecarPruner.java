@@ -33,7 +33,7 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
-public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
+public class BlobsSidecarPruner extends Service implements FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -49,7 +49,7 @@ public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
   private AtomicReference<Optional<UInt64>> latestFinalizedSlot =
       new AtomicReference<>(Optional.empty());
 
-  public BlobsPruner(
+  public BlobsSidecarPruner(
       final Spec spec,
       final Database database,
       final AsyncRunner asyncRunner,
@@ -102,7 +102,7 @@ public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
     try {
       final long start = System.currentTimeMillis();
       final boolean limitReached =
-          database.pruneOldestUnconfirmedBlobsSidecar(maybeLatestFinalizedSlot.get(), pruneLimit);
+          database.pruneOldestUnconfirmedBlobsSidecars(maybeLatestFinalizedSlot.get(), pruneLimit);
       LOG.debug(
           "Unconfirmed blobs pruning finished in {} ms. Limit reached: {}",
           () -> System.currentTimeMillis() - start,
@@ -122,17 +122,16 @@ public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
     final UInt64 currentSlot =
         spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime.get());
 
-    final UInt64 earliestPrunableSlot = getEarliestPrunableSlot(currentSlot);
+    final UInt64 latestPrunableSlot = getLatestPrunableSlot(currentSlot);
 
-    if (earliestPrunableSlot.isZero()) {
-      LOG.debug("Not pruning as slots to keep includes genesis.");
+    if (latestPrunableSlot.isZero()) {
+      LOG.debug("Not pruning as slots to keep include genesis.");
       return;
     }
-    LOG.debug("Pruning blobs up to slot {}, limit {}", earliestPrunableSlot, pruneLimit);
+    LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
     try {
       final long start = System.currentTimeMillis();
-      final boolean limitReached =
-          database.pruneOldestBlobsSidecar(earliestPrunableSlot, pruneLimit);
+      final boolean limitReached = database.pruneOldestBlobsSidecar(latestPrunableSlot, pruneLimit);
       LOG.debug(
           "Blobs pruning finished in {} ms. Limit reached: {}",
           () -> System.currentTimeMillis() - start,
@@ -156,9 +155,30 @@ public class BlobsPruner extends Service implements FinalizedCheckpointChannel {
     return genesisTime;
   }
 
-  private UInt64 getEarliestPrunableSlot(final UInt64 currentSlot) {
-    final int slotsPerEpoch = spec.getSlotsPerEpoch(currentSlot);
+  private UInt64 getLatestPrunableSlot(final UInt64 currentSlot) {
+    // we have to guarantee that current epoch data is fully available,
+    // moreover we want to gradually delete blobs at each iteration
 
-    return currentSlot.minusMinZero((long) MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS * slotsPerEpoch);
+    // MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 1
+    //    (5)
+    //  latest                        (70)
+    //  prunable   DA boundary          current_slot
+    //     |       |                    |
+    // 0 ----- 31 // 32 ---- 63 // 64 ---- 95 // 96
+
+    // edge case 1 (only 1 slot of tolerance to support slight client timing differences):
+    //   current_slot = 95
+    //   DA_boundary: 32
+    //   latest_prunable_slot = 30
+
+    // edge case 2 (1 entire epoch of extra data):
+    //   current_slot = 96
+    //   DA_boundary: 64
+    //   latest_prunable_slot = 31
+
+    return currentSlot.minusMinZero(
+        ((long) (MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS + 1)
+                * spec.atSlot(currentSlot).getSlotsPerEpoch())
+            + 1);
   }
 }
