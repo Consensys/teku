@@ -219,7 +219,7 @@ public class HistoricalBatchFetcherTest {
   public void run_failingOnBlobsSidecarNotReceived() {
     mockBlockAndBlobsSidecarsRelatedMethods(true);
 
-    // discard sidecar for slot 20
+    // discard sidecar for slot 20 (with kzg commitments)
     chainBuilder.discardBlobsSidecar(UInt64.valueOf(20));
 
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
