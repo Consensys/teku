@@ -45,7 +45,7 @@ public class GetSyncing extends RestApiEndpoint {
           .withField("sync_distance", UINT64_TYPE, SyncStatusData::getSlotsBehind)
           .withField("is_syncing", BOOLEAN_TYPE, SyncStatusData::isSyncing)
           .withOptionalField("is_optimistic", BOOLEAN_TYPE, SyncStatusData::isOptimistic)
-          .withField("el_offline", BOOLEAN_TYPE, SyncStatusData::isElOffline)
+          .withOptionalField("el_offline", BOOLEAN_TYPE, SyncStatusData::isElOffline)
           .build();
 
   private static final SerializableTypeDefinition<SyncStatusData> SYNCING_RESPONSE_TYPE =
@@ -83,7 +83,7 @@ public class GetSyncing extends RestApiEndpoint {
   static class SyncStatusData {
     private final boolean isSyncing;
     private final Optional<Boolean> isOptimistic;
-    private final boolean elOffline;
+    private final Optional<Boolean> elOffline;
     private final UInt64 currentSlot;
     private final UInt64 slotsBehind;
 
@@ -91,7 +91,7 @@ public class GetSyncing extends RestApiEndpoint {
       final SyncingStatus status = syncProvider.getSyncingStatus();
       final SyncState syncState = syncProvider.getCurrentSyncState();
       this.isSyncing = syncState.isSyncing();
-      this.elOffline = syncState.isElOffline();
+      this.elOffline = Optional.of(syncState.isElOffline());
       this.isOptimistic = Optional.of(syncState.isOptimistic());
       this.currentSlot = status.getCurrentSlot();
       // do this last, after isSyncing is calculated
@@ -101,12 +101,12 @@ public class GetSyncing extends RestApiEndpoint {
     SyncStatusData(
         final boolean isSyncing,
         final Boolean isOptimistic,
-        final boolean elOffline,
+        final Boolean elOffline,
         final int currentSlot,
         final int slotsBehind) {
       this.isSyncing = isSyncing;
       this.isOptimistic = Optional.ofNullable(isOptimistic);
-      this.elOffline = elOffline;
+      this.elOffline = Optional.of(elOffline);
       this.currentSlot = UInt64.valueOf(currentSlot);
       this.slotsBehind = UInt64.valueOf(slotsBehind);
     }
@@ -119,7 +119,7 @@ public class GetSyncing extends RestApiEndpoint {
       return isOptimistic;
     }
 
-    public boolean isElOffline() {
+    public Optional<Boolean> isElOffline() {
       return elOffline;
     }
 
@@ -150,7 +150,7 @@ public class GetSyncing extends RestApiEndpoint {
       final SyncStatusData that = (SyncStatusData) o;
       return isSyncing == that.isSyncing
           && Objects.equals(isOptimistic, that.isOptimistic)
-          && elOffline == that.elOffline
+          && Objects.equals(elOffline, that.elOffline)
           && Objects.equals(currentSlot, that.currentSlot)
           && Objects.equals(slotsBehind, that.slotsBehind);
     }

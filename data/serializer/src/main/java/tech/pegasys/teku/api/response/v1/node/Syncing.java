@@ -50,7 +50,7 @@ public class Syncing {
 
   @JsonProperty("el_offline")
   @Schema(type = "boolean", description = "Set to true if the execution client is offline.")
-  public final boolean elOffline;
+  public final Boolean elOffline;
 
   public Syncing(
       final UInt64 headSlot,
@@ -87,7 +87,7 @@ public class Syncing {
         && Objects.equals(headSlot, syncing.headSlot)
         && Objects.equals(syncDistance, syncing.syncDistance)
         && Objects.equals(isOptimistic, syncing.isOptimistic)
-        && elOffline == syncing.elOffline;
+        && Objects.equals(elOffline, syncing.elOffline);
   }
 
   @Override
