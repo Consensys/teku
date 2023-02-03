@@ -232,16 +232,12 @@ public class ChainBuilder {
     return Optional.ofNullable(blocks.lastEntry()).map(Map.Entry::getValue).orElse(null);
   }
 
-  public BlobsSidecar getLatestBlobsSidecar() {
-    return Optional.ofNullable(blobsSidecars.lastEntry()).map(Map.Entry::getValue).orElse(null);
-  }
-
   public SignedBlockAndState getBlockAndStateAtSlot(final long slot) {
     return getBlockAndStateAtSlot(UInt64.valueOf(slot));
   }
 
   public SignedBlockAndState getBlockAndStateAtSlot(final UInt64 slot) {
-    return Optional.ofNullable(blocks.get(slot)).orElse(null);
+    return blocks.get(slot);
   }
 
   public SignedBeaconBlock getBlockAtSlot(final long slot) {

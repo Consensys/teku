@@ -57,8 +57,8 @@ public class MilestoneBasedFetchBlockTaskFactory implements FetchBlockTaskFactor
   }
 
   @Override
-  public FetchBlockTask create(final UInt64 currentSlot, final Bytes32 blockRoot) {
-    final SpecMilestone currentMilestone = spec.atSlot(currentSlot).getMilestone();
-    return registeredFetchBlockTaskFactories.get(currentMilestone).create(currentSlot, blockRoot);
+  public FetchBlockTask create(final UInt64 slot, final Bytes32 blockRoot) {
+    final SpecMilestone currentMilestone = spec.atSlot(slot).getMilestone();
+    return registeredFetchBlockTaskFactories.get(currentMilestone).create(slot, blockRoot);
   }
 }
