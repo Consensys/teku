@@ -182,7 +182,7 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.7.1'
+    dependency 'net.jqwik:jqwik:1.7.2'
     dependency 'com.github.oshi:oshi-core:6.4.0'
   }
 }
