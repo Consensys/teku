@@ -385,8 +385,8 @@ public class HistoricalBatchFetcher {
     blobsSidecarAndValidationResult
         .getCause()
         .ifPresentOrElse(
-            throwable -> {
-              throw new IllegalArgumentException(exceptionMessage, throwable);
+            cause -> {
+              throw new IllegalArgumentException(exceptionMessage, cause);
             },
             () -> {
               throw new IllegalArgumentException(exceptionMessage);
