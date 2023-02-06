@@ -45,7 +45,7 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.7.20'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
@@ -105,7 +105,7 @@ dependencyManagement {
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
 
-    dependency 'org.assertj:assertj-core:3.23.1'
+    dependency 'org.assertj:assertj-core:3.24.2'
 
     dependency 'org.awaitility:awaitility:4.2.0'
 
@@ -140,7 +140,7 @@ dependencyManagement {
       entry 'crypto'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.8.4'
+    dependency 'org.xerial.snappy:snappy-java:1.1.9.1'
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
@@ -171,7 +171,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.3'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.4'
 
     dependency 'org.jupnp:org.jupnp.support:2.6.1'
     dependency 'org.jupnp:org.jupnp:2.6.1'
