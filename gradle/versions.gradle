@@ -134,7 +134,7 @@ dependencyManagement {
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.2.0'
 
-    dependencySet(group: "org.web3j", version: "4.9.4") {
+    dependencySet(group: "org.web3j", version: "4.9.6") {
       entry 'core'
       entry 'abi'
       entry 'crypto'
