@@ -56,7 +56,9 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {}
+  public void storeFinalizedBlocks(
+      final Collection<SignedBeaconBlock> blocks,
+      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {}
 
   @Override
   public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {}
