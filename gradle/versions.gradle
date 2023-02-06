@@ -1,14 +1,14 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.14.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.1'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.14.1'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.2'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2'
 
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.17.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.18.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -18,7 +18,7 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     dependency 'com.google.guava:guava:31.1-jre'
-    dependency 'com.google.code.gson:gson:2.10'
+    dependency 'com.google.code.gson:gson:2.10.1'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.15.3'
@@ -30,9 +30,9 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
-    dependency 'info.picocli:picocli:4.7.0'
+    dependency 'info.picocli:picocli:4.7.1'
 
-    dependencySet(group: 'io.javalin', version: '5.2.0') {
+    dependencySet(group: 'io.javalin', version: '5.3.2') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
@@ -183,6 +183,6 @@ dependencyManagement {
     }
 
     dependency 'net.jqwik:jqwik:1.7.1'
-    dependency 'com.github.oshi:oshi-core:6.2.2'
+    dependency 'com.github.oshi:oshi-core:6.4.0'
   }
 }
