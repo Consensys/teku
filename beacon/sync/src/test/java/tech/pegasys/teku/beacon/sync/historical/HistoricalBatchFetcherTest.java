@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatcher;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockAndBlobsSidecarTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
@@ -52,7 +54,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
@@ -104,9 +105,7 @@ public class HistoricalBatchFetcherTest {
     chainBuilder.generateGenesis();
     forkBuilder = chainBuilder.fork();
     // blocks up to slot 19 will have empty sidecars
-    chainBuilder.generateBlocksUpToSlot(19);
-    // slot 20 sidecar will have kzg commitments
-    chainBuilder.generateBlockAtSlot(20, BlockOptions.create().setGenerateRandomBlobs(true));
+    chainBuilder.generateBlocksUpToSlot(20);
     // Fork skips one block then creates a chain of the same size
     forkBuilder.generateBlockAtSlot(2);
     forkBuilder.generateBlocksUpToSlot(20);
@@ -191,13 +190,16 @@ public class HistoricalBatchFetcherTest {
   public void run_failingOnBlobsSidecarValidation() {
     mockBlockAndBlobsSidecarsRelatedMethods(true);
 
+    // return INVALID result for the blobs sidecar in slot 18
     doAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    BlobsSidecarAndValidationResult.invalidResult(
-                        i.getArgument(0), new IllegalStateException("oopsy"))))
+            i -> {
+              final Optional<BlobsSidecar> blobsSidecar = i.getArgument(0);
+              return SafeFuture.completedFuture(
+                  BlobsSidecarAndValidationResult.invalidResult(
+                      blobsSidecar.orElseThrow(), new IllegalStateException("oopsy")));
+            })
         .when(blobsSidecarAvailabilityChecker)
-        .validate(any());
+        .validate(argThat(blobsSidecarForSlot(UInt64.valueOf(18))));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
@@ -209,8 +211,7 @@ public class HistoricalBatchFetcherTest {
     SafeFutureAssert.assertThatSafeFuture(future)
         .isCompletedExceptionallyWithMessage(
             String.format(
-                "Blobs sidecar for slot 10 received from peer %s has failed the validation check: INVALID",
-                peer.getId()));
+                "Blobs sidecar for slot 18 received from peer %s is not valid", peer.getId()));
 
     verifyNoInteractions(storageUpdateChannel);
   }
@@ -219,8 +220,13 @@ public class HistoricalBatchFetcherTest {
   public void run_failingOnBlobsSidecarNotReceived() {
     mockBlockAndBlobsSidecarsRelatedMethods(true);
 
-    // discard sidecar for slot 20 (with kzg commitments)
-    chainBuilder.discardBlobsSidecar(UInt64.valueOf(20));
+    // return NOT_AVAILABLE for the not received blobs sidecars
+    doAnswer(__ -> SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE))
+        .when(blobsSidecarAvailabilityChecker)
+        .validate(argThat(Optional::isEmpty));
+
+    // discard sidecar for slot 18
+    chainBuilder.discardBlobsSidecar(UInt64.valueOf(18));
 
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
 
@@ -228,29 +234,9 @@ public class HistoricalBatchFetcherTest {
 
     SafeFutureAssert.assertThatSafeFuture(future)
         .isCompletedExceptionallyWithMessage(
-            "Blobs sidecar for slot 20 was not received from peer " + peer.getId());
+            "Blobs sidecar for slot 18 was not received from peer " + peer.getId());
 
     verifyNoInteractions(storageUpdateChannel);
-  }
-
-  @Test
-  public void run_doesNotFailIfBlobsSidecarNotReceivedAndNoKzgCommitments() {
-    mockBlockAndBlobsSidecarsRelatedMethods(
-        true,
-        Optional.of(
-            finalizedBlobsSidecars ->
-                assertThat(finalizedBlobsSidecars)
-                    .hasSize(blockBatch.size() - 1)
-                    .doesNotContainKeys(UInt64.valueOf(19))));
-
-    // discard sidecar for slot 19 (no kzg commitments)
-    chainBuilder.discardBlobsSidecar(UInt64.valueOf(19));
-
-    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
-
-    peer.completePendingRequests();
-
-    SafeFutureAssert.assertThatSafeFuture(future).isNotCompletedExceptionally();
   }
 
   @Test
@@ -526,9 +512,11 @@ public class HistoricalBatchFetcherTest {
           .thenReturn(blobsSidecarAvailabilityChecker);
       // make all blobs sidecars valid
       doAnswer(
-              i ->
-                  SafeFuture.completedFuture(
-                      BlobsSidecarAndValidationResult.validResult(i.getArgument(0))))
+              i -> {
+                final Optional<BlobsSidecar> blobsSidecar = i.getArgument(0);
+                return SafeFuture.completedFuture(
+                    BlobsSidecarAndValidationResult.validResult(blobsSidecar.orElseThrow()));
+              })
           .when(blobsSidecarAvailabilityChecker)
           .validate(any());
       doAnswer(
@@ -557,5 +545,13 @@ public class HistoricalBatchFetcherTest {
           .when(storageUpdateChannel)
           .onFinalizedBlocks(any(), any());
     }
+  }
+
+  private ArgumentMatcher<Optional<BlobsSidecar>> blobsSidecarForSlot(final UInt64 slot) {
+    return blobsSidecar ->
+        blobsSidecar
+            .map(BlobsSidecar::getBeaconBlockSlot)
+            .map(sidecarSlot -> sidecarSlot.equals(slot))
+            .orElse(false);
   }
 }

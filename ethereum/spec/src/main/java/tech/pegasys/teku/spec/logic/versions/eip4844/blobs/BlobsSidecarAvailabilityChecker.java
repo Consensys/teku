@@ -39,7 +39,7 @@ public interface BlobsSidecarAvailabilityChecker {
 
         @Override
         public SafeFuture<BlobsSidecarAndValidationResult> validate(
-            final BlobsSidecar blobsSidecar) {
+            final Optional<BlobsSidecar> blobsSidecar) {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
       };
@@ -63,7 +63,7 @@ public interface BlobsSidecarAvailabilityChecker {
 
           @Override
           public SafeFuture<BlobsSidecarAndValidationResult> validate(
-              final BlobsSidecar blobsSidecar) {
+              final Optional<BlobsSidecar> blobsSidecar) {
             return blobsSidecarValidResult;
           }
         };
@@ -82,7 +82,7 @@ public interface BlobsSidecarAvailabilityChecker {
   SafeFuture<BlobsSidecarAndValidationResult> getAvailabilityCheckResult();
 
   /** Only perform the {@link MiscHelpersEip4844#isDataAvailable} check */
-  SafeFuture<BlobsSidecarAndValidationResult> validate(BlobsSidecar blobsSidecar);
+  SafeFuture<BlobsSidecarAndValidationResult> validate(Optional<BlobsSidecar> blobsSidecar);
 
   enum BlobsSidecarValidationResult {
     NOT_REQUIRED,
@@ -144,17 +144,24 @@ public interface BlobsSidecarAvailabilityChecker {
       return validationResult.equals(BlobsSidecarValidationResult.VALID);
     }
 
+    public boolean isNotRequired() {
+      return validationResult.equals(BlobsSidecarValidationResult.NOT_REQUIRED);
+    }
+
+    public boolean isInvalid() {
+      return validationResult.equals(BlobsSidecarValidationResult.INVALID);
+    }
+
+    public boolean isNotAvailable() {
+      return validationResult.equals(BlobsSidecarValidationResult.NOT_AVAILABLE);
+    }
+
     public boolean isFailure() {
-      return validationResult.equals(BlobsSidecarValidationResult.INVALID)
-          || validationResult.equals(BlobsSidecarValidationResult.NOT_AVAILABLE);
+      return isInvalid() || isNotAvailable();
     }
 
     public Optional<Throwable> getCause() {
       return cause;
-    }
-
-    public boolean isNotRequired() {
-      return validationResult.equals(BlobsSidecarValidationResult.NOT_REQUIRED);
     }
 
     @Override

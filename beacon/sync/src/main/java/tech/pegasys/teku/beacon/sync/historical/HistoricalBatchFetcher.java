@@ -46,12 +46,12 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -272,8 +272,7 @@ public class HistoricalBatchFetcher {
         .thenCompose(
             __ -> {
               final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
-              return validateBlobsSidecars(
-                  latestSlotInBatch, blocksToImport, blobsSidecarsBySlotToImport);
+              return validateBlobsSidecars(latestSlotInBatch, blocksToImport);
             })
         .thenCompose(
             __ -> {
@@ -338,9 +337,7 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobsSidecars(
-      final UInt64 latestSlotInBatch,
-      final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarsBySlot) {
+      final UInt64 latestSlotInBatch, final Collection<SignedBeaconBlock> blocks) {
     if (!blobsSidecarManager.isStorageOfBlobsSidecarRequired(latestSlotInBatch)) {
       LOG.trace(
           "Latest slot in batch does not require blobs sidecars to be available. No validation is needed.");
@@ -356,23 +353,25 @@ public class HistoricalBatchFetcher {
 
                   final UInt64 slot = signedBlock.getSlot();
 
-                  if (!blobsSidecarsBySlot.containsKey(slot)) {
-                    return handleNotReceivedBlobsSidecar(signedBlock, slot);
-                  }
-
-                  final BlobsSidecar blobsSidecar = blobsSidecarsBySlot.get(slot);
+                  final Optional<BlobsSidecar> blobsSidecar =
+                      Optional.ofNullable(blobsSidecarsBySlotToImport.get(slot));
 
                   return availabilityChecker
                       .validate(blobsSidecar)
                       .thenAccept(
                           blobsSidecarAndValidationResult -> {
-                            if (blobsSidecarAndValidationResult.isFailure()) {
+                            if (blobsSidecarAndValidationResult.isNotAvailable()) {
                               throw new IllegalArgumentException(
                                   String.format(
-                                      "Blobs sidecar for slot %s received from peer %s has failed the validation check: %s",
-                                      slot,
-                                      peer.getId(),
-                                      blobsSidecarAndValidationResult.getValidationResult()));
+                                      "Blobs sidecar for slot %s was not received from peer %s",
+                                      slot, peer.getId()));
+                            } else if (blobsSidecarAndValidationResult.isInvalid()) {
+                              final String exceptionMessage =
+                                  String.format(
+                                      "Blobs sidecar for slot %s received from peer %s is not valid",
+                                      slot, peer.getId());
+                              throwInvalidBlobsSidecarException(
+                                  blobsSidecarAndValidationResult, exceptionMessage);
                             }
                           });
                 });
@@ -380,26 +379,18 @@ public class HistoricalBatchFetcher {
     return SafeFuture.allOfFailFast(validatingBlobsSidecars);
   }
 
-  private SafeFuture<Void> handleNotReceivedBlobsSidecar(
-      final SignedBeaconBlock block, final UInt64 slot) {
-    if (blockHasKzgCommitments(block)
-        && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot)) {
-      return SafeFuture.failedFuture(
-          new IllegalArgumentException(
-              String.format(
-                  "Blobs sidecar for slot %s was not received from peer %s", slot, peer.getId())));
-    }
-    return SafeFuture.COMPLETE;
-  }
-
-  private boolean blockHasKzgCommitments(final SignedBeaconBlock block) {
-    return block
-        .getMessage()
-        .getBody()
-        .toVersionEip4844()
-        .map(BeaconBlockBodyEip4844::getBlobKzgCommitments)
-        .map(kzgCommitments -> !kzgCommitments.isEmpty())
-        .orElse(false);
+  private void throwInvalidBlobsSidecarException(
+      final BlobsSidecarAndValidationResult blobsSidecarAndValidationResult,
+      final String exceptionMessage) {
+    blobsSidecarAndValidationResult
+        .getCause()
+        .ifPresentOrElse(
+            throwable -> {
+              throw new IllegalArgumentException(exceptionMessage, throwable);
+            },
+            () -> {
+              throw new IllegalArgumentException(exceptionMessage);
+            });
   }
 
   private RequestParameters calculateRequestParams() {
