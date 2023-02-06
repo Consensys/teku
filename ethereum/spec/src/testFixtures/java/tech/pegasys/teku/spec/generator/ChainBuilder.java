@@ -232,16 +232,12 @@ public class ChainBuilder {
     return Optional.ofNullable(blocks.lastEntry()).map(Map.Entry::getValue).orElse(null);
   }
 
-  public BlobsSidecar getLatestBlobsSidecar() {
-    return Optional.ofNullable(blobsSidecars.lastEntry()).map(Map.Entry::getValue).orElse(null);
-  }
-
   public SignedBlockAndState getBlockAndStateAtSlot(final long slot) {
     return getBlockAndStateAtSlot(UInt64.valueOf(slot));
   }
 
   public SignedBlockAndState getBlockAndStateAtSlot(final UInt64 slot) {
-    return Optional.ofNullable(blocks.get(slot)).orElse(null);
+    return blocks.get(slot);
   }
 
   public SignedBeaconBlock getBlockAtSlot(final long slot) {
@@ -327,6 +323,19 @@ public class ChainBuilder {
 
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
+
+    // add an empty blobs sidecar to the genesis block if genesis is in the EIP-4844 milestone
+    spec.getGenesisSchemaDefinitions()
+        .toVersionEip4844()
+        .ifPresent(
+            schemaDefinitions -> {
+              final BlobsSidecarSchema blobsSidecarSchema =
+                  schemaDefinitions.getBlobsSidecarSchema();
+              final BlobsSidecar blobsSidecar =
+                  blobsSidecarSchema.createEmpty(blockAndState.getRoot(), blockAndState.getSlot());
+              trackBlobsSidecar(blobsSidecar);
+            });
+
     return blockAndState;
   }
 

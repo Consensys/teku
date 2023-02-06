@@ -30,13 +30,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult.Status;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
@@ -48,7 +50,6 @@ public class FetchRecentBlocksServiceTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalEip4844());
-  private final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
 
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
@@ -72,15 +73,12 @@ public class FetchRecentBlocksServiceTest {
     recentBlockFetcher =
         new FetchRecentBlocksService(
             asyncRunner,
-            eth2P2PNetwork,
             pendingBlocksPool,
             forwardSync,
             fetchBlockTaskFactory,
             maxConcurrentRequests);
 
-    lenient()
-        .when(fetchBlockTaskFactory.create(any(), any(), any()))
-        .thenAnswer(this::createMockTask);
+    lenient().when(fetchBlockTaskFactory.create(any(), any())).thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(
         (block, blobsSidecar) -> {
           blobsSidecar.ifPresent(importedBlobsSidecars::add);
@@ -89,7 +87,7 @@ public class FetchRecentBlocksServiceTest {
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
-    Bytes32 blockRoot = invocationOnMock.getArgument(2);
+    Bytes32 blockRoot = invocationOnMock.getArgument(1);
     final FetchBlockTask task = mock(FetchBlockTask.class);
 
     lenient().when(task.getBlockRoot()).thenReturn(blockRoot);

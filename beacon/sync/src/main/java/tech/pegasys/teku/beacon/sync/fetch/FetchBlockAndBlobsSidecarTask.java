@@ -11,13 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import com.google.common.base.Throwables;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -32,8 +32,9 @@ public class FetchBlockAndBlobsSidecarTask extends FetchBlockTask {
     super(eth2Network, blockRoot);
   }
 
+  /** Fetch block and blobs sidecar by root from an {@link Eth2Peer} */
   @Override
-  public SafeFuture<FetchBlockResult> fetchBlock(final Eth2Peer peer, final Bytes32 blockRoot) {
+  public SafeFuture<FetchBlockResult> fetchBlock(final Eth2Peer peer) {
     return peer.requestBlockAndBlobsSidecarByRoot(blockRoot)
         .thenApply(
             maybeBlockAndBlobsSidecar ->
@@ -50,10 +51,11 @@ public class FetchBlockAndBlobsSidecarTask extends FetchBlockTask {
                 if (rpcException.getResponseCode() == RpcResponseStatus.RESOURCE_UNAVAILABLE) {
                   LOG.trace(
                       "Block root may reference a block earlier than the minimum_request_epoch. Will attempt requesting via the old RPC method.");
-                  return super.fetchBlock(peer, blockRoot);
+                  return super.fetchBlock(peer);
                 }
               }
-              return SafeFuture.failedFuture(throwable);
+              LOG.debug("Failed to fetch block and blobs sidecar by root " + blockRoot, throwable);
+              return SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.FETCH_FAILED));
             });
   }
 }

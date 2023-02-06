@@ -24,6 +24,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.RetryDelayFunction;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -31,8 +34,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
@@ -49,7 +50,6 @@ public class FetchRecentBlocksService extends Service
 
   private final ForwardSync forwardSync;
   private final int maxConcurrentRequests;
-  private final P2PNetwork<Eth2Peer> eth2Network;
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool;
 
   private final Map<Bytes32, FetchBlockTask> allTasks = new ConcurrentHashMap<>();
@@ -64,7 +64,6 @@ public class FetchRecentBlocksService extends Service
 
   FetchRecentBlocksService(
       final AsyncRunner asyncRunner,
-      final P2PNetwork<Eth2Peer> eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final ForwardSync forwardSync,
       final FetchBlockTaskFactory fetchBlockTaskFactory,
@@ -72,20 +71,17 @@ public class FetchRecentBlocksService extends Service
     this.asyncRunner = asyncRunner;
     this.forwardSync = forwardSync;
     this.maxConcurrentRequests = maxConcurrentRequests;
-    this.eth2Network = eth2Network;
     this.pendingBlocksPool = pendingBlocksPool;
     this.fetchBlockTaskFactory = fetchBlockTaskFactory;
   }
 
   public static FetchRecentBlocksService create(
       final AsyncRunner asyncRunner,
-      final P2PNetwork<Eth2Peer> eth2Network,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final ForwardSync forwardSync,
       final FetchBlockTaskFactory fetchBlockTaskFactory) {
     return new FetchRecentBlocksService(
         asyncRunner,
-        eth2Network,
         pendingBlocksPool,
         forwardSync,
         fetchBlockTaskFactory,
@@ -133,7 +129,7 @@ public class FetchRecentBlocksService extends Service
       // We've already got this block
       return;
     }
-    final FetchBlockTask task = fetchBlockTaskFactory.create(eth2Network, currentSlot, blockRoot);
+    final FetchBlockTask task = fetchBlockTaskFactory.create(currentSlot, blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {
       // We're already tracking this task
       task.cancel();
@@ -182,7 +178,7 @@ public class FetchRecentBlocksService extends Service
   private void processFetchResult(final FetchBlockTask task, final FetchBlockResult result) {
     switch (result.getStatus()) {
       case SUCCESSFUL:
-        handleFetchedBlock(task, result.getBlock(), result.getBlobsSidecar());
+        handleFetchedBlock(task, result.getBlock().orElseThrow(), result.getBlobsSidecar());
         break;
       case NO_AVAILABLE_PEERS:
         // Wait a bit and then requeue
@@ -199,28 +195,28 @@ public class FetchRecentBlocksService extends Service
     }
   }
 
-  private void registerActiveTask(FetchBlockTask task) {
+  private void registerActiveTask(final FetchBlockTask task) {
     LOG.trace("Fetch block {}", task.getBlockRoot());
     activeTasks.add(task);
   }
 
-  private void deregisterActiveTask(FetchBlockTask task) {
+  private void deregisterActiveTask(final FetchBlockTask task) {
     activeTasks.remove(task);
     checkTasks();
   }
 
-  private void removeTask(FetchBlockTask task) {
+  private void removeTask(final FetchBlockTask task) {
     // Stop tracking task
     task.cancel();
     allTasks.remove(task.getBlockRoot(), task);
   }
 
-  private void queueTask(FetchBlockTask task) {
+  private void queueTask(final FetchBlockTask task) {
     pendingTasks.add(task);
     checkTasks();
   }
 
-  private void queueTaskWithDelay(FetchBlockTask task, Duration delay) {
+  private void queueTaskWithDelay(final FetchBlockTask task, final Duration delay) {
     asyncRunner
         .getDelayedFuture(delay)
         .finish(
@@ -240,7 +236,7 @@ public class FetchRecentBlocksService extends Service
   }
 
   private void handleFetchedBlock(
-      FetchBlockTask task,
+      final FetchBlockTask task,
       final SignedBeaconBlock block,
       final Optional<BlobsSidecar> blobsSidecar) {
     LOG.trace("Successfully fetched block: {}", block);
