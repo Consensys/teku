@@ -49,9 +49,9 @@ dependencyManagement {
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
-    dependency 'org.mock-server:mockserver-junit-jupiter:5.14.0'
+    dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.7') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.8') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
@@ -76,7 +76,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.5.1'
+    dependency 'io.projectreactor:reactor-core:3.5.2'
 
     dependency 'it.unimi.dsi:fastutil:8.5.11'
 
@@ -113,7 +113,7 @@ dependencyManagement {
 
     dependency 'org.java-websocket:Java-WebSocket:1.5.2'
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.9.1') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.9.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
@@ -129,7 +129,7 @@ dependencyManagement {
       entry 'jmh-generator-annprocess'
     }
     dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:7.7.3'
+    dependency 'org.rocksdb:rocksdbjni:7.9.2'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.2.0'
