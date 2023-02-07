@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -53,7 +53,7 @@ public class FetchBlockAndBlobsSidecarTaskTest extends AbstractFetchBlockTask {
     assertThat(result).isDone();
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
-    assertThat(fetchBlockResult.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult.getBlock()).hasValue(block);
     assertThat(fetchBlockResult.getBlobsSidecar()).hasValue(blobsSidecar);
   }
 
@@ -100,7 +100,7 @@ public class FetchBlockAndBlobsSidecarTaskTest extends AbstractFetchBlockTask {
     assertThat(result).isDone();
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
-    assertThat(fetchBlockResult.getBlock()).isEqualTo(block);
+    assertThat(fetchBlockResult.getBlock()).hasValue(block);
     assertThat(fetchBlockResult.getBlobsSidecar()).isEmpty();
   }
 }

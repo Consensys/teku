@@ -66,6 +66,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertNotRequired(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+    assertNotRequired(blobsSidecarAvailabilityChecker.validate(Optional.empty()));
   }
 
   @Test
@@ -74,6 +75,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertNotAvailable(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
+    assertNotAvailable(blobsSidecarAvailabilityChecker.validate(Optional.empty()));
   }
 
   @Test
@@ -82,7 +84,8 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(), Optional.empty());
-    assertInvalid(blobsSidecarAvailabilityChecker.validate(blobsSidecar), Optional.empty());
+    assertInvalid(
+        blobsSidecarAvailabilityChecker.validate(Optional.of(blobsSidecar)), Optional.empty());
   }
 
   @Test
@@ -100,7 +103,8 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertInvalid(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(), Optional.of(cause));
-    assertInvalid(blobsSidecarAvailabilityChecker.validate(blobsSidecar), Optional.of(cause));
+    assertInvalid(
+        blobsSidecarAvailabilityChecker.validate(Optional.of(blobsSidecar)), Optional.of(cause));
   }
 
   @Test
@@ -116,7 +120,7 @@ public class ForkChoiceBlobsSidecarAvailabilityCheckerTest {
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertAvailable(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult());
-    assertAvailable(blobsSidecarAvailabilityChecker.validate(blobsSidecar));
+    assertAvailable(blobsSidecarAvailabilityChecker.validate(Optional.of(blobsSidecar)));
   }
 
   @Test
