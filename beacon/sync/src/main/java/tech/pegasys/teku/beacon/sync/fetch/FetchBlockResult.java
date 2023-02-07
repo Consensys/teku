@@ -11,9 +11,8 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
@@ -61,8 +60,8 @@ public final class FetchBlockResult {
     return status == Status.SUCCESSFUL;
   }
 
-  public SignedBeaconBlock getBlock() throws NoSuchElementException {
-    return block.orElseThrow();
+  public Optional<SignedBeaconBlock> getBlock() {
+    return block;
   }
 
   public Optional<BlobsSidecar> getBlobsSidecar() {

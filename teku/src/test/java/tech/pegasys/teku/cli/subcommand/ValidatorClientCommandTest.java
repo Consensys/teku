@@ -173,6 +173,43 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
         .isTrue();
   }
 
+  @Test
+  public void clientExecutorThreadsShouldBeDefaultValue() {
+
+    final String[] args = {"vc", "--network", "minimal"};
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getexecutorThreads()).isEqualTo(5);
+  }
+
+  @Test
+  public void clientExecutorThreadsShouldBeSetValue() {
+
+    final String[] args = {
+      "vc", "--network", "minimal", "--Xvalidator-client-executor-threads", "1000"
+    };
+
+    final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
+
+    assertThat(tekuConfig.validatorClient().getValidatorConfig().getexecutorThreads())
+        .isEqualTo(1000);
+  }
+
+  @Test
+  public void clientExecutorThreadsShouldThrowOverLimit() {
+    final String[] args = {
+      "vc", "--network", "minimal", "--Xvalidator-client-executor-threads", "6000"
+    };
+
+    int parseResult = beaconNodeCommand.parse(args);
+    assertThat(parseResult).isEqualTo(1);
+    String cmdOutput = getCommandLineOutput();
+    assertThat(cmdOutput)
+        .contains(
+            "--Xvalidator-client-executor-threads must be greater than 0 and less than 5000.");
+  }
+
   private String pathFor(final String filename) {
     return Resources.getResource(ValidatorClientCommandTest.class, filename).toString();
   }

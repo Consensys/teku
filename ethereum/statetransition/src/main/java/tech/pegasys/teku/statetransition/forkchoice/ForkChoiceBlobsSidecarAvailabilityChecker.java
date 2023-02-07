@@ -63,7 +63,8 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   }
 
   @Override
-  public SafeFuture<BlobsSidecarAndValidationResult> validate(final BlobsSidecar blobsSidecar) {
+  public SafeFuture<BlobsSidecarAndValidationResult> validate(
+      final Optional<BlobsSidecar> blobsSidecar) {
     return SafeFuture.of(() -> validateBlobsSidecar(blobsSidecar));
   }
 
