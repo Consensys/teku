@@ -232,7 +232,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get)
           .hasCauseInstanceOf(RpcException.class)
-          .hasMessageContaining("[Code 1] Must request altair blocks using v2 protocol");
+          .hasMessageContaining("Must request blocks with compatible fork.");
     } else {
       // Remote only supports v1, we should get a v1 response back and error out trying to
       // decode these blocks with a phase0 decoder
