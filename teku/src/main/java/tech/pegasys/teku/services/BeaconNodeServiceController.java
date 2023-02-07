@@ -35,7 +35,7 @@ public class BeaconNodeServiceController extends ServiceController {
             serviceConfig,
             tekuConfig.storageConfiguration(),
             tekuConfig.powchain().isDepositSnapshotEnabled(),
-            tekuConfig.metricsConfig().isBlobsSidecarStorageEnabled()));
+            tekuConfig.metricsConfig().isBlobsSidecarStorageCountersEnabled()));
     Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
       // Need to make sure the execution engine is listening before starting the beacon chain

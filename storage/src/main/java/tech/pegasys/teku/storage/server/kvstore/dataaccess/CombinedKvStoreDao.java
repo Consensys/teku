@@ -384,7 +384,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     schema.getColumnMap().entrySet().stream()
         .filter(
-            stringKvStoreColumnEntry -> stringKvStoreColumnEntry.getKey().contains("BLOBS_SIDECAR"))
+            stringKvStoreColumnEntry ->
+                List.of(
+                        "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
+                        "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT")
+                    .contains(stringKvStoreColumnEntry.getKey()))
         .collect(Collectors.toMap(Entry::getKey, Entry::getValue))
         .forEach((k, v) -> columnCounts.put(k, db.size(v)));
     return columnCounts;

@@ -113,12 +113,14 @@ public class MetricsOptions {
 
   @Option(
       names = {"--Xmetrics-blobs-sidecar-storage-enabled"},
+      hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
       description = "Whether blobs sidecar storage metrics are reported",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean blobsSidecarStorageEnabled = MetricsConfig.DEFAULT_BLOBS_SIDECAR_STORAGE_ENABLED;
+  private boolean blobsSidecarStorageCountersEnabled =
+      MetricsConfig.DEFAULT_BLOBS_SIDECAR_STORAGE_COUNTERS_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.metrics(
@@ -133,7 +135,7 @@ public class MetricsOptions {
                 .idleTimeoutSeconds(idleTimeoutSeconds)
                 .blockPerformanceEnabled(blockPerformanceEnabled)
                 .tickPerformanceEnabled(tickPerformanceEnabled)
-                .blobsSidecarStorageEnabled(blobsSidecarStorageEnabled));
+                .blobsSidecarStorageCountersEnabled(blobsSidecarStorageCountersEnabled));
   }
 
   private URL parseMetricsEndpointUrl() {
