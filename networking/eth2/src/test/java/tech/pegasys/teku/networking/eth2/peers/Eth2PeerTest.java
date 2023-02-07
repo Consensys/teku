@@ -17,24 +17,35 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer.PeerStatusSubscriber;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
+import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
+import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class Eth2PeerTest {
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
+
+  private final UInt64 eip4844ForkEpoch = UInt64.ONE;
+  private final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(eip4844ForkEpoch);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Peer delegate = mock(Peer.class);
   private final BeaconChainMethods rpcMethods = mock(BeaconChainMethods.class);
@@ -147,6 +158,35 @@ class Eth2PeerTest {
 
     verify(initialSubscriber, never()).onPeerStatus(status2);
     verify(subscriber).onPeerStatus(status2);
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  public void shouldModifyRequestSpanningTheEip4844ForkTransition() {
+
+    final Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>
+        blobsSidecarsByRangeMethod = mock(Eth2RpcMethod.class);
+
+    final RpcStreamController<RpcRequestHandler> rpcStreamController =
+        mock(RpcStreamController.class);
+
+    when(rpcMethods.blobsSidecarsByRange()).thenReturn(Optional.of(blobsSidecarsByRangeMethod));
+
+    when(peer.sendRequest(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(rpcStreamController));
+
+    peer.requestBlobsSidecarsByRange(UInt64.ONE, UInt64.valueOf(13), __ -> SafeFuture.COMPLETE);
+
+    final ArgumentCaptor<BlobsSidecarsByRangeRequestMessage> requestCaptor =
+        ArgumentCaptor.forClass(BlobsSidecarsByRangeRequestMessage.class);
+
+    verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
+
+    final BlobsSidecarsByRangeRequestMessage request = requestCaptor.getValue();
+
+    // EIP-4844 starts from epoch 1, so request start slot should be 8 and the count should be 6
+    assertThat(request.getStartSlot()).isEqualTo(UInt64.valueOf(8));
+    assertThat(request.getCount()).isEqualTo(UInt64.valueOf(6));
   }
 
   private PeerStatus randomPeerStatus() {
