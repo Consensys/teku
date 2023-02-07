@@ -47,7 +47,7 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
   private final Duration pruneInterval;
   private int pruneLimit;
   private final TimeProvider timeProvider;
-  private final boolean blobsSidecarStorageEnabled;
+  private final boolean blobsSidecarStorageCountersEnabled;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<UInt64> genesisTime = Optional.empty();
@@ -65,16 +65,16 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
       final TimeProvider timeProvider,
       final Duration pruneInterval,
       final int pruneLimit,
-      final boolean blobsSidecarStorageEnabled) {
+      final boolean blobsSidecarStorageCountersEnabled) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
-    this.blobsSidecarStorageEnabled = blobsSidecarStorageEnabled;
+    this.blobsSidecarStorageCountersEnabled = blobsSidecarStorageCountersEnabled;
 
-    if (blobsSidecarStorageEnabled) {
+    if (blobsSidecarStorageCountersEnabled) {
       LabelledGauge labelledGauge =
           metricsSystem.createLabelledGauge(
               TekuMetricCategory.STORAGE,
@@ -118,7 +118,7 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
     pruneBlobsPriorToAvailabilityWindow();
     pruneUnconfirmedBlobs();
 
-    if (blobsSidecarStorageEnabled) {
+    if (blobsSidecarStorageCountersEnabled) {
       blobsColumnsSize.putAll(database.getBlobsSidecarColumnCounts());
     }
   }
