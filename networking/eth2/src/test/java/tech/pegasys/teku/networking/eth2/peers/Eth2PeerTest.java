@@ -161,7 +161,7 @@ class Eth2PeerTest {
   }
 
   @Test
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
   public void shouldModifyRequestSpanningTheEip4844ForkTransition() {
 
     final Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>
