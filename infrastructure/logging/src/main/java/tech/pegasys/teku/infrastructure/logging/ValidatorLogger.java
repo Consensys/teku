@@ -168,7 +168,7 @@ public class ValidatorLogger {
                 slot,
                 formatBlockRoots(roots),
                 context.map(s -> ", " + s).orElse("")),
-            Color.BLUE));
+            type.startsWith("block") ? Color.CYAN : Color.BLUE));
   }
 
   private String formatBlockRoots(final Set<Bytes32> blockRoots) {

@@ -251,9 +251,9 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
                     "eth_chainId method is not supported by provider, skipping validation", ex);
                 return Result.NOT_SUPPORTED;
               }
-              if (chainId.intValueExact() != config.getDepositChainId()) {
+              if (chainId.longValue() != config.getDepositChainId()) {
                 STATUS_LOG.eth1DepositChainIdMismatch(
-                    config.getDepositChainId(), chainId.intValueExact(), this.id);
+                    config.getDepositChainId(), chainId.longValue(), this.id);
                 return Result.FAILED;
               }
               return Result.SUCCESS;

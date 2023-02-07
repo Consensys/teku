@@ -25,6 +25,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import oshi.SystemInfo;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.data.publisher.MetricsPublisherManager;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -32,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.async.OccurrenceCounter;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.logging.StartupLogConfig;
 import tech.pegasys.teku.infrastructure.metrics.MetricsEndpoint;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -39,6 +42,9 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
+import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 
 public abstract class AbstractNode implements Node {
   private static final Logger LOG = LogManager.getLogger();
@@ -59,7 +65,32 @@ public abstract class AbstractNode implements Node {
   protected final ServiceConfig serviceConfig;
 
   protected AbstractNode(final TekuConfiguration tekuConfig) {
+    final String network =
+        tekuConfig
+            .eth2NetworkConfiguration()
+            .getEth2Network()
+            .map(Eth2Network::configName)
+            .orElse("empty");
+    final String storageMode = tekuConfig.storageConfiguration().getDataStorageMode().name();
+    final BeaconRestApiConfig beaconChainRestApiConfig =
+        tekuConfig.beaconChain().beaconRestApiConfig();
+    final ValidatorRestApiConfig validatorRestApiConfig = tekuConfig.validatorRestApiConfig();
+
     STATUS_LOG.onStartup(VersionProvider.VERSION);
+    STATUS_LOG.startupConfigurations(
+        StartupLogConfig.builder()
+            .network(network)
+            .storageMode(storageMode)
+            .hardwareInfo(new SystemInfo().getHardware())
+            .beaconChainRestApiEnabled(beaconChainRestApiConfig.isRestApiEnabled())
+            .beaconChainRestApiInterface(beaconChainRestApiConfig.getRestApiInterface())
+            .beaconChainRestApiPort(beaconChainRestApiConfig.getRestApiPort())
+            .beaconChainRestApiAllow(beaconChainRestApiConfig.getRestApiHostAllowlist())
+            .validatorRestApiInterface(validatorRestApiConfig.getRestApiInterface())
+            .validatorRestApiPort(validatorRestApiConfig.getRestApiPort())
+            .validatorRestApiAllow(validatorRestApiConfig.getRestApiHostAllowlist())
+            .build());
+
     reportOverrides(tekuConfig);
     this.metricsEndpoint = new MetricsEndpoint(tekuConfig.metricsConfig(), vertx);
     final MetricsSystem metricsSystem = metricsEndpoint.getMetricsSystem();
@@ -71,6 +102,8 @@ public abstract class AbstractNode implements Node {
         AsyncRunnerFactory.createDefault(
             new MetricTrackingExecutorFactory(metricsSystem, rejectedExecutionCounter));
     final DataDirLayout dataDirLayout = DataDirLayout.createFrom(tekuConfig.dataConfig());
+    ValidatorConfig validatorConfig = tekuConfig.validatorClient().getValidatorConfig();
+
     serviceConfig =
         new ServiceConfig(
             asyncRunnerFactory,
@@ -78,7 +111,8 @@ public abstract class AbstractNode implements Node {
             eventChannels,
             metricsSystem,
             dataDirLayout,
-            rejectedExecutionCounter::getTotalCount);
+            rejectedExecutionCounter::getTotalCount,
+            validatorConfig::getexecutorThreads);
     this.metricsPublisher =
         new MetricsPublisherManager(
             asyncRunnerFactory,

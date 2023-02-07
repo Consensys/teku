@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

@@ -139,6 +139,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               .collect(Collectors.joining("\n"));
       throw new AssertionError(
           e.getMessage()
+              + "\n-------"
               + "\nJustified checkpoint: "
               + recentChainData.getJustifiedCheckpoint().orElse(null)
               + "\nFinalized checkpoint: "
