@@ -55,7 +55,7 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
       case CAPELLA:
         fromMilestoneSchema = BeaconStateSchemaBellatrix.create(spec.getConfig());
         break;
-      case EIP4844:
+      case DENEB:
         fromMilestoneSchema = BeaconStateSchemaCapella.create(spec.getConfig());
         break;
       default:

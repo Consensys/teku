@@ -35,8 +35,8 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.eip4844.SignedBeaconBlockEip4844;
-import tech.pegasys.teku.api.schema.eip4844.SignedBlindedBeaconBlockEip4844;
+import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
+import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -175,8 +175,8 @@ public class ValidatorDataProvider {
       case CAPELLA:
         signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockCapella.class);
         break;
-      case EIP4844:
-        signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockEip4844.class);
+      case DENEB:
+        signedBeaconBlock = mapper.treeToValue(jsonNode, SignedBeaconBlockDeneb.class);
         break;
       default:
         throw new IllegalArgumentException("Could not determine milestone for slot " + slot);
@@ -204,8 +204,8 @@ public class ValidatorDataProvider {
       case CAPELLA:
         signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockCapella.class);
         break;
-      case EIP4844:
-        signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockEip4844.class);
+      case DENEB:
+        signedBlindedBlock = mapper.treeToValue(jsonNode, SignedBlindedBeaconBlockDeneb.class);
         break;
       default:
         throw new IllegalArgumentException("Could not determine milestone for slot " + slot);

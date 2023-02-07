@@ -113,7 +113,7 @@ public class StorageSystem implements AutoCloseable {
         new CombinedChainDataClient(recentChainData, chainStorageServer, spec);
 
     final BlobsSidecarManager blobsSidecarManager;
-    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       blobsSidecarManager =
           new BlobsSidecarManagerImpl(
               spec, recentChainData, chainStorageServer, chainStorageServer);

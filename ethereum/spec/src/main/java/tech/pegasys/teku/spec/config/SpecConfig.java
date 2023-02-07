@@ -160,7 +160,7 @@ public interface SpecConfig {
     return Optional.empty();
   }
 
-  default Optional<SpecConfigEip4844> toVersionEip4844() {
+  default Optional<SpecConfigDeneb> toVersionDeneb() {
     return Optional.empty();
   }
 }

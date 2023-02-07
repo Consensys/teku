@@ -86,7 +86,7 @@ public interface SchemaDefinitions {
   }
 
   @NonSchema
-  default Optional<SchemaDefinitionsEip4844> toVersionEip4844() {
+  default Optional<SchemaDefinitionsDeneb> toVersionDeneb() {
     return Optional.empty();
   }
 

@@ -430,7 +430,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initBlobsImporter() {
-    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlobsSidecarManagerImpl blobsSidecarManagerImpl =
           new BlobsSidecarManagerImpl(
               spec, recentChainData, storageQueryChannel, storageUpdateChannel);

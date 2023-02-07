@@ -87,7 +87,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             storagePrunerAsyncRunner,
                             config.getBlockPruningInterval()));
               }
-              if (config.getSpec().isMilestoneSupported(SpecMilestone.EIP4844)) {
+              if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
                     Optional.of(
                         new BlobsSidecarPruner(

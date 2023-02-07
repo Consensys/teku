@@ -34,7 +34,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -45,18 +45,18 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final UInt64 eip4844ForkEpoch;
+  private final UInt64 denebForkEpoch;
   private final RecentChainData recentChainData;
   private final Counter totalBlockAndBlobsSidecarRequestedCounter;
   private final LabelledMetric<Counter> requestCounter;
 
   public BeaconBlockAndBlobsSidecarByRootMessageHandler(
       final Spec spec,
-      final UInt64 eip4844ForkEpoch,
+      final UInt64 denebForkEpoch,
       final MetricsSystem metricsSystem,
       final RecentChainData recentChainData) {
     this.spec = spec;
-    this.eip4844ForkEpoch = eip4844ForkEpoch;
+    this.denebForkEpoch = denebForkEpoch;
     this.recentChainData = recentChainData;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -82,7 +82,7 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandler
             .orElse(UInt64.ZERO)
             .minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS);
     final UInt64 minimumRequestEpoch =
-        finalizedEpoch.max(minEpochForBlobsSidecar).max(eip4844ForkEpoch);
+        finalizedEpoch.max(minEpochForBlobsSidecar).max(denebForkEpoch);
 
     for (final SszBytes32 blockRoot : request) {
       final Optional<UInt64> requestedSlot = recentChainData.getSlotForBlockRoot(blockRoot.get());

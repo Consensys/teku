@@ -22,14 +22,14 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.config.SpecConfigEip4844;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public enum SpecMilestone {
   PHASE0,
   ALTAIR,
   BELLATRIX,
   CAPELLA,
-  EIP4844;
+  DENEB;
 
   /**
    * Returns true if this milestone is at or after the supplied milestone ({@code other})
@@ -85,8 +85,8 @@ public enum SpecMilestone {
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkVersion);
       case CAPELLA:
         return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
-      case EIP4844:
-        return specConfig.toVersionEip4844().map(SpecConfigEip4844::getEip4844ForkVersion);
+      case DENEB:
+        return specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkVersion);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }
@@ -104,8 +104,8 @@ public enum SpecMilestone {
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkEpoch);
       case CAPELLA:
         return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
-      case EIP4844:
-        return specConfig.toVersionEip4844().map(SpecConfigEip4844::getEip4844ForkEpoch);
+      case DENEB:
+        return specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch);
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }

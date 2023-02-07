@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "eip4844" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
     },
     "data" : {
       "$ref" : "#/components/schemas/LightClientBootstrap"

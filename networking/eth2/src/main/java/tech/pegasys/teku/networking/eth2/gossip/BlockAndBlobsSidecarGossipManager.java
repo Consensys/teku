@@ -19,7 +19,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -45,7 +45,7 @@ public class BlockAndBlobsSidecarGossipManager
         processor,
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
-            .toVersionEip4844()
+            .toVersionDeneb()
             .orElseThrow()
             .getSignedBeaconBlockAndBlobsSidecarSchema(),
         message -> spec.computeEpochAtSlot(message.getSignedBeaconBlock().getSlot()),

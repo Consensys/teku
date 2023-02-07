@@ -16,13 +16,13 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
-import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class BlobsBundleValidatorImpl implements BlobsBundleValidator {
-  private final MiscHelpersEip4844 miscHelpers;
+  private final MiscHelpersDeneb miscHelpers;
 
-  public BlobsBundleValidatorImpl(final MiscHelpersEip4844 miscHelpers) {
+  public BlobsBundleValidatorImpl(final MiscHelpersDeneb miscHelpers) {
     this.miscHelpers = miscHelpers;
   }
 

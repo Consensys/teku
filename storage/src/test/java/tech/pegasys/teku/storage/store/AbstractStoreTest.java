@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 
 public abstract class AbstractStoreTest {
-  protected final Spec spec = TestSpecFactory.createMinimalEip4844();
+  protected final Spec spec = TestSpecFactory.createMinimalDeneb();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
 

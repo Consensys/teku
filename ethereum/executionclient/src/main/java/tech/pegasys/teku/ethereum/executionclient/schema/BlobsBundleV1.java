@@ -31,9 +31,9 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.BytesDeserialize
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 
 public class BlobsBundleV1 {
   @JsonSerialize(using = BytesSerializer.class)
