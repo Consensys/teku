@@ -61,7 +61,8 @@ public class BlobsSidecarPrunerTest {
           asyncRunner,
           timeProvider,
           PRUNE_INTERVAL,
-          PRUNE_LIMIT);
+          PRUNE_LIMIT,
+          false);
 
   @BeforeEach
   void setUp() {
