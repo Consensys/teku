@@ -18,6 +18,8 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,6 +44,9 @@ import tech.pegasys.teku.networking.p2p.peer.DelegatingPeer;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
@@ -74,8 +79,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blockRequestTracker;
   private final RateTracker blobsSidecarsRequestTracker;
   private final RateTracker requestTracker;
+  private final Supplier<UInt64> eip4844StartSlotSupplier;
 
   DefaultEth2Peer(
+      final Spec spec,
       final Peer peer,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
@@ -92,6 +99,14 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blockRequestTracker = blockRequestTracker;
     this.blobsSidecarsRequestTracker = blobsSidecarsRequestTracker;
     this.requestTracker = requestTracker;
+    this.eip4844StartSlotSupplier =
+        Suppliers.memoize(
+            () -> {
+              final UInt64 eip4844ForkEpoch =
+                  SpecConfigEip4844.required(spec.forMilestone(SpecMilestone.EIP4844).getConfig())
+                      .getEip4844ForkEpoch();
+              return spec.computeStartSlotAtEpoch(eip4844ForkEpoch);
+            });
   }
 
   @Override
@@ -282,8 +297,20 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .blobsSidecarsByRange()
         .map(
             method -> {
-              final BlobsSidecarsByRangeRequestMessage request =
-                  new BlobsSidecarsByRangeRequestMessage(startSlot, count);
+              final UInt64 eip4844StartSlot = eip4844StartSlotSupplier.get();
+              final BlobsSidecarsByRangeRequestMessage request;
+              if (startSlot.isLessThan(eip4844StartSlot)) {
+                // handle request spanning the EIP-4844 fork transition
+                LOG.debug(
+                    "Requesting blobs sidecars from slot {} instead of slot {} because the request is spanning the EIP-4844 fork transition",
+                    eip4844StartSlot,
+                    startSlot);
+                final UInt64 updatedCount =
+                    count.minusMinZero(eip4844StartSlot.minusMinZero(startSlot));
+                request = new BlobsSidecarsByRangeRequestMessage(eip4844StartSlot, updatedCount);
+              } else {
+                request = new BlobsSidecarsByRangeRequestMessage(startSlot, count);
+              }
               return requestStream(method, request, listener);
             })
         .orElse(

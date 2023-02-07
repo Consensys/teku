@@ -50,6 +50,7 @@ class Eth2PeerTest {
 
   private final Eth2Peer peer =
       Eth2Peer.create(
+          spec,
           delegate,
           rpcMethods,
           statusMessageFactory,

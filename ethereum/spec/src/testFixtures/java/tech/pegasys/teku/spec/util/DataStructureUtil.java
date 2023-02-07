@@ -1943,14 +1943,19 @@ public final class DataStructureUtil {
             .orElseThrow()
             .getBlobKzgCommitmentsSchema();
     final int maxKzgCommitments =
-        spec.getGenesisSpecConfig().toVersionEip4844().orElseThrow().getMaxBlobsPerBlock();
+        spec.forMilestone(SpecMilestone.EIP4844)
+            .getConfig()
+            .toVersionEip4844()
+            .orElseThrow()
+            .getMaxBlobsPerBlock();
 
     return randomSszList(
         kzgCommitmentsSchema, randomInt(maxKzgCommitments) + 1, this::randomSszKZGCommitment);
   }
 
   public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
-    return SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsEip4844.required(
+            spec.forMilestone(SpecMilestone.EIP4844).getSchemaDefinitions())
         .getBeaconBlockBodySchema()
         .toVersionEip4844()
         .orElseThrow()

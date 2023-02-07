@@ -31,10 +31,11 @@ import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabil
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAvailabilityChecker {
-  private SpecVersion specVersion;
-  private RecentChainData recentChainData;
-  private SignedBeaconBlock block;
-  private BlobsSidecarProvider blobsSidecarProvider;
+
+  private final SpecVersion specVersion;
+  private final RecentChainData recentChainData;
+  private final SignedBeaconBlock block;
+  private final BlobsSidecarProvider blobsSidecarProvider;
 
   private Optional<SafeFuture<BlobsSidecarAndValidationResult>> validationResult = Optional.empty();
 
@@ -52,8 +53,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   @Override
   public boolean initiateDataAvailabilityCheck() {
     validationResult =
-        Optional.of(
-            blobsSidecarProvider.getBlobsSidecar(block).thenApply(this::validateBlobsSidecar));
+        Optional.of(blobsSidecarProvider.getBlobsSidecar(block).thenCompose(this::validate));
     return true;
   }
 
@@ -65,29 +65,26 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   @Override
   public SafeFuture<BlobsSidecarAndValidationResult> validate(
       final Optional<BlobsSidecar> blobsSidecar) {
-    return SafeFuture.of(() -> validateBlobsSidecar(blobsSidecar));
+    return SafeFuture.of(
+        () -> {
+          // in the current 4844 specs, the blobsSidecar is immediately available with the block
+          // so if we have it we do want to validate it regardless
+          if (blobsSidecar.isPresent()) {
+            return validate(blobsSidecar.get());
+          }
+
+          // when blobs are not available, we check if it is ok to not have them based on
+          // the required availability window.
+          if (isBlockInDataAvailabilityWindow()) {
+            return BlobsSidecarAndValidationResult.NOT_AVAILABLE;
+          }
+
+          // block is older than the availability window
+          return BlobsSidecarAndValidationResult.NOT_REQUIRED;
+        });
   }
 
-  private BlobsSidecarAndValidationResult validateBlobsSidecar(
-      final Optional<BlobsSidecar> blobsSidecar) {
-
-    // in the current 4844 specs, the blobsSidecar is immediately available with the block
-    // so if we have it we do want to validate it regardless
-    if (blobsSidecar.isPresent()) {
-      return validateBlobsSidecar(blobsSidecar.get());
-    }
-
-    // when blobs are not available, we check if it is ok to not have them based on
-    // the required availability window.
-    if (isBlockInDataAvailabilityWindow()) {
-      return BlobsSidecarAndValidationResult.NOT_AVAILABLE;
-    }
-
-    // block is older than the availability window
-    return BlobsSidecarAndValidationResult.NOT_REQUIRED;
-  }
-
-  private BlobsSidecarAndValidationResult validateBlobsSidecar(final BlobsSidecar blobsSidecar) {
+  private BlobsSidecarAndValidationResult validate(final BlobsSidecar blobsSidecar) {
     final BeaconBlockBodyEip4844 blockBody =
         block
             .getBeaconBlock()
