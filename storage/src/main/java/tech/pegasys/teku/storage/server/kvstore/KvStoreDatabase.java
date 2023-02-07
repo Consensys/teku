@@ -300,9 +300,16 @@ public class KvStoreDatabase implements Database {
     return dao.getNonCanonicalBlocksAtSlot(slot);
   }
 
-  protected void storeFinalizedBlocksToDao(final Collection<SignedBeaconBlock> blocks) {
+  protected void storeFinalizedBlocksToDao(
+      final Collection<SignedBeaconBlock> blocks,
+      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      blocks.forEach(updater::addFinalizedBlock);
+      blocks.forEach(
+          block -> {
+            updater.addFinalizedBlock(block);
+            Optional.ofNullable(blobsSidecarBySlot.get(block.getSlot()))
+                .ifPresent(updater::addBlobsSidecar);
+          });
       updater.commit();
     }
   }
@@ -438,7 +445,9 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeFinalizedBlocks(final Collection<SignedBeaconBlock> blocks) {
+  public void storeFinalizedBlocks(
+      final Collection<SignedBeaconBlock> blocks,
+      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
     if (blocks.isEmpty()) {
       return;
     }
@@ -463,7 +472,7 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks);
+    storeFinalizedBlocksToDao(blocks, blobsSidecarBySlot);
   }
 
   @Override
@@ -733,10 +742,10 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public boolean pruneOldestUnconfirmedBlobsSidecar(
+  public boolean pruneOldestUnconfirmedBlobsSidecars(
       final UInt64 lastSlotToPrune, final int pruneLimit) {
     try (final Stream<SlotAndBlockRoot> prunableUnconfirmed =
-            streamUnconfirmedBlobsSidecar(UInt64.ZERO, lastSlotToPrune);
+            streamUnconfirmedBlobsSidecars(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
       final long pruned =
           prunableUnconfirmed
@@ -755,13 +764,20 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   @Override
-  public Stream<BlobsSidecar> streamBlobsSidecar(final UInt64 startSlot, final UInt64 endSlot) {
+  public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobsSidecar(startSlot, endSlot)
         .map(
             slotAndBlockRootBytesEntry ->
                 spec.deserializeBlobsSidecar(
                     slotAndBlockRootBytesEntry.getValue(),
                     slotAndBlockRootBytesEntry.getKey().getSlot()));
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarsAsSsz(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamBlobsSidecar(startSlot, endSlot);
   }
 
   @MustBeClosed
@@ -773,7 +789,7 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   @Override
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
+  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
   }

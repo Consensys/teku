@@ -262,6 +262,10 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return complete;
   }
 
+  public static SafeFuture<Void> allOfFailFast(final Stream<SafeFuture<?>> futures) {
+    return allOfFailFast(futures.toArray(SafeFuture[]::new));
+  }
+
   /**
    * Returns a new {@link SafeFuture} with the result of the first successful future from the given
    * futures. If all futures complete exceptionally, the returned {@link SafeFuture} will complete

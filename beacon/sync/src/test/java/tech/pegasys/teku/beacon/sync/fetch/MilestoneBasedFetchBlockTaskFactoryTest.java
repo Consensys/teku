@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -32,26 +32,25 @@ public class MilestoneBasedFetchBlockTaskFactoryTest {
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(UInt64.ZERO);
 
-  private final MilestoneBasedFetchBlockTaskFactory milestoneBasedFetchBlockTaskFactory =
-      new MilestoneBasedFetchBlockTaskFactory(spec);
-
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Eth2Peer> eth2Network = mock(P2PNetwork.class);
+
+  private final MilestoneBasedFetchBlockTaskFactory milestoneBasedFetchBlockTaskFactory =
+      new MilestoneBasedFetchBlockTaskFactory(spec, eth2Network);
 
   @Test
   public void createsFetchBlockTaskForMilestonesBeforeDeneb() {
     final FetchBlockTask task =
-        milestoneBasedFetchBlockTaskFactory.create(
-            eth2Network, UInt64.ONE, dataStructureUtil.randomBytes32());
+        milestoneBasedFetchBlockTaskFactory.create(UInt64.ONE, dataStructureUtil.randomBytes32());
 
     assertThat(task).isExactlyInstanceOf(FetchBlockTask.class);
   }
 
   @Test
-  public void createsFetchBlockTaskForMilestonesAfterDeneb() {
+  public void createsFetchBlockAndBlobsSidecarTaskForMilestonesAfterDeneb() {
     final FetchBlockTask task =
         milestoneBasedFetchBlockTaskFactory.create(
-            eth2Network, UInt64.ONE.plus(slotsPerEpoch), dataStructureUtil.randomBytes32());
+            UInt64.ONE.plus(slotsPerEpoch), dataStructureUtil.randomBytes32());
 
     assertThat(task).isExactlyInstanceOf(FetchBlockAndBlobsSidecarTask.class);
   }

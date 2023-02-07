@@ -14,10 +14,12 @@
 package tech.pegasys.teku.storage.api;
 
 import java.util.Collection;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
@@ -28,7 +30,9 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<UpdateResult> onStorageUpdate(StorageUpdate event);
 
-  SafeFuture<Void> onFinalizedBlocks(Collection<SignedBeaconBlock> finalizedBlocks);
+  SafeFuture<Void> onFinalizedBlocks(
+      Collection<SignedBeaconBlock> finalizedBlocks,
+      Map<UInt64, BlobsSidecar> finalizedBlobsSidecar);
 
   SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);
 
