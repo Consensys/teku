@@ -49,14 +49,17 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private volatile Optional<BlobsSidecarPruner> blobsPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
+  private final boolean blobsSidecarStorageEnabled;
 
   public StorageService(
       final ServiceConfig serviceConfig,
       final StorageConfiguration storageConfiguration,
-      final boolean depositSnapshotStorageEnabled) {
+      final boolean depositSnapshotStorageEnabled,
+      final boolean blobsSidecarStorageEnabled) {
     this.serviceConfig = serviceConfig;
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
+    this.blobsSidecarStorageEnabled = blobsSidecarStorageEnabled;
   }
 
   @Override
@@ -97,7 +100,8 @@ public class StorageService extends Service implements StorageServiceFacade {
                             storagePrunerAsyncRunner,
                             serviceConfig.getTimeProvider(),
                             config.getBlobsPruningInterval(),
-                            config.getBlobsPruningLimit()));
+                            config.getBlobsPruningLimit(),
+                            blobsSidecarStorageEnabled));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage = ChainStorage.create(database, config.getSpec());

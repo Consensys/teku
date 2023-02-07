@@ -47,6 +47,7 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
   private final Duration pruneInterval;
   private int pruneLimit;
   private final TimeProvider timeProvider;
+  private final boolean blobsSidecarStorageEnabled;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<UInt64> genesisTime = Optional.empty();
@@ -63,32 +64,36 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final Duration pruneInterval,
-      final int pruneLimit) {
+      final int pruneLimit,
+      final boolean blobsSidecarStorageEnabled) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
+    this.blobsSidecarStorageEnabled = blobsSidecarStorageEnabled;
 
-    LabelledGauge labelledGauge =
-        metricsSystem.createLabelledGauge(
-            TekuMetricCategory.STORAGE,
-            "blobs_sidecar_counts",
-            "Number of blobs sidecars stored",
-            "type");
+    if (blobsSidecarStorageEnabled) {
+      LabelledGauge labelledGauge =
+          metricsSystem.createLabelledGauge(
+              TekuMetricCategory.STORAGE,
+              "blobs_sidecar_counts",
+              "Number of blobs sidecars stored",
+              "type");
 
-    labelledGauge.labels(
-        () ->
-            Optional.ofNullable(blobsColumnsSize.get("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
-                .orElse(0L),
-        "total");
-    labelledGauge.labels(
-        () ->
-            Optional.ofNullable(
-                    blobsColumnsSize.get("UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
-                .orElse(0L),
-        "unconfirmed");
+      labelledGauge.labels(
+          () ->
+              Optional.ofNullable(blobsColumnsSize.get("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
+                  .orElse(0L),
+          "total");
+      labelledGauge.labels(
+          () ->
+              Optional.ofNullable(
+                      blobsColumnsSize.get("UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
+                  .orElse(0L),
+          "unconfirmed");
+    }
   }
 
   @Override
@@ -113,7 +118,9 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
     pruneBlobsPriorToAvailabilityWindow();
     pruneUnconfirmedBlobs();
 
-    blobsColumnsSize.putAll(database.getBlobsSidecarColumnCounts());
+    if (blobsSidecarStorageEnabled) {
+      blobsColumnsSize.putAll(database.getBlobsSidecarColumnCounts());
+    }
   }
 
   private void pruneUnconfirmedBlobs() {
