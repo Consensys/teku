@@ -106,7 +106,7 @@ public class GetSyncing extends RestApiEndpoint {
         final int slotsBehind) {
       this.isSyncing = isSyncing;
       this.isOptimistic = Optional.ofNullable(isOptimistic);
-      this.elOffline = Optional.of(elOffline);
+      this.elOffline = Optional.ofNullable(elOffline);
       this.currentSlot = UInt64.valueOf(currentSlot);
       this.slotsBehind = UInt64.valueOf(slotsBehind);
     }

@@ -86,4 +86,34 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(
             "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"is_optimistic\":false,\"el_offline\":false}}");
   }
+
+  @Test
+  void metadata_shouldHandle200WithoutOptionalFields() throws JsonProcessingException {
+    final String data =
+        getResponseStringFromMetadata(
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, null, null, 10, 0));
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false}}");
+  }
+
+  @Test
+  void metadata_shouldHandle200WithoutIsOptimistic() throws JsonProcessingException {
+    final String data =
+        getResponseStringFromMetadata(
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, null, false, 10, 0));
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"el_offline\":false}}");
+  }
+
+  @Test
+  void metadata_shouldHandle200WithoutElOffline() throws JsonProcessingException {
+    final String data =
+        getResponseStringFromMetadata(
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, false, null, 10, 0));
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"is_optimistic\":false}}");
+  }
 }
