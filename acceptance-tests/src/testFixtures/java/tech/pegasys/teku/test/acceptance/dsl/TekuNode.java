@@ -774,6 +774,10 @@ public class TekuNode extends Node {
     assertThat(fetchSyncStatus().data.elOffline).isTrue();
   }
 
+  public void expectElOnline() throws IOException {
+    assertThat(fetchSyncStatus().data.elOffline).isFalse();
+  }
+
   public void expectNodeSyncing() throws IOException {
     assertThat(fetchSyncStatus().data.isSyncing).isTrue();
   }

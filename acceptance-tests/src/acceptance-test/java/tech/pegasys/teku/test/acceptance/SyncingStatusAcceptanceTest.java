@@ -66,6 +66,7 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
 
     beaconNode.waitForEpochAtOrAbove(1);
 
+    beaconNode.expectElOnline();
     beaconNode.expectNodeNotSyncing();
 
     eth1Node.stop();
