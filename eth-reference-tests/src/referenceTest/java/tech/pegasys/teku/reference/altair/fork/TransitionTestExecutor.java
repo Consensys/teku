@@ -47,7 +47,10 @@ public class TransitionTestExecutor implements TestExecutor {
   }
 
   private void processUpgrade(final TestDefinition testDefinition, final MetaData metadata) {
-    final SpecMilestone milestone = SpecMilestone.valueOf(metadata.postFork.toUpperCase());
+    final String postFork = metadata.postFork.toUpperCase();
+    // TODO: simplify when reference tests are updated to Deneb
+    final SpecMilestone milestone =
+        SpecMilestone.valueOf(postFork.equals("EIP4844") ? "DENEB" : postFork);
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
     final SpecConfig config =
         SpecConfigLoader.loadConfig(

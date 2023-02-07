@@ -38,7 +38,10 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final MetaData metadata = TestDataUtils.loadYaml(testDefinition, "meta.yaml", MetaData.class);
-    final SpecMilestone specMilestone = SpecMilestone.valueOf(metadata.fork.toUpperCase());
+    final String fork = metadata.fork.toUpperCase();
+    // TODO: simplify when reference tests are updated to Deneb
+    final SpecMilestone specMilestone =
+        SpecMilestone.valueOf(fork.equals("EIP4844") ? "DENEB" : fork);
     processUpgrade(testDefinition, specMilestone);
   }
 
