@@ -70,7 +70,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
           // in the current 4844 specs, the blobsSidecar is immediately available with the block
           // so if we have it we do want to validate it regardless
           if (blobsSidecar.isPresent()) {
-            return validate(blobsSidecar.get());
+            return internalValidate(blobsSidecar.get());
           }
 
           // when blobs are not available, we check if it is ok to not have them based on
@@ -84,7 +84,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
         });
   }
 
-  private BlobsSidecarAndValidationResult validate(final BlobsSidecar blobsSidecar) {
+  private BlobsSidecarAndValidationResult internalValidate(final BlobsSidecar blobsSidecar) {
     final BeaconBlockBodyEip4844 blockBody =
         block
             .getBeaconBlock()

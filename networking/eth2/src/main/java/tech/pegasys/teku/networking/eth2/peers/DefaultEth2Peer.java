@@ -79,7 +79,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blockRequestTracker;
   private final RateTracker blobsSidecarsRequestTracker;
   private final RateTracker requestTracker;
-  private final Supplier<UInt64> eip4844StartSlotSupplier;
+  private final Supplier<UInt64> firstSlotSupportingBlobsSidecarsByRange;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -99,7 +99,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blockRequestTracker = blockRequestTracker;
     this.blobsSidecarsRequestTracker = blobsSidecarsRequestTracker;
     this.requestTracker = requestTracker;
-    this.eip4844StartSlotSupplier =
+    this.firstSlotSupportingBlobsSidecarsByRange =
         Suppliers.memoize(
             () -> {
               final UInt64 eip4844ForkEpoch =
@@ -297,17 +297,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .blobsSidecarsByRange()
         .map(
             method -> {
-              final UInt64 eip4844StartSlot = eip4844StartSlotSupplier.get();
+              final UInt64 firstSupportedSlot = firstSlotSupportingBlobsSidecarsByRange.get();
               final BlobsSidecarsByRangeRequestMessage request;
-              if (startSlot.isLessThan(eip4844StartSlot)) {
-                // handle request spanning the EIP-4844 fork transition
+              if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
-                    "Requesting blobs sidecars from slot {} instead of slot {} because the request is spanning the EIP-4844 fork transition",
-                    eip4844StartSlot,
+                    "Requesting blobs sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
+                    firstSupportedSlot,
                     startSlot);
                 final UInt64 updatedCount =
-                    count.minusMinZero(eip4844StartSlot.minusMinZero(startSlot));
-                request = new BlobsSidecarsByRangeRequestMessage(eip4844StartSlot, updatedCount);
+                    count.minusMinZero(firstSupportedSlot.minusMinZero(startSlot));
+                request = new BlobsSidecarsByRangeRequestMessage(firstSupportedSlot, updatedCount);
               } else {
                 request = new BlobsSidecarsByRangeRequestMessage(startSlot, count);
               }

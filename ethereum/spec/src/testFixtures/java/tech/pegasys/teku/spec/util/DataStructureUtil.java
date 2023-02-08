@@ -80,6 +80,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigEip4844;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -95,6 +96,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodySchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -1937,16 +1939,13 @@ public final class DataStructureUtil {
 
   public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
     final SszListSchema<SszKZGCommitment, ?> kzgCommitmentsSchema =
-        SchemaDefinitionsEip4844.required(spec.getGenesisSchemaDefinitions())
-            .getBeaconBlockBodySchema()
-            .toVersionEip4844()
-            .orElseThrow()
+        BeaconBlockBodySchemaEip4844.required(
+                spec.forMilestone(SpecMilestone.EIP4844)
+                    .getSchemaDefinitions()
+                    .getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsSchema();
     final int maxKzgCommitments =
-        spec.forMilestone(SpecMilestone.EIP4844)
-            .getConfig()
-            .toVersionEip4844()
-            .orElseThrow()
+        SpecConfigEip4844.required(spec.forMilestone(SpecMilestone.EIP4844).getConfig())
             .getMaxBlobsPerBlock();
 
     return randomSszList(

@@ -600,10 +600,7 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobsSidecarSchema blobsSidecarSchema =
-        spec.atSlot(slot)
-            .getSchemaDefinitions()
-            .toVersionEip4844()
-            .orElseThrow()
+        SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions())
             .getBlobsSidecarSchema();
 
     if (options.isStoreBlobsSidecarEnabled()) {
