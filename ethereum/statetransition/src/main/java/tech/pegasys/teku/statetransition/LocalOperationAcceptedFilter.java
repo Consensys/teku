@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition;
 
 import java.util.function.Consumer;
-import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 

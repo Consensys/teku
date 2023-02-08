@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 
 class SyncCommitteeContributionPoolTest {
 
