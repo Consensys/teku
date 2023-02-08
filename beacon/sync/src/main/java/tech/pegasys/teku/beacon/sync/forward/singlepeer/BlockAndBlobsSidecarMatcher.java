@@ -22,8 +22,8 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class BlockAndBlobsSidecarMatcher {
@@ -77,8 +77,8 @@ public class BlockAndBlobsSidecarMatcher {
         block
             .getMessage()
             .getBody()
-            .toVersionEip4844()
-            .map(BeaconBlockBodyEip4844::getBlobKzgCommitments)
+            .toVersionDeneb()
+            .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
             .map(kzgCommitments -> !kzgCommitments.isEmpty())
             .orElse(false);
     return blockHasKzgCommitments && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot);

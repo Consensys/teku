@@ -20,6 +20,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class KZGCommitmentSupplier extends DataStructureUtilSupplier<KZGCommitment> {
   public KZGCommitmentSupplier() {
-    super(DataStructureUtil::randomKZGCommitment, SpecMilestone.EIP4844);
+    super(DataStructureUtil::randomKZGCommitment, SpecMilestone.DENEB);
   }
 }

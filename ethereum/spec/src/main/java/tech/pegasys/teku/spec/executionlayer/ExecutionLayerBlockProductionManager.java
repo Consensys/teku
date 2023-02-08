@@ -68,7 +68,7 @@ public interface ExecutionLayerBlockProductionManager {
 
   /**
    * Initiates block and sidecar blobs production flow with execution client or builder. Use since
-   * EIP-4844.
+   * Deneb.
    *
    * @param context Payload context
    * @param blockSlotState pre state

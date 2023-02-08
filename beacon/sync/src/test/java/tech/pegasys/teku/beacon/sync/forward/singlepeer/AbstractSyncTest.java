@@ -36,7 +36,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
@@ -45,16 +45,16 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public abstract class AbstractSyncTest {
 
-  protected final UInt64 eip4844ForkEpoch = UInt64.valueOf(112260);
-  protected final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(eip4844ForkEpoch);
+  protected final UInt64 denebForkEpoch = UInt64.valueOf(112260);
+  protected final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
   protected final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   protected final RecentChainData storageClient = mock(RecentChainData.class);
 
-  private final DataStructureUtil preEip4844DataStructureUtil = new DataStructureUtil(spec);
+  private final DataStructureUtil preDenebDataStructureUtil = new DataStructureUtil(spec);
   protected final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalEip4844());
+      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @BeforeEach
@@ -98,10 +98,10 @@ public abstract class AbstractSyncTest {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     for (final UInt64 slot : slots) {
       final SignedBeaconBlock block;
-      if (spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(eip4844ForkEpoch)) {
+      if (spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(denebForkEpoch)) {
         block = dataStructureUtil.randomSignedBeaconBlock(slot);
       } else {
-        block = preEip4844DataStructureUtil.randomSignedBeaconBlock(slot);
+        block = preDenebDataStructureUtil.randomSignedBeaconBlock(slot);
       }
 
       blocks.add(block);

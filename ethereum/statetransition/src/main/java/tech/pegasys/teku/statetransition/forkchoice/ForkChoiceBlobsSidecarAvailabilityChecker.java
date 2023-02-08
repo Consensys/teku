@@ -24,10 +24,10 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAvailabilityChecker {
@@ -67,7 +67,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
       final Optional<BlobsSidecar> blobsSidecar) {
     return SafeFuture.of(
         () -> {
-          // in the current 4844 specs, the blobsSidecar is immediately available with the block
+          // in the current Deneb specs, the blobsSidecar is immediately available with the block
           // so if we have it we do want to validate it regardless
           if (blobsSidecar.isPresent()) {
             return internalValidate(blobsSidecar.get());
@@ -85,11 +85,11 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   }
 
   private BlobsSidecarAndValidationResult internalValidate(final BlobsSidecar blobsSidecar) {
-    final BeaconBlockBodyEip4844 blockBody =
+    final BeaconBlockBodyDeneb blockBody =
         block
             .getBeaconBlock()
             .map(BeaconBlock::getBody)
-            .flatMap(BeaconBlockBody::toVersionEip4844)
+            .flatMap(BeaconBlockBody::toVersionDeneb)
             .orElseThrow();
     try {
       if (!specVersion

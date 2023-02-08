@@ -20,6 +20,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class KZGProofSupplier extends DataStructureUtilSupplier<KZGProof> {
   public KZGProofSupplier() {
-    super(DataStructureUtil::randomKZGProof, SpecMilestone.EIP4844);
+    super(DataStructureUtil::randomKZGProof, SpecMilestone.DENEB);
   }
 }

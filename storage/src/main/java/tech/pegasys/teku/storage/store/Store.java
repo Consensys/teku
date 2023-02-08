@@ -53,9 +53,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -64,7 +64,7 @@ import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -507,27 +507,27 @@ class Store implements UpdatableStore {
               .getBeaconBlock()
               .orElseThrow()
               .getBody()
-              .toVersionEip4844()
+              .toVersionDeneb()
               .orElseThrow()
               .getBlobKzgCommitments()
               .isEmpty(),
           "BeaconBlock contains kzg commitments but BlobsSidecar is not present");
     }
 
-    final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
+    final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
         spec.atSlot(signedBeaconBlock.getSlot())
             .getSchemaDefinitions()
-            .toVersionEip4844()
+            .toVersionDeneb()
             .orElseThrow();
 
     final BlobsSidecar blobsSidecar =
         maybeBlobsSidecar.orElseGet(
             () ->
-                schemaDefinitionsEip4844
+                schemaDefinitionsDeneb
                     .getBlobsSidecarSchema()
                     .createEmpty(signedBeaconBlock.getRoot(), signedBeaconBlock.getSlot()));
 
-    return schemaDefinitionsEip4844
+    return schemaDefinitionsDeneb
         .getSignedBeaconBlockAndBlobsSidecarSchema()
         .create(signedBeaconBlock, blobsSidecar);
   }

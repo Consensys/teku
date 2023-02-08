@@ -56,8 +56,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -86,7 +86,7 @@ public class BlockManagerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
   private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
@@ -651,7 +651,7 @@ public class BlockManagerTest {
 
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         spec.getGenesisSchemaDefinitions()
-            .toVersionEip4844()
+            .toVersionDeneb()
             .orElseThrow()
             .getSignedBeaconBlockAndBlobsSidecarSchema()
             .create(block, blobsSidecar);

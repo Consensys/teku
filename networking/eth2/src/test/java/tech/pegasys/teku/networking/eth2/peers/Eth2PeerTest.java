@@ -38,14 +38,14 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class Eth2PeerTest {
 
-  private final UInt64 eip4844ForkEpoch = UInt64.ONE;
-  private final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(eip4844ForkEpoch);
+  private final UInt64 denebForkEpoch = UInt64.ONE;
+  private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Peer delegate = mock(Peer.class);
   private final BeaconChainMethods rpcMethods = mock(BeaconChainMethods.class);
@@ -184,7 +184,7 @@ class Eth2PeerTest {
 
     final BlobsSidecarsByRangeRequestMessage request = requestCaptor.getValue();
 
-    // EIP-4844 starts from epoch 1, so request start slot should be 8 and the count should be 6
+    // Deneb starts from epoch 1, so request start slot should be 8 and the count should be 6
     assertThat(request.getStartSlot()).isEqualTo(UInt64.valueOf(8));
     assertThat(request.getCount()).isEqualTo(UInt64.valueOf(6));
   }

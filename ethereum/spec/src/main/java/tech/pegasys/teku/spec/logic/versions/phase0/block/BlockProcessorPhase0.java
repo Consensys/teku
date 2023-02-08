@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
+import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
