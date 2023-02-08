@@ -19,10 +19,10 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 /**
- * Represents an external source of blocks (and blobs sidecars post EIP-4844) to sync. Typically, a
+ * Represents an external source of blocks (and blobs sidecars post Deneb) to sync. Typically, a
  * peer, but this provides the minimal interface required by the sync system.
  */
 public interface SyncSource {

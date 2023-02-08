@@ -46,10 +46,10 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigEip4844;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -102,10 +102,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.firstSlotSupportingBlobsSidecarsByRange =
         Suppliers.memoize(
             () -> {
-              final UInt64 eip4844ForkEpoch =
-                  SpecConfigEip4844.required(spec.forMilestone(SpecMilestone.EIP4844).getConfig())
-                      .getEip4844ForkEpoch();
-              return spec.computeStartSlotAtEpoch(eip4844ForkEpoch);
+              final UInt64 denebForkEpoch =
+                  SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+                      .getDenebForkEpoch();
+              return spec.computeStartSlotAtEpoch(denebForkEpoch);
             });
   }
 

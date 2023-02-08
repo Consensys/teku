@@ -113,22 +113,22 @@ public class BeaconChainMethodsTest {
   }
 
   @Test
-  public void shouldNotCreateBlobsSidecarsByRangeWithEip4844Disabled() {
+  public void shouldNotCreateBlobsSidecarsByRangeWithDenebDisabled() {
     final BeaconChainMethods methods = getMethods();
 
     assertThat(methods.blobsSidecarsByRange()).isEmpty();
   }
 
   @Test
-  public void shouldNotCreateBeaconBlockAndBlobsSidecarByRootWithEip4844Disabled() {
+  public void shouldNotCreateBeaconBlockAndBlobsSidecarByRootWithDenebDisabled() {
     final BeaconChainMethods methods = getMethods();
 
     assertThat(methods.beaconBlockAndBlobsSidecarByRoot()).isEmpty();
   }
 
   @Test
-  public void shouldCreateBlobsSidecarsByRangeWithEip4844Enabled() {
-    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalEip4844());
+  public void shouldCreateBlobsSidecarsByRangeWithDenebEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalDeneb());
 
     assertThat(methods.blobsSidecarsByRange())
         .hasValueSatisfying(
@@ -139,8 +139,8 @@ public class BeaconChainMethodsTest {
   }
 
   @Test
-  public void shouldCreateBeaconBlockAndBlobsSidecarsByRootWithEip4844Enabled() {
-    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalEip4844());
+  public void shouldCreateBeaconBlockAndBlobsSidecarsByRootWithDenebEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalDeneb());
 
     assertThat(methods.beaconBlockAndBlobsSidecarByRoot())
         .hasValueSatisfying(

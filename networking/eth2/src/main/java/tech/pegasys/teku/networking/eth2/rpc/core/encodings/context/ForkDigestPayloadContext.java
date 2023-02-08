@@ -17,8 +17,8 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public interface ForkDigestPayloadContext<TPayload extends SszData> {
@@ -47,7 +47,7 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         @Override
         public SszSchema<BlobsSidecar> getSchemaFromSchemaDefinitions(
             final SchemaDefinitions schemaDefinitions) {
-          return schemaDefinitions.toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
+          return schemaDefinitions.toVersionDeneb().orElseThrow().getBlobsSidecarSchema();
         }
       };
 
@@ -62,7 +62,7 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         public SszSchema<SignedBeaconBlockAndBlobsSidecar> getSchemaFromSchemaDefinitions(
             final SchemaDefinitions schemaDefinitions) {
           return schemaDefinitions
-              .toVersionEip4844()
+              .toVersionDeneb()
               .orElseThrow()
               .getSignedBeaconBlockAndBlobsSidecarSchema();
         }

@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -79,7 +79,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   @Test
-  public void pre4844_builderOffline() throws Exception {
+  public void preDeneb_builderOffline() throws Exception {
     setBuilderOffline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -132,7 +132,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   @Test
-  public void pre4844_builderOnline() throws Exception {
+  public void preDeneb_builderOnline() throws Exception {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -176,7 +176,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   @Test
-  public void pre4844_noBuilder() throws Exception {
+  public void preDeneb_noBuilder() throws Exception {
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -209,8 +209,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   @Test
-  public void post4844_builderOffline() throws Exception {
-    setup4844();
+  public void postDeneb_builderOffline() throws Exception {
+    setupDeneb();
     setBuilderOffline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -224,7 +224,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
             .getSchemaDefinitions()
-            .toVersionEip4844()
+            .toVersionDeneb()
             .orElseThrow()
             .getExecutionPayloadHeaderSchema()
             .createFromExecutionPayload(payload);
@@ -261,8 +261,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   @Test
-  public void post4844_builderOnline() throws Exception {
-    setup4844();
+  public void postDeneb_builderOnline() throws Exception {
+    setupDeneb();
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -310,8 +310,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   @Test
-  public void post4844_noBuilder() throws Exception {
-    setup4844();
+  public void postDeneb_noBuilder() throws Exception {
+    setupDeneb();
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -348,8 +348,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
-  private void setup4844() {
-    this.spec = TestSpecFactory.createMinimalEip4844();
+  private void setupDeneb() {
+    this.spec = TestSpecFactory.createMinimalDeneb();
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.executionLayerManager = createExecutionLayerChannelImpl(true, false);
     this.blockProductionManager =

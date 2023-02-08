@@ -15,7 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 
 public interface BlobsBundleValidator {
   BlobsBundleValidator NOOP = (blobsBundle, executionPayloadOptional) -> {};

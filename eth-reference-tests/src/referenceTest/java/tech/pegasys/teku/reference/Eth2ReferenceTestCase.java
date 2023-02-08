@@ -76,7 +76,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
           .build();
 
-  private static final ImmutableMap<String, TestExecutor> EIP4844_TEST_TYPES =
+  private static final ImmutableMap<String, TestExecutor> DENEB_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
@@ -104,8 +104,8 @@ public abstract class Eth2ReferenceTestCase {
       case TestFork.CAPELLA:
         testExecutor = CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
         break;
-      case TestFork.EIP4844:
-        testExecutor = EIP4844_TEST_TYPES.get(testDefinition.getTestType());
+      case TestFork.DENEB:
+        testExecutor = DENEB_TEST_TYPES.get(testDefinition.getTestType());
         break;
     }
 

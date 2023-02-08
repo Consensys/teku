@@ -31,11 +31,11 @@ import tech.pegasys.teku.api.schema.capella.BeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.capella.BlindedBeaconBlockBodyCapella;
 import tech.pegasys.teku.api.schema.capella.BlindedBlockCapella;
-import tech.pegasys.teku.api.schema.eip4844.BeaconBlockBodyEip4844;
-import tech.pegasys.teku.api.schema.eip4844.BeaconBlockEip4844;
-import tech.pegasys.teku.api.schema.eip4844.BeaconStateEip4844;
-import tech.pegasys.teku.api.schema.eip4844.BlindedBeaconBlockBodyEip4844;
-import tech.pegasys.teku.api.schema.eip4844.BlindedBlockEip4844;
+import tech.pegasys.teku.api.schema.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.api.schema.deneb.BeaconBlockDeneb;
+import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.api.schema.deneb.BlindedBeaconBlockBodyDeneb;
+import tech.pegasys.teku.api.schema.deneb.BlindedBlockDeneb;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -111,13 +111,13 @@ public class SchemaObjectProvider {
             block.getParentRoot(),
             block.getStateRoot(),
             getBlindedBlockBodyCapella(block.getBody()));
-      case EIP4844:
-        return new BlindedBlockEip4844(
+      case DENEB:
+        return new BlindedBlockDeneb(
             block.getSlot(),
             block.getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
-            getBlindedBlockBodyEip4844(block.getBody()));
+            getBlindedBlockBodyDeneb(block.getBody()));
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
@@ -155,13 +155,13 @@ public class SchemaObjectProvider {
             block.getParentRoot(),
             block.getStateRoot(),
             getBeaconBlockBodyCapella(block.getBody()));
-      case EIP4844:
-        return new BeaconBlockEip4844(
+      case DENEB:
+        return new BeaconBlockDeneb(
             block.getSlot(),
             block.getProposerIndex(),
             block.getParentRoot(),
             block.getStateRoot(),
-            getBeaconBlockBodyEip4844(block.getBody()));
+            getBeaconBlockBodyDeneb(block.getBody()));
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + block.getSlot());
     }
@@ -188,11 +188,11 @@ public class SchemaObjectProvider {
             .BeaconBlockBodyCapella.required(body));
   }
 
-  private BeaconBlockBodyEip4844 getBeaconBlockBodyEip4844(
+  private BeaconBlockBodyDeneb getBeaconBlockBodyDeneb(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
-    return new BeaconBlockBodyEip4844(
-        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844
-            .BeaconBlockBodyEip4844.required(body));
+    return new BeaconBlockBodyDeneb(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb
+            .required(body));
   }
 
   private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
@@ -209,11 +209,11 @@ public class SchemaObjectProvider {
             .BlindedBeaconBlockBodyCapella.required(body));
   }
 
-  private BlindedBeaconBlockBodyEip4844 getBlindedBlockBodyEip4844(
+  private BlindedBeaconBlockBodyDeneb getBlindedBlockBodyDeneb(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
-    return new BlindedBeaconBlockBodyEip4844(
-        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844
-            .BlindedBeaconBlockBodyEip4844.required(body));
+    return new BlindedBeaconBlockBodyDeneb(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb
+            .BlindedBeaconBlockBodyDeneb.required(body));
   }
 
   public BeaconState getBeaconState(
@@ -228,8 +228,8 @@ public class SchemaObjectProvider {
         return new BeaconStateBellatrix(state);
       case CAPELLA:
         return new BeaconStateCapella(state);
-      case EIP4844:
-        return new BeaconStateEip4844(state);
+      case DENEB:
+        return new BeaconStateDeneb(state);
       default:
         throw new IllegalArgumentException("Unsupported milestone for slot " + slot);
     }

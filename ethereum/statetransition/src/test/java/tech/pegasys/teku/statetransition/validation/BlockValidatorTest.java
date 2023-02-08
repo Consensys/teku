@@ -37,8 +37,8 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
@@ -47,7 +47,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, SpecMilestone.EIP4844})
+@TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, SpecMilestone.DENEB})
 public class BlockValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
@@ -303,7 +303,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnInvalidForInconsistentBlockAndBlobsSidecar(final SpecContext specContext) {
-    specContext.assumeEip4844Active();
+    specContext.assumeDenebActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem
@@ -338,7 +338,7 @@ public class BlockValidatorTest {
 
   @TestTemplate
   void shouldReturnAcceptConsistentBlockAndBlobsSidecar(final SpecContext specContext) {
-    specContext.assumeEip4844Active();
+    specContext.assumeDenebActive();
 
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem
@@ -359,7 +359,7 @@ public class BlockValidatorTest {
             .randomBlobsSidecar(
                 block.getRoot(),
                 block.getSlot(),
-                BeaconBlockBodyEip4844.required(block.getBeaconBlock().orElseThrow().getBody())
+                BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
                     .getBlobKzgCommitments()
                     .size());
 

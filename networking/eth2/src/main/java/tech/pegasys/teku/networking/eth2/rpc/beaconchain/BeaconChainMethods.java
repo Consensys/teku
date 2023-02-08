@@ -47,8 +47,8 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage.BeaconBlockAndBlobsSidecarByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -274,7 +274,7 @@ public class BeaconChainMethods {
           final RecentChainData recentChainData,
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding) {
-    if (!spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+    if (!spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       return Optional.empty();
     }
 
@@ -287,7 +287,7 @@ public class BeaconChainMethods {
 
     final BeaconBlockAndBlobsSidecarByRootMessageHandler messageHandler =
         new BeaconBlockAndBlobsSidecarByRootMessageHandler(
-            spec, getEip4844ForkEpoch(spec), metricsSystem, recentChainData);
+            spec, getDenebForkEpoch(spec), metricsSystem, recentChainData);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -312,7 +312,7 @@ public class BeaconChainMethods {
           final RpcEncoding rpcEncoding,
           final RecentChainData recentChainData) {
 
-    if (!spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+    if (!spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       return Optional.empty();
     }
 
@@ -325,7 +325,7 @@ public class BeaconChainMethods {
     final BlobsSidecarsByRangeMessageHandler blobsSidecarsByRangeHandler =
         new BlobsSidecarsByRangeMessageHandler(
             spec,
-            getEip4844ForkEpoch(spec),
+            getDenebForkEpoch(spec),
             metricsSystem,
             combinedChainDataClient,
             MAX_REQUEST_BLOBS_SIDECARS);
@@ -422,12 +422,12 @@ public class BeaconChainMethods {
         peerLookup);
   }
 
-  private static UInt64 getEip4844ForkEpoch(final Spec spec) {
-    return spec.forMilestone(SpecMilestone.EIP4844)
+  private static UInt64 getDenebForkEpoch(final Spec spec) {
+    return spec.forMilestone(SpecMilestone.DENEB)
         .getConfig()
-        .toVersionEip4844()
+        .toVersionDeneb()
         .orElseThrow()
-        .getEip4844ForkEpoch();
+        .getDenebForkEpoch();
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {

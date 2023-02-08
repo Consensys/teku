@@ -40,7 +40,7 @@ public class BlobsSidecarPrunerTest {
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(5);
   public static final int PRUNE_LIMIT = 10;
 
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
   private final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();

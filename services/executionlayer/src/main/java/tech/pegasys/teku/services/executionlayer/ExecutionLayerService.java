@@ -46,7 +46,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class ExecutionLayerService extends Service {
 
@@ -153,10 +153,10 @@ public class ExecutionLayerService extends Service {
                       metricsSystem));
 
       final BlobsBundleValidator blobsBundleValidator =
-          config.getSpec().isMilestoneSupported(SpecMilestone.EIP4844)
+          config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)
               ? new BlobsBundleValidatorImpl(
-                  (MiscHelpersEip4844)
-                      config.getSpec().forMilestone(SpecMilestone.EIP4844).miscHelpers())
+                  (MiscHelpersDeneb)
+                      config.getSpec().forMilestone(SpecMilestone.DENEB).miscHelpers())
               : BlobsBundleValidator.NOOP;
       executionLayerManager =
           ExecutionLayerManagerImpl.create(

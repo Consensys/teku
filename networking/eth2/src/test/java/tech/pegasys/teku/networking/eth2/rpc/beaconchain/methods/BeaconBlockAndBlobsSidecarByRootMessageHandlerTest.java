@@ -44,7 +44,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -55,11 +55,11 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
-  private final UInt64 eip4844ForkEpoch = UInt64.ONE;
+  private final UInt64 denebForkEpoch = UInt64.ONE;
 
   private final UInt64 finalizedEpoch = UInt64.valueOf(3);
 
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(UInt64.ONE);
 
@@ -89,7 +89,7 @@ public class BeaconBlockAndBlobsSidecarByRootMessageHandlerTest {
 
   final BeaconBlockAndBlobsSidecarByRootMessageHandler handler =
       new BeaconBlockAndBlobsSidecarByRootMessageHandler(
-          spec, eip4844ForkEpoch, metricsSystem, recentChainData);
+          spec, denebForkEpoch, metricsSystem, recentChainData);
 
   @Test
   public void validateRequest_resourceNotAvailableWhenNotInSupportedRange() {

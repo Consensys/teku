@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 
 public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
@@ -219,8 +219,8 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
-  public void testRequestingBlocksByRangeForEip4844() {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalEip4844());
+  public void testRequestingBlocksByRangeForDeneb() {
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
     // Create blocks
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
     final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
@@ -240,8 +240,7 @@ public class BeaconBlocksByRangeIntegrationTest extends AbstractRpcMethodIntegra
         .containsExactly(block1.getBlock(), block2.getBlock())
         .allSatisfy(
             block ->
-                assertThat(block.getMessage().getBody())
-                    .isInstanceOf(BeaconBlockBodyEip4844.class));
+                assertThat(block.getMessage().getBody()).isInstanceOf(BeaconBlockBodyDeneb.class));
   }
 
   public static Stream<Arguments> altairVersioningOptions() {

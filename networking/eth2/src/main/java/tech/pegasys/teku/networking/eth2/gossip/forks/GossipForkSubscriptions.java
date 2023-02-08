@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -40,7 +40,7 @@ public interface GossipForkSubscriptions {
   void publishBlock(SignedBeaconBlock block);
 
   default void publishBlockAndBlobsSidecar(SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar) {
-    // from Eip4844
+    // since Deneb
   }
 
   void subscribeToAttestationSubnetId(int subnetId);
@@ -48,11 +48,11 @@ public interface GossipForkSubscriptions {
   void unsubscribeFromAttestationSubnetId(int subnetId);
 
   default void publishSyncCommitteeMessage(ValidateableSyncCommitteeMessage message) {
-    // from Altair
+    // since Altair
   }
 
   default void publishSyncCommitteeContribution(SignedContributionAndProof message) {
-    // from Altair
+    // since Altair
   }
 
   void publishProposerSlashing(ProposerSlashing message);
@@ -62,11 +62,11 @@ public interface GossipForkSubscriptions {
   void publishVoluntaryExit(SignedVoluntaryExit message);
 
   default void subscribeToSyncCommitteeSubnet(int subnetId) {
-    // from Altair
+    // since Altair
   }
 
   default void unsubscribeFromSyncCommitteeSubnet(int subnetId) {
-    // from Altair
+    // since Altair
   }
 
   default void publishSignedBlsToExecutionChangeMessage(SignedBlsToExecutionChange message) {}

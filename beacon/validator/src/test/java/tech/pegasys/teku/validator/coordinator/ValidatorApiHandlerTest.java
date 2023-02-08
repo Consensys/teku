@@ -78,7 +78,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -813,12 +813,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void sendSignedBlock_shouldConvertSuccessfulResultWithBlobsSidecar() {
-    setupEip4844();
+    setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         new SignedBeaconBlockAndBlobsSidecar(
             spec.getGenesisSchemaDefinitions()
-                .toVersionEip4844()
+                .toVersionDeneb()
                 .orElseThrow()
                 .getSignedBeaconBlockAndBlobsSidecarSchema(),
             block,
@@ -838,12 +838,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void sendSignedBlock_shouldConvertFailedResultWithBlobsSidecar() {
-    setupEip4844();
+    setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         new SignedBeaconBlockAndBlobsSidecar(
             spec.getGenesisSchemaDefinitions()
-                .toVersionEip4844()
+                .toVersionDeneb()
                 .orElseThrow()
                 .getSignedBeaconBlockAndBlobsSidecarSchema(),
             block,
@@ -865,12 +865,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void sendSignedBlock_shouldConvertKnownBlockResultWithBlobsSidecar() {
-    setupEip4844();
+    setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         new SignedBeaconBlockAndBlobsSidecar(
             spec.getGenesisSchemaDefinitions()
-                .toVersionEip4844()
+                .toVersionDeneb()
                 .orElseThrow()
                 .getSignedBeaconBlockAndBlobsSidecarSchema(),
             block,
@@ -890,7 +890,7 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void sendSignedBlock_shouldBeRejectedWhenBlobsSidecarCannotBeRetrieved() {
-    setupEip4844();
+    setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     when(blockFactory.supplementBlockWithSidecar(block))
         .thenThrow(new IllegalArgumentException(""));
@@ -1264,8 +1264,8 @@ class ValidatorApiHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(stateValidators)));
   }
 
-  private void setupEip4844() {
-    this.spec = TestSpecFactory.createMinimalEip4844();
+  private void setupDeneb() {
+    this.spec = TestSpecFactory.createMinimalDeneb();
     this.epochStartSlot = spec.computeStartSlotAtEpoch(EPOCH);
     this.previousEpochStartSlot = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
     this.dataStructureUtil = new DataStructureUtil(spec);

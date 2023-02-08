@@ -33,12 +33,12 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   @Test
-  public void shouldFailBeforeEip4844Milestone() {
+  public void shouldFailBeforeDenebMilestone() {
     final Eth2Peer peer = createPeer();
     assertThatThrownBy(() -> requestBlobsSideCars(peer, UInt64.ONE, UInt64.valueOf(2)))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
@@ -47,7 +47,7 @@ public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegr
 
   @Test
   public void shouldFailWhenBlobsSidecarsNotAvailable() {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalEip4844());
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
     assertThatThrownBy(() -> requestBlobsSideCars(peer, UInt64.ONE, UInt64.valueOf(2)))
         .hasRootCauseInstanceOf(RpcException.class)
         .hasMessageContaining("Requested blobs sidecars are not available");
@@ -55,7 +55,7 @@ public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegr
 
   @Test
   public void shouldReturnAvailableBlobsSidecars() throws Exception {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalEip4844());
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
 
     peerStorage.chainUpdater().advanceChain(1);
     final SignedBlockAndState blockAndState2 = peerStorage.chainUpdater().advanceChain(2);
@@ -72,12 +72,12 @@ public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegr
   }
 
   @Test
-  public void shouldHandleRequestSpanningTheEip4844ForkTransition()
+  public void shouldHandleRequestSpanningTheDenebForkTransition()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer =
-        createPeer(TestSpecFactory.createMinimalWithEip4844ForkEpoch(UInt64.valueOf(1)));
+        createPeer(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
 
-    // slot 8 - 13 is in EIP-4844 milestone
+    // slot 8 - 13 is in Deneb milestone
     final SignedBlockAndState latestBlockAndState =
         peerStorage.chainUpdater().advanceChainUntil(13);
     peerStorage.chainUpdater().updateBestBlock(latestBlockAndState);
@@ -91,7 +91,7 @@ public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegr
 
   @Test
   public void requestBlobsSidecarsByRangeAfterPeerDisconnected() throws Exception {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalEip4844());
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
 
     peerStorage.chainUpdater().advanceChain(1);
     peerStorage.chainUpdater().advanceChain(2);
@@ -115,7 +115,7 @@ public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegr
 
   @Test
   public void requestBlobsSidecarsByRangeAfterPeerDisconnectedImmediately() {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalEip4844());
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
 
     peerStorage.chainUpdater().advanceChain(1);
     peerStorage.chainUpdater().advanceChain(2);

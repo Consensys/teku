@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -42,7 +42,7 @@ import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 /** Note: Most tests should be added to the integration-test directory */
 class CombinedChainDataClientTest {
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
