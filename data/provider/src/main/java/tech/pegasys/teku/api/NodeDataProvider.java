@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -163,18 +164,17 @@ public class NodeDataProvider {
     attestationManager.subscribeToAllValidAttestations(listener);
   }
 
-  public void subscribeToNewVoluntaryExits(
-      OperationPool.OperationAddedSubscriber<SignedVoluntaryExit> listener) {
+  public void subscribeToNewVoluntaryExits(OperationAddedSubscriber<SignedVoluntaryExit> listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToNewBlsToExecutionChanges(
-      OperationPool.OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
+      OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
     blsToExecutionChangePool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToSyncCommitteeContributions(
-      OperationPool.OperationAddedSubscriber<SignedContributionAndProof> listener) {
+      OperationAddedSubscriber<SignedContributionAndProof> listener) {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);
   }
 

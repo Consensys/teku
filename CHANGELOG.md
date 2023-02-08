@@ -15,6 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- Removed references to beacon block methods `/eth2/beacon_chain/req/beacon_blocks_by_root` and `/eth2/beacon_chain/req/beacon_blocks_by_range`.
 
 ### Additions and Improvements
 - Introduced [Doppelganger Detection feature](https://docs.teku.consensys.net/en/latest/HowTo/Doppelganger-Detection/) 
