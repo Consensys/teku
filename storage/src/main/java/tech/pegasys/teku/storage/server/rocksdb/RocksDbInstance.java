@@ -157,6 +157,12 @@ public class RocksDbInstance implements KvStoreAccessor {
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Bytes> streamKeysRaw(final KvStoreColumn<?, ?> column) {
+    return createStreamKeyRaw(column, RocksIterator::seekToFirst, key -> true).map(Bytes::wrap);
+  }
+
+  @Override
   public <K, V> Optional<Bytes> getRaw(final KvStoreColumn<K, V> column, final K key) {
     assertOpen();
     final ColumnFamilyHandle handle = columnHandles.get(column);
