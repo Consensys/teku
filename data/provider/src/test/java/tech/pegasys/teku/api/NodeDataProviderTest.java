@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
-import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
@@ -53,14 +52,14 @@ public class NodeDataProviderTest {
   private final ActiveValidatorChannel validatorChannel = mock(ActiveValidatorChannel.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
 
-  private OperationPool<AttesterSlashing> attesterSlashingPool = mock(SimpleOperationPool.class);
+  private OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
 
-  private OperationPool<ProposerSlashing> proposerSlashingPool = mock(SimpleOperationPool.class);
+  private OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
 
-  private OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(SimpleOperationPool.class);
+  private OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
   private OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
-      mock(SimpleOperationPool.class);
+      mock(OperationPool.class);
 
   private SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);

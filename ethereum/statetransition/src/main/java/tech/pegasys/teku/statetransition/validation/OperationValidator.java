@@ -17,19 +17,19 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.statetransition.SimpleOperationPool;
+import tech.pegasys.teku.statetransition.OperationPool;
 
 public interface OperationValidator<T> {
 
   /**
-   * Validates an operation before adding it into an {@link SimpleOperationPool}. Used when
-   * receiving operation messages broadcast via gossip or sent to the node's REST API.
+   * Validates an operation before adding it into an {@link OperationPool}. Used when receiving
+   * operation messages broadcast via gossip or sent to the node's REST API.
    */
   SafeFuture<InternalValidationResult> validateForGossip(T operation);
 
   /**
-   * * Validates an operation when selecting it from an {@link SimpleOperationPool}. Used when
-   * creating a new block.
+   * * Validates an operation when selecting it from an {@link OperationPool}. Used when creating a
+   * new block.
    */
   Optional<OperationInvalidReason> validateForBlockInclusion(
       BeaconState stateAtBlockSlot, T operation);
