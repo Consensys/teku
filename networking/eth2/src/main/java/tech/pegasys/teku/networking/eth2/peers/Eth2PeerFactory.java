@@ -59,6 +59,7 @@ public class Eth2PeerFactory {
 
   public Eth2Peer create(final Peer peer, final BeaconChainMethods rpcMethods) {
     return Eth2Peer.create(
+        spec,
         peer,
         rpcMethods,
         statusMessageFactory,
