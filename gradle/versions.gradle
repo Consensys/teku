@@ -1,14 +1,14 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.14.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.1'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.1'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.14.1'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.2'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2'
 
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.17.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.18.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -18,7 +18,7 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     dependency 'com.google.guava:guava:31.1-jre'
-    dependency 'com.google.code.gson:gson:2.10'
+    dependency 'com.google.code.gson:gson:2.10.1'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.15.3'
@@ -30,9 +30,9 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
-    dependency 'info.picocli:picocli:4.7.0'
+    dependency 'info.picocli:picocli:4.7.1'
 
-    dependencySet(group: 'io.javalin', version: '5.2.0') {
+    dependencySet(group: 'io.javalin', version: '5.3.2') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
@@ -45,13 +45,13 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.7.20'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.8.10'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
-    dependency 'org.mock-server:mockserver-junit-jupiter:5.14.0'
+    dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.7') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.8') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
@@ -76,7 +76,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.5.1'
+    dependency 'io.projectreactor:reactor-core:3.5.2'
 
     dependency 'it.unimi.dsi:fastutil:8.5.11'
 
@@ -105,7 +105,7 @@ dependencyManagement {
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
 
-    dependency 'org.assertj:assertj-core:3.23.1'
+    dependency 'org.assertj:assertj-core:3.24.2'
 
     dependency 'org.awaitility:awaitility:4.2.0'
 
@@ -113,13 +113,13 @@ dependencyManagement {
 
     dependency 'org.java-websocket:Java-WebSocket:1.5.2'
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.9.1') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.9.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '4.11.0') {
+    dependencySet(group: 'org.mockito', version: '5.1.1') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -129,18 +129,18 @@ dependencyManagement {
       entry 'jmh-generator-annprocess'
     }
     dependency 'org.quartz-scheduler:quartz:2.3.2'
-    dependency 'org.rocksdb:rocksdbjni:7.7.3'
+    dependency 'org.rocksdb:rocksdbjni:7.9.2'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.2.0'
 
-    dependencySet(group: "org.web3j", version: "4.9.4") {
+    dependencySet(group: "org.web3j", version: "4.9.6") {
       entry 'core'
       entry 'abi'
       entry 'crypto'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.8.4'
+    dependency 'org.xerial.snappy:snappy-java:1.1.9.1'
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
@@ -171,7 +171,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.3'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.4'
 
     dependency 'org.jupnp:org.jupnp.support:2.6.1'
     dependency 'org.jupnp:org.jupnp:2.6.1'
@@ -182,7 +182,7 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.7.1'
-    dependency 'com.github.oshi:oshi-core:6.2.2'
+    dependency 'net.jqwik:jqwik:1.7.2'
+    dependency 'com.github.oshi:oshi-core:6.4.0'
   }
 }

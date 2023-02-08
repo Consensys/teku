@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beacon.sync.gossip.FetchBlockResult.Status;
+import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -35,7 +35,9 @@ public class FetchBlockTask {
       Comparator.comparing(p -> Math.random());
 
   private final P2PNetwork<Eth2Peer> eth2Network;
-  private final Bytes32 blockRoot;
+
+  protected final Bytes32 blockRoot;
+
   private final Set<NodeId> queriedPeers = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
   private final AtomicInteger numberOfRuns = new AtomicInteger(0);
@@ -58,6 +60,11 @@ public class FetchBlockTask {
     return Math.max(0, numberOfRuns.get() - 1);
   }
 
+  /**
+   * Selects random {@link Eth2Peer} from the network and fetches a block by root using the
+   * implementation of {@link #fetchBlock(Eth2Peer)}. It also tracks the number of runs and the
+   * already queried peers.
+   */
   public SafeFuture<FetchBlockResult> run() {
     if (cancelled.get()) {
       return SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.CANCELLED));
@@ -79,20 +86,22 @@ public class FetchBlockTask {
     numberOfRuns.incrementAndGet();
     queriedPeers.add(peer.getId());
 
-    return fetchBlock(peer, blockRoot)
-        .exceptionally(
-            err -> {
-              LOG.debug("Failed to fetch block " + blockRoot, err);
-              return FetchBlockResult.createFailed(Status.FETCH_FAILED);
-            });
+    return fetchBlock(peer);
   }
 
-  protected SafeFuture<FetchBlockResult> fetchBlock(final Eth2Peer peer, final Bytes32 blockRoot) {
+  /** Fetch block by root from an {@link Eth2Peer} */
+  public SafeFuture<FetchBlockResult> fetchBlock(final Eth2Peer peer) {
+
     return peer.requestBlockByRoot(blockRoot)
         .thenApply(
             maybeBlock ->
                 maybeBlock
                     .map(FetchBlockResult::createSuccessful)
-                    .orElseGet(() -> FetchBlockResult.createFailed(Status.FETCH_FAILED)));
+                    .orElseGet(() -> FetchBlockResult.createFailed(Status.FETCH_FAILED)))
+        .exceptionally(
+            err -> {
+              LOG.debug("Failed to fetch block by root " + blockRoot, err);
+              return FetchBlockResult.createFailed(Status.FETCH_FAILED);
+            });
   }
 }

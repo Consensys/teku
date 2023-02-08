@@ -215,9 +215,14 @@ public class BeaconRestApiConfig {
     }
 
     public BeaconRestApiConfigBuilder validatorThreads(final int validatorThreads) {
-      if (validatorThreads < 0) {
+      // Generally this will be a low number, and there's a point where too many won't help.
+      // 5000 seems like a lot of concurrent threads for a rest api
+      // and at that point it's likely to not help if you go higher; so that can be a starting upper
+      // sanity bound.
+      if (validatorThreads < 1 || validatorThreads > 5_000) {
         throw new InvalidConfigurationException(
-            String.format("Invalid validatorThreads: %d", validatorThreads));
+            String.format(
+                "Invalid validatorThreads: %d should be between 1 and 5000", validatorThreads));
       }
       this.validatorThreads = validatorThreads;
       return this;

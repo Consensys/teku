@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import com.google.common.base.Suppliers;
 import java.util.HashMap;
@@ -31,17 +31,17 @@ public class MilestoneBasedFetchBlockTaskFactory implements FetchBlockTaskFactor
   private final Map<SpecMilestone, FetchBlockTaskFactory> registeredFetchBlockTaskFactories =
       new HashMap<>();
 
-  public MilestoneBasedFetchBlockTaskFactory(final Spec spec) {
+  public MilestoneBasedFetchBlockTaskFactory(
+      final Spec spec, final P2PNetwork<Eth2Peer> eth2Network) {
     this.spec = spec;
+
     final FetchBlockTaskFactory blockTaskFactory =
-        (eth2Network, __, blockRoot) -> new FetchBlockTask(eth2Network, blockRoot);
+        (__, blockRoot) -> new FetchBlockTask(eth2Network, blockRoot);
 
     // Not needed for all milestones
     final Supplier<FetchBlockTaskFactory> blockAndBlobsSidecarTaskFactory =
         Suppliers.memoize(
-            () ->
-                (eth2Network, __, blockRoot) ->
-                    new FetchBlockAndBlobsSidecarTask(eth2Network, blockRoot));
+            () -> (__, blockRoot) -> new FetchBlockAndBlobsSidecarTask(eth2Network, blockRoot));
 
     spec.getEnabledMilestones()
         .forEach(
@@ -57,11 +57,8 @@ public class MilestoneBasedFetchBlockTaskFactory implements FetchBlockTaskFactor
   }
 
   @Override
-  public FetchBlockTask create(
-      final P2PNetwork<Eth2Peer> eth2Network, final UInt64 currentSlot, final Bytes32 blockRoot) {
-    final SpecMilestone currentMilestone = spec.atSlot(currentSlot).getMilestone();
-    return registeredFetchBlockTaskFactories
-        .get(currentMilestone)
-        .create(eth2Network, currentSlot, blockRoot);
+  public FetchBlockTask create(final UInt64 slot, final Bytes32 blockRoot) {
+    final SpecMilestone currentMilestone = spec.atSlot(slot).getMilestone();
+    return registeredFetchBlockTaskFactories.get(currentMilestone).create(slot, blockRoot);
   }
 }

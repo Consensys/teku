@@ -11,14 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.fetch;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 
 public interface FetchBlockTaskFactory {
 
-  FetchBlockTask create(P2PNetwork<Eth2Peer> eth2Network, UInt64 currentSlot, Bytes32 blockRoot);
+  FetchBlockTask create(UInt64 slot, Bytes32 blockRoot);
 }

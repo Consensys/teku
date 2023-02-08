@@ -48,7 +48,8 @@ public interface Database extends AutoCloseable {
 
   UpdateResult update(StorageUpdate event);
 
-  void storeFinalizedBlocks(Collection<SignedBeaconBlock> blocks);
+  void storeFinalizedBlocks(
+      Collection<SignedBeaconBlock> blocks, Map<UInt64, BlobsSidecar> blobsSidecarBySlot);
 
   void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
 
