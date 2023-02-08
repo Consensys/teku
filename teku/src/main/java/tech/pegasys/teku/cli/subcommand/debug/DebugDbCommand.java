@@ -583,7 +583,7 @@ public class DebugDbCommand implements Runnable {
 
         for (final Iterator<Map.Entry<Bytes, Bytes>> iterator = blockStream.iterator();
             iterator.hasNext(); ) {
-          sidecarsToBlocksCounter++;
+          blocksToSidecarsCounter++;
 
           final Map.Entry<Bytes, Bytes> rootAndBlock = iterator.next();
           final Bytes blockData = rootAndBlock.getValue();
@@ -619,6 +619,8 @@ public class DebugDbCommand implements Runnable {
         for (final Iterator<SlotAndBlockRoot> iterator = blobsSidecarsKeys.iterator();
             iterator.hasNext(); ) {
           final SlotAndBlockRoot blobsSidecarsKey = iterator.next();
+
+          sidecarsToBlocksCounter++;
 
           final boolean isUnconfirmed = unconfirmedBlobsSidecars.contains(blobsSidecarsKey);
 
