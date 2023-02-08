@@ -28,6 +28,9 @@ public interface KZG {
         public void loadTrustedSetup(final String trustedSetup) throws KZGException {}
 
         @Override
+        public void loadTrustedSetup(TrustedSetup trustedSetup) throws KZGException {}
+
+        @Override
         public void freeTrustedSetup() throws KZGException {}
 
         @Override
@@ -51,6 +54,8 @@ public interface KZG {
       };
 
   void loadTrustedSetup(String trustedSetup) throws KZGException;
+
+  void loadTrustedSetup(TrustedSetup trustedSetup) throws KZGException;
 
   void freeTrustedSetup() throws KZGException;
 
