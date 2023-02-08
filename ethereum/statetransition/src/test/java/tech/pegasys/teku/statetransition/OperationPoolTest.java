@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 
@@ -73,7 +72,7 @@ public class OperationPoolTest {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
 
     OperationPool<ProposerSlashing> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
@@ -86,7 +85,8 @@ public class OperationPoolTest {
     final int largePoolSize = 16_384;
     OperationValidator<SszBytes4> validator = mock(OperationValidator.class);
     OperationPool<SszBytes4> pool =
-        new OperationPool<>("Bytes4Pool", metricsSystem, (a) -> null, validator, largePoolSize);
+        new SimpleOperationPool<>(
+            "Bytes4Pool", metricsSystem, (a) -> null, validator, largePoolSize);
     when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     final int loopSanityCounter = largePoolSize + 10_000;
     // because the loop de-duplicates, we can require more than the pool size of adds, so
@@ -101,7 +101,7 @@ public class OperationPoolTest {
   void shouldAddMaxItemsToPool() {
     OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "SignedVoluntaryExitPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
@@ -120,7 +120,7 @@ public class OperationPoolTest {
     final Predicate<SignedVoluntaryExit> filter = mock(Predicate.class);
     OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
     OperationPool<SignedVoluntaryExit> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "SignedVoluntaryExitPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
@@ -142,7 +142,7 @@ public class OperationPoolTest {
     final OperationValidator<SignedVoluntaryExit> validator = mock(OperationValidator.class);
 
     OperationPool<SignedVoluntaryExit> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "SignedVoluntaryExitPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
@@ -177,7 +177,7 @@ public class OperationPoolTest {
             .andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema)
             .apply(state.getSlot());
     OperationPool<AttesterSlashing> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "AttesterSlashingPool", metricsSystem, __ -> attesterSlashingsSchema, validator);
     when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForBlockInclusion(any(), any())).thenReturn(Optional.empty());
@@ -193,7 +193,7 @@ public class OperationPoolTest {
   void shouldNotIncludeInvalidatedItemsFromPool() {
     final OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     final OperationPool<ProposerSlashing> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
@@ -220,7 +220,7 @@ public class OperationPoolTest {
 
     final OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     final OperationPool<ProposerSlashing> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
@@ -246,7 +246,7 @@ public class OperationPoolTest {
   void subscribeOperationAdded() {
     OperationValidator<ProposerSlashing> validator = mock(OperationValidator.class);
     OperationPool<ProposerSlashing> pool =
-        new OperationPool<>(
+        new SimpleOperationPool<>(
             "ProposerSlashingPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),

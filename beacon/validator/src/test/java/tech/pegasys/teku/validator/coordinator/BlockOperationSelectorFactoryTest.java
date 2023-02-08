@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
@@ -101,7 +102,7 @@ class BlockOperationSelectorFactoryTest {
 
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final OperationPool<AttesterSlashing> attesterSlashingPool =
-      new OperationPool<>(
+      new SimpleOperationPool<>(
           "attester_slashing",
           metricsSystem,
           beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getAttesterSlashingsSchema),
@@ -110,20 +111,20 @@ class BlockOperationSelectorFactoryTest {
                   slashing -> slashing.getIntersectingValidatorIndices().size())
               .reversed());
   private final OperationPool<ProposerSlashing> proposerSlashingPool =
-      new OperationPool<>(
+      new SimpleOperationPool<>(
           "proposer_slashing",
           metricsSystem,
           beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
           proposerSlashingValidator);
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool =
-      new OperationPool<>(
+      new SimpleOperationPool<>(
           "voluntary_exit",
           metricsSystem,
           beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
           voluntaryExitValidator);
 
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
-      new OperationPool<>(
+      new SimpleOperationPool<>(
           "bls_to_execution_Change",
           metricsSystem,
           beaconBlockSchemaSupplier.andThen(

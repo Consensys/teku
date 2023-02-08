@@ -52,10 +52,11 @@ public class OperationsReOrgManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final OperationPool<ProposerSlashing> proposerSlashingOperationPool =
-      mock(OperationPool.class);
+      mock(SimpleOperationPool.class);
   private final OperationPool<AttesterSlashing> attesterSlashingOperationPool =
-      mock(OperationPool.class);
-  private final OperationPool<SignedVoluntaryExit> exitOperationPool = mock(OperationPool.class);
+      mock(SimpleOperationPool.class);
+  private final OperationPool<SignedVoluntaryExit> exitOperationPool =
+      mock(SimpleOperationPool.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
 
