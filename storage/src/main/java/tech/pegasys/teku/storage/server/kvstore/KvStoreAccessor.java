@@ -79,6 +79,9 @@ public interface KvStoreAccessor extends AutoCloseable {
   @MustBeClosed
   Stream<ColumnEntry<Bytes, Bytes>> streamRaw(KvStoreColumn<?, ?> column);
 
+  @MustBeClosed
+  Stream<Bytes> streamKeysRaw(final KvStoreColumn<?, ?> column);
+
   /**
    * WARNING: should only be used to migrate data between tables
    *

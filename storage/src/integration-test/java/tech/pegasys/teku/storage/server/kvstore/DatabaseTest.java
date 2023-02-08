@@ -210,6 +210,12 @@ public class DatabaseTest {
     database.storeUnconfirmedBlobsSidecar(blobsSidecar4);
     database.storeUnconfirmedBlobsSidecar(blobsSidecar3);
 
+    assertThat(database.getBlobsSidecarColumnCounts())
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 5L,
+                "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 5L));
+
     assertThat(database.getEarliestBlobsSidecarSlot()).contains(ONE);
 
     // all added blobs must be there
@@ -239,6 +245,12 @@ public class DatabaseTest {
         blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
 
     database.confirmBlobsSidecar(blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
+
+    assertThat(database.getBlobsSidecarColumnCounts())
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 4L,
+                "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 5L));
 
     // only 1 and 3 blobs must be unconfirmed
     assertUnconfirmedBlobsStream(
@@ -282,6 +294,12 @@ public class DatabaseTest {
     // all empty now
     assertUnconfirmedBlobsStream();
     assertBlobsStream();
+
+    assertThat(database.getBlobsSidecarColumnCounts())
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 0L,
+                "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 0L));
   }
 
   @TestTemplate

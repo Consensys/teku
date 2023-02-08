@@ -205,6 +205,8 @@ public interface Database extends AutoCloseable {
 
   Map<String, Long> getColumnCounts();
 
+  Map<String, Long> getBlobsSidecarColumnCounts();
+
   void migrate();
 
   Optional<Checkpoint> getAnchor();
