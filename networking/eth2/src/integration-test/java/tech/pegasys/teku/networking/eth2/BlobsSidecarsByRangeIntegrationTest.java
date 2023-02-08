@@ -72,12 +72,12 @@ public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegr
   }
 
   @Test
-  public void shouldHandleRequestSpanningTheEip4844ForkTransition()
+  public void shouldHandleRequestSpanningTheDenebForkTransition()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer =
         createPeer(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
 
-    // slot 8 - 13 is in EIP-4844 milestone
+    // slot 8 - 13 is in Deneb milestone
     final SignedBlockAndState latestBlockAndState =
         peerStorage.chainUpdater().advanceChainUntil(13);
     peerStorage.chainUpdater().updateBestBlock(latestBlockAndState);

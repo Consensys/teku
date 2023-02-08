@@ -67,7 +67,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
       final Optional<BlobsSidecar> blobsSidecar) {
     return SafeFuture.of(
         () -> {
-          // in the current 4844 specs, the blobsSidecar is immediately available with the block
+          // in the current Deneb specs, the blobsSidecar is immediately available with the block
           // so if we have it we do want to validate it regardless
           if (blobsSidecar.isPresent()) {
             return internalValidate(blobsSidecar.get());
