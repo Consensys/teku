@@ -379,6 +379,22 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Map<String, Long> getBlobsSidecarColumnCounts() {
+    final Map<String, Long> columnCounts = new LinkedHashMap<>();
+
+    schema.getColumnMap().entrySet().stream()
+        .filter(
+            stringKvStoreColumnEntry ->
+                List.of(
+                        "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
+                        "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT")
+                    .contains(stringKvStoreColumnEntry.getKey()))
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue))
+        .forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    return columnCounts;
+  }
+
+  @Override
   @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return stateStorageLogic.streamFinalizedStateSlots(db, schema, startSlot, endSlot);

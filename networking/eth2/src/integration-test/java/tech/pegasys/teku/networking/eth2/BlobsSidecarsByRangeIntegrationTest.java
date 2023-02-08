@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
-public class BlobsSidecarByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
+public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   @Test
   public void shouldFailBeforeDenebMilestone() {
@@ -54,7 +54,7 @@ public class BlobsSidecarByRangeIntegrationTest extends AbstractRpcMethodIntegra
   }
 
   @Test
-  public void shouldReturnAvailableBlobsSideCars() throws Exception {
+  public void shouldReturnAvailableBlobsSidecars() throws Exception {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
 
     peerStorage.chainUpdater().advanceChain(1);
@@ -69,6 +69,24 @@ public class BlobsSidecarByRangeIntegrationTest extends AbstractRpcMethodIntegra
         .isEqualTo(blockAndState2.getBlock().getParentRoot());
     assertThat(response.get(1).getBeaconBlockRoot())
         .isEqualTo(blockAndState3.getBlock().getParentRoot());
+  }
+
+  @Test
+  public void shouldHandleRequestSpanningTheEip4844ForkTransition()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    final Eth2Peer peer =
+        createPeer(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
+
+    // slot 8 - 13 is in EIP-4844 milestone
+    final SignedBlockAndState latestBlockAndState =
+        peerStorage.chainUpdater().advanceChainUntil(13);
+    peerStorage.chainUpdater().updateBestBlock(latestBlockAndState);
+
+    final List<BlobsSidecar> response = requestBlobsSideCars(peer, UInt64.ONE, UInt64.valueOf(13));
+
+    assertThat(response).hasSize(6);
+    assertThat(response.get(5).getBeaconBlockRoot())
+        .isEqualTo(latestBlockAndState.getBlock().getRoot());
   }
 
   @Test
@@ -115,10 +133,11 @@ public class BlobsSidecarByRangeIntegrationTest extends AbstractRpcMethodIntegra
     waitFor(() -> assertThat(res).isDone());
     assertThat(res).isCompletedExceptionally();
     assertThatThrownBy(res::get).hasRootCauseInstanceOf(PeerDisconnectedException.class);
+    assertThat(blobsSidecars).isEmpty();
   }
 
   private List<BlobsSidecar> requestBlobsSideCars(
-      final Eth2Peer peer, UInt64 startSlot, UInt64 count)
+      final Eth2Peer peer, final UInt64 startSlot, final UInt64 count)
       throws InterruptedException, ExecutionException, TimeoutException {
     final List<BlobsSidecar> blobsSidecars = new ArrayList<>();
     waitFor(

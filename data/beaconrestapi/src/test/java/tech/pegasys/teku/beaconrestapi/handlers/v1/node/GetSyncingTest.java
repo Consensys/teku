@@ -42,7 +42,7 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())
-        .isEqualTo(new GetSyncing.SyncStatusData(true, false, 7, 3));
+        .isEqualTo(new GetSyncing.SyncStatusData(true, false, false, 7, 3));
   }
 
   @Test
@@ -53,7 +53,18 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody())
-        .isEqualTo(new GetSyncing.SyncStatusData(false, false, 10, 0));
+        .isEqualTo(new GetSyncing.SyncStatusData(false, false, false, 10, 0));
+  }
+
+  @Test
+  public void shouldGetSyncStatusElOffline() throws Exception {
+    when(syncService.getSyncStatus()).thenReturn(getSyncStatus(true, 1, 10, 11));
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.EL_OFFLINE);
+
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody())
+        .isEqualTo(new GetSyncing.SyncStatusData(true, false, true, 10, 1));
   }
 
   @Test
@@ -70,7 +81,37 @@ public class GetSyncingTest extends AbstractMigratedBeaconHandlerTest {
   void metadata_shouldHandle200() throws JsonProcessingException {
     final String data =
         getResponseStringFromMetadata(
-            handler, SC_OK, new GetSyncing.SyncStatusData(false, false, 10, 0));
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, false, false, 10, 0));
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"is_optimistic\":false,\"el_offline\":false}}");
+  }
+
+  @Test
+  void metadata_shouldHandle200WithoutOptionalFields() throws JsonProcessingException {
+    final String data =
+        getResponseStringFromMetadata(
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, null, null, 10, 0));
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false}}");
+  }
+
+  @Test
+  void metadata_shouldHandle200WithoutIsOptimistic() throws JsonProcessingException {
+    final String data =
+        getResponseStringFromMetadata(
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, null, false, 10, 0));
+    assertThat(data)
+        .isEqualTo(
+            "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"el_offline\":false}}");
+  }
+
+  @Test
+  void metadata_shouldHandle200WithoutElOffline() throws JsonProcessingException {
+    final String data =
+        getResponseStringFromMetadata(
+            handler, SC_OK, new GetSyncing.SyncStatusData(false, false, null, 10, 0));
     assertThat(data)
         .isEqualTo(
             "{\"data\":{\"head_slot\":\"10\",\"sync_distance\":\"0\",\"is_syncing\":false,\"is_optimistic\":false}}");

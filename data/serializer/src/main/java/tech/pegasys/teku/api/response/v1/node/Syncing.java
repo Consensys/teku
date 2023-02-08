@@ -48,8 +48,16 @@ public class Syncing {
       description = "Set to true if the node is optimistically fetching blocks.")
   public final Boolean isOptimistic;
 
-  public Syncing(final UInt64 headSlot, final UInt64 syncDistance, final boolean isSyncing) {
-    this(headSlot, syncDistance, isSyncing, false);
+  @JsonProperty("el_offline")
+  @Schema(type = "boolean", description = "Set to true if the execution client is offline.")
+  public final Boolean elOffline;
+
+  public Syncing(
+      final UInt64 headSlot,
+      final UInt64 syncDistance,
+      final boolean isSyncing,
+      final boolean elOffline) {
+    this(headSlot, syncDistance, isSyncing, false, elOffline);
   }
 
   @JsonCreator
@@ -57,11 +65,13 @@ public class Syncing {
       @JsonProperty("head_slot") final UInt64 headSlot,
       @JsonProperty("sync_distance") final UInt64 syncDistance,
       @JsonProperty("is_syncing") final boolean isSyncing,
-      @JsonProperty("is_optimistic") final boolean isOptimistic) {
+      @JsonProperty("is_optimistic") final boolean isOptimistic,
+      @JsonProperty("el_offline") final boolean elOffline) {
     this.headSlot = headSlot;
     this.syncDistance = syncDistance;
     this.isSyncing = isSyncing;
     this.isOptimistic = isOptimistic;
+    this.elOffline = elOffline;
   }
 
   @Override
@@ -76,12 +86,13 @@ public class Syncing {
     return isSyncing == syncing.isSyncing
         && Objects.equals(headSlot, syncing.headSlot)
         && Objects.equals(syncDistance, syncing.syncDistance)
-        && Objects.equals(isOptimistic, syncing.isOptimistic);
+        && Objects.equals(isOptimistic, syncing.isOptimistic)
+        && Objects.equals(elOffline, syncing.elOffline);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headSlot, syncDistance, isSyncing, isOptimistic);
+    return Objects.hash(headSlot, syncDistance, isSyncing, isOptimistic, elOffline);
   }
 
   @Override
@@ -91,6 +102,7 @@ public class Syncing {
         .add("syncDistance", syncDistance)
         .add("isSyncing", isSyncing)
         .add("isOptimistic", isOptimistic)
+        .add("elOffline", elOffline)
         .toString();
   }
 }

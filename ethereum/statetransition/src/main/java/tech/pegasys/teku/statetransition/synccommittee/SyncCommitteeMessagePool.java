@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
-import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SyncCommitteeMessagePool implements SlotEventsChannel {

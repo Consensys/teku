@@ -139,6 +139,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Map<String, Long> getColumnCounts();
 
+  Map<String, Long> getBlobsSidecarColumnCounts();
+
   @MustBeClosed
   Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot);
 

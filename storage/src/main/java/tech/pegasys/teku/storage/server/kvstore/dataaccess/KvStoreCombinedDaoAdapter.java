@@ -217,6 +217,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Map<String, Long> getBlobsSidecarColumnCounts() {
+    return new LinkedHashMap<>(finalizedDao.getBlobsSidecarColumnCounts());
+  }
+
+  @Override
   @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedStateSlots(startSlot, endSlot);

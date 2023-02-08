@@ -80,6 +80,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -95,6 +96,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -1936,20 +1938,22 @@ public final class DataStructureUtil {
 
   public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
     final SszListSchema<SszKZGCommitment, ?> kzgCommitmentsSchema =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBeaconBlockBodySchema()
-            .toVersionDeneb()
-            .orElseThrow()
+        BeaconBlockBodySchemaDeneb.required(
+                spec.forMilestone(SpecMilestone.DENEB)
+                    .getSchemaDefinitions()
+                    .getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsSchema();
     final int maxKzgCommitments =
-        spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock();
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMaxBlobsPerBlock();
 
     return randomSszList(
         kzgCommitmentsSchema, randomInt(maxKzgCommitments) + 1, this::randomSszKZGCommitment);
   }
 
   public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
-    return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsDeneb.required(
+            spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
         .getBeaconBlockBodySchema()
         .toVersionDeneb()
         .orElseThrow()
