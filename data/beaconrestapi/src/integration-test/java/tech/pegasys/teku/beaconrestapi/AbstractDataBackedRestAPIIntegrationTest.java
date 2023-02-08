@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
@@ -114,12 +115,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       mock(AggregatingAttestationPool.class);
   protected final BlockManager blockManager = mock(BlockManager.class);
   protected final AttestationManager attestationManager = mock(AttestationManager.class);
-  protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
-  protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
-  protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  protected final OperationPool<AttesterSlashing> attesterSlashingPool =
+      mock(SimpleOperationPool.class);
+  protected final OperationPool<ProposerSlashing> proposerSlashingPool =
+      mock(SimpleOperationPool.class);
+  protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool =
+      mock(SimpleOperationPool.class);
 
   protected final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
-      mock(OperationPool.class);
+      mock(SimpleOperationPool.class);
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);

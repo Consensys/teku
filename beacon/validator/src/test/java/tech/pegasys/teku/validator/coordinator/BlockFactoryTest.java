@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
+import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -77,11 +78,11 @@ class BlockFactoryTest {
   private static final Eth1Data ETH1_DATA = new Eth1Data();
 
   final AggregatingAttestationPool attestationsPool = mock(AggregatingAttestationPool.class);
-  final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
-  final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
-  final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+  final OperationPool<AttesterSlashing> attesterSlashingPool = mock(SimpleOperationPool.class);
+  final OperationPool<ProposerSlashing> proposerSlashingPool = mock(SimpleOperationPool.class);
+  final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(SimpleOperationPool.class);
   final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
-      mock(OperationPool.class);
+      mock(SimpleOperationPool.class);
   final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   final ExecutionLayerBlockProductionManager executionLayer =
       mock(ExecutionLayerBlockProductionManager.class);
