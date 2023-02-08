@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -472,12 +472,12 @@ public class DebugDbCommand implements Runnable {
 
     final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
 
-    final UInt64 eip4844ActivationEpoch =
-        spec.forMilestone(SpecMilestone.EIP4844)
+    final UInt64 denebActivationEpoch =
+        spec.forMilestone(SpecMilestone.DENEB)
             .getConfig()
-            .toVersionEip4844()
+            .toVersionDeneb()
             .orElseThrow()
-            .getEip4844ForkEpoch();
+            .getDenebForkEpoch();
 
     final UInt64 currentEpoch =
         eth2NetworkOptions
@@ -486,9 +486,7 @@ public class DebugDbCommand implements Runnable {
             .computeEpochAtSlot(UInt64.valueOf(currentSlot));
 
     final UInt64 lowerEpochBoundDataAvailability =
-        currentEpoch
-            .minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS)
-            .max(eip4844ActivationEpoch);
+        currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS).max(denebActivationEpoch);
 
     final UInt64 lowerSlotBoundDataAvailability =
         eth2NetworkOptions
