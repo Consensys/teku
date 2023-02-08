@@ -5,7 +5,7 @@
   "properties" : {
     "data" : {
       "type" : "object",
-      "required" : [ "head_slot", "sync_distance", "is_syncing" ],
+      "required" : [ "head_slot", "sync_distance", "is_syncing"],
       "properties" : {
         "head_slot" : {
           "type" : "string",
@@ -23,6 +23,9 @@
           "type" : "boolean"
         },
         "is_optimistic" : {
+          "type" : "boolean"
+        },
+        "el_offline" : {
           "type" : "boolean"
         }
       }
