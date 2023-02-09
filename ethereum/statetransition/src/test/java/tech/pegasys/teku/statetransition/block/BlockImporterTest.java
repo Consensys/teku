@@ -710,7 +710,8 @@ public class BlockImporterTest {
                 currentSlot.minus(wsPeriodInSlots),
                 BlockOptions.create()
                     .setBlsToExecutionChange(
-                        blsToExecutionChangeGenerator.asSszList(signedBlsToExecutionChange)));
+                        blsToExecutionChangeGenerator.asSszList(
+                            UInt64.ZERO, signedBlsToExecutionChange)));
 
     final BlockImportResult result =
         blockImporter.importBlock(signedBlockAndState.getBlock()).get();

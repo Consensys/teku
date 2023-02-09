@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -181,22 +182,17 @@ public class BlockImporter {
   }
 
   private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
+    final BeaconBlockBody blockBody = block.getMessage().getBody();
+
     attestationSubscribers.forEach(
-        listener ->
-            listener.onOperationsFromBlock(
-                block.getSlot(), block.getMessage().getBody().getAttestations()));
+        listener -> listener.onOperationsFromBlock(block.getSlot(), blockBody.getAttestations()));
     attesterSlashingSubscribers.deliver(
-        VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getAttesterSlashings());
+        VerifiedBlockOperationsListener::onOperationsFromBlock, blockBody.getAttesterSlashings());
     proposerSlashingSubscribers.deliver(
-        VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getProposerSlashings());
+        VerifiedBlockOperationsListener::onOperationsFromBlock, blockBody.getProposerSlashings());
     voluntaryExitSubscribers.deliver(
-        VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getVoluntaryExits());
-    block
-        .getMessage()
-        .getBody()
+        VerifiedBlockOperationsListener::onOperationsFromBlock, blockBody.getVoluntaryExits());
+    blockBody
         .getOptionalBlsToExecutionChanges()
         .ifPresent(
             blsOperations ->
