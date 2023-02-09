@@ -19,10 +19,10 @@
     ],
     "withdrawals": [
       {
-        "index": "2592256487080420414",
-        "validator_index": "1585999",
-        "address": "0xfd51d623fe295d04aa1246dad03924928415fc32",
-        "amount": "2580689100268664222"
+        "index": "1",
+        "validator_index": "1",
+        "address": "0xabcf8e0d4e9587369b2301d0790347320302cc09",
+        "amount": "32000000000"
       }
     ]
   }
