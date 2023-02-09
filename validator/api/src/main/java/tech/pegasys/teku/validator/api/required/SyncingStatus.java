@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.api.required;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -81,18 +82,13 @@ public class SyncingStatus {
 
   @Override
   public String toString() {
-    return "SyncingStatus{"
-        + "headSlot="
-        + headSlot
-        + ", syncDistance="
-        + syncDistance
-        + ", isSyncing="
-        + isSyncing
-        + ", isOptimistic="
-        + isOptimistic
-        + ", elOffline="
-        + elOffline
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("headSlot", headSlot)
+        .add("syncDistance", syncDistance)
+        .add("isSyncing", isSyncing)
+        .add("isOptimistic", isOptimistic)
+        .add("elOffline", elOffline)
+        .toString();
   }
 
   public static class Builder {
