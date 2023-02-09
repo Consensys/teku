@@ -15,7 +15,6 @@ package tech.pegasys.teku.api;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -608,7 +607,10 @@ public class ChainDataProvider {
           committeeKeys.stream()
               .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey).stream())
               .collect(toList());
-      return IntStream.range(0, result.size()).boxed().collect(toMap(result::get, i -> i));
+
+      return IntStream.range(0, result.size())
+          .boxed()
+          .collect(Collectors.<Integer, Integer, Integer>toMap(Function.identity(), result::get));
     }
 
     final Map<Integer, Integer> output = new HashMap<>();
@@ -639,9 +641,9 @@ public class ChainDataProvider {
 
     committeeIndices.forEach(
         (i, key) -> {
-          if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
-            data.updateReward(key, participantReward);
-          }
+          final UInt64 amount =
+              aggregate.get().getSyncCommitteeBits().getBit(i) ? participantReward : ZERO;
+          data.updateReward(key, amount);
         });
 
     return data;

@@ -25,19 +25,52 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.List;
+import java.util.Set;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class GetSyncCommitteeRewardsTest extends AbstractMigratedBeaconHandlerTest {
+public class GetSyncCommitteeRewardsTest
+    extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private final SyncCommitteeRewardData responseData = new SyncCommitteeRewardData(false, false);
 
   @BeforeEach
   void setup() {
+    spec = TestSpecFactory.createMinimalAltair();
+    dataStructureUtil = new DataStructureUtil(spec);
+    initialise(SpecMilestone.ALTAIR);
+    genesis();
+    final SyncAggregate syncAggregate =
+        dataStructureUtil.randomSyncAggregate(0, 3, 4, 7, 8, 9, 10, 16, 17, 20, 23, 25, 26, 29, 30);
+    final ChainBuilder.BlockOptions blockOptions =
+        ChainBuilder.BlockOptions.create().setSyncAggregate(syncAggregate);
+    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(1, blockOptions);
+    chainUpdater.saveBlock(blockAndState);
+    chainUpdater.updateBestBlock(blockAndState);
     setHandler(new GetSyncCommitteeRewards(chainDataProvider));
     request.setPathParameter("block_id", "head");
+  }
+
+  @Test
+  void shouldReturnSyncCommitteeRewardsInformation() throws Exception {
+    request.setRequestBody(List.of());
+
+    handler.handleRequest(request);
+
+    final SyncCommitteeRewardData output =
+        chainDataProvider.getSyncCommitteeRewardsFromBlockId("head", Set.of()).get().orElseThrow();
+    Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(output);
   }
 
   @Test

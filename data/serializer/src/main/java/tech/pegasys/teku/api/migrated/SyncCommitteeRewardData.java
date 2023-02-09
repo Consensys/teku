@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncCommitteeRewardData {
@@ -45,5 +46,36 @@ public class SyncCommitteeRewardData {
 
   public List<Map.Entry<Integer, UInt64>> getRewardData() {
     return new ArrayList<>(rewardData.entrySet());
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    SyncCommitteeRewardData that = (SyncCommitteeRewardData) o;
+    return executionOptimistic == that.executionOptimistic
+        && finalized == that.finalized
+        && Objects.equals(rewardData, that.rewardData);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(executionOptimistic, finalized, rewardData);
+  }
+
+  @Override
+  public String toString() {
+    return "SyncCommitteeRewardData{"
+        + "executionOptimistic="
+        + executionOptimistic
+        + ", finalized="
+        + finalized
+        + ", rewardData="
+        + rewardData
+        + '}';
   }
 }

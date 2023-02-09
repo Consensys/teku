@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodySchemaEip4844;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -83,6 +84,7 @@ public class BlockProposalTestUtil {
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
+      final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments)
       throws EpochProcessingException, SlotProcessingException {
@@ -110,7 +112,8 @@ public class BlockProposalTestUtil {
                   .voluntaryExits(exits);
               if (builder.supportsSyncAggregate()) {
                 builder.syncAggregate(
-                    dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState));
+                    syncAggregate.orElse(
+                        dataStructureUtil.emptySyncAggregateIfRequiredByState(blockSlotState)));
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
@@ -287,6 +290,7 @@ public class BlockProposalTestUtil {
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
+      final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final Optional<SszList<SszKZGCommitment>> kzgCommitments,
       final boolean skipStateTransition)
@@ -324,6 +328,7 @@ public class BlockProposalTestUtil {
         transactions,
         terminalBlock,
         executionPayload,
+        syncAggregate,
         blsToExecutionChange,
         kzgCommitments);
   }
@@ -341,6 +346,7 @@ public class BlockProposalTestUtil {
       final Optional<List<Bytes>> transactions,
       final Optional<Bytes32> terminalBlock,
       final Optional<ExecutionPayload> executionPayload,
+      final Optional<SyncAggregate> syncAggregate,
       final Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange,
       final List<Blob> blobs,
       final boolean skipStateTransition)
@@ -394,6 +400,7 @@ public class BlockProposalTestUtil {
           transactions,
           terminalBlock,
           executionPayload,
+          syncAggregate,
           blsToExecutionChange,
           Optional.of(kzgCommitments));
     }
