@@ -695,6 +695,16 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot());
+    if (dao.getBlobsSidecar(
+            new SlotAndBlockRoot(
+                blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()))
+        .isPresent()) {
+      // if blobs are already present, do not revert confirmation them.
+      LOG.debug("BlobSidecar is already present {}", slotAndBlockRoot);
+      return;
+    }
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addBlobsSidecar(blobsSidecar);
       updater.addUnconfirmedBlobsSidecar(blobsSidecar);
@@ -854,7 +864,10 @@ public class KvStoreDatabase implements Database {
 
     if (update.isBlobsSidecarEnabled()) {
       updateBlobsSidecars(
-          update.getHotBlocks(), update.getFinalizedBlocks(), update.getDeletedHotBlocks());
+          update.getHotBlocks(),
+          update.getFinalizedBlocks(),
+          update.getFinalizedChildToParentMap(),
+          update.getDeletedHotBlocks());
     }
 
     LOG.trace("Applying hot updates");
@@ -940,23 +953,45 @@ public class KvStoreDatabase implements Database {
   private void updateBlobsSidecars(
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, UInt64> deletedHotBlocks) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      LOG.trace("Confirming blobs sidecars for new hot blocks");
+
+      finalizedBlocks.values().stream()
+          .map(
+              blockAndCheckpoints ->
+                  new SlotAndBlockRoot(
+                      blockAndCheckpoints.getSlot(), blockAndCheckpoints.getRoot()))
+          .forEach(
+              block -> {
+                LOG.trace("Confirming blobs sidecars for block {}", block::toLogString);
+                updater.confirmBlobsSidecar(block);
+              });
+
       hotBlocks.values().stream()
           .map(
               blockAndCheckpoints ->
                   new SlotAndBlockRoot(
                       blockAndCheckpoints.getSlot(), blockAndCheckpoints.getRoot()))
-          .forEach(updater::confirmBlobsSidecar);
+          .forEach(
+              block -> {
+                LOG.trace("Confirming blobs sidecars for block {}", block::toLogString);
+                updater.confirmBlobsSidecar(block);
+              });
 
-      final Set<Bytes32> finalizedBlockRoots = finalizedBlocks.keySet();
-
-      LOG.trace("Removing blobs sidecars for deleted hot blocks");
       deletedHotBlocks.entrySet().stream()
-          .filter(entry -> !finalizedBlockRoots.contains(entry.getKey()))
           .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
-          .forEach(updater::removeBlobsSidecar);
+          .forEach(
+              slotAndBlockRoot -> {
+                if (finalizedChildToParentMap.containsKey(slotAndBlockRoot.getBlockRoot())) {
+                  LOG.trace(
+                      "Confirming blobs sidecars for block {}", slotAndBlockRoot::toLogString);
+                  updater.confirmBlobsSidecar(slotAndBlockRoot);
+                } else {
+                  LOG.trace("Removing blobs sidecars for block {}", slotAndBlockRoot::toLogString);
+                  updater.removeBlobsSidecar(slotAndBlockRoot);
+                }
+              });
 
       updater.commit();
     }

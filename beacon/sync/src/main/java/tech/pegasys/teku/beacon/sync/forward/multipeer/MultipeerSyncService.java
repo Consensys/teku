@@ -91,7 +91,10 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             recentChainData,
             new BatchImporter(blockImporter, blobsSidecarManager, asyncRunner),
             new BatchFactory(
-                eventThread, new PeerScoringConflictResolutionStrategy(), blobsSidecarManager),
+                spec,
+                eventThread,
+                new PeerScoringConflictResolutionStrategy(),
+                blobsSidecarManager),
             Constants.SYNC_BATCH_SIZE,
             MultipeerCommonAncestorFinder.create(recentChainData, eventThread, spec),
             timeProvider);

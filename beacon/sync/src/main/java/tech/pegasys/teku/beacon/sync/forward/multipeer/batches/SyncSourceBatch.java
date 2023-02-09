@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 public class SyncSourceBatch implements Batch {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final EventThread eventThread;
   private final SyncSourceSelector syncSourceProvider;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
@@ -61,6 +63,7 @@ public class SyncSourceBatch implements Batch {
   private final Map<UInt64, BlobsSidecar> blobsSidecarsBySlot = new HashMap<>();
 
   SyncSourceBatch(
+      final Spec spec,
       final EventThread eventThread,
       final SyncSourceSelector syncSourceProvider,
       final ConflictResolutionStrategy conflictResolutionStrategy,
@@ -70,6 +73,7 @@ public class SyncSourceBatch implements Batch {
       final UInt64 count) {
     checkArgument(
         count.isGreaterThanOrEqualTo(UInt64.ONE), "Must include at least one slot in a batch");
+    this.spec = spec;
     this.eventThread = eventThread;
     this.syncSourceProvider = syncSourceProvider;
     this.conflictResolutionStrategy = conflictResolutionStrategy;
@@ -301,7 +305,29 @@ public class SyncSourceBatch implements Batch {
         return;
       }
     }
+
     blocks.addAll(newBlocks);
+
+    // fill empty blobs with empty sidecar placeholder
+    blocks.stream()
+        .filter(block -> !blobsSidecarsBySlot.containsKey(block.getSlot()))
+        .filter(block -> blobsSidecarManager.isStorageOfBlobsSidecarRequired(block.getSlot()))
+        .filter(
+            block ->
+                block
+                    .getBeaconBlock()
+                    .flatMap(beaconBlock -> beaconBlock.getBody().toVersionDeneb())
+                    .map(
+                        beaconBlockBodyEip4844 ->
+                            beaconBlockBodyEip4844.getBlobKzgCommitments().isEmpty())
+                    .orElse(false))
+        .forEach(
+            block -> {
+              System.out.println(
+                  "generating empty sidecar for: " + block.getSlot() + " " + block.getRoot());
+              blobsSidecarsBySlot.put(block.getSlot(), spec.createEmptyBlobsSidecar(block));
+            });
+
     if (newBlocks.isEmpty()
         || newBlocks.get(newBlocks.size() - 1).getSlot().equals(getLastSlot())) {
       complete = true;

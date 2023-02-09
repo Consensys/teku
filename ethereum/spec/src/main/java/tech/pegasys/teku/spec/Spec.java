@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
@@ -813,6 +814,16 @@ public class Spec {
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
+  }
+
+  public BlobsSidecar createEmptyBlobsSidecar(final SignedBeaconBlock block) {
+    return atSlot(block.getSlot())
+        .getSchemaDefinitions()
+        .toVersionDeneb()
+        .orElseThrow()
+        .getBlobsSidecarSchema()
+        .create(
+            block.getRoot(), block.getSlot(), List.of(), KZGProof.INFINITY.getBytesCompressed());
   }
 
   // Private helpers

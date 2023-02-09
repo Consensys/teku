@@ -16,21 +16,24 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer.batches;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class BatchFactory {
-
+  private final Spec spec;
   private final EventThread eventThread;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
   private final BlobsSidecarManager blobsSidecarManager;
 
   public BatchFactory(
+      final Spec spec,
       final EventThread eventThread,
       final ConflictResolutionStrategy conflictResolutionStrategy,
       final BlobsSidecarManager blobsSidecarManager) {
     this.eventThread = eventThread;
     this.conflictResolutionStrategy = conflictResolutionStrategy;
     this.blobsSidecarManager = blobsSidecarManager;
+    this.spec = spec;
   }
 
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
@@ -39,6 +42,7 @@ public class BatchFactory {
     return new EventThreadOnlyBatch(
         eventThread,
         new SyncSourceBatch(
+            spec,
             eventThread,
             syncSourceProvider,
             conflictResolutionStrategy,

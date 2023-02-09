@@ -372,6 +372,10 @@ public class HistoricalBatchFetcher {
                                       slot, peer.getId());
                               throwInvalidBlobsSidecarException(
                                   blobsSidecarAndValidationResult, exceptionMessage);
+                            } else if (blobsSidecarAndValidationResult.isNotRequired()
+                                && blobsSidecarManager.isStorageOfBlobsSidecarRequired(slot)) {
+                              blobsSidecarsBySlotToImport.put(
+                                  slot, spec.createEmptyBlobsSidecar(signedBlock));
                             }
                           });
                 });
