@@ -544,6 +544,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
             validator);
+    blockImporter.subscribeToVerifiedBlockBlsToExecutionChanges(
+        blsToExecutionChangePool::removeAll);
   }
 
   protected void initDataProvider() {
