@@ -48,10 +48,10 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
             blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
 
     // Not needed for all milestones
-    final Supplier<BlockPublisherEip4844> blockAndBlobsSidecarPublisherSupplier =
+    final Supplier<BlockPublisherDeneb> blockAndBlobsSidecarPublisherSupplier =
         Suppliers.memoize(
             () ->
-                new BlockPublisherEip4844(
+                new BlockPublisherDeneb(
                     blockFactory,
                     blockImportChannel,
                     blockAndBlobsSidecarGossipChannel,
@@ -63,7 +63,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredPublishers.put(milestone, blockAndBlobsSidecarPublisherSupplier.get());
               } else {
                 registeredPublishers.put(milestone, blockPublisherPhase0);

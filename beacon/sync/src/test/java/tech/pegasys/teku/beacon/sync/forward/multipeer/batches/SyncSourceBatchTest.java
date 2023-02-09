@@ -42,14 +42,14 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class SyncSourceBatchTest {
 
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalEip4844());
+      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
   private final TargetChain targetChain =
       chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), Bytes32.ZERO));
   private final InlineEventThread eventThread = new InlineEventThread();

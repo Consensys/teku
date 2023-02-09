@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.analysis.V
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.eip4844.BeaconStateEip4844;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 
 public interface BeaconState extends SszContainer, ValidatorStats {
@@ -184,7 +184,7 @@ public interface BeaconState extends SszContainer, ValidatorStats {
     return Optional.empty();
   }
 
-  default Optional<BeaconStateEip4844> toVersionEip4844() {
+  default Optional<BeaconStateDeneb> toVersionDeneb() {
     return Optional.empty();
   }
 }

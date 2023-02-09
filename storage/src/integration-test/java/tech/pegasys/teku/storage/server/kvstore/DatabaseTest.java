@@ -66,7 +66,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -99,7 +99,7 @@ public class DatabaseTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
-  protected final Spec spec = TestSpecFactory.createMinimalEip4844();
+  protected final Spec spec = TestSpecFactory.createMinimalDeneb();
   final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
   private final ChainProperties chainProperties = new ChainProperties(spec);
@@ -210,6 +210,12 @@ public class DatabaseTest {
     database.storeUnconfirmedBlobsSidecar(blobsSidecar4);
     database.storeUnconfirmedBlobsSidecar(blobsSidecar3);
 
+    assertThat(database.getBlobsSidecarColumnCounts())
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 5L,
+                "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 5L));
+
     assertThat(database.getEarliestBlobsSidecarSlot()).contains(ONE);
 
     // all added blobs must be there
@@ -239,6 +245,12 @@ public class DatabaseTest {
         blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
 
     database.confirmBlobsSidecar(blobsSidecarToSlotAndBlockRoot(blobsSidecar4));
+
+    assertThat(database.getBlobsSidecarColumnCounts())
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 4L,
+                "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 5L));
 
     // only 1 and 3 blobs must be unconfirmed
     assertUnconfirmedBlobsStream(
@@ -282,6 +294,12 @@ public class DatabaseTest {
     // all empty now
     assertUnconfirmedBlobsStream();
     assertBlobsStream();
+
+    assertThat(database.getBlobsSidecarColumnCounts())
+        .containsExactlyInAnyOrderEntriesOf(
+            Map.of(
+                "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 0L,
+                "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", 0L));
   }
 
   @TestTemplate

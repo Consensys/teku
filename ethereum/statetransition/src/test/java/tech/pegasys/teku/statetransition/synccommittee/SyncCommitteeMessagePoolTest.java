@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.OperationPool.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 
 class SyncCommitteeMessagePoolTest {
 

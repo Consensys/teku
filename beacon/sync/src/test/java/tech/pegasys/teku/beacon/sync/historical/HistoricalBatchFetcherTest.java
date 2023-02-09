@@ -52,11 +52,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -66,7 +66,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class HistoricalBatchFetcherTest {
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
@@ -496,16 +496,16 @@ public class HistoricalBatchFetcherTest {
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
   }
 
-  private void mockBlockAndBlobsSidecarsRelatedMethods(final boolean eip4844) {
-    mockBlockAndBlobsSidecarsRelatedMethods(eip4844, Optional.empty());
+  private void mockBlockAndBlobsSidecarsRelatedMethods(final boolean deneb) {
+    mockBlockAndBlobsSidecarsRelatedMethods(deneb, Optional.empty());
   }
 
   @SuppressWarnings("unchecked")
   private void mockBlockAndBlobsSidecarsRelatedMethods(
-      final boolean eip4844,
+      final boolean deneb,
       final Optional<Consumer<Map<UInt64, BlobsSidecar>>> customFinalizedBlobsSidecarsAssertion) {
-    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(eip4844);
-    if (eip4844) {
+    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(deneb);
+    if (deneb) {
       when(fetchBlockTaskFactory.create(any(), any()))
           .thenAnswer(i -> new FetchBlockAndBlobsSidecarTask(eth2Network, i.getArgument(1)));
       when(blobsSidecarManager.createAvailabilityChecker(any()))

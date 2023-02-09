@@ -149,8 +149,8 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       Assumptions.assumeTrue(specMilestone.isGreaterThanOrEqualTo(milestone), "Milestone skipped");
     }
 
-    public void assumeEip4844Active() {
-      assumeMilestoneActive(SpecMilestone.EIP4844);
+    public void assumeDenebActive() {
+      assumeMilestoneActive(SpecMilestone.DENEB);
     }
 
     public void assumeCapellaActive() {

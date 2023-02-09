@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -138,6 +138,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Optional<UInt64> getEarliestBlobsSidecarSlot();
 
   Map<String, Long> getColumnCounts();
+
+  Map<String, Long> getBlobsSidecarColumnCounts();
 
   @MustBeClosed
   Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot);

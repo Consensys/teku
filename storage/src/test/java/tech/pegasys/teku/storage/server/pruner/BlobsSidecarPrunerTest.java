@@ -28,6 +28,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -39,7 +40,7 @@ public class BlobsSidecarPrunerTest {
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(5);
   public static final int PRUNE_LIMIT = 10;
 
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
   private final int secondsPerSlot = spec.getGenesisSpecConfig().getSecondsPerSlot();
@@ -50,10 +51,18 @@ public class BlobsSidecarPrunerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
+  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
   private final BlobsSidecarPruner blobsPruner =
       new BlobsSidecarPruner(
-          spec, database, asyncRunner, timeProvider, PRUNE_INTERVAL, PRUNE_LIMIT);
+          spec,
+          database,
+          stubMetricsSystem,
+          asyncRunner,
+          timeProvider,
+          PRUNE_INTERVAL,
+          PRUNE_LIMIT,
+          false);
 
   @BeforeEach
   void setUp() {

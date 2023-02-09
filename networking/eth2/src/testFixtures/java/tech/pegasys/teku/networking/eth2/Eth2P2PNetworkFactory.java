@@ -284,6 +284,7 @@ public class Eth2P2PNetworkFactory {
               new GossipForkSubscriptionsCapella(
                   spec.getForkSchedule().getFork(UInt64.ZERO),
                   spec,
+                  config,
                   asyncRunner,
                   metricsSystem,
                   network,

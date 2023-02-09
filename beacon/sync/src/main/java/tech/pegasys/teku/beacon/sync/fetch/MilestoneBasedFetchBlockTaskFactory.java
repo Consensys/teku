@@ -47,7 +47,7 @@ public class MilestoneBasedFetchBlockTaskFactory implements FetchBlockTaskFactor
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
                 registeredFetchBlockTaskFactories.put(
                     milestone, blockAndBlobsSidecarTaskFactory.get());
               } else {

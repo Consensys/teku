@@ -49,14 +49,17 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
   private volatile Optional<BlobsSidecarPruner> blobsPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
+  private final boolean blobsSidecarStorageCountersEnabled;
 
   public StorageService(
       final ServiceConfig serviceConfig,
       final StorageConfiguration storageConfiguration,
-      final boolean depositSnapshotStorageEnabled) {
+      final boolean depositSnapshotStorageEnabled,
+      final boolean blobsSidecarStorageCountersEnabled) {
     this.serviceConfig = serviceConfig;
     this.config = storageConfiguration;
     this.depositSnapshotStorageEnabled = depositSnapshotStorageEnabled;
+    this.blobsSidecarStorageCountersEnabled = blobsSidecarStorageCountersEnabled;
   }
 
   @Override
@@ -87,16 +90,18 @@ public class StorageService extends Service implements StorageServiceFacade {
                             storagePrunerAsyncRunner,
                             config.getBlockPruningInterval()));
               }
-              if (config.getSpec().isMilestoneSupported(SpecMilestone.EIP4844)) {
+              if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
                     Optional.of(
                         new BlobsSidecarPruner(
                             config.getSpec(),
                             database,
+                            serviceConfig.getMetricsSystem(),
                             storagePrunerAsyncRunner,
                             serviceConfig.getTimeProvider(),
                             config.getBlobsPruningInterval(),
-                            config.getBlobsPruningLimit()));
+                            config.getBlobsPruningLimit(),
+                            blobsSidecarStorageCountersEnabled));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage = ChainStorage.create(database, config.getSpec());

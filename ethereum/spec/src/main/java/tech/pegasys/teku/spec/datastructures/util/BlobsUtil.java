@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.util;
 
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
-import static tech.pegasys.teku.spec.config.SpecConfigEip4844.VERSIONED_HASH_VERSION_KZG;
+import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.math.BigInteger;
 import java.nio.ByteOrder;
@@ -28,9 +28,9 @@ import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobSchema;
-import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class BlobsUtil {
   private static final int RANDOM_SEED = 5566;
@@ -71,10 +71,10 @@ public class BlobsUtil {
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final UInt64 slot, final List<Blob> blobs) {
-    final MiscHelpersEip4844 miscHelpersEip4844 =
-        spec.atSlot(slot).miscHelpers().toVersionEip4844().orElseThrow();
+    final MiscHelpersDeneb miscHelpersDeneb =
+        spec.atSlot(slot).miscHelpers().toVersionDeneb().orElseThrow();
 
-    return blobs.stream().map(miscHelpersEip4844::blobToKzgCommitment).collect(Collectors.toList());
+    return blobs.stream().map(miscHelpersDeneb::blobToKzgCommitment).collect(Collectors.toList());
   }
 
   public List<Blob> generateBlobs(final UInt64 slot, final int count) {
@@ -105,14 +105,10 @@ public class BlobsUtil {
   }
 
   private int getFieldElementsPerBlob(final UInt64 slot) {
-    return spec.atSlot(slot).getConfig().toVersionEip4844().orElseThrow().getFieldElementsPerBlob();
+    return spec.atSlot(slot).getConfig().toVersionDeneb().orElseThrow().getFieldElementsPerBlob();
   }
 
   private BlobSchema getBlobSchema(final UInt64 slot) {
-    return spec.atSlot(slot)
-        .getSchemaDefinitions()
-        .toVersionEip4844()
-        .orElseThrow()
-        .getBlobSchema();
+    return spec.atSlot(slot).getSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSchema();
   }
 }

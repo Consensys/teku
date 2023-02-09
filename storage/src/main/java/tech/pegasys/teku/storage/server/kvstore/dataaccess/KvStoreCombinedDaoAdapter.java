@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -214,6 +214,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     final HashMap<String, Long> result = new LinkedHashMap<>(hotDao.getColumnCounts());
     result.putAll(finalizedDao.getColumnCounts());
     return result;
+  }
+
+  @Override
+  public Map<String, Long> getBlobsSidecarColumnCounts() {
+    return new LinkedHashMap<>(finalizedDao.getBlobsSidecarColumnCounts());
   }
 
   @Override

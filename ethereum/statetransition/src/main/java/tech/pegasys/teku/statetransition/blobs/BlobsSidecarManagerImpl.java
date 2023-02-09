@@ -15,7 +15,7 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import static java.util.Collections.emptyMap;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
-import static tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.ALREADY_CHECKED;
+import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.ALREADY_CHECKED;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
@@ -33,9 +33,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -67,7 +67,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   @Override
   public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtSlot(slot);
-    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+    if (!milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       return false;
     }
     return recentChainData
@@ -108,8 +108,8 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   public BlobsSidecarAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
-    // Block is pre-4844, BlobsSidecar is not supported yet
-    if (block.getMessage().getBody().toVersionEip4844().isEmpty()) {
+    // Block is pre-Deneb, BlobsSidecar is not supported yet
+    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return BlobsSidecarAvailabilityChecker.NOT_REQUIRED;
     }
 
@@ -154,7 +154,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   private Optional<BlobsSidecarAvailabilityChecker> handleEmptyBlockCommitmentsChecker(
       final SignedBeaconBlock block) {
-    if (BeaconBlockBodyEip4844.required(block.getBeaconBlock().orElseThrow().getBody())
+    if (BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
         .getBlobKzgCommitments()
         .isEmpty()) {
       return Optional.of(BlobsSidecarAvailabilityChecker.NOT_REQUIRED);

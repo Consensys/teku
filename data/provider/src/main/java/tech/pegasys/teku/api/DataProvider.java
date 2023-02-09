@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.IntSupplier;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -104,8 +105,9 @@ public class DataProvider {
     private OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
     private SyncCommitteeContributionPool syncCommitteeContributionPool;
     private ProposersDataManager proposersDataManager;
-
     private boolean isLivenessTrackingEnabled = true;
+    private boolean acceptBlsToExecutionMessages =
+        P2PConfig.DEFAULT_BLS_TO_EXECUTION_CHANGES_SUBNET_ENABLED;
     private IntSupplier rejectedExecutionSupplier;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
@@ -150,6 +152,11 @@ public class DataProvider {
 
     public Builder isLivenessTrackingEnabled(final boolean isLivenessTrackingEnabled) {
       this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
+      return this;
+    }
+
+    public Builder acceptBlsToExecutionMessages(final boolean acceptBlsToExecutionMessages) {
+      this.acceptBlsToExecutionMessages = acceptBlsToExecutionMessages;
       return this;
     }
 
@@ -212,7 +219,8 @@ public class DataProvider {
               attestationManager,
               isLivenessTrackingEnabled,
               activeValidatorChannel,
-              proposersDataManager);
+              proposersDataManager,
+              acceptBlsToExecutionMessages);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
       final SyncDataProvider syncDataProvider =

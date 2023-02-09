@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class MilestoneBasedFetchBlockTaskFactoryTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalWithEip4844ForkEpoch(UInt64.ONE);
+  private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.ONE);
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

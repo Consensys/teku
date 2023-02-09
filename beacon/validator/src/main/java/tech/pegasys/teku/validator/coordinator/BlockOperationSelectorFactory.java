@@ -33,14 +33,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -49,10 +49,10 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
-import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
@@ -178,7 +178,7 @@ public class BlockOperationSelectorFactory {
     final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
         forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
 
-    // Pre-4844: Execution Payload / Execution Payload Header
+    // Pre-Deneb: Execution Payload / Execution Payload Header
     if (!bodyBuilder.supportsKzgCommitments()) {
       if (bodyBuilder.isBlinded()) {
         builderSetPayloadHeader(
@@ -190,7 +190,7 @@ public class BlockOperationSelectorFactory {
       return;
     }
 
-    // Post-4844: Execution Payload / Execution Payload Header + KZG Commitments
+    // Post-Deneb: Execution Payload / Execution Payload Header + KZG Commitments
     SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
         executionPayloadContextFuture.thenApply(
             executionPayloadContextOptional ->
@@ -283,8 +283,8 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
       final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture) {
-    final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
-        SchemaDefinitionsEip4844.required(schemaDefinitions);
+    final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+        SchemaDefinitionsDeneb.required(schemaDefinitions);
     final SafeFuture<SszList<SszKZGCommitment>> commitments =
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
@@ -293,9 +293,9 @@ public class BlockOperationSelectorFactory {
                     .orElseThrow()
                     .thenApply(
                         kzgs ->
-                            schemaDefinitionsEip4844
+                            schemaDefinitionsDeneb
                                 .getBeaconBlockBodySchema()
-                                .toVersionEip4844()
+                                .toVersionDeneb()
                                 .orElseThrow()
                                 .getBlobKzgCommitmentsSchema()
                                 .createFromElements(
@@ -334,10 +334,10 @@ public class BlockOperationSelectorFactory {
   public Function<SignedBeaconBlock, SafeFuture<SignedBeaconBlockAndBlobsSidecar>>
       createSidecarSupplementSelector() {
     return signedBeaconBlock -> {
-      final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
+      final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
           spec.atSlot(signedBeaconBlock.getSlot())
               .getSchemaDefinitions()
-              .toVersionEip4844()
+              .toVersionDeneb()
               .orElseThrow();
       return executionLayerBlockProductionManager
           .getCachedPayloadResult(signedBeaconBlock.getSlot())
@@ -347,10 +347,10 @@ public class BlockOperationSelectorFactory {
           .thenApply(
               blobs ->
                   new SignedBeaconBlockAndBlobsSidecar(
-                      schemaDefinitionsEip4844.getSignedBeaconBlockAndBlobsSidecarSchema(),
+                      schemaDefinitionsDeneb.getSignedBeaconBlockAndBlobsSidecarSchema(),
                       signedBeaconBlock,
                       createBlobsSidecar(
-                          schemaDefinitionsEip4844,
+                          schemaDefinitionsDeneb,
                           signedBeaconBlock.getSlot(),
                           signedBeaconBlock.getRoot(),
                           blobs)));
@@ -358,14 +358,14 @@ public class BlockOperationSelectorFactory {
   }
 
   private BlobsSidecar createBlobsSidecar(
-      final SchemaDefinitionsEip4844 schemaDefinitionsEip4844,
+      final SchemaDefinitionsDeneb schemaDefinitionsDeneb,
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<Blob> blobs) {
-    final MiscHelpersEip4844 miscHelpers =
-        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
     return new BlobsSidecar(
-        schemaDefinitionsEip4844.getBlobsSidecarSchema(),
+        schemaDefinitionsDeneb.getBlobsSidecarSchema(),
         beaconBlockRoot,
         slot,
         blobs,

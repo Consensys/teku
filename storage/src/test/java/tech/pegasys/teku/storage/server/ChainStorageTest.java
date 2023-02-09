@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -48,7 +48,7 @@ public class ChainStorageTest {
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainStorage chainStorage;
-  private Spec spec = TestSpecFactory.createMinimalEip4844();
+  private Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {

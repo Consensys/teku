@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -375,6 +375,22 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   public Map<String, Long> getColumnCounts() {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
     schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    return columnCounts;
+  }
+
+  @Override
+  public Map<String, Long> getBlobsSidecarColumnCounts() {
+    final Map<String, Long> columnCounts = new LinkedHashMap<>();
+
+    schema.getColumnMap().entrySet().stream()
+        .filter(
+            stringKvStoreColumnEntry ->
+                List.of(
+                        "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
+                        "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT")
+                    .contains(stringKvStoreColumnEntry.getKey()))
+        .collect(Collectors.toMap(Entry::getKey, Entry::getValue))
+        .forEach((k, v) -> columnCounts.put(k, db.size(v)));
     return columnCounts;
   }
 

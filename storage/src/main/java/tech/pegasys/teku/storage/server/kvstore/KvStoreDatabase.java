@@ -56,7 +56,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -321,6 +321,11 @@ public class KvStoreDatabase implements Database {
   @Override
   public Map<String, Long> getColumnCounts() {
     return dao.getColumnCounts();
+  }
+
+  @Override
+  public Map<String, Long> getBlobsSidecarColumnCounts() {
+    return dao.getBlobsSidecarColumnCounts();
   }
 
   @Override

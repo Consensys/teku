@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -92,8 +92,8 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class Spec {
@@ -323,9 +323,9 @@ public class Spec {
       final Bytes serializedBlobsSidecar, final UInt64 slot) {
     return atSlot(slot)
         .getSchemaDefinitions()
-        .toVersionEip4844()
+        .toVersionDeneb()
         .orElseThrow(
-            () -> new RuntimeException("Eip4844 milestone is required to load execution payload"))
+            () -> new RuntimeException("Deneb milestone is required to load execution payload"))
         .getBlobsSidecarSchema()
         .sszDeserialize(serializedBlobsSidecar);
   }

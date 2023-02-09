@@ -39,7 +39,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -153,11 +153,6 @@ public class PeerSync {
       return completeSyncWithPeer(peer, status);
     }
 
-    final RequestContext requestContext = createRequestContext(startSlot, status);
-
-    final UInt64 count = requestContext.getCount();
-    final boolean blobsSidecarsRequired = requestContext.areBlobsSidecarsRequired();
-
     return readyForRequest
         .thenCompose(
             __ -> {
@@ -172,6 +167,10 @@ public class PeerSync {
               if (findCommonAncestor) {
                 LOG.trace("Start sync from slot {}, instead of {}", ancestorStartSlot, startSlot);
               }
+
+              final RequestContext requestContext = createRequestContext(ancestorStartSlot, status);
+
+              final UInt64 count = requestContext.getCount();
 
               LOG.debug(
                   "Request {} blocks starting at {} from peer {}",
@@ -191,7 +190,7 @@ public class PeerSync {
               final RpcResponseListener<SignedBeaconBlock> blockListener;
               final SafeFuture<Void> blobsSidecarsRequest;
 
-              if (blobsSidecarsRequired) {
+              if (requestContext.areBlobsSidecarsRequired()) {
                 blockListener = blockAndBlobsSidecarMatcher::recordBlock;
                 LOG.debug(
                     "Request {} blobs sidecars starting at {} from peer {}",
@@ -208,7 +207,7 @@ public class PeerSync {
 
               final PeerSyncBlockRequest request =
                   new PeerSyncBlockRequest(
-                      readyForNextRequest, ancestorStartSlot.plus(count), blockListener);
+                      readyForNextRequest, ancestorStartSlot, count, blockListener);
 
               return SafeFuture.allOfFailFast(
                       peer.requestBlocksByRange(ancestorStartSlot, count, request),
@@ -224,11 +223,14 @@ public class PeerSync {
               final UInt64 nextSlot = blockRequest.getActualEndSlot().plus(UInt64.ONE);
               LOG.trace(
                   "Completed request for {} slots from peer {}. Next request starts from {}",
-                  requestContext.count,
+                  blockRequest.getCount(),
                   peer.getId(),
                   nextSlot);
-              if (count.isGreaterThan(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
-                  && startSlot.plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST).isGreaterThan(nextSlot)) {
+              if (blockRequest.getCount().isGreaterThan(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
+                  && blockRequest
+                      .getStartSlot()
+                      .plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
+                      .isGreaterThan(nextSlot)) {
                 final int throttledRequests = throttledRequestCount.incrementAndGet();
                 LOG.debug(
                     "Received {} consecutive excessively throttled response from {}",

@@ -38,7 +38,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
-import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsEip4844;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -68,7 +68,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -251,6 +251,7 @@ public class Eth2P2PNetworkBuilder {
         return new GossipForkSubscriptionsCapella(
             forkAndSpecMilestone.getFork(),
             spec,
+            config,
             asyncRunner,
             metricsSystem,
             network,
@@ -265,10 +266,11 @@ public class Eth2P2PNetworkBuilder {
             gossipedSignedContributionAndProofProcessor,
             gossipedSyncCommitteeMessageProcessor,
             gossipedSignedBlsToExecutionChangeProcessor);
-      case EIP4844:
-        return new GossipForkSubscriptionsEip4844(
+      case DENEB:
+        return new GossipForkSubscriptionsDeneb(
             forkAndSpecMilestone.getFork(),
             spec,
+            config,
             asyncRunner,
             metricsSystem,
             network,

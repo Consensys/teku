@@ -22,16 +22,20 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 public class PeerSyncBlockRequest implements RpcResponseListener<SignedBeaconBlock> {
 
   private final SafeFuture<Void> readyForNextRequest;
-  private final UInt64 lastRequestedSlot;
+  private final UInt64 startSlot;
+  private final UInt64 count;
   private final RpcResponseListener<SignedBeaconBlock> blockResponseListener;
+
   private Optional<UInt64> slotOfLastBlock = Optional.empty();
 
   public PeerSyncBlockRequest(
       final SafeFuture<Void> readyForNextRequest,
-      final UInt64 lastRequestedSlot,
+      final UInt64 startSlot,
+      final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> blockResponseListener) {
     this.readyForNextRequest = readyForNextRequest;
-    this.lastRequestedSlot = lastRequestedSlot;
+    this.startSlot = startSlot;
+    this.count = count;
     this.blockResponseListener = blockResponseListener;
   }
 
@@ -45,9 +49,17 @@ public class PeerSyncBlockRequest implements RpcResponseListener<SignedBeaconBlo
     return readyForNextRequest;
   }
 
+  public UInt64 getStartSlot() {
+    return startSlot;
+  }
+
+  public UInt64 getCount() {
+    return count;
+  }
+
   public UInt64 getActualEndSlot() {
     // The peer must return at least one block if it has it, so if no blocks were returned they
     // must all of have been empty.
-    return slotOfLastBlock.orElse(lastRequestedSlot.minus(UInt64.ONE));
+    return slotOfLastBlock.orElse(startSlot.plus(count).minus(UInt64.ONE));
   }
 }

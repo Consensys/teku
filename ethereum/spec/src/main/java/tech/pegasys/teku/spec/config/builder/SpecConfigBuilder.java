@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigEip4844;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -104,11 +104,11 @@ public class SpecConfigBuilder {
 
   private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.USED;
 
-  private final BuilderChain<SpecConfig, SpecConfigEip4844> builderChain =
+  private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
-          .appendBuilder(new Eip4844Builder());
+          .appendBuilder(new DenebBuilder());
 
   public SpecConfig build() {
     builderChain.addOverridableItemsToRawConfig(
@@ -557,8 +557,8 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder eip4844Builder(final Consumer<Eip4844Builder> consumer) {
-    builderChain.withBuilder(Eip4844Builder.class, consumer);
+  public SpecConfigBuilder denebBuilder(final Consumer<DenebBuilder> consumer) {
+    builderChain.withBuilder(DenebBuilder.class, consumer);
     return this;
   }
 }

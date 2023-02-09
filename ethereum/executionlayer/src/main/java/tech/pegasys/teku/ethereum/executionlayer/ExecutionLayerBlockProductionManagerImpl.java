@@ -26,14 +26,14 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
-  // TODO: Switch to actual Builder API when 4844 version is ready
+  // TODO: Switch to actual Builder API when Deneb version is ready
   protected static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_BUILDER_DUMMY =
       SafeFuture.completedFuture(
           new BlobsBundle(Bytes32.ZERO, Collections.emptyList(), Collections.emptyList()));
@@ -120,7 +120,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   private ExecutionPayloadResult builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final boolean post4844) {
+      final boolean postDeneb) {
     final SafeFuture<HeaderWithFallbackData> executionPayloadHeaderFuture =
         executionLayerChannel.builderGetHeader(executionPayloadContext, state);
 
@@ -128,6 +128,6 @@ public class ExecutionLayerBlockProductionManagerImpl
         executionPayloadContext,
         Optional.empty(),
         Optional.of(executionPayloadHeaderFuture),
-        post4844 ? Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY) : Optional.empty());
+        postDeneb ? Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY) : Optional.empty());
   }
 }

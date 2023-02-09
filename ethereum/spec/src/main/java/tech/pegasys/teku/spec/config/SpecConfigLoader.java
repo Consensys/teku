@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.networks.Eth2Presets;
 
 public class SpecConfigLoader {
   private static final List<String> AVAILABLE_PRESETS =
-      List.of("phase0", "altair", "bellatrix", "capella", "eip4844");
+      List.of("phase0", "altair", "bellatrix", "capella", "deneb");
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
 
