@@ -50,8 +50,8 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 @TestSpecContext(
     milestone = {SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA},
@@ -95,12 +95,13 @@ class RestBuilderClientTest {
     final SpecMilestone milestone = specContext.getSpecMilestone();
     final String endpoint = "http://localhost:" + mockWebServer.getPort();
     final OkHttpRestClient okHttpRestClient = new OkHttpRestClient(okHttpClient, endpoint);
-    final SchemaDefinitions schemaDefinitions = spec.forMilestone(milestone).getSchemaDefinitions();
 
     if (milestone.equals(SpecMilestone.BELLATRIX)) {
-      this.schemaDefinitions = schemaDefinitions.toVersionBellatrix().orElseThrow();
+      this.schemaDefinitions =
+          SchemaDefinitionsBellatrix.required(specContext.getSchemaDefinitions());
     } else {
-      this.schemaDefinitions = schemaDefinitions.toVersionCapella().orElseThrow();
+      this.schemaDefinitions =
+          SchemaDefinitionsCapella.required(specContext.getSchemaDefinitions());
     }
 
     signedValidatorRegistrationsRequest = readResource("builder/signedValidatorRegistrations.json");
