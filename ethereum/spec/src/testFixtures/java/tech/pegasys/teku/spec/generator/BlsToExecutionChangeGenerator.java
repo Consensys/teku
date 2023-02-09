@@ -11,38 +11,39 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl.tools;
+package tech.pegasys.teku.spec.generator;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
-public class BlsToExecutionChangeCreator {
+public class BlsToExecutionChangeGenerator {
 
   private final Spec spec;
   private final Bytes32 genesisValidatorRoot;
 
-  public BlsToExecutionChangeCreator(final Spec spec, final Bytes32 genesisValidatorRoot) {
+  public BlsToExecutionChangeGenerator(final Spec spec, final Bytes32 genesisValidatorRoot) {
     this.spec = spec;
     this.genesisValidatorRoot = genesisValidatorRoot;
   }
 
   public SignedBlsToExecutionChange createAndSign(
       final UInt64 validatorIndex,
-      final BLSPublicKey fromBlsPubKey,
+      final BLSKeyPair validatorCredentials,
       final Bytes20 executionAddress,
-      final BLSSecretKey secretKey,
       final UInt64 epoch) {
     final SchemaDefinitionsCapella schemaDefinitionsCapella =
         SchemaDefinitionsCapella.required(spec.atEpoch(epoch).getSchemaDefinitions());
@@ -50,14 +51,23 @@ public class BlsToExecutionChangeCreator {
     final BlsToExecutionChange blsToExecutionChange =
         schemaDefinitionsCapella
             .getBlsToExecutionChangeSchema()
-            .create(validatorIndex, fromBlsPubKey, executionAddress);
+            .create(validatorIndex, validatorCredentials.getPublicKey(), executionAddress);
 
     final BLSSignature signature =
-        BLS.sign(secretKey, signingRootForBlsToExecutionChanges(blsToExecutionChange, epoch));
+        BLS.sign(
+            validatorCredentials.getSecretKey(),
+            signingRootForBlsToExecutionChanges(blsToExecutionChange, epoch));
 
     return schemaDefinitionsCapella
         .getSignedBlsToExecutionChangeSchema()
         .create(blsToExecutionChange, signature);
+  }
+
+  public SszList<SignedBlsToExecutionChange> asSszList(SignedBlsToExecutionChange... changes) {
+    return BeaconBlockBodySchemaCapella.required(
+            spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema())
+        .getBlsToExecutionChangesSchema()
+        .createFromElements(List.of(changes));
   }
 
   private Bytes signingRootForBlsToExecutionChanges(
