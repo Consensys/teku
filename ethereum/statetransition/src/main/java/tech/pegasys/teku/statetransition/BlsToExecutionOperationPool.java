@@ -46,7 +46,7 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExecutionChange> {
   private static final Logger LOG = LogManager.getLogger();
   private static final int DEFAULT_OPERATION_POOL_SIZE = 50_000;
-  final Map<UInt64, SignedBlsToExecutionChange> operations;
+  private final Map<Integer, SignedBlsToExecutionChange> operations;
   private final Function<UInt64, SszListSchema<SignedBlsToExecutionChange, ?>>
       slotToSszListSchemaSupplier;
   private final OperationValidator<SignedBlsToExecutionChange> operationValidator;
@@ -77,7 +77,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
             "result");
   }
 
-  private static InternalValidationResult rejectForDuplicatedMessage(final UInt64 validatorIndex) {
+  private static InternalValidationResult rejectForDuplicatedMessage(final int validatorIndex) {
     final String logMessage =
         String.format(
             "BlsToExecutionChange is not the first one for validator %s.", validatorIndex);
@@ -112,9 +112,8 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
       if (!filter.test(item)) {
         continue;
       }
-      final UInt64 validatorIndex = item.getMessage().getValidatorIndex();
+      final int validatorIndex = getValidatorIndex(item);
       if (operationValidator.validateForBlockInclusion(stateAtBlockSlot, item).isEmpty()) {
-        LOG.trace("ADD " + validatorIndex);
         selected.add(item);
         includedItemConsumer.accept(item);
         if (selected.size() == schema.getMaxLength()) {
@@ -122,7 +121,6 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
         }
       } else {
         // The item is no longer valid to be included in a block so remove it from the pool.
-        LOG.trace("PRUNE " + validatorIndex);
         operations.remove(validatorIndex);
       }
     }
@@ -131,7 +129,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
 
   @Override
   public SafeFuture<InternalValidationResult> addLocal(final SignedBlsToExecutionChange item) {
-    final UInt64 validatorIndex = item.getMessage().getValidatorIndex();
+    final int validatorIndex = getValidatorIndex(item);
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(validatorIndex))
           .thenPeek(result -> validationReasonCounter.labels(result.code().toString()).inc());
@@ -141,7 +139,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
 
   @Override
   public SafeFuture<InternalValidationResult> addRemote(final SignedBlsToExecutionChange item) {
-    final UInt64 validatorIndex = item.getMessage().getValidatorIndex();
+    final int validatorIndex = getValidatorIndex(item);
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(validatorIndex))
           .thenPeek(result -> validationReasonCounter.labels(result.code().toString()).inc());
@@ -153,8 +151,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
   public void addAll(final SszCollection<SignedBlsToExecutionChange> items) {
     items.forEach(
         item -> {
-          final UInt64 validatorIndex = item.getMessage().getValidatorIndex();
-          LOG.trace("ADD ALL " + validatorIndex);
+          final int validatorIndex = getValidatorIndex(item);
           operations.putIfAbsent(validatorIndex, item);
         });
   }
@@ -163,8 +160,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
   public void removeAll(final SszCollection<SignedBlsToExecutionChange> items) {
     items.forEach(
         item -> {
-          final UInt64 validatorIndex = item.getMessage().getValidatorIndex();
-          LOG.trace("REMOVE ALL " + validatorIndex);
+          final int validatorIndex = getValidatorIndex(item);
           operations.remove(validatorIndex);
         });
   }
@@ -181,7 +177,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
 
   private SafeFuture<InternalValidationResult> add(
       SignedBlsToExecutionChange item, boolean fromNetwork) {
-    final UInt64 validatorIndex = item.getMessage().getValidatorIndex();
+    final int validatorIndex = getValidatorIndex(item);
     return operationValidator
         .validateForGossip(item)
         .thenApply(
@@ -194,5 +190,9 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
               }
               return result;
             });
+  }
+
+  private int getValidatorIndex(final SignedBlsToExecutionChange blsToExecutionChange) {
+    return blsToExecutionChange.getMessage().getValidatorIndex().intValue();
   }
 }
