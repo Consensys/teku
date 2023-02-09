@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -42,6 +43,7 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
   public GossipForkSubscriptionsDeneb(
       final Fork fork,
       final Spec spec,
+      final P2PConfig config,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
@@ -63,6 +65,7 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
     super(
         fork,
         spec,
+        config,
         asyncRunner,
         metricsSystem,
         discoveryNetwork,

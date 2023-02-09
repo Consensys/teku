@@ -251,6 +251,7 @@ public class Eth2P2PNetworkBuilder {
         return new GossipForkSubscriptionsCapella(
             forkAndSpecMilestone.getFork(),
             spec,
+            config,
             asyncRunner,
             metricsSystem,
             network,
@@ -269,6 +270,7 @@ public class Eth2P2PNetworkBuilder {
         return new GossipForkSubscriptionsDeneb(
             forkAndSpecMilestone.getFork(),
             spec,
+            config,
             asyncRunner,
             metricsSystem,
             network,

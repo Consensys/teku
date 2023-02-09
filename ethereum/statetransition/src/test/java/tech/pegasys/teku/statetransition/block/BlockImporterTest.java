@@ -31,11 +31,14 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -44,12 +47,16 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
+import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
+import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -635,6 +642,86 @@ public class BlockImporterTest {
     assertThat(result).isCompleted();
     assertThat(result.join().getEpoch()).isEqualTo(newFinalizedEpoch);
     assertThat(result.join().getRoot()).isEqualTo(newFinalizedBlock.getRoot());
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test
+  public void importBlock_validBlsToExecutionChanges() throws Exception {
+    final int numOfValidators = 3;
+    // Using same keys used on InMemoryStorageSystemBuilder
+    final List<BLSKeyPair> validatorKeys =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, numOfValidators);
+    final Spec spec = TestSpecFactory.createMinimalCapella();
+
+    final StorageSystem storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .specProvider(spec)
+            .numberOfValidators(numOfValidators)
+            .build();
+    storageSystem.chainUpdater().initializeGenesis();
+
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            storageSystem.recentChainData(),
+            BlobsSidecarManager.NOOP,
+            forkChoiceNotifier,
+            transitionBlockValidator);
+
+    final BlockImporter blockImporter =
+        new BlockImporter(
+            spec,
+            blockImportNotifications,
+            storageSystem.recentChainData(),
+            forkChoice,
+            weakSubjectivityValidator,
+            ExecutionLayerChannel.NOOP);
+
+    final VerifiedBlockOperationsListener<SignedBlsToExecutionChange> operationsListener =
+        mock(VerifiedBlockOperationsListener.class);
+    blockImporter.subscribeToVerifiedBlockBlsToExecutionChanges(operationsListener);
+
+    // Set current time to be several WSP's ahead of finalized checkpoint
+    final UInt64 wsPeriod = UInt64.valueOf(10);
+    final UInt64 wsPeriodInSlots = wsPeriod.times(genesisConfig.getSlotsPerEpoch());
+    when(weakSubjectivityValidator.getWSPeriod(any())).thenReturn(Optional.of(wsPeriod));
+    final UInt64 currentSlot = wsPeriodInSlots.times(3).plus(1);
+    storageSystem.chainUpdater().setCurrentSlot(currentSlot);
+
+    final BlsToExecutionChangeGenerator blsToExecutionChangeGenerator =
+        new BlsToExecutionChangeGenerator(
+            spec,
+            storageSystem
+                .recentChainData()
+                .getGenesisData()
+                .orElseThrow()
+                .getGenesisValidatorsRoot());
+
+    final BLSKeyPair blsKeyPair = validatorKeys.get(0);
+    final SignedBlsToExecutionChange signedBlsToExecutionChange =
+        blsToExecutionChangeGenerator.createAndSign(
+            UInt64.ZERO, blsKeyPair, Eth1Address.ZERO, UInt64.ZERO);
+
+    final SignedBlockAndState signedBlockAndState =
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(
+                currentSlot.minus(wsPeriodInSlots),
+                BlockOptions.create()
+                    .setBlsToExecutionChange(
+                        blsToExecutionChangeGenerator.asSszList(
+                            UInt64.ZERO, signedBlsToExecutionChange)));
+
+    final BlockImportResult result =
+        blockImporter.importBlock(signedBlockAndState.getBlock()).get();
+    assertSuccessfulResult(result);
+
+    // Verify that subscribers are notified of the BlsToExecutionChange in the block
+    final ArgumentCaptor<SszList<SignedBlsToExecutionChange>> argumentCaptor =
+        ArgumentCaptor.forClass(SszList.class);
+    verify(operationsListener).onOperationsFromBlock(argumentCaptor.capture());
+    assertThat(argumentCaptor.getValue()).hasSize(1).contains(signedBlsToExecutionChange);
   }
 
   private void assertImportFailed(

@@ -544,6 +544,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
             validator,
             16_384);
+    blockImporter.subscribeToVerifiedBlockBlsToExecutionChanges(
+        blsToExecutionChangePool::removeAll);
   }
 
   protected void initDataProvider() {
@@ -561,6 +563,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(
                 beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
+            .acceptBlsToExecutionMessages(
+                beaconConfig.p2pConfig().isBlsToExecutionChangesSubnetEnabled())
             .activeValidatorChannel(
                 eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
             .attesterSlashingPool(attesterSlashingPool)
