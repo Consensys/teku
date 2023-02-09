@@ -51,12 +51,12 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -304,13 +304,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   @Override
   public SafeFuture<BlobsBundle> engineGetBlobsBundle(
       UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
-    final Optional<SchemaDefinitionsEip4844> schemaDefinitionsEip4844 =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionEip4844();
+    final Optional<SchemaDefinitionsDeneb> schemaDefinitionsDeneb =
+        spec.atSlot(slot).getSchemaDefinitions().toVersionDeneb();
 
-    if (schemaDefinitionsEip4844.isEmpty()) {
+    if (schemaDefinitionsDeneb.isEmpty()) {
       return SafeFuture.failedFuture(
           new UnsupportedOperationException(
-              "getBlobsBundle not supported for pre-EIP4844 milestones"));
+              "getBlobsBundle not supported for pre-Deneb milestones"));
     }
 
     final Optional<HeadAndAttributes> maybeHeadAndAttrs =
@@ -505,7 +505,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final List<Bytes> transactions = new ArrayList<>();
     transactions.add(Bytes.fromHexString("0x0edf"));
 
-    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.EIP4844)) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       transactions.add(generateBlobsAndTransaction(slot, headAndAttrs));
     }
 

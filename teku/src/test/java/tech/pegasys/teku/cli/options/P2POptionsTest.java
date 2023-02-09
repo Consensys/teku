@@ -285,4 +285,19 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Invalid minimumSubnetSubscriptions: -1");
   }
+
+  @Test
+  public void subscribeToBlsToExecutionChangesOption_shouldDefaultToTrue() {
+    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
+    final P2PConfig config = tekuConfiguration.p2p();
+    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isTrue();
+  }
+
+  @Test
+  public void subscribeToBlsToExecutionChangesOption_shouldOverrideDefault() {
+    final TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xbls-to-execution-changes-subnet-enabled", "false");
+    final P2PConfig config = tekuConfiguration.p2p();
+    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isFalse();
+  }
 }

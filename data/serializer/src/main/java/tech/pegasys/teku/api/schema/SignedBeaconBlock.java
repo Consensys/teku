@@ -27,8 +27,8 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.eip4844.SignedBeaconBlockEip4844;
-import tech.pegasys.teku.api.schema.eip4844.SignedBlindedBeaconBlockEip4844;
+import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
+import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
@@ -65,12 +65,9 @@ public class SignedBeaconBlock implements SignedBlock {
     return Stream.of(
             () ->
                 beaconBlock
-                    .toBlindedVersionEip4844()
-                    .map(__ -> new SignedBlindedBeaconBlockEip4844(internalBlock)),
-            () ->
-                beaconBlock
-                    .toVersionEip4844()
-                    .map(__ -> new SignedBeaconBlockEip4844(internalBlock)),
+                    .toBlindedVersionDeneb()
+                    .map(__ -> new SignedBlindedBeaconBlockDeneb(internalBlock)),
+            () -> beaconBlock.toVersionDeneb().map(__ -> new SignedBeaconBlockDeneb(internalBlock)),
             () ->
                 beaconBlock
                     .toBlindedVersionCapella()

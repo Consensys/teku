@@ -45,7 +45,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedE
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -574,14 +574,14 @@ public class PeerSyncTest extends AbstractSyncTest {
   }
 
   @Test
-  void sync_withEip4844BlobsSidecars() {
+  void sync_withDenebBlobsSidecars() {
     when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(true);
 
-    // peer has finalized 35 epochs after the EIP-4844 fork epoch
-    final UInt64 peerFinalizedEpoch = eip4844ForkEpoch.plus(35);
+    // peer has finalized 35 epochs after the Deneb fork epoch
+    final UInt64 peerFinalizedEpoch = denebForkEpoch.plus(35);
     withPeerFinalizedEpoch(peerFinalizedEpoch);
-    // Teku has finalized until the EIP-4844 fork epoch
-    when(storageClient.getFinalizedEpoch()).thenReturn(eip4844ForkEpoch);
+    // Teku has finalized until the Deneb fork epoch
+    when(storageClient.getFinalizedEpoch()).thenReturn(denebForkEpoch);
     // current epoch is 1 ahead of the peer
     when(storageClient.getCurrentEpoch()).thenReturn(Optional.of(peerFinalizedEpoch.plus(1)));
 
@@ -618,19 +618,19 @@ public class PeerSyncTest extends AbstractSyncTest {
   }
 
   @Test
-  void sync_withRequestDuringTheEip4844ForkTransition() {
+  void sync_withRequestDuringTheDenebForkTransition() {
     when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any()))
         .thenAnswer(
             i -> {
               final UInt64 slot = i.getArgument(0);
-              return spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(eip4844ForkEpoch);
+              return spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(denebForkEpoch);
             });
 
-    // peer has finalized 1 epoch after the EIP-4844 fork epoch
-    final UInt64 peerFinalizedEpoch = eip4844ForkEpoch.plus(1);
+    // peer has finalized 1 epoch after the Deneb fork epoch
+    final UInt64 peerFinalizedEpoch = denebForkEpoch.plus(1);
     withPeerFinalizedEpoch(peerFinalizedEpoch);
-    // Teku has finalized until the 1 epoch before EIP-4844 fork epoch
-    when(storageClient.getFinalizedEpoch()).thenReturn(eip4844ForkEpoch.minusMinZero(1));
+    // Teku has finalized until the 1 epoch before Deneb fork epoch
+    when(storageClient.getFinalizedEpoch()).thenReturn(denebForkEpoch.minusMinZero(1));
     // current epoch is 1 ahead of the peer
     when(storageClient.getCurrentEpoch()).thenReturn(Optional.of(peerFinalizedEpoch.plus(1)));
 
@@ -645,7 +645,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     // updating the finalized epoch
     when(storageClient.getFinalizedEpoch()).thenReturn(peerFinalizedEpoch);
 
-    // the requests will span Capella and EIP-4844
+    // the requests will span Capella and Deneb
     completeRequestsWithBlocksAndBlobsSidecars(
         List.of(blocksRequest), List.of(blobsSidecarsRequest));
 

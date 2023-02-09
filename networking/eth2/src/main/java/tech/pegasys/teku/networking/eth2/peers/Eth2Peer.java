@@ -28,15 +28,17 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public interface Eth2Peer extends Peer, SyncSource {
   static Eth2Peer create(
+      final Spec spec,
       final Peer peer,
       final BeaconChainMethods rpcMethods,
       final StatusMessageFactory statusMessageFactory,
@@ -46,6 +48,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       final RateTracker blobsSidecarsRequestTracker,
       final RateTracker requestTracker) {
     return new DefaultEth2Peer(
+        spec,
         peer,
         rpcMethods,
         statusMessageFactory,

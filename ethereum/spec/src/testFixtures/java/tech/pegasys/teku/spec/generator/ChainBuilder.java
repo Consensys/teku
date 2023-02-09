@@ -47,12 +47,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -71,9 +71,9 @@ import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsEip4844;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
@@ -136,15 +136,15 @@ public class ChainBuilder {
         .map(
             block -> {
               final UInt64 slot = block.getSlot();
-              final SchemaDefinitionsEip4844 schemaDefinitionsEip4844 =
-                  SchemaDefinitionsEip4844.required(spec.atSlot(slot).getSchemaDefinitions());
+              final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+                  SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions());
               final BlobsSidecar blobsSidecar =
                   getBlobsSidecar(blockRoot)
                       .orElse(
-                          schemaDefinitionsEip4844
+                          schemaDefinitionsDeneb
                               .getBlobsSidecarSchema()
                               .createEmpty(blockRoot, slot));
-              return schemaDefinitionsEip4844
+              return schemaDefinitionsDeneb
                   .getSignedBeaconBlockAndBlobsSidecarSchema()
                   .create(block, blobsSidecar);
             });
@@ -324,9 +324,9 @@ public class ChainBuilder {
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
 
-    // add an empty blobs sidecar to the genesis block if genesis is in the EIP-4844 milestone
+    // add an empty blobs sidecar to the genesis block if genesis is in the Deneb milestone
     spec.getGenesisSchemaDefinitions()
-        .toVersionEip4844()
+        .toVersionDeneb()
         .ifPresent(
             schemaDefinitions -> {
               final BlobsSidecarSchema blobsSidecarSchema =
@@ -487,10 +487,10 @@ public class ChainBuilder {
     checkState(!blocks.isEmpty(), "Genesis block must be created before blocks can be added.");
   }
 
-  private boolean eip4844MilestoneReached(final UInt64 slot) {
+  private boolean denebMilestoneReached(final UInt64 slot) {
     return spec.getForkSchedule()
         .getSpecMilestoneAtSlot(slot)
-        .isGreaterThanOrEqualTo(SpecMilestone.EIP4844);
+        .isGreaterThanOrEqualTo(SpecMilestone.DENEB);
   }
 
   private void trackBlock(final SignedBlockAndState block) {
@@ -523,11 +523,11 @@ public class ChainBuilder {
               .createAttesterSlashings(
                   options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
 
-      if (eip4844MilestoneReached(slot) && options.getGenerateRandomBlobs()) {
+      if (denebMilestoneReached(slot) && options.getGenerateRandomBlobs()) {
         nextBlockAndState =
             generateBlockWithRandomBlobsSidecar(
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
-      } else if (eip4844MilestoneReached(slot)) {
+      } else if (denebMilestoneReached(slot)) {
         nextBlockAndState =
             generateBlockWithBlobsSidecar(
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
@@ -600,7 +600,8 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobsSidecarSchema blobsSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobsSidecarSchema();
 
     if (options.isStoreBlobsSidecarEnabled()) {
       final BlobsSidecar blobsSidecar =
@@ -649,10 +650,10 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobsSidecarSchema blobsSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionEip4844().orElseThrow().getBlobsSidecarSchema();
+        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobsSidecarSchema();
 
-    final MiscHelpersEip4844 miscHelpers =
-        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
     KZGProof kzgProof =
         miscHelpers.computeAggregatedKzgProof(
             randomBlobs.stream().map(Blob::getBytes).collect(Collectors.toList()));

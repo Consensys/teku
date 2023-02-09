@@ -37,10 +37,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodySchemaEip4844;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
-import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -347,13 +347,13 @@ public class BlockProposalTestUtil {
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
 
-    final MiscHelpersEip4844 miscHelpers =
-        spec.forMilestone(SpecMilestone.EIP4844).miscHelpers().toVersionEip4844().orElseThrow();
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
     List<KZGCommitment> generatedBlobsKzgCommitments =
         blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
 
     final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
-        ((BeaconBlockBodySchemaEip4844<?>)
+        ((BeaconBlockBodySchemaDeneb<?>)
                 spec.atSlot(newSlot).getSchemaDefinitions().getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsSchema();
 

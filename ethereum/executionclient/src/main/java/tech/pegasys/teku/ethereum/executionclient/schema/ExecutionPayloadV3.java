@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.ExecutionPayloadEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 
 public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
   @JsonSerialize(using = UInt256AsHexSerializer.class)
@@ -91,10 +91,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
         executionPayload.getTimestamp(),
         executionPayload.getExtraData(),
         executionPayload.getBaseFeePerGas(),
-        executionPayload
-            .toVersionEip4844()
-            .map(ExecutionPayloadEip4844::getExcessDataGas)
-            .orElse(null),
+        executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getExcessDataGas).orElse(null),
         executionPayload.getBlockHash(),
         executionPayload.getTransactions().stream()
             .map(SszByteListImpl::getBytes)

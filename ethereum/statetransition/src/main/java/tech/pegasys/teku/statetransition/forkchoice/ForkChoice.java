@@ -58,9 +58,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
-import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;

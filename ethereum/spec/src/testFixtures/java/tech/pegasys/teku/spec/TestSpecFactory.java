@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
-import tech.pegasys.teku.spec.config.SpecConfigEip4844;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -47,8 +47,8 @@ public class TestSpecFactory {
         return createMinimalBellatrix();
       case CAPELLA:
         return createMinimalCapella();
-      case EIP4844:
-        return createMinimalEip4844();
+      case DENEB:
+        return createMinimalDeneb();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -64,8 +64,8 @@ public class TestSpecFactory {
         return createMainnetBellatrix();
       case CAPELLA:
         return createMainnetCapella();
-      case EIP4844:
-        return createMainnetEip4844();
+      case DENEB:
+        return createMainnetDeneb();
       default:
         throw new IllegalStateException("unsupported milestone");
     }
@@ -104,9 +104,9 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.CAPELLA);
   }
 
-  public static Spec createMinimalEip4844() {
-    final SpecConfigEip4844 specConfig = getEip4844SpecConfig(Eth2Network.MINIMAL);
-    return create(specConfig, SpecMilestone.EIP4844);
+  public static Spec createMinimalDeneb() {
+    final SpecConfigDeneb specConfig = getDenebSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.DENEB);
   }
 
   /**
@@ -146,16 +146,16 @@ public class TestSpecFactory {
   }
 
   /**
-   * Create a spec that forks to EIP4844 at the provided epoch
+   * Create a spec that forks to Deneb at the provided epoch
    *
-   * @param eip4844ForkEpoch The eip4844 fork epoch
-   * @return A spec with eip4844 enabled, forking to eip4844 at the given epoch
+   * @param denebForkEpoch The Deneb fork epoch
+   * @return A spec with Deneb enabled, forking to Deneb at the given epoch
    */
-  public static Spec createMinimalWithEip4844ForkEpoch(final UInt64 eip4844ForkEpoch) {
-    final SpecConfigEip4844 config =
-        getEip4844SpecConfig(
-            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, eip4844ForkEpoch);
-    return create(config, SpecMilestone.EIP4844);
+  public static Spec createMinimalWithDenebForkEpoch(final UInt64 denebForkEpoch) {
+    final SpecConfigDeneb config =
+        getDenebSpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, denebForkEpoch);
+    return create(config, SpecMilestone.DENEB);
   }
 
   public static Spec createMinimalPhase0() {
@@ -178,9 +178,9 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.CAPELLA);
   }
 
-  public static Spec createMainnetEip4844() {
-    final SpecConfigBellatrix specConfig = getEip4844SpecConfig(Eth2Network.MAINNET);
-    return create(specConfig, SpecMilestone.EIP4844);
+  public static Spec createMainnetDeneb() {
+    final SpecConfigBellatrix specConfig = getDenebSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.DENEB);
   }
 
   public static Spec createMainnetPhase0() {
@@ -209,8 +209,8 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.CAPELLA);
   }
 
-  public static Spec createEip4844(final SpecConfig config) {
-    return create(config, SpecMilestone.EIP4844);
+  public static Spec createDeneb(final SpecConfig config) {
+    return create(config, SpecMilestone.DENEB);
   }
 
   public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {
@@ -246,14 +246,14 @@ public class TestSpecFactory {
                         .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                         .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO)));
         break;
-      case EIP4844:
+      case DENEB:
         actualModifier =
             configModifier.andThen(
                 z ->
                     z.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                         .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                         .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true)));
+                        .denebBuilder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true)));
         break;
       default:
         throw new IllegalStateException("unsupported milestone");
@@ -334,28 +334,28 @@ public class TestSpecFactory {
             }));
   }
 
-  private static SpecConfigEip4844 getEip4844SpecConfig(final Eth2Network network) {
-    return getEip4844SpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
+  private static SpecConfigDeneb getDenebSpecConfig(final Eth2Network network) {
+    return getDenebSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigEip4844 getEip4844SpecConfig(
+  private static SpecConfigDeneb getDenebSpecConfig(
       final Eth2Network network,
       final UInt64 altairForkEpoch,
       final UInt64 bellatrixForkEpoch,
       final UInt64 capellaForkEpoch,
-      final UInt64 eip4844ForkEpoch) {
-    return getEip4844SpecConfig(
+      final UInt64 denebForkEpoch) {
+    return getDenebSpecConfig(
         network,
         z ->
             z.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .eip4844Builder(d -> d.eip4844ForkEpoch(eip4844ForkEpoch).kzgNoop(true)));
+                .denebBuilder(d -> d.eip4844ForkEpoch(denebForkEpoch).kzgNoop(true)));
   }
 
-  private static SpecConfigEip4844 getEip4844SpecConfig(
+  private static SpecConfigDeneb getDenebSpecConfig(
       final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
-    return SpecConfigEip4844.required(
+    return SpecConfigDeneb.required(
         SpecConfigLoader.loadConfig(
             network.configName(),
             builder -> {
@@ -363,7 +363,7 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                  .eip4844Builder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true));
+                  .denebBuilder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true));
               configAdapter.accept(builder);
             }));
   }

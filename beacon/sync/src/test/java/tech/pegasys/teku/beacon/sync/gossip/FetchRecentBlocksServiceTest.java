@@ -41,15 +41,15 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksServiceTest {
 
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalEip4844());
+      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
 
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);

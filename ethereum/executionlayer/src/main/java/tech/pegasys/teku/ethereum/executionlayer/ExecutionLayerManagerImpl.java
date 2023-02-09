@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -123,8 +123,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BlobsBundleValidator blobsBundleValidator) {
     final ExecutionClientHandler executionClientHandler;
 
-    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
-      executionClientHandler = new Eip4844ExecutionClientHandler(spec, executionEngineClient);
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      executionClientHandler = new DenebExecutionClientHandler(spec, executionEngineClient);
     } else if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
       executionClientHandler = new CapellaExecutionClientHandler(spec, executionEngineClient);
     } else {

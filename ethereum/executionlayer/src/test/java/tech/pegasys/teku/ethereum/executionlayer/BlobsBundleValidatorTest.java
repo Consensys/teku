@@ -30,14 +30,14 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
-import tech.pegasys.teku.spec.logic.versions.eip4844.helpers.MiscHelpersEip4844;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlobsBundleValidatorTest {
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final MiscHelpersEip4844 miscHelpers = mock(MiscHelpersEip4844.class);
+  private final MiscHelpersDeneb miscHelpers = mock(MiscHelpersDeneb.class);
   private final BlobsBundleValidator blobsBundleValidator =
       new BlobsBundleValidatorImpl(miscHelpers);
 

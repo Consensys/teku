@@ -242,6 +242,6 @@ class StoreTransactionUpdatesFactory {
         stateRoots,
         optimisticTransitionBlockRootSet,
         optimisticTransitionBlockRoot,
-        spec.isMilestoneSupported(SpecMilestone.EIP4844));
+        spec.isMilestoneSupported(SpecMilestone.DENEB));
   }
 }

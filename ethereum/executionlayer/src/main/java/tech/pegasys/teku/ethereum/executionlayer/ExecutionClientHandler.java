@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -44,7 +44,7 @@ public interface ExecutionClientHandler {
   default SafeFuture<BlobsBundle> engineGetBlobsBundle(Bytes8 payloadId, UInt64 slot) {
     throw new IllegalArgumentException(
         String.format(
-            "Pre-EIP4844 execution client handler is called to get EIP-4844 BlobsBundleV1 for payload `%s`, slot %s",
+            "Pre-Deneb execution client handler is called to get Deneb BlobsBundleV1 for payload `%s`, slot %s",
             payloadId, slot));
   }
 

@@ -17,7 +17,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
 /**
- * This interface specifies all the KZG functions needed for the EIP-4844 specification and is the
+ * This interface specifies all the KZG functions needed for the Deneb specification and is the
  * entry-point for all KZG operations in Teku.
  */
 public interface KZG {

@@ -431,7 +431,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initBlobsImporter() {
-    if (spec.isMilestoneSupported(SpecMilestone.EIP4844)) {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlobsSidecarManagerImpl blobsSidecarManagerImpl =
           new BlobsSidecarManagerImpl(
               spec, recentChainData, storageQueryChannel, storageUpdateChannel);
@@ -544,6 +544,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
             validator,
             16_384);
+    blockImporter.subscribeToVerifiedBlockBlsToExecutionChanges(
+        blsToExecutionChangePool::removeAll);
   }
 
   protected void initDataProvider() {
@@ -561,6 +563,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(
                 beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
+            .acceptBlsToExecutionMessages(
+                beaconConfig.p2pConfig().isBlsToExecutionChangesSubnetEnabled())
             .activeValidatorChannel(
                 eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
             .attesterSlashingPool(attesterSlashingPool)

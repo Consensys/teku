@@ -45,7 +45,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -55,15 +55,15 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final UInt64 eip4844ForkEpoch = UInt64.valueOf(1);
+  private final UInt64 denebForkEpoch = UInt64.valueOf(1);
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
 
-  private final UInt64 startSlot = eip4844ForkEpoch.increment().times(slotsPerEpoch);
+  private final UInt64 startSlot = denebForkEpoch.increment().times(slotsPerEpoch);
 
   private final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
 
@@ -86,7 +86,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
   private final BlobsSidecarsByRangeMessageHandler handler =
       new BlobsSidecarsByRangeMessageHandler(
-          spec, eip4844ForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
+          spec, denebForkEpoch, metricsSystem, combinedChainDataClient, maxRequestSize);
 
   @BeforeEach
   public void setUp() {
@@ -94,7 +94,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     when(peer.wantToReceiveBlobsSidecars(listener, count.longValue())).thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(eip4844ForkEpoch.increment());
+    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
@@ -134,7 +134,7 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
 
     // earliest available sidecar epoch - 5010
     when(combinedChainDataClient.getEarliestAvailableBlobsSidecarEpoch())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(eip4844ForkEpoch.plus(5009))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(denebForkEpoch.plus(5009))));
 
     // start slot in epoch 5000 within MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS range
     final BlobsSidecarsByRangeRequestMessage request =

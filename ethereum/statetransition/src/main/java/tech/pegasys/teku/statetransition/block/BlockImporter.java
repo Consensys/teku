@@ -27,10 +27,12 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -56,6 +58,8 @@ public class BlockImporter {
       proposerSlashingSubscribers = Subscribers.create(true);
   private final Subscribers<VerifiedBlockOperationsListener<SignedVoluntaryExit>>
       voluntaryExitSubscribers = Subscribers.create(true);
+  private final Subscribers<VerifiedBlockOperationsListener<SignedBlsToExecutionChange>>
+      blsToExecutionChangeSubscribers = Subscribers.create(true);
 
   private final AtomicReference<CheckpointState> latestFinalizedCheckpointState =
       new AtomicReference<>(null);
@@ -178,19 +182,22 @@ public class BlockImporter {
   }
 
   private void notifyBlockOperationSubscribers(SignedBeaconBlock block) {
+    final BeaconBlockBody blockBody = block.getMessage().getBody();
+
     attestationSubscribers.forEach(
-        listener ->
-            listener.onOperationsFromBlock(
-                block.getSlot(), block.getMessage().getBody().getAttestations()));
+        listener -> listener.onOperationsFromBlock(block.getSlot(), blockBody.getAttestations()));
     attesterSlashingSubscribers.deliver(
-        VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getAttesterSlashings());
+        VerifiedBlockOperationsListener::onOperationsFromBlock, blockBody.getAttesterSlashings());
     proposerSlashingSubscribers.deliver(
-        VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getProposerSlashings());
+        VerifiedBlockOperationsListener::onOperationsFromBlock, blockBody.getProposerSlashings());
     voluntaryExitSubscribers.deliver(
-        VerifiedBlockOperationsListener::onOperationsFromBlock,
-        block.getMessage().getBody().getVoluntaryExits());
+        VerifiedBlockOperationsListener::onOperationsFromBlock, blockBody.getVoluntaryExits());
+    blockBody
+        .getOptionalBlsToExecutionChanges()
+        .ifPresent(
+            blsOperations ->
+                blsToExecutionChangeSubscribers.deliver(
+                    VerifiedBlockOperationsListener::onOperationsFromBlock, blsOperations));
   }
 
   public void subscribeToVerifiedBlockAttestations(
@@ -211,6 +218,12 @@ public class BlockImporter {
   public void subscribeToVerifiedBlockVoluntaryExits(
       VerifiedBlockOperationsListener<SignedVoluntaryExit> verifiedBlockVoluntaryExitsListener) {
     voluntaryExitSubscribers.subscribe(verifiedBlockVoluntaryExitsListener);
+  }
+
+  public void subscribeToVerifiedBlockBlsToExecutionChanges(
+      VerifiedBlockOperationsListener<SignedBlsToExecutionChange>
+          verifiedBlockBlsToExecutionChangeListener) {
+    blsToExecutionChangeSubscribers.subscribe(verifiedBlockBlsToExecutionChangeListener);
   }
 
   private String getBlockContent(final SignedBeaconBlock block) {

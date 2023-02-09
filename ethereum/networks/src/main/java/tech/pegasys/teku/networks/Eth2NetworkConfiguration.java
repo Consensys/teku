@@ -64,7 +64,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> altairForkEpoch;
   private final Optional<UInt64> bellatrixForkEpoch;
   private final Optional<UInt64> capellaForkEpoch;
-  private final Optional<UInt64> eip4844ForkEpoch;
+  private final Optional<UInt64> denebForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
@@ -91,7 +91,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<UInt64> capellaForkEpoch,
-      final Optional<UInt64> eip4844ForkEpoch,
+      final Optional<UInt64> denebForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -107,7 +107,7 @@ public class Eth2NetworkConfiguration {
     this.altairForkEpoch = altairForkEpoch;
     this.bellatrixForkEpoch = bellatrixForkEpoch;
     this.capellaForkEpoch = capellaForkEpoch;
-    this.eip4844ForkEpoch = eip4844ForkEpoch;
+    this.denebForkEpoch = denebForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
@@ -194,8 +194,8 @@ public class Eth2NetworkConfiguration {
         return bellatrixForkEpoch;
       case CAPELLA:
         return capellaForkEpoch;
-      case EIP4844:
-        return eip4844ForkEpoch;
+      case DENEB:
+        return denebForkEpoch;
       default:
         return Optional.empty();
     }
@@ -237,7 +237,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
-    private Optional<UInt64> eip4844ForkEpoch = Optional.empty();
+    private Optional<UInt64> denebForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
@@ -278,10 +278,10 @@ public class Eth2NetworkConfiguration {
                   builder.capellaBuilder(
                       capellaBuilder ->
                           capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
-                  builder.eip4844Builder(
-                      eip4844Builder -> {
-                        eip4844ForkEpoch.ifPresent(eip4844Builder::eip4844ForkEpoch);
-                        trustedSetup.ifPresent(eip4844Builder::trustedSetupPath);
+                  builder.denebBuilder(
+                      denebBuilder -> {
+                        denebForkEpoch.ifPresent(denebBuilder::eip4844ForkEpoch);
+                        trustedSetup.ifPresent(denebBuilder::trustedSetupPath);
                       });
                 });
       }
@@ -306,7 +306,7 @@ public class Eth2NetworkConfiguration {
           altairForkEpoch,
           bellatrixForkEpoch,
           capellaForkEpoch,
-          eip4844ForkEpoch,
+          denebForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -428,8 +428,8 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder eip4844ForkEpoch(final UInt64 eip4844ForkEpoch) {
-      this.eip4844ForkEpoch = Optional.of(eip4844ForkEpoch);
+    public Builder denebForkEpoch(final UInt64 denebForkEpoch) {
+      this.denebForkEpoch = Optional.of(denebForkEpoch);
       return this;
     }
 

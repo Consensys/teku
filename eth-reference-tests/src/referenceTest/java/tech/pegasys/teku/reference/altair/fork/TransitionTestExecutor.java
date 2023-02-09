@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.eip4844.block.KzgCommitmentsProcessor;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public class TransitionTestExecutor implements TestExecutor {
 
@@ -47,7 +47,10 @@ public class TransitionTestExecutor implements TestExecutor {
   }
 
   private void processUpgrade(final TestDefinition testDefinition, final MetaData metadata) {
-    final SpecMilestone milestone = SpecMilestone.valueOf(metadata.postFork.toUpperCase());
+    final String postFork = metadata.postFork.toUpperCase();
+    // TODO: simplify when reference tests are updated to Deneb
+    final SpecMilestone milestone =
+        SpecMilestone.valueOf(postFork.equals("EIP4844") ? "DENEB" : postFork);
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
@@ -68,12 +71,12 @@ public class TransitionTestExecutor implements TestExecutor {
                       .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                       .capellaBuilder(c -> c.capellaForkEpoch(forkEpoch));
                   break;
-                case EIP4844:
+                case DENEB:
                   builder
                       .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                       .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                       .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                      .eip4844Builder(d -> d.eip4844ForkEpoch(forkEpoch).kzgNoop(true));
+                      .denebBuilder(d -> d.eip4844ForkEpoch(forkEpoch).kzgNoop(true));
                   break;
                 default:
                   throw new IllegalStateException(

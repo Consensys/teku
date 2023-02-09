@@ -37,7 +37,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailab
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -47,7 +47,7 @@ public class BlobsSidecarsByRangeMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final UInt64 eip4844ForkEpoch;
+  private final UInt64 denebForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
   private final LabelledMetric<Counter> requestCounter;
@@ -55,12 +55,12 @@ public class BlobsSidecarsByRangeMessageHandler
 
   public BlobsSidecarsByRangeMessageHandler(
       final Spec spec,
-      final UInt64 eip4844ForkEpoch,
+      final UInt64 denebForkEpoch,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
       final UInt64 maxRequestSize) {
     this.spec = spec;
-    this.eip4844ForkEpoch = eip4844ForkEpoch;
+    this.denebForkEpoch = denebForkEpoch;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
     requestCounter =
@@ -131,7 +131,9 @@ public class BlobsSidecarsByRangeMessageHandler
   }
 
   /**
-   * See <a
+   * TODO: Update link for Deneb
+   *
+   * <p>See <a
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/p2p-interface.md#blobssidecarsbyrange-v1">BlobsSidecarsByRange
    * v1</a>
    */
@@ -145,7 +147,7 @@ public class BlobsSidecarsByRangeMessageHandler
   private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     final UInt64 minEpochForBlobsSidecar =
-        eip4844ForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS));
+        denebForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobsSidecar)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }

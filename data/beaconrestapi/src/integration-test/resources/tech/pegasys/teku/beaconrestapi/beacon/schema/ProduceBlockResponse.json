@@ -15,7 +15,7 @@
       }, {
         "$ref" : "#/components/schemas/BeaconBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/BeaconBlockEip4844"
+        "$ref" : "#/components/schemas/BeaconBlockDeneb"
       }  ]
     }
   }

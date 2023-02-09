@@ -19,8 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.NOT_REQUIRED;
-import static tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.validResult;
+import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.NOT_REQUIRED;
+import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.validResult;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,17 +34,17 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobsSidecarManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalEip4844();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Spec mockedSpec = mock(Spec.class);
   private final SpecVersion mockedSpecVersion = mock(SpecVersion.class);
@@ -169,7 +169,7 @@ public class BlobsSidecarManagerTest {
 
   @Test
   void isStorageOfBlobsSidecarRequired_shouldReturnTrueIfWithinRange() {
-    when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.EIP4844);
+    when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.DENEB);
 
     final UInt64 currentEpoch = UInt64.valueOf(10000);
     when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(currentEpoch));
@@ -185,7 +185,7 @@ public class BlobsSidecarManagerTest {
 
   @Test
   void isStorageOfBlobsSidecarRequired_shouldReturnFalseIfNotWithinRange() {
-    when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.EIP4844);
+    when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.DENEB);
 
     final UInt64 currentEpoch = UInt64.valueOf(10000);
     when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(currentEpoch));
@@ -200,7 +200,7 @@ public class BlobsSidecarManagerTest {
   }
 
   @Test
-  void isStorageOfBlobsSidecarRequired_shouldReturnFalseIfPreEip4844() {
+  void isStorageOfBlobsSidecarRequired_shouldReturnFalseIfPreDeneb() {
     when(mockedForkSchedule.getSpecMilestoneAtSlot(any())).thenReturn(SpecMilestone.BELLATRIX);
 
     final boolean result =

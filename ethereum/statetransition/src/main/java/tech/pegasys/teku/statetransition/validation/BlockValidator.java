@@ -37,9 +37,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844Impl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -228,7 +228,7 @@ public class BlockValidator {
       final BlobsSidecar blobsSidecar,
       final MiscHelpers miscHelpers) {
     final SszList<SszKZGCommitment> blobKzgCommitments =
-        BeaconBlockBodyEip4844Impl.required(block.getBeaconBlock().orElseThrow().getBody())
+        BeaconBlockBodyDenebImpl.required(block.getBeaconBlock().orElseThrow().getBody())
             .getBlobKzgCommitments();
     try {
       return miscHelpers.isDataAvailable(

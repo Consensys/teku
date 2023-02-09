@@ -57,7 +57,8 @@ public class CommonAncestor {
 
     final BestBlockListener blockListener = new BestBlockListener(storageClient, firstNonFinalSlot);
     final PeerSyncBlockRequest request =
-        new PeerSyncBlockRequest(SafeFuture.COMPLETE, lastSlot, blockListener);
+        new PeerSyncBlockRequest(
+            SafeFuture.COMPLETE, firstRequestedSlot, BLOCK_COUNT, blockListener);
 
     return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, request)
         .thenApply(__ -> blockListener.getBestSlot());

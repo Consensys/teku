@@ -15,12 +15,12 @@
       }, {
         "$ref" : "#/components/schemas/BlindedBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockEip4844"
+        "$ref" : "#/components/schemas/BlindedBlockDeneb"
       } ]
     },
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "eip4844" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
     }
   }
 }

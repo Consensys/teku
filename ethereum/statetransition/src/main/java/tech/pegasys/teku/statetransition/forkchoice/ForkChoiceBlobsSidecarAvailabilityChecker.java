@@ -24,17 +24,18 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.eip4844.BeaconBlockBodyEip4844;
-import tech.pegasys.teku.spec.datastructures.execution.versions.eip4844.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.versions.eip4844.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAvailabilityChecker {
-  private SpecVersion specVersion;
-  private RecentChainData recentChainData;
-  private SignedBeaconBlock block;
-  private BlobsSidecarProvider blobsSidecarProvider;
+
+  private final SpecVersion specVersion;
+  private final RecentChainData recentChainData;
+  private final SignedBeaconBlock block;
+  private final BlobsSidecarProvider blobsSidecarProvider;
 
   private Optional<SafeFuture<BlobsSidecarAndValidationResult>> validationResult = Optional.empty();
 
@@ -52,8 +53,7 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   @Override
   public boolean initiateDataAvailabilityCheck() {
     validationResult =
-        Optional.of(
-            blobsSidecarProvider.getBlobsSidecar(block).thenApply(this::validateBlobsSidecar));
+        Optional.of(blobsSidecarProvider.getBlobsSidecar(block).thenCompose(this::validate));
     return true;
   }
 
@@ -65,34 +65,31 @@ public class ForkChoiceBlobsSidecarAvailabilityChecker implements BlobsSidecarAv
   @Override
   public SafeFuture<BlobsSidecarAndValidationResult> validate(
       final Optional<BlobsSidecar> blobsSidecar) {
-    return SafeFuture.of(() -> validateBlobsSidecar(blobsSidecar));
+    return SafeFuture.of(
+        () -> {
+          // in the current Deneb specs, the blobsSidecar is immediately available with the block
+          // so if we have it we do want to validate it regardless
+          if (blobsSidecar.isPresent()) {
+            return internalValidate(blobsSidecar.get());
+          }
+
+          // when blobs are not available, we check if it is ok to not have them based on
+          // the required availability window.
+          if (isBlockInDataAvailabilityWindow()) {
+            return BlobsSidecarAndValidationResult.NOT_AVAILABLE;
+          }
+
+          // block is older than the availability window
+          return BlobsSidecarAndValidationResult.NOT_REQUIRED;
+        });
   }
 
-  private BlobsSidecarAndValidationResult validateBlobsSidecar(
-      final Optional<BlobsSidecar> blobsSidecar) {
-
-    // in the current 4844 specs, the blobsSidecar is immediately available with the block
-    // so if we have it we do want to validate it regardless
-    if (blobsSidecar.isPresent()) {
-      return validateBlobsSidecar(blobsSidecar.get());
-    }
-
-    // when blobs are not available, we check if it is ok to not have them based on
-    // the required availability window.
-    if (isBlockInDataAvailabilityWindow()) {
-      return BlobsSidecarAndValidationResult.NOT_AVAILABLE;
-    }
-
-    // block is older than the availability window
-    return BlobsSidecarAndValidationResult.NOT_REQUIRED;
-  }
-
-  private BlobsSidecarAndValidationResult validateBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    final BeaconBlockBodyEip4844 blockBody =
+  private BlobsSidecarAndValidationResult internalValidate(final BlobsSidecar blobsSidecar) {
+    final BeaconBlockBodyDeneb blockBody =
         block
             .getBeaconBlock()
             .map(BeaconBlock::getBody)
-            .flatMap(BeaconBlockBody::toVersionEip4844)
+            .flatMap(BeaconBlockBody::toVersionDeneb)
             .orElseThrow();
     try {
       if (!specVersion
