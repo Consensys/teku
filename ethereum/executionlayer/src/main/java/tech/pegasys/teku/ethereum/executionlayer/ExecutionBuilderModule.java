@@ -164,7 +164,10 @@ public class ExecutionBuilderModule {
                       localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER);
                 }
                 return getResultFromSignedBuilderBid(
-                    signedBuilderBidMaybe.get(), state, validatorRegistration.get());
+                    signedBuilderBidMaybe.get(),
+                    state,
+                    validatorRegistration.get(),
+                    localExecutionPayload);
               }
             })
         .exceptionallyCompose(
@@ -180,11 +183,17 @@ public class ExecutionBuilderModule {
   private SafeFuture<HeaderWithFallbackData> getResultFromSignedBuilderBid(
       final SignedBuilderBid signedBuilderBid,
       final BeaconState state,
-      final SignedValidatorRegistration validatorRegistration) {
-    final ExecutionPayloadHeader executionPayloadHeader =
-        builderBidValidator.validateAndGetPayloadHeader(
-            spec, signedBuilderBid, validatorRegistration, state);
-    return SafeFuture.completedFuture(HeaderWithFallbackData.create(executionPayloadHeader));
+      final SignedValidatorRegistration validatorRegistration,
+      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload) {
+    return localExecutionPayload
+        .thenApply(Optional::of)
+        // ensures we still propose a builder block even if the local payload is unavailable
+        .exceptionally(__ -> Optional.empty())
+        .thenApply(
+            executionPayload ->
+                builderBidValidator.validateAndGetPayloadHeader(
+                    spec, signedBuilderBid, validatorRegistration, state, executionPayload))
+        .thenApply(HeaderWithFallbackData::create);
   }
 
   public SafeFuture<Void> builderRegisterValidators(
