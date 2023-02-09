@@ -93,6 +93,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.statetransition.BlsToExecutionOperationPool;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -535,15 +536,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec, timeProvider, recentChainData, signatureVerificationService);
 
     blsToExecutionChangePool =
-        new SimpleOperationPool<>(
+        new BlsToExecutionOperationPool(
             "SignedBlsToExecutionChangePool",
             metricsSystem,
             beaconBlockSchemaSupplier
                 .andThen(BeaconBlockBodySchema::toVersionCapella)
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
-            validator,
-            16_384);
+            validator);
   }
 
   protected void initDataProvider() {

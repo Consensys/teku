@@ -25,6 +25,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public interface OperationPool<T extends SszData> {
+
+  String OPERATION_POOL_SIZE_METRIC = "operation_pool_size_";
+  String OPERATION_POOL_SIZE_VALIDATION_REASON = "operation_pool_validation_";
+
   void subscribeOperationAdded(OperationAddedSubscriber<T> subscriber);
 
   SszList<T> getItemsForBlock(BeaconState stateAtBlockSlot);
