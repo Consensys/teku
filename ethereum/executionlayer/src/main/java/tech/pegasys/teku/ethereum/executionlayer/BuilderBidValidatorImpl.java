@@ -46,7 +46,7 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
       final BeaconState state,
-      final Optional<ExecutionPayloadWithValue> localExecutionPayload) {
+      final Optional<ExecutionPayload> localExecutionPayload) {
 
     // validating Bid Signature
     final Bytes signingRoot =
@@ -75,7 +75,6 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
 
     // validating the withdrawals root
     localExecutionPayload
-        .map(ExecutionPayloadWithValue::getExecutionPayload)
         .flatMap(ExecutionPayload::getOptionalWithdrawalsRoot)
         .ifPresent(
             localWithdrawalsRoot -> {

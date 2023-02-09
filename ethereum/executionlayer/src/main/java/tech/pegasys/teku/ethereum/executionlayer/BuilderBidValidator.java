@@ -17,6 +17,7 @@ import java.util.Optional;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -31,5 +32,5 @@ public interface BuilderBidValidator {
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
       final BeaconState state,
-      final Optional<ExecutionPayloadWithValue> localExecutionPayload);
+      final Optional<ExecutionPayload> localExecutionPayload);
 }

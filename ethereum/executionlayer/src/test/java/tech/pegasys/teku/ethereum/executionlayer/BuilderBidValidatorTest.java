@@ -69,8 +69,11 @@ public class BuilderBidValidatorTest {
   private SignedValidatorRegistration validatorRegistration =
       dataStructureUtil.randomSignedValidatorRegistration();
 
-  private ExecutionPayloadWithValue localExecutionPayload;
-  private SignedBuilderBid signedBuilderBid;
+  private final ExecutionPayload localExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+  private SignedBuilderBid signedBuilderBid =
+      dataStructureUtil.randomSignedBuilderBid(
+          localExecutionPayload.getOptionalWithdrawalsRoot().orElseThrow());
 
   @BeforeEach
   void setUp() throws BlockProcessingException {
@@ -82,13 +85,6 @@ public class BuilderBidValidatorTest {
     when(specMock.atSlot(any())).thenReturn(specVersionMock);
     when(specVersionMock.getBlockProcessor()).thenReturn(blockProcessor);
     doNothing().when(blockProcessor).validateExecutionPayload(any(), any(), any(), any());
-
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-
-    localExecutionPayload = new ExecutionPayloadWithValue(executionPayload, UInt256.ONE);
-    signedBuilderBid =
-        dataStructureUtil.randomSignedBuilderBid(
-            executionPayload.getOptionalWithdrawalsRoot().orElseThrow());
   }
 
   @AfterEach
@@ -150,7 +146,7 @@ public class BuilderBidValidatorTest {
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessage(
             "Withdrawals root from the local payload (%s) was different from the proposed payload (%s)",
-            localExecutionPayload.getExecutionPayload().getOptionalWithdrawalsRoot().orElseThrow(),
+            localExecutionPayload.getOptionalWithdrawalsRoot().orElseThrow(),
             dodgySignedBuilderBid
                 .getMessage()
                 .getExecutionPayloadHeader()

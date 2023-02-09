@@ -131,12 +131,9 @@ public class ExecutionBuilderModule {
         validatorPublicKey,
         executionPayloadContext.getParentHash());
 
-    // Treat the local block value as zero if getPayload fails so any builder bid will beat it
-    // Ensures we can still propose a builder block even if the local payload is unavailable
-    final SafeFuture<UInt256> localExecutionPayloadValue =
-        localExecutionPayload
-            .thenApply(ExecutionPayloadWithValue::getValue)
-            .exceptionally(__ -> UInt256.ZERO);
+    // Ensures we can still propose a builder block even if getPayload fails
+    final SafeFuture<Optional<ExecutionPayloadWithValue>> safeLocalExecutionPayload =
+        localExecutionPayload.thenApply(Optional::of).exceptionally(__ -> Optional.empty());
 
     return builderClient
         .orElseThrow()
@@ -151,23 +148,27 @@ public class ExecutionBuilderModule {
                     executionPayloadContext.getParentHash(),
                     signedBuilderBidMaybe))
         .thenComposeCombined(
-            localExecutionPayloadValue,
-            (signedBuilderBidMaybe, localPayloadValue) -> {
+            safeLocalExecutionPayload,
+            (signedBuilderBidMaybe, maybeLocalExecutionPayload) -> {
               if (signedBuilderBidMaybe.isEmpty()) {
                 return getResultFromLocalExecutionPayload(
                     localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
               } else {
                 final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
+                // Treat the local block value as zero if local payload is unavailable
+                final UInt256 localPayloadValue =
+                    maybeLocalExecutionPayload
+                        .map(ExecutionPayloadWithValue::getValue)
+                        .orElse(UInt256.ZERO);
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
-                if (signedBuilderBid.getMessage().getValue().compareTo(localPayloadValue) <= 0) {
+                if (signedBuilderBid.getMessage().getValue().lessOrEqualThan(localPayloadValue)) {
                   return getResultFromLocalExecutionPayload(
                       localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER);
                 }
+                final Optional<ExecutionPayload> localPayload =
+                    maybeLocalExecutionPayload.map(ExecutionPayloadWithValue::getExecutionPayload);
                 return getResultFromSignedBuilderBid(
-                    signedBuilderBidMaybe.get(),
-                    state,
-                    validatorRegistration.get(),
-                    localExecutionPayload);
+                    signedBuilderBidMaybe.get(), state, validatorRegistration.get(), localPayload);
               }
             })
         .exceptionallyCompose(
@@ -184,16 +185,11 @@ public class ExecutionBuilderModule {
       final SignedBuilderBid signedBuilderBid,
       final BeaconState state,
       final SignedValidatorRegistration validatorRegistration,
-      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload) {
-    return localExecutionPayload
-        .thenApply(Optional::of)
-        // ensures we still propose a builder block even if the local payload is unavailable
-        .exceptionally(__ -> Optional.empty())
-        .thenApply(
-            executionPayload ->
-                builderBidValidator.validateAndGetPayloadHeader(
-                    spec, signedBuilderBid, validatorRegistration, state, executionPayload))
-        .thenApply(HeaderWithFallbackData::create);
+      final Optional<ExecutionPayload> localExecutionPayload) {
+    final ExecutionPayloadHeader executionPayloadHeader =
+        builderBidValidator.validateAndGetPayloadHeader(
+            spec, signedBuilderBid, validatorRegistration, state, localExecutionPayload);
+    return SafeFuture.completedFuture(HeaderWithFallbackData.create(executionPayloadHeader));
   }
 
   public SafeFuture<Void> builderRegisterValidators(
