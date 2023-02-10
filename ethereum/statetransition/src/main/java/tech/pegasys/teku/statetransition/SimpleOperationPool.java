@@ -43,8 +43,6 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
 public class SimpleOperationPool<T extends SszData> implements OperationPool<T> {
   private static final int DEFAULT_OPERATION_POOL_SIZE = 1000;
-  private static final String OPERATION_POOL_SIZE_METRIC = "operation_pool_size_";
-  private static final String OPERATION_POOL_SIZE_VALIDATION_REASON = "operation_pool_validation_";
   private final Set<T> operations;
   private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
   private final OperationValidator<T> operationValidator;
