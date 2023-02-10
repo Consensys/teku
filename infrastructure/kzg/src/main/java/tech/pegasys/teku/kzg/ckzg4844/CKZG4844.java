@@ -15,6 +15,7 @@ package tech.pegasys.teku.kzg.ckzg4844;
 
 import ethereum.ckzg4844.CKZG4844JNI;
 import ethereum.ckzg4844.CKZG4844JNI.Preset;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.kzg.TrustedSetup;
 
 /**
  * Wrapper around jc-kzg-4844
@@ -38,6 +40,8 @@ public final class CKZG4844 implements KZG {
   private static CKZG4844 instance;
 
   private static int initializedFieldElementsPerBlob = -1;
+
+  private Optional<Integer> loadedTrustedSetupHash = Optional.empty();
 
   public static synchronized CKZG4844 createInstance(final int fieldElementsPerBlob) {
     if (instance == null) {
@@ -72,8 +76,6 @@ public final class CKZG4844 implements KZG {
                         fieldElementsPerBlob)));
   }
 
-  private Optional<String> loadedTrustedSetup = Optional.empty();
-
   private CKZG4844(final Preset preset) {
     try {
       CKZG4844JNI.loadNativeLibrary(preset);
@@ -84,18 +86,32 @@ public final class CKZG4844 implements KZG {
   }
 
   @Override
-  public synchronized void loadTrustedSetup(final String trustedSetup) throws KZGException {
-    if (loadedTrustedSetup.isPresent() && loadedTrustedSetup.get().equals(trustedSetup)) {
+  public synchronized void loadTrustedSetup(final String trustedSetupFilePath) throws KZGException {
+    try {
+      final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFilePath);
+      loadTrustedSetup(trustedSetup);
+    } catch (IOException ex) {
+      throw new KZGException("Failed to load trusted setup from file: " + trustedSetupFilePath, ex);
+    }
+  }
+
+  @Override
+  public void loadTrustedSetup(final TrustedSetup trustedSetup) throws KZGException {
+    if (loadedTrustedSetupHash.isPresent()
+        && loadedTrustedSetupHash.get().equals(trustedSetup.hashCode())) {
       LOG.trace("Trusted setup {} is already loaded.", trustedSetup);
       return;
     }
     try {
-      final String file = CKZG4844Utils.copyTrustedSetupToTempFileIfNeeded(trustedSetup);
-      CKZG4844JNI.loadTrustedSetup(file);
-      loadedTrustedSetup = Optional.of(trustedSetup);
-      LOG.debug("Loaded trusted setup from {}", file);
+      CKZG4844JNI.loadTrustedSetup(
+          CKZG4844Utils.flattenBytes(trustedSetup.getG1Points()),
+          trustedSetup.getG1Points().size(),
+          CKZG4844Utils.flattenBytes(trustedSetup.getG2Points()),
+          trustedSetup.getG2Points().size());
+      loadedTrustedSetupHash = Optional.of(trustedSetup.hashCode());
+      LOG.debug("Loaded trusted setup: {}", trustedSetup);
     } catch (final Exception ex) {
-      throw new KZGException("Failed to load trusted setup from " + trustedSetup, ex);
+      throw new KZGException("Failed to load trusted setup: " + trustedSetup, ex);
     }
   }
 
@@ -103,7 +119,7 @@ public final class CKZG4844 implements KZG {
   public synchronized void freeTrustedSetup() throws KZGException {
     try {
       CKZG4844JNI.freeTrustedSetup();
-      loadedTrustedSetup = Optional.empty();
+      loadedTrustedSetupHash = Optional.empty();
       LOG.debug("Trusted setup was freed");
     } catch (final Exception ex) {
       throw new KZGException("Failed to free trusted setup", ex);
