@@ -64,10 +64,7 @@ public class SyncingStatus {
       return false;
     }
     if (isSyncing) {
-      return false;
-    }
-    if (!isOptimistic.orElse(false)) {
-      return false;
+      return isOptimistic.isPresent() && isOptimistic.get();
     }
     return true;
   }
