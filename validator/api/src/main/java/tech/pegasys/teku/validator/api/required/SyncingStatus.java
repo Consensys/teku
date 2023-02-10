@@ -62,9 +62,14 @@ public class SyncingStatus {
   public boolean isReady() {
     if (elOffline.isPresent() && elOffline.get()) {
       return false;
-    } else {
-      return !isSyncing || isOptimistic.orElse(false);
     }
+    if (isSyncing) {
+      return false;
+    }
+    if (!isOptimistic.orElse(false)) {
+      return false;
+    }
+    return true;
   }
 
   @Override
