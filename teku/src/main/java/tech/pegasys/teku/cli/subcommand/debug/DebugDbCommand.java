@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -46,9 +49,11 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -273,9 +278,8 @@ public class DebugDbCommand implements Runnable {
 
       Optional<SignedBeaconBlock> maybeFinalizedBlock = database.getLastAvailableFinalizedBlock();
       Optional<SignedBeaconBlock> maybeEarliestBlock = database.getEarliestAvailableBlock();
-      while (maybeFinalizedBlock.isPresent()
-          && maybeFinalizedBlock.get().getSlot().isGreaterThanOrEqualTo(UInt64.ZERO)) {
-        SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
+      while (maybeFinalizedBlock.isPresent()) {
+        final SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
         if (counter == 0) {
           System.out.printf(
               "Tracing chain from best finalized block %s (%s)%n",
@@ -314,8 +318,9 @@ public class DebugDbCommand implements Runnable {
     } catch (DatabaseStorageException ex) {
       System.out.println("Failed to open database");
     }
-    final long endTime = System.currentTimeMillis();
-    System.out.printf("Done. Checked %s blocks in %s ms%n", counter, endTime - startTimeMillis);
+    final long endTimeMillis = System.currentTimeMillis();
+    System.out.printf(
+        "Done. Checked %s blocks in %s ms%n", counter, endTimeMillis - startTimeMillis);
     return 0;
   }
 
@@ -410,7 +415,10 @@ public class DebugDbCommand implements Runnable {
           final Map.Entry<SlotAndBlockRoot, Bytes> entryData = iterator.next();
           out.putNextEntry(
               new ZipEntry(
-                  entryData.getKey().getSlot() + "_" + entryData.getKey().getBlockRoot() + ".ssz"));
+                  entryData.getKey().getSlot()
+                      + "_"
+                      + entryData.getKey().getBlockRoot().toUnprefixedHexString()
+                      + ".ssz"));
           out.write(entryData.getValue().toArrayUnsafe());
           index++;
         }
@@ -436,6 +444,288 @@ public class DebugDbCommand implements Runnable {
 
     System.out.println(
         "Wrote " + index + " unconfirmed blobs sidecars to " + outputFile.toAbsolutePath());
+    return 0;
+  }
+
+  @Command(
+      name = "validate-blobs-sidecars",
+      description = "Validate the blobs sidecars",
+      mixinStandardHelpOptions = true,
+      showDefaultValues = true,
+      abbreviateSynopsis = true,
+      versionProvider = PicoCliVersionProvider.class,
+      synopsisHeading = "%n",
+      descriptionHeading = "%nDescription:%n%n",
+      optionListHeading = "%nOptions:%n",
+      footerHeading = "%n",
+      footer = "Teku is licensed under the Apache License 2.0")
+  public int validateBlobsSidecars(
+      @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              required = true,
+              names = {"--current-slot", "-s"},
+              description =
+                  "Provide the current slot from which calculate Data Availability window")
+          final Long currentSlot)
+      throws Exception {
+
+    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+
+    final UInt64 denebActivationEpoch =
+        spec.forMilestone(SpecMilestone.DENEB)
+            .getConfig()
+            .toVersionDeneb()
+            .orElseThrow()
+            .getDenebForkEpoch();
+
+    final UInt64 currentEpoch =
+        eth2NetworkOptions
+            .getNetworkConfiguration()
+            .getSpec()
+            .computeEpochAtSlot(UInt64.valueOf(currentSlot));
+
+    final UInt64 lowerEpochBoundDataAvailability =
+        currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS).max(denebActivationEpoch);
+
+    final UInt64 lowerSlotBoundDataAvailability =
+        eth2NetworkOptions
+            .getNetworkConfiguration()
+            .getSpec()
+            .computeStartSlotAtEpoch(lowerEpochBoundDataAvailability);
+
+    long missingFinalizedBlobsSidecars = 0;
+    long missingHotBlobsSidecars = 0;
+    long orphanBlobsSidecars = 0;
+    long unconfirmedBlobsSidecarsWithBlocks = 0;
+    long unprunedBlobsSidecars = 0;
+    long unprunedUnconfirmedBlobsSidecarsNonFinalized = 0;
+    long unprunedUnconfirmedBlobsSidecarsFinalized = 0;
+    long orphanUnconfirmations = 0;
+    long blocksToSidecarsCheckCounter = 0;
+    long sidecarsToBlocksCheckCounter = 0;
+
+    final long startTimeMillis = System.currentTimeMillis();
+
+    Optional<UInt64> maybeEarliestBlobsSidecarSlot = Optional.empty();
+    Optional<UInt64> maybeLatestFinalizedSlot = Optional.empty();
+    Optional<SignedBeaconBlock> maybeEarliestBlock = Optional.empty();
+    try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
+
+      // checking blobs for finalized blocks
+
+      Optional<SignedBeaconBlock> maybeFinalizedBlock = database.getLastAvailableFinalizedBlock();
+      maybeEarliestBlock = database.getEarliestAvailableBlock();
+      maybeEarliestBlobsSidecarSlot = database.getEarliestBlobsSidecarSlot();
+      maybeLatestFinalizedSlot = maybeFinalizedBlock.map(SignedBeaconBlock::getSlot);
+      while (maybeFinalizedBlock.isPresent()) {
+        final SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
+        if (blocksToSidecarsCheckCounter == 0) {
+          System.out.printf(
+              "Checking blobs sidecars tracing chain from best finalized block %s (%s)%n",
+              currentBlock.getRoot(), currentBlock.getSlot());
+        }
+
+        // check blobs sidecar existence
+        final SlotAndBlockRoot slotAndBlockRoot =
+            new SlotAndBlockRoot(currentBlock.getSlot(), currentBlock.getRoot());
+
+        final Optional<BlobsSidecar> maybeCurrentBlobsSidecar;
+        if (maybeEarliestBlobsSidecarSlot.isEmpty()
+            || maybeEarliestBlobsSidecarSlot.get().isGreaterThan(currentBlock.getSlot())) {
+          maybeCurrentBlobsSidecar = Optional.empty();
+        } else {
+          maybeCurrentBlobsSidecar = database.getBlobsSidecar(slotAndBlockRoot);
+        }
+
+        if (maybeCurrentBlobsSidecar.isEmpty()
+            && currentBlock.getSlot().isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)) {
+          // inside DA window but missing
+          missingFinalizedBlobsSidecars++;
+          System.err.printf(
+              "ERROR: Unable to locate finalized blobs sidecar %s%n",
+              slotAndBlockRoot.toLogString());
+        }
+
+        final Optional<SignedBeaconBlock> maybeParent =
+            database.getSignedBlock(currentBlock.getParentRoot());
+        if (maybeParent.isEmpty()) {
+          if (maybeEarliestBlock.isPresent()
+              && maybeEarliestBlock.get().getRoot().equals(currentBlock.getRoot())) {
+            System.out.printf(
+                "Found back to earliest block %s (%s)%n",
+                currentBlock.getRoot(), currentBlock.getSlot());
+            break;
+          }
+        } else {
+          checkFinalizedIndices(database, maybeParent.get());
+          maybeFinalizedBlock = maybeParent;
+        }
+        blocksToSidecarsCheckCounter++;
+        if (blocksToSidecarsCheckCounter % 5_000 == 0) {
+          System.out.printf("%s (%s)...%n", currentBlock.getRoot(), currentBlock.getSlot());
+        }
+      }
+
+      // checking blobs sidecars for hot blocks
+
+      try (final Stream<Map.Entry<Bytes, Bytes>> blockStream = database.streamHotBlocksAsSsz()) {
+        // Iterate through hot blocks
+        System.out.printf(
+            "Checking blobs sidecars excess with respect to finalized or hot blocks block...%n");
+
+        for (final Iterator<Map.Entry<Bytes, Bytes>> iterator = blockStream.iterator();
+            iterator.hasNext(); ) {
+          blocksToSidecarsCheckCounter++;
+
+          final Map.Entry<Bytes, Bytes> rootAndBlock = iterator.next();
+          final Bytes blockData = rootAndBlock.getValue();
+          final UInt64 blockSlot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(blockData);
+
+          // check blobs sidecar existence
+          final SlotAndBlockRoot slotAndBlockRoot =
+              new SlotAndBlockRoot(blockSlot, Bytes32.wrap(rootAndBlock.getKey()));
+          final Optional<BlobsSidecar> maybeCurrentBlobsSidecar =
+              database.getBlobsSidecar(slotAndBlockRoot);
+          if (maybeCurrentBlobsSidecar.isEmpty()
+              && blockSlot.isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)) {
+            // inside DA window but missing
+            missingFinalizedBlobsSidecars++;
+            System.err.printf(
+                "ERROR: Unable to locate hot blobs sidecar %s%n", slotAndBlockRoot.toLogString());
+          }
+        }
+      }
+
+      final ArrayList<SlotAndBlockRoot> unconfirmedBlobsSidecars = new ArrayList<>();
+
+      // collect unconfirmed blobs sidecar
+      try (final Stream<SlotAndBlockRoot> slotAndBlockRootStream =
+          database.streamUnconfirmedBlobsSidecars(UInt64.ZERO, UInt64.MAX_VALUE)) {
+        slotAndBlockRootStream.forEach(unconfirmedBlobsSidecars::add);
+      }
+
+      // calculate non-pruned or orphaned blobs sidecars
+      try (final Stream<SlotAndBlockRoot> blobsSidecarsKeys =
+          database.streamBlobsSidecarKeys(UInt64.ZERO, UInt64.MAX_VALUE)) {
+        // Iterate through hot blocks
+        for (final Iterator<SlotAndBlockRoot> iterator = blobsSidecarsKeys.iterator();
+            iterator.hasNext(); ) {
+          final SlotAndBlockRoot blobsSidecarsKey = iterator.next();
+
+          sidecarsToBlocksCheckCounter++;
+
+          final boolean isUnconfirmed = unconfirmedBlobsSidecars.contains(blobsSidecarsKey);
+
+          final Optional<SignedBeaconBlock> maybeFinalizedBlockFound =
+              database
+                  .getFinalizedBlockAtSlot(blobsSidecarsKey.getSlot())
+                  .filter(block -> block.getRoot().equals(blobsSidecarsKey.getBlockRoot()));
+
+          final Optional<SignedBeaconBlock> maybeHotBlockFound =
+              database.getHotBlock(blobsSidecarsKey.getBlockRoot());
+
+          if (isUnconfirmed) {
+            // unconfirmed, check a corresponding hot or finalized block doesn't exist
+
+            if (maybeHotBlockFound.isPresent()) {
+              unconfirmedBlobsSidecarsWithBlocks++;
+              System.err.printf(
+                  "ERROR: unconfirmed blobs sidecar has a corresponding hot block %s%n",
+                  blobsSidecarsKey.toLogString());
+            } else if (maybeFinalizedBlockFound.isPresent()) {
+              unconfirmedBlobsSidecarsWithBlocks++;
+              System.err.printf(
+                  "ERROR: unconfirmed blobs sidecar has a corresponding finalized block %s%n",
+                  blobsSidecarsKey.toLogString());
+            }
+          } else {
+            // is confirmed, hot or finalized blocks must exist
+
+            if (maybeHotBlockFound.isEmpty() && maybeFinalizedBlockFound.isEmpty()) {
+
+              orphanBlobsSidecars++;
+
+              System.err.printf(
+                  "ERROR: confirmed blobs sidecar has no corresponding finalized or hot block %s%n",
+                  blobsSidecarsKey.toLogString());
+            }
+          }
+
+          // check Data Availability
+          if (blobsSidecarsKey.getSlot().isLessThan(lowerSlotBoundDataAvailability)) {
+            unprunedBlobsSidecars++;
+            System.err.printf(
+                "WARNING: non pruned blobs sidecar %s%n", blobsSidecarsKey.toLogString());
+          }
+        }
+      }
+
+      // check that unconfirmed blobs sidecar exists in the main blobs sidecar table
+      System.out.printf("Checking unconfirmed blobs sidecar in main blobs sidecar table...%n");
+
+      for (final SlotAndBlockRoot slotAndBlockRoot : unconfirmedBlobsSidecars) {
+        if (maybeLatestFinalizedSlot
+            .map(slot -> slotAndBlockRoot.getSlot().isGreaterThan(slot))
+            .orElse(false)) {
+          // unconfirmed sidecars for a non finalized slot
+          unprunedUnconfirmedBlobsSidecarsNonFinalized++;
+          System.err.printf(
+              "WARNING: non pruned unconfirmed hot blobs sidecar %s%n",
+              slotAndBlockRoot.toLogString());
+
+        } else {
+          // unconfirmed sidecars for finalized slot
+          unprunedUnconfirmedBlobsSidecarsFinalized++;
+          System.err.printf(
+              "WARNING: non pruned unconfirmed finalized blobs sidecar %s%n",
+              slotAndBlockRoot.toLogString());
+        }
+
+        if (database.getBlobsSidecar(slotAndBlockRoot).isEmpty()) {
+          orphanUnconfirmations++;
+          System.err.printf(
+              "ERROR: Unable to locate unconfirmed blobs sidecar in main blobs sidecar table %s%n",
+              slotAndBlockRoot.toLogString());
+        }
+      }
+    } catch (DatabaseStorageException ex) {
+      System.out.println("Failed to open database");
+    }
+
+    final long endTimeMillis = System.currentTimeMillis();
+    System.out.printf(
+        "Done. Performed %s block->blobs_sidecars and %s blobs_sidecars->block checks in %s ms%n",
+        blocksToSidecarsCheckCounter,
+        sidecarsToBlocksCheckCounter,
+        endTimeMillis - startTimeMillis);
+    System.out.printf(
+        "\tCalculated Data Availability window (slots): %s - %s%n",
+        lowerSlotBoundDataAvailability, currentSlot);
+    System.out.printf("\tEarliest BlobsSidecar slot: %s%n", maybeEarliestBlobsSidecarSlot);
+    System.out.printf(
+        "\tEarliest finalized block slot: %s%n",
+        maybeEarliestBlock.map(SignedBeaconBlock::getSlot));
+    System.out.printf("\tLatest finalized block slot: %s%n", maybeLatestFinalizedSlot);
+    System.out.printf("\tMissing finalized BlobsSidecars: %s%n", missingFinalizedBlobsSidecars);
+    System.out.printf("\tMissing hot BlobsSidecars: %s%n", missingHotBlobsSidecars);
+    System.out.printf(
+        "\tUnconfirmed BlobsSidecars with blocks (should have been confirmed): %s%n",
+        unconfirmedBlobsSidecarsWithBlocks);
+    System.out.printf(
+        "\tOrphaned BlobsSidecars (corresponding block is missing): %s%n", orphanBlobsSidecars);
+    System.out.printf(
+        "\tNon-pruned BlobsSidecars (older than DA lower bound): %s%n", unprunedBlobsSidecars);
+    System.out.printf(
+        "\tNon-pruned unconfirmed Hot BlobsSidecars (related to non-imported blocks): %s%n",
+        unprunedUnconfirmedBlobsSidecarsNonFinalized);
+    System.out.printf(
+        "\tNon-pruned unconfirmed Finalized BlobsSidecars (related to non-imported blocks): %s%n",
+        unprunedUnconfirmedBlobsSidecarsFinalized);
+    System.out.printf(
+        "\tOrphaned unconfirmations of BlobsSidecars (corresponding BlobsSidecars is missing): %s%n",
+        orphanUnconfirmations);
+
     return 0;
   }
 
