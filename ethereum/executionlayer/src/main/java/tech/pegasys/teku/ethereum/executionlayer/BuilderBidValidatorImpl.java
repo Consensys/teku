@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -25,11 +26,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 
 public class BuilderBidValidatorImpl implements BuilderBidValidator {
+
   private static final Logger LOG = LogManager.getLogger();
   private final EventLogger eventLogger;
 
@@ -42,7 +45,8 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
       final Spec spec,
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
-      final BeaconState state) {
+      final BeaconState state,
+      final Optional<ExecutionPayload> localExecutionPayload) {
 
     // validating Bid Signature
     final Bytes signingRoot =
@@ -64,10 +68,32 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
           .getBlockProcessor()
           .validateExecutionPayload(
               state, executionPayloadHeader, Optional.empty(), Optional.empty());
-    } catch (BlockProcessingException e) {
+    } catch (final BlockProcessingException e) {
       throw new BuilderBidValidationException(
           "Invalid proposed payload with respect to consensus.", e);
     }
+
+    // validating the withdrawals root
+    localExecutionPayload
+        .flatMap(ExecutionPayload::getOptionalWithdrawalsRoot)
+        .ifPresent(
+            localWithdrawalsRoot -> {
+              final Bytes32 withdrawalsRoot =
+                  executionPayloadHeader
+                      .getOptionalWithdrawalsRoot()
+                      .orElseThrow(
+                          () ->
+                              new BuilderBidValidationException(
+                                  "Proposed payload does not contain withdrawals"));
+
+              if (!localWithdrawalsRoot.equals(withdrawalsRoot)) {
+                final String errorMessage =
+                    String.format(
+                        "Withdrawals root from the local payload (%s) was different from the proposed payload (%s)",
+                        localWithdrawalsRoot, withdrawalsRoot);
+                throw new BuilderBidValidationException(errorMessage);
+              }
+            });
 
     final ValidatorRegistration validatorRegistration = signedValidatorRegistration.getMessage();
 

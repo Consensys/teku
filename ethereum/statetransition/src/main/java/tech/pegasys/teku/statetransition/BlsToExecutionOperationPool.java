@@ -183,8 +183,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
         .thenApply(
             result -> {
               validationReasonCounter.labels(result.code().toString()).inc();
-              if (result.code().equals(ValidationResultCode.ACCEPT)
-                  || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
+              if (result.code().equals(ValidationResultCode.ACCEPT)) {
                 operations.put(validatorIndex, item);
                 subscribers.forEach(s -> s.onOperationAdded(item, result, fromNetwork));
               }
