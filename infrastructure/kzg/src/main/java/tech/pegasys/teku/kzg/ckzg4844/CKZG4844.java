@@ -41,6 +41,8 @@ public final class CKZG4844 implements KZG {
 
   private static int initializedFieldElementsPerBlob = -1;
 
+  private Optional<Integer> loadedTrustedSetupHash = Optional.empty();
+
   public static synchronized CKZG4844 createInstance(final int fieldElementsPerBlob) {
     if (instance == null) {
       final Preset preset = getPreset(fieldElementsPerBlob);
@@ -73,8 +75,6 @@ public final class CKZG4844 implements KZG {
                         "C-KZG-4844 library can't be initialized with %d fieldElementsPerBlob.",
                         fieldElementsPerBlob)));
   }
-
-  private Optional<Integer> loadedTrustedSetupHash = Optional.empty();
 
   private CKZG4844(final Preset preset) {
     try {

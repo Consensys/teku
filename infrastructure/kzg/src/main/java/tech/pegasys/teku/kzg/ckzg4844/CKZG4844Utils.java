@@ -33,6 +33,8 @@ import tech.pegasys.teku.kzg.TrustedSetup;
 
 public class CKZG4844Utils {
 
+  private static final int G2_POINT_SIZE = 96;
+
   public static byte[] flattenBlobs(final List<Bytes> blobs) {
     return flattenBytes(blobs.stream(), CKZG4844JNI.getBytesPerBlob() * blobs.size());
   }
@@ -70,17 +72,14 @@ public class CKZG4844Utils {
       // List of G2 points, one on each new line
       final List<Bytes> g2Points = new ArrayList<>();
       for (int i = 0; i < g2Size; i++) {
-        final Bytes g2Point = Bytes.fromHexString(reader.readLine());
-        if (g2Point.size() != 96) {
-          throw new IllegalArgumentException(
-              String.format("G2 Point should be 96 bytes size, but got %s bytes", g2Point.size()));
-        }
+        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), G2_POINT_SIZE);
         g2Points.add(g2Point);
       }
 
       return new TrustedSetup(g1Points, g2Points);
     } catch (Exception ex) {
-      throw new IOException(String.format("Failed to parse file: %s", filePath));
+      throw new IOException(
+          String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
   }
 

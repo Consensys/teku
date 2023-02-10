@@ -35,6 +35,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
 
@@ -131,6 +133,42 @@ public final class KZGTest {
         .isFalse();
     final KZGProof invalidProof = kzg.computeAggregateKzgProof(getSampleBlobs(numberOfBlobs));
     assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
+  }
+
+  @Test
+  public void testComputingProofWithZeroLengthBlobsDoesNotCauseSegfault() {
+    loadTrustedSetup();
+    final List<Bytes> blobs =
+      Stream.of(
+          "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
+          "0x",
+          "0x925668a49d06f4")
+        .map(Bytes::fromHexString)
+        .collect(Collectors.toList());
+
+    final KZGException kzgException =
+      assertThrows(KZGException.class, () -> kzg.computeAggregateKzgProof(blobs));
+
+    assertThat(kzgException)
+      .cause()
+      .satisfies(
+        cause -> {
+          // non-canonical blobs
+          assertThat(cause).isInstanceOf(CKZGException.class);
+          final CKZGException cryptoException = (CKZGException) cause;
+          assertThat(cryptoException.getError()).isEqualTo(CKZGError.C_KZG_BADARGS);
+          assertThat(cryptoException.getErrorMessage())
+            .isEqualTo("There was an error while computing aggregate kzg proof.");
+        });
+  }
+
+  @ParameterizedTest(name = "trusted_setup={0}")
+  @ValueSource(strings = {"broken/trusted_setup_g1_length.txt", "broken/trusted_setup_g2_length.txt", "broken/trusted_setup_g2_bytesize.txt"})
+  public void incorrectTrustedSetupFilesShouldThrow(final String path) {
+    final String trustedSetup =
+      Resources.getResource(TrustedSetups.class, path).toExternalForm();
+    final Throwable cause = assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup)).getCause();
+    assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
   }
 
   @Test
@@ -289,33 +327,6 @@ public final class KZGTest {
         .isFalse();
     final KZGProof invalidProof = kzg.computeAggregateKzgProof(getSampleBlobs(numberOfBlobs));
     assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
-  }
-
-  @Test
-  public void testComputingProofWithZeroLengthBlobsDoesNotCauseSegfault() {
-    loadTrustedSetup();
-    final List<Bytes> blobs =
-        Stream.of(
-                "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
-                "0x",
-                "0x925668a49d06f4")
-            .map(Bytes::fromHexString)
-            .collect(Collectors.toList());
-
-    final KZGException kzgException =
-        assertThrows(KZGException.class, () -> kzg.computeAggregateKzgProof(blobs));
-
-    assertThat(kzgException)
-        .cause()
-        .satisfies(
-            cause -> {
-              // non-canonical blobs
-              assertThat(cause).isInstanceOf(CKZGException.class);
-              final CKZGException cryptoException = (CKZGException) cause;
-              assertThat(cryptoException.getError()).isEqualTo(CKZGError.C_KZG_BADARGS);
-              assertThat(cryptoException.getErrorMessage())
-                  .isEqualTo("There was an error while computing aggregate kzg proof.");
-            });
   }
 
   private void loadTrustedSetup() {
