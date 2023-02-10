@@ -13,18 +13,15 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.spec.config.Constants.VALID_VALIDATOR_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 
 import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -48,9 +45,6 @@ public class SignedBlsToExecutionChangeValidator
   private final RecentChainData recentChainData;
 
   private final AsyncBLSSignatureVerifier blsSignatureVerifier;
-
-  private final Set<UInt64> seenBlsToExecutionChangeMessageFromValidators =
-      LimitedSet.createSynchronized(VALID_VALIDATOR_SET_SIZE);
 
   public SignedBlsToExecutionChangeValidator(
       final Spec spec,
@@ -85,10 +79,8 @@ public class SignedBlsToExecutionChangeValidator
     /*
      [IGNORE] The signed_bls_to_execution_change is the first valid signed bls to execution change received for the
      validator with index signed_bls_to_execution_change.message.validator_index.
+     NOTE: Validator index checked against pool prior to calling validateForGossip
     */
-    if (!isFirstBlsToExecutionChangeForValidator(blsToExecutionChange)) {
-      return SafeFuture.completedFuture(rejectForDuplicatedMessage(validatorIndex));
-    }
 
     /*
      [REJECT] All of the conditions within process_bls_to_execution_change pass validation.
@@ -99,23 +91,14 @@ public class SignedBlsToExecutionChangeValidator
                 validateBlsMessage(state, blsToExecutionChange)
                     .thenCombine(
                         validateBlsMessageSignature(state, operation),
-                        (messageValidationResult, signatureValidationResult) ->
-                            processValidationResults(
-                                validatorIndex,
-                                messageValidationResult,
-                                signatureValidationResult)));
+                        this::processValidationResults));
   }
 
   private InternalValidationResult processValidationResults(
-      final UInt64 validatorIndex,
       final InternalValidationResult messageValidationResult,
       final InternalValidationResult signatureValidationResult) {
     if (messageValidationResult.isAccept() && signatureValidationResult.isAccept()) {
-      if (seenBlsToExecutionChangeMessageFromValidators.add(validatorIndex)) {
-        return InternalValidationResult.ACCEPT;
-      } else {
-        return rejectForDuplicatedMessage(validatorIndex);
-      }
+      return InternalValidationResult.ACCEPT;
     }
 
     if (!messageValidationResult.isAccept()) {
@@ -123,14 +106,6 @@ public class SignedBlsToExecutionChangeValidator
     } else {
       return signatureValidationResult;
     }
-  }
-
-  private static InternalValidationResult rejectForDuplicatedMessage(final UInt64 validatorIndex) {
-    final String logMessage =
-        String.format(
-            "BlsToExecutionChange is not the first one for validator %s.", validatorIndex);
-    LOG.trace(logMessage);
-    return InternalValidationResult.create(IGNORE, logMessage);
   }
 
   @SuppressWarnings("FormatStringAnnotation")
@@ -189,11 +164,5 @@ public class SignedBlsToExecutionChangeValidator
             () ->
                 new IllegalStateException(
                     "Unable to get best state for BlsToExecutionChange processing."));
-  }
-
-  private boolean isFirstBlsToExecutionChangeForValidator(
-      final BlsToExecutionChange blsToExecutionChange) {
-    return !seenBlsToExecutionChangeMessageFromValidators.contains(
-        blsToExecutionChange.getValidatorIndex());
   }
 }
