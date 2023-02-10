@@ -53,7 +53,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 
 @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
-public class OperationPoolTest {
+public class SimpleOperationPoolTest {
 
   Spec spec = TestSpecFactory.createMinimalPhase0();
   DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
