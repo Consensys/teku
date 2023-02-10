@@ -18,7 +18,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Removed references to beacon block methods `/eth2/beacon_chain/req/beacon_blocks_by_root` and `/eth2/beacon_chain/req/beacon_blocks_by_range`.
 
 ### Additions and Improvements
-- Introduced [Doppelganger Detection feature](https://docs.teku.consensys.net/en/latest/HowTo/Doppelganger-Detection/) 
+- Introduced [Doppelganger Detection feature](https://docs.teku.consensys.net/HowTo/Doppelganger-Detection) 
 - Changed color of block production duty to cyan, rather than dark blue.
 - Introduced a configuration overview printed during start up.
 - Introduced a new field `el_offline` in the `GetSyncingStatusResponse` which is set to `true` when the execution layer is offline: [Syncing API update](https://github.com/ethereum/beacon-APIs/pull/290)
