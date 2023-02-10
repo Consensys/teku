@@ -351,7 +351,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableDoppelgangerDetection() {
-    final String[] args = {"--Xdoppelganger-detection-enabled", "true"};
+    final String[] args = {"--doppelganger-detection-enabled", "true"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
@@ -364,7 +364,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldDisableDoppelgangerDetection() {
-    final String[] args = {"--Xdoppelganger-detection-enabled", "false"};
+    final String[] args = {"--doppelganger-detection-enabled", "false"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand

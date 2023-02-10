@@ -854,7 +854,7 @@ public class TekuNode extends Node {
     }
 
     public Config withDoppelgangerDetectionEnabled() {
-      configMap.put("Xdoppelganger-detection-enabled", true);
+      configMap.put("doppelganger-detection-enabled", true);
       return this;
     }
 
