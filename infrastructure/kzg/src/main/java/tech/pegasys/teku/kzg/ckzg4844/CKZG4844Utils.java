@@ -78,8 +78,7 @@ public class CKZG4844Utils {
 
       return new TrustedSetup(g1Points, g2Points);
     } catch (Exception ex) {
-      throw new IOException(
-          String.format("Failed to parse trusted setup file\n: %s", filePath));
+      throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
   }
 
