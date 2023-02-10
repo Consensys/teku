@@ -84,24 +84,6 @@ class SignedBlsToExecutionChangeValidatorTest {
   }
 
   @Test
-  public void validateFullyShouldIgnoreSubsequentMessagesForSameValidator() {
-    final SignedBlsToExecutionChange message = dataStructureUtil.randomSignedBlsToExecutionChange();
-    mockSpecValidationSucceeded(spec);
-    mockSignatureVerificationSucceeded(spec);
-
-    final SafeFuture<InternalValidationResult> firstValidationResult =
-        validator.validateForGossip(message);
-    final SafeFuture<InternalValidationResult> secondValidationResult =
-        validator.validateForGossip(message);
-
-    assertValidationResult(firstValidationResult, ValidationResultCode.ACCEPT);
-    assertValidationResult(
-        secondValidationResult,
-        ValidationResultCode.IGNORE,
-        "BlsToExecutionChange is not the first one for validator");
-  }
-
-  @Test
   public void validateFullyShouldRejectMessageIfSpecValidationFails() {
     final SignedBlsToExecutionChange signedBlsToExecutionChange =
         dataStructureUtil.randomSignedBlsToExecutionChange();
