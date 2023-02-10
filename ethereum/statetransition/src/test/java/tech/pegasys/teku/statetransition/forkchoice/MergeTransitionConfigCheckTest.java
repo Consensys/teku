@@ -63,6 +63,7 @@ class MergeTransitionConfigCheckTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private TransitionConfiguration localTransitionConfiguration;
+  private TransitionConfiguration remoteTransitionConfiguration;
 
   private final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
   private final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
@@ -77,66 +78,71 @@ class MergeTransitionConfigCheckTest {
                 .getTerminalTotalDifficulty(),
             spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalBlockHash(),
             UInt64.ZERO);
-
     final MergeTransitionConfigCheck mergeTransitionConfigCheck =
         new MergeTransitionConfigCheck(eventLogger, spec, executionLayer, asyncRunner);
-
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new TransitionConfiguration(
-                    localTransitionConfiguration.getTerminalTotalDifficulty(),
-                    localTransitionConfiguration.getTerminalBlockHash(),
-                    dataStructureUtil.randomUInt64())));
+    setRemoteTransitionConfiguration(
+        new TransitionConfiguration(
+            localTransitionConfiguration.getTerminalTotalDifficulty(),
+            localTransitionConfiguration.getTerminalBlockHash(),
+            dataStructureUtil.randomUInt64()));
 
     assertThat(mergeTransitionConfigCheck.start()).isCompleted();
   }
 
   @Test
+  void shouldReportWrongBlockNumber() {
+    // already in setUp
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger)
+        .transitionConfigurationTtdTbhMismatch(
+            localTransitionConfiguration.toString(), remoteTransitionConfiguration.toString());
+  }
+
+  @Test
   void shouldReportWrongTotalTerminalDifficulty() {
-    final TransitionConfiguration wrongRemoteConfig =
+    setRemoteTransitionConfiguration(
         new TransitionConfiguration(
-            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO));
 
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
         .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+            localTransitionConfiguration.toString(), remoteTransitionConfiguration.toString());
   }
 
   @Test
   void shouldDetectWrongTerminalBlockHash() {
-    final TransitionConfiguration wrongRemoteConfig =
+    setRemoteTransitionConfiguration(
         new TransitionConfiguration(
-            localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+            localTransitionConfiguration.getTerminalTotalDifficulty(),
+            wrongRemoteTBH,
+            UInt64.ZERO));
 
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
         .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+            localTransitionConfiguration.toString(), remoteTransitionConfiguration.toString());
   }
 
   @Test
-  void shouldReportInconsistencyReportedByRemote() {
-    final TransitionConfiguration wrongRemoteConfig =
+  void shouldPassWithEqualConfiguration() {
+    setRemoteTransitionConfiguration(
         new TransitionConfiguration(
             localTransitionConfiguration.getTerminalTotalDifficulty(),
             localTransitionConfiguration.getTerminalBlockHash(),
-            UInt64.ZERO);
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+            localTransitionConfiguration.getTerminalBlockNumber()));
 
     asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationRemoteTbhTbnInconsistency(wrongRemoteConfig.toString());
-
     verifyNoMoreInteractions(eventLogger);
+  }
+
+  private void setRemoteTransitionConfiguration(
+      final TransitionConfiguration transitionConfiguration) {
+    this.remoteTransitionConfiguration = transitionConfiguration;
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(remoteTransitionConfiguration));
   }
 }

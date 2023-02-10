@@ -258,15 +258,6 @@ public class EventLogger {
     error(configurationErrorEventLog, Color.RED);
   }
 
-  public void transitionConfigurationRemoteTbhTbnInconsistency(final String remoteConfig) {
-    final String configurationErrorEventLog =
-        String.format(
-            "Merge       *** Transition Configuration error: remote Execution Client TerminalBlockHash and TerminalBlockNumber are inconsistent\n"
-                + "  remote configuration: %s",
-            remoteConfig);
-    error(configurationErrorEventLog, Color.RED);
-  }
-
   public void lateBlockImport(
       final Bytes32 root, final UInt64 slot, final UInt64 proposer, final String timings) {
     String slowBlockLog =
