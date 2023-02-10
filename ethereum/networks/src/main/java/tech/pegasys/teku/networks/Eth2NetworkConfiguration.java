@@ -282,7 +282,7 @@ public class Eth2NetworkConfiguration {
 
                         // set progressiveBalancesMode to FULL for all milestones if capella is
                         // defined and no commandline override has been specified
-                        if (!capellaBuilder.getCapellaForkEpoch().equals(FAR_FUTURE_EPOCH)
+                        if (!FAR_FUTURE_EPOCH.equals(capellaBuilder.getCapellaForkEpoch())
                             && progressiveBalancesMode == DEFAULT_PROGRESSIVE_BALANCES_MODE) {
                           builder.progressiveBalancesMode(ProgressiveBalancesMode.FULL);
                         }
