@@ -516,7 +516,8 @@ public final class DataStructureUtil {
         new SszPublicKey(randomPublicKey()));
   }
 
-  public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
+  public ExecutionPayloadHeader randomExecutionPayloadHeader(
+      final SpecVersion specVersion, final Bytes32 withdrawalsRoot) {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(specVersion.getConfig());
     return SchemaDefinitionsBellatrix.required(specVersion.getSchemaDefinitions())
@@ -538,8 +539,12 @@ public final class DataStructureUtil {
                     .baseFeePerGas(randomUInt256())
                     .blockHash(randomBytes32())
                     .transactionsRoot(randomBytes32())
-                    .withdrawalsRoot(this::randomBytes32)
+                    .withdrawalsRoot(() -> withdrawalsRoot)
                     .excessDataGas(this::randomUInt256));
+  }
+
+  public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
+    return randomExecutionPayloadHeader(specVersion, randomBytes32());
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader() {
@@ -558,10 +563,25 @@ public final class DataStructureUtil {
             randomExecutionPayloadHeader(spec.getGenesisSpec()), randomUInt256(), builderPublicKey);
   }
 
+  public BuilderBid randomBuilderBid(final Bytes32 withdrawalsRoot) {
+    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+        .getBuilderBidSchema()
+        .create(
+            randomExecutionPayloadHeader(spec.getGenesisSpec(), withdrawalsRoot),
+            randomUInt256(),
+            randomPublicKey());
+  }
+
   public SignedBuilderBid randomSignedBuilderBid() {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getSignedBuilderBidSchema()
         .create(randomBuilderBid(), randomSignature());
+  }
+
+  public SignedBuilderBid randomSignedBuilderBid(final Bytes32 withdrawalsRoot) {
+    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBuilderBidSchema()
+        .create(randomBuilderBid(withdrawalsRoot), randomSignature());
   }
 
   public ExecutionPayload randomExecutionPayload() {
