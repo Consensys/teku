@@ -279,7 +279,7 @@ public class DebugDbCommand implements Runnable {
       Optional<SignedBeaconBlock> maybeFinalizedBlock = database.getLastAvailableFinalizedBlock();
       Optional<SignedBeaconBlock> maybeEarliestBlock = database.getEarliestAvailableBlock();
       while (maybeFinalizedBlock.isPresent()) {
-        SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
+        final SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
         if (counter == 0) {
           System.out.printf(
               "Tracing chain from best finalized block %s (%s)%n",
@@ -519,7 +519,7 @@ public class DebugDbCommand implements Runnable {
       maybeEarliestBlobsSidecarSlot = database.getEarliestBlobsSidecarSlot();
       maybeLatestFinalizedSlot = maybeFinalizedBlock.map(SignedBeaconBlock::getSlot);
       while (maybeFinalizedBlock.isPresent()) {
-        SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
+        final SignedBeaconBlock currentBlock = maybeFinalizedBlock.get();
         if (blocksToSidecarsCheckCounter == 0) {
           System.out.printf(
               "Checking blobs sidecars tracing chain from best finalized block %s (%s)%n",
