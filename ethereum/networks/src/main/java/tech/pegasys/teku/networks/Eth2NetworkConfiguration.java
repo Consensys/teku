@@ -16,6 +16,7 @@ package tech.pegasys.teku.networks;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KILN;
@@ -276,8 +277,16 @@ public class Eth2NetworkConfiguration {
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
                   builder.capellaBuilder(
-                      capellaBuilder ->
-                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
+                      capellaBuilder -> {
+                        capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch);
+
+                        // set progressiveBalancesMode to FULL for all milestones if capella is
+                        // defined and no commandline override has been specified
+                        if (!capellaBuilder.getCapellaForkEpoch().equals(FAR_FUTURE_EPOCH)
+                            && progressiveBalancesMode == DEFAULT_PROGRESSIVE_BALANCES_MODE) {
+                          builder.progressiveBalancesMode(ProgressiveBalancesMode.FULL);
+                        }
+                      });
                   builder.denebBuilder(
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::eip4844ForkEpoch);
