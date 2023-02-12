@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Arrays;
@@ -37,6 +38,8 @@ public class SpecFactoryTest {
 
   private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("swift", "less-swift");
 
+  private static final Set<String> CAPELLA_NETWORKS = Set.of("sepolia");
+
   @Test
   public void defaultFactoryShouldScheduleAltairAndBellatrixForMainNet() {
     final Spec spec = SpecFactory.create("mainnet");
@@ -52,6 +55,9 @@ public class SpecFactoryTest {
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
     } else if (NON_BELLATRIX_NETWORKS.contains(configName)) {
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
+    } else if (CAPELLA_NETWORKS.contains(configName)) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones())
+          .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
     } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX);
