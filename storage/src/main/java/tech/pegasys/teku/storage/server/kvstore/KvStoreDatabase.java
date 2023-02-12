@@ -1073,6 +1073,7 @@ public class KvStoreDatabase implements Database {
       FinalizedUpdater updater, final Bytes32 blockRoot, final BeaconState state) {
     if (stateStorageMode.storesFinalizedStates()) {
       updater.addFinalizedState(blockRoot, state);
+      updater.addFinalizedStateRoot(state.hashTreeRoot(), state.getSlot());
     }
   }
 }
