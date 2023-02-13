@@ -107,22 +107,11 @@ public class Eth2NetworkConfigurationTest {
     networkConfig =
         Eth2NetworkConfiguration.builder(Eth2Network.MAINNET)
             .capellaForkEpoch(UInt64.valueOf(200_000))
+            .denebForkEpoch(UInt64.valueOf(210_000))
             .build();
 
     // check default FULL when capella enabled
     assertAllMilestoneHaveProgressiveBalancesMode(networkConfig, ProgressiveBalancesMode.FULL);
-
-    // make sure CHECKED isn't the current default
-    assertThat(DEFAULT_PROGRESSIVE_BALANCES_MODE).isNotEqualTo(ProgressiveBalancesMode.CHECKED);
-
-    networkConfig =
-        Eth2NetworkConfiguration.builder(Eth2Network.MAINNET)
-            .capellaForkEpoch(UInt64.valueOf(200_000))
-            .progressiveBalancesEnabled(ProgressiveBalancesMode.CHECKED)
-            .build();
-
-    // check we can still override by commandline
-    assertAllMilestoneHaveProgressiveBalancesMode(networkConfig, ProgressiveBalancesMode.CHECKED);
   }
 
   @Test
