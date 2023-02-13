@@ -148,9 +148,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
     String str = getCommandLineOutput();
-    // --Xmetrics-block-timing-tracking-enabled is being supported as an alias for the supported
-    // version because of the significant number of people using it
-    str = str.replace("--Xmetrics-block-timing-tracking-enabled", "");
     assertThat(str).doesNotContain("--X");
   }
 

@@ -90,10 +90,7 @@ public class MetricsOptions {
   private int metricsPublicationInterval = MetricsConfig.DEFAULT_METRICS_PUBLICATION_INTERVAL;
 
   @Option(
-      names = {
-        "--metrics-block-timing-tracking-enabled",
-        "--Xmetrics-block-timing-tracking-enabled"
-      },
+      names = {"--metrics-block-timing-tracking-enabled"},
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<BOOLEAN>",
       description = "Whether block timing metrics are tracked and reported",
