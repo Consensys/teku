@@ -48,7 +48,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 @SuppressWarnings("unchecked")
 public class OperationsReOrgManagerTest {
-  private final Spec spec = TestSpecFactory.createDefault();
+  private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final OperationPool<ProposerSlashing> proposerSlashingOperationPool =
@@ -59,6 +59,8 @@ public class OperationsReOrgManagerTest {
       mock(SimpleOperationPool.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
+  private final BlsToExecutionOperationPool blsToExecutionOperationPool =
+      mock(BlsToExecutionOperationPool.class);
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
@@ -69,6 +71,7 @@ public class OperationsReOrgManagerTest {
           exitOperationPool,
           attestationPool,
           attestationManager,
+          blsToExecutionOperationPool,
           recentChainData);
 
   @Test
@@ -127,10 +130,14 @@ public class OperationsReOrgManagerTest {
     verify(proposerSlashingOperationPool).addAll(fork1Block1.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).addAll(fork1Block1.getBody().getAttesterSlashings());
     verify(exitOperationPool).addAll(fork1Block1.getBody().getVoluntaryExits());
+    verify(blsToExecutionOperationPool)
+        .addAll(fork1Block1.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
 
     verify(proposerSlashingOperationPool).addAll(fork1Block2.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).addAll(fork1Block2.getBody().getAttesterSlashings());
     verify(exitOperationPool).addAll(fork1Block2.getBody().getVoluntaryExits());
+    verify(blsToExecutionOperationPool)
+        .addAll(fork1Block2.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
 
     ArgumentCaptor<ValidateableAttestation> argument =
         ArgumentCaptor.forClass(ValidateableAttestation.class);
@@ -155,6 +162,8 @@ public class OperationsReOrgManagerTest {
     verify(attestationPool)
         .onAttestationsIncludedInBlock(
             fork2Block1.getSlot(), fork2Block1.getBody().getAttestations());
+    verify(blsToExecutionOperationPool)
+        .removeAll(fork2Block1.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
 
     verify(proposerSlashingOperationPool).removeAll(fork2Block2.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(fork2Block2.getBody().getAttesterSlashings());
@@ -162,6 +171,8 @@ public class OperationsReOrgManagerTest {
     verify(attestationPool)
         .onAttestationsIncludedInBlock(
             fork2Block2.getSlot(), fork2Block2.getBody().getAttestations());
+    verify(blsToExecutionOperationPool)
+        .removeAll(fork2Block2.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
   }
 
   @Test
@@ -206,17 +217,22 @@ public class OperationsReOrgManagerTest {
     verify(proposerSlashingOperationPool, never()).addAll(any());
     verify(attesterSlashingOperationPool, never()).addAll(any());
     verify(attestationManager, never()).onAttestation(any());
+    verify(blsToExecutionOperationPool, never()).addAll(any());
 
     verify(proposerSlashingOperationPool).removeAll(block2.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(block2.getBody().getAttesterSlashings());
     verify(exitOperationPool).removeAll(block2.getBody().getVoluntaryExits());
     verify(attestationPool)
         .onAttestationsIncludedInBlock(block2.getSlot(), block2.getBody().getAttestations());
+    verify(blsToExecutionOperationPool)
+        .removeAll(block2.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
 
     verify(proposerSlashingOperationPool).removeAll(block1.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(block1.getBody().getAttesterSlashings());
     verify(exitOperationPool).removeAll(block1.getBody().getVoluntaryExits());
     verify(attestationPool)
         .onAttestationsIncludedInBlock(block1.getSlot(), block1.getBody().getAttestations());
+    verify(blsToExecutionOperationPool)
+        .removeAll(block1.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
   }
 }
