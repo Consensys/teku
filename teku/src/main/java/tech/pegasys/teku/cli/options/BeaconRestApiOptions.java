@@ -112,15 +112,13 @@ public class BeaconRestApiOptions {
     this.maxUrlLength = maxUrlLength;
   }
 
-  // beacon-liveness-tracking-enabled
   @Option(
-      names = {"--Xbeacon-liveness-tracking-enabled"},
+      names = {"--beacon-liveness-tracking-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Track validator liveness and enable requests to the liveness rest api.",
       arity = "0..1",
-      fallbackValue = "true",
-      hidden = true)
+      fallbackValue = "true")
   private Boolean beaconLivenessTrackingEnabled =
       BeaconRestApiConfig.DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
 
