@@ -164,7 +164,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   public void shouldEnableDoppelgangerDetection() {
 
     final String[] args = {
-      "vc", "--network", "minimal", "--Xdoppelganger-detection-enabled", "true"
+      "vc", "--network", "minimal", "--doppelganger-detection-enabled", "true"
     };
 
     final TekuConfiguration tekuConfig = getTekuConfigurationFromArguments(args);
