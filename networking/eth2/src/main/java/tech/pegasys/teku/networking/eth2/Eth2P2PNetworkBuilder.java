@@ -69,6 +69,7 @@ import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -87,6 +88,7 @@ import tech.pegasys.teku.storage.store.KeyValueStore;
  * might be changed in any version in backward incompatible way
  */
 public class Eth2P2PNetworkBuilder {
+
   public static final Duration DEFAULT_ETH2_RPC_PING_INTERVAL = Duration.ofSeconds(10);
   public static final int DEFAULT_ETH2_RPC_OUTSTANDING_PING_THRESHOLD = 2;
   public static final Duration DEFAULT_ETH2_STATUS_UPDATE_INTERVAL = Duration.ofMinutes(5);
@@ -95,6 +97,7 @@ public class Eth2P2PNetworkBuilder {
   protected EventChannels eventChannels;
   protected RecentChainData recentChainData;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+  protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor;
   protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
@@ -277,6 +280,7 @@ public class Eth2P2PNetworkBuilder {
             recentChainData,
             gossipEncoding,
             gossipedBlockProcessor,
+            gossipedBlobSidecarProcessor,
             gossipedBlockAndBlobsProcessor,
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
@@ -380,6 +384,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
     assertNotNull("gossipedBlockProcessor", gossipedBlockProcessor);
+    assertNotNull("gossipedBlobSidecarProcessor", gossipedBlobSidecarProcessor);
     assertNotNull("gossipedAttestationProcessor", gossipedAttestationConsumer);
     assertNotNull("gossipedAggregateProcessor", gossipedAggregateProcessor);
     assertNotNull("gossipedAttesterSlashingProcessor", gossipedAttesterSlashingConsumer);
@@ -437,6 +442,13 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<SignedBeaconBlock> blockProcessor) {
     checkNotNull(blockProcessor);
     this.gossipedBlockProcessor = blockProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedBlobSidecarProcessor(
+      final OperationProcessor<BlobSidecar> blobSidecarProcessor) {
+    checkNotNull(blobSidecarProcessor);
+    this.gossipedBlobSidecarProcessor = blobSidecarProcessor;
     return this;
   }
 

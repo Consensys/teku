@@ -60,6 +60,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SignedBuilderBidSchema signedBuilderBidSchemaDeneb;
 
   private final BlobSchema blobSchema;
+  private final BlobSidecarSchema blobSidecarSchema;
   private final BlobsSidecarSchema blobsSidecarSchema;
   private final BlobSidecarSchema blobSidecarSchema;
   private final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema;
@@ -99,6 +100,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
     this.blobSchema = new BlobSchema(specConfig);
+    this.blobSidecarSchema = new BlobSidecarSchema(blobSchema);
     this.blobsSidecarSchema = BlobsSidecarSchema.create(specConfig, blobSchema);
     this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);
     this.signedBeaconBlockAndBlobsSidecarSchema =
@@ -173,6 +175,10 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public BlobSchema getBlobSchema() {
     return blobSchema;
+  }
+
+  public BlobSidecarSchema getBlobSidecarSchema() {
+    return blobSidecarSchema;
   }
 
   public BlobsSidecarSchema getBlobsSidecarSchema() {
