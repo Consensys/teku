@@ -31,6 +31,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -386,6 +388,33 @@ public class ChainDataProviderTest {
         provider.getStateSyncCommittees("head", Optional.of(UInt64.valueOf("1024000")));
     SafeFutureAssert.assertThatSafeFuture(future)
         .isCompletedExceptionallyWith(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void getCommitteeIndices() {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        data.randomBeaconState(32);
+
+    final List<BLSPublicKey> stateValidators =
+        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
+    final List<BLSPublicKey> committeeKeys =
+        List.of(
+            stateValidators.get(1),
+            stateValidators.get(4),
+            stateValidators.get(6),
+            stateValidators.get(7),
+            stateValidators.get(9),
+            stateValidators.get(11));
+
+    final Set<String> validators =
+        Set.of(committeeKeys.get(0).toHexString(), committeeKeys.get(2).toHexString());
+    final Map<Integer, Integer> committeeIndices =
+        provider.getCommitteeIndices(committeeKeys, validators, state);
+
+    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 2, 6));
   }
 
   @Test

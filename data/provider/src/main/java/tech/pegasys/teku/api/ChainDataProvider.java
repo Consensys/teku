@@ -598,7 +598,8 @@ public class ChainDataProvider {
             });
   }
 
-  private Map<Integer, Integer> getCommitteeIndices(
+  @VisibleForTesting
+  protected Map<Integer, Integer> getCommitteeIndices(
       final List<BLSPublicKey> committeeKeys,
       final Set<String> validators,
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
@@ -618,12 +619,14 @@ public class ChainDataProvider {
     for (BLSPublicKey key : committeeKeys) {
       final Optional<Integer> validatorIndex = spec.getValidatorIndex(state, key);
       if (validatorIndex.isEmpty()) {
+        i++;
         continue;
       }
       if (validators.contains(key.toHexString())
           || validators.contains(validatorIndex.toString())) {
-        output.put(i++, validatorIndex.get());
+        output.put(i, validatorIndex.get());
       }
+      i++;
     }
 
     return output;
