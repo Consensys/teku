@@ -42,6 +42,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final AttestationManager attestationManager;
   private final AggregatingAttestationPool attestationPool;
+  private final BlsToExecutionOperationPool blsToExecutionOperationPool;
   private final RecentChainData recentChainData;
 
   public OperationsReOrgManager(
@@ -50,12 +51,14 @@ public class OperationsReOrgManager implements ChainHeadChannel {
       final OperationPool<SignedVoluntaryExit> exitPool,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
+      final BlsToExecutionOperationPool blsToExecutionOperationPool,
       final RecentChainData recentChainData) {
     this.exitPool = exitPool;
     this.proposerSlashingPool = proposerSlashingPool;
     this.attesterSlashingPool = attesterSlashingPool;
     this.attestationManager = attestationManager;
     this.attestationPool = attestationPool;
+    this.blsToExecutionOperationPool = blsToExecutionOperationPool;
     this.recentChainData = recentChainData;
   }
 
@@ -101,6 +104,9 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                             proposerSlashingPool.addAll(blockBody.getProposerSlashings());
                             attesterSlashingPool.addAll(blockBody.getAttesterSlashings());
                             exitPool.addAll(blockBody.getVoluntaryExits());
+                            blockBody
+                                .getOptionalBlsToExecutionChanges()
+                                .ifPresent(blsToExecutionOperationPool::addAll);
 
                             processNonCanonicalBlockAttestations(blockBody.getAttestations(), root);
                           },
@@ -160,6 +166,9 @@ public class OperationsReOrgManager implements ChainHeadChannel {
                             exitPool.removeAll(blockBody.getVoluntaryExits());
                             attestationPool.onAttestationsIncludedInBlock(
                                 block.getSlot(), blockBody.getAttestations());
+                            blockBody
+                                .getOptionalBlsToExecutionChanges()
+                                .ifPresent(blsToExecutionOperationPool::removeAll);
                           },
                           () ->
                               LOG.debug(

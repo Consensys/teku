@@ -30,19 +30,23 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
 
 public final class KZGTest {
 
   private static final int FIELD_ELEMENTS_PER_BLOB =
-      CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob;
+      CKZG4844JNI.Preset.MINIMAL.fieldElementsPerBlob;
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
+  private static final String TRUSTED_SETUP_PATH = "minimal/trusted_setup.txt";
 
   private static KZG kzg;
 
@@ -68,7 +72,9 @@ public final class KZGTest {
   @Test
   public void testCreatingInstanceWithDifferentFieldElementsPerBlob_shouldThrowException() {
     final KZGException exception =
-        assertThrows(KZGException.class, () -> CKZG4844.createInstance(4));
+        assertThrows(
+            KZGException.class,
+            () -> CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob));
     assertThat(exception)
         .hasMessage(
             "Can't reinitialize C-KZG-4844 library with a different value for fieldElementsPerBlob.");
@@ -156,9 +162,181 @@ public final class KZGTest {
             });
   }
 
+  @ParameterizedTest(name = "trusted_setup={0}")
+  @ValueSource(
+      strings = {
+        "broken/trusted_setup_g1_length.txt",
+        "broken/trusted_setup_g2_length.txt",
+        "broken/trusted_setup_g2_bytesize.txt"
+      })
+  public void incorrectTrustedSetupFilesShouldThrow(final String path) {
+    final String trustedSetup = Resources.getResource(TrustedSetups.class, path).toExternalForm();
+    final Throwable cause =
+        assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup)).getCause();
+    assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
+  }
+
+  @Test
+  public void testComputingAndVerifyingProofWithTrustedSetupInitializedFromObject() {
+    kzg.loadTrustedSetup(
+        new TrustedSetup(
+            List.of(
+                Bytes48.fromHexString(
+                    "97f1d3a73197d7942695638c4fa9ac0fc3688c4f9774b905a14e3a3f171bac586c55e83ff97a1aeffb3af00adb22c6bb"),
+                Bytes48.fromHexString(
+                    "854262641262cb9e056a8512808ea6864d903dbcad713fd6da8dddfa5ce40d85612c912063ace060ed8c4bf005bab839"),
+                Bytes48.fromHexString(
+                    "86f708eee5ae0cf40be36993e760d9cb3b2371f22db3209947c5d21ea68e55186b30871c50bf11ef29e5248bf42d5678"),
+                Bytes48.fromHexString(
+                    "94f9c0bafb23cbbf34a93a64243e3e0f934b57593651f3464de7dc174468123d9698f1b9dfa22bb5b6eb96eae002f29f")),
+            List.of(
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"),
+                Bytes.fromHexString(
+                    "99aca9fb2f7760cecb892bf7262c176b334824f5727f680bba701a33e322cb6667531410dfc7c8e4321a3f0ea8af48cb1436638a2093123f046f0f504cc2a864825542873edbbc5d7ed17af125a4f2cf6433c6f4f61b81173726981dd989761d"),
+                Bytes.fromHexString(
+                    "88e2e982982bf8231e747e9dfcd14c05bd02623d1332734d2af26246c6869fb56ee6c994843f593178a040495ba61f4a083b0e18110b1d9f5224783d8f9a895e8ee744e87929430e9ba96bd29251cbf61240b256d1525600f3d562894d93d659"),
+                Bytes.fromHexString(
+                    "a2d33775e3d9e6af0d1b27d389e6c021a578e617a3d6627686db6288d4b3dffd7a847a00f7ef01828b7f42885b660e4204923402aca18fbae74ccd4e9c50dd8c2281b38dc09c022342ed1ac695d53f7081cb21f05fdfc0a3508c04759196fcd3"),
+                Bytes.fromHexString(
+                    "93e02b6052719f607dacd3a088274f65596bd0d09920b61ab5da61bbdc7f5049334cf11213945d57e5ac7d055d042b7e024aa2b2f08f0a91260805272dc51051c6e47ad4fa403b02b4510b647ae3d1770bac0326a805bbefd48056c8c121bdb8"))));
+    final int numberOfBlobs = 4;
+    final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
+    final List<KZGCommitment> kzgCommitments =
+        blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
+    final KZGProof kzgProof = kzg.computeAggregateKzgProof(blobs);
+    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, kzgProof)).isTrue();
+    assertThat(kzg.verifyAggregateKzgProof(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProof))
+        .isFalse();
+    assertThat(kzg.verifyAggregateKzgProof(blobs, getSampleCommitments(numberOfBlobs), kzgProof))
+        .isFalse();
+    final KZGProof invalidProof = kzg.computeAggregateKzgProof(getSampleBlobs(numberOfBlobs));
+    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
+  }
+
   private void loadTrustedSetup() {
     final String trustedSetup =
-        Resources.getResource(TrustedSetups.class, "mainnet/trusted_setup.txt").toExternalForm();
+        Resources.getResource(TrustedSetups.class, TRUSTED_SETUP_PATH).toExternalForm();
     kzg.loadTrustedSetup(trustedSetup);
   }
 
