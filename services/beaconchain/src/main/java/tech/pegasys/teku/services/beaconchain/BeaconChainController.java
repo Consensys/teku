@@ -562,7 +562,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .blockManager(blockManager)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(
-                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled())
+                beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()
+                    || beaconConfig.validatorConfig().isDoppelgangerDetectionEnabled())
             .acceptBlsToExecutionMessages(
                 beaconConfig.p2pConfig().isBlsToExecutionChangesSubnetEnabled())
             .activeValidatorChannel(
@@ -932,7 +933,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 executionClientDataProvider,
                 spec));
 
-    if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()) {
+    if (beaconConfig.beaconRestApiConfig().isBeaconLivenessTrackingEnabled()
+        || beaconConfig.validatorConfig().isDoppelgangerDetectionEnabled()) {
       final int initialValidatorsCount =
           spec.getGenesisSpec().getConfig().getMinGenesisActiveValidatorCount();
       eventChannels.subscribe(

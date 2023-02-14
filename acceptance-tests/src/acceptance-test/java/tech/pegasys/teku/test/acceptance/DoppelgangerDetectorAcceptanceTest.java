@@ -161,7 +161,6 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorKeystores(keyStore)
                     .withDepositsFrom(eth1Node)
                     .withExecutionEngine(eth1Node)
-                    .withValidatorLivenessTracking()
                     .withPeers(firstNode)
                     .withRealNetwork()
                     .withDoppelgangerDetectionEnabled());
