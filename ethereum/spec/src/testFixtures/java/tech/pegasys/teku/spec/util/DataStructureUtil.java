@@ -97,8 +97,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -1966,10 +1966,10 @@ public final class DataStructureUtil {
         .create(randomSignedBeaconBlock(), randomBlobsSidecar());
   }
 
-  public SignedBeaconBlockAndBlobSidecar randomSignedBeaconBlockAndBlobSidecar() {
+  public SignedBlobSidecar randomSignedBlobSidecar() {
     return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-        .getSignedBeaconBlockAndBlobSidecarSchema()
-        .create(randomSignedBeaconBlock(), randomBlobSidecar());
+        .getSignedBlobSidecarSchema()
+        .create(randomBlobSidecar(), randomSignature());
   }
 
   public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar() {
