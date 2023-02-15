@@ -622,12 +622,9 @@ public class ChainDataProvider {
     int i = 0;
     for (BLSPublicKey key : committeeKeys) {
       final Optional<Integer> validatorIndex = spec.getValidatorIndex(state, key);
-      if (validatorIndex.isEmpty()) {
-        i++;
-        continue;
-      }
-      if (validators.contains(key.toHexString())
-          || validators.contains(validatorIndex.toString())) {
+      if (validatorIndex.isPresent()
+          && (validators.contains(key.toHexString())
+              || validators.contains(validatorIndex.toString()))) {
         output.put(i, validatorIndex.get());
       }
       i++;
