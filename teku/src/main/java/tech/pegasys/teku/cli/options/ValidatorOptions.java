@@ -102,10 +102,9 @@ public class ValidatorOptions {
   private int executorMaxQueueSize = ValidatorConfig.DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
 
   @Option(
-      names = {"--Xdoppelganger-detection-enabled"},
+      names = {"--doppelganger-detection-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enable validators doppelganger detection",
-      hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
