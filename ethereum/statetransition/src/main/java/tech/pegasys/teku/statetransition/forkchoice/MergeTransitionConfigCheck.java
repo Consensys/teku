@@ -106,13 +106,15 @@ public class MergeTransitionConfigCheck extends Service {
                       .equals(remoteTransitionConfiguration.getTerminalTotalDifficulty())
                   || !localTransitionConfiguration
                       .getTerminalBlockHash()
-                      .equals(remoteTransitionConfiguration.getTerminalBlockHash())
-                  || !localTransitionConfiguration
-                      .getTerminalBlockNumber()
-                      .equals(remoteTransitionConfiguration.getTerminalBlockNumber())) {
+                      .equals(remoteTransitionConfiguration.getTerminalBlockHash())) {
 
                 eventLogger.transitionConfigurationTtdTbhMismatch(
                     localTransitionConfiguration.toString(),
+                    remoteTransitionConfiguration.toString());
+              } else if (remoteTransitionConfiguration.getTerminalBlockHash().isZero()
+                  && !remoteTransitionConfiguration.getTerminalBlockNumber().isZero()) {
+
+                eventLogger.transitionConfigurationRemoteTbhTbnInconsistency(
                     remoteTransitionConfiguration.toString());
               }
             })
