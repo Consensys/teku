@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-class GossipForkSubscriptionsDenebTest {
+public class GossipForkSubscriptionsDenebTest {
 
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final Fork fork = spec.getForkSchedule().getFork(UInt64.ZERO);
