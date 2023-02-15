@@ -37,7 +37,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
@@ -571,7 +570,6 @@ public class ChainDataProvider {
             });
   }
 
-  @NotNull
   private Optional<SyncCommitteeRewardData> getSyncCommitteeRewardData(
       Set<String> validators,
       BeaconBlock block,
