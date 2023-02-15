@@ -846,7 +846,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .recentChainData(recentChainData)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-            // TODO: implement blob sidecar processing
+            // TODO: implement BlobSidecarManager
             .gossipedBlobSidecarProcessor(OperationProcessor.noop())
             .gossipedBlockAndBlobsProcessor(blockManager::validateAndImportBlockAndBlobsSidecar)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
