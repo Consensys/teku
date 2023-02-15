@@ -24,12 +24,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDenebImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDenebImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
@@ -59,7 +61,9 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   private final BlobSchema blobSchema;
   private final BlobsSidecarSchema blobsSidecarSchema;
+  private final BlobSidecarSchema blobSidecarSchema;
   private final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema;
+  private final SignedBeaconBlockAndBlobSidecarSchema signedBeaconBlockAndBlobSidecarSchema;
 
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig.toVersionDeneb().orElseThrow());
@@ -96,8 +100,11 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
     this.blobSchema = new BlobSchema(specConfig);
     this.blobsSidecarSchema = BlobsSidecarSchema.create(specConfig, blobSchema);
+    this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);
     this.signedBeaconBlockAndBlobsSidecarSchema =
         SignedBeaconBlockAndBlobsSidecarSchema.create(signedBeaconBlockSchema, blobsSidecarSchema);
+    this.signedBeaconBlockAndBlobSidecarSchema =
+        SignedBeaconBlockAndBlobSidecarSchema.create(signedBeaconBlockSchema, blobSidecarSchema);
   }
 
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {
@@ -173,8 +180,16 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return blobsSidecarSchema;
   }
 
+  public BlobSidecarSchema getBlobSidecarSchema() {
+    return blobSidecarSchema;
+  }
+
   public SignedBeaconBlockAndBlobsSidecarSchema getSignedBeaconBlockAndBlobsSidecarSchema() {
     return signedBeaconBlockAndBlobsSidecarSchema;
+  }
+
+  public SignedBeaconBlockAndBlobSidecarSchema getSignedBeaconBlockAndBlobSidecarSchema() {
+    return signedBeaconBlockAndBlobSidecarSchema;
   }
 
   @Override

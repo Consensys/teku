@@ -88,6 +88,10 @@ public class BlobSidecarSchema
         KZGProof.fromBytesCompressed(kzgProof));
   }
 
+  public static BlobSidecarSchema create(final BlobSchema blobSchema) {
+    return new BlobSidecarSchema(blobSchema);
+  }
+
   @Override
   public BlobSidecar createFromBackingNode(TreeNode node) {
     return new BlobSidecar(this, node);
