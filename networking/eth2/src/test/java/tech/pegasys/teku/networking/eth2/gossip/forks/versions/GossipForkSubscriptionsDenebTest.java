@@ -53,7 +53,7 @@ class GossipForkSubscriptionsDenebTest {
 
     gossipForkSubscriptions.addGossipManagers(forkInfo());
 
-    verify(gossipForkSubscriptions, times(11)).addGossipManager(any());
+    verify(gossipForkSubscriptions, times(10)).addGossipManager(any());
     verify(gossipForkSubscriptions, times(1)).addGossipManager(any(BlobSidecarGossipManager.class));
   }
 

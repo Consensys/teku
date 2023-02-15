@@ -92,7 +92,24 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
 
   @Override
   protected void addGossipManagers(final ForkInfo forkInfo) {
-    super.addGossipManagers(forkInfo);
+    // TODO: change this to super.addGossipManagers(forkInfo) when the coupled block and blobs
+    // sidecar gossip manager is removed
+
+    // Phase0 without BlockGossipManager
+    addAttestationGossipManager(forkInfo);
+    addAggregateGossipManager(forkInfo);
+    addVoluntaryExitGossipManager(forkInfo);
+    addProposerSlashingGossipManager(forkInfo);
+    addAttesterSlashingGossipManager(forkInfo);
+
+    // Altair
+    addSignedContributionAndProofGossipManager(forkInfo);
+    addSyncCommitteeMessageGossipManager(forkInfo);
+
+    // Capella
+    addSignedBlsToExecutionChangeGossipManager(forkInfo);
+
+    // Deneb
     addBlobSidecarGossipManager(forkInfo);
     addBlockAndBlobsSidecarGossipManager(forkInfo);
   }
