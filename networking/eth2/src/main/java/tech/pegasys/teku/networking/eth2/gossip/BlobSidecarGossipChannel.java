@@ -14,9 +14,9 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 
 public interface BlobSidecarGossipChannel extends VoidReturningChannelInterface {
 
-  void publishBlobSidecar(BlobSidecar blobSidecar);
+  void publishBlobSidecar(SignedBlobSidecar blobSidecar);
 }

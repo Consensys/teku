@@ -19,11 +19,12 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobSidecarGossipManager extends AbstractGossipManager<BlobSidecar> {
+public class BlobSidecarGossipManager extends AbstractGossipManager<SignedBlobSidecar> {
 
   public BlobSidecarGossipManager(
       final RecentChainData recentChainData,
@@ -32,7 +33,7 @@ public class BlobSidecarGossipManager extends AbstractGossipManager<BlobSidecar>
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<BlobSidecar> processor,
+      final OperationProcessor<SignedBlobSidecar> processor,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -42,16 +43,14 @@ public class BlobSidecarGossipManager extends AbstractGossipManager<BlobSidecar>
         gossipEncoding,
         forkInfo,
         processor,
-        spec.atEpoch(forkInfo.getFork().getEpoch())
-            .getSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getBlobSidecarSchema(),
-        message -> spec.computeEpochAtSlot(message.getBlockSlot()),
+        SchemaDefinitionsDeneb.required(
+                spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
+            .getSignedBlobSidecarSchema(),
+        message -> spec.computeEpochAtSlot(message.getBlobSidecar().getSlot()),
         maxMessageSize);
   }
 
-  public void publishBlobSidecar(final BlobSidecar message) {
+  public void publishBlobSidecar(final SignedBlobSidecar message) {
     publishMessage(message);
   }
 
