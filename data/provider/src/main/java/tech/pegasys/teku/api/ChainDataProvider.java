@@ -632,7 +632,8 @@ public class ChainDataProvider {
     return output;
   }
 
-  private SyncCommitteeRewardData calculateRewards(
+  @VisibleForTesting
+  protected SyncCommitteeRewardData calculateRewards(
       final Map<Integer, Integer> committeeIndices,
       final UInt64 participantReward,
       final BeaconBlock block,

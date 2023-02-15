@@ -46,6 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
+import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -415,6 +416,24 @@ public class ChainDataProviderTest {
         provider.getCommitteeIndices(committeeKeys, validators, state);
 
     assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 2, 6));
+  }
+
+  @Test
+  public void calculateRewards_shouldGetData() {
+    final UInt64 reward = UInt64.valueOf(5000);
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+
+    final Map<Integer, Integer> committeeIndices = Map.of(0, 4, 1, 2);
+    final SyncCommitteeRewardData inputData = new SyncCommitteeRewardData(true, false);
+    final SyncCommitteeRewardData syncCommitteeRewardData =
+        provider.calculateRewards(committeeIndices, reward, data.randomBeaconBlock(), inputData);
+
+    assertThat(syncCommitteeRewardData.isExecutionOptimistic()).isTrue();
+    assertThat(syncCommitteeRewardData.isFinalized()).isFalse();
+    assertThat(syncCommitteeRewardData.getRewardData())
+        .containsExactlyInAnyOrder(Map.entry(2, ZERO), Map.entry(4, reward));
   }
 
   @Test
