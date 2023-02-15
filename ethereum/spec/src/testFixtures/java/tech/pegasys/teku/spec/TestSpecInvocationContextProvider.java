@@ -26,6 +26,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContext;
 import org.junit.jupiter.api.extension.TestTemplateInvocationContextProvider;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class TestSpecInvocationContextProvider implements TestTemplateInvocationContextProvider {
@@ -91,6 +92,7 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
     private final String displayName;
     private final Spec spec;
     private final DataStructureUtil dataStructureUtil;
+    private final SchemaDefinitions schemaDefinitions;
 
     private final SpecMilestone specMilestone;
     private final Eth2Network network;
@@ -99,12 +101,13 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
       if (doNotGenerateSpec) {
         spec = null;
         dataStructureUtil = null;
+        schemaDefinitions = null;
       } else {
         this.spec = TestSpecFactory.create(specMilestone, network);
         this.dataStructureUtil = new DataStructureUtil(spec);
+        this.schemaDefinitions = spec.forMilestone(specMilestone).getSchemaDefinitions();
       }
       this.displayName = specMilestone.name() + ' ' + network.name();
-
       this.specMilestone = specMilestone;
       this.network = network;
     }
@@ -119,6 +122,10 @@ public class TestSpecInvocationContextProvider implements TestTemplateInvocation
 
     public DataStructureUtil getDataStructureUtil() {
       return dataStructureUtil;
+    }
+
+    public SchemaDefinitions getSchemaDefinitions() {
+      return schemaDefinitions;
     }
 
     public SpecMilestone getSpecMilestone() {

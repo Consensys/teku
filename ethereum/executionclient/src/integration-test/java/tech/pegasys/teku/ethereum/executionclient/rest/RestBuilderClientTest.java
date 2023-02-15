@@ -51,10 +51,11 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 @TestSpecContext(
-    milestone = SpecMilestone.BELLATRIX,
-    network = {Eth2Network.MAINNET})
+    milestone = {SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA},
+    network = Eth2Network.MAINNET)
 class RestBuilderClientTest {
 
   private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -63,18 +64,6 @@ class RestBuilderClientTest {
 
   private static final String INTERNAL_SERVER_ERROR_MESSAGE =
       "{\"code\":500,\"message\":\"Internal server error\"}";
-
-  private static final String SIGNED_VALIDATOR_REGISTRATIONS_REQUEST =
-      readResource("builder/signedValidatorRegistrations.json");
-
-  private static final String SIGNED_BLINDED_BEACON_BLOCK_REQUEST =
-      readResource("builder/signedBlindedBeaconBlock.json");
-
-  private static final String EXECUTION_PAYLOAD_HEADER_RESPONSE =
-      readResource("builder/executionPayloadHeaderResponse.json");
-
-  private static final String UNBLINDED_EXECUTION_PAYLOAD_RESPONSE =
-      readResource("builder/unblindedExecutionPayloadResponse.json");
 
   private static final UInt64 SLOT = UInt64.ONE;
 
@@ -86,25 +75,45 @@ class RestBuilderClientTest {
           Bytes48.fromHexString(
               "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"));
 
-  private final MockWebServer mockWebServer = new MockWebServer();
   private final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
-
-  private SchemaDefinitionsBellatrix schemaDefinitionsBellatrix;
+  private final MockWebServer mockWebServer = new MockWebServer();
 
   private RestBuilderClient restBuilderClient;
 
+  private SchemaDefinitionsBellatrix schemaDefinitions;
+
+  private String signedValidatorRegistrationsRequest;
+  private String signedBlindedBeaconBlockRequest;
+  private String executionPayloadHeaderResponse;
+  private String unblindedExecutionPayloadResponse;
+
   @BeforeEach
-  void setUp(SpecContext specContext) throws IOException {
+  void setUp(final SpecContext specContext) throws IOException {
     mockWebServer.start();
-    Spec spec = specContext.getSpec();
-    String endpoint = "http://localhost:" + mockWebServer.getPort();
-    OkHttpRestClient okHttpRestClient = new OkHttpRestClient(okHttpClient, endpoint);
-    this.schemaDefinitionsBellatrix =
-        spec.forMilestone(specContext.getSpecMilestone())
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow();
-    this.restBuilderClient = new RestBuilderClient(okHttpRestClient, spec);
+
+    final Spec spec = specContext.getSpec();
+    final SpecMilestone milestone = specContext.getSpecMilestone();
+    final String endpoint = "http://localhost:" + mockWebServer.getPort();
+    final OkHttpRestClient okHttpRestClient = new OkHttpRestClient(okHttpClient, endpoint);
+
+    if (milestone.equals(SpecMilestone.BELLATRIX)) {
+      this.schemaDefinitions =
+          SchemaDefinitionsBellatrix.required(specContext.getSchemaDefinitions());
+    } else {
+      this.schemaDefinitions =
+          SchemaDefinitionsCapella.required(specContext.getSchemaDefinitions());
+    }
+
+    signedValidatorRegistrationsRequest = readResource("builder/signedValidatorRegistrations.json");
+    final String milestoneFolder = "builder/" + milestone.toString().toLowerCase();
+    signedBlindedBeaconBlockRequest =
+        readResource(milestoneFolder + "/signedBlindedBeaconBlock.json");
+    executionPayloadHeaderResponse =
+        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
+    unblindedExecutionPayloadResponse =
+        readResource(milestoneFolder + "/unblindedExecutionPayloadResponse.json");
+
+    restBuilderClient = new RestBuilderClient(okHttpRestClient, spec);
   }
 
   @AfterEach
@@ -148,7 +157,7 @@ class RestBuilderClientTest {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    SszList<SignedValidatorRegistration> signedValidatorRegistrations =
+    final SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
     assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
@@ -159,13 +168,13 @@ class RestBuilderClientTest {
               assertThat(response.getPayload()).isNull();
             });
 
-    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATIONS_REQUEST);
+    verifyPostRequest("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
   }
 
   @TestTemplate
   void registerValidators_zeroRegistrationsDoesNotMakeRequest() {
 
-    SszList<SignedValidatorRegistration> zeroRegistrations =
+    final SszList<SignedValidatorRegistration> zeroRegistrations =
         SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getDefault();
 
     assertThat(restBuilderClient.registerValidators(SLOT, zeroRegistrations))
@@ -182,11 +191,11 @@ class RestBuilderClientTest {
   @TestTemplate
   void registerValidators_failures() {
 
-    String unknownValidatorError = "{\"code\":400,\"message\":\"unknown validator\"}";
+    final String unknownValidatorError = "{\"code\":400,\"message\":\"unknown validator\"}";
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(unknownValidatorError));
 
-    SszList<SignedValidatorRegistration> signedValidatorRegistrations =
+    final SszList<SignedValidatorRegistration> signedValidatorRegistrations =
         createSignedValidatorRegistrations();
 
     assertThat(restBuilderClient.registerValidators(SLOT, signedValidatorRegistrations))
@@ -197,7 +206,7 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(unknownValidatorError);
             });
 
-    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATIONS_REQUEST);
+    verifyPostRequest("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
@@ -210,14 +219,14 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
-    verifyPostRequest("/eth/v1/builder/validators", SIGNED_VALIDATOR_REGISTRATIONS_REQUEST);
+    verifyPostRequest("/eth/v1/builder/validators", signedValidatorRegistrationsRequest);
   }
 
   @TestTemplate
   void getExecutionPayloadHeader_success() {
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(EXECUTION_PAYLOAD_HEADER_RESPONSE));
+        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
 
     assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
@@ -251,7 +260,7 @@ class RestBuilderClientTest {
   @TestTemplate
   void getExecutionPayloadHeader_failures() {
 
-    String missingParentHashError =
+    final String missingParentHashError =
         "{\"code\":400,\"message\":\"Unknown hash: missing parent hash\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(missingParentHashError));
 
@@ -283,9 +292,9 @@ class RestBuilderClientTest {
   void sendSignedBlindedBlock_success() {
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(UNBLINDED_EXECUTION_PAYLOAD_RESPONSE));
+        new MockResponse().setResponseCode(200).setBody(unblindedExecutionPayloadResponse));
 
-    SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
+    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
     assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
@@ -296,7 +305,7 @@ class RestBuilderClientTest {
               verifyExecutionPayloadResponse(responsePayload);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", SIGNED_BLINDED_BEACON_BLOCK_REQUEST);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
   }
 
   @TestTemplate
@@ -306,7 +315,7 @@ class RestBuilderClientTest {
         "{\"code\":400,\"message\":\"Invalid block: missing signature\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(missingSignatureError));
 
-    SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
+    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
     assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
@@ -316,7 +325,7 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(missingSignatureError);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", SIGNED_BLINDED_BEACON_BLOCK_REQUEST);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
@@ -329,23 +338,24 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", SIGNED_BLINDED_BEACON_BLOCK_REQUEST);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
   }
 
-  private void verifyGetRequest(String apiPath) {
+  private void verifyGetRequest(final String apiPath) {
     verifyRequest("GET", apiPath, Optional.empty());
   }
 
-  private void verifyPostRequest(String apiPath, String requestBody) {
+  private void verifyPostRequest(final String apiPath, final String requestBody) {
     verifyRequest("POST", apiPath, Optional.of(requestBody));
   }
 
-  private void verifyRequest(String method, String apiPath, Optional<String> expectedRequestBody) {
+  private void verifyRequest(
+      final String method, final String apiPath, final Optional<String> expectedRequestBody) {
     try {
-      RecordedRequest request = mockWebServer.takeRequest();
+      final RecordedRequest request = mockWebServer.takeRequest();
       assertThat(request.getMethod()).isEqualTo(method);
       assertThat(request.getPath()).isEqualTo(apiPath);
-      Buffer actualRequestBody = request.getBody();
+      final Buffer actualRequestBody = request.getBody();
       if (expectedRequestBody.isEmpty()) {
         assertThat(actualRequestBody.size()).isZero();
       } else {
@@ -361,20 +371,21 @@ class RestBuilderClientTest {
   private SszList<SignedValidatorRegistration> createSignedValidatorRegistrations() {
     try {
       return JsonUtil.parse(
-          SIGNED_VALIDATOR_REGISTRATIONS_REQUEST,
+          signedValidatorRegistrationsRequest,
           SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition());
     } catch (JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
     }
   }
 
-  private void verifySignedBuilderBidResponse(SignedBuilderBid actual) {
-    DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>> responseTypeDefinition =
-        BuilderApiResponse.createTypeDefinition(
-            schemaDefinitionsBellatrix.getSignedBuilderBidSchema().getJsonTypeDefinition());
+  private void verifySignedBuilderBidResponse(final SignedBuilderBid actual) {
+    final DeserializableTypeDefinition<BuilderApiResponse<SignedBuilderBid>>
+        responseTypeDefinition =
+            BuilderApiResponse.createTypeDefinition(
+                schemaDefinitions.getSignedBuilderBidSchema().getJsonTypeDefinition());
     try {
-      SignedBuilderBid expected =
-          JsonUtil.parse(EXECUTION_PAYLOAD_HEADER_RESPONSE, responseTypeDefinition).getData();
+      final SignedBuilderBid expected =
+          JsonUtil.parse(executionPayloadHeaderResponse, responseTypeDefinition).getData();
       assertThat(actual).isEqualTo(expected);
     } catch (JsonProcessingException ex) {
       Assertions.fail(ex);
@@ -384,28 +395,28 @@ class RestBuilderClientTest {
   private SignedBeaconBlock createSignedBlindedBeaconBlock() {
     try {
       return JsonUtil.parse(
-          SIGNED_BLINDED_BEACON_BLOCK_REQUEST,
-          schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition());
+          signedBlindedBeaconBlockRequest,
+          schemaDefinitions.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition());
     } catch (JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
     }
   }
 
-  private void verifyExecutionPayloadResponse(ExecutionPayload actual) {
-    DeserializableTypeDefinition<? extends BuilderApiResponse<? extends ExecutionPayload>>
+  private void verifyExecutionPayloadResponse(final ExecutionPayload actual) {
+    final DeserializableTypeDefinition<? extends BuilderApiResponse<? extends ExecutionPayload>>
         responseTypeDefinition =
             BuilderApiResponse.createTypeDefinition(
-                schemaDefinitionsBellatrix.getExecutionPayloadSchema().getJsonTypeDefinition());
+                schemaDefinitions.getExecutionPayloadSchema().getJsonTypeDefinition());
     try {
-      ExecutionPayload expected =
-          JsonUtil.parse(UNBLINDED_EXECUTION_PAYLOAD_RESPONSE, responseTypeDefinition).getData();
+      final ExecutionPayload expected =
+          JsonUtil.parse(unblindedExecutionPayloadResponse, responseTypeDefinition).getData();
       assertThat(actual).isEqualTo(expected);
     } catch (JsonProcessingException ex) {
       Assertions.fail(ex);
     }
   }
 
-  private static String readResource(String resource) {
+  private static String readResource(final String resource) {
     try {
       return Resources.toString(Resources.getResource(resource), StandardCharsets.UTF_8);
     } catch (IOException ex) {

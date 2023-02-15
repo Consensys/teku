@@ -96,11 +96,11 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.test.acceptance.dsl.Eth2EventHandler.PackedMessage;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
-import tech.pegasys.teku.test.acceptance.dsl.tools.BlsToExecutionChangeCreator;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuNode extends Node {
@@ -278,12 +278,11 @@ public class TekuNode extends Node {
     final int currentEpoch = getCurrentEpoch();
 
     final SignedBlsToExecutionChange signedBlsToExecutionChange =
-        new BlsToExecutionChangeCreator(spec, getGenesisValidatorsRoot())
+        new BlsToExecutionChangeGenerator(spec, getGenesisValidatorsRoot())
             .createAndSign(
                 UInt64.valueOf(validatorIndex),
-                validatorKeyPair.getPublicKey(),
+                validatorKeyPair,
                 executionAddress,
-                validatorKeyPair.getSecretKey(),
                 UInt64.valueOf(currentEpoch));
 
     final DeserializableTypeDefinition<List<SignedBlsToExecutionChange>> jsonTypeDefinition =
@@ -855,7 +854,7 @@ public class TekuNode extends Node {
     }
 
     public Config withDoppelgangerDetectionEnabled() {
-      configMap.put("Xdoppelganger-detection-enabled", true);
+      configMap.put("doppelganger-detection-enabled", true);
       return this;
     }
 

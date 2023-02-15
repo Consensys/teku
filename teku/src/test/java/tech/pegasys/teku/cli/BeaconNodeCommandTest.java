@@ -148,9 +148,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
     beaconNodeCommand.parse(args);
     String str = getCommandLineOutput();
-    // --Xmetrics-block-timing-tracking-enabled is being supported as an alias for the supported
-    // version because of the significant number of people using it
-    str = str.replace("--Xmetrics-block-timing-tracking-enabled", "");
     assertThat(str).doesNotContain("--X");
   }
 
@@ -351,7 +348,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableDoppelgangerDetection() {
-    final String[] args = {"--Xdoppelganger-detection-enabled", "true"};
+    final String[] args = {"--doppelganger-detection-enabled", "true"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
@@ -364,7 +361,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldDisableDoppelgangerDetection() {
-    final String[] args = {"--Xdoppelganger-detection-enabled", "false"};
+    final String[] args = {"--doppelganger-detection-enabled", "false"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
