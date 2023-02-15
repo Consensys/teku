@@ -73,6 +73,10 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     return this;
   }
 
+  public UInt64 getCapellaForkEpoch() {
+    return capellaForkEpoch;
+  }
+
   @Override
   public void validate() {
     if (capellaForkEpoch == null) {

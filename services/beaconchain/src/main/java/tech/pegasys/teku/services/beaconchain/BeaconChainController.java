@@ -87,7 +87,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -219,7 +218,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   protected volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   protected volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  protected volatile OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
+  protected volatile BlsToExecutionOperationPool blsToExecutionChangePool;
   protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
@@ -1041,6 +1040,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             voluntaryExitPool,
             attestationPool,
             attestationManager,
+            blsToExecutionChangePool,
             recentChainData);
     eventChannels.subscribe(ChainHeadChannel.class, operationsReOrgManager);
   }
