@@ -119,6 +119,18 @@ public final class KZGTest {
   }
 
   @Test
+  public void testNoErrorOnLoadingIncorrectTrustedSetup() {
+    final String trustedSetup =
+        Resources.getResource(TrustedSetups.class, "mainnet/trusted_setup.txt").toExternalForm();
+    kzg.loadTrustedSetup(trustedSetup);
+    final int numberOfBlobs = 4;
+    final List<Bytes> blobs = getSampleBlobsIncorrectSize(numberOfBlobs);
+    assertThrows(
+        KZGException.class,
+        () -> blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList()));
+  }
+
+  @Test
   public void testComputingAndVerifyingProof() {
     loadTrustedSetup();
     final int numberOfBlobs = 4;
@@ -338,6 +350,20 @@ public final class KZGTest {
     final String trustedSetup =
         Resources.getResource(TrustedSetups.class, TRUSTED_SETUP_PATH).toExternalForm();
     kzg.loadTrustedSetup(trustedSetup);
+  }
+
+  private List<Bytes> getSampleBlobsIncorrectSize(final int count) {
+    return IntStream.range(0, count)
+        .mapToObj(__ -> getSampleBlobIncorrectSize())
+        .collect(Collectors.toList());
+  }
+
+  private Bytes getSampleBlobIncorrectSize() {
+    return IntStream.range(0, CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob)
+        .mapToObj(__ -> randomBLSFieldElement())
+        .map(fieldElement -> Bytes.wrap(fieldElement.toArray(ByteOrder.LITTLE_ENDIAN)))
+        .reduce(Bytes::wrap)
+        .orElse(Bytes.EMPTY);
   }
 
   private List<Bytes> getSampleBlobs(final int count) {
