@@ -392,7 +392,7 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getCommitteeIndices() {
+  public void getCommitteeIndices_withSpecifiedValidators() {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
@@ -416,6 +416,32 @@ public class ChainDataProviderTest {
         provider.getCommitteeIndices(committeeKeys, validators, state);
 
     assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 2, 6));
+  }
+
+  @Test
+  public void getCommitteeIndices_withNoSpecifiedValidators() {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        data.randomBeaconState(32);
+
+    final List<BLSPublicKey> stateValidators =
+        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
+    final List<BLSPublicKey> committeeKeys =
+        List.of(
+            stateValidators.get(1),
+            stateValidators.get(4),
+            stateValidators.get(6),
+            stateValidators.get(7),
+            stateValidators.get(9),
+            stateValidators.get(11));
+
+    final Map<Integer, Integer> committeeIndices =
+        provider.getCommitteeIndices(committeeKeys, Set.of(), state);
+
+    assertThat(committeeIndices)
+        .containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 1, 4, 2, 6, 3, 7, 4, 9, 5, 11));
   }
 
   @Test
