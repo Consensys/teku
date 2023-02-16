@@ -1,7 +1,6 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-- The `--Xmetrics-block-timing-tracking-enabled` option has been renamed to `--metrics-block-timing-tracking-enabled` and enabled by default. The `--X` version will be removed in a future release.
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
@@ -16,13 +15,15 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Breaking Changes
 - Removed references to beacon block methods `/eth2/beacon_chain/req/beacon_blocks_by_root` and `/eth2/beacon_chain/req/beacon_blocks_by_range`.
+- `--Xmetrics-block-timing-tracking-enabled` option has been removed. The `--metrics-block-timing-tracking-enabled` option should be used instead (enabled by default).
 
 ### Additions and Improvements
-- Introduced [Doppelganger Detection feature](https://docs.teku.consensys.net/en/latest/HowTo/Doppelganger-Detection/) 
+- Introduced [Doppelganger Detection feature](https://docs.teku.consensys.net/HowTo/Doppelganger-Detection) 
 - Changed color of block production duty to cyan, rather than dark blue.
 - Introduced a configuration overview printed during start up.
 - Introduced a new field `el_offline` in the `GetSyncingStatusResponse` which is set to `true` when the execution layer is offline: [Syncing API update](https://github.com/ethereum/beacon-APIs/pull/290)
 - Trigger the beacon nodes fallback mechanism when the execution layer is offline
+- Added Capella fork information for Sepolia network configuration.
 
 ### Bug Fixes
 - Fixed issue which was causing validator keys to be loaded twice, which, in some cases, was causing beacon node to initialize slower.

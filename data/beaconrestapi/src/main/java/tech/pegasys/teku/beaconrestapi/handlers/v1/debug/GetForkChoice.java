@@ -59,7 +59,7 @@ public class GetForkChoice extends RestApiEndpoint {
                   "parent_root",
                   BYTES32_TYPE.withDescription(
                       "The signing merkle root of the parent `BeaconBlock`."),
-                  ProtoNodeData::getRoot)
+                  ProtoNodeData::getParentRoot)
               .withField(
                   "justified_epoch",
                   UINT64_TYPE,

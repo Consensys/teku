@@ -144,10 +144,8 @@ public abstract class BeaconStateAccessors {
   }
 
   public UInt64 getProposerBoostAmount(final BeaconState state) {
-    final int numValidators = getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
-    final UInt64 avgBalance = getTotalActiveBalance(state).dividedBy(numValidators);
-    final long committeeSize = numValidators / config.getSlotsPerEpoch();
-    final UInt64 committeeWeight = avgBalance.times(committeeSize);
+    final UInt64 committeeWeight =
+        getTotalActiveBalance(state).dividedBy(config.getSlotsPerEpoch());
     return committeeWeight.times(config.getProposerScoreBoost()).dividedBy(100);
   }
 

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_PROGRESSIVE_BALANCES_MODE;
 
 import java.net.URL;
 import java.util.List;
@@ -25,6 +26,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
+import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfigurationTest {
@@ -93,6 +97,24 @@ public class Eth2NetworkConfigurationTest {
   }
 
   @Test
+  public void shouldApplyProgressiveBalancesModeFULLWhenCapellaIsConfigured() {
+    Eth2NetworkConfiguration networkConfig =
+        Eth2NetworkConfiguration.builder(Eth2Network.MAINNET).build();
+
+    // check default
+    assertAllMilestoneHaveProgressiveBalancesMode(networkConfig, DEFAULT_PROGRESSIVE_BALANCES_MODE);
+
+    networkConfig =
+        Eth2NetworkConfiguration.builder(Eth2Network.MAINNET)
+            .capellaForkEpoch(UInt64.valueOf(200_000))
+            .denebForkEpoch(UInt64.valueOf(210_000))
+            .build();
+
+    // check default FULL when capella enabled
+    assertAllMilestoneHaveProgressiveBalancesMode(networkConfig, ProgressiveBalancesMode.FULL);
+  }
+
+  @Test
   public void applyNamedNetworkDefaults_shouldOverwritePreviouslySetValues() {
     List<Arguments> definedNetworks = getDefinedNetworks().collect(Collectors.toList());
 
@@ -149,6 +171,20 @@ public class Eth2NetworkConfigurationTest {
         .map(enr -> enr.startsWith("enr:") ? enr.substring("enr:".length()) : enr)
         .map(nodeRecordFactory::fromBase64)
         .collect(Collectors.toList());
+  }
+
+  private void assertAllMilestoneHaveProgressiveBalancesMode(
+      final Eth2NetworkConfiguration networkConfig,
+      final ProgressiveBalancesMode progressiveBalancesMode) {
+    for (final ForkAndSpecMilestone milestone : networkConfig.getSpec().getEnabledMilestones()) {
+      assertThat(
+              networkConfig
+                  .getSpec()
+                  .forMilestone(milestone.getSpecMilestone())
+                  .getConfig()
+                  .getProgressiveBalancesMode())
+          .isEqualTo(progressiveBalancesMode);
+    }
   }
 
   @FunctionalInterface
