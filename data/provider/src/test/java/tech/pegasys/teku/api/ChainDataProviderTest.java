@@ -392,6 +392,29 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getSyncCommitteeRewardsFromBlockId() {
+    final ChainDataProvider provider = setupAltairState();
+    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
+        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
+
+    final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
+    expectedOutput.updateReward(0, ZERO);
+    expectedOutput.updateReward(6, ZERO);
+    expectedOutput.updateReward(9, UInt64.valueOf(247));
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
+  }
+
+  @Test
+  public void getSyncCommitteeRewardsFromBlockId_emptyBlockAndMetaData() {
+    final ChainDataProvider provider = setupAltairState();
+    when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.empty());
+
+    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
+        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+  }
+
+  @Test
   public void getCommitteeIndices_withSpecifiedValidators() {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
@@ -704,8 +727,13 @@ public class ChainDataProviderTest {
             .validators(validators)
             .currentSyncCommittee(currentSyncCommittee)
             .build();
-    final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(internalState));
+    final SignedBlockAndState signedBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(internalState);
+    final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(signedBlockAndState));
     when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
+    when(mockCombinedChainDataClient.getStateByBlockRoot(
+            eq(signedBlockAndState.getBlock().getRoot())))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBlockAndState.getState())));
     return provider;
   }
 
