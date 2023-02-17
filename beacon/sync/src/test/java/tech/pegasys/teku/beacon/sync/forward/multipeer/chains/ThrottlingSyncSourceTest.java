@@ -35,6 +35,7 @@ class ThrottlingSyncSourceTest {
 
   private static final int MAX_BLOCKS_PER_MINUTE = 100;
   private static final int MAX_BLOBS_SIDECARS_PER_MINUTE = 100;
+  private static final int MAX_BLOB_SIDECARS_PER_MINUTE = 100;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final SyncSource delegate = mock(SyncSource.class);
@@ -53,7 +54,8 @@ class ThrottlingSyncSourceTest {
           timeProvider,
           delegate,
           MAX_BLOCKS_PER_MINUTE,
-          MAX_BLOBS_SIDECARS_PER_MINUTE);
+          MAX_BLOBS_SIDECARS_PER_MINUTE,
+          MAX_BLOB_SIDECARS_PER_MINUTE);
 
   @Test
   void shouldDelegateDisconnectImmediately() {

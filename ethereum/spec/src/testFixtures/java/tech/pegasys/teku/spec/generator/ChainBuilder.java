@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Sig
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
@@ -88,8 +89,10 @@ public class ChainBuilder {
   private final AttesterSlashingGenerator attesterSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
   private final NavigableMap<UInt64, BlobsSidecar> blobsSidecars = new TreeMap<>();
+  private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
   private final Map<Bytes32, BlobsSidecar> blobsSidecarsByHash = new HashMap<>();
+  private final Map<Bytes32, BlobSidecar> blobSidecarsByHash = new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
 
@@ -97,7 +100,8 @@ public class ChainBuilder {
       final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
-      final Map<UInt64, BlobsSidecar> existingBlobsSidecars) {
+      final Map<UInt64, BlobsSidecar> existingBlobsSidecars,
+      final Map<UInt64, BlobSidecar> existingBlobSidecars) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -106,8 +110,10 @@ public class ChainBuilder {
     blockProposalTestUtil = new BlockProposalTestUtil(spec);
     blocks.putAll(existingBlocks);
     blobsSidecars.putAll(existingBlobsSidecars);
+    blobSidecars.putAll(existingBlobSidecars);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
     blobsSidecars.values().forEach(b -> blobsSidecarsByHash.put(b.getBeaconBlockRoot(), b));
+    blobSidecars.values().forEach(b -> blobSidecarsByHash.put(b.getBlockRoot(), b));
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -115,7 +121,12 @@ public class ChainBuilder {
   }
 
   public static ChainBuilder create(final Spec spec, final List<BLSKeyPair> validatorKeys) {
-    return new ChainBuilder(spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap());
+    return new ChainBuilder(
+        spec,
+        validatorKeys,
+        Collections.emptyMap(),
+        Collections.emptyMap(),
+        Collections.emptyMap());
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
@@ -157,7 +168,7 @@ public class ChainBuilder {
    * @return An independent copy of this ChainBuilder
    */
   public ChainBuilder fork() {
-    return new ChainBuilder(spec, validatorKeys, blocks, blobsSidecars);
+    return new ChainBuilder(spec, validatorKeys, blocks, blobsSidecars, blobSidecars);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -210,10 +221,20 @@ public class ChainBuilder {
     return streamBlobsSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
+  public Stream<BlobSidecar> streamBlobSidecars(final long fromSlot, final long toSlot) {
+    return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
+  }
+
   public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 fromSlot, final UInt64 toSlot) {
     return blobsSidecars.values().stream()
         .filter(s -> s.getBeaconBlockSlot().isGreaterThanOrEqualTo(fromSlot))
         .filter(s -> s.getBeaconBlockSlot().isLessThanOrEqualTo(toSlot));
+  }
+
+  public Stream<BlobSidecar> streamBlobSidecars(final UInt64 fromSlot, final UInt64 toSlot) {
+    return blobSidecars.values().stream()
+        .filter(s -> s.getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(s -> s.getSlot().isLessThanOrEqualTo(toSlot));
   }
 
   public Stream<BlobsSidecar> streamBlobsSidecars() {
