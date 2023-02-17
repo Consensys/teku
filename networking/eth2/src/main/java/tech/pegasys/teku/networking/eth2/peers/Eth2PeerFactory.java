@@ -67,6 +67,7 @@ public class Eth2PeerFactory {
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
         new RateTracker(peerRateLimit, 60, timeProvider),
         new RateTracker(peerRateLimit, 60, timeProvider),
+        new RateTracker(peerRateLimit, 60, timeProvider),
         new RateTracker(peerRequestLimit, 60, timeProvider));
   }
 }

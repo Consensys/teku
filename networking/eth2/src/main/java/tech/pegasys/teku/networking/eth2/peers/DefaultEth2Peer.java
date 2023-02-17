@@ -83,6 +83,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final AtomicInteger unansweredPings = new AtomicInteger();
   private final RateTracker blockRequestTracker;
   private final RateTracker blobsSidecarsRequestTracker;
+  private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker requestTracker;
   private final Supplier<UInt64> firstSlotSupportingBlobsSidecarsByRange;
 
@@ -95,6 +96,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobsSidecarsRequestTracker,
+      final RateTracker blobSidecarsRequestTracker,
       final RateTracker requestTracker) {
     super(peer);
     this.rpcMethods = rpcMethods;
@@ -103,6 +105,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.peerChainValidator = peerChainValidator;
     this.blockRequestTracker = blockRequestTracker;
     this.blobsSidecarsRequestTracker = blobsSidecarsRequestTracker;
+    this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.requestTracker = requestTracker;
     this.firstSlotSupportingBlobsSidecarsByRange =
         Suppliers.memoize(
@@ -399,7 +402,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public boolean wantToReceiveBlobSidecars(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return wantToReceiveObjects(
+        "blob sidecars", blobSidecarsRequestTracker, callback, blobSidecarsCount);
   }
 
   @Override

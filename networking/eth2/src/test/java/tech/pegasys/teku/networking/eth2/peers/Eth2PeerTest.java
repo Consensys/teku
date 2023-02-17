@@ -55,6 +55,7 @@ class Eth2PeerTest {
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final RateTracker blockRateTracker = mock(RateTracker.class);
   private final RateTracker blobsSidecarsRateTracker = mock(RateTracker.class);
+  private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
 
   private final PeerStatus randomPeerStatus = randomPeerStatus();
@@ -69,6 +70,7 @@ class Eth2PeerTest {
           peerChainValidator,
           blockRateTracker,
           blobsSidecarsRateTracker,
+          blobSidecarsRateTracker,
           rateTracker);
 
   @Test

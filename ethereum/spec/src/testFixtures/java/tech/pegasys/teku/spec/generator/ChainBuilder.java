@@ -141,6 +141,10 @@ public class ChainBuilder {
     return Optional.ofNullable(blobsSidecarsByHash.get(blockRoot));
   }
 
+  public Optional<BlobSidecar> getBlobSidecar(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blobSidecarsByHash.get(blockRoot));
+  }
+
   public Optional<SignedBeaconBlockAndBlobsSidecar> getBlockAndBlobsSidecar(
       final Bytes32 blockRoot) {
     return getBlock(blockRoot)
