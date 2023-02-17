@@ -1891,11 +1891,6 @@ public final class DataStructureUtil {
     return randomBlobsSidecar(randomBytes32(), randomUInt64());
   }
 
-  public BlobSidecar randomBlobSidecar() {
-    return randomBlobSidecar(
-        randomBytes32(), randomUInt64(), randomUInt64(), randomBytes32(), randomUInt64());
-  }
-
   public BlobsSidecar randomBlobsSidecar(final UInt64 slot) {
     return randomBlobsSidecar(randomBytes32(), slot);
   }
@@ -1907,6 +1902,15 @@ public final class DataStructureUtil {
 
     return randomBlobsSidecar(
         blockRoot, slot, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()));
+  }
+
+  public BlobSidecar randomBlobSidecar() {
+    return randomBlobSidecar(randomUInt64());
+  }
+
+  public BlobSidecar randomBlobSidecar(final UInt64 index) {
+    return randomBlobSidecar(
+        randomBytes32(), index, randomUInt64(), randomBytes32(), randomUInt64());
   }
 
   public BlobSidecar randomBlobSidecar(
@@ -1970,6 +1974,12 @@ public final class DataStructureUtil {
     return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
         .getSignedBlobSidecarSchema()
         .create(randomBlobSidecar(), randomSignature());
+  }
+
+  public SignedBlobSidecar randomSignedBlobSidecar(final UInt64 index) {
+    return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBlobSidecarSchema()
+        .create(randomBlobSidecar(index), randomSignature());
   }
 
   public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar() {

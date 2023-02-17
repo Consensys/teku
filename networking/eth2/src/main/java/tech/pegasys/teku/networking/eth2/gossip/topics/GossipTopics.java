@@ -57,8 +57,16 @@ public class GossipTopics {
         forkDigest, GossipTopicName.getSyncCommitteeSubnetTopicName(subnetId), gossipEncoding);
   }
 
+  public static String getBlobSidecarIndexTopic(
+      final Bytes4 forkDigest, final int index, final GossipEncoding gossipEncoding) {
+    return getTopic(
+        forkDigest, GossipTopicName.getBlobSidecarIndexTopicName(index), gossipEncoding);
+  }
+
   public static Set<String> getAllTopics(
-      final GossipEncoding gossipEncoding, final Bytes4 forkDigest) {
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest,
+      final int blobSidecarIndexCount) {
     final Set<String> topics = new HashSet<>();
 
     for (int i = 0; i < Constants.ATTESTATION_SUBNET_COUNT; i++) {
@@ -66,6 +74,9 @@ public class GossipTopics {
     }
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
+    }
+    for (int i = 0; i < blobSidecarIndexCount; i++) {
+      topics.add(getBlobSidecarIndexTopic(forkDigest, i, gossipEncoding));
     }
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
