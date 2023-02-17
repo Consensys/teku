@@ -10,7 +10,7 @@ Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. See the [Changel
 
 ## Useful links
 
-* [Ethereum 2.0 Beacon Chain specification](https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/beacon-chain.md)
+* [Ethereum 2.0 Beacon Chain specification](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md)
 * [Teku user documentation](https://docs.teku.consensys.net/)
 * [Teku REST API reference documentation](https://consensys.github.io/teku/)
 * [Teku issues](https://github.com/ConsenSys/teku/issues)

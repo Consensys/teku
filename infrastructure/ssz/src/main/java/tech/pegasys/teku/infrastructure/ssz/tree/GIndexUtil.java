@@ -21,7 +21,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 
 /**
  * Util methods for binary tree generalized indices manipulations See
- * https://github.com/ethereum/eth2.0-specs/blob/v1.0.0/ssz/merkle-proofs.md#generalized-merkle-tree-index
+ * https://github.com/ethereum/consensus-specs/blob/v1.0.0/ssz/merkle-proofs.md#generalized-merkle-tree-index
  * for more info on generalized indices
  *
  * <p>Here the general index is represented by <code>long</code> which is treated as unsigned uint64

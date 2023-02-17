@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
-/** https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
+/** https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata */
 public class MetadataMessagePhase0
     extends Container2<MetadataMessagePhase0, SszUInt64, SszBitvector> implements MetadataMessage {
 

@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 
 /**
  * Gossip options
- * https://github.com/ethereum/eth2.0-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#the-gossip-domain-gossipsub
+ * https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#the-gossip-domain-gossipsub
  */
 public class GossipConfig {
   public static final int DEFAULT_D = 8;

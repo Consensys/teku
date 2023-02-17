@@ -77,7 +77,7 @@ public abstract class AttestationUtil {
    * @param data2
    * @return
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_attestation_data</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_attestation_data</a>
    */
   public boolean isSlashableAttestationData(
       final AttestationData data1, final AttestationData data2) {
@@ -95,7 +95,7 @@ public abstract class AttestationUtil {
    * @param attestation
    * @return
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_indexed_attestation</a>
    */
   public IndexedAttestation getIndexedAttestation(
       final BeaconState state, final Attestation attestation) {
@@ -122,7 +122,7 @@ public abstract class AttestationUtil {
    * @return
    * @throws IllegalArgumentException
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#get_attesting_indices</a>
    */
   public IntList getAttestingIndices(
       final BeaconState state, final AttestationData data, final SszBitlist bits) {
@@ -209,7 +209,7 @@ public abstract class AttestationUtil {
    * @param state
    * @param indexedAttestation
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_valid_indexed_attestation</a>
    */
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork, final BeaconState state, final IndexedAttestation indexedAttestation) {

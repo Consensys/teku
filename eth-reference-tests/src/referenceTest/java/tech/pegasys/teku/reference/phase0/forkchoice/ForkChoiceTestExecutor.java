@@ -152,7 +152,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
   /**
    * The anchor block is currently always a Phase 0 block because of the way the specs repo are
-   * doing Altair genesis. See https://github.com/ethereum/eth2.0-specs/pull/2323
+   * doing Altair genesis. See https://github.com/ethereum/consensus-specs/pull/2323
    *
    * @param testDefinition the test definition
    * @return the anchor block for the test
