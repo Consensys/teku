@@ -62,13 +62,28 @@ public class GetSyncCommitteeRewardsTest
   }
 
   @Test
-  void shouldReturnSyncCommitteeRewardsInformation() throws Exception {
+  void shouldReturnSyncCommitteeRewardsInformation_emptyValidators() throws Exception {
     request.setRequestBody(List.of());
 
     handler.handleRequest(request);
 
     final SyncCommitteeRewardData output =
         chainDataProvider.getSyncCommitteeRewardsFromBlockId("head", Set.of()).get().orElseThrow();
+    Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(output);
+  }
+
+  @Test
+  void shouldReturnSyncCommitteeRewardsInformation_specifiedValidators() throws Exception {
+    request.setRequestBody(List.of("0", "3", "9", "10"));
+
+    handler.handleRequest(request);
+
+    final SyncCommitteeRewardData output =
+        chainDataProvider
+            .getSyncCommitteeRewardsFromBlockId("head", Set.of("0", "3", "9", "10"))
+            .get()
+            .orElseThrow();
     Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(output);
   }

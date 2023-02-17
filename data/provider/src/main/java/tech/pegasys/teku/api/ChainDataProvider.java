@@ -624,7 +624,7 @@ public class ChainDataProvider {
       final Optional<Integer> validatorIndex = spec.getValidatorIndex(state, key);
       if (validatorIndex.isPresent()
           && (validators.contains(key.toHexString())
-              || validators.contains(validatorIndex.toString()))) {
+              || validators.contains(validatorIndex.get().toString()))) {
         output.put(i, validatorIndex.get());
       }
       i++;
