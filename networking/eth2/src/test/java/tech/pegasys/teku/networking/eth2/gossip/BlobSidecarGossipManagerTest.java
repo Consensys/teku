@@ -13,20 +13,25 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.contains;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
-import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
@@ -49,8 +54,11 @@ public class BlobSidecarGossipManagerTest {
 
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-  private final TopicChannel topicChannel = mock(TopicChannel.class);
+
+  private final Map<Integer, TopicChannel> topicChannels = new HashMap<>();
+
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+
   private final ForkInfo forkInfo =
       new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
 
@@ -59,9 +67,23 @@ public class BlobSidecarGossipManagerTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
-    doReturn(topicChannel)
+    // return TopicChannel mock for each blob_sidecar_<index> topic
+    doAnswer(
+            i -> {
+              final String topicName = i.getArgument(0);
+              final TopicChannel topicChannel = mock(TopicChannel.class);
+              final Pattern topicPattern = Pattern.compile("blob_sidecar_(\\d+)");
+              final Matcher matcher = topicPattern.matcher(topicName);
+              if (!matcher.find()) {
+                Assertions.fail(topicPattern + " regex does not match the topic: " + topicName);
+              }
+              assertThat(topicName).containsPattern(topicPattern);
+              final int index = Integer.parseInt(matcher.group(1));
+              topicChannels.put(index, topicChannel);
+              return topicChannel;
+            })
         .when(gossipNetwork)
-        .subscribe(contains(GossipTopicName.BLOB_SIDECAR.toString()), any());
+        .subscribe(any(), any());
     blobSidecarGossipManager =
         new BlobSidecarGossipManager(
             storageSystem.recentChainData(),
@@ -76,12 +98,41 @@ public class BlobSidecarGossipManagerTest {
   }
 
   @Test
-  public void testGossipingBlobSidecar() {
-    final SignedBlobSidecar blobSidecar = dataStructureUtil.randomSignedBlobSidecar();
+  public void testGossipingBlobSidecarPublishesToCorrectTopic() {
+    final SignedBlobSidecar blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
 
-    verify(topicChannel).gossip(serialized);
+    topicChannels.forEach(
+        (index, channel) -> {
+          if (index == 1) {
+            verify(channel).gossip(serialized);
+          } else {
+            verifyNoInteractions(channel);
+          }
+        });
+  }
+
+  @Test
+  public void testGossipingBlobSidecarWithInvalidIndexDoesNotGossipAnything() {
+    final SignedBlobSidecar blobSidecar =
+        dataStructureUtil.randomSignedBlobSidecar(UInt64.valueOf(10));
+
+    blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
+
+    topicChannels.forEach((__, channel) -> verifyNoInteractions(channel));
+  }
+
+  @Test
+  public void testUnsubscribingClosesAllChannels() {
+    blobSidecarGossipManager.unsubscribe();
+
+    topicChannels
+        .values()
+        .forEach(
+            channel -> {
+              verify(channel).close();
+            });
   }
 }

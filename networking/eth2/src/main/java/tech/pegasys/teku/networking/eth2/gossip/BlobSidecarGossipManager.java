@@ -13,18 +13,35 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import java.util.Optional;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
+import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobSidecarGossipManager extends AbstractGossipManager<SignedBlobSidecar> {
+public class BlobSidecarGossipManager implements GossipManager {
+
+  private final GossipNetwork gossipNetwork;
+  private final GossipEncoding gossipEncoding;
+
+  private final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler =
+      new Int2ObjectOpenHashMap<>();
+  private final Int2ObjectMap<TopicChannel> indexToChannel = new Int2ObjectOpenHashMap<>();
 
   public BlobSidecarGossipManager(
       final RecentChainData recentChainData,
@@ -35,27 +52,84 @@ public class BlobSidecarGossipManager extends AbstractGossipManager<SignedBlobSi
       final ForkInfo forkInfo,
       final OperationProcessor<SignedBlobSidecar> processor,
       final int maxMessageSize) {
-    super(
-        recentChainData,
-        GossipTopicName.BLOB_SIDECAR,
-        asyncRunner,
-        gossipNetwork,
-        gossipEncoding,
-        forkInfo,
-        processor,
-        SchemaDefinitionsDeneb.required(
-                spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions())
-            .getSignedBlobSidecarSchema(),
-        message -> spec.computeEpochAtSlot(message.getBlobSidecar().getSlot()),
-        maxMessageSize);
+    this.gossipNetwork = gossipNetwork;
+    this.gossipEncoding = gossipEncoding;
+    final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
+    final int maxBlobsPerBlock =
+        SpecConfigDeneb.required(forkSpecVersion.getConfig()).getMaxBlobsPerBlock();
+    final SignedBlobSidecarSchema gossipType =
+        SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
+            .getSignedBlobSidecarSchema();
+    IntStream.range(0, maxBlobsPerBlock)
+        .forEach(
+            index -> {
+              final Eth2TopicHandler<SignedBlobSidecar> topicHandler =
+                  createBlobSidecarTopicHandler(
+                      index,
+                      recentChainData,
+                      spec,
+                      asyncRunner,
+                      processor,
+                      gossipEncoding,
+                      forkInfo,
+                      gossipType,
+                      maxMessageSize);
+              indexToTopicHandler.put(index, topicHandler);
+            });
   }
 
   public void publishBlobSidecar(final SignedBlobSidecar message) {
-    publishMessage(message);
+    final int index = message.getBlobSidecar().getIndex().intValue();
+    Optional.ofNullable(indexToChannel.get(index))
+        .ifPresent(channel -> channel.gossip(gossipEncoding.encode(message)));
+  }
+
+  @Override
+  public void subscribe() {
+    indexToTopicHandler
+        .int2ObjectEntrySet()
+        .forEach(
+            entry -> {
+              final Eth2TopicHandler<SignedBlobSidecar> topicHandler = entry.getValue();
+              final TopicChannel channel =
+                  gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
+              indexToChannel.put(entry.getIntKey(), channel);
+            });
+  }
+
+  @Override
+  public void unsubscribe() {
+    indexToChannel.values().forEach(TopicChannel::close);
+    indexToChannel.clear();
   }
 
   @Override
   public boolean isEnabledDuringOptimisticSync() {
     return true;
+  }
+
+  private Eth2TopicHandler<SignedBlobSidecar> createBlobSidecarTopicHandler(
+      final int index,
+      final RecentChainData recentChainData,
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final OperationProcessor<SignedBlobSidecar> processor,
+      final GossipEncoding gossipEncoding,
+      final ForkInfo forkInfo,
+      final SignedBlobSidecarSchema gossipType,
+      final int maxMessageSize) {
+    return new Eth2TopicHandler<>(
+        recentChainData,
+        asyncRunner,
+        processor,
+        gossipEncoding,
+        forkInfo.getForkDigest(spec),
+        GossipTopicName.getBlobSidecarIndexTopicName(index),
+        new OperationMilestoneValidator<>(
+            spec,
+            forkInfo.getFork(),
+            blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getBlobSidecar().getSlot())),
+        gossipType,
+        maxMessageSize);
   }
 }

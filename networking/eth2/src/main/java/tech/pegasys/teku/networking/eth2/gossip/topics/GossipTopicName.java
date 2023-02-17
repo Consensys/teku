@@ -19,7 +19,6 @@ public enum GossipTopicName {
   BEACON_BLOCK,
   BEACON_BLOCK_AND_BLOBS_SIDECAR,
   BEACON_AGGREGATE_AND_PROOF,
-  BLOB_SIDECAR,
   ATTESTER_SLASHING,
   PROPOSER_SLASHING,
   VOLUNTARY_EXIT,
@@ -37,5 +36,9 @@ public enum GossipTopicName {
 
   public static String getSyncCommitteeSubnetTopicName(final int subnetId) {
     return "sync_committee_" + subnetId;
+  }
+
+  public static String getBlobSidecarIndexTopicName(final int index) {
+    return "blob_sidecar_" + index;
   }
 }
