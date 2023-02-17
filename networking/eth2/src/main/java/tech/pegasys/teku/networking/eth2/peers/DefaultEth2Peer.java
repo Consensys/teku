@@ -399,8 +399,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   @Override
   public boolean wantToReceiveBlobSidecars(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return wantToReceiveObjects(
-        "blobs sidecars", blobsSidecarsRequestTracker, callback, blobSidecarsCount);
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

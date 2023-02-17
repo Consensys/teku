@@ -106,7 +106,7 @@ public class BlobSidecarsByRangeMessageHandler
                         "Can't retrieve the block root chosen by fork choice."));
 
     combinedChainDataClient
-        .getEarliestAvailableBlobsSidecarEpoch()
+        .getEarliestAvailableBlobSidecarEpoch()
         .thenCompose(
             earliestAvailableEpoch -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
