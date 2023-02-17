@@ -93,7 +93,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
    *
    * @param genericState The state to process
    * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/master/specs/altair/beacon-chain.md#participation-flags-updates">Altair
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/altair/beacon-chain.md#participation-flags-updates">Altair
    *     Participation Flags updates</a>
    */
   @Override

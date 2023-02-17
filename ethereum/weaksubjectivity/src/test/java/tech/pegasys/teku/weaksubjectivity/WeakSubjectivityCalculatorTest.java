@@ -109,7 +109,7 @@ public class WeakSubjectivityCalculatorTest {
   }
 
   // Parameters from the table here:
-  // https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/weak-subjectivity.md#compute_weak_subjectivity_period
+  // https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/weak-subjectivity.md#compute_weak_subjectivity_period
   public static Stream<Arguments> computeWeakSubjectivityParams() {
     return Stream.of(
         Arguments.of(UInt64.valueOf(10), ETH_TO_GWEI.times(28), 32768, 504),

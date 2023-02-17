@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.vers
 @Schema(
     description =
         "Based on eth2 [Metadata object]"
-            + "(https://github.com/ethereum/eth2.0-specs/blob/v0.12.2/specs/phase0/p2p-interface.md#metadata)")
+            + "(https://github.com/ethereum/consensus-specs/blob/v0.12.2/specs/phase0/p2p-interface.md#metadata)")
 public class Metadata {
   @JsonProperty("seq_number")
   @Schema(

@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 
 /**
  * Base class for any SSZ structure schema like Vector, List, Container, primitive types
- * (https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#typing)
+ * (https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md#typing)
  */
 public interface SszSchema<SszDataT extends SszData> extends SszType {
 

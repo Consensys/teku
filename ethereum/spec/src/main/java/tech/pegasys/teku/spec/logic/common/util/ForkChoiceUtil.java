@@ -117,7 +117,7 @@ public class ForkChoiceUtil {
    * @param slot
    * @return
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.10.1/specs/phase0/fork-choice.md#get_ancestor</a>
    */
   public Optional<Bytes32> getAncestor(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy, Bytes32 root, UInt64 slot) {

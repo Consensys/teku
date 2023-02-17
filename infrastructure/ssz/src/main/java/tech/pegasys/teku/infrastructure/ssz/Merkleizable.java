@@ -17,13 +17,13 @@ import org.apache.tuweni.bytes.Bytes32;
 
 /**
  * Returns `hash_tree_root` conforming to SSZ spec:
- * https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#merkleization
+ * https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md#merkleization
  */
 public interface Merkleizable {
 
   /**
    * Returns `hash_tree_root` conforming to SSZ spec:
-   * https://github.com/ethereum/eth2.0-specs/blob/dev/ssz/simple-serialize.md#merkleization
+   * https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md#merkleization
    */
   Bytes32 hashTreeRoot();
 }
