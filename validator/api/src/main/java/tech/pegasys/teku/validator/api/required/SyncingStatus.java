@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.api.required;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -23,16 +24,19 @@ public class SyncingStatus {
   private final UInt64 syncDistance;
   private final boolean isSyncing;
   private final Optional<Boolean> isOptimistic;
+  private final Optional<Boolean> elOffline;
 
   public SyncingStatus(
       final UInt64 headSlot,
       final UInt64 syncDistance,
       final boolean isSyncing,
-      final Optional<Boolean> isOptimistic) {
+      final Optional<Boolean> isOptimistic,
+      final Optional<Boolean> elOffline) {
     this.headSlot = headSlot;
     this.syncDistance = syncDistance;
     this.isSyncing = isSyncing;
     this.isOptimistic = isOptimistic;
+    this.elOffline = elOffline;
   }
 
   public UInt64 getHeadSlot() {
@@ -51,6 +55,20 @@ public class SyncingStatus {
     return isOptimistic;
   }
 
+  public Optional<Boolean> isElOffline() {
+    return elOffline;
+  }
+
+  public boolean isReady() {
+    if (elOffline.isPresent() && elOffline.get()) {
+      return false;
+    }
+    if (isSyncing) {
+      return isOptimistic.isPresent() && isOptimistic.get();
+    }
+    return true;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -63,26 +81,24 @@ public class SyncingStatus {
     return isSyncing == that.isSyncing
         && Objects.equals(headSlot, that.headSlot)
         && Objects.equals(syncDistance, that.syncDistance)
-        && Objects.equals(isOptimistic, that.isOptimistic);
+        && Objects.equals(isOptimistic, that.isOptimistic)
+        && Objects.equals(elOffline, that.elOffline);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(headSlot, syncDistance, isSyncing, isOptimistic);
+    return Objects.hash(headSlot, syncDistance, isSyncing, isOptimistic, elOffline);
   }
 
   @Override
   public String toString() {
-    return "SyncingStatus{"
-        + "headSlot="
-        + headSlot
-        + ", syncDistance="
-        + syncDistance
-        + ", isSyncing="
-        + isSyncing
-        + ", isOptimistic="
-        + isOptimistic
-        + '}';
+    return MoreObjects.toStringHelper(this)
+        .add("headSlot", headSlot)
+        .add("syncDistance", syncDistance)
+        .add("isSyncing", isSyncing)
+        .add("isOptimistic", isOptimistic)
+        .add("elOffline", elOffline)
+        .toString();
   }
 
   public static class Builder {
@@ -91,6 +107,7 @@ public class SyncingStatus {
     private UInt64 syncDistance;
     private boolean isSyncing;
     private Optional<Boolean> isOptimistic;
+    private Optional<Boolean> elOffline;
 
     private Builder() {}
 
@@ -118,8 +135,13 @@ public class SyncingStatus {
       return this;
     }
 
+    public Builder elOffline(final Optional<Boolean> elOffline) {
+      this.elOffline = elOffline;
+      return this;
+    }
+
     public SyncingStatus build() {
-      return new SyncingStatus(headSlot, syncDistance, isSyncing, isOptimistic);
+      return new SyncingStatus(headSlot, syncDistance, isSyncing, isOptimistic, elOffline);
     }
   }
 }

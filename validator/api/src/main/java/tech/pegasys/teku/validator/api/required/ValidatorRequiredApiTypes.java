@@ -44,6 +44,11 @@ public class ValidatorRequiredApiTypes {
               CoreTypes.BOOLEAN_TYPE,
               SyncingStatus::getIsOptimistic,
               SyncingStatus.Builder::isOptimistic)
+          .withOptionalField(
+              "el_offline",
+              CoreTypes.BOOLEAN_TYPE,
+              SyncingStatus::isElOffline,
+              SyncingStatus.Builder::elOffline)
           .build();
 
   public static final DeserializableTypeDefinition<SyncingStatus> SYNCING_STATUS_RESPONSE =
@@ -60,6 +65,7 @@ public class ValidatorRequiredApiTypes {
                       .headSlot(syncingStatus.getHeadSlot())
                       .syncDistance(syncingStatus.getSyncDistance())
                       .isSyncing(syncingStatus.isSyncing())
-                      .isOptimistic(syncingStatus.getIsOptimistic()))
+                      .isOptimistic(syncingStatus.getIsOptimistic())
+                      .elOffline(syncingStatus.isElOffline()))
           .build();
 }

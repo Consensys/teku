@@ -98,6 +98,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -110,6 +111,8 @@ import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
@@ -1888,6 +1891,11 @@ public final class DataStructureUtil {
     return randomBlobsSidecar(randomBytes32(), randomUInt64());
   }
 
+  public BlobSidecar randomBlobSidecar() {
+    return randomBlobSidecar(
+        randomBytes32(), randomUInt64(), randomUInt64(), randomBytes32(), randomUInt64());
+  }
+
   public BlobsSidecar randomBlobsSidecar(final UInt64 slot) {
     return randomBlobsSidecar(randomBytes32(), slot);
   }
@@ -1899,6 +1907,27 @@ public final class DataStructureUtil {
 
     return randomBlobsSidecar(
         blockRoot, slot, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()));
+  }
+
+  public BlobSidecar randomBlobSidecar(
+      final Bytes32 blockRoot,
+      final UInt64 index,
+      final UInt64 slot,
+      final Bytes32 blockParentRoot,
+      final UInt64 proposerIndex) {
+    final BlobSidecarSchema blobSidecarSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobSidecarSchema();
+
+    return blobSidecarSchema.create(
+        blockRoot,
+        index,
+        slot,
+        blockParentRoot,
+        proposerIndex,
+        randomBytes(blobSidecarSchema.getBlobSchema().getLength()),
+        randomBytes48(),
+        randomBytes48());
   }
 
   public BlobsSidecar randomBlobsSidecar(
@@ -1935,6 +1964,12 @@ public final class DataStructureUtil {
     return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
         .getSignedBeaconBlockAndBlobsSidecarSchema()
         .create(randomSignedBeaconBlock(), randomBlobsSidecar());
+  }
+
+  public SignedBlobSidecar randomSignedBlobSidecar() {
+    return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+        .getSignedBlobSidecarSchema()
+        .create(randomBlobSidecar(), randomSignature());
   }
 
   public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar() {

@@ -114,7 +114,7 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void getSyncingStatus_ReturnsSyncingStatus() {
     final SyncingStatus syncingStatus =
-        new SyncingStatus(UInt64.ONE, UInt64.ONE, true, Optional.of(true));
+        new SyncingStatus(UInt64.ONE, UInt64.ONE, true, Optional.of(true), Optional.of(true));
     when(typeDefClient.getSyncingStatus()).thenReturn(syncingStatus);
 
     final SafeFuture<SyncingStatus> future = apiHandler.getSyncingStatus();

@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class ExecutionBuilderModule {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -200,8 +201,14 @@ public class ExecutionBuilderModule {
         signedValidatorRegistrations);
 
     if (!isBuilderAvailable()) {
+      final String reason;
+      if (builderClient.isEmpty()) {
+        reason = "builder not configured";
+      } else {
+        reason = "builder not available";
+      }
       return SafeFuture.failedFuture(
-          new RuntimeException("Unable to register validators: builder not available"));
+          new RuntimeException("Unable to register validators: " + reason));
     }
 
     return builderClient
