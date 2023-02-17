@@ -50,6 +50,8 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class BlobSidecarGossipManagerTest {
 
+  private static final Pattern BLOB_SIDECAR_TOPIC_PATTERN = Pattern.compile("blob_sidecar_(\\d+)");
+
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -77,12 +79,11 @@ public class BlobSidecarGossipManagerTest {
             i -> {
               final String topicName = i.getArgument(0);
               final TopicChannel topicChannel = mock(TopicChannel.class);
-              final Pattern topicPattern = Pattern.compile("blob_sidecar_(\\d+)");
-              final Matcher matcher = topicPattern.matcher(topicName);
+              final Matcher matcher = BLOB_SIDECAR_TOPIC_PATTERN.matcher(topicName);
               if (!matcher.find()) {
-                Assertions.fail(topicPattern + " regex does not match the topic: " + topicName);
+                Assertions.fail(
+                    BLOB_SIDECAR_TOPIC_PATTERN + " regex does not match the topic: " + topicName);
               }
-              assertThat(topicName).containsPattern(topicPattern);
               final int index = Integer.parseInt(matcher.group(1));
               topicChannels.put(index, topicChannel);
               return topicChannel;
@@ -92,7 +93,7 @@ public class BlobSidecarGossipManagerTest {
     when(processor.process(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     blobSidecarGossipManager =
-        new BlobSidecarGossipManager(
+        BlobSidecarGossipManager.create(
             storageSystem.recentChainData(),
             spec,
             asyncRunner,

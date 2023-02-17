@@ -41,12 +41,11 @@ public class BlobSidecarGossipManager implements GossipManager {
 
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
+  private final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler;
 
-  private final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler =
-      new Int2ObjectOpenHashMap<>();
   private final Int2ObjectMap<TopicChannel> indexToChannel = new Int2ObjectOpenHashMap<>();
 
-  public BlobSidecarGossipManager(
+  public static BlobSidecarGossipManager create(
       final RecentChainData recentChainData,
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -55,14 +54,11 @@ public class BlobSidecarGossipManager implements GossipManager {
       final ForkInfo forkInfo,
       final OperationProcessor<SignedBlobSidecar> processor,
       final int maxMessageSize) {
-    this.gossipNetwork = gossipNetwork;
-    this.gossipEncoding = gossipEncoding;
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final int maxBlobsPerBlock =
         SpecConfigDeneb.required(forkSpecVersion.getConfig()).getMaxBlobsPerBlock();
-    final SignedBlobSidecarSchema gossipType =
-        SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
-            .getSignedBlobSidecarSchema();
+    final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler =
+        new Int2ObjectOpenHashMap<>();
     IntStream.range(0, maxBlobsPerBlock)
         .forEach(
             index -> {
@@ -75,10 +71,21 @@ public class BlobSidecarGossipManager implements GossipManager {
                       processor,
                       gossipEncoding,
                       forkInfo,
-                      gossipType,
+                      SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
+                          .getSignedBlobSidecarSchema(),
                       maxMessageSize);
               indexToTopicHandler.put(index, topicHandler);
             });
+    return new BlobSidecarGossipManager(gossipNetwork, gossipEncoding, indexToTopicHandler);
+  }
+
+  private BlobSidecarGossipManager(
+      final GossipNetwork gossipNetwork,
+      final GossipEncoding gossipEncoding,
+      final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler) {
+    this.gossipNetwork = gossipNetwork;
+    this.gossipEncoding = gossipEncoding;
+    this.indexToTopicHandler = indexToTopicHandler;
   }
 
   public void publishBlobSidecar(final SignedBlobSidecar message) {
@@ -116,7 +123,7 @@ public class BlobSidecarGossipManager implements GossipManager {
     return true;
   }
 
-  private Eth2TopicHandler<SignedBlobSidecar> createBlobSidecarTopicHandler(
+  private static Eth2TopicHandler<SignedBlobSidecar> createBlobSidecarTopicHandler(
       final int index,
       final RecentChainData recentChainData,
       final Spec spec,

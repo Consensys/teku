@@ -116,7 +116,7 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
 
   void addBlobSidecarGossipManager(final ForkInfo forkInfo) {
     blobSidecarGossipManager =
-        new BlobSidecarGossipManager(
+        BlobSidecarGossipManager.create(
             recentChainData,
             spec,
             asyncRunner,
