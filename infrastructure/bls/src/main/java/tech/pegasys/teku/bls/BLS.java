@@ -134,7 +134,7 @@ public class BLS {
    * <p>https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.1.1
    *
    * <p>The standard says to return INVALID, that is, false, if the list of public keys is empty.
-   * See also discussion at https://github.com/ethereum/eth2.0-specs/issues/1713
+   * See also discussion at https://github.com/ethereum/consensus-specs/issues/1713
    *
    * <p>We also return false if any of the messages are duplicates.
    *
@@ -174,7 +174,7 @@ public class BLS {
    * <p>Implements https://tools.ietf.org/html/draft-irtf-cfrg-bls-signature-02#section-3.3.4
    *
    * <p>The standard says to return INVALID, that is, false, if the list of public keys is empty.
-   * See also discussion at https://github.com/ethereum/eth2.0-specs/issues/1713
+   * See also discussion at https://github.com/ethereum/consensus-specs/issues/1713
    *
    * @param publicKeys The list of public keys, not null
    * @param message The message data to verify, not null

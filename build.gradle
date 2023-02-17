@@ -1,9 +1,10 @@
 import com.github.jk1.license.filter.LicenseBundleNormalizer
 import tech.pegasys.internal.license.reporter.GroupedLicenseHtmlRenderer
 import tech.pegasys.teku.depcheck.DepCheckPlugin
-import static tech.pegasys.teku.repackage.Repackage.repackage
 
 import java.text.SimpleDateFormat
+
+import static tech.pegasys.teku.repackage.Repackage.repackage
 
 buildscript {
   repositories {
@@ -124,7 +125,7 @@ allprojects {
   version = rootProject.version
 
   task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier = 'sources'
     from sourceSets.main.allSource
     jar.reproducibleFileOrder = true
     jar.preserveFileTimestamps = false
@@ -301,11 +302,11 @@ allprojects {
 
 def refTestVersion = 'v1.3.0-rc.2-hotfix' // Arbitrary change to refresh cache number: 1
 def blsRefTestVersion = 'v0.1.1'
-def refTestBaseUrl = 'https://github.com/ethereum/eth2.0-spec-tests/releases/download'
+def refTestBaseUrl = 'https://github.com/ethereum/consensus-spec-tests/releases/download'
 def blsRefTestBaseUrl = 'https://github.com/ethereum/bls12-381-tests/releases/download'
 def refTestDownloadDir = "${buildDir}/refTests/${refTestVersion}"
 def blsRefTestDownloadDir = "${buildDir}/blsRefTests/${blsRefTestVersion}"
-def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/eth2.0-spec-tests/"
+def refTestExpandDir = "${project.rootDir}/eth-reference-tests/src/referenceTest/resources/consensus-spec-tests/"
 
 task downloadEthRefTests(type: Download) {
   src([
@@ -514,7 +515,7 @@ task distDocker  {
         def image = "${dockerImage}:${dockerBuildVersion}-${variant}"
         workingDir dockerBuildDir
         executable "sh"
-        args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+        args "-c", "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
       }
     }
     // tag the "default" (which is the variant in the zero position)
@@ -558,7 +559,7 @@ task uploadDocker {
       exec {
         workingDir dockerBuildDir
         executable "sh"
-        args "-c", "docker build --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
+        args "-c", "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
       }
 
       //docker trust sign runs one image at a time, so we have to remove the '-t' in the string and split into a list we can use
