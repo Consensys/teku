@@ -190,6 +190,10 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     return getGossipEncoding().decodeMessage(message, getMessageType());
   }
 
+  public OperationProcessor<MessageT> getProcessor() {
+    return processor;
+  }
+
   public String getTopic() {
     return GossipTopics.getTopic(getForkDigest(), getTopicName(), getGossipEncoding());
   }

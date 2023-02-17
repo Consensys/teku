@@ -19,6 +19,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.HashMap;
@@ -29,10 +30,13 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -84,6 +89,8 @@ public class BlobSidecarGossipManagerTest {
             })
         .when(gossipNetwork)
         .subscribe(any(), any());
+    when(processor.process(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     blobSidecarGossipManager =
         new BlobSidecarGossipManager(
             storageSystem.recentChainData(),
@@ -134,5 +141,36 @@ public class BlobSidecarGossipManagerTest {
             channel -> {
               verify(channel).close();
             });
+  }
+
+  @Test
+  public void tesAcceptingSidecarGossipIfOnTheCorrectTopic() {
+    // topic handler for blob sidecars with index 1
+    final Eth2TopicHandler<SignedBlobSidecar> topicHandler =
+        blobSidecarGossipManager.getTopicHandler(1);
+
+    // processing blob sidecar with index 1 should be accepted
+    final SignedBlobSidecar blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
+    final InternalValidationResult validationResult =
+        SafeFutureAssert.safeJoin(topicHandler.getProcessor().process(blobSidecar));
+
+    assertThat(validationResult).isEqualTo(InternalValidationResult.ACCEPT);
+  }
+
+  @Test
+  public void testRejectingSidecarGossipIfNotOnTheCorrectTopic() {
+    // topic handler for blob sidecars with index 1
+    final Eth2TopicHandler<SignedBlobSidecar> topicHandler =
+        blobSidecarGossipManager.getTopicHandler(1);
+
+    // processing blob sidecar with index 2 should be rejected
+    final SignedBlobSidecar blobSidecar =
+        dataStructureUtil.randomSignedBlobSidecar(UInt64.valueOf(2));
+    final InternalValidationResult validationResult =
+        SafeFutureAssert.safeJoin(topicHandler.getProcessor().process(blobSidecar));
+
+    assertThat(validationResult.isReject()).isTrue();
+    assertThat(validationResult.getDescription())
+        .hasValue("blob sidecar with index 2 does not match the topic index 1");
   }
 }
