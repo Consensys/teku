@@ -514,7 +514,7 @@ task distDocker  {
         def image = "${dockerImage}:${dockerBuildVersion}-${variant}"
         workingDir dockerBuildDir
         executable "sh"
-        args "-c", "docker build --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+        args "-c", "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
       }
     }
     // tag the "default" (which is the variant in the zero position)
@@ -558,7 +558,7 @@ task uploadDocker {
       exec {
         workingDir dockerBuildDir
         executable "sh"
-        args "-c", "docker build --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
+        args "-c", "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
       }
 
       //docker trust sign runs one image at a time, so we have to remove the '-t' in the string and split into a list we can use
