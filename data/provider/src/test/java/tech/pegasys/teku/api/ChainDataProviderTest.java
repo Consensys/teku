@@ -405,6 +405,18 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getSyncCommitteeRewardsFromBlockId_specifyValidators() {
+    final ChainDataProvider provider = setupAltairState();
+    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
+        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of("0", "9"));
+
+    final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
+    expectedOutput.updateReward(0, ZERO);
+    expectedOutput.updateReward(9, UInt64.valueOf(247));
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
+  }
+
+  @Test
   public void getSyncCommitteeRewardsFromBlockId_emptyBlockAndMetaData() {
     final ChainDataProvider provider = setupAltairState();
     when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.empty());
@@ -434,11 +446,11 @@ public class ChainDataProviderTest {
             stateValidators.get(11));
 
     final Set<String> validators =
-        Set.of(committeeKeys.get(0).toHexString(), committeeKeys.get(2).toHexString());
+        Set.of(committeeKeys.get(0).toHexString(), committeeKeys.get(2).toHexString(), "4");
     final Map<Integer, Integer> committeeIndices =
         provider.getCommitteeIndices(committeeKeys, validators, state);
 
-    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 2, 6));
+    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 1, 4, 2, 6));
   }
 
   @Test
