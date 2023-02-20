@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,6 +50,7 @@ public class BlobSidecarsByRangeMessageHandler
   private final UInt64 denebForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
+  private final UInt64 maxBlobsPerBlock;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobSidecarsRequestedCounter;
 
@@ -57,11 +59,13 @@ public class BlobSidecarsByRangeMessageHandler
       final UInt64 denebForkEpoch,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient,
-      final UInt64 maxRequestSize) {
+      final UInt64 maxRequestSize,
+      final UInt64 maxBlobsPerBlock) {
     this.spec = spec;
     this.denebForkEpoch = denebForkEpoch;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
+    this.maxBlobsPerBlock = maxBlobsPerBlock;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -123,8 +127,8 @@ public class BlobSidecarsByRangeMessageHandler
             })
         .finish(
             requestState -> {
-              final int sentBlobsSidecars = requestState.sentBlobSidecars.get();
-              LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobsSidecars, peer.getId());
+              final int sentBlobSidecars = requestState.sentBlobSidecars.get();
+              LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
             error -> handleProcessingRequestError(error, callback));
@@ -149,14 +153,14 @@ public class BlobSidecarsByRangeMessageHandler
     return requestState
         .loadNextBlobSidecar()
         .thenCompose(
-            maybeSidecar ->
-                maybeSidecar.map(requestState::sendBlobSidecar).orElse(SafeFuture.COMPLETE))
+            maybeBlobSidecar ->
+                maybeBlobSidecar.map(requestState::sendBlobSidecar).orElse(SafeFuture.COMPLETE))
         .thenCompose(
             __ -> {
               if (requestState.isComplete()) {
                 return SafeFuture.completedFuture(requestState);
               } else {
-                requestState.incrementCurrentSlot();
+                requestState.incrementSlotAndIndex();
                 return sendBlobSidecars(requestState);
               }
             });
@@ -185,7 +189,10 @@ public class BlobSidecarsByRangeMessageHandler
     private final ResponseCallback<BlobSidecar> callback;
     private final Bytes32 headBlockRoot;
     private final AtomicReference<UInt64> currentSlot;
+    private final AtomicReference<UInt64> currentIndex;
     private final UInt64 maxSlot;
+
+    private Optional<SignedBeaconBlock> maybeCurrentBlock = Optional.empty();
 
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
@@ -195,6 +202,7 @@ public class BlobSidecarsByRangeMessageHandler
       this.callback = callback;
       this.headBlockRoot = headBlockRoot;
       this.currentSlot = new AtomicReference<>(currentSlot);
+      this.currentIndex = new AtomicReference<>(UInt64.ZERO);
       this.maxSlot = maxSlot;
     }
 
@@ -203,26 +211,59 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     SafeFuture<Optional<BlobSidecar>> loadNextBlobSidecar() {
-      return combinedChainDataClient
-          .getBlockAtSlotExact(currentSlot.get(), headBlockRoot)
-          .thenCompose(
-              block ->
-                  block
-                      .map(SignedBeaconBlock::getRoot)
-                      .map(
-                          blockRoot ->
-                              combinedChainDataClient.getBlobSidecarBySlotAndBlockRoot(
-                                  currentSlot.get(), blockRoot))
-                      .orElse(SafeFuture.completedFuture(Optional.empty())));
+      // currentBlock is used to avoid querying the combinedChainDataClient for the same slot again
+      if (maybeCurrentBlock.isEmpty()) {
+        return combinedChainDataClient
+            .getBlockAtSlotExact(currentSlot.get(), headBlockRoot)
+            .thenCompose(
+                block -> {
+                  maybeCurrentBlock = block;
+                  return retrieveBlobSidecar();
+                });
+      } else {
+        return retrieveBlobSidecar();
+      }
     }
 
     boolean isComplete() {
-      return currentSlot.get().isGreaterThanOrEqualTo(maxSlot)
+      return (currentSlot.get().equals(maxSlot)
+              && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE)))
           || maxRequestSize.isLessThanOrEqualTo(sentBlobSidecars.get());
     }
 
-    void incrementCurrentSlot() {
-      currentSlot.updateAndGet(UInt64::increment);
+    void incrementSlotAndIndex() {
+      if (currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE))) {
+        currentIndex.set(UInt64.ZERO);
+        currentSlot.updateAndGet(UInt64::increment);
+      } else {
+        currentIndex.updateAndGet(UInt64::increment);
+      }
+    }
+
+    @NotNull
+    private SafeFuture<Optional<BlobSidecar>> retrieveBlobSidecar() {
+      SafeFuture<Optional<BlobSidecar>> blobSidecar =
+          maybeCurrentBlock
+              .map(SignedBeaconBlock::getRoot)
+              .map(
+                  blockRoot ->
+                      combinedChainDataClient.getBlobSidecarBySlotIndexAndBlockRoot(
+                          currentSlot.get(), currentIndex.get(), blockRoot))
+              .orElse(SafeFuture.completedFuture(Optional.empty()));
+
+      refreshCurrentBlock();
+
+      return blobSidecar;
+    }
+
+    private void refreshCurrentBlock() {
+      maybeCurrentBlock.ifPresent(
+          block -> {
+            if (block.getSlot().equals(currentSlot.get())
+                && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE))) {
+              maybeCurrentBlock = Optional.empty();
+            }
+          });
     }
   }
 }
