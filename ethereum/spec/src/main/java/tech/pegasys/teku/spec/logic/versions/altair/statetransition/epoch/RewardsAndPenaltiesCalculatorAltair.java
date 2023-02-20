@@ -69,7 +69,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
    * Corresponds to altair beacon chain accessor get_flag_index_deltas
    *
    * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/master/specs/altair/beacon-chain.md#beacon-state-accessors">Altair
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/altair/beacon-chain.md#beacon-state-accessors">Altair
    *     beacon-chain.md</a>
    * @param deltas The deltas accumulator (holding deltas for all validators) to be updated
    * @param flagIndex The flag index to process
@@ -133,7 +133,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
    * Corresponds to altair beacon chain accessor get_inactivity_penalty_deltas
    *
    * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/master/specs/altair/beacon-chain.md#beacon-state-accessors">Altair
+   *     href="https://github.com/ethereum/consensus-specs/blob/master/specs/altair/beacon-chain.md#beacon-state-accessors">Altair
    *     beacon-chain.md</a>
    * @param deltas The deltas accumulator (holding deltas for all validators) to be updated
    */

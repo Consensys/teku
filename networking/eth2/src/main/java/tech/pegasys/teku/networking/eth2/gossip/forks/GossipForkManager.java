@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -161,6 +162,14 @@ public class GossipForkManager {
 
   public synchronized void publishBlock(final SignedBeaconBlock block) {
     publishMessage(block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
+  }
+
+  public synchronized void publishBlobSidecar(final SignedBlobSidecar blobSidecar) {
+    publishMessage(
+        blobSidecar.getBlobSidecar().getSlot(),
+        blobSidecar,
+        "blob sidecar",
+        GossipForkSubscriptions::publishBlobSidecar);
   }
 
   public synchronized void publishBlockAndBlobsSidecar(

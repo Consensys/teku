@@ -44,7 +44,7 @@ public class BeaconStateMutators {
    * @param index
    * @param delta
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#increase_balance</a>
    */
   public void increaseBalance(MutableBeaconState state, int index, UInt64 delta) {
     state.getBalances().setElement(index, state.getBalances().getElement(index).plus(delta));
@@ -57,7 +57,7 @@ public class BeaconStateMutators {
    * @param index
    * @param delta
    * @see
-   *     <a>https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#decrease_balance</a>
    */
   public void decreaseBalance(MutableBeaconState state, int index, UInt64 delta) {
     state

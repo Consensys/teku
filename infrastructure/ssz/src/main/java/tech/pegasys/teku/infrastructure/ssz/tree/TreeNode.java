@@ -46,7 +46,7 @@ public interface TreeNode {
    * Gets this node descendant by its 'generalized index'
    *
    * @param generalizedIndex generalized index of a tree is specified here:
-   *     https://github.com/ethereum/eth2.0-specs/blob/2787fea5feb8d5977ebee7c578c5d835cff6dc21/specs/light_client/merkle_proofs.md#generalized-merkle-tree-index
+   *     https://github.com/ethereum/consensus-specs/blob/2787fea5feb8d5977ebee7c578c5d835cff6dc21/specs/light_client/merkle_proofs.md#generalized-merkle-tree-index
    * @return node descendant
    * @throws IllegalArgumentException if no node exists for the passed generalized index
    */

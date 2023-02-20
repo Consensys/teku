@@ -112,7 +112,7 @@ public class MergeTransitionConfigCheck extends Service {
                     localTransitionConfiguration.toString(),
                     remoteTransitionConfiguration.toString());
               } else if (remoteTransitionConfiguration.getTerminalBlockHash().isZero()
-                  != remoteTransitionConfiguration.getTerminalBlockNumber().isZero()) {
+                  && !remoteTransitionConfiguration.getTerminalBlockNumber().isZero()) {
 
                 eventLogger.transitionConfigurationRemoteTbhTbnInconsistency(
                     remoteTransitionConfiguration.toString());

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarIndexTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
@@ -32,14 +33,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 class Eth2GossipTopicFilterTest {
-  protected Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(10));
-  final List<Fork> forks = spec.getForkSchedule().getForks();
+
+  private final UInt64 denebForkEpoch = UInt64.valueOf(10);
+  private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+  private final List<Fork> forks = spec.getForkSchedule().getForks();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Bytes32 genesisValidatorsRoot = dataStructureUtil.randomBytes32();
   private final ForkInfo forkInfo = new ForkInfo(forks.get(0), genesisValidatorsRoot);
@@ -49,6 +53,8 @@ class Eth2GossipTopicFilterTest {
       spec.atEpoch(nextFork.getEpoch())
           .miscHelpers()
           .computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot);
+  private final int maxBlobsPerBlock =
+      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig()).getMaxBlobsPerBlock();
 
   private final Eth2GossipTopicFilter filter =
       new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
@@ -97,6 +103,26 @@ class Eth2GossipTopicFilterTest {
     for (int i = 0; i < SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getSyncCommitteeSubnetTopicName(i)))).isTrue();
     }
+  }
+
+  @Test
+  void shouldConsiderAllBlobSidecarIndexTopicsRelevant() {
+    for (int i = 0; i < maxBlobsPerBlock; i++) {
+      assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarIndexTopicName(i)))).isTrue();
+    }
+  }
+
+  @Test
+  void shouldNotConsiderBlobSidecarWithIncorrectIndexTopicRelevant() {
+    assertThat(
+            filter.isRelevantTopic(
+                getTopicName(getBlobSidecarIndexTopicName(maxBlobsPerBlock + 1))))
+        .isFalse();
+  }
+
+  @Test
+  void shouldNotConsiderBlobSidecarWithoutIndexTopicRelevant() {
+    assertThat(filter.isRelevantTopic(getTopicName("blob_sidecar"))).isFalse();
   }
 
   @Test

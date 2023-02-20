@@ -47,29 +47,32 @@ class MergeTransitionConfigCheckTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final EventLogger eventLogger = Mockito.mock(EventLogger.class);
 
-  private final Spec spec =
-      TestSpecFactory.createBellatrix(
-          SpecConfigLoader.loadConfig(
-              "minimal",
-              phase0Builder ->
-                  phase0Builder
-                      .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(
-                          bellatrixBuilder ->
-                              bellatrixBuilder
-                                  .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
-                                  .terminalBlockHash(TERMINAL_BLOCK_HASH)
-                                  .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH))));
+  private Spec spec;
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private TransitionConfiguration localTransitionConfiguration;
+  private TransitionConfiguration remoteTransitionConfiguration;
+  private MergeTransitionConfigCheck mergeTransitionConfigCheck;
 
   private final UInt256 wrongRemoteTTD = dataStructureUtil.randomUInt256();
   private final Bytes32 wrongRemoteTBH = dataStructureUtil.randomBytes32();
 
   @BeforeEach
   void setUp() {
-    localTransitionConfiguration =
+    this.spec =
+        TestSpecFactory.createBellatrix(
+            SpecConfigLoader.loadConfig(
+                "minimal",
+                phase0Builder ->
+                    phase0Builder
+                        .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                        .bellatrixBuilder(
+                            bellatrixBuilder ->
+                                bellatrixBuilder
+                                    .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
+                                    .terminalBlockHash(TERMINAL_BLOCK_HASH)
+                                    .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH))));
+    this.localTransitionConfiguration =
         new TransitionConfiguration(
             spec.getGenesisSpecConfig()
                 .toVersionBellatrix()
@@ -77,66 +80,92 @@ class MergeTransitionConfigCheckTest {
                 .getTerminalTotalDifficulty(),
             spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalBlockHash(),
             UInt64.ZERO);
-
-    final MergeTransitionConfigCheck mergeTransitionConfigCheck =
+    this.mergeTransitionConfigCheck =
         new MergeTransitionConfigCheck(eventLogger, spec, executionLayer, asyncRunner);
-
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new TransitionConfiguration(
-                    localTransitionConfiguration.getTerminalTotalDifficulty(),
-                    localTransitionConfiguration.getTerminalBlockHash(),
-                    dataStructureUtil.randomUInt64())));
+    setRemoteTransitionConfiguration(
+        new TransitionConfiguration(
+            localTransitionConfiguration.getTerminalTotalDifficulty(),
+            localTransitionConfiguration.getTerminalBlockHash(),
+            dataStructureUtil.randomUInt64()));
 
     assertThat(mergeTransitionConfigCheck.start()).isCompleted();
   }
 
   @Test
-  void shouldReportWrongTotalTerminalDifficulty() {
-    final TransitionConfiguration wrongRemoteConfig =
+  void shouldReportInconsistencyReportedByRemote() {
+    spec =
+        TestSpecFactory.createBellatrix(
+            SpecConfigLoader.loadConfig(
+                "minimal",
+                phase0Builder ->
+                    phase0Builder
+                        .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                        .bellatrixBuilder(
+                            bellatrixBuilder ->
+                                bellatrixBuilder
+                                    .bellatrixForkEpoch(UInt64.ZERO)
+                                    .terminalBlockHash(Bytes32.ZERO)
+                                    .terminalBlockHashActivationEpoch(UInt64.ZERO))));
+    this.localTransitionConfiguration =
         new TransitionConfiguration(
-            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO);
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+            localTransitionConfiguration.getTerminalTotalDifficulty(), Bytes32.ZERO, UInt64.ZERO);
+    mergeTransitionConfigCheck =
+        new MergeTransitionConfigCheck(eventLogger, spec, executionLayer, asyncRunner);
+    setRemoteTransitionConfiguration(
+        new TransitionConfiguration(
+            localTransitionConfiguration.getTerminalTotalDifficulty(), Bytes32.ZERO, UInt64.ONE));
+    assertThat(mergeTransitionConfigCheck.start()).isCompleted();
+    asyncRunner.executeQueuedActions();
+
+    verify(eventLogger)
+        .transitionConfigurationRemoteTbhTbnInconsistency(remoteTransitionConfiguration.toString());
+    verifyNoMoreInteractions(eventLogger);
+  }
+
+  @Test
+  void shouldReportWrongTotalTerminalDifficulty() {
+    setRemoteTransitionConfiguration(
+        new TransitionConfiguration(
+            wrongRemoteTTD, localTransitionConfiguration.getTerminalBlockHash(), UInt64.ZERO));
 
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
         .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+            localTransitionConfiguration.toString(), remoteTransitionConfiguration.toString());
   }
 
   @Test
   void shouldDetectWrongTerminalBlockHash() {
-    final TransitionConfiguration wrongRemoteConfig =
+    setRemoteTransitionConfiguration(
         new TransitionConfiguration(
-            localTransitionConfiguration.getTerminalTotalDifficulty(), wrongRemoteTBH, UInt64.ZERO);
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+            localTransitionConfiguration.getTerminalTotalDifficulty(),
+            wrongRemoteTBH,
+            UInt64.ZERO));
 
     asyncRunner.executeQueuedActions();
 
     verify(eventLogger)
         .transitionConfigurationTtdTbhMismatch(
-            localTransitionConfiguration.toString(), wrongRemoteConfig.toString());
+            localTransitionConfiguration.toString(), remoteTransitionConfiguration.toString());
   }
 
   @Test
-  void shouldReportInconsistencyReportedByRemote() {
-    final TransitionConfiguration wrongRemoteConfig =
+  void shouldPassWithEqualConfiguration() {
+    setRemoteTransitionConfiguration(
         new TransitionConfiguration(
             localTransitionConfiguration.getTerminalTotalDifficulty(),
             localTransitionConfiguration.getTerminalBlockHash(),
-            UInt64.ZERO);
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(wrongRemoteConfig));
+            localTransitionConfiguration.getTerminalBlockNumber()));
 
     asyncRunner.executeQueuedActions();
-
-    verify(eventLogger)
-        .transitionConfigurationRemoteTbhTbnInconsistency(wrongRemoteConfig.toString());
-
     verifyNoMoreInteractions(eventLogger);
+  }
+
+  private void setRemoteTransitionConfiguration(
+      final TransitionConfiguration transitionConfiguration) {
+    this.remoteTransitionConfiguration = transitionConfiguration;
+    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
+        .thenReturn(SafeFuture.completedFuture(remoteTransitionConfiguration));
   }
 }

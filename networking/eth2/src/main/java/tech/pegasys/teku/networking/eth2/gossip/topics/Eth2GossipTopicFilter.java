@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.GossipTopicFilter;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -52,16 +54,29 @@ public class Eth2GossipTopicFilter implements GossipTopicFilter {
       final RecentChainData recentChainData, final GossipEncoding gossipEncoding) {
     final ForkInfo forkInfo = recentChainData.getCurrentForkInfo().orElseThrow();
     final Bytes4 forkDigest = forkInfo.getForkDigest(spec);
-    final Set<String> topics = getAllTopics(gossipEncoding, forkDigest);
+    final Set<String> topics =
+        getAllTopics(gossipEncoding, forkDigest, getBlobSidecarIndexCount(forkInfo.getFork()));
     spec.getForkSchedule().getForks().stream()
         .filter(fork -> fork.getEpoch().isGreaterThanOrEqualTo(forkInfo.getFork().getEpoch()))
-        .map(
-            futureFork ->
-                spec.atEpoch(futureFork.getEpoch())
-                    .miscHelpers()
-                    .computeForkDigest(
-                        futureFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot()))
-        .forEach(futureForkDigest -> topics.addAll(getAllTopics(gossipEncoding, futureForkDigest)));
+        .forEach(
+            futureFork -> {
+              final Bytes4 futureForkDigest =
+                  spec.atEpoch(futureFork.getEpoch())
+                      .miscHelpers()
+                      .computeForkDigest(
+                          futureFork.getCurrentVersion(), forkInfo.getGenesisValidatorsRoot());
+              topics.addAll(
+                  getAllTopics(
+                      gossipEncoding, futureForkDigest, getBlobSidecarIndexCount(futureFork)));
+            });
     return topics;
+  }
+
+  private int getBlobSidecarIndexCount(final Fork fork) {
+    return spec.atEpoch(fork.getEpoch())
+        .getConfig()
+        .toVersionDeneb()
+        .map(SpecConfigDeneb::getMaxBlobsPerBlock)
+        .orElse(0);
   }
 }
