@@ -1,7 +1,7 @@
 {
   "title" : "ExecutionPayloadDeneb",
   "type" : "object",
-  "required" : [ "parent_hash", "fee_recipient", "state_root", "receipts_root", "logs_bloom", "prev_randao", "block_number", "gas_limit", "gas_used", "timestamp", "extra_data", "base_fee_per_gas", "excess_data_gas", "block_hash", "transactions", "withdrawals" ],
+  "required" : [ "parent_hash", "fee_recipient", "state_root", "receipts_root", "logs_bloom", "prev_randao", "block_number", "gas_limit", "gas_used", "timestamp", "extra_data", "base_fee_per_gas", "block_hash", "transactions", "withdrawals", "excess_data_gas" ],
   "properties" : {
     "parent_hash" : {
       "type" : "string",
@@ -75,12 +75,6 @@
       "example" : "1",
       "format" : "uint256"
     },
-    "excess_data_gas" : {
-      "type" : "string",
-      "description" : "unsigned 256 bit integer",
-      "example" : "1",
-      "format" : "uint256"
-    },
     "block_hash" : {
       "type" : "string",
       "description" : "Bytes32 hexadecimal",
@@ -101,6 +95,12 @@
       "items" : {
         "$ref" : "#/components/schemas/Withdrawal"
       }
+    },
+    "excess_data_gas" : {
+      "type" : "string",
+      "description" : "unsigned 256 bit integer",
+      "example" : "1",
+      "format" : "uint256"
     }
   }
 }

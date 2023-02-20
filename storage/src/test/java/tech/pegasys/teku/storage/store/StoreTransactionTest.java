@@ -404,24 +404,14 @@ public class StoreTransactionTest extends AbstractStoreTest {
     // Added block should be included
     tx.putBlockAndState(forkBlock2, spec.calculateBlockCheckpoints(forkBlock2.getState()));
 
-    // Children are ordered based on hash - so check ordering depending on specific hashes
-    if (mainChainBlock1.getRoot().compareTo(forkBlock2.getRoot()) < 0) {
-      assertThat(tx.getOrderedBlockRoots())
-          .containsExactly(
-              genesis.getRoot(),
-              mainChainBlock1.getRoot(),
-              forkBlock2.getRoot(),
-              mainChainBlock3.getRoot(),
-              mainChainBlock4.getRoot());
-    } else {
-      assertThat(tx.getOrderedBlockRoots())
-          .containsExactly(
-              genesis.getRoot(),
-              forkBlock2.getRoot(),
-              mainChainBlock1.getRoot(),
-              mainChainBlock3.getRoot(),
-              mainChainBlock4.getRoot());
-    }
+    // Childrens are ordered by slot
+    assertThat(tx.getOrderedBlockRoots())
+        .containsExactly(
+            genesis.getRoot(),
+            mainChainBlock1.getRoot(),
+            forkBlock2.getRoot(),
+            mainChainBlock3.getRoot(),
+            mainChainBlock4.getRoot());
   }
 
   private void setTime(UpdatableStore store, final UInt64 newTime) {

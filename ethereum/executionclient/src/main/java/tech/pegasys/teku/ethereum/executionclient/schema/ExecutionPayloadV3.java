@@ -51,10 +51,10 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("extraData") Bytes extraData,
       @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
-      @JsonProperty("excessDataGas") UInt256 excessDataGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
-      @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals) {
+      @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
+      @JsonProperty("excessDataGas") UInt256 excessDataGas) {
     super(
         parentHash,
         feeRecipient,
@@ -91,12 +91,15 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
         executionPayload.getTimestamp(),
         executionPayload.getExtraData(),
         executionPayload.getBaseFeePerGas(),
-        executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getExcessDataGas).orElse(null),
         executionPayload.getBlockHash(),
         executionPayload.getTransactions().stream()
             .map(SszByteListImpl::getBytes)
             .collect(Collectors.toList()),
-        withdrawalsList);
+        withdrawalsList,
+        executionPayload
+            .toVersionDeneb()
+            .map(ExecutionPayloadDeneb::getExcessDataGas)
+            .orElse(null));
   }
 
   @Override

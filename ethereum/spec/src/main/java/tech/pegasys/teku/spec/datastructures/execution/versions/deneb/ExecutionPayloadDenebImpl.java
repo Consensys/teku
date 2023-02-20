@@ -47,10 +47,10 @@ public class ExecutionPayloadDenebImpl
         SszUInt64,
         SszByteList,
         SszUInt256,
-        SszUInt256,
         SszBytes32,
         SszList<Transaction>,
-        SszList<Withdrawal>>
+        SszList<Withdrawal>,
+        SszUInt256>
     implements ExecutionPayloadDeneb {
 
   public ExecutionPayloadDenebImpl(
@@ -68,10 +68,10 @@ public class ExecutionPayloadDenebImpl
               SszUInt64,
               SszByteList,
               SszUInt256,
-              SszUInt256,
               SszBytes32,
               SszList<Transaction>,
-              SszList<Withdrawal>>
+              SszList<Withdrawal>,
+              SszUInt256>
           schema,
       TreeNode backingNode) {
     super(schema, backingNode);
@@ -91,10 +91,10 @@ public class ExecutionPayloadDenebImpl
       SszUInt64 timestamp,
       SszByteList extraData,
       SszUInt256 baseFeePerGas,
-      SszUInt256 excessDataGas,
       SszBytes32 blockHash,
       SszList<Transaction> transactions,
-      SszList<Withdrawal> withdrawals) {
+      SszList<Withdrawal> withdrawals,
+      SszUInt256 excessDataGas) {
     super(
         schema,
         parentHash,
@@ -109,10 +109,10 @@ public class ExecutionPayloadDenebImpl
         timestamp,
         extraData,
         baseFeePerGas,
-        excessDataGas,
         blockHash,
         transactions,
-        withdrawals);
+        withdrawals,
+        excessDataGas);
   }
 
   @Override
@@ -191,13 +191,8 @@ public class ExecutionPayloadDenebImpl
   }
 
   @Override
-  public UInt256 getExcessDataGas() {
-    return getField12().get();
-  }
-
-  @Override
   public Bytes32 getBlockHash() {
-    return getField13().get();
+    return getField12().get();
   }
 
   @Override
@@ -207,12 +202,17 @@ public class ExecutionPayloadDenebImpl
 
   @Override
   public SszList<Transaction> getTransactions() {
-    return getField14();
+    return getField13();
   }
 
   @Override
   public SszList<Withdrawal> getWithdrawals() {
-    return getField15();
+    return getField14();
+  }
+
+  @Override
+  public UInt256 getExcessDataGas() {
+    return getField15().get();
   }
 
   @Override

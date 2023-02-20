@@ -68,11 +68,11 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
         SszUInt64.of(timestamp),
         schema.getExtraDataSchema().fromBytes(extraData),
         SszUInt256.of(baseFeePerGas),
-        SszUInt256.of(excessDataGas),
         SszBytes32.of(blockHash),
         transactions.stream()
             .map(schema.getTransactionSchema()::fromBytes)
             .collect(schema.getTransactionsSchema().collector()),
-        schema.getWithdrawalsSchema().createFromElements(withdrawals));
+        schema.getWithdrawalsSchema().createFromElements(withdrawals),
+        SszUInt256.of(excessDataGas));
   }
 }
