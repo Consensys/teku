@@ -398,9 +398,9 @@ public class ChainDataProviderTest {
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
 
     final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.updateReward(0, ZERO);
-    expectedOutput.updateReward(6, ZERO);
-    expectedOutput.updateReward(9, UInt64.valueOf(247));
+    expectedOutput.increaseReward(0, ZERO);
+    expectedOutput.increaseReward(6, ZERO);
+    expectedOutput.increaseReward(9, UInt64.valueOf(247));
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
   }
 
@@ -411,8 +411,8 @@ public class ChainDataProviderTest {
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of("0", "9"));
 
     final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.updateReward(0, ZERO);
-    expectedOutput.updateReward(9, UInt64.valueOf(247));
+    expectedOutput.increaseReward(0, ZERO);
+    expectedOutput.increaseReward(9, UInt64.valueOf(247));
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
   }
 

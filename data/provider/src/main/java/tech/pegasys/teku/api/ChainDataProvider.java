@@ -646,9 +646,11 @@ public class ChainDataProvider {
 
     committeeIndices.forEach(
         (i, key) -> {
-          final UInt64 amount =
-              aggregate.get().getSyncCommitteeBits().getBit(i) ? participantReward : ZERO;
-          data.updateReward(key, amount);
+          if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
+            data.increaseReward(key, participantReward);
+          } else {
+            data.decreaseReward(key, participantReward);
+          }
         });
 
     return data;

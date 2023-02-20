@@ -105,8 +105,8 @@ public class GetSyncCommitteeRewardsTest
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    responseData.updateReward(1, UInt64.valueOf(1029));
-    responseData.updateReward(2, UInt64.valueOf(3920));
+    responseData.increaseReward(1, UInt64.valueOf(1029));
+    responseData.increaseReward(2, UInt64.valueOf(3920));
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =

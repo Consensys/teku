@@ -31,9 +31,14 @@ public class SyncCommitteeRewardData {
     this.rewardData = new HashMap<>();
   }
 
-  public void updateReward(final int validatorIndex, final UInt64 amount) {
+  public void increaseReward(final int validatorIndex, final UInt64 amount) {
     final UInt64 balance = rewardData.getOrDefault(validatorIndex, UInt64.ZERO);
     rewardData.put(validatorIndex, balance.plus(amount));
+  }
+
+  public void decreaseReward(final int validatorIndex, final UInt64 amount) {
+    final UInt64 balance = rewardData.getOrDefault(validatorIndex, UInt64.ZERO);
+    rewardData.put(validatorIndex, balance.minusMinZero(amount));
   }
 
   public boolean isExecutionOptimistic() {
