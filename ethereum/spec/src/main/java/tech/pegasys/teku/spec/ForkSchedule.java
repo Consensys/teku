@@ -83,7 +83,7 @@ public class ForkSchedule {
   public List<ForkAndSpecMilestone> getActiveMilestones() {
     return milestoneToFork.entrySet().stream()
         .map(entry -> new ForkAndSpecMilestone(entry.getValue(), entry.getKey()))
-        .sorted(Comparator.comparing(ForkAndSpecMilestone::getSpecMilestone))
+        .sorted(Comparator.comparing(f -> f.getFork().getEpoch()))
         .collect(Collectors.toList());
   }
 
