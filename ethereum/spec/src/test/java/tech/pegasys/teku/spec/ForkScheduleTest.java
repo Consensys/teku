@@ -173,6 +173,7 @@ public class ForkScheduleTest {
             new ForkAndSpecMilestone(altairFork, SpecMilestone.ALTAIR));
 
     assertThat(forkSchedule.getSpecMilestoneAtSlot(UInt64.ZERO)).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(forkSchedule.getHighestSupportedMilestone()).isEqualTo(SpecMilestone.ALTAIR);
   }
 
   @Test
