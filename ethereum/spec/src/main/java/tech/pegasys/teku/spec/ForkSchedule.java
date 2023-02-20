@@ -38,18 +38,21 @@ public class ForkSchedule {
   private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone;
   private final Map<Bytes4, SpecMilestone> forkVersionToMilestone;
   private final Map<SpecMilestone, Fork> milestoneToFork;
+  private final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap;
 
   private ForkSchedule(
       final NavigableMap<UInt64, SpecMilestone> epochToMilestone,
       final NavigableMap<UInt64, SpecMilestone> slotToMilestone,
       final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone,
       final Map<Bytes4, SpecMilestone> forkVersionToMilestone,
-      final Map<SpecMilestone, Fork> milestoneToFork) {
+      final Map<SpecMilestone, Fork> milestoneToFork,
+      final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap) {
     this.epochToMilestone = epochToMilestone;
     this.slotToMilestone = slotToMilestone;
     this.genesisOffsetToMilestone = genesisOffsetToMilestone;
     this.forkVersionToMilestone = forkVersionToMilestone;
     this.milestoneToFork = milestoneToFork;
+    this.fullMilestoneToForkMap = fullMilestoneToForkMap;
   }
 
   public int size() {
@@ -94,9 +97,23 @@ public class ForkSchedule {
         .map(milestoneToFork::get);
   }
 
+  /**
+   * @return Include only active forks that have been configured. If 2 forks are activated at the
+   *     same epoch, only the later milestone will be in the result.
+   */
   public List<Fork> getForks() {
     return epochToMilestone.values().stream()
         .map(milestoneToFork::get)
+        .collect(Collectors.toList());
+  }
+
+  /**
+   * @return Includes all forks that have been configured. If 2 forks are defined at the same epoch,
+   *     both will be listed in this result.
+   */
+  public List<Fork> getFullForkList() {
+    return fullMilestoneToForkMap.entrySet().stream()
+        .map(Map.Entry::getValue)
         .collect(Collectors.toList());
   }
 
@@ -152,6 +169,7 @@ public class ForkSchedule {
     private final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone = new TreeMap<>();
     private final Map<Bytes4, SpecMilestone> forkVersionToMilestone = new HashMap<>();
     private final Map<SpecMilestone, Fork> milestoneToFork = new HashMap<>();
+    private final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap = new TreeMap<>();
 
     // Track info on the last processed milestone
     private Optional<Bytes4> prevForkVersion = Optional.empty();
@@ -167,7 +185,8 @@ public class ForkSchedule {
           slotToMilestone,
           genesisOffsetToMilestone,
           forkVersionToMilestone,
-          milestoneToFork);
+          milestoneToFork,
+          fullMilestoneToForkMap);
     }
 
     public Builder addNextMilestone(final SpecVersion spec) {
@@ -211,12 +230,20 @@ public class ForkSchedule {
         throw new IllegalArgumentException("Attempt to process milestones out of order");
       }
 
+      if (prevMilestone.isPresent() && prevMilestoneForkEpoch.equals(forkEpoch)) {
+        // Clear out previous milestone data that is overshadowed by this milestone
+        milestoneToFork.remove(prevMilestone.orElseThrow());
+        forkVersionToMilestone.remove(prevForkVersion.orElseThrow());
+        // Remaining mappings are naturally overwritten
+      }
+
       // Track milestone
       epochToMilestone.put(forkEpoch, milestone);
       slotToMilestone.put(forkSlot, milestone);
       genesisOffsetToMilestone.put(genesisOffset, milestone);
       forkVersionToMilestone.put(forkVersion, milestone);
       milestoneToFork.put(milestone, fork);
+      fullMilestoneToForkMap.put(milestone, fork);
 
       // Remember what we just processed
       prevMilestone = Optional.of(milestone);

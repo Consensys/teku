@@ -164,16 +164,21 @@ public class ForkScheduleTest {
   @Test
   public void getActiveMilestones_onlyAltairConfigured() {
     final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
-    final Fork phase0Fork = getPhase0Fork(ALTAIR_CONFIG);
     final Fork altairFork = getAltairFork(ALTAIR_CONFIG);
 
     assertThat(forkSchedule.getActiveMilestones())
-        .containsExactly(
-            new ForkAndSpecMilestone(phase0Fork, SpecMilestone.PHASE0),
-            new ForkAndSpecMilestone(altairFork, SpecMilestone.ALTAIR));
+        .containsExactly(new ForkAndSpecMilestone(altairFork, SpecMilestone.ALTAIR));
 
     assertThat(forkSchedule.getSpecMilestoneAtSlot(UInt64.ZERO)).isEqualTo(SpecMilestone.ALTAIR);
     assertThat(forkSchedule.getHighestSupportedMilestone()).isEqualTo(SpecMilestone.ALTAIR);
+  }
+
+  @Test
+  public void getAllForks_shouldReturnCompleteForkList() {
+    final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
+    final Fork phase0Fork = getPhase0Fork(PHASE0_CONFIG);
+    final Fork altairFork = getAltairFork(ALTAIR_CONFIG);
+    assertThat(forkSchedule.getFullForkList()).containsExactly(phase0Fork, altairFork);
   }
 
   @Test
@@ -369,8 +374,7 @@ public class ForkScheduleTest {
   public void getSpecMilestoneAtForkVersion_altairOnly() {
     final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
 
-    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(PHASE_0_FORK_VERSION))
-        .contains(SpecMilestone.PHASE0);
+    assertThat(forkSchedule.getSpecMilestoneAtForkVersion(PHASE_0_FORK_VERSION)).isEmpty();
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(ALTAIR_FORK_VERSION))
         .contains(SpecMilestone.ALTAIR);
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
