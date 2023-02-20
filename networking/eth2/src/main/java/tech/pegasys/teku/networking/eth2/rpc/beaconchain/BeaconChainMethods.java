@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +49,8 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.VersionedEth2RpcMethod
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
@@ -428,13 +431,17 @@ public class BeaconChainMethods {
     final RpcContextCodec<Bytes4, BlobSidecar> forkDigestContextCodec =
         RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOB_SIDECAR);
 
+    final int maxBlobsPerBlock =
+            SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+                    .getMaxBlobsPerBlock();
+
     final BlobSidecarsByRangeMessageHandler blobSidecarsByRangeHandler =
         new BlobSidecarsByRangeMessageHandler(
             spec,
             getDenebForkEpoch(spec),
             metricsSystem,
             combinedChainDataClient,
-            MAX_REQUEST_BLOBS_SIDECARS);
+            MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock));
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

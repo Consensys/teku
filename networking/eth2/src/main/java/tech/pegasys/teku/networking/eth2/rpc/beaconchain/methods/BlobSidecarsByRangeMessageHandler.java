@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
@@ -140,7 +140,7 @@ public class BlobSidecarsByRangeMessageHandler
   private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     final UInt64 minEpochForBlobsSidecar =
-        denebForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS));
+        denebForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobsSidecar)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }
