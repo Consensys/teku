@@ -80,7 +80,7 @@ public class ForkSchedule {
   public List<ForkAndSpecMilestone> getActiveMilestones() {
     return milestoneToFork.entrySet().stream()
         .map(entry -> new ForkAndSpecMilestone(entry.getValue(), entry.getKey()))
-        .sorted(Comparator.comparing(f -> f.getFork().getEpoch()))
+        .sorted(Comparator.comparing(ForkAndSpecMilestone::getSpecMilestone))
         .collect(Collectors.toList());
   }
 
@@ -209,13 +209,6 @@ public class ForkSchedule {
       if (prevMilestone.isPresent()
           && !SpecMilestone.areMilestonesInOrder(prevMilestone.get(), milestone)) {
         throw new IllegalArgumentException("Attempt to process milestones out of order");
-      }
-
-      if (prevMilestone.isPresent() && prevMilestoneForkEpoch.equals(forkEpoch)) {
-        // Clear out previous milestone data that is overshadowed by this milestone
-        milestoneToFork.remove(prevMilestone.orElseThrow());
-        forkVersionToMilestone.remove(prevForkVersion.orElseThrow());
-        // Remaining mappings are naturally overwritten
       }
 
       // Track milestone
