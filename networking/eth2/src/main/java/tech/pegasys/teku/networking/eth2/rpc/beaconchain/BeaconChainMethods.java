@@ -439,6 +439,7 @@ public class BeaconChainMethods {
             spec,
             getDenebForkEpoch(spec),
             metricsSystem,
+            recentChainData,
             combinedChainDataClient,
             MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock),
             UInt64.valueOf(maxBlobsPerBlock));

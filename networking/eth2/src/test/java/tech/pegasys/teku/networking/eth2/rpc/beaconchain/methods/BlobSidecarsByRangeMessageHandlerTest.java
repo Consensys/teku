@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -50,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarsByRangeMessageHandlerTest {
 
@@ -78,8 +81,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
+  private final UInt64 finalizedEpoch = UInt64.valueOf(3);
+
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
+
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -92,6 +99,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
           spec,
           denebForkEpoch,
           metricsSystem,
+          recentChainData,
           combinedChainDataClient,
           maxRequestSize,
           maxBlobsPerBlock);
@@ -108,10 +116,23 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void validateRequest_validRequest() {
+  public void validateRequest_resourceNotAvailableWhenNotInSupportedRange() {
+    when(recentChainData.getFinalizedEpoch()).thenReturn(finalizedEpoch);
+    // 4098 - 4096 = 2
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(UInt64.valueOf(4098)));
+
     final Optional<RpcException> result =
         handler.validateRequest(protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ONE));
-    assertThat(result).isEmpty();
+    Assertions.assertThat(result)
+        .hasValueSatisfying(
+            rpcException -> {
+              Assertions.assertThat(rpcException.getResponseCode())
+                  .isEqualTo(RpcResponseStatus.RESOURCE_UNAVAILABLE);
+              Assertions.assertThat(rpcException.getErrorMessageString())
+                  .isEqualTo("Can't request blob sidecars earlier than epoch 3");
+            });
+
+    verifyRequestsMetric("resource_unavailable", 1);
   }
 
   @Test
@@ -236,5 +257,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     }
 
     return blobSidecars;
+  }
+
+  private void verifyRequestsMetric(final String status, final long expectedCount) {
+    Assertions.assertThat(
+            metricsSystem
+                .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
+                .getValue(status))
+        .isEqualTo(expectedCount);
   }
 }

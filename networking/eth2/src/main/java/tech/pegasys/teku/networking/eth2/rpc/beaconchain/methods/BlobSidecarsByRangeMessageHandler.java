@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarsByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<BlobSidecarsByRangeRequestMessage, BlobSidecar> {
@@ -48,6 +49,7 @@ public class BlobSidecarsByRangeMessageHandler
 
   private final Spec spec;
   private final UInt64 denebForkEpoch;
+  private final RecentChainData recentChainData;
   private final CombinedChainDataClient combinedChainDataClient;
   private final UInt64 maxRequestSize;
   private final UInt64 maxBlobsPerBlock;
@@ -58,11 +60,13 @@ public class BlobSidecarsByRangeMessageHandler
       final Spec spec,
       final UInt64 denebForkEpoch,
       final MetricsSystem metricsSystem,
+      final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final UInt64 maxRequestSize,
       final UInt64 maxBlobsPerBlock) {
     this.spec = spec;
     this.denebForkEpoch = denebForkEpoch;
+    this.recentChainData = recentChainData;
     this.combinedChainDataClient = combinedChainDataClient;
     this.maxRequestSize = maxRequestSize;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
@@ -77,6 +81,27 @@ public class BlobSidecarsByRangeMessageHandler
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_range_requested_sidecars_total",
             "Total number of blob sidecars requested in accepted blob sidecars by range requests from peers");
+  }
+
+  @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final BlobSidecarsByRangeRequestMessage request) {
+    final UInt64 finalizedEpoch = recentChainData.getFinalizedEpoch();
+    final UInt64 minEpochForBlobSidecars =
+        recentChainData
+            .getCurrentEpoch()
+            .orElse(UInt64.ZERO)
+            .minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS);
+    final UInt64 minimumRequestEpoch =
+        finalizedEpoch.max(minEpochForBlobSidecars).max(denebForkEpoch);
+
+    if (!verifyRequestedEpochIsInSupportedRange(request.getStartSlot(), minimumRequestEpoch)) {
+      requestCounter.labels("resource_unavailable").inc();
+      return Optional.of(
+          new RpcException.ResourceUnavailableException(
+              "Can't request blob sidecars earlier than epoch " + minimumRequestEpoch));
+    }
+    return Optional.empty();
   }
 
   @Override
@@ -170,17 +195,22 @@ public class BlobSidecarsByRangeMessageHandler
       final Throwable error, final ResponseCallback<BlobSidecar> callback) {
     final Throwable rootCause = Throwables.getRootCause(error);
     if (rootCause instanceof RpcException) {
-      LOG.trace("Rejecting blobs sidecars by range request", error);
+      LOG.trace("Rejecting blob sidecars by range request", error);
       callback.completeWithErrorResponse((RpcException) rootCause);
     } else {
       if (rootCause instanceof StreamClosedException
           || rootCause instanceof ClosedChannelException) {
         LOG.trace("Stream closed while sending requested blobs sidecars", error);
       } else {
-        LOG.error("Failed to process blobs by sidecars request", error);
+        LOG.error("Failed to process blob sidecars request", error);
       }
       callback.completeWithUnexpectedError(error);
     }
+  }
+
+  private boolean verifyRequestedEpochIsInSupportedRange(
+      final UInt64 requestedSlot, final UInt64 minimumRequestEpoch) {
+    return spec.computeEpochAtSlot(requestedSlot).isGreaterThanOrEqualTo(minimumRequestEpoch);
   }
 
   private class RequestState {
