@@ -1,5 +1,5 @@
 {
-  "get" : {
+  "post" : {
     "tags" : [ "Beacon", "Rewards" ],
     "operationId" : "getSyncCommitteeRewards",
     "summary" : "Get Sync Committee Rewards",

@@ -67,7 +67,7 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
 
   public GetSyncCommitteeRewards(final ChainDataProvider chainDataProvider) {
     super(
-        EndpointMetadata.get(ROUTE)
+        EndpointMetadata.post(ROUTE)
             .operationId("getSyncCommitteeRewards")
             .summary("Get Sync Committee Rewards")
             .description(
