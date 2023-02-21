@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.migrated;
 
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockRewardData {
@@ -60,5 +61,28 @@ public class BlockRewardData {
 
   public UInt64 getAttesterSlashings() {
     return attesterSlashings;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    BlockRewardData that = (BlockRewardData) o;
+    return Objects.equals(proposerIndex, that.proposerIndex)
+        && Objects.equals(total, that.total)
+        && Objects.equals(attestations, that.attestations)
+        && Objects.equals(syncAggregate, that.syncAggregate)
+        && Objects.equals(proposerSlashings, that.proposerSlashings)
+        && Objects.equals(attesterSlashings, that.attesterSlashings);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        proposerIndex, total, attestations, syncAggregate, proposerSlashings, attesterSlashings);
   }
 }
