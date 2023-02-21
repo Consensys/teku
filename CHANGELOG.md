@@ -18,3 +18,4 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 ### Bug Fixes
+- Included All forks in fork schedule if they're defined in configuration.

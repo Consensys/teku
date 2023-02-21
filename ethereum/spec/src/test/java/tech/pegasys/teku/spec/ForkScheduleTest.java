@@ -168,6 +168,17 @@ public class ForkScheduleTest {
 
     assertThat(forkSchedule.getActiveMilestones())
         .containsExactly(new ForkAndSpecMilestone(altairFork, SpecMilestone.ALTAIR));
+
+    assertThat(forkSchedule.getSpecMilestoneAtSlot(UInt64.ZERO)).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(forkSchedule.getHighestSupportedMilestone()).isEqualTo(SpecMilestone.ALTAIR);
+  }
+
+  @Test
+  public void getAllForks_shouldReturnCompleteForkList() {
+    final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
+    final Fork phase0Fork = getPhase0Fork(PHASE0_CONFIG);
+    final Fork altairFork = getAltairFork(ALTAIR_CONFIG);
+    assertThat(forkSchedule.getFullForkList()).containsExactly(phase0Fork, altairFork);
   }
 
   @Test
