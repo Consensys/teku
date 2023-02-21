@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -323,12 +322,9 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             "Duplicated BlsToExecutionChange for validator " + addressChange.getValidatorIndex());
       }
 
-      final Optional<OperationInvalidReason> operationInvalidReason =
-          operationValidator.validateBlsToExecutionChange(
-              genericState.getFork(), genericState, addressChange);
-      if (operationInvalidReason.isPresent()) {
-        return BlockValidationResult.failed(operationInvalidReason.get().describe());
-      }
+      // we can't pre-validate bls changes here, as the validation requires a validator index to
+      // cross-check and that validator index is unknown if a deposit and bls change are in the same
+      // block
 
       boolean signatureValid =
           operationSignatureVerifier.verifyBlsToExecutionChangeSignature(
