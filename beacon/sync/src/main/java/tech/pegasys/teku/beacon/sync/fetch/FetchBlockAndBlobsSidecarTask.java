@@ -46,7 +46,6 @@ public class FetchBlockAndBlobsSidecarTask extends FetchBlockTask {
               final Throwable rootException = Throwables.getRootCause(throwable);
               if (rootException instanceof RpcException) {
                 final RpcException rpcException = (RpcException) rootException;
-                // TODO: update link for Deneb
                 // based on behaviour described at
                 // https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/p2p-interface.md#beaconblocksbyroot-v2
                 if (rpcException.getResponseCode() == RpcResponseStatus.RESOURCE_UNAVAILABLE) {
