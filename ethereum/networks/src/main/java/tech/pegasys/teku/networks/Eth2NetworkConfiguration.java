@@ -292,7 +292,7 @@ public class Eth2NetworkConfiguration {
                       });
                   builder.denebBuilder(
                       denebBuilder -> {
-                        denebForkEpoch.ifPresent(denebBuilder::eip4844ForkEpoch);
+                        denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         trustedSetup.ifPresent(denebBuilder::trustedSetupPath);
                       });
                 });
