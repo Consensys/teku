@@ -131,9 +131,7 @@ public class BlobsSidecarsByRangeMessageHandler
   }
 
   /**
-   * TODO: Update link for Deneb
-   *
-   * <p>See <a
+   * See <a
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/eip4844/p2p-interface.md#blobssidecarsbyrange-v1">BlobsSidecarsByRange
    * v1</a>
    */

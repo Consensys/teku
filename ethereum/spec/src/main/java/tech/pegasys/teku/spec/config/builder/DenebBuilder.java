@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigDenebImpl;
 
-// TODO: Update to Deneb
 public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecConfigDeneb> {
 
   private Bytes4 denebForkVersion;
@@ -50,13 +49,13 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         kzgNoop);
   }
 
-  public DenebBuilder eip4844ForkEpoch(final UInt64 denebForkEpoch) {
+  public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
     checkNotNull(denebForkEpoch);
     this.denebForkEpoch = denebForkEpoch;
     return this;
   }
 
-  public DenebBuilder eip4844ForkVersion(final Bytes4 denebForkVersion) {
+  public DenebBuilder denebForkVersion(final Bytes4 denebForkVersion) {
     checkNotNull(denebForkVersion);
     this.denebForkVersion = denebForkVersion;
     return this;
@@ -99,6 +98,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
 
   @Override
   public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {
-    rawConfig.accept("EIP4844_FORK_EPOCH", denebForkEpoch);
+    rawConfig.accept("DENEB_FORK_EPOCH", denebForkEpoch);
   }
 }

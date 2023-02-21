@@ -253,7 +253,7 @@ public class TestSpecFactory {
                     z.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                         .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                         .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true)));
+                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO).kzgNoop(true)));
         break;
       default:
         throw new IllegalStateException("unsupported milestone");
@@ -350,7 +350,7 @@ public class TestSpecFactory {
             z.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .denebBuilder(d -> d.eip4844ForkEpoch(denebForkEpoch).kzgNoop(true)));
+                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch).kzgNoop(true)));
   }
 
   private static SpecConfigDeneb getDenebSpecConfig(
@@ -363,7 +363,7 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                  .denebBuilder(d -> d.eip4844ForkEpoch(UInt64.ZERO).kzgNoop(true));
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO).kzgNoop(true));
               configAdapter.accept(builder);
             }));
   }
