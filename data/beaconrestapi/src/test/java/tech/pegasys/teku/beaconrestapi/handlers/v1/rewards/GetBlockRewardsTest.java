@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.rewards;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -62,6 +63,11 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   void metadata_shouldHandle500() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @Test
+  void metadata_shouldHandle501() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
   }
 
   @Test
