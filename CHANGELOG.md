@@ -16,6 +16,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Trigger the beacon nodes fallback mechanism when the execution layer is offline
 
 ### Bug Fixes
 - Included All forks in fork schedule if they're defined in configuration.
