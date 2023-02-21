@@ -18,6 +18,5 @@ public class TestFork {
   public static final String ALTAIR = "altair";
   public static final String BELLATRIX = "bellatrix";
   public static final String CAPELLA = "capella";
-  // TODO: rename to DENEB when reference tests are updated
-  public static final String DENEB = "eip4844";
+  public static final String DENEB = "deneb";
 }
