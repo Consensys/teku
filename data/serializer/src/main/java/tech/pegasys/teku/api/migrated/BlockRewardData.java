@@ -13,21 +13,23 @@
 
 package tech.pegasys.teku.api.migrated;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 public class BlockRewardData {
-  private final String proposerIndex;
-  private final String total;
-  private final String attestations;
-  private final String syncAggregate;
-  private final String proposerSlashings;
-  private final String attesterSlashings;
+  private final UInt64 proposerIndex;
+  private final UInt64 total;
+  private final UInt64 attestations;
+  private final UInt64 syncAggregate;
+  private final UInt64 proposerSlashings;
+  private final UInt64 attesterSlashings;
 
   public BlockRewardData(
-      String proposerIndex,
-      String total,
-      String attestations,
-      String syncAggregate,
-      String proposerSlashings,
-      String attesterSlashings) {
+      final UInt64 proposerIndex,
+      final UInt64 total,
+      final UInt64 attestations,
+      final UInt64 syncAggregate,
+      final UInt64 proposerSlashings,
+      final UInt64 attesterSlashings) {
     this.proposerIndex = proposerIndex;
     this.total = total;
     this.attestations = attestations;
@@ -36,27 +38,27 @@ public class BlockRewardData {
     this.attesterSlashings = attesterSlashings;
   }
 
-  public String getProposerIndex() {
+  public UInt64 getProposerIndex() {
     return proposerIndex;
   }
 
-  public String getTotal() {
+  public UInt64 getTotal() {
     return total;
   }
 
-  public String getAttestations() {
+  public UInt64 getAttestations() {
     return attestations;
   }
 
-  public String getSyncAggregate() {
+  public UInt64 getSyncAggregate() {
     return syncAggregate;
   }
 
-  public String getProposerSlashings() {
+  public UInt64 getProposerSlashings() {
     return proposerSlashings;
   }
 
-  public String getAttesterSlashings() {
+  public UInt64 getAttesterSlashings() {
     return attesterSlashings;
   }
 }
