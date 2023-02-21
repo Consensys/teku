@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
@@ -481,6 +482,11 @@ public class CombinedChainDataClient {
   public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecarBySlotAndBlockRoot(
       final UInt64 slot, final Bytes32 blockRoot) {
     return historicalChainData.getBlobsSidecar(new SlotAndBlockRoot(slot, blockRoot));
+  }
+
+  public SafeFuture<Optional<SignedBlobSidecar>> getBlobSidecarByBlockRootAndIndex(
+      final Bytes32 blockRoot, final UInt64 index) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   private boolean isRecentData(final UInt64 slot) {

@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -257,6 +259,13 @@ public class RespondingEth2Peer implements Eth2Peer {
                     .collect(Collectors.toList()));
 
     return createPendingBlockAndBlobsSidecarRequest(handler);
+  }
+
+  @Override
+  public SafeFuture<Void> requestBlobSidecarsByRoot(
+      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBlobSidecar> listener)
+      throws RpcException {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

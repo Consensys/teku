@@ -18,12 +18,12 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -241,6 +242,13 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             SafeFuture.failedFuture(
                 new UnsupportedOperationException(
                     "BlockAndBlobsSidecarByRoot method is not available")));
+  }
+
+  @Override
+  public SafeFuture<Void> requestBlobSidecarsByRoot(
+      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBlobSidecar> listener)
+      throws RpcException {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
