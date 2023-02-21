@@ -1,0 +1,37 @@
+{
+  "title" : "GetBlockRewards",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "type" : "object",
+      "required" : [ "proposer_index", "total", "attestations", "sync_aggregate", "proposer_slashings", "attester_slashings" ],
+      "properties" : {
+        "proposer_index" : {
+          "type" : "string"
+        },
+        "total" : {
+          "type" : "string"
+        },
+        "attestations" : {
+          "type" : "string"
+        },
+        "sync_aggregate" : {
+          "type" : "string"
+        },
+        "proposer_slashings" : {
+          "type" : "string"
+        },
+        "attester_slashings" : {
+          "type" : "string"
+        }
+      }
+    }
+  }
+}
