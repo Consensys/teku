@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -85,12 +84,11 @@ public class BlobSidecarsByRootMessageHandler
 
     LOG.trace("Peer {} requested blob sidecars with blob identifiers: {}", peer.getId(), message);
 
-    // TODO: add rate limiting
+    // TODO: add rate limiting + metrics
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
 
-    final UInt64 finalizedEpoch =
-        combinedChainDataClient.getLatestFinalized().map(AnchorPoint::getEpoch).orElse(UInt64.ZERO);
+    final UInt64 finalizedEpoch = getFinalizedEpoch();
 
     for (final BlobIdentifier identifier : message) {
       final Bytes32 blockRoot = identifier.getBlockRoot();
@@ -111,6 +109,14 @@ public class BlobSidecarsByRootMessageHandler
     }
 
     future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
+  }
+
+  private UInt64 getFinalizedEpoch() {
+    return combinedChainDataClient
+        .getFinalizedBlock()
+        .map(SignedBeaconBlock::getSlot)
+        .map(spec::computeEpochAtSlot)
+        .orElse(UInt64.ZERO);
   }
 
   /**
@@ -135,7 +141,8 @@ public class BlobSidecarsByRootMessageHandler
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(block.getSlot());
               final UInt64 minimumRequestEpoch = computeMinimumRequestEpoch(finalizedEpoch);
               if (requestedEpoch.isLessThan(minimumRequestEpoch)) {
-                throw new ResourceUnavailableException(
+                throw new RpcException(
+                    INVALID_REQUEST_CODE,
                     String.format(
                         "Block root (%s) references a block earlier than the minimum_request_epoch (%s)",
                         blockRoot, minimumRequestEpoch));
