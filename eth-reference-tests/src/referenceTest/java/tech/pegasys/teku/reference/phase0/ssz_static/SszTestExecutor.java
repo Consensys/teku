@@ -176,15 +176,17 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
 
           // Deneb types
           .put(
-              "ssz_static/BlobsSidecar",
+              "ssz_static/BlobSidecar",
               new SszTestExecutor<>(
-                  schemas -> SchemaDefinitionsDeneb.required(schemas).getBlobsSidecarSchema()))
+                  schemas -> SchemaDefinitionsDeneb.required(schemas).getBlobSidecarSchema()))
           .put(
-              "ssz_static/SignedBeaconBlockAndBlobsSidecar",
+              "ssz_static/SignedBlobSidecar",
               new SszTestExecutor<>(
-                  schemas ->
-                      SchemaDefinitionsDeneb.required(schemas)
-                          .getSignedBeaconBlockAndBlobsSidecarSchema()))
+                  schemas -> SchemaDefinitionsDeneb.required(schemas).getSignedBlobSidecarSchema()))
+          .put(
+              "ssz_static/BlobIdentifier",
+              new SszTestExecutor<>(
+                  schemas -> SchemaDefinitionsDeneb.required(schemas).getBlobIdentifierSchema()))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
