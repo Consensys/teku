@@ -171,7 +171,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
     final BlockValidationResult validationResult =
         capellaBlockProcessor.verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP);
+            state, blsToExecutionChangesListWithDuplicate, BLSSignatureVerifier.NO_OP, true);
 
     assertThat(validationResult.isValid()).isFalse();
     assertThat(validationResult.getFailureReason())
