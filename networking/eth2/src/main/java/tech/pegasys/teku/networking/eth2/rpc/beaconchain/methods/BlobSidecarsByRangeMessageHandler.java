@@ -186,11 +186,6 @@ public class BlobSidecarsByRangeMessageHandler
     }
   }
 
-  private boolean verifyRequestedEpochIsInSupportedRange(
-      final UInt64 requestedSlot, final UInt64 minimumRequestEpoch) {
-    return spec.computeEpochAtSlot(requestedSlot).isGreaterThanOrEqualTo(minimumRequestEpoch);
-  }
-
   private class RequestState {
 
     private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
