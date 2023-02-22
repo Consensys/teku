@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.valueOf;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.ArrayList;
@@ -236,7 +235,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     for (int slot = currentSlot.intValue(); slot < count.intValue(); slot++) {
       for (int index = 0; index < maxBlobsPerBlock.intValue(); index++) {
-        assertThat(request.getCurrentSlot()).isEqualTo(valueOf(slot));
+        assertThat(request.getCurrentSlot()).isEqualTo(UInt64.valueOf(slot));
         assertThat(request.getCurrentIndex()).isEqualTo(UInt64.valueOf(index));
 
         assertThat(request.isComplete()).isFalse();
