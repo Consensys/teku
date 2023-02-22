@@ -261,12 +261,4 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     return blobSidecars;
   }
-
-  private void verifyRequestsMetric(final String status, final long expectedCount) {
-    Assertions.assertThat(
-            metricsSystem
-                .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
-                .getValue(status))
-        .isEqualTo(expectedCount);
-  }
 }
