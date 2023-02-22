@@ -21,8 +21,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.HashSet;
@@ -37,16 +37,15 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetSyncCommitteeRewards extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/rewards/sync_committee/{block_id}";
   final ChainDataProvider chainDataProvider;
 
-  private static final SerializableTypeDefinition<Map.Entry<Integer, UInt64>> DATA_TYPE =
-      SerializableTypeDefinition.<Map.Entry<Integer, UInt64>>object()
+  private static final SerializableTypeDefinition<Map.Entry<Integer, Long>> DATA_TYPE =
+      SerializableTypeDefinition.<Map.Entry<Integer, Long>>object()
           .withField("validator_index", INTEGER_TYPE, Map.Entry::getKey)
-          .withField("reward", UINT64_TYPE, Map.Entry::getValue)
+          .withField("reward", LONG_TYPE, Map.Entry::getValue)
           .build();
 
   private static final SerializableTypeDefinition<SyncCommitteeRewardData> RESPONSE_TYPE =

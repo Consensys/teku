@@ -32,7 +32,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -105,8 +104,8 @@ public class GetSyncCommitteeRewardsTest
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    responseData.increaseReward(1, UInt64.valueOf(1029));
-    responseData.increaseReward(2, UInt64.valueOf(3920));
+    responseData.increaseReward(1, 1029L);
+    responseData.increaseReward(2, 3920L);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =

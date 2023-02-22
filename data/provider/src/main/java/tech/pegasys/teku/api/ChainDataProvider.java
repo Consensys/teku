@@ -599,7 +599,8 @@ public class ChainDataProvider {
             validators,
             state);
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
-    return Optional.of(calculateRewards(committeeIndices, participantReward, block, data));
+    return Optional.of(
+        calculateRewards(committeeIndices, participantReward.longValue(), block, data));
   }
 
   @VisibleForTesting
@@ -636,7 +637,7 @@ public class ChainDataProvider {
   @VisibleForTesting
   protected SyncCommitteeRewardData calculateRewards(
       final Map<Integer, Integer> committeeIndices,
-      final UInt64 participantReward,
+      final Long participantReward,
       final BeaconBlock block,
       final SyncCommitteeRewardData data) {
     final Optional<SyncAggregate> aggregate = block.getBody().getOptionalSyncAggregate();

@@ -18,12 +18,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SyncCommitteeRewardData {
   final boolean executionOptimistic;
   final boolean finalized;
-  final Map<Integer, UInt64> rewardData;
+  final Map<Integer, Long> rewardData;
 
   public SyncCommitteeRewardData(final boolean executionOptimistic, final boolean finalized) {
     this.executionOptimistic = executionOptimistic;
@@ -31,14 +30,14 @@ public class SyncCommitteeRewardData {
     this.rewardData = new HashMap<>();
   }
 
-  public void increaseReward(final int validatorIndex, final UInt64 amount) {
-    final UInt64 balance = rewardData.getOrDefault(validatorIndex, UInt64.ZERO);
-    rewardData.put(validatorIndex, balance.plus(amount));
+  public void increaseReward(final int validatorIndex, final Long amount) {
+    final Long balance = rewardData.getOrDefault(validatorIndex, 0L);
+    rewardData.put(validatorIndex, balance + amount);
   }
 
-  public void decreaseReward(final int validatorIndex, final UInt64 amount) {
-    final UInt64 balance = rewardData.getOrDefault(validatorIndex, UInt64.ZERO);
-    rewardData.put(validatorIndex, balance.minusMinZero(amount));
+  public void decreaseReward(final int validatorIndex, final Long amount) {
+    final Long balance = rewardData.getOrDefault(validatorIndex, 0L);
+    rewardData.put(validatorIndex, balance - amount);
   }
 
   public boolean isExecutionOptimistic() {
@@ -49,7 +48,7 @@ public class SyncCommitteeRewardData {
     return finalized;
   }
 
-  public List<Map.Entry<Integer, UInt64>> getRewardData() {
+  public List<Map.Entry<Integer, Long>> getRewardData() {
     return new ArrayList<>(rewardData.entrySet());
   }
 

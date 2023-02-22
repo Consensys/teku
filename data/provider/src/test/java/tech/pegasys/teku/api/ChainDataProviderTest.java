@@ -398,9 +398,9 @@ public class ChainDataProviderTest {
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
 
     final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.increaseReward(0, ZERO);
-    expectedOutput.increaseReward(6, ZERO);
-    expectedOutput.increaseReward(9, UInt64.valueOf(247));
+    expectedOutput.increaseReward(0, -247L);
+    expectedOutput.increaseReward(6, -247L);
+    expectedOutput.increaseReward(9, 247L);
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
   }
 
@@ -411,8 +411,8 @@ public class ChainDataProviderTest {
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of("0", "9"));
 
     final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.increaseReward(0, ZERO);
-    expectedOutput.increaseReward(9, UInt64.valueOf(247));
+    expectedOutput.increaseReward(0, -247L);
+    expectedOutput.increaseReward(9, 247L);
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
   }
 
@@ -481,7 +481,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void calculateRewards_shouldGetData() {
-    final UInt64 reward = UInt64.valueOf(5000);
+    final Long reward = 5000L;
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
@@ -494,7 +494,7 @@ public class ChainDataProviderTest {
     assertThat(syncCommitteeRewardData.isExecutionOptimistic()).isTrue();
     assertThat(syncCommitteeRewardData.isFinalized()).isFalse();
     assertThat(syncCommitteeRewardData.getRewardData())
-        .containsExactlyInAnyOrder(Map.entry(2, ZERO), Map.entry(4, reward));
+        .containsExactlyInAnyOrder(Map.entry(2, -1 * reward), Map.entry(4, reward));
   }
 
   @Test
