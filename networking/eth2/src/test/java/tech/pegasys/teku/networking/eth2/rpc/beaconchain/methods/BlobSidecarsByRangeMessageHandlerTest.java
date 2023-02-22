@@ -43,7 +43,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -52,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarsByRangeMessageHandlerTest {
 
@@ -86,8 +84,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
 
-  private final RecentChainData recentChainData = mock(RecentChainData.class);
-
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
@@ -99,7 +95,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
           spec,
           denebForkEpoch,
           metricsSystem,
-          recentChainData,
           combinedChainDataClient,
           maxRequestSize,
           maxBlobsPerBlock);
@@ -116,23 +111,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void validateRequest_resourceNotAvailableWhenNotInSupportedRange() {
-    when(recentChainData.getFinalizedEpoch()).thenReturn(finalizedEpoch);
-    // 4098 - 4096 = 2
-    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(UInt64.valueOf(4098)));
-
+  public void validateRequest_validRequest() {
     final Optional<RpcException> result =
         handler.validateRequest(protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ONE));
-    Assertions.assertThat(result)
-        .hasValueSatisfying(
-            rpcException -> {
-              Assertions.assertThat(rpcException.getResponseCode())
-                  .isEqualTo(RpcResponseStatus.RESOURCE_UNAVAILABLE);
-              Assertions.assertThat(rpcException.getErrorMessageString())
-                  .isEqualTo("Can't request blob sidecars earlier than epoch 3");
-            });
-
-    verifyRequestsMetric("resource_unavailable", 1);
+    assertThat(result).isEmpty();
   }
 
   @Test
