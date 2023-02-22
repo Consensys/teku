@@ -21,7 +21,7 @@ dependencyManagement {
     dependency 'com.google.code.gson:gson:2.10.1'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
-    dependency 'org.jsoup:jsoup:1.15.3'
+    dependency 'org.jsoup:jsoup:1.15.4'
 
     dependency 'com.launchdarkly:okhttp-eventsource:3.0.0'
 
@@ -41,7 +41,7 @@ dependencyManagement {
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.10'
-    dependency 'tech.pegasys:jc-kzg-4844:0.3.0'
+    dependency 'tech.pegasys:jc-kzg-4844:0.4.0'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -70,13 +70,13 @@ dependencyManagement {
       }
     }
 
-    dependencySet(group: 'io.vertx', version: '4.3.7') {
+    dependencySet(group: 'io.vertx', version: '4.3.8') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.5.2'
+    dependency 'io.projectreactor:reactor-core:3.5.3'
 
     dependency 'it.unimi.dsi:fastutil:8.5.11'
 
@@ -171,7 +171,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.4'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.6'
 
     dependency 'org.jupnp:org.jupnp.support:2.6.1'
     dependency 'org.jupnp:org.jupnp:2.6.1'

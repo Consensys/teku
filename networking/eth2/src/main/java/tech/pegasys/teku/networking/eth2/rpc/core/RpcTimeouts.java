@@ -18,7 +18,7 @@ import tech.pegasys.teku.networking.p2p.rpc.StreamTimeoutException;
 
 /**
  * This class holds constants related to handling rpc request timeouts. See:
- * https://github.com/ethereum/eth2.0-specs/blob/dev/specs/phase0/p2p-interface.md#configuration
+ * https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/p2p-interface.md#configuration
  */
 public abstract class RpcTimeouts {
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -36,9 +38,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella {
 
-  private final OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor;
+  private final OperationProcessor<SignedBlobSidecar> blobSidecarProcessor;
+  private final OperationProcessor<SignedBeaconBlockAndBlobsSidecar> blockAndBlobsProcessor;
 
   private BlockAndBlobsSidecarGossipManager blockAndBlobsSidecarGossipManager;
+  private BlobSidecarGossipManager blobSidecarGossipManager;
 
   public GossipForkSubscriptionsDeneb(
       final Fork fork,
@@ -50,7 +54,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
       final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor,
+      final OperationProcessor<SignedBlobSidecar> blobSidecarProcessor,
+      final OperationProcessor<SignedBeaconBlockAndBlobsSidecar> blockAndBlobsProcessor,
       final OperationProcessor<ValidateableAttestation> attestationProcessor,
       final OperationProcessor<ValidateableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -81,11 +86,15 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
         syncCommitteeMessageOperationProcessor,
         signedBlsToExecutionChangeOperationProcessor);
 
-    this.gossipedBlockAndBlobsProcessor = gossipedBlockAndBlobsProcessor;
+    this.blobSidecarProcessor = blobSidecarProcessor;
+    this.blockAndBlobsProcessor = blockAndBlobsProcessor;
   }
 
   @Override
   protected void addGossipManagers(final ForkInfo forkInfo) {
+    // TODO: change this to super.addGossipManagers(forkInfo) when the coupled block and blobs
+    // sidecar gossip manager is removed
+
     // Phase0 without BlockGossipManager
     addAttestationGossipManager(forkInfo);
     addAggregateGossipManager(forkInfo);
@@ -101,7 +110,22 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
     addSignedBlsToExecutionChangeGossipManager(forkInfo);
 
     // Deneb
+    addBlobSidecarGossipManager(forkInfo);
     addBlockAndBlobsSidecarGossipManager(forkInfo);
+  }
+
+  void addBlobSidecarGossipManager(final ForkInfo forkInfo) {
+    blobSidecarGossipManager =
+        BlobSidecarGossipManager.create(
+            recentChainData,
+            spec,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            blobSidecarProcessor,
+            getMessageMaxSize());
+    addGossipManager(blobSidecarGossipManager);
   }
 
   void addBlockAndBlobsSidecarGossipManager(final ForkInfo forkInfo) {
@@ -113,9 +137,14 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            gossipedBlockAndBlobsProcessor,
+            blockAndBlobsProcessor,
             getMessageMaxSize());
     addGossipManager(blockAndBlobsSidecarGossipManager);
+  }
+
+  @Override
+  public void publishBlobSidecar(final SignedBlobSidecar blobSidecar) {
+    blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
   }
 
   @Override

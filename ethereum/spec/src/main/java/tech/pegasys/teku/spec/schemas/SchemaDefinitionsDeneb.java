@@ -60,8 +60,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SignedBuilderBidSchema signedBuilderBidSchemaDeneb;
 
   private final BlobSchema blobSchema;
-  private final BlobsSidecarSchema blobsSidecarSchema;
   private final BlobSidecarSchema blobSidecarSchema;
+  private final BlobsSidecarSchema blobsSidecarSchema;
   private final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema;
   private final SignedBlobSidecarSchema signedBlobSidecarSchema;
 

@@ -264,7 +264,7 @@ public class EventLogger {
             "Merge       *** Transition Configuration error: remote Execution Client TerminalBlockHash and TerminalBlockNumber are inconsistent\n"
                 + "  remote configuration: %s",
             remoteConfig);
-    error(configurationErrorEventLog, Color.RED);
+    warn(configurationErrorEventLog, Color.YELLOW);
   }
 
   public void lateBlockImport(

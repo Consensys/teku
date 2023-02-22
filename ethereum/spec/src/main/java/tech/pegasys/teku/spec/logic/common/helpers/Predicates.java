@@ -37,7 +37,7 @@ public class Predicates {
    * @param epoch - The epoch under consideration.
    * @return A boolean indicating if the validator is active.
    * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator</a>
+   *     href="https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_active_validator">is_active_validator</a>
    */
   public boolean isActiveValidator(Validator validator, UInt64 epoch) {
     return isActiveValidator(validator.getActivationEpoch(), validator.getExitEpoch(), epoch);
@@ -66,7 +66,7 @@ public class Predicates {
    * Determines if a validator has a balance that can be slashed
    *
    * @see <a
-   *     href="https://github.com/ethereum/eth2.0-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator">is_slashable_validator</a>
+   *     href="https://github.com/ethereum/consensus-specs/blob/v0.8.0/specs/core/0_beacon-chain.md#is_slashable_validator">is_slashable_validator</a>
    */
   public boolean isSlashableValidator(Validator validator, UInt64 epoch) {
     return !validator.isSlashed()

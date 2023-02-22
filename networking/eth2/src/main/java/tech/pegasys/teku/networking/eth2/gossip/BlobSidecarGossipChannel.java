@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,19 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.ssz;
+package tech.pegasys.teku.networking.eth2.gossip;
 
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 
-/**
- * Returns `hash_tree_root` conforming to SSZ spec:
- * https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md#merkleization
- */
-public interface Merkleizable {
+public interface BlobSidecarGossipChannel extends VoidReturningChannelInterface {
 
-  /**
-   * Returns `hash_tree_root` conforming to SSZ spec:
-   * https://github.com/ethereum/consensus-specs/blob/dev/ssz/simple-serialize.md#merkleization
-   */
-  Bytes32 hashTreeRoot();
+  void publishBlobSidecar(SignedBlobSidecar blobSidecar);
 }
