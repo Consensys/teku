@@ -78,8 +78,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
-  private final UInt64 finalizedEpoch = UInt64.valueOf(3);
-
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
 
