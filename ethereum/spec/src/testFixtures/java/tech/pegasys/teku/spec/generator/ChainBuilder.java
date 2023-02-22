@@ -89,10 +89,10 @@ public class ChainBuilder {
   private final AttesterSlashingGenerator attesterSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
   private final NavigableMap<UInt64, BlobsSidecar> blobsSidecars = new TreeMap<>();
-  private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new TreeMap<>();
+  private final NavigableMap<UInt64, List<BlobSidecar>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
   private final Map<Bytes32, BlobsSidecar> blobsSidecarsByHash = new HashMap<>();
-  private final Map<Bytes32, BlobSidecar> blobSidecarsByHash = new HashMap<>();
+  private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
 
@@ -101,7 +101,7 @@ public class ChainBuilder {
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
       final Map<UInt64, BlobsSidecar> existingBlobsSidecars,
-      final Map<UInt64, BlobSidecar> existingBlobSidecars) {
+      final Map<UInt64, List<BlobSidecar>> existingBlobSidecars) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -113,7 +113,14 @@ public class ChainBuilder {
     blobSidecars.putAll(existingBlobSidecars);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
     blobsSidecars.values().forEach(b -> blobsSidecarsByHash.put(b.getBeaconBlockRoot(), b));
-    blobSidecars.values().forEach(b -> blobSidecarsByHash.put(b.getBlockRoot(), b));
+    blobSidecars
+        .values()
+        .forEach(
+            b -> {
+              if (!b.isEmpty()) {
+                blobSidecarsByHash.put(b.get(0).getBlockRoot(), b);
+              }
+            });
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -141,7 +148,7 @@ public class ChainBuilder {
     return Optional.ofNullable(blobsSidecarsByHash.get(blockRoot));
   }
 
-  public Optional<BlobSidecar> getBlobSidecar(final Bytes32 blockRoot) {
+  public Optional<List<BlobSidecar>> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot));
   }
 
@@ -237,8 +244,10 @@ public class ChainBuilder {
 
   public Stream<BlobSidecar> streamBlobSidecars(final UInt64 fromSlot, final UInt64 toSlot) {
     return blobSidecars.values().stream()
-        .filter(s -> s.getSlot().isGreaterThanOrEqualTo(fromSlot))
-        .filter(s -> s.getSlot().isLessThanOrEqualTo(toSlot));
+        .filter(blobs -> !blobs.isEmpty())
+        .filter(blobs -> blobs.get(0).getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(blobs -> blobs.get(0).getSlot().isLessThanOrEqualTo(toSlot))
+        .flatMap(List::stream);
   }
 
   public Stream<BlobsSidecar> streamBlobsSidecars() {
