@@ -31,6 +31,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidec
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
+  private static final long TIME_OUT = 60;
+  private static final long DELAY = 3;
   private final AsyncRunner asyncRunner;
   private final SyncSource delegate;
 
@@ -47,9 +49,11 @@ public class ThrottlingSyncSource implements SyncSource {
       final int maxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, 60, timeProvider);
-    this.blobsSidecarsRateTracker = new RateTracker(maxBlobsSidecarsPerMinute, 60, timeProvider);
-    this.blobSidecarsRateTracker = new RateTracker(maxBlobSidecarsPerMinute, 60, timeProvider);
+    this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, TIME_OUT, timeProvider);
+    this.blobsSidecarsRateTracker =
+        new RateTracker(maxBlobsSidecarsPerMinute, TIME_OUT, timeProvider);
+    this.blobSidecarsRateTracker =
+        new RateTracker(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider);
   }
 
   @Override
@@ -62,7 +66,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlocksByRange(startSlot, count, listener), Duration.ofSeconds(3));
+          () -> requestBlocksByRange(startSlot, count, listener), Duration.ofSeconds(DELAY));
     }
   }
 
@@ -76,7 +80,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlobsSidecarsByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlobsSidecarsByRange(startSlot, count, listener), Duration.ofSeconds(3));
+          () -> requestBlobsSidecarsByRange(startSlot, count, listener), Duration.ofSeconds(DELAY));
     }
   }
 
@@ -88,7 +92,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlobSidecarsByRange(startSlot, count, listener), Duration.ofSeconds(3));
+          () -> requestBlobSidecarsByRange(startSlot, count, listener), Duration.ofSeconds(DELAY));
     }
   }
 
