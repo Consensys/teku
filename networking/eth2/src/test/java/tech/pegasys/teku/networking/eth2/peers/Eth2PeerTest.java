@@ -191,6 +191,35 @@ class Eth2PeerTest {
     assertThat(request.getCount()).isEqualTo(UInt64.valueOf(6));
   }
 
+  @Test
+  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
+  public void shouldSetCountToZeroWhenUpdateSlotEqualsDenebTransitionSlot() {
+
+    final Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>
+        blobsSidecarsByRangeMethod = mock(Eth2RpcMethod.class);
+
+    final RpcStreamController<RpcRequestHandler> rpcStreamController =
+        mock(RpcStreamController.class);
+
+    when(rpcMethods.blobsSidecarsByRange()).thenReturn(Optional.of(blobsSidecarsByRangeMethod));
+
+    when(peer.sendRequest(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(rpcStreamController));
+
+    peer.requestBlobsSidecarsByRange(UInt64.ONE, UInt64.valueOf(7), __ -> SafeFuture.COMPLETE);
+
+    final ArgumentCaptor<BlobsSidecarsByRangeRequestMessage> requestCaptor =
+        ArgumentCaptor.forClass(BlobsSidecarsByRangeRequestMessage.class);
+
+    verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
+
+    final BlobsSidecarsByRangeRequestMessage request = requestCaptor.getValue();
+
+    // Deneb starts from epoch 1, so request start slot should be 8 and the count should be 0
+    assertThat(request.getStartSlot()).isEqualTo(UInt64.valueOf(8));
+    assertThat(request.getCount()).isEqualTo(UInt64.valueOf(0));
+  }
+
   private PeerStatus randomPeerStatus() {
     return new PeerStatus(
         dataStructureUtil.randomBytes4(),

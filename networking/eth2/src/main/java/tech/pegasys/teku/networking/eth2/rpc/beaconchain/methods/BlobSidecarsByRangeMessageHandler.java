@@ -148,6 +148,9 @@ public class BlobSidecarsByRangeMessageHandler
               final BlobSidecarsByRangeMessageHandler.RequestState initialState =
                   new BlobSidecarsByRangeMessageHandler.RequestState(
                       callback, headBlockRoot, startSlot, message.getMaxSlot());
+              if (initialState.isComplete()) {
+                return SafeFuture.completedFuture(initialState);
+              }
               return sendBlobSidecars(initialState);
             })
         .finish(
@@ -256,8 +259,9 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return (currentSlot.get().equals(maxSlot)
-              && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE)))
+      return (currentSlot.get().isGreaterThan(maxSlot)
+              || (currentSlot.get().equals(maxSlot)
+                  && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE))))
           || maxRequestSize.isLessThanOrEqualTo(sentBlobSidecars.get());
     }
 

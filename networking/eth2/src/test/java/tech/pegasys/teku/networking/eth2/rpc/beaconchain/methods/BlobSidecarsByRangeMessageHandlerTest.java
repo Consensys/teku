@@ -207,7 +207,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         new BlobSidecarsByRangeRequestMessage(startSlot, count);
 
     final List<BlobSidecar> expectedSent =
-        setUpBlobSidecarData(startSlot, request.getMaxSlot(), headBlockRoot);
+        setUpBlobSidecarsData(startSlot, request.getMaxSlot(), headBlockRoot);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -225,7 +225,28 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
   }
 
-  private List<BlobSidecar> setUpBlobSidecarData(
+  @Test
+  public void shouldIgnoreRequestWhenCountIsZero() {
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, ZERO);
+
+    when(peer.wantToReceiveBlobSidecars(listener, 0)).thenReturn(true);
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+
+    verify(listener, never()).respond(argumentCaptor.capture());
+
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+
+    verify(listener).completeSuccessfully();
+
+    AssertionsForInterfaceTypes.assertThat(actualSent).isEmpty();
+  }
+
+  private List<BlobSidecar> setUpBlobSidecarsData(
       final UInt64 startSlot, final UInt64 maxSlot, final Bytes32 headBlockRoot) {
     List<BlobSidecar> blobSidecars = new ArrayList<>();
     for (int slot = startSlot.intValue(); slot <= maxSlot.intValue(); slot++) {

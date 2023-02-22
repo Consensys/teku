@@ -119,6 +119,9 @@ public class BlobsSidecarsByRangeMessageHandler
               }
               final RequestState initialState =
                   new RequestState(callback, headBlockRoot, startSlot, message.getMaxSlot());
+              if (initialState.isComplete()) {
+                return SafeFuture.completedFuture(initialState);
+              }
               return sendBlobsSidecars(initialState);
             })
         .finish(

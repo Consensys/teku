@@ -61,7 +61,7 @@ public class BlobsSidecarsByRangeRequestMessage
   }
 
   public UInt64 getMaxSlot() {
-    return getStartSlot().plus(getCount().minus(1));
+    return getStartSlot().plus(getCount()).minusMinZero(1);
   }
 
   @Override
