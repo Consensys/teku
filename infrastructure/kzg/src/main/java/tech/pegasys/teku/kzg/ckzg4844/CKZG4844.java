@@ -129,26 +129,34 @@ public final class CKZG4844 implements KZG {
   @Override
   public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
     try {
-      final byte[] blobsBytes = CKZG4844Utils.flattenBlobs(blobs);
-      final byte[] proof = CKZG4844JNI.computeAggregateKzgProof(blobsBytes, blobs.size());
-      return KZGProof.fromArray(proof);
+      return computeBlobKzgProof(blobs.get(0));
     } catch (final Exception ex) {
       throw new KZGException("Failed to compute aggregated KZG proof for blobs", ex);
     }
   }
 
   @Override
-  public boolean verifyAggregateKzgProof(
-      final List<Bytes> blobs, final List<KZGCommitment> kzgCommitments, final KZGProof kzgProof)
+  public boolean verifyBlobKzgProofBatch(
+      final List<Bytes> blobs,
+      final List<KZGCommitment> kzgCommitments,
+      final List<KZGProof> kzgProofs)
       throws KZGException {
+    if (blobs.size() != kzgCommitments.size() || blobs.size() != kzgProofs.size()) {
+      throw new KZGException(
+          String.format(
+              "Expecting equal number of blobs, commitments and proofs for verification, "
+                  + "provided instead: blobs=%s, commitments=%s, proofs=%s",
+              blobs.size(), kzgCommitments.size(), kzgProofs.size()));
+    }
     try {
-      final byte[] blobsBytes = CKZG4844Utils.flattenBlobs(blobs);
+      final byte[] blobsBytes = CKZG4844Utils.flattenBytes(blobs);
       final byte[] commitmentsBytes = CKZG4844Utils.flattenCommitments(kzgCommitments);
-      return CKZG4844JNI.verifyAggregateKzgProof(
-          blobsBytes, commitmentsBytes, blobs.size(), kzgProof.toArray());
+      final byte[] proofBytes = CKZG4844Utils.flattenProofs(kzgProofs);
+      return CKZG4844JNI.verifyBlobKzgProofBatch(
+          blobsBytes, commitmentsBytes, proofBytes, blobs.size());
     } catch (final Exception ex) {
       throw new KZGException(
-          "Failed to verify blobs and commitments against KZG proof " + kzgProof, ex);
+          "Failed to verify blobs and commitments against KZG proof " + kzgProofs, ex);
     }
   }
 
@@ -159,6 +167,16 @@ public final class CKZG4844 implements KZG {
       return KZGCommitment.fromArray(commitmentBytes);
     } catch (final Exception ex) {
       throw new KZGException("Failed to produce KZG commitment from blob", ex);
+    }
+  }
+
+  @Override
+  public KZGProof computeBlobKzgProof(final Bytes blob) throws KZGException {
+    try {
+      final byte[] proof = CKZG4844JNI.computeBlobKzgProof(blob.toArray());
+      return KZGProof.fromArray(proof);
+    } catch (final Exception ex) {
+      throw new KZGException("Failed to compute KZG proof for blob", ex);
     }
   }
 }

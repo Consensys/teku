@@ -48,9 +48,9 @@ public class CKZG4844PropertyTest {
       final KZG kzg,
       @ForAll final List<@From(supplier = DiverseBlobBytesSupplier.class) Bytes> blobs,
       @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
-      @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
+      @ForAll final List<@From(supplier = KZGProofSupplier.class) KZGProof> proofs) {
     try {
-      kzg.verifyAggregateKzgProof(blobs, commitments, proof);
+      kzg.verifyBlobKzgProofBatch(blobs, commitments, proofs);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
     }

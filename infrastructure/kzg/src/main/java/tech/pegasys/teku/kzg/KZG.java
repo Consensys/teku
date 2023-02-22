@@ -39,10 +39,10 @@ public interface KZG {
         }
 
         @Override
-        public boolean verifyAggregateKzgProof(
+        public boolean verifyBlobKzgProofBatch(
             final List<Bytes> blobs,
             final List<KZGCommitment> kzgCommitments,
-            final KZGProof kzgProof)
+            final List<KZGProof> kzgProofs)
             throws KZGException {
           return true;
         }
@@ -50,6 +50,11 @@ public interface KZG {
         @Override
         public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
           return KZGCommitment.infinity();
+        }
+
+        @Override
+        public KZGProof computeBlobKzgProof(final Bytes blob) throws KZGException {
+          return KZGProof.INFINITY;
         }
       };
 
@@ -59,10 +64,14 @@ public interface KZG {
 
   void freeTrustedSetup() throws KZGException;
 
+  // TODO: remove, not used with decoupled blobs
   KZGProof computeAggregateKzgProof(List<Bytes> blobs) throws KZGException;
 
-  boolean verifyAggregateKzgProof(
-      List<Bytes> blobs, List<KZGCommitment> kzgCommitments, KZGProof kzgProof) throws KZGException;
+  boolean verifyBlobKzgProofBatch(
+      List<Bytes> blobs, List<KZGCommitment> kzgCommitments, List<KZGProof> kzgProofs)
+      throws KZGException;
 
   KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException;
+
+  KZGProof computeBlobKzgProof(Bytes blob) throws KZGException;
 }
