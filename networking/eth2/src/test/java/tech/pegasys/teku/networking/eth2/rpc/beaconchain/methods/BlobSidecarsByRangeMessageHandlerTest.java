@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.valueOf;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.ArrayList;
@@ -223,6 +224,36 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(listener).completeSuccessfully();
 
     AssertionsForInterfaceTypes.assertThat(actualSent).isEmpty();
+  }
+
+  @Test
+  public void shouldIterateThroughIndicesAndSlots() {
+
+    UInt64 count = UInt64.valueOf(5);
+    UInt64 currentSlot = ZERO;
+    BlobSidecarsByRangeMessageHandler.RequestState request =
+        handler.new RequestState(listener, headBlockRoot, currentSlot, count);
+
+    for (int slot = currentSlot.intValue(); slot < count.intValue(); slot++) {
+      for (int index = 0; index < maxBlobsPerBlock.intValue(); index++) {
+        assertThat(request.getCurrentSlot()).isEqualTo(valueOf(slot));
+        assertThat(request.getCurrentIndex()).isEqualTo(UInt64.valueOf(index));
+
+        assertThat(request.isComplete()).isFalse();
+        request.incrementSlotAndIndex();
+      }
+    }
+
+    assertThat(request.getCurrentSlot()).isEqualTo(currentSlot.plus(count.intValue()));
+    assertThat(request.getCurrentIndex()).isEqualTo(ZERO);
+
+    assertThat(request.isComplete()).isFalse();
+    request.incrementSlotAndIndex();
+
+    assertThat(request.getCurrentSlot()).isEqualTo(currentSlot.plus(count.intValue()));
+    assertThat(request.getCurrentIndex()).isEqualTo(ONE);
+
+    assertThat(request.isComplete()).isTrue();
   }
 
   private List<BlobSidecar> setUpBlobSidecarsData(

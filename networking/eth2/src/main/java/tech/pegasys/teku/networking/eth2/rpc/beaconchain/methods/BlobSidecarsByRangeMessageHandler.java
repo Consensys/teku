@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
@@ -186,7 +187,8 @@ public class BlobSidecarsByRangeMessageHandler
     }
   }
 
-  private class RequestState {
+  @VisibleForTesting
+  class RequestState {
 
     private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     private final ResponseCallback<BlobSidecar> callback;
@@ -209,6 +211,16 @@ public class BlobSidecarsByRangeMessageHandler
       this.maxSlot = maxSlot;
     }
 
+    @VisibleForTesting
+    UInt64 getCurrentSlot() {
+      return currentSlot.get();
+    }
+
+    @VisibleForTesting
+    UInt64 getCurrentIndex() {
+      return currentIndex.get();
+    }
+
     SafeFuture<Void> sendBlobSidecar(final BlobSidecar blobSidecar) {
       return callback.respond(blobSidecar).thenRun(sentBlobSidecars::incrementAndGet);
     }
@@ -229,9 +241,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return (currentSlot.get().isGreaterThan(maxSlot)
-              || (currentSlot.get().equals(maxSlot)
-                  && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE))))
+      return (currentSlot.get().isGreaterThan(maxSlot) || reachedLastIndexInLastSlot())
           || maxRequestSize.isLessThanOrEqualTo(sentBlobSidecars.get());
     }
 
@@ -268,6 +278,12 @@ public class BlobSidecarsByRangeMessageHandler
               maybeCurrentBlock = Optional.empty();
             }
           });
+    }
+
+    @VisibleForTesting
+    boolean reachedLastIndexInLastSlot() {
+      return currentSlot.get().equals(maxSlot)
+          && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE));
     }
   }
 }
