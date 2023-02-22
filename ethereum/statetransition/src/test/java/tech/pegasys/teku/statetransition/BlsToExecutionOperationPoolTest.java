@@ -142,7 +142,7 @@ public class BlsToExecutionOperationPoolTest {
   }
 
   @Test
-  void shouldSelectLocalMessagesBeforeRemoteMessage() {
+  void shouldSelectLocalOperationBeforeRemoteOperation() {
     when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     initPoolWithSingleItem();
     final SignedBlsToExecutionChange remoteEntry =
