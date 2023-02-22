@@ -23,7 +23,6 @@ import ethereum.ckzg4844.CKZGException;
 import ethereum.ckzg4844.CKZGException.CKZGError;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -113,8 +112,7 @@ public final class KZGTest {
                         List.of(KZGCommitment.infinity()),
                         List.of(KZGProof.INFINITY))),
             assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY)),
-            assertThrows(
-                KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList())));
+            assertThrows(KZGException.class, () -> kzg.computeBlobKzgProof(Bytes.EMPTY)));
 
     assertThat(exceptions)
         .allSatisfy(

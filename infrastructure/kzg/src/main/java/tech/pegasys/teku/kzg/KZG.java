@@ -34,11 +34,6 @@ public interface KZG {
         public void freeTrustedSetup() throws KZGException {}
 
         @Override
-        public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
-          return KZGProof.INFINITY;
-        }
-
-        @Override
         public boolean verifyBlobKzgProofBatch(
             final List<Bytes> blobs,
             final List<KZGCommitment> kzgCommitments,
@@ -63,9 +58,6 @@ public interface KZG {
   void loadTrustedSetup(TrustedSetup trustedSetup) throws KZGException;
 
   void freeTrustedSetup() throws KZGException;
-
-  // TODO: remove, not used with decoupled blobs
-  KZGProof computeAggregateKzgProof(List<Bytes> blobs) throws KZGException;
 
   boolean verifyBlobKzgProofBatch(
       List<Bytes> blobs, List<KZGCommitment> kzgCommitments, List<KZGProof> kzgProofs)

@@ -127,15 +127,6 @@ public final class CKZG4844 implements KZG {
   }
 
   @Override
-  public KZGProof computeAggregateKzgProof(final List<Bytes> blobs) throws KZGException {
-    try {
-      return computeBlobKzgProof(blobs.get(0));
-    } catch (final Exception ex) {
-      throw new KZGException("Failed to compute aggregated KZG proof for blobs", ex);
-    }
-  }
-
-  @Override
   public boolean verifyBlobKzgProofBatch(
       final List<Bytes> blobs,
       final List<KZGCommitment> kzgCommitments,
