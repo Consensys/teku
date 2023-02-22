@@ -481,7 +481,7 @@ public class ChainDataProviderTest {
 
   @Test
   public void calculateRewards_shouldGetData() {
-    final Long reward = 5000L;
+    final long reward = 5000L;
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
