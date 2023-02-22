@@ -49,10 +49,10 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
       @JsonProperty("timestamp") final UInt64 timestamp,
       @JsonProperty("extra_data") final Bytes extraData,
       @JsonProperty("base_fee_per_gas") final UInt256 baseFeePerGas,
-      @JsonProperty("excess_data_gas") final UInt256 excessDataGas,
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions") final List<Bytes> transactions,
-      @JsonProperty("withdrawals") final List<Withdrawal> withdrawals) {
+      @JsonProperty("withdrawals") final List<Withdrawal> withdrawals,
+      @JsonProperty("excess_data_gas") final UInt256 excessDataGas) {
     super(
         parentHash,
         feeRecipient,
@@ -125,10 +125,10 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
         .add("timestamp", timestamp)
         .add("extraData", extraData)
         .add("baseFeePerGas", baseFeePerGas)
-        .add("excessDataGas", excessDataGas)
         .add("blockHash", blockHash)
         .add("transactions", transactions)
         .add("withdrawals", withdrawals)
+        .add("excessDataGas", excessDataGas)
         .toString();
   }
 }

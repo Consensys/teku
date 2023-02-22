@@ -69,10 +69,10 @@ public class ExecutionPayloadSchemaDeneb
         SszUInt64,
         SszByteList,
         SszUInt256,
-        SszUInt256,
         SszBytes32,
         SszList<Transaction>,
-        SszList<Withdrawal>>
+        SszList<Withdrawal>,
+        SszUInt256>
     implements ExecutionPayloadSchema<ExecutionPayloadDenebImpl> {
 
   private final ExecutionPayloadDenebImpl defaultExecutionPayload;
@@ -92,7 +92,6 @@ public class ExecutionPayloadSchemaDeneb
         namedSchema(TIMESTAMP, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXTRA_DATA, SszByteListSchema.create(specConfig.getMaxExtraDataBytes())),
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
-        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(
             TRANSACTIONS,
@@ -100,8 +99,8 @@ public class ExecutionPayloadSchemaDeneb
                 new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())),
         namedSchema(
             WITHDRAWALS,
-            SszListSchema.create(
-                new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())));
+            SszListSchema.create(new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())),
+        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT256_SCHEMA));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
