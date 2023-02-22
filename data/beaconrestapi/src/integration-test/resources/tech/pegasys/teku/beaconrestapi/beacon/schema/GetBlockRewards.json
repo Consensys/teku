@@ -1,0 +1,55 @@
+{
+  "title" : "GetBlockRewards",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "type" : "object",
+      "required" : [ "proposer_index", "total", "attestations", "sync_aggregate", "proposer_slashings", "attester_slashings" ],
+      "properties" : {
+        "proposer_index" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "total" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "attestations" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "sync_aggregate" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "proposer_slashings" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "attester_slashings" : {
+          "type" : "string",
+          "description" : "unsigned 64 bit integer",
+          "example" : "1",
+          "format" : "uint64"
+        }
+      }
+    }
+  }
+}

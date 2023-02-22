@@ -48,9 +48,7 @@ public class TransitionTestExecutor implements TestExecutor {
 
   private void processUpgrade(final TestDefinition testDefinition, final MetaData metadata) {
     final String postFork = metadata.postFork.toUpperCase();
-    // TODO: simplify when reference tests are updated to Deneb
-    final SpecMilestone milestone =
-        SpecMilestone.valueOf(postFork.equals("EIP4844") ? "DENEB" : postFork);
+    final SpecMilestone milestone = SpecMilestone.valueOf(postFork);
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
     final SpecConfig config =
         SpecConfigLoader.loadConfig(
@@ -76,7 +74,7 @@ public class TransitionTestExecutor implements TestExecutor {
                       .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                       .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                       .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                      .denebBuilder(d -> d.eip4844ForkEpoch(forkEpoch).kzgNoop(true));
+                      .denebBuilder(d -> d.denebForkEpoch(forkEpoch).kzgNoop(true));
                   break;
                 default:
                   throw new IllegalStateException(
