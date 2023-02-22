@@ -162,7 +162,7 @@ class Eth2PeerTest {
 
   @Test
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
-  public void shouldModifyRequestSpanningTheEip4844ForkTransition() {
+  public void shouldModifyRequestSpanningTheDenebForkTransition() {
 
     final Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>
         blobsSidecarsByRangeMethod = mock(Eth2RpcMethod.class);

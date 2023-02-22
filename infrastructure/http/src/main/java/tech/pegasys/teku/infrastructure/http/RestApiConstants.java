@@ -50,6 +50,7 @@ public class RestApiConstants {
   public static final String TAG_CONFIG = "Config";
   public static final String TAG_EVENTS = "Events";
   public static final String TAG_VALIDATOR_REQUIRED = "Validator Required Api";
+  public static final String TAG_REWARDS = "Rewards";
   public static final String TAG_DEBUG = "Debug";
   public static final String TAG_TEKU = "Teku";
 

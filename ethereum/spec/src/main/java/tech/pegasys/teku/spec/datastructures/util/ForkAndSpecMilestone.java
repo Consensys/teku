@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -49,5 +50,13 @@ public class ForkAndSpecMilestone {
   @Override
   public int hashCode() {
     return Objects.hash(fork, specMilestone);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("fork", fork)
+        .add("specMilestone", specMilestone)
+        .toString();
   }
 }
