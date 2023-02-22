@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
@@ -127,7 +128,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                 () ->
                     new BlockProcessingException(
                         "BlsToExecutionChanges was not found during block processing.")),
-        signatureVerifier);
+        signatureVerifier,
+        false);
   }
 
   @Override
@@ -154,7 +156,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     final BlockValidationResult result =
         verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE);
+            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE, true);
     if (!result.isValid()) {
       throw new BlockProcessingException(result.getFailureReason());
     }
@@ -311,7 +313,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
       final BeaconState genericState,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges,
-      final BLSSignatureVerifier signatureVerifier) {
+      final BLSSignatureVerifier signatureVerifier,
+      final boolean executeValidationRules) {
 
     final Set<UInt64> validatorsSeenInBlock = new HashSet<>();
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
@@ -322,9 +325,14 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             "Duplicated BlsToExecutionChange for validator " + addressChange.getValidatorIndex());
       }
 
-      // we can't pre-validate bls changes here, as the validation requires a validator index to
-      // cross-check and that validator index is unknown if a deposit and bls change are in the same
-      // block
+      if (executeValidationRules) {
+        final Optional<OperationInvalidReason> operationInvalidReason =
+            operationValidator.validateBlsToExecutionChange(
+                genericState.getFork(), genericState, addressChange);
+        if (operationInvalidReason.isPresent()) {
+          return BlockValidationResult.failed(operationInvalidReason.get().describe());
+        }
+      }
 
       boolean signatureValid =
           operationSignatureVerifier.verifyBlsToExecutionChangeSignature(
