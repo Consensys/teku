@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -23,7 +24,11 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -49,9 +54,20 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final UInt64 maxRequestSize = UInt64.valueOf(8);
 
+  private final int maxBlobsPerBlock =
+      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig()).getMaxBlobsPerBlock();
+
+  private final BlobSidecarsByRootRequestMessageSchema requestSchema =
+      new BlobSidecarsByRootRequestMessageSchema(maxBlobsPerBlock);
+
   BlobSidecarsByRootMessageHandler handler =
       new BlobSidecarsByRootMessageHandler(
           spec, denebForkEpoch, combinedChainDataClient, maxRequestSize);
+
+  @Test
+  public void shouldSendInvalidRequestIfMoreThanMaxRequestSizeIsRequested() {
+    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
+  }
 
   @Test
   public void shouldSendResourceUnavailableIfBlockForBlockRootIsNotAvailable() {}
@@ -65,4 +81,9 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   @Test
   public void shouldSendToPeerRequestedBlobSidecars() {}
+
+  private BlobSidecarsByRootRequestMessage createRequest(
+      final List<BlobIdentifier> blobIdentifiers) {
+    return new BlobSidecarsByRootRequestMessage(requestSchema, blobIdentifiers);
+  }
 }

@@ -124,6 +124,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -1911,6 +1912,13 @@ public final class DataStructureUtil {
   public BlobSidecar randomBlobSidecar(final UInt64 index) {
     return randomBlobSidecar(
         randomBytes32(), index, randomUInt64(), randomBytes32(), randomUInt64());
+  }
+
+  public BlobIdentifier randomBlobIdentifier() {
+    final int maxBlobsPerBlock =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMaxBlobsPerBlock();
+    return new BlobIdentifier(randomBytes32(), randomUInt64(maxBlobsPerBlock));
   }
 
   public BlobSidecar randomBlobSidecar(

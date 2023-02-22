@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
@@ -64,13 +65,25 @@ public class BlobSidecarsByRootMessageHandler
   }
 
   @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final BlobSidecarsByRootRequestMessage request) {
+    if (maxRequestSize.isLessThan(request.size())) {
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "A maximum of " + maxRequestSize + " blob sidecars per request"));
+    }
+    return Optional.empty();
+  }
+
+  @Override
   public void onIncomingMessage(
       final String protocolId,
       final Eth2Peer peer,
       final BlobSidecarsByRootRequestMessage message,
       final ResponseCallback<BlobSidecar> callback) {
 
-    LOG.trace("Peer {} requested BlobSidecars with blob identifiers: {}", peer.getId(), message);
+    LOG.trace("Peer {} requested blob sidecars with blob identifiers: {}", peer.getId(), message);
 
     // TODO: add rate limiting
 
@@ -90,7 +103,8 @@ public class BlobSidecarsByRootMessageHandler
                     if (maybeSidecar.isEmpty()) {
                       throw new ResourceUnavailableException(
                           String.format(
-                              "Blob sidecar for block root (%s) was not available", blockRoot));
+                              "Blob sidecar for blob identifier (%s) was not available",
+                              identifier));
                     }
                     return callback.respond(maybeSidecar.get());
                   });

@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -335,10 +334,10 @@ public class BeaconChainMethods {
         SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
             .getMaxBlobsPerBlock();
 
-    final UInt64 maxRequestSize = MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock);
-
     final BlobSidecarsByRootRequestMessageSchema requestType =
-        new BlobSidecarsByRootRequestMessageSchema(maxRequestSize);
+        new BlobSidecarsByRootRequestMessageSchema(maxBlobsPerBlock);
+
+    final UInt64 maxRequestSize = UInt64.valueOf(requestType.getMaxLength());
 
     final BlobSidecarsByRootMessageHandler blobSidecarsByRootHandler =
         new BlobSidecarsByRootMessageHandler(

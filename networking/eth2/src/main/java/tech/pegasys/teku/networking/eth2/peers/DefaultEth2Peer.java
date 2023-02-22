@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -54,6 +55,9 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidec
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -81,6 +85,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blobsSidecarsRequestTracker;
   private final RateTracker requestTracker;
   private final Supplier<UInt64> firstSlotSupportingBlobsSidecarsByRange;
+  private final Supplier<BlobSidecarsByRootRequestMessageSchema>
+      blobSidecarsByRootRequestMessageSchema;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -107,6 +113,14 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                   SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
                       .getDenebForkEpoch();
               return spec.computeStartSlotAtEpoch(denebForkEpoch);
+            });
+    this.blobSidecarsByRootRequestMessageSchema =
+        Suppliers.memoize(
+            () -> {
+              final int maxBlobsPerBlock =
+                  SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+                      .getMaxBlobsPerBlock();
+              return new BlobSidecarsByRootRequestMessageSchema(maxBlobsPerBlock);
             });
   }
 
@@ -214,7 +228,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       throws RpcException {
     if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
       throw new RpcException(
-          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " can per request");
+          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks per request");
     }
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
@@ -228,7 +242,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       throws RpcException {
     if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
       throw new RpcException(
-          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " can per request");
+          INVALID_REQUEST_CODE,
+          "Only a maximum of " + MAX_REQUEST_BLOCKS + " block and blobs sidecars per request");
     }
     return rpcMethods
         .beaconBlockAndBlobsSidecarByRoot()
@@ -246,9 +261,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<Bytes32> blockRoots, final RpcResponseListener<BlobSidecar> listener)
-      throws RpcException {
-    throw new UnsupportedOperationException("Not yet implemented");
+      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener) {
+    return rpcMethods
+        .blobSidecarsByRoot()
+        .map(
+            method ->
+                requestStream(
+                    method,
+                    new BlobSidecarsByRootRequestMessage(
+                        blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
+                    listener))
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException("BlobSidecarsByRoot method is not available")));
   }
 
   @Override
@@ -269,8 +294,20 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(final Bytes32 blockRoot) {
-    throw new UnsupportedOperationException("Not yet implemented");
+  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(
+      final BlobIdentifier blobIdentifier) {
+    return rpcMethods
+        .blobSidecarsByRoot()
+        .map(
+            method ->
+                requestOptionalItem(
+                    method,
+                    new BlobSidecarsByRootRequestMessage(
+                        blobSidecarsByRootRequestMessageSchema.get(),
+                        Collections.singletonList(blobIdentifier))))
+        .orElse(
+            SafeFuture.failedFuture(
+                new UnsupportedOperationException("BlobSidecarsByRoot method is not available")));
   }
 
   @Override
