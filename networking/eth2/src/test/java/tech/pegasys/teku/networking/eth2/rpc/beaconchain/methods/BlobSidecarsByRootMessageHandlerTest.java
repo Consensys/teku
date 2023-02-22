@@ -23,12 +23,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-// TODO: implement tests
 public class BlobSidecarsByRootMessageHandlerTest {
 
   private static final RpcEncoding RPC_ENCODING =
@@ -54,9 +52,6 @@ public class BlobSidecarsByRootMessageHandlerTest {
   BlobSidecarsByRootMessageHandler handler =
       new BlobSidecarsByRootMessageHandler(
           spec, denebForkEpoch, combinedChainDataClient, maxRequestSize);
-
-  @SuppressWarnings("unchecked")
-  final ResponseCallback<SignedBlobSidecar> callback = mock(ResponseCallback.class);
 
   @Test
   public void shouldSendResourceUnavailableIfBlockForBlockRootIsNotAvailable() {}

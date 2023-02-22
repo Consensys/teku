@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -246,7 +246,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBlobSidecar> listener)
+      final List<Bytes32> blockRoots, final RpcResponseListener<BlobSidecar> listener)
       throws RpcException {
     throw new UnsupportedOperationException("Not yet implemented");
   }
@@ -266,6 +266,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         rpcMethods.beaconBlocksByRoot();
     return requestOptionalItem(
         blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(final Bytes32 blockRoot) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

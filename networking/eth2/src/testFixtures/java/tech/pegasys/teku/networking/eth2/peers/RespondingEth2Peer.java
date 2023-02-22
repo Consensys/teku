@@ -52,7 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -263,7 +263,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBlobSidecar> listener)
+      final List<Bytes32> blockRoots, final RpcResponseListener<BlobSidecar> listener)
       throws RpcException {
     throw new UnsupportedOperationException("Not yet implemented");
   }
@@ -283,6 +283,11 @@ public class RespondingEth2Peer implements Eth2Peer {
         PendingRequestHandler.createForSingleBlockRequest(() -> findBlockByRoot(blockRoot));
 
     return createPendingBlockRequest(handler);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(final Bytes32 blockRoot) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
