@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -42,6 +43,7 @@ import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
+import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -56,7 +58,9 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -539,6 +543,29 @@ public class ChainDataProvider {
         committeeIndices,
         Lists.partition(
             committeeIndices, spec.atEpoch(epoch).getConfig().getTargetCommitteeSize()));
+  }
+
+  @VisibleForTesting
+  protected SyncCommitteeRewardData calculateRewards(
+      final Map<Integer, Integer> committeeIndices,
+      final Long participantReward,
+      final BeaconBlock block,
+      final SyncCommitteeRewardData data) {
+    final Optional<SyncAggregate> aggregate = block.getBody().getOptionalSyncAggregate();
+    if (aggregate.isEmpty()) {
+      return data;
+    }
+
+    committeeIndices.forEach(
+        (i, key) -> {
+          if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
+            data.increaseReward(key, participantReward);
+          } else {
+            data.decreaseReward(key, participantReward);
+          }
+        });
+
+    return data;
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

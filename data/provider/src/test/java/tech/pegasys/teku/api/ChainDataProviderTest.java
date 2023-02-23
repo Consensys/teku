@@ -31,6 +31,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -45,6 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
+import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -386,6 +388,24 @@ public class ChainDataProviderTest {
         provider.getStateSyncCommittees("head", Optional.of(UInt64.valueOf("1024000")));
     SafeFutureAssert.assertThatSafeFuture(future)
         .isCompletedExceptionallyWith(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void calculateRewards_shouldGetData() {
+    final long reward = 5000L;
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+
+    final Map<Integer, Integer> committeeIndices = Map.of(0, 4, 1, 2);
+    final SyncCommitteeRewardData inputData = new SyncCommitteeRewardData(true, false);
+    final SyncCommitteeRewardData syncCommitteeRewardData =
+        provider.calculateRewards(committeeIndices, reward, data.randomBeaconBlock(), inputData);
+
+    assertThat(syncCommitteeRewardData.isExecutionOptimistic()).isTrue();
+    assertThat(syncCommitteeRewardData.isFinalized()).isFalse();
+    assertThat(syncCommitteeRewardData.getRewardData())
+        .containsExactlyInAnyOrder(Map.entry(2, -1 * reward), Map.entry(4, reward));
   }
 
   @Test
