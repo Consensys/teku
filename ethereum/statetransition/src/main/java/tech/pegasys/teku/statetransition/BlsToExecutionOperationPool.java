@@ -178,6 +178,14 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
   }
 
   @Override
+  public Set<SignedBlsToExecutionChange> getLocallySubmitted() {
+    return operations.values().stream()
+        .filter(OperationPoolEntry::isLocal)
+        .map(OperationPoolEntry::getMessage)
+        .collect(Collectors.toSet());
+  }
+
+  @Override
   public int size() {
     return operations.size();
   }
