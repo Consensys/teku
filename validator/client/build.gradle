@@ -46,4 +46,6 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:serviceutils'))
   testImplementation testFixtures(project(':infrastructure:restapi'))
 
+  integrationTestRuntimeOnly "org.apache.logging.log4j:log4j-slf4j2-impl"
+
 }
