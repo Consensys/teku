@@ -37,7 +37,7 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
     assertThatThrownBy(() -> requestBlobSidecars(peer, List.of()))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
-        .hasMessageContaining("BlobSidecarsByRoot method is not available");
+        .hasMessageContaining("BlobSidecarsByRoot method is not supported");
   }
 
   private List<BlobSidecar> requestBlobSidecars(

@@ -252,16 +252,18 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     method,
                     new BeaconBlockAndBlobsSidecarByRootRequestMessage(blockRoots),
                     listener))
-        .orElse(
-            SafeFuture.failedFuture(
-                new UnsupportedOperationException(
-                    "BlockAndBlobsSidecarByRoot method is not available")));
+        .orElse(failWithUnsupportedMethodException("BlockAndBlobsSidecarByRoot"));
   }
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
       final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener)
       throws RpcException {
+    final Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>> rpcMethod =
+        rpcMethods.blobSidecarsByRoot();
+    if (rpcMethod.isEmpty()) {
+      return failWithUnsupportedMethodException("BlobSidecarsByRoot");
+    }
     final BlobSidecarsByRootRequestMessageSchema requestSchema =
         blobSidecarsByRootRequestMessageSchema.get();
     final long requestMaxLength = requestSchema.getMaxLength();
@@ -270,17 +272,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
           INVALID_REQUEST_CODE,
           "Only a maximum of " + requestMaxLength + " blob sidecars per request");
     }
-    return rpcMethods
-        .blobSidecarsByRoot()
-        .map(
-            method ->
-                requestStream(
-                    method,
-                    new BlobSidecarsByRootRequestMessage(requestSchema, blobIdentifiers),
-                    listener))
-        .orElse(
-            SafeFuture.failedFuture(
-                new UnsupportedOperationException("BlobSidecarsByRoot method is not available")));
+    return requestStream(
+        rpcMethod.get(),
+        new BlobSidecarsByRootRequestMessage(requestSchema, blobIdentifiers),
+        listener);
   }
 
   @Override
@@ -312,9 +307,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new BlobSidecarsByRootRequestMessage(
                         blobSidecarsByRootRequestMessageSchema.get(),
                         Collections.singletonList(blobIdentifier))))
-        .orElse(
-            SafeFuture.failedFuture(
-                new UnsupportedOperationException("BlobSidecarsByRoot method is not available")));
+        .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
   @Override
@@ -326,10 +319,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             method ->
                 requestOptionalItem(
                     method, new BeaconBlockAndBlobsSidecarByRootRequestMessage(List.of(blockRoot))))
-        .orElse(
-            SafeFuture.failedFuture(
-                new UnsupportedOperationException(
-                    "BlockAndBlobsSidecarByRoot method is not available")));
+        .orElse(failWithUnsupportedMethodException("BlockAndBlobsSidecarByRoot"));
   }
 
   @Override
@@ -369,9 +359,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
               }
               return requestStream(method, request, listener);
             })
-        .orElse(
-            SafeFuture.failedFuture(
-                new UnsupportedOperationException("BlobsSidecarsByRange method is not available")));
+        .orElse(failWithUnsupportedMethodException("BlobsSidecarsByRange"));
   }
 
   @Override
@@ -466,7 +454,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private <I extends RpcRequest, O extends SszData> SafeFuture<Void> sendEth2Request(
       final Eth2RpcMethod<I, O> method,
       final I request,
-      Eth2RpcResponseHandler<O, ?> responseHandler) {
+      final Eth2RpcResponseHandler<O, ?> responseHandler) {
     outstandingRequests.incrementAndGet();
 
     return this.sendRequest(method, request, responseHandler)
@@ -476,6 +464,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     .handleInitialPayloadSent(ctrl.getRpcStream()))
         .thenCompose(ctrl -> ctrl.getRequiredOutgoingRequestHandler().getCompletedFuture())
         .alwaysRun(outstandingRequests::decrementAndGet);
+  }
+
+  private <T> SafeFuture<T> failWithUnsupportedMethodException(final String method) {
+    return SafeFuture.failedFuture(
+        new UnsupportedOperationException(method + " method is not supported"));
   }
 
   @Override
