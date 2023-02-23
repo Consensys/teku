@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetSyncCommitteeRewards extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/rewards/sync_committee/{block_id}";
+  private static final String ROUTE = "/eth/v1/beacon/rewards/sync_committee/{block_id}";
 
   private static final SerializableTypeDefinition<Map.Entry<Integer, Long>> DATA_TYPE =
       SerializableTypeDefinition.<Map.Entry<Integer, Long>>object()
