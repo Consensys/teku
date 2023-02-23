@@ -86,9 +86,16 @@ public class BlobSidecarsByRootMessageHandler
       final BlobSidecarsByRootRequestMessage message,
       final ResponseCallback<BlobSidecar> callback) {
 
-    LOG.trace("Peer {} requested blob sidecars with blob identifiers: {}", peer.getId(), message);
+    LOG.trace(
+        "Peer {} requested {} blob sidecars with blob identifiers: {}",
+        peer.getId(),
+        message.size(),
+        message);
 
-    // TODO: add rate limiting
+    if (!peer.wantToMakeRequest() || !peer.wantToReceiveBlobSidecars(callback, message.size())) {
+      requestCounter.labels("rate_limited").inc();
+      return;
+    }
 
     requestCounter.labels("ok").inc();
     totalBlobSidecarsRequestedCounter.inc(message.size());

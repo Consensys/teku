@@ -15,10 +15,13 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -83,14 +87,16 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
-  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final BlobSidecarsByRootMessageHandler handler =
       new BlobSidecarsByRootMessageHandler(
-          spec, stubMetricsSystem, denebForkEpoch, combinedChainDataClient);
+          spec, metricsSystem, denebForkEpoch, combinedChainDataClient);
 
   @BeforeEach
   public void setup() {
+    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.wantToReceiveBlobSidecars(eq(callback), anyLong())).thenReturn(true);
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -110,6 +116,26 @@ public class BlobSidecarsByRootMessageHandlerTest {
                   Optional.of(dataStructureUtil.randomBlobSidecar(blockRoot, index)));
             });
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
+  }
+
+  @Test
+  public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
+
+    when(peer.wantToReceiveBlobSidecars(callback, 5)).thenReturn(false);
+
+    final BlobSidecarsByRootRequestMessage request =
+        createRequest(dataStructureUtil.randomBlobIdentifiers(5));
+
+    handler.onIncomingMessage(protocolId, peer, request, callback);
+
+    final long rateLimitedCount =
+        metricsSystem
+            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_root_requests_total")
+            .getValue("rate_limited");
+
+    assertThat(rateLimitedCount).isOne();
+
+    verifyNoInteractions(callback);
   }
 
   @Test

@@ -388,6 +388,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public boolean wantToReceiveBlobSidecars(
+      final ResponseCallback<BlobSidecar> callback, final long blobsSidecarsCount) {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
+  @Override
   public boolean wantToMakeRequest() {
     if (requestTracker.wantToRequestObjects(1L) == 0L) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
