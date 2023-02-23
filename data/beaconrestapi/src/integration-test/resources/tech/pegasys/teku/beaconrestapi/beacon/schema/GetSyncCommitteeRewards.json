@@ -17,13 +17,13 @@
         "properties" : {
           "validator_index" : {
             "type" : "string",
-            "description" : "integer string",
+            "description" : "The validator index receiving this reward",
             "example" : "1",
             "format" : "integer"
           },
           "reward" : {
             "type" : "string",
-            "description" : "long string",
+            "description" : "The sync committee reward in GWEI for the validator",
             "example" : "1",
             "format" : "long"
           }

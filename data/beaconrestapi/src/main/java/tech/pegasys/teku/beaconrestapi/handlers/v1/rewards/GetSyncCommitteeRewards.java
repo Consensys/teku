@@ -39,8 +39,14 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
 
   private static final SerializableTypeDefinition<Map.Entry<Integer, Long>> DATA_TYPE =
       SerializableTypeDefinition.<Map.Entry<Integer, Long>>object()
-          .withField("validator_index", INTEGER_TYPE, Map.Entry::getKey)
-          .withField("reward", LONG_TYPE, Map.Entry::getValue)
+          .withField(
+              "validator_index",
+              INTEGER_TYPE.withDescription("The validator index receiving this reward"),
+              Map.Entry::getKey)
+          .withField(
+              "reward",
+              LONG_TYPE.withDescription("The sync committee reward in GWEI for the validator"),
+              Map.Entry::getValue)
           .build();
 
   private static final SerializableTypeDefinition<SyncCommitteeRewardData> RESPONSE_TYPE =
