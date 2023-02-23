@@ -83,6 +83,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetSyncing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetVersion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetBlockRewards;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetSyncCommitteeRewards;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAggregateAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetAttestationData;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlindedBlock;
@@ -260,6 +261,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetSyncing(dataProvider))
             .endpoint(new GetVersion())
             // Rewards Handlers
+            .endpoint(new GetSyncCommitteeRewards())
             .endpoint(new GetBlockRewards())
             // Validator Handlers
             .endpoint(new PostAttesterDuties(dataProvider))
