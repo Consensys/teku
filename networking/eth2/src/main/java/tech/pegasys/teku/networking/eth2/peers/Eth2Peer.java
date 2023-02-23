@@ -119,8 +119,7 @@ public interface Eth2Peer extends Peer, SyncSource {
   boolean wantToReceiveBlobsSidecars(
       ResponseCallback<BlobsSidecar> callback, long blobsSidecarsCount);
 
-  boolean wantToReceiveBlobSidecars(
-      ResponseCallback<BlobSidecar> callback, long blobsSidecarsCount);
+  boolean wantToReceiveBlobSidecars(ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
 
   boolean wantToMakeRequest();
 

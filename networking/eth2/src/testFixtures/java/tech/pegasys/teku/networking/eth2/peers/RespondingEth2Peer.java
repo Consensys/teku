@@ -363,7 +363,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public boolean wantToReceiveBlobSidecars(
-      final ResponseCallback<BlobSidecar> callback, final long blobsSidecarsCount) {
+      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return true;
   }
 
