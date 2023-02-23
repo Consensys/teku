@@ -63,7 +63,7 @@ public class GetSyncCommitteeRewardsTest
   @Test
   void metadata_shouldHandle200() throws IOException {
     responseData.increaseReward(1, 1029L);
-    responseData.increaseReward(2, 3920L);
+    responseData.decreaseReward(2, 3920L);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
