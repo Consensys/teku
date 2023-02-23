@@ -47,7 +47,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.VersionedEth2RpcMethod
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
@@ -68,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessag
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -330,18 +330,14 @@ public class BeaconChainMethods {
     final RpcContextCodec<Bytes4, BlobSidecar> forkDigestContextCodec =
         RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOB_SIDECAR);
 
-    final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-            .getMaxBlobsPerBlock();
-
     final BlobSidecarsByRootRequestMessageSchema requestType =
-        new BlobSidecarsByRootRequestMessageSchema(maxBlobsPerBlock);
-
-    final UInt64 maxRequestSize = UInt64.valueOf(requestType.getMaxLength());
+        SchemaDefinitionsDeneb.required(
+                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+            .getBlobSidecarsByRootRequestMessageSchema();
 
     final BlobSidecarsByRootMessageHandler blobSidecarsByRootHandler =
         new BlobSidecarsByRootMessageHandler(
-            spec, getDenebForkEpoch(spec), combinedChainDataClient, maxRequestSize);
+            spec, getDenebForkEpoch(spec), combinedChainDataClient);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

@@ -50,29 +50,14 @@ public class BlobSidecarsByRootMessageHandler
   private final Spec spec;
   private final UInt64 denebForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final UInt64 maxRequestSize;
 
   public BlobSidecarsByRootMessageHandler(
       final Spec spec,
       final UInt64 denebForkEpoch,
-      final CombinedChainDataClient combinedChainDataClient,
-      final UInt64 maxRequestSize) {
+      final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
     this.denebForkEpoch = denebForkEpoch;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.maxRequestSize = maxRequestSize;
-  }
-
-  @Override
-  public Optional<RpcException> validateRequest(
-      final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    if (maxRequestSize.isLessThan(request.size())) {
-      return Optional.of(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              "A maximum of " + maxRequestSize + " blob sidecars per request"));
-    }
-    return Optional.empty();
   }
 
   @Override

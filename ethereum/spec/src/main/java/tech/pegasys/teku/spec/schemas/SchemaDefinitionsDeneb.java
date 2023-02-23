@@ -35,8 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier.BlobIdentifierSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
@@ -62,7 +61,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SignedBuilderBidSchema signedBuilderBidSchemaDeneb;
 
   private final BlobSchema blobSchema;
-  private final BlobIdentifierSchema blobIdentifierSchema;
+  private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
   private final BlobSidecarSchema blobSidecarSchema;
   private final BlobsSidecarSchema blobsSidecarSchema;
   private final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema;
@@ -102,7 +101,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
     this.blobSchema = new BlobSchema(specConfig);
-    this.blobIdentifierSchema = BlobIdentifier.SSZ_SCHEMA;
+    this.blobSidecarsByRootRequestMessageSchema =
+        new BlobSidecarsByRootRequestMessageSchema(specConfig);
     this.blobsSidecarSchema = BlobsSidecarSchema.create(specConfig, blobSchema);
     this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);
     this.signedBeaconBlockAndBlobsSidecarSchema =
@@ -179,8 +179,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return blobSchema;
   }
 
-  public BlobIdentifierSchema getBlobIdentifierSchema() {
-    return blobIdentifierSchema;
+  public BlobSidecarsByRootRequestMessageSchema getBlobSidecarsByRootRequestMessageSchema() {
+    return blobSidecarsByRootRequestMessageSchema;
   }
 
   public BlobsSidecarSchema getBlobsSidecarSchema() {

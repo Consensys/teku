@@ -40,11 +40,11 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -76,19 +76,14 @@ public class BlobSidecarsByRootMessageHandlerTest {
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
-  private final int maxRequestSize = 8;
-
-  private final int maxBlobsPerBlock =
-      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig()).getMaxBlobsPerBlock();
-
   private final BlobSidecarsByRootRequestMessageSchema requestSchema =
-      new BlobSidecarsByRootRequestMessageSchema(maxBlobsPerBlock);
+      SchemaDefinitionsDeneb.required(spec.atEpoch(denebForkEpoch).getSchemaDefinitions())
+          .getBlobSidecarsByRootRequestMessageSchema();
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
   private final BlobSidecarsByRootMessageHandler handler =
-      new BlobSidecarsByRootMessageHandler(
-          spec, denebForkEpoch, combinedChainDataClient, UInt64.valueOf(maxRequestSize));
+      new BlobSidecarsByRootMessageHandler(spec, denebForkEpoch, combinedChainDataClient);
 
   @BeforeEach
   public void setup() {
@@ -111,24 +106,6 @@ public class BlobSidecarsByRootMessageHandlerTest {
                   Optional.of(dataStructureUtil.randomBlobSidecar(blockRoot, index)));
             });
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
-  }
-
-  @Test
-  public void validateRequest_shouldReturnInvalidRequestIfInvalidSizeIsRequested() {
-    final List<BlobIdentifier> blobIdentifiers =
-        dataStructureUtil.randomBlobIdentifiers(maxRequestSize + 1);
-
-    final BlobSidecarsByRootRequestMessage request = createRequest(blobIdentifiers);
-
-    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
-
-    assertThat(result)
-        .hasValueSatisfying(
-            rpcException -> {
-              assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
-              assertThat(rpcException.getErrorMessageString())
-                  .isEqualTo("A maximum of 8 blob sidecars per request");
-            });
   }
 
   @Test

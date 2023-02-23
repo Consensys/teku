@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier>
     implements SszList<BlobIdentifier>, RpcRequest {
@@ -27,9 +28,10 @@ public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier
   public static class BlobSidecarsByRootRequestMessageSchema
       extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
 
-    public BlobSidecarsByRootRequestMessageSchema(final int maxBlobsPerBlock) {
+    public BlobSidecarsByRootRequestMessageSchema(final SpecConfigDeneb specConfigDeneb) {
       super(
-          BlobIdentifier.SSZ_SCHEMA, MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock).longValue());
+          BlobIdentifier.SSZ_SCHEMA,
+          MAX_REQUEST_BLOB_SIDECARS.times(specConfigDeneb.getMaxBlobsPerBlock()).longValue());
     }
 
     @Override

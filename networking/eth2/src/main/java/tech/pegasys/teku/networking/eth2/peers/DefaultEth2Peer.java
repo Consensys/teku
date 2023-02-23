@@ -66,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -116,12 +117,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             });
     this.blobSidecarsByRootRequestMessageSchema =
         Suppliers.memoize(
-            () -> {
-              final int maxBlobsPerBlock =
-                  SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-                      .getMaxBlobsPerBlock();
-              return new BlobSidecarsByRootRequestMessageSchema(maxBlobsPerBlock);
-            });
+            () ->
+                SchemaDefinitionsDeneb.required(
+                        spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+                    .getBlobSidecarsByRootRequestMessageSchema());
   }
 
   @Override
@@ -261,15 +260,23 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener) {
+      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener)
+      throws RpcException {
+    final BlobSidecarsByRootRequestMessageSchema requestSchema =
+        blobSidecarsByRootRequestMessageSchema.get();
+    final long requestMaxLength = requestSchema.getMaxLength();
+    if (blobIdentifiers.size() > requestMaxLength) {
+      throw new RpcException(
+          INVALID_REQUEST_CODE,
+          "Only a maximum of " + requestMaxLength + " blob sidecars per request");
+    }
     return rpcMethods
         .blobSidecarsByRoot()
         .map(
             method ->
                 requestStream(
                     method,
-                    new BlobSidecarsByRootRequestMessage(
-                        blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
+                    new BlobSidecarsByRootRequestMessage(requestSchema, blobIdentifiers),
                     listener))
         .orElse(
             SafeFuture.failedFuture(
