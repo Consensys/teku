@@ -22,7 +22,11 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
@@ -51,13 +55,28 @@ public class BlobSidecarsByRootMessageHandler
   private final UInt64 denebForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
 
+  private final LabelledMetric<Counter> requestCounter;
+  private final Counter totalBlobSidecarsRequestedCounter;
+
   public BlobSidecarsByRootMessageHandler(
       final Spec spec,
+      final MetricsSystem metricsSystem,
       final UInt64 denebForkEpoch,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
     this.denebForkEpoch = denebForkEpoch;
     this.combinedChainDataClient = combinedChainDataClient;
+    requestCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_root_requests_total",
+            "Total number of blob sidecars by root requests received",
+            "status");
+    totalBlobSidecarsRequestedCounter =
+        metricsSystem.createCounter(
+            TekuMetricCategory.NETWORK,
+            "rpc_blob_sidecars_by_root_requested_blob_sidecars_total",
+            "Total number of blob sidecars requested in accepted blob sidecars by root requests from peers");
   }
 
   @Override
@@ -69,7 +88,10 @@ public class BlobSidecarsByRootMessageHandler
 
     LOG.trace("Peer {} requested blob sidecars with blob identifiers: {}", peer.getId(), message);
 
-    // TODO: add rate limiting + metrics
+    // TODO: add rate limiting
+
+    requestCounter.labels("ok").inc();
+    totalBlobSidecarsRequestedCounter.inc(message.size());
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
 

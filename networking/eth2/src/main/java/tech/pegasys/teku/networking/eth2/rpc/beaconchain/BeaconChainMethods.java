@@ -158,7 +158,13 @@ public class BeaconChainMethods {
             rpcEncoding,
             recentChainData),
         createBlobSidecarsByRoot(
-            spec, asyncRunner, combinedChainDataClient, peerLookup, rpcEncoding, recentChainData),
+            spec,
+            metricsSystem,
+            asyncRunner,
+            combinedChainDataClient,
+            peerLookup,
+            rpcEncoding,
+            recentChainData),
         createMetadata(spec, asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding),
         createPing(asyncRunner, metadataMessagesFactory, peerLookup, rpcEncoding));
   }
@@ -318,6 +324,7 @@ public class BeaconChainMethods {
   private static Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>>
       createBlobSidecarsByRoot(
           final Spec spec,
+          final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
           final CombinedChainDataClient combinedChainDataClient,
           final PeerLookup peerLookup,
@@ -337,7 +344,7 @@ public class BeaconChainMethods {
 
     final BlobSidecarsByRootMessageHandler blobSidecarsByRootHandler =
         new BlobSidecarsByRootMessageHandler(
-            spec, getDenebForkEpoch(spec), combinedChainDataClient);
+            spec, metricsSystem, getDenebForkEpoch(spec), combinedChainDataClient);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

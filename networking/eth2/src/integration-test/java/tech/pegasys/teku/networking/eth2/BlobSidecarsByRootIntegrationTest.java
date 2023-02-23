@@ -29,7 +29,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-// TODO: add more test cases once ChainBuilder is updated for BlobSidecars
 public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   @Test

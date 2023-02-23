@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -82,8 +83,11 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
+  private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
+
   private final BlobSidecarsByRootMessageHandler handler =
-      new BlobSidecarsByRootMessageHandler(spec, denebForkEpoch, combinedChainDataClient);
+      new BlobSidecarsByRootMessageHandler(
+          spec, stubMetricsSystem, denebForkEpoch, combinedChainDataClient);
 
   @BeforeEach
   public void setup() {
