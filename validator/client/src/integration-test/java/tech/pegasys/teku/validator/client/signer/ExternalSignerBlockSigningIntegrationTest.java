@@ -16,75 +16,43 @@ package tech.pegasys.teku.validator.client.signer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static tech.pegasys.teku.validator.client.signer.ExternalSignerIntegrationTestData.TIMEOUT;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.createForkInfo;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.validateMetrics;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.verifySignRequest;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.signatures.SigningRootUtil;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 
 @ExtendWith(MockServerExtension.class)
-public class ExternalSignerBellatrixBlockSigningIntegrationTest {
-  private static final Duration TIMEOUT = Duration.ofMillis(500);
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
-  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
+public class ExternalSignerBlockSigningIntegrationTest {
   private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final ThrottlingTaskQueueWithPriority queue =
-      ThrottlingTaskQueueWithPriority.create(
-          8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
 
   private ClientAndServer client;
-  private ExternalSigner externalSigner;
+  private URL externalSignerUrl;
 
   @BeforeEach
   void setup(final ClientAndServer client) throws MalformedURLException {
     this.client = client;
-    final ValidatorConfig config =
-        ValidatorConfig.builder()
-            .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
-            .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
-            .validatorExternalSignerTimeout(TIMEOUT)
-            .build();
-    final HttpClientExternalSignerFactory httpClientExternalSignerFactory =
-        new HttpClientExternalSignerFactory(config);
-
-    externalSigner =
-        new ExternalSigner(
-            spec,
-            httpClientExternalSignerFactory.get(),
-            config.getValidatorExternalSignerUrl(),
-            KEYPAIR.getPublicKey(),
-            TIMEOUT,
-            queue,
-            metricsSystem);
+    externalSignerUrl = new URL("http://127.0.0.1:" + client.getLocalPort());
   }
 
   @AfterEach
@@ -92,33 +60,48 @@ public class ExternalSignerBellatrixBlockSigningIntegrationTest {
     client.reset();
   }
 
-  @Test
-  void shouldSignBellatrixBlock() throws Exception {
-    final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
+  @ParameterizedTest(name = "#{index} - Should sign Block for spec {0}")
+  @EnumSource(
+      value = SpecMilestone.class,
+      names = {"BELLATRIX", "CAPELLA"})
+  void shouldSignBlock(final SpecMilestone specMilestone) throws Exception {
+    final Spec spec = TestSpecFactory.createMinimal(specMilestone);
+    final ExternalSignerIntegrationTestData data = new ExternalSignerIntegrationTestData(spec);
+    final ExternalSigner externalSigner =
+        new ExternalSigner(
+            spec,
+            data.getHttpClient(externalSignerUrl, List.of(KEYPAIR.getPublicKey().toString())),
+            externalSignerUrl,
+            KEYPAIR.getPublicKey(),
+            TIMEOUT,
+            data.getQueue(),
+            data.getMetricsSystem());
+    final BeaconBlock block = data.getDataStructureUtil().randomBeaconBlock(10);
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
                 "luIZGEgsjSbFo4MEPVeqaqqm1AnnTODcxFy9gPmdAywVmDIpqkzYed8DJ2l4zx5WAejUTox+NO5HQ4M2APMNovd7FuqnCSVUEftrL4WtJqegPrING2ZCtVTrcaUzFpUQ"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final BLSSignature response = externalSigner.signBlock(block, fork).join();
+    final BLSSignature response = externalSigner.signBlock(block, data.getFork()).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
-        new ExternalSignerBlockRequestProvider(spec, block);
+        new ExternalSignerBlockRequestProvider(data.getSpec(), block);
 
     final Bytes blockHeaderSigningRoot =
-        signingRootUtil.signingRootForSignBlockHeader(BeaconBlockHeader.fromBlock(block), fork);
+        data.getSigningRootUtil()
+            .signingRootForSignBlockHeader(BeaconBlockHeader.fromBlock(block), data.getFork());
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
             blockHeaderSigningRoot,
             externalSignerBlockRequestProvider.getSignType(),
             externalSignerBlockRequestProvider.getBlockMetadata(
-                Map.of("fork_info", createForkInfo(fork))));
+                Map.of("fork_info", createForkInfo(data.getFork()))));
 
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 
-    validateMetrics(metricsSystem, 1, 0, 0);
+    validateMetrics(data.getMetricsSystem(), 1, 0, 0);
   }
 }
