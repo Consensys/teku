@@ -233,24 +233,14 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     BlobSidecarsByRangeMessageHandler.RequestState request =
         handler.new RequestState(listener, headBlockRoot, currentSlot, count);
 
-    for (int slot = currentSlot.intValue(); slot < count.intValue(); slot++) {
+    for (int slot = currentSlot.intValue(); slot <= count.intValue(); slot++) {
       for (int index = 0; index < maxBlobsPerBlock.intValue(); index++) {
+        assertThat(request.isComplete()).isFalse();
         assertThat(request.getCurrentSlot()).isEqualTo(UInt64.valueOf(slot));
         assertThat(request.getCurrentIndex()).isEqualTo(UInt64.valueOf(index));
-
-        assertThat(request.isComplete()).isFalse();
         request.incrementSlotAndIndex();
       }
     }
-
-    assertThat(request.getCurrentSlot()).isEqualTo(currentSlot.plus(count.intValue()));
-    assertThat(request.getCurrentIndex()).isEqualTo(ZERO);
-
-    assertThat(request.isComplete()).isFalse();
-    request.incrementSlotAndIndex();
-
-    assertThat(request.getCurrentSlot()).isEqualTo(currentSlot.plus(count.intValue()));
-    assertThat(request.getCurrentIndex()).isEqualTo(ONE);
 
     assertThat(request.isComplete()).isTrue();
   }

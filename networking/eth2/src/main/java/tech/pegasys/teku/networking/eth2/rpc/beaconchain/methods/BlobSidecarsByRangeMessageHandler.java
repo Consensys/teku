@@ -161,10 +161,10 @@ public class BlobSidecarsByRangeMessageHandler
                 maybeBlobSidecar.map(requestState::sendBlobSidecar).orElse(SafeFuture.COMPLETE))
         .thenCompose(
             __ -> {
+              requestState.incrementSlotAndIndex();
               if (requestState.isComplete()) {
                 return SafeFuture.completedFuture(requestState);
               } else {
-                requestState.incrementSlotAndIndex();
                 return sendBlobSidecars(requestState);
               }
             });
@@ -241,7 +241,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     boolean isComplete() {
-      return (currentSlot.get().isGreaterThan(maxSlot) || reachedLastIndexInLastSlot())
+      return currentSlot.get().isGreaterThan(maxSlot)
           || maxRequestSize.isLessThanOrEqualTo(sentBlobSidecars.get());
     }
 
@@ -278,12 +278,6 @@ public class BlobSidecarsByRangeMessageHandler
               maybeCurrentBlock = Optional.empty();
             }
           });
-    }
-
-    @VisibleForTesting
-    boolean reachedLastIndexInLastSlot() {
-      return currentSlot.get().equals(maxSlot)
-          && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE));
     }
   }
 }
