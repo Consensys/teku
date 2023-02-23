@@ -30,6 +30,16 @@ public class SyncCommitteeRewardData {
     this.rewardData = new HashMap<>();
   }
 
+  public void increaseReward(final int validatorIndex, final Long amount) {
+    final Long balance = rewardData.getOrDefault(validatorIndex, 0L);
+    rewardData.put(validatorIndex, balance + amount);
+  }
+
+  public void decreaseReward(final int validatorIndex, final Long amount) {
+    final Long balance = rewardData.getOrDefault(validatorIndex, 0L);
+    rewardData.put(validatorIndex, balance - amount);
+  }
+
   public boolean isExecutionOptimistic() {
     return executionOptimistic;
   }
