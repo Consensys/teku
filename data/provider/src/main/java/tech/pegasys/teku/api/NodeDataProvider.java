@@ -119,7 +119,11 @@ public class NodeDataProvider {
     return proposerSlashingPool.addLocal(slashing);
   }
 
-  public List<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
+  public List<SignedBlsToExecutionChange> getBlsToExecutionChanges(
+      Optional<Boolean> locallySubmitted) {
+    if (locallySubmitted.isPresent() && locallySubmitted.get()) {
+      return new ArrayList<>(blsToExecutionChangePool.getLocallySubmitted());
+    }
     return new ArrayList<>(blsToExecutionChangePool.getAll());
   }
 
