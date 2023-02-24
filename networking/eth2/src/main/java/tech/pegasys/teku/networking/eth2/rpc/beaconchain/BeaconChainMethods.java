@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage.BlobsSidecarsByRangeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
@@ -67,7 +66,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessag
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -337,11 +335,6 @@ public class BeaconChainMethods {
     final RpcContextCodec<Bytes4, BlobSidecar> forkDigestContextCodec =
         RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOB_SIDECAR);
 
-    final BlobSidecarsByRootRequestMessageSchema requestType =
-        SchemaDefinitionsDeneb.required(
-                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-            .getBlobSidecarsByRootRequestMessageSchema();
-
     final BlobSidecarsByRootMessageHandler blobSidecarsByRootHandler =
         new BlobSidecarsByRootMessageHandler(
             spec, metricsSystem, getDenebForkEpoch(spec), combinedChainDataClient);
@@ -352,7 +345,7 @@ public class BeaconChainMethods {
             BeaconChainMethodIds.BLOB_SIDECARS_BY_ROOT,
             1,
             rpcEncoding,
-            requestType,
+            BlobSidecarsByRootRequestMessage.SSZ_SCHEMA,
             true,
             forkDigestContextCodec,
             blobSidecarsByRootHandler,

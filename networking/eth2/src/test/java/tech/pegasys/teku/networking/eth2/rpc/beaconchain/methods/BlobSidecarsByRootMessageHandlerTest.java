@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,11 +46,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -80,10 +80,6 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-
-  private final BlobSidecarsByRootRequestMessageSchema requestSchema =
-      SchemaDefinitionsDeneb.required(spec.atEpoch(denebForkEpoch).getSchemaDefinitions())
-          .getBlobSidecarsByRootRequestMessageSchema();
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
@@ -119,12 +115,43 @@ public class BlobSidecarsByRootMessageHandlerTest {
   }
 
   @Test
+  public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
+    final int maxRequestSize =
+        MAX_REQUEST_BLOB_SIDECARS
+            .times(
+                SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig())
+                    .getMaxBlobsPerBlock())
+            .intValue();
+
+    final BlobSidecarsByRootRequestMessage request =
+        new BlobSidecarsByRootRequestMessage(
+            dataStructureUtil.randomBlobIdentifiers(maxRequestSize + 1));
+
+    final Optional<RpcException> result = handler.validateRequest(protocolId, request);
+
+    assertThat(result)
+        .hasValueSatisfying(
+            rpcException -> {
+              assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
+              assertThat(rpcException.getErrorMessageString())
+                  .isEqualTo("Maximum of %d blob sidecars allowed per request", maxRequestSize);
+            });
+
+    final long countTooBigCount =
+        metricsSystem
+            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_root_requests_total")
+            .getValue("count_too_big");
+
+    assertThat(countTooBigCount).isOne();
+  }
+
+  @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
     when(peer.wantToReceiveBlobSidecars(callback, 5)).thenReturn(false);
 
     final BlobSidecarsByRootRequestMessage request =
-        createRequest(dataStructureUtil.randomBlobIdentifiers(5));
+        new BlobSidecarsByRootRequestMessage(dataStructureUtil.randomBlobIdentifiers(5));
 
     handler.onIncomingMessage(protocolId, peer, request, callback);
 
@@ -147,7 +174,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getBlockByBlockRoot(secondBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    handler.onIncomingMessage(protocolId, peer, createRequest(blobIdentifiers), callback);
+    handler.onIncomingMessage(
+        protocolId, peer, new BlobSidecarsByRootRequestMessage(blobIdentifiers), callback);
 
     verify(callback, times(1)).respond(blobSidecarCaptor.capture());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -175,7 +203,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
             SafeFuture.completedFuture(
                 Optional.of(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE))));
 
-    handler.onIncomingMessage(protocolId, peer, createRequest(blobIdentifiers), callback);
+    handler.onIncomingMessage(
+        protocolId, peer, new BlobSidecarsByRootRequestMessage(blobIdentifiers), callback);
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -200,7 +229,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
             secondBlobIdentifier.getBlockRoot(), secondBlobIdentifier.getIndex()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
-    handler.onIncomingMessage(protocolId, peer, createRequest(blobIdentifiers), callback);
+    handler.onIncomingMessage(
+        protocolId, peer, new BlobSidecarsByRootRequestMessage(blobIdentifiers), callback);
 
     verify(callback, times(1)).respond(blobSidecarCaptor.capture());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -220,7 +250,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
   public void shouldSendToPeerRequestedBlobSidecars() {
     final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(5);
 
-    handler.onIncomingMessage(protocolId, peer, createRequest(blobIdentifiers), callback);
+    handler.onIncomingMessage(
+        protocolId, peer, new BlobSidecarsByRootRequestMessage(blobIdentifiers), callback);
 
     verify(callback, times(5)).respond(blobSidecarCaptor.capture());
 
@@ -237,10 +268,5 @@ public class BlobSidecarsByRootMessageHandlerTest {
             });
 
     verify(callback).completeSuccessfully();
-  }
-
-  private BlobSidecarsByRootRequestMessage createRequest(
-      final List<BlobIdentifier> blobIdentifiers) {
-    return new BlobSidecarsByRootRequestMessage(requestSchema, blobIdentifiers);
   }
 }

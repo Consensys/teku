@@ -57,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -66,7 +65,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -86,8 +84,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blobsSidecarsRequestTracker;
   private final RateTracker requestTracker;
   private final Supplier<UInt64> firstSlotSupportingBlobsSidecarsByRange;
-  private final Supplier<BlobSidecarsByRootRequestMessageSchema>
-      blobSidecarsByRootRequestMessageSchema;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -115,12 +111,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       .getDenebForkEpoch();
               return spec.computeStartSlotAtEpoch(denebForkEpoch);
             });
-    this.blobSidecarsByRootRequestMessageSchema =
-        Suppliers.memoize(
-            () ->
-                SchemaDefinitionsDeneb.required(
-                        spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-                    .getBlobSidecarsByRootRequestMessageSchema());
   }
 
   @Override
@@ -257,25 +247,14 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener)
-      throws RpcException {
-    final Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>> rpcMethod =
-        rpcMethods.blobSidecarsByRoot();
-    if (rpcMethod.isEmpty()) {
-      return failWithUnsupportedMethodException("BlobSidecarsByRoot");
-    }
-    final BlobSidecarsByRootRequestMessageSchema requestSchema =
-        blobSidecarsByRootRequestMessageSchema.get();
-    final long requestMaxLength = requestSchema.getMaxLength();
-    if (blobIdentifiers.size() > requestMaxLength) {
-      throw new RpcException(
-          INVALID_REQUEST_CODE,
-          "Only a maximum of " + requestMaxLength + " blob sidecars per request");
-    }
-    return requestStream(
-        rpcMethod.get(),
-        new BlobSidecarsByRootRequestMessage(requestSchema, blobIdentifiers),
-        listener);
+      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener) {
+    return rpcMethods
+        .blobSidecarsByRoot()
+        .map(
+            method ->
+                requestStream(
+                    method, new BlobSidecarsByRootRequestMessage(blobIdentifiers), listener))
+        .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
   @Override
@@ -305,7 +284,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 requestOptionalItem(
                     method,
                     new BlobSidecarsByRootRequestMessage(
-                        blobSidecarsByRootRequestMessageSchema.get(),
                         Collections.singletonList(blobIdentifier))))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }

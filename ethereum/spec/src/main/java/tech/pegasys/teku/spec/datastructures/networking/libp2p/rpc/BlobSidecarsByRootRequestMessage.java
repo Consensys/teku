@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier>
     implements SszList<BlobIdentifier>, RpcRequest {
@@ -28,10 +27,9 @@ public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier
   public static class BlobSidecarsByRootRequestMessageSchema
       extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
 
-    public BlobSidecarsByRootRequestMessageSchema(final SpecConfigDeneb specConfigDeneb) {
-      super(
-          BlobIdentifier.SSZ_SCHEMA,
-          MAX_REQUEST_BLOB_SIDECARS.times(specConfigDeneb.getMaxBlobsPerBlock()).longValue());
+    public BlobSidecarsByRootRequestMessageSchema() {
+      // account for future forks by handling up tp to 128 MAX_BLOBS_PER_BLOCK
+      super(BlobIdentifier.SSZ_SCHEMA, MAX_REQUEST_BLOB_SIDECARS.times(128).longValue());
     }
 
     @Override
@@ -40,10 +38,11 @@ public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier
     }
   }
 
-  public BlobSidecarsByRootRequestMessage(
-      final BlobSidecarsByRootRequestMessageSchema schema,
-      final List<BlobIdentifier> blobIdentifiers) {
-    super(schema, schema.createTreeFromElements(blobIdentifiers));
+  public static final BlobSidecarsByRootRequestMessageSchema SSZ_SCHEMA =
+      new BlobSidecarsByRootRequestMessageSchema();
+
+  public BlobSidecarsByRootRequestMessage(final List<BlobIdentifier> blobIdentifiers) {
+    super(SSZ_SCHEMA, SSZ_SCHEMA.createTreeFromElements(blobIdentifiers));
   }
 
   private BlobSidecarsByRootRequestMessage(

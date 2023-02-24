@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
@@ -62,7 +61,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   private final BlobSchema blobSchema;
   private final BlobSidecarSchema blobSidecarSchema;
-  private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
   private final BlobsSidecarSchema blobsSidecarSchema;
   private final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema;
   private final SignedBlobSidecarSchema signedBlobSidecarSchema;
@@ -103,8 +101,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blobSchema = new BlobSchema(specConfig);
     this.blobsSidecarSchema = BlobsSidecarSchema.create(specConfig, blobSchema);
     this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);
-    this.blobSidecarsByRootRequestMessageSchema =
-        new BlobSidecarsByRootRequestMessageSchema(specConfig);
     this.signedBeaconBlockAndBlobsSidecarSchema =
         SignedBeaconBlockAndBlobsSidecarSchema.create(signedBeaconBlockSchema, blobsSidecarSchema);
     this.signedBlobSidecarSchema = SignedBlobSidecarSchema.create(blobSidecarSchema);
@@ -185,10 +181,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public BlobSidecarSchema getBlobSidecarSchema() {
     return blobSidecarSchema;
-  }
-
-  public BlobSidecarsByRootRequestMessageSchema getBlobSidecarsByRootRequestMessageSchema() {
-    return blobSidecarsByRootRequestMessageSchema;
   }
 
   public SignedBeaconBlockAndBlobsSidecarSchema getSignedBeaconBlockAndBlobsSidecarSchema() {

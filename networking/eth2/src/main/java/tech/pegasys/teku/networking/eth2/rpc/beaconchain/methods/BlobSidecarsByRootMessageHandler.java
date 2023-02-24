@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -77,6 +79,20 @@ public class BlobSidecarsByRootMessageHandler
             TekuMetricCategory.NETWORK,
             "rpc_blob_sidecars_by_root_requested_blob_sidecars_total",
             "Total number of blob sidecars requested in accepted blob sidecars by root requests from peers");
+  }
+
+  @Override
+  public Optional<RpcException> validateRequest(
+      final String protocolId, final BlobSidecarsByRootRequestMessage request) {
+    final int maxRequestSize = calculateMaxRequestSize();
+    if (request.size() > maxRequestSize) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format("Maximum of %d blob sidecars allowed per request", maxRequestSize)));
+    }
+    return Optional.empty();
   }
 
   @Override
@@ -123,6 +139,14 @@ public class BlobSidecarsByRootMessageHandler
     }
 
     future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
+  }
+
+  // MAX_REQUEST_BLOB_SIDECARS * MAX_BLOBS_PER_BLOCK
+  private int calculateMaxRequestSize() {
+    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final int maxBlobsPerBlock =
+        SpecConfigDeneb.required(spec.atEpoch(currentEpoch).getConfig()).getMaxBlobsPerBlock();
+    return MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock).intValue();
   }
 
   private UInt64 getFinalizedEpoch() {
