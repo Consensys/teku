@@ -127,8 +127,7 @@ public class BeaconChainMethodsTest {
         .hasValueSatisfying(
             method ->
                 assertThat(method.getIds())
-                    .containsExactly(
-                        "/eth2/beacon_chain/req/blob_sidecars_by_root/1/ssz_snappy"));
+                    .containsExactly("/eth2/beacon_chain/req/blob_sidecars_by_root/1/ssz_snappy"));
   }
 
   @Test
