@@ -563,15 +563,14 @@ public class ChainDataProvider {
     }
 
     final Map<Integer, Integer> output = new HashMap<>();
-    int i = 0;
-    for (BLSPublicKey key : committeeKeys) {
+    for (int i = 0; i < committeeKeys.size(); i++) {
+      final BLSPublicKey key = committeeKeys.get(i);
       final Optional<Integer> validatorIndex = spec.getValidatorIndex(state, key);
       if (validatorIndex.isPresent()
           && (validators.contains(key.toHexString())
               || validators.contains(validatorIndex.get().toString()))) {
         output.put(i, validatorIndex.get());
       }
-      i++;
     }
 
     return output;
