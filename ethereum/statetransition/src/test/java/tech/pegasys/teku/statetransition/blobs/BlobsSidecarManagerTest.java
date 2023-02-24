@@ -55,7 +55,7 @@ public class BlobsSidecarManagerTest {
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final BlobsSidecarManagerImpl blobsSidecarManager =
       new BlobsSidecarManagerImpl(
-          mockedSpec, recentChainData, storageQueryChannel, storageUpdateChannel);
+          mockedSpec, recentChainData, null, null, storageQueryChannel, storageUpdateChannel);
 
   @BeforeEach
   void setUp() {

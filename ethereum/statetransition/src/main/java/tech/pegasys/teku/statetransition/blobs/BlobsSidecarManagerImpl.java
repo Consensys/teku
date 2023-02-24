@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,9 +35,14 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,6 +53,8 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   private final Spec spec;
   private final RecentChainData recentChainData;
+  private final BlobSidecarValidator validator;
+
   private final StorageQueryChannel storageQueryChannel;
   private final StorageUpdateChannel storageUpdateChannel;
 
@@ -56,12 +64,36 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   public BlobsSidecarManagerImpl(
       final Spec spec,
       final RecentChainData recentChainData,
+      final BlobSidecarValidator validator,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel) {
     this.spec = spec;
     this.recentChainData = recentChainData;
+    this.validator = validator;
     this.storageUpdateChannel = storageUpdateChannel;
     this.storageQueryChannel = storageQueryChannel;
+  }
+
+  @Override
+  public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
+      final SignedBlobSidecar blobsSidecar) {
+
+    final SafeFuture<InternalValidationResult> validationResult = validator.validate(blobsSidecar);
+
+    validationResult.thenAccept(
+        result -> {
+          if (result.code().equals(ValidationResultCode.ACCEPT)
+              || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
+            doImportBlobSidecar(blobsSidecar.getBlobSidecar())
+                .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
+          }
+        });
+
+    return validationResult;
+  }
+
+  private SafeFuture<Void> doImportBlobSidecar(final BlobSidecar blobsSidecar) {
+    return SafeFuture.COMPLETE;
   }
 
   @Override

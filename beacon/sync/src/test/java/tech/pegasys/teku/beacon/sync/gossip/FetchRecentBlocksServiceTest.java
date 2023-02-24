@@ -79,11 +79,7 @@ public class FetchRecentBlocksServiceTest {
             maxConcurrentRequests);
 
     lenient().when(fetchBlockTaskFactory.create(any(), any())).thenAnswer(this::createMockTask);
-    recentBlockFetcher.subscribeBlockFetched(
-        (block, blobsSidecar) -> {
-          blobsSidecar.ifPresent(importedBlobsSidecars::add);
-          importedBlocks.add(block);
-        });
+    recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
@@ -132,12 +128,10 @@ public class FetchRecentBlocksServiceTest {
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar(UInt64.ONE);
     final SignedBeaconBlock block = blockAndBlobsSidecar.getSignedBeaconBlock();
-    final BlobsSidecar blobsSidecar = blockAndBlobsSidecar.getBlobsSidecar();
 
     future.complete(FetchBlockResult.createSuccessful(blockAndBlobsSidecar));
 
     assertThat(importedBlocks).containsExactly(block);
-    assertThat(importedBlobsSidecars).containsExactly(blobsSidecar);
     assertTaskCounts(0, 0, 0);
   }
 
