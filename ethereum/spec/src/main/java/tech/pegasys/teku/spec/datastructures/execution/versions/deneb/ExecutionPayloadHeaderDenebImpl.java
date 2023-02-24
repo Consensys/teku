@@ -42,10 +42,10 @@ public class ExecutionPayloadHeaderDenebImpl
         SszUInt64,
         SszByteList,
         SszUInt256,
-        SszUInt256,
         SszBytes32,
         SszBytes32,
-        SszBytes32>
+        SszBytes32,
+        SszUInt256>
     implements ExecutionPayloadHeaderDeneb {
 
   protected ExecutionPayloadHeaderDenebImpl(
@@ -63,10 +63,10 @@ public class ExecutionPayloadHeaderDenebImpl
               SszUInt64,
               SszByteList,
               SszUInt256,
-              SszUInt256,
               SszBytes32,
               SszBytes32,
-              SszBytes32>
+              SszBytes32,
+              SszUInt256>
           schema,
       TreeNode backingTree) {
     super(schema, backingTree);
@@ -86,10 +86,10 @@ public class ExecutionPayloadHeaderDenebImpl
       SszUInt64 timestamp,
       SszByteList extraData,
       SszUInt256 baseFeePerGas,
-      SszUInt256 excessDataGas,
       SszBytes32 blockHash,
       SszBytes32 transactionsRoot,
-      SszBytes32 withdrawalsRoot) {
+      SszBytes32 withdrawalsRoot,
+      SszUInt256 excessDataGas) {
     super(
         schema,
         parentHash,
@@ -104,10 +104,10 @@ public class ExecutionPayloadHeaderDenebImpl
         timestamp,
         extraData,
         baseFeePerGas,
-        excessDataGas,
         blockHash,
         transactionsRoot,
-        withdrawalsRoot);
+        withdrawalsRoot,
+        excessDataGas);
   }
 
   @Override
@@ -186,18 +186,13 @@ public class ExecutionPayloadHeaderDenebImpl
   }
 
   @Override
-  public UInt256 getExcessDataGas() {
+  public Bytes32 getBlockHash() {
     return getField12().get();
   }
 
   @Override
-  public Bytes32 getBlockHash() {
-    return getField13().get();
-  }
-
-  @Override
   public Bytes32 getTransactionsRoot() {
-    return getField14().get();
+    return getField13().get();
   }
 
   @Override
@@ -207,6 +202,11 @@ public class ExecutionPayloadHeaderDenebImpl
 
   @Override
   public Bytes32 getWithdrawalsRoot() {
+    return getField14().get();
+  }
+
+  @Override
+  public UInt256 getExcessDataGas() {
     return getField15().get();
   }
 }

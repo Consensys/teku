@@ -47,11 +47,12 @@ public class PostBlsToExecutionChangesIntegrationTest
 
   @Test
   void postValidBlsToExecutionReturnsOk() throws IOException {
+    final tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange item =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
     final List<SignedBlsToExecutionChange> requestBody =
-        List.of(
-            new SignedBlsToExecutionChange(dataStructureUtil.randomSignedBlsToExecutionChange()));
+        List.of(new SignedBlsToExecutionChange(item));
 
-    when(blsToExecutionChangePool.addLocal(any()))
+    when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     Response response =
@@ -62,11 +63,12 @@ public class PostBlsToExecutionChangesIntegrationTest
 
   @Test
   void postInvalidBlsToExecutionReturnsBadRequest() throws IOException {
+    final tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange item =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
     final List<SignedBlsToExecutionChange> requestBody =
-        List.of(
-            new SignedBlsToExecutionChange(dataStructureUtil.randomSignedBlsToExecutionChange()));
+        List.of(new SignedBlsToExecutionChange(item));
 
-    when(blsToExecutionChangePool.addLocal(any()))
+    when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Invalid!")));
 
     Response response =

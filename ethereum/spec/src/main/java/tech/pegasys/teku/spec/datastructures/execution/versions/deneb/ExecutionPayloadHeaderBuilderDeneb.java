@@ -69,9 +69,9 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
         SszUInt64.of(timestamp),
         schema.getExtraDataSchema().fromBytes(extraData),
         SszUInt256.of(baseFeePerGas),
-        SszUInt256.of(excessDataGas),
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot),
-        SszBytes32.of(withdrawalsRoot));
+        SszBytes32.of(withdrawalsRoot),
+        SszUInt256.of(excessDataGas));
   }
 }

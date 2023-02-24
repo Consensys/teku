@@ -28,6 +28,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -56,7 +57,7 @@ class GetBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void successfullyReturnsBlsToExecutionChanges() throws JsonProcessingException {
-    when(nodeDataProvider.getBlsToExecutionChanges()).thenReturn(responseData);
+    when(nodeDataProvider.getBlsToExecutionChanges(Optional.empty())).thenReturn(responseData);
 
     handler.handleRequest(request);
 
@@ -66,7 +67,19 @@ class GetBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void returnsEmptyListWhenPoolIsEmpty() throws JsonProcessingException {
-    when(nodeDataProvider.getBlsToExecutionChanges()).thenReturn(Collections.emptyList());
+    when(nodeDataProvider.getBlsToExecutionChanges(Optional.empty()))
+        .thenReturn(Collections.emptyList());
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(Collections.emptyList());
+  }
+
+  @Test
+  public void returnsEmptyListOfLocalOperationsIfPoolIsEmpty() throws JsonProcessingException {
+    when(nodeDataProvider.getBlsToExecutionChanges(Optional.of(true)))
+        .thenReturn(Collections.emptyList());
 
     handler.handleRequest(request);
 

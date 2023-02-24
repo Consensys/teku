@@ -28,7 +28,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
@@ -54,12 +57,15 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.statetransition.BlsToExecutionOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -70,6 +76,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
+import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -118,8 +125,12 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
 
-  protected final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool =
-      mock(OperationPool.class);
+  protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
+
+  protected final SignedBlsToExecutionChangeValidator validator =
+      mock(SignedBlsToExecutionChangeValidator.class);
+
+  protected final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
@@ -182,6 +193,18 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP));
+    final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
+        slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
+
+    blsToExecutionChangePool =
+        new BlsToExecutionOperationPool(
+            "BlsOperationPool",
+            stubMetricsSystem,
+            beaconBlockSchemaSupplier
+                .andThen(BeaconBlockBodySchema::toVersionCapella)
+                .andThen(Optional::orElseThrow)
+                .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
+            validator);
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {

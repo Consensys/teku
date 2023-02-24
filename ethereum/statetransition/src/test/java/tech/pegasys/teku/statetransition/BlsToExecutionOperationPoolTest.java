@@ -31,6 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -138,6 +139,37 @@ public class BlsToExecutionOperationPoolTest {
     assertThat(pool.getItemsForBlock(state)).hasSize(maxBlsToExecutionChanges);
     assertThat(pool.size()).isEqualTo(maxBlsToExecutionChanges);
     assertThat(pool.getItemsForBlock(state)).contains(item);
+  }
+
+  @Test
+  void shouldSelectLocalOperationBeforeRemoteOperation() {
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+    initPoolWithSingleItem();
+    final SignedBlsToExecutionChange remoteEntry =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final SignedBlsToExecutionChange secondLocalEntry =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+
+    assertThat(pool.addRemote(remoteEntry)).isCompleted();
+    assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
+
+    final SszList<SignedBlsToExecutionChange> blockItems = pool.getItemsForBlock(state);
+    assertThat(blockItems.size()).isEqualTo(3);
+    assertThat(blockItems.get(2)).isEqualTo(remoteEntry);
+  }
+
+  @Test
+  void getLocalEntriesReturnsOnlyLocalEntries() {
+    final SignedBlsToExecutionChange localEntry = initPoolWithSingleItem();
+    final SignedBlsToExecutionChange remoteEntry =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final SignedBlsToExecutionChange secondLocalEntry =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+
+    assertThat(pool.addRemote(remoteEntry)).isCompleted();
+    assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
+
+    assertThat(pool.getLocallySubmitted()).containsExactlyInAnyOrder(localEntry, secondLocalEntry);
   }
 
   @Test

@@ -51,4 +51,5 @@ dependencies {
     integrationTestImplementation 'com.squareup.okhttp3:okhttp'
     integrationTestImplementation 'org.jsoup:jsoup'
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))
+    integrationTestImplementation testFixtures(project(':infrastructure:metrics'))
 }

@@ -128,7 +128,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                 () ->
                     new BlockProcessingException(
                         "BlsToExecutionChanges was not found during block processing.")),
-        signatureVerifier);
+        signatureVerifier,
+        false);
   }
 
   @Override
@@ -155,7 +156,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     final BlockValidationResult result =
         verifyBlsToExecutionChangesPreProcessing(
-            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE);
+            state, blsToExecutionChanges, BLSSignatureVerifier.SIMPLE, true);
     if (!result.isValid()) {
       throw new BlockProcessingException(result.getFailureReason());
     }
@@ -312,7 +313,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
   BlockValidationResult verifyBlsToExecutionChangesPreProcessing(
       final BeaconState genericState,
       final SszList<SignedBlsToExecutionChange> signedBlsToExecutionChanges,
-      final BLSSignatureVerifier signatureVerifier) {
+      final BLSSignatureVerifier signatureVerifier,
+      final boolean executeValidationRules) {
 
     final Set<UInt64> validatorsSeenInBlock = new HashSet<>();
     for (SignedBlsToExecutionChange signedBlsToExecutionChange : signedBlsToExecutionChanges) {
@@ -323,11 +325,13 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
             "Duplicated BlsToExecutionChange for validator " + addressChange.getValidatorIndex());
       }
 
-      final Optional<OperationInvalidReason> operationInvalidReason =
-          operationValidator.validateBlsToExecutionChange(
-              genericState.getFork(), genericState, addressChange);
-      if (operationInvalidReason.isPresent()) {
-        return BlockValidationResult.failed(operationInvalidReason.get().describe());
+      if (executeValidationRules) {
+        final Optional<OperationInvalidReason> operationInvalidReason =
+            operationValidator.validateBlsToExecutionChange(
+                genericState.getFork(), genericState, addressChange);
+        if (operationInvalidReason.isPresent()) {
+          return BlockValidationResult.failed(operationInvalidReason.get().describe());
+        }
       }
 
       boolean signatureValid =

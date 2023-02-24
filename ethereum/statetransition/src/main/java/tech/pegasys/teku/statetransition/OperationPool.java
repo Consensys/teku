@@ -46,6 +46,10 @@ public interface OperationPool<T extends SszData> {
 
   Set<T> getAll();
 
+  default Set<T> getLocallySubmitted() {
+    return Set.of();
+  }
+
   @VisibleForTesting
   int size();
 }

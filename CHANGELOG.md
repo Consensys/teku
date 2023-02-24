@@ -16,6 +16,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Trigger the beacon nodes fallback mechanism when the execution layer is offline
+- Added an optional query parameter `locally_submitted` to `/eth/v1/beacon/pool/bls_to_execution_changes` to allow users to query only bls changes submitted to the current node.
 
 ### Bug Fixes
 - Included All forks in fork schedule if they're defined in configuration.
