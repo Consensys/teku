@@ -467,11 +467,11 @@ public class ChainDataProviderTest {
         Set.of(
             data.randomPublicKey().toHexString(), // Validator not in committee
             "2", // Validator not in committee
-            committeeKeys.get(2).toHexString());
+            committeeKeys.get(5).toHexString());
     final Map<Integer, Integer> committeeIndices =
         provider.getCommitteeIndices(committeeKeys, validators, state);
 
-    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(2, 6));
+    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(5, 11));
   }
 
   @Test
