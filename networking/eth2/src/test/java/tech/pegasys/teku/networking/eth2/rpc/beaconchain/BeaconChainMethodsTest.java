@@ -113,6 +113,25 @@ public class BeaconChainMethodsTest {
   }
 
   @Test
+  public void shouldNotCreateBlobSidecarsByRootWithDenebDisabled() {
+    final BeaconChainMethods methods = getMethods();
+
+    assertThat(methods.blobSidecarsByRoot()).isEmpty();
+  }
+
+  @Test
+  public void shouldCreateBlobSidecarsByRootWithDenebEnabled() {
+    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalDeneb());
+
+    assertThat(methods.blobSidecarsByRoot())
+        .hasValueSatisfying(
+            method ->
+                assertThat(method.getIds())
+                    .containsExactly(
+                        "/eth2/beacon_chain/req/blob_sidecars_by_root/1/ssz_snappy"));
+  }
+
+  @Test
   public void shouldNotCreateBlobsSidecarsByRangeWithDenebDisabled() {
     final BeaconChainMethods methods = getMethods();
 
