@@ -28,7 +28,7 @@ public class PingMessage extends Container1<PingMessage, SszUInt64> implements R
   static class PingMessageSchema extends ContainerSchema1<PingMessage, SszUInt64> {
 
     public PingMessageSchema() {
-      super("PingMessage", namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA));
+      super("PingMessage", namedSchema("seq_number", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
