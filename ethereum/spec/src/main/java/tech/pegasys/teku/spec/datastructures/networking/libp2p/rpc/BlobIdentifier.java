@@ -30,7 +30,7 @@ public class BlobIdentifier extends Container2<BlobIdentifier, SszBytes32, SszUI
     private BlobIdentifierSchema() {
       super(
           "BlobIdentifier",
-          namedSchema("blockRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
           namedSchema("index", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
