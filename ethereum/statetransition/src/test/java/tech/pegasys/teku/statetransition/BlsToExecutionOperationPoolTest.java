@@ -159,6 +159,20 @@ public class BlsToExecutionOperationPoolTest {
   }
 
   @Test
+  void getLocalEntriesReturnsOnlyLocalEntries() {
+    final SignedBlsToExecutionChange localEntry = initPoolWithSingleItem();
+    final SignedBlsToExecutionChange remoteEntry =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final SignedBlsToExecutionChange secondLocalEntry =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+
+    assertThat(pool.addRemote(remoteEntry)).isCompleted();
+    assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
+
+    assertThat(pool.getLocallySubmitted()).containsExactlyInAnyOrder(localEntry, secondLocalEntry);
+  }
+
+  @Test
   void shouldPruneFromPoolIfNoLongerValid() {
     when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
     when(validator.validateForBlockInclusion(any(), any()))

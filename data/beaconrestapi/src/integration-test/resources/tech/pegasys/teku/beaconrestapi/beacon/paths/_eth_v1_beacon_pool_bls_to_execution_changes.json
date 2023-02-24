@@ -48,6 +48,14 @@
     "operationId" : "getBlsToExecutionChanges",
     "summary" : "Get SignedBLSToExecutionChange from operations pool",
     "description" : "Retrieves BLS to execution changes known by the node but not necessarily incorporated into any block",
+    "parameters" : [ {
+      "name" : "locally_submitted",
+      "in" : "query",
+      "schema" : {
+        "type" : "boolean",
+        "description" : "Set to true if only locally submitted bls operations should be returned"
+      }
+    } ],
     "responses" : {
       "200" : {
         "description" : "Successful response",
