@@ -30,7 +30,7 @@ public final class BeaconBlocksByRangeRequestMessage
     public BeaconBlocksByRangeRequestMessageSchema() {
       super(
           "BeaconBlocksByRangeRequestMessage",
-          namedSchema("startSlot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("start_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("step", SszPrimitiveSchemas.UINT64_SCHEMA));
     }

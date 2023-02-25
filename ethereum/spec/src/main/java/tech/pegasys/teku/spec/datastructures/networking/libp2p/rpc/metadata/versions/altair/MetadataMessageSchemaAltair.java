@@ -30,7 +30,7 @@ public class MetadataMessageSchemaAltair
   public MetadataMessageSchemaAltair() {
     super(
         "MetadataMessage",
-        namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema("seq_number", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("attnets", SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT)),
         namedSchema(
             "syncnets", SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)));

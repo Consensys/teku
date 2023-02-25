@@ -30,7 +30,7 @@ public class MetadataMessageSchemaPhase0
   public MetadataMessageSchemaPhase0() {
     super(
         "MetadataMessage",
-        namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema("seq_number", SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema("attnets", SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT)));
   }
 
