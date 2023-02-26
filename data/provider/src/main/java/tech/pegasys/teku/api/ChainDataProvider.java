@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -544,6 +545,61 @@ public class ChainDataProvider {
         committeeIndices,
         Lists.partition(
             committeeIndices, spec.atEpoch(epoch).getConfig().getTargetCommitteeSize()));
+  }
+
+  public SafeFuture<Optional<SyncCommitteeRewardData>> getSyncCommitteeRewardsFromBlockId(
+      final String blockId, final Set<String> validators) {
+    return getBlockAndMetaData(blockId)
+        .thenCompose(
+            result -> {
+              if (result.isEmpty() || result.get().getData().getBeaconBlock().isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final BlockAndMetaData blockAndMetaData = result.get();
+              final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
+              final SyncCommitteeRewardData data =
+                  new SyncCommitteeRewardData(
+                      blockAndMetaData.isExecutionOptimistic(), blockAndMetaData.isFinalized());
+
+              return combinedChainDataClient
+                  .getStateByBlockRoot(block.getRoot())
+                  .thenApply(
+                      maybeState ->
+                          getSyncCommitteeRewardData(validators, block, data, maybeState));
+            });
+  }
+
+  private Optional<SyncCommitteeRewardData> getSyncCommitteeRewardData(
+      Set<String> validators,
+      BeaconBlock block,
+      SyncCommitteeRewardData data,
+      Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState> maybeState) {
+    if (maybeState.isEmpty()) {
+      return Optional.empty();
+    }
+
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        maybeState.get();
+
+    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
+    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
+
+    final Optional<SyncCommittee> maybeCommittee =
+        spec.getSyncCommitteeUtil(slot).map(util -> util.getSyncCommittee(state, epoch));
+    if (maybeCommittee.isEmpty()) {
+      return Optional.of(data);
+    }
+
+    final Map<Integer, Integer> committeeIndices =
+        getCommitteeIndices(
+            maybeCommittee.get().getPubkeys().stream()
+                .map(SszPublicKey::getBLSPublicKey)
+                .collect(toList()),
+            validators,
+            state);
+    final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
+    return Optional.of(
+        calculateRewards(committeeIndices, participantReward.longValue(), block, data));
   }
 
   @VisibleForTesting
