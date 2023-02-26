@@ -582,10 +582,9 @@ public class ChainDataProvider {
         maybeState.get();
 
     final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
-    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
 
     final Optional<SyncCommittee> maybeCommittee =
-        spec.getSyncCommitteeUtil(slot).map(util -> util.getSyncCommittee(state, epoch));
+        spec.getSyncCommitteeUtil(block.getSlot()).map(util -> util.getSyncCommittee(state, epoch));
     if (maybeCommittee.isEmpty()) {
       return Optional.of(data);
     }
