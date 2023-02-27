@@ -30,8 +30,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.InvalidRemoteResponseException;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
-import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,26 +41,27 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-class EngineGetPayloadV2Test {
+class EngineGetPayloadV3Test {
 
-  private final Spec spec = TestSpecFactory.createMinimalCapella();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
-  private EngineGetPayloadV2 jsonRpcMethod;
+  private EngineGetPayloadV3 jsonRpcMethod;
 
   @BeforeEach
   public void setUp() {
-    jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, spec);
+    jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, spec);
   }
 
   @Test
   public void shouldReturnExpectedNameAndVersion() {
     assertThat(jsonRpcMethod.getName()).isEqualTo("engine_getPayload");
-    assertThat(jsonRpcMethod.getVersion()).isEqualTo(2);
-    assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("engine_getPayloadV2");
+    assertThat(jsonRpcMethod.getVersion()).isEqualTo(3);
+    assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("engine_getPayloadV3");
   }
 
   @Test
@@ -95,7 +96,7 @@ class EngineGetPayloadV2Test {
         dataStructureUtil.randomPayloadExecutionContext(false);
     final String errorResponseFromClient = "error!";
 
-    when(executionEngineClient.getPayloadV2(any()))
+    when(executionEngineClient.getPayloadV3(any()))
         .thenReturn(dummyFailedResponse(errorResponseFromClient));
 
     final JsonRpcRequestParams params =
@@ -110,7 +111,7 @@ class EngineGetPayloadV2Test {
   }
 
   @Test
-  public void shouldCallGetPayloadV2AndParseResponseSuccessfullyWhenInBellatrix() {
+  public void shouldCallGetPayloadV3AndParseResponseSuccessfullyWhenInBellatrix() {
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtilBellatrix = new DataStructureUtil(bellatrixSpec);
 
@@ -121,24 +122,24 @@ class EngineGetPayloadV2Test {
         dataStructureUtilBellatrix.randomExecutionPayload();
     assertThat(executionPayloadBellatrix).isInstanceOf(ExecutionPayloadBellatrix.class);
 
-    when(executionEngineClient.getPayloadV2(eq(executionPayloadContext.getPayloadId())))
+    when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
         .thenReturn(dummySuccessfulResponse(executionPayloadBellatrix, blockValue));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
 
-    jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, bellatrixSpec);
+    jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, bellatrixSpec);
 
     final ExecutionPayloadWithValue expectedPayloadWithValue =
         new ExecutionPayloadWithValue(executionPayloadBellatrix, blockValue);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
 
-    verify(executionEngineClient).getPayloadV2(eq(executionPayloadContext.getPayloadId()));
+    verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
   @Test
-  public void shouldCallGetPayloadV2AndParseResponseSuccessfullyWhenInCapella() {
+  public void shouldCallGetPayloadV3AndParseResponseSuccessfullyWhenInCapella() {
     final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
     final DataStructureUtil dataStructureUtilCapella = new DataStructureUtil(capellaSpec);
 
@@ -149,31 +150,59 @@ class EngineGetPayloadV2Test {
         dataStructureUtilCapella.randomExecutionPayload();
     assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadCapella.class);
 
-    when(executionEngineClient.getPayloadV2(eq(executionPayloadContext.getPayloadId())))
+    when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
         .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
 
-    jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, capellaSpec);
+    jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, capellaSpec);
 
     final ExecutionPayloadWithValue expectedPayloadWithValue =
         new ExecutionPayloadWithValue(executionPayloadCapella, blockValue);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
 
-    verify(executionEngineClient).getPayloadV2(eq(executionPayloadContext.getPayloadId()));
+    verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
-  private SafeFuture<Response<GetPayloadV2Response>> dummySuccessfulResponse(
+  @Test
+  public void shouldCallGetPayloadV3AndParseResponseSuccessfullyWhenInDeneb() {
+    final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
+    final DataStructureUtil dataStructureUtilDeneb = new DataStructureUtil(denebSpec);
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtilDeneb.randomPayloadExecutionContext(false);
+    final UInt256 blockValue = UInt256.MAX_VALUE;
+    final ExecutionPayload executionPayloadCapella =
+        dataStructureUtilDeneb.randomExecutionPayload();
+    assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadDeneb.class);
+
+    when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
+        .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue));
+
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
+
+    jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, denebSpec);
+
+    final ExecutionPayloadWithValue expectedPayloadWithValue =
+        new ExecutionPayloadWithValue(executionPayloadCapella, blockValue);
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
+
+    verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
+    verifyNoMoreInteractions(executionEngineClient);
+  }
+
+  private SafeFuture<Response<GetPayloadV3Response>> dummySuccessfulResponse(
       final ExecutionPayload executionPayload, final UInt256 blockValue) {
     return SafeFuture.completedFuture(
         new Response<>(
-            new GetPayloadV2Response(
-                ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload), blockValue)));
+            new GetPayloadV3Response(
+                ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload), blockValue)));
   }
 
-  private SafeFuture<Response<GetPayloadV2Response>> dummyFailedResponse(
+  private SafeFuture<Response<GetPayloadV3Response>> dummyFailedResponse(
       final String errorMessage) {
     return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
   }
