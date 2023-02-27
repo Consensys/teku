@@ -16,12 +16,10 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -75,26 +73,10 @@ public class DenebExecutionClientHandler extends CapellaExecutionClientHandler
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    LOG.trace("calling engineNewPayloadV3(executionPayload={})", executionPayload);
-    final ExecutionPayloadV1 executionPayloadV1;
-    if (executionPayload.toVersionDeneb().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
-    } else if (executionPayload.toVersionCapella().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
-    } else {
-      executionPayloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
-    }
-    return executionEngineClient
-        .newPayloadV3(executionPayloadV1)
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
-        .thenPeek(
-            payloadStatus ->
-                LOG.trace(
-                    "engineNewPayloadV3(executionPayload={}) -> {}",
-                    executionPayload,
-                    payloadStatus))
-        .exceptionally(PayloadStatus::failedExecution);
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+
+    return new EngineNewPayloadV3(executionEngineClient).execute(params);
   }
 
   @Override
