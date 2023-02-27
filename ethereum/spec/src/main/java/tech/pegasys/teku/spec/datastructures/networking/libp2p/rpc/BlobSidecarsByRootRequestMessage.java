@@ -20,16 +20,20 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier>
     implements SszList<BlobIdentifier>, RpcRequest {
+
+  // size validation according to the spec (MAX_REQUEST_BLOB_SIDECARS * MAX_BLOBS_PER_BLOCK) is done
+  // in the RPC handler
+  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOB_SIDECARS.times(128);
 
   public static class BlobSidecarsByRootRequestMessageSchema
       extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
 
     public BlobSidecarsByRootRequestMessageSchema() {
-      // account for future forks by handling up tp to 128 MAX_BLOBS_PER_BLOCK
-      super(BlobIdentifier.SSZ_SCHEMA, MAX_REQUEST_BLOB_SIDECARS.times(128).longValue());
+      super(BlobIdentifier.SSZ_SCHEMA, MAX_LENGTH.longValue());
     }
 
     @Override
