@@ -180,7 +180,8 @@ class EngineForkChoiceUpdatedV2Test {
                 dataStructureUtil.randomBytes8())));
   }
 
-  private SafeFuture<Response<ForkChoiceUpdatedResult>> dummyFailedResponse(final String errorMsg) {
-    return SafeFuture.completedFuture(Response.withErrorMessage(errorMsg));
+  private SafeFuture<Response<ForkChoiceUpdatedResult>> dummyFailedResponse(
+      final String errorMessage) {
+    return SafeFuture.completedFuture(Response.withErrorMessage(errorMessage));
   }
 }

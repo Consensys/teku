@@ -59,7 +59,7 @@ public class EngineForkChoiceUpdatedV2
         params.getOptionalParameter(1, PayloadBuildingAttributes.class);
 
     LOG.trace(
-        "calling engineForkChoiceUpdatedV1(forkChoiceState={}, payloadAttributes={})",
+        "calling engineForkChoiceUpdatedV2(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
         payloadBuildingAttributes);
 
@@ -73,10 +73,7 @@ public class EngineForkChoiceUpdatedV2
                         payloadBuildingAttributes)
                     : PayloadAttributesV1.fromInternalPayloadBuildingAttributes(
                         payloadBuildingAttributes));
-    LOG.trace(
-        "calling engineForkChoiceUpdatedV2(forkChoiceState={}, payloadAttributes={})",
-        forkChoiceState,
-        maybePayloadAttributes);
+
     return executionEngineClient
         .forkChoiceUpdatedV2(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState), maybePayloadAttributes)

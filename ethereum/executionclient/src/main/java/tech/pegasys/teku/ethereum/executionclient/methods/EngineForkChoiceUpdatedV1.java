@@ -56,6 +56,7 @@ public class EngineForkChoiceUpdatedV1
         "calling engineForkChoiceUpdatedV1(forkChoiceState={}, payloadAttributes={})",
         forkChoiceState,
         payloadBuildingAttributes);
+
     return executionEngineClient
         .forkChoiceUpdatedV1(
             ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),

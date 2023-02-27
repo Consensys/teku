@@ -20,6 +20,9 @@ import java.util.Optional;
 
 public class JsonRpcRequestParams {
 
+  public static final JsonRpcRequestParams NO_PARAMS =
+      new JsonRpcRequestParams(Collections.emptyList());
+
   private final List<Object> params;
 
   private JsonRpcRequestParams(final List<Object> params) {
@@ -47,9 +50,6 @@ public class JsonRpcRequestParams {
 
     return Optional.of((T) param);
   }
-
-  public static final JsonRpcRequestParams NO_PARAMS =
-      new JsonRpcRequestParams(Collections.emptyList());
 
   public static class Builder {
 
