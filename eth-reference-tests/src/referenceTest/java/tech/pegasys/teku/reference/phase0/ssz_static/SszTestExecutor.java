@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
@@ -185,8 +186,7 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
                   schemas -> SchemaDefinitionsDeneb.required(schemas).getSignedBlobSidecarSchema()))
           .put(
               "ssz_static/BlobIdentifier",
-              new SszTestExecutor<>(
-                  schemas -> SchemaDefinitionsDeneb.required(schemas).getBlobIdentifierSchema()))
+              new SszTestExecutor<>(schemas -> BlobIdentifier.SSZ_SCHEMA))
 
           // Legacy Schemas (Not yet migrated to SchemaDefinitions)
           .put(
