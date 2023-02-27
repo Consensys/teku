@@ -417,18 +417,6 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getSyncCommitteeRewardData_emptyState() {
-    final ChainDataProvider provider = setupAltairState();
-    final Optional<SyncCommitteeRewardData> result =
-        provider.getSyncCommitteeRewardData(
-            Set.of(),
-            data.randomBeaconBlock(),
-            new SyncCommitteeRewardData(true, true),
-            Optional.empty());
-    assertThat(result).isEmpty();
-  }
-
-  @Test
   public void getSyncCommitteeRewardsFromBlockId_emptyBlockAndMetaData() {
     final ChainDataProvider provider = setupAltairState();
     when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.empty());
