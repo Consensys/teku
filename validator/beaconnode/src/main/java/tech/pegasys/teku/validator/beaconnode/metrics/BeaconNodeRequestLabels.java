@@ -38,5 +38,5 @@ public class BeaconNodeRequestLabels {
   public static final String SEND_CONTRIBUTIONS_AND_PROOFS_METHOD = "send_contributions_and_proofs";
   public static final String PREPARE_BEACON_PROPOSERS_METHOD = "prepare_beacon_proposers";
   public static final String REGISTER_VALIDATORS_METHOD = "register_validators";
-  public static final String CHECK_VALIDATORS_DOPPELGANGER_METHOD = "check_validators_doppelganger";
+  public static final String GET_VALIDATORS_LIVENESS = "get_validators_liveness";
 }
