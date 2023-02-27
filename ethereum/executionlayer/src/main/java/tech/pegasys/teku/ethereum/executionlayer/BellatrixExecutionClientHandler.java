@@ -19,11 +19,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
+import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -33,7 +32,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
@@ -68,28 +69,17 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult>
-      engineForkChoiceUpdated(
-          final ForkChoiceState forkChoiceState,
-          final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
+  public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState,
+      final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
 
-    LOG.trace(
-        "calling engineForkChoiceUpdatedV1(forkChoiceState={}, payloadAttributes={})",
-        forkChoiceState,
-        payloadBuildingAttributes);
-    return executionEngineClient
-        .forkChoiceUpdatedV1(
-            ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState),
-            PayloadAttributesV1.fromInternalPayloadBuildingAttributes(payloadBuildingAttributes))
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(ForkChoiceUpdatedResult::asInternalExecutionPayload)
-        .thenPeek(
-            forkChoiceUpdatedResult ->
-                LOG.trace(
-                    "engineForkChoiceUpdatedV1(forkChoiceState={}, payloadAttributes={}) -> {}",
-                    forkChoiceState,
-                    payloadBuildingAttributes,
-                    forkChoiceUpdatedResult));
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder()
+            .add(forkChoiceState)
+            .addOptional(payloadBuildingAttributes)
+            .build();
+
+    return new EngineForkChoiceUpdatedV1(executionEngineClient).execute(params);
   }
 
   @Override

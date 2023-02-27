@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,48 +11,39 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.builder;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
-import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-class GetStateTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+class GetExpectedWithdrawalsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
   void setup() {
-    initialise(PHASE0);
+    initialise(SpecMilestone.CAPELLA);
     genesis();
 
-    setHandler(new GetState(chainDataProvider, schemaDefinitionCache));
-    request.setPathParameter("state_id", "head");
-  }
-
-  @Test
-  void shouldReturnStateInformation()
-      throws JsonProcessingException, ExecutionException, InterruptedException {
-    final StateAndMetaData stateAndMetaData =
-        chainDataProvider.getBeaconStateAndMetadata("head").get().orElseThrow();
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(stateAndMetaData);
+    setHandler(new GetExpectedWithdrawals(chainDataProvider, schemaDefinitionCache));
+    request.setPathParameter("block_id", "head");
   }
 
   @Test
@@ -71,18 +62,22 @@ class GetStateTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
   }
 
   @Test
+  void metadata_shouldHandle501() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
+  }
+
+  @Test
   void metadata_shouldHandle200() throws IOException {
-    final StateAndMetaData responseData =
-        new StateAndMetaData(
-            dataStructureUtil.randomBeaconState(),
-            spec.getGenesisSpec().getMilestone(),
-            false,
-            true,
-            false);
+    final BeaconBlockBodyCapella beaconBlock =
+        BeaconBlockBodyCapella.required(dataStructureUtil.randomBeaconBlock(1).getBody());
+    final ObjectAndMetaData<SszList<Withdrawal>> responseData =
+        withMetaData(beaconBlock.getExecutionPayload().getWithdrawals());
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =
-        Resources.toString(Resources.getResource(GetStateTest.class, "getState.json"), UTF_8);
-    assertThat(data).isEqualTo(String.format(expected, responseData.getData().getGenesisTime()));
+        Resources.toString(
+            Resources.getResource(GetExpectedWithdrawalsTest.class, "getExpectedWithdrawals.json"),
+            UTF_8);
+    assertThat(data).isEqualTo(expected);
   }
 }
