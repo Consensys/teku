@@ -392,7 +392,7 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void getSyncCommitteeRewardsFromBlockId() {
+  public void getSyncCommitteeRewardsFromBlockId_noSpecifiedValidators() {
     final ChainDataProvider provider = setupAltairState();
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
@@ -414,6 +414,18 @@ public class ChainDataProviderTest {
     expectedOutput.increaseReward(0, -247L);
     expectedOutput.increaseReward(9, 247L);
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
+  }
+
+  @Test
+  public void getSyncCommitteeRewardData_emptyState() {
+    final ChainDataProvider provider = setupAltairState();
+    final Optional<SyncCommitteeRewardData> result =
+        provider.getSyncCommitteeRewardData(
+            Set.of(),
+            data.randomBeaconBlock(),
+            new SyncCommitteeRewardData(true, true),
+            Optional.empty());
+    assertThat(result).isEmpty();
   }
 
   @Test
