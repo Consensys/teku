@@ -67,7 +67,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final UInt64 startSlot = denebForkEpoch.increment().times(slotsPerEpoch);
 
   private final Bytes32 headBlockRoot = dataStructureUtil.randomBytes32();
-  private final Bytes32 blockParentRoot = dataStructureUtil.randomBytes32();
 
   private final UInt64 count = UInt64.valueOf(5);
 
