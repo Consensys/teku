@@ -338,6 +338,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     startSlot);
                 final UInt64 updatedCount =
                     count.minusMinZero(firstSupportedSlot.minusMinZero(startSlot));
+                if (updatedCount.isZero()) {
+                  return SafeFuture.COMPLETE;
+                }
                 request = new BlobsSidecarsByRangeRequestMessage(firstSupportedSlot, updatedCount);
               } else {
                 request = new BlobsSidecarsByRangeRequestMessage(startSlot, count);
