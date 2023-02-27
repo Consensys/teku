@@ -38,7 +38,9 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -195,13 +197,13 @@ class Eth2PeerTest {
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
   public void shouldSetCountToZeroWhenSlotEqualsToDenebTransitionSlot() {
 
-    final Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>
-        blobsSidecarsByRangeMethod = mock(Eth2RpcMethod.class);
+    final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar> blobSidecarsByRangeMethod =
+        mock(Eth2RpcMethod.class);
 
     final RpcStreamController<RpcRequestHandler> rpcStreamController =
         mock(RpcStreamController.class);
 
-    when(rpcMethods.blobsSidecarsByRange()).thenReturn(Optional.of(blobsSidecarsByRangeMethod));
+    when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
     when(peer.sendRequest(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
