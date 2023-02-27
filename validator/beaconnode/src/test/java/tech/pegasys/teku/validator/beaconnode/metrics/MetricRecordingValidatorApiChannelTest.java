@@ -213,9 +213,9 @@ class MetricRecordingValidatorApiChannelTest {
             BeaconNodeRequestLabels.CREATE_SYNC_COMMITTEE_CONTRIBUTION_METHOD,
             dataStructureUtil.randomSyncCommitteeContribution(slot)),
         requestDataTest(
-            "checkValidatorsDoppelganger",
+            "getValidatorsLiveness",
             channel -> channel.getValidatorsLiveness(validatorIndices, epoch),
-            BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD,
+            BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS,
             new ArrayList<>()));
   }
 

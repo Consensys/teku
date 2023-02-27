@@ -288,7 +288,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final List<UInt64> validatorIndices, final UInt64 epoch) {
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.getValidatorsLiveness(validatorIndices, epoch),
-        BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
+        BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS);
   }
 
   private <T> SafeFuture<T> relayRequest(
