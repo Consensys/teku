@@ -7,6 +7,7 @@
 - The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
 - The commandline option `--network` of the `validator-client` subcommand has been undeprecated and can be used to select a network for standalone validator clients. When set to `auto`, it automatically
   fetches network configuration information from the configured beacon node endpoint.
+- `--Xbeacon-liveness-tracking-enabled` option will be removed. The `--beacon-liveness-tracking-enabled` option should be used instead (disabled by default)
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -14,10 +15,10 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- `--Xbeacon-liveness-tracking-enabled` option will be removed (Temporarily kept for backward compatibility). The `--beacon-liveness-tracking-enabled` option should be used instead (disabled by default).
 
 ### Additions and Improvements
 - Trigger the beacon nodes fallback mechanism when the execution layer is offline
+- `--beacon-liveness-tracking-enabled` option (disabled by default) can be used instead of `--Xbeacon-liveness-tracking-enabled`
 - Added an optional query parameter `locally_submitted` to `/eth/v1/beacon/pool/bls_to_execution_changes` to allow users to query only bls changes submitted to the current node.
 
 ### Bug Fixes
