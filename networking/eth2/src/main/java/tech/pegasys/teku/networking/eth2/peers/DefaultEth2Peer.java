@@ -217,7 +217,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       throws RpcException {
     if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
       throw new RpcException(
-          INVALID_REQUEST_CODE, "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks per request");
+          INVALID_REQUEST_CODE,
+          "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request");
     }
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
@@ -232,7 +233,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
       throw new RpcException(
           INVALID_REQUEST_CODE,
-          "Only a maximum of " + MAX_REQUEST_BLOCKS + " block and blobs sidecars per request");
+          "Only a maximum of "
+              + MAX_REQUEST_BLOCKS
+              + " block and blobs sidecars can be requested per request");
     }
     return rpcMethods
         .beaconBlockAndBlobsSidecarByRoot()

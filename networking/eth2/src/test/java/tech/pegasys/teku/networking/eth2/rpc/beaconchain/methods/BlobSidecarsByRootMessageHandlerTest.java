@@ -134,7 +134,9 @@ public class BlobSidecarsByRootMessageHandlerTest {
             rpcException -> {
               assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
               assertThat(rpcException.getErrorMessageString())
-                  .isEqualTo("Maximum of %d blob sidecars allowed per request", maxRequestSize);
+                  .isEqualTo(
+                      "Only a maximum of %d blob sidecars can be requested per request",
+                      maxRequestSize);
             });
 
     final long countTooBigCount =

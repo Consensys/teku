@@ -90,7 +90,9 @@ public class BlobSidecarsByRootMessageHandler
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
-              String.format("Maximum of %d blob sidecars allowed per request", maxRequestSize)));
+              String.format(
+                  "Only a maximum of %d blob sidecars can be requested per request",
+                  maxRequestSize)));
     }
     return Optional.empty();
   }
