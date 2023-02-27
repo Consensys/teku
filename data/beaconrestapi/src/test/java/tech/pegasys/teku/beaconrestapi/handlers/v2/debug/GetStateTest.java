@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
+import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
@@ -29,15 +30,13 @@ import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 class GetStateTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialise(PHASE0);
     genesis();
 
     setHandler(new GetState(chainDataProvider, schemaDefinitionCache));
@@ -73,10 +72,13 @@ class GetStateTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    BeaconState beaconState = dataStructureUtil.randomBeaconState();
-    System.out.println(beaconState.getGenesisTime());
-    StateAndMetaData responseData =
-        new StateAndMetaData(beaconState, SpecMilestone.BELLATRIX, false, true, false);
+    final StateAndMetaData responseData =
+        new StateAndMetaData(
+            dataStructureUtil.randomBeaconState(),
+            spec.getGenesisSpec().getMilestone(),
+            false,
+            true,
+            false);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, responseData);
     final String expected =

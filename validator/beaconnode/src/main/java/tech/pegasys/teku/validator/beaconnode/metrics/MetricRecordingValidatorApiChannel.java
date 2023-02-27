@@ -234,7 +234,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       List<UInt64> validatorIndices, UInt64 epoch) {
     return countOptionalDataRequest(
         delegate.getValidatorsLiveness(validatorIndices, epoch),
-        BeaconNodeRequestLabels.CHECK_VALIDATORS_DOPPELGANGER_METHOD);
+        BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS);
   }
 
   private <T> SafeFuture<T> countDataRequest(

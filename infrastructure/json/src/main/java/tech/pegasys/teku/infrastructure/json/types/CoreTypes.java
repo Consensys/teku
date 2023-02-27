@@ -89,6 +89,15 @@ public class CoreTypes {
           .format("integer")
           .build();
 
+  public static final StringValueTypeDefinition<Long> LONG_TYPE =
+      DeserializableTypeDefinition.string(Long.class)
+          .formatter(Object::toString)
+          .parser(Long::getLong)
+          .example("1")
+          .description("long string")
+          .format("long")
+          .build();
+
   public static final StringValueTypeDefinition<Double> RAW_DOUBLE_TYPE =
       new DoubleTypeDefinition();
 

@@ -21,14 +21,15 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
- * https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata
+ * <a
+ * href="https://github.com/ethereum/consensus-specs/blob/v0.11.1/specs/phase0/p2p-interface.md#metadata">MetaData</a>
  */
 public class PingMessage extends Container1<PingMessage, SszUInt64> implements RpcRequest {
 
   static class PingMessageSchema extends ContainerSchema1<PingMessage, SszUInt64> {
 
     public PingMessageSchema() {
-      super("PingMessage", namedSchema("seqNumber", SszPrimitiveSchemas.UINT64_SCHEMA));
+      super("PingMessage", namedSchema("seq_number", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override

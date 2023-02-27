@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExecutionChange> {
   private static final Logger LOG = LogManager.getLogger();
   private static final int DEFAULT_OPERATION_POOL_SIZE = 50_000;
-  private final Map<Integer, SignedBlsToExecutionChange> operations;
+  private final Map<Integer, OperationPoolEntry<SignedBlsToExecutionChange>> operations;
   private final Function<UInt64, SszListSchema<SignedBlsToExecutionChange, ?>>
       slotToSszListSchemaSupplier;
   private final OperationValidator<SignedBlsToExecutionChange> operationValidator;
@@ -106,7 +107,11 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
 
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
-    final Collection<SignedBlsToExecutionChange> sortedViableOperations = operations.values();
+    final Collection<SignedBlsToExecutionChange> sortedViableOperations =
+        operations.values().stream()
+            .sorted()
+            .map(OperationPoolEntry::getMessage)
+            .collect(Collectors.toList());
     final List<SignedBlsToExecutionChange> selected = new ArrayList<>();
     for (final SignedBlsToExecutionChange item : sortedViableOperations) {
       if (!filter.test(item)) {
@@ -152,7 +157,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
     items.forEach(
         item -> {
           final int validatorIndex = getValidatorIndex(item);
-          operations.putIfAbsent(validatorIndex, item);
+          operations.putIfAbsent(validatorIndex, new OperationPoolEntry<>(item, false));
         });
   }
 
@@ -167,7 +172,17 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
 
   @Override
   public Set<SignedBlsToExecutionChange> getAll() {
-    return Set.copyOf(operations.values());
+    return operations.values().stream()
+        .map(OperationPoolEntry::getMessage)
+        .collect(Collectors.toSet());
+  }
+
+  @Override
+  public Set<SignedBlsToExecutionChange> getLocallySubmitted() {
+    return operations.values().stream()
+        .filter(OperationPoolEntry::isLocal)
+        .map(OperationPoolEntry::getMessage)
+        .collect(Collectors.toSet());
   }
 
   @Override
@@ -184,7 +199,7 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
             result -> {
               validationReasonCounter.labels(result.code().toString()).inc();
               if (result.code().equals(ValidationResultCode.ACCEPT)) {
-                operations.put(validatorIndex, item);
+                operations.put(validatorIndex, new OperationPoolEntry<>(item, !fromNetwork));
                 subscribers.forEach(s -> s.onOperationAdded(item, result, fromNetwork));
               }
               return result;

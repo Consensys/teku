@@ -30,9 +30,9 @@ public class EnrForkId extends Container3<EnrForkId, SszBytes4, SszBytes4, SszUI
     public EnrForkIdSchema() {
       super(
           "EnrForkId",
-          namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
-          namedSchema("nextForkVersion", SszPrimitiveSchemas.BYTES4_SCHEMA),
-          namedSchema("nextForkEpoch", SszPrimitiveSchemas.UINT64_SCHEMA));
+          namedSchema("fork_digest", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("next_fork_version", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("next_fork_epoch", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override

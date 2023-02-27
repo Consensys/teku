@@ -849,7 +849,7 @@ public class TekuNode extends Node {
     }
 
     public Config withValidatorLivenessTracking() {
-      configMap.put("Xbeacon-liveness-tracking-enabled", true);
+      configMap.put("beacon-liveness-tracking-enabled", true);
       return this;
     }
 
