@@ -42,7 +42,7 @@ public class BlobsSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegr
     final Eth2Peer peer = createPeer();
     assertThatThrownBy(() -> requestBlobsSideCars(peer, UInt64.ONE, UInt64.valueOf(2)))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
-        .hasMessageContaining("BlobsSidecarsByRange method is not available");
+        .hasMessageContaining("BlobsSidecarsByRange method is not supported");
   }
 
   @Test

@@ -37,11 +37,11 @@ public class StatusMessage
     public StatusMessageSchema() {
       super(
           "StatusMessage",
-          namedSchema("forkDigest", SszPrimitiveSchemas.BYTES4_SCHEMA),
-          namedSchema("finalizedRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("finalizedEpoch", SszPrimitiveSchemas.UINT64_SCHEMA),
-          namedSchema("headRoot", SszPrimitiveSchemas.BYTES32_SCHEMA),
-          namedSchema("headSlot", SszPrimitiveSchemas.UINT64_SCHEMA));
+          namedSchema("fork_digest", SszPrimitiveSchemas.BYTES4_SCHEMA),
+          namedSchema("finalized_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("finalized_epoch", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("head_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
+          namedSchema("head_slot", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override

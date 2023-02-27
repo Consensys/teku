@@ -20,6 +20,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -54,6 +55,7 @@ public class AbstractMigratedBeaconHandlerWithChainDataProviderTest
       final SpecMilestone specMilestone,
       final boolean storeNonCanonicalBlocks) {
     this.spec = TestSpecFactory.createMinimal(specMilestone);
+    this.dataStructureUtil = new DataStructureUtil(spec);
     this.storageSystem =
         InMemoryStorageSystemBuilder.create()
             .specProvider(spec)

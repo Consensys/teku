@@ -11,21 +11,21 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer;
+package tech.pegasys.teku.ethereum.executionclient.response;
 
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 
-class ResponseUnwrapper {
+public class ResponseUnwrapper {
 
-  static <K> K unwrapExecutionClientResponseOrThrow(final Response<K> response) {
+  public static <K> K unwrapExecutionClientResponseOrThrow(final Response<K> response) {
     return unwrapResponseOrThrow(ExecutionType.EXECUTION_CLIENT, response);
   }
 
-  static <K> K unwrapBuilderResponseOrThrow(final Response<K> response) {
+  public static <K> K unwrapBuilderResponseOrThrow(final Response<K> response) {
     return unwrapResponseOrThrow(ExecutionType.BUILDER, response);
   }
 
-  static <K> K unwrapResponseOrThrow(
+  public static <K> K unwrapResponseOrThrow(
       final ExecutionType executionType, final Response<K> response) {
     if (response.isFailure()) {
       final String errorMessage =

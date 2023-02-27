@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -21,6 +22,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import okhttp3.Response;
@@ -28,10 +30,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlsToExecutionChanges;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class GetBlsToExecutionChangesIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
@@ -52,8 +56,11 @@ public class GetBlsToExecutionChangesIntegrationTest
             dataStructureUtil.randomSignedBlsToExecutionChange(),
             dataStructureUtil.randomSignedBlsToExecutionChange(),
             dataStructureUtil.randomSignedBlsToExecutionChange());
-
-    when(blsToExecutionChangePool.getAll()).thenReturn(expectedOperations);
+    when(validator.validateForGossip(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    for (SignedBlsToExecutionChange operation : expectedOperations) {
+      assertThat(blsToExecutionChangePool.addRemote(operation)).isCompleted();
+    }
 
     Response response = getResponse(GetBlsToExecutionChanges.ROUTE);
 
@@ -62,6 +69,26 @@ public class GetBlsToExecutionChangesIntegrationTest
     final List<SignedBlsToExecutionChange> operationsInResponse = readListFromResponse(response);
     assertThat(operationsInResponse).hasSize(expectedOperations.size());
     assertThat(operationsInResponse).hasSameElementsAs(expectedOperations);
+  }
+
+  @Test
+  void getLocalBlsToExecutionChangesFromPool() throws IOException {
+    final SignedBlsToExecutionChange localChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    final SignedBlsToExecutionChange remoteChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    when(validator.validateForGossip(any()))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+    assertThat(blsToExecutionChangePool.addLocal(localChange)).isCompleted();
+    assertThat(blsToExecutionChangePool.addRemote(remoteChange)).isCompleted();
+
+    Response response =
+        getResponse(GetBlsToExecutionChanges.ROUTE, Map.of("locally_submitted", "true"));
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    final List<SignedBlsToExecutionChange> operationsInResponse = readListFromResponse(response);
+    assertThat(operationsInResponse).hasSize(1);
+    assertThat(operationsInResponse).containsExactly(localChange);
   }
 
   private List<SignedBlsToExecutionChange> readListFromResponse(final Response response)

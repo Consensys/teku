@@ -11,20 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer;
+package tech.pegasys.teku.ethereum.executionclient.response;
 
-enum ExecutionType {
-  EXECUTION_CLIENT("execution client"),
-  BUILDER("builder");
+public class InvalidRemoteResponseException extends RuntimeException {
 
-  private final String displayName;
-
-  ExecutionType(final String displayName) {
-    this.displayName = displayName;
-  }
-
-  @Override
-  public String toString() {
-    return displayName;
+  public InvalidRemoteResponseException(final String message) {
+    super(message);
   }
 }

@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -48,6 +49,20 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         public SszSchema<BlobsSidecar> getSchemaFromSchemaDefinitions(
             final SchemaDefinitions schemaDefinitions) {
           return schemaDefinitions.toVersionDeneb().orElseThrow().getBlobsSidecarSchema();
+        }
+      };
+
+  ForkDigestPayloadContext<BlobSidecar> BLOB_SIDECAR =
+      new ForkDigestPayloadContext<>() {
+        @Override
+        public UInt64 getSlotFromPayload(final BlobSidecar responsePayload) {
+          return responsePayload.getSlot();
+        }
+
+        @Override
+        public SszSchema<BlobSidecar> getSchemaFromSchemaDefinitions(
+            final SchemaDefinitions schemaDefinitions) {
+          return schemaDefinitions.toVersionDeneb().orElseThrow().getBlobSidecarSchema();
         }
       };
 

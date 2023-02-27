@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer;
+package tech.pegasys.teku.ethereum.executionclient.methods;
 
-public class InvalidRemoteResponseException extends RuntimeException {
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
-  public InvalidRemoteResponseException(final String message) {
-    super(message);
-  }
+public interface EngineJsonRpcMethod<T> {
+
+  String getName();
+
+  int getVersion();
+
+  String getVersionedName();
+
+  SafeFuture<T> execute(JsonRpcRequestParams params);
 }
