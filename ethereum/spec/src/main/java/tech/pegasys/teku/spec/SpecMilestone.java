@@ -53,6 +53,16 @@ public enum SpecMilestone {
 
   /**
    * @param milestone The milestone being inspected
+   * @return An ordered list of all milestones succeeding the supplied milestone
+   */
+  public static List<SpecMilestone> getAllFutureMilestones(SpecMilestone milestone) {
+    final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
+    final int milestoneIndex = allMilestones.indexOf(milestone);
+    return allMilestones.subList(milestoneIndex + 1, SpecMilestone.values().length);
+  }
+
+  /**
+   * @param milestone The milestone being inspected
    * @return An ordered list of all milestones up to and included the specified milestone
    */
   static List<SpecMilestone> getMilestonesUpTo(SpecMilestone milestone) {

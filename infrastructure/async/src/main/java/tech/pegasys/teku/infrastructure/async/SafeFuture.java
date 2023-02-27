@@ -516,6 +516,18 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     return (SafeFuture<Void>) super.thenAcceptAsync(action, executor);
   }
 
+  public SafeFuture<Void> thenAcceptChecked(final ExceptionThrowingConsumer<? super T> action) {
+    return thenCompose(
+        value -> {
+          try {
+            action.accept(value);
+            return SafeFuture.COMPLETE;
+          } catch (final Throwable e) {
+            return SafeFuture.failedFuture(e);
+          }
+        });
+  }
+
   @SuppressWarnings("unchecked")
   @Override
   public <U, V> SafeFuture<V> thenCombine(
