@@ -69,7 +69,6 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   public SafeFuture<ForkChoiceUpdatedResult> engineForkChoiceUpdated(
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
-
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder()
             .add(forkChoiceState)
@@ -83,7 +82,8 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
+        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(slot).build();
+
     return new EngineGetPayloadV1(executionEngineClient, spec).execute(params);
   }
 
@@ -91,6 +91,7 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayload).build();
+
     return new EngineNewPayloadV1(executionEngineClient).execute(params);
   }
 
