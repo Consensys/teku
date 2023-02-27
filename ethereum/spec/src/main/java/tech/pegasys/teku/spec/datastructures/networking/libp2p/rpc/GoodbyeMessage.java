@@ -68,7 +68,7 @@ public final class GoodbyeMessage extends Container1<GoodbyeMessage, SszUInt64>
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return 0;
   }
 }

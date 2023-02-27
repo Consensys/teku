@@ -104,7 +104,7 @@ public class StatusMessage
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return 1;
   }
 }

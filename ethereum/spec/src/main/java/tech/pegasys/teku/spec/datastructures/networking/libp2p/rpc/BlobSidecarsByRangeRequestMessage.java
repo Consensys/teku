@@ -66,7 +66,7 @@ public class BlobSidecarsByRangeRequestMessage
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return getCount().intValue();
   }
 }
