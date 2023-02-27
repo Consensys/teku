@@ -23,6 +23,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -543,6 +544,36 @@ public class ChainDataProvider {
         committeeIndices,
         Lists.partition(
             committeeIndices, spec.atEpoch(epoch).getConfig().getTargetCommitteeSize()));
+  }
+
+  @VisibleForTesting
+  protected Map<Integer, Integer> getCommitteeIndices(
+      final List<BLSPublicKey> committeeKeys,
+      final Set<String> validators,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    if (validators.isEmpty()) {
+      final List<Integer> result =
+          committeeKeys.stream()
+              .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey).stream())
+              .collect(toList());
+
+      return IntStream.range(0, result.size())
+          .boxed()
+          .collect(Collectors.<Integer, Integer, Integer>toMap(Function.identity(), result::get));
+    }
+
+    final Map<Integer, Integer> output = new HashMap<>();
+    for (int i = 0; i < committeeKeys.size(); i++) {
+      final BLSPublicKey key = committeeKeys.get(i);
+      final Optional<Integer> validatorIndex = spec.getValidatorIndex(state, key);
+      if (validatorIndex.isPresent()
+          && (validators.contains(key.toHexString())
+              || validators.contains(validatorIndex.get().toString()))) {
+        output.put(i, validatorIndex.get());
+      }
+    }
+
+    return output;
   }
 
   @VisibleForTesting
