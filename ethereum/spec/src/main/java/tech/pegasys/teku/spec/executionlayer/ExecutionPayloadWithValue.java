@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer;
+package tech.pegasys.teku.spec.executionlayer;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
