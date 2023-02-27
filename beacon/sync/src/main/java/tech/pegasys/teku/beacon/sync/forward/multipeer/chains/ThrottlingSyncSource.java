@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
-import java.time.Duration;
+import static tech.pegasys.teku.spec.config.Constants.PEERS_REQUESTS_THROTTLING_DELAY;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -66,7 +67,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlocksByRange(startSlot, count, listener), Duration.ofSeconds(DELAY));
+          () -> requestBlocksByRange(startSlot, count, listener), PEERS_REQUESTS_THROTTLING_DELAY);
     }
   }
 
@@ -80,7 +81,8 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlobsSidecarsByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlobsSidecarsByRange(startSlot, count, listener), Duration.ofSeconds(DELAY));
+          () -> requestBlobsSidecarsByRange(startSlot, count, listener),
+          PEERS_REQUESTS_THROTTLING_DELAY);
     }
   }
 
@@ -92,7 +94,8 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlobSidecarsByRange(startSlot, count, listener), Duration.ofSeconds(DELAY));
+          () -> requestBlobSidecarsByRange(startSlot, count, listener),
+          PEERS_REQUESTS_THROTTLING_DELAY);
     }
   }
 
