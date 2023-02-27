@@ -18,11 +18,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -89,20 +87,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);
-    return executionEngineClient
-        .newPayloadV2(
-            executionPayload.toVersionCapella().isPresent()
-                ? ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload)
-                : ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
-        .thenPeek(
-            payloadStatus ->
-                LOG.trace(
-                    "engineNewPayloadV2(executionPayload={}) -> {}",
-                    executionPayload,
-                    payloadStatus))
-        .exceptionally(PayloadStatus::failedExecution);
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+
+    return new EngineNewPayloadV2(executionEngineClient).execute(params);
   }
 }
