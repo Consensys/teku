@@ -23,7 +23,6 @@ import ethereum.ckzg4844.CKZGException;
 import ethereum.ckzg4844.CKZGException.CKZGError;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -32,6 +31,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -107,11 +107,12 @@ public final class KZGTest {
             assertThrows(
                 KZGException.class,
                 () ->
-                    kzg.verifyAggregateKzgProof(
-                        Collections.emptyList(), Collections.emptyList(), KZGProof.INFINITY)),
+                    kzg.verifyBlobKzgProofBatch(
+                        List.of(Bytes.fromHexString("0x", 128)),
+                        List.of(KZGCommitment.infinity()),
+                        List.of(KZGProof.INFINITY))),
             assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY)),
-            assertThrows(
-                KZGException.class, () -> kzg.computeAggregateKzgProof(Collections.emptyList())));
+            assertThrows(KZGException.class, () -> kzg.computeBlobKzgProof(Bytes.EMPTY)));
 
     assertThat(exceptions)
         .allSatisfy(
@@ -119,35 +120,95 @@ public final class KZGTest {
   }
 
   @Test
-  public void testComputingAndVerifyingProof() {
+  public void testComputingAndVerifyingBatchProofs() {
     loadTrustedSetup();
     final int numberOfBlobs = 4;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
         blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
-    final KZGProof kzgProof = kzg.computeAggregateKzgProof(blobs);
-    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, kzgProof)).isTrue();
-    assertThat(kzg.verifyAggregateKzgProof(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProof))
+    final List<KZGProof> kzgProofs =
+        blobs.stream().map(kzg::computeBlobKzgProof).collect(Collectors.toList());
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
+
+    assertThat(
+            kzg.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
-    assertThat(kzg.verifyAggregateKzgProof(blobs, getSampleCommitments(numberOfBlobs), kzgProof))
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
-    final KZGProof invalidProof = kzg.computeAggregateKzgProof(getSampleBlobs(numberOfBlobs));
-    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
+    final List<KZGProof> invalidProofs =
+        getSampleBlobs(numberOfBlobs).stream()
+            .map(kzg::computeBlobKzgProof)
+            .collect(Collectors.toList());
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, invalidProofs)).isFalse();
   }
 
   @Test
-  public void testComputingProofWithZeroLengthBlobsDoesNotCauseSegfault() {
+  public void testComputingAndVerifyingBatchSingleProof() {
     loadTrustedSetup();
-    final List<Bytes> blobs =
-        Stream.of(
-                "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
-                "0x",
-                "0x925668a49d06f4")
-            .map(Bytes::fromHexString)
+    final int numberOfBlobs = 1;
+    final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
+    final List<KZGCommitment> kzgCommitments =
+        blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
+    final List<KZGProof> kzgProofs =
+        blobs.stream().map(kzg::computeBlobKzgProof).collect(Collectors.toList());
+    assertThat(kzgProofs.size()).isEqualTo(1);
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
+
+    assertThat(
+            kzg.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
+        .isFalse();
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
+        .isFalse();
+    final List<KZGProof> invalidProofs =
+        getSampleBlobs(numberOfBlobs).stream()
+            .map(kzg::computeBlobKzgProof)
             .collect(Collectors.toList());
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, invalidProofs)).isFalse();
+  }
+
+  @Test
+  public void testVerifyingBatchProofsThrowsIfSizesDoesntMatch() {
+    loadTrustedSetup();
+    final int numberOfBlobs = 4;
+    final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
+    final List<KZGCommitment> kzgCommitments =
+        blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
+    final List<KZGProof> kzgProofs =
+        blobs.stream().map(kzg::computeBlobKzgProof).collect(Collectors.toList());
+    final KZGException kzgException1 =
+        assertThrows(
+            KZGException.class,
+            () -> kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, List.of(kzgProofs.get(0))));
+    final KZGException kzgException2 =
+        assertThrows(
+            KZGException.class,
+            () -> kzg.verifyBlobKzgProofBatch(blobs, List.of(kzgCommitments.get(0)), kzgProofs));
+    final KZGException kzgException3 =
+        assertThrows(
+            KZGException.class,
+            () -> kzg.verifyBlobKzgProofBatch(List.of(blobs.get(0)), kzgCommitments, kzgProofs));
+
+    Stream.of(kzgException1, kzgException2, kzgException3)
+        .forEach(
+            ex ->
+                AssertionsForClassTypes.assertThat(ex)
+                    .hasMessageContaining(
+                        "Expecting equal number of blobs, commitments and proofs for verification"));
+  }
+
+  @ParameterizedTest(name = "blob={0}")
+  @ValueSource(
+      strings = {
+        "0x0d2024ece3e004271319699b8b00cc010628b6bc0be5457f031fb1db0afd3ff8",
+        "0x",
+        "0x925668a49d06f4"
+      })
+  public void testComputingProofWithIncorrectLengthBlobDoesNotCauseSegfault(final String blobHex) {
+    loadTrustedSetup();
+    final Bytes blob = Bytes.fromHexString(blobHex);
 
     final KZGException kzgException =
-        assertThrows(KZGException.class, () -> kzg.computeAggregateKzgProof(blobs));
+        assertThrows(KZGException.class, () -> kzg.computeBlobKzgProof(blob));
 
     assertThat(kzgException)
         .cause()
@@ -158,7 +219,7 @@ public final class KZGTest {
               final CKZGException cryptoException = (CKZGException) cause;
               assertThat(cryptoException.getError()).isEqualTo(CKZGError.C_KZG_BADARGS);
               assertThat(cryptoException.getErrorMessage())
-                  .isEqualTo("There was an error while computing aggregate kzg proof.");
+                  .contains("Invalid blob size. Expected 128 bytes but got");
             });
   }
 
@@ -324,14 +385,21 @@ public final class KZGTest {
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
         blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
-    final KZGProof kzgProof = kzg.computeAggregateKzgProof(blobs);
-    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, kzgProof)).isTrue();
-    assertThat(kzg.verifyAggregateKzgProof(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProof))
+    final List<KZGProof> kzgProofs =
+        blobs.stream().map(kzg::computeBlobKzgProof).collect(Collectors.toList());
+
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
+
+    assertThat(
+            kzg.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
-    assertThat(kzg.verifyAggregateKzgProof(blobs, getSampleCommitments(numberOfBlobs), kzgProof))
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
-    final KZGProof invalidProof = kzg.computeAggregateKzgProof(getSampleBlobs(numberOfBlobs));
-    assertThat(kzg.verifyAggregateKzgProof(blobs, kzgCommitments, invalidProof)).isFalse();
+    final List<KZGProof> invalidProofs =
+        getSampleBlobs(numberOfBlobs).stream()
+            .map(kzg::computeBlobKzgProof)
+            .collect(Collectors.toList());
+    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, invalidProofs)).isFalse();
   }
 
   private void loadTrustedSetup() {

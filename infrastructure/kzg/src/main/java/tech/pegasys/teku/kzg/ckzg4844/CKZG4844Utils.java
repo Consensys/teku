@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
-import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,15 +28,12 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.TrustedSetup;
 
 public class CKZG4844Utils {
 
   private static final int G2_POINT_SIZE = 96;
-
-  public static byte[] flattenBlobs(final List<Bytes> blobs) {
-    return flattenBytes(blobs.stream(), CKZG4844JNI.getBytesPerBlob() * blobs.size());
-  }
 
   public static byte[] flattenBytes(final List<? extends Bytes> bytes) {
     return flattenBytes(
@@ -48,6 +44,11 @@ public class CKZG4844Utils {
     final Stream<Bytes> commitmentsBytes =
         commitments.stream().map(KZGCommitment::getBytesCompressed);
     return flattenBytes(commitmentsBytes, KZGCommitment.KZG_COMMITMENT_SIZE * commitments.size());
+  }
+
+  public static byte[] flattenProofs(final List<KZGProof> kzgProofs) {
+    final Stream<Bytes> kzgProofBytes = kzgProofs.stream().map(KZGProof::getBytesCompressed);
+    return flattenBytes(kzgProofBytes, KZGProof.KZG_PROOF_SIZE * kzgProofs.size());
   }
 
   public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
