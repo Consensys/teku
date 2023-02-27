@@ -36,6 +36,10 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
+/**
+ * This class supposed to implement gossip validation rules as per <a
+ * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#the-gossip-domain-gossipsub">spec</a>
+ */
 public class BlobSidecarValidator {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -73,14 +77,31 @@ public class BlobSidecarValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedBlobSidecar signedBlobSidecar) {
-
     final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
 
+    /*
+    [REJECT] The sidecar is for the correct topic -- i.e. sidecar.index matches the topic {index}.
+    */
+    /*
+    This rule is already implemented in
+    tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager.TopicIndexAwareOperationProcessor
+     */
+
+    /*
+    [REJECT] The sidecar's block's parent (defined by sidecar.block_parent_root) passes validation.
+     */
     if (invalidBlockRoots.containsKey(blobSidecar.getBlockParentRoot())) {
       return completedFuture(reject("BlobSidecar has an invalid parent block"));
     }
 
-    if (!gossipValidationHelper.isSlotGreaterThanLatestFinalizedSlot(blobSidecar.getSlot())
+    /*
+    [IGNORE] The sidecar's block's parent (defined by sidecar.block_parent_root) has been seen
+    (via both gossip and non-gossip sources) (a client MAY queue sidecars for processing once the parent block is retrieved).
+
+    [IGNORE] The sidecar is from a slot greater than the latest finalized slot
+    -- i.e. validate that sidecar.slot > compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)
+     */
+    if (gossipValidationHelper.isSlotFinalized(blobSidecar.getSlot())
         || !blobSidecarIsFirstWithValidSignatureForSlot(blobSidecar)) {
       LOG.trace(
           "BlobSidecarValidator: BlobSidecar is either too old or is not the first block with valid signature for "
@@ -88,18 +109,26 @@ public class BlobSidecarValidator {
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
+    /*
+    [IGNORE] The sidecar is not from a future slot (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance)
+    -- i.e. validate that sidecar.slot <= current_slot (a client MAY queue future sidecars for processing
+    at the appropriate slot).
+     */
     if (gossipValidationHelper.isSlotFromFuture(blobSidecar.getSlot())) {
       LOG.trace(
           "BlobSidecarValidator: BlobSidecar is from the future. It will be saved for future processing");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
+    /*
+    [IGNORE] The sidecar's block's parent (defined by sidecar.block_parent_root) has been seen (via both gossip and
+    non-gossip sources) (a client MAY queue sidecars for processing once the parent block is retrieved).
+     */
     if (!gossipValidationHelper.isBlockAvailable(blobSidecar.getBlockParentRoot())) {
       LOG.trace(
           "BlobSidecarValidator: BlobSidecar parent is not available. It will be saved for future processing");
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
-
     final Optional<UInt64> maybeParentBlockSlot =
         gossipValidationHelper.getSlotForBlockRoot(blobSidecar.getBlockParentRoot());
     if (maybeParentBlockSlot.isEmpty()) {
@@ -109,6 +138,10 @@ public class BlobSidecarValidator {
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
+    /*
+     TODO: I just proposed this rule in spec
+    [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by sidecar.block_parent_root).
+     */
     if (parentBlockSlot.isGreaterThanOrEqualTo(blobSidecar.getSlot())) {
       return completedFuture(reject("Parent block is after BlobSidecar slot."));
     }
@@ -118,13 +151,18 @@ public class BlobSidecarValidator {
             parentBlockSlot, blobSidecar.getBlockParentRoot(), blobSidecar.getSlot())
         .thenApply(
             maybePostState -> {
+              /*
+              [REJECT] The sidecar is proposed by the expected proposer_index for the block's slot in the context of the
+              current shuffling (defined by block_parent_root/slot). If the proposer_index cannot immediately be verified
+              against the expected shuffling, the sidecar MAY be queued for later processing while proposers for the
+              block's branch are calculated -- in such a case do not REJECT, instead IGNORE this message.
+               */
               if (maybePostState.isEmpty()) {
                 LOG.trace(
                     "Block was available but state wasn't. Must have been pruned by finalized.");
                 return InternalValidationResult.IGNORE;
               }
               final BeaconState postState = maybePostState.get();
-
               if (!gossipValidationHelper.isProposerTheExpectedProposer(
                   blobSidecar.getProposerIndex(), blobSidecar.getSlot(), postState)) {
                 return reject(
@@ -132,7 +170,11 @@ public class BlobSidecarValidator {
                     blobSidecar.getProposerIndex());
               }
 
-              if (!blockSignatureIsValidWithRespectToProposerIndex(signedBlobSidecar, postState)) {
+              /*
+              [REJECT] The proposer signature, signed_blob_sidecar.signature, is valid with respect to the
+              sidecar.proposer_index pubkey.
+               */
+              if (!signatureIsValidWithRespectToProposerIndex(signedBlobSidecar, postState)) {
                 return reject("BlobSidecar signature is invalid");
               }
 
@@ -140,19 +182,19 @@ public class BlobSidecarValidator {
             });
   }
 
-  private boolean blockSignatureIsValidWithRespectToProposerIndex(
+  private boolean signatureIsValidWithRespectToProposerIndex(
       SignedBlobSidecar signedBlobSidecar, BeaconState postState) {
 
     final Bytes32 domain =
         spec.getDomain(
-            Domain.BEACON_PROPOSER,
+            Domain.DOMAIN_BLOB_SIDECAR,
             spec.getCurrentEpoch(postState),
             postState.getFork(),
             postState.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(signedBlobSidecar.getBlobSidecar(), domain);
 
     boolean signatureValid =
-        gossipValidationHelper.isSignatureIsValidWithRespectToProposerIndex(
+        gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             signingRoot,
             signedBlobSidecar.getBlobSidecar().getProposerIndex(),
             signedBlobSidecar.getSignature(),

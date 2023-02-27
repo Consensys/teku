@@ -29,6 +29,9 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
+  public static final UInt64 MAX_OFFSET_TIME_IN_SECONDS =
+      UInt64.valueOf(Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0));
+
   private final Spec spec;
   private final RecentChainData recentChainData;
 
@@ -37,22 +40,20 @@ public class GossipValidationHelper {
     this.recentChainData = recentChainData;
   }
 
-  public boolean isSlotGreaterThanLatestFinalizedSlot(final UInt64 slot) {
+  public boolean isSlotFinalized(final UInt64 slot) {
     final UInt64 finalizedSlot =
         recentChainData.getStore().getFinalizedCheckpoint().getEpochStartSlot(spec);
-    return slot.compareTo(finalizedSlot) > 0;
+    return slot.isLessThanOrEqualTo(finalizedSlot);
   }
 
   public boolean isSlotFromFuture(final UInt64 slot) {
-    ReadOnlyStore store = recentChainData.getStore();
-    final long disparityInSeconds = Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0);
-    final UInt64 maxOffset = UInt64.valueOf(disparityInSeconds);
-    final UInt64 maxTime = store.getTimeSeconds().plus(maxOffset);
-    UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
-    return slot.compareTo(maxCurrSlot) > 0;
+    final ReadOnlyStore store = recentChainData.getStore();
+    final UInt64 maxTime = store.getTimeSeconds().plus(MAX_OFFSET_TIME_IN_SECONDS);
+    final UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
+    return slot.isGreaterThan(maxCurrSlot);
   }
 
-  public boolean isSignatureIsValidWithRespectToProposerIndex(
+  public boolean isSignatureValidWithRespectToProposerIndex(
       final Bytes signingRoot,
       final UInt64 validatorIndex,
       final BLSSignature signature,

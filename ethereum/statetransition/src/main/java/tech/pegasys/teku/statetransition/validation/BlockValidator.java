@@ -63,7 +63,7 @@ public class BlockValidator {
 
   public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {
 
-    if (!gossipValidationHelper.isSlotGreaterThanLatestFinalizedSlot(block.getSlot())
+    if (gossipValidationHelper.isSlotFinalized(block.getSlot())
         || !blockIsFirstBlockWithValidSignatureForSlot(block)) {
       LOG.trace(
           "BlockValidator: Block is either too old or is not the first block with valid signature for "
@@ -162,7 +162,7 @@ public class BlockValidator {
     final Bytes signingRoot = spec.computeSigningRoot(block.getMessage(), domain);
 
     boolean signatureValid =
-        gossipValidationHelper.isSignatureIsValidWithRespectToProposerIndex(
+        gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             signingRoot, block.getProposerIndex(), block.getSignature(), postState);
 
     return signatureValid && receivedValidBlockInfoSet.add(new SlotAndProposer(block));

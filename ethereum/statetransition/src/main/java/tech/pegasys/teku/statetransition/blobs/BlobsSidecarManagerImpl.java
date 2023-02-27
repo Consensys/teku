@@ -75,6 +75,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   }
 
   @Override
+  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
       final SignedBlobSidecar blobsSidecar) {
 
@@ -92,7 +93,9 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
     return validationResult;
   }
 
+  @SuppressWarnings("UnusedVariable")
   private SafeFuture<Void> doImportBlobSidecar(final BlobSidecar blobsSidecar) {
+    // TODO implement import
     return SafeFuture.COMPLETE;
   }
 
