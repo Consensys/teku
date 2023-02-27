@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
@@ -424,6 +425,20 @@ public class ChainDataProviderTest {
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  public void getSyncCommitteeRewardsFromBlockId_slotIsPreAltair() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
+        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(BadRequestException.class);
+    assertThatThrownBy(future::get)
+        .hasMessageMatching(
+            "tech.pegasys.teku.api.exceptions.BadRequestException: "
+                + "Slot [0-9]+ is pre altair, and no sync committee information is available");
   }
 
   @Test
