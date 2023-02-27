@@ -85,7 +85,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blobsSidecarsRequestTracker;
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker requestTracker;
-  private final Supplier<UInt64> firstSlotSupportingBlobsSidecarsByRange;
+  private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -107,7 +107,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blobsSidecarsRequestTracker = blobsSidecarsRequestTracker;
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.requestTracker = requestTracker;
-    this.firstSlotSupportingBlobsSidecarsByRange =
+    this.firstSlotSupportingBlobSidecarsByRange =
         Suppliers.memoize(
             () -> {
               final UInt64 denebForkEpoch =
@@ -329,7 +329,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .blobsSidecarsByRange()
         .map(
             method -> {
-              final UInt64 firstSupportedSlot = firstSlotSupportingBlobsSidecarsByRange.get();
+              final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobsSidecarsByRangeRequestMessage request;
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
@@ -354,7 +354,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .blobSidecarsByRange()
         .map(
             method -> {
-              final UInt64 firstSupportedSlot = firstSlotSupportingBlobsSidecarsByRange.get();
+              final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobSidecarsByRangeRequestMessage request;
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
