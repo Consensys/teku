@@ -27,6 +27,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
+import static tech.pegasys.teku.spec.config.Constants.SYNC_BLOB_SIDECARS_SIZE;
 
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
@@ -270,5 +272,21 @@ public class BlobSidecarsByRootMessageHandlerTest {
             });
 
     verify(callback).completeSuccessfully();
+  }
+
+  @Test
+  public void verifySyncBlobSidecarsSizeIsNotLargerThanMaxRequestSizeForShardingMilestones() {
+    final List<SpecMilestone> shardingMilestones =
+        SpecMilestone.getAllFutureMilestones(SpecMilestone.CAPELLA);
+
+    shardingMilestones.forEach(
+        milestone -> {
+          final Spec spec = TestSpecFactory.createMainnet(milestone);
+          final int maxBlobsPerBlock =
+              SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig())
+                  .getMaxBlobsPerBlock();
+          final UInt64 maxRequestSize = MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock);
+          assertThat(SYNC_BLOB_SIDECARS_SIZE.isLessThanOrEqualTo(maxRequestSize)).isTrue();
+        });
   }
 }
