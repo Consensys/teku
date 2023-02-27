@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
-import static tech.pegasys.teku.spec.config.Constants.PEERS_REQUESTS_THROTTLING_DELAY;
-
+import java.time.Duration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidec
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
   private static final long TIME_OUT = 60;
-  private static final long DELAY = 3;
+  public static final Duration PEER_REQUEST_DELAY = Duration.ofSeconds(3);
   private final AsyncRunner asyncRunner;
   private final SyncSource delegate;
 
@@ -67,7 +66,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlocksByRange(startSlot, count, listener), PEERS_REQUESTS_THROTTLING_DELAY);
+          () -> requestBlocksByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }
   }
 
@@ -81,8 +80,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlobsSidecarsByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlobsSidecarsByRange(startSlot, count, listener),
-          PEERS_REQUESTS_THROTTLING_DELAY);
+          () -> requestBlobsSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }
   }
 
@@ -94,8 +92,7 @@ public class ThrottlingSyncSource implements SyncSource {
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {
       return asyncRunner.runAfterDelay(
-          () -> requestBlobSidecarsByRange(startSlot, count, listener),
-          PEERS_REQUESTS_THROTTLING_DELAY);
+          () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }
   }
 
