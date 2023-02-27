@@ -17,9 +17,9 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   private static final Logger LOG = LogManager.getLogger();
@@ -84,28 +82,9 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   @Override
   public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    LOG.trace(
-        "calling engineGetPayloadV1(payloadId={}, slot={})",
-        executionPayloadContext.getPayloadId(),
-        slot);
-    return executionEngineClient
-        .getPayloadV1(executionPayloadContext.getPayloadId())
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(
-            payload -> {
-              final ExecutionPayloadSchema<?> payloadSchema =
-                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                      .getExecutionPayloadSchema();
-              return new ExecutionPayloadWithValue(
-                  payload.asInternalExecutionPayload(payloadSchema), UInt256.ZERO);
-            })
-        .thenPeek(
-            payloadAndValue ->
-                LOG.trace(
-                    "engineGetPayloadV1(payloadId={}, slot={}) -> {}",
-                    executionPayloadContext.getPayloadId(),
-                    slot,
-                    payloadAndValue));
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
+    return new EngineGetPayloadV1(executionEngineClient, spec).execute(params);
   }
 
   @Override
