@@ -147,7 +147,7 @@ public final class CKZG4844 implements KZG {
           blobsBytes, commitmentsBytes, proofBytes, blobs.size());
     } catch (final Exception ex) {
       throw new KZGException(
-          "Failed to verify blobs and commitments against KZG proof " + kzgProofs, ex);
+          "Failed to verify blobs and commitments against KZG proofs " + kzgProofs, ex);
     }
   }
 
