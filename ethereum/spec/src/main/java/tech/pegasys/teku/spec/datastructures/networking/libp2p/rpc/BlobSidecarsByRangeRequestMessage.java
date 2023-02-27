@@ -30,7 +30,7 @@ public class BlobSidecarsByRangeRequestMessage
     public BlobSidecarsByRangeRequestMessageSchema() {
       super(
           "BlobSidecarsByRangeRequestMessage",
-          namedSchema("startSlot", SszPrimitiveSchemas.UINT64_SCHEMA),
+          namedSchema("start_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
