@@ -575,18 +575,18 @@ public class ChainDataProvider {
       BeaconBlock block,
       SyncCommitteeRewardData data,
       tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
-
-    final Optional<SyncCommittee> maybeCommittee =
-        spec.getSyncCommitteeUtil(block.getSlot()).map(util -> util.getSyncCommittee(state, epoch));
-    if (maybeCommittee.isEmpty()) {
-      return data;
+    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      throw new BadRequestException(
+          "Slot "
+              + block.getSlot()
+              + " is pre altair, and no sync committee information is available");
     }
 
+    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
+    final SyncCommittee committee =
+        spec.getSyncCommitteeUtil(block.getSlot()).orElseThrow().getSyncCommittee(state, epoch);
     final List<BLSPublicKey> committeeKeys =
-        maybeCommittee.get().getPubkeys().stream()
-            .map(SszPublicKey::getBLSPublicKey)
-            .collect(toList());
+        committee.getPubkeys().stream().map(SszPublicKey::getBLSPublicKey).collect(toList());
     final Map<Integer, Integer> committeeIndices =
         getCommitteeIndices(committeeKeys, validators, state);
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
