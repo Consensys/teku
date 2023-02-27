@@ -1220,6 +1220,18 @@ public class SafeFutureTest {
     assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
   }
 
+  @Test
+  void thenAcceptChecked_shouldHandleCheckedException() {
+    final IOException error = new IOException("oopsy");
+    final SafeFuture<Void> result =
+        SafeFuture.completedFuture("foo")
+            .thenAcceptChecked(
+                __ -> {
+                  throw error;
+                });
+    assertThatSafeFuture(result).isCompletedExceptionallyWith(error);
+  }
+
   private List<Throwable> collectUncaughtExceptions() {
     final List<Throwable> caughtExceptions = new ArrayList<>();
     Thread.currentThread().setUncaughtExceptionHandler((t, e) -> caughtExceptions.add(e));

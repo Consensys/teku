@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -104,6 +105,11 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No SyncAggregates in phase0");
+  }
+
+  @Override
+  public UInt64 computeParticipantReward(BeaconStateAltair state) {
+    return UInt64.ZERO;
   }
 
   @Override
