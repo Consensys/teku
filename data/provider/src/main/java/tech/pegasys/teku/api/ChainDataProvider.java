@@ -589,13 +589,12 @@ public class ChainDataProvider {
       return Optional.of(data);
     }
 
+    final List<BLSPublicKey> committeeKeys =
+        maybeCommittee.get().getPubkeys().stream()
+            .map(SszPublicKey::getBLSPublicKey)
+            .collect(toList());
     final Map<Integer, Integer> committeeIndices =
-        getCommitteeIndices(
-            maybeCommittee.get().getPubkeys().stream()
-                .map(SszPublicKey::getBLSPublicKey)
-                .collect(toList()),
-            validators,
-            state);
+        getCommitteeIndices(committeeKeys, validators, state);
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
     return Optional.of(
         calculateRewards(committeeIndices, participantReward.longValue(), block, data));
