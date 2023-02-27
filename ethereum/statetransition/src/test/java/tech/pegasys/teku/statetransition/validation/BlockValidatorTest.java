@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -337,6 +338,7 @@ public class BlockValidatorTest {
   }
 
   @TestTemplate
+  @Disabled("Should migrate to decoupled BlobSidecar when everything is ready")
   void shouldReturnAcceptConsistentBlockAndBlobsSidecar(final SpecContext specContext) {
     specContext.assumeDenebActive();
 

@@ -57,6 +57,9 @@ public class BlobSidecarGossipManager implements GossipManager {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final int maxBlobsPerBlock =
         SpecConfigDeneb.required(forkSpecVersion.getConfig()).getMaxBlobsPerBlock();
+    final SignedBlobSidecarSchema gossipType =
+        SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
+            .getSignedBlobSidecarSchema();
     final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler =
         new Int2ObjectOpenHashMap<>();
     IntStream.range(0, maxBlobsPerBlock)
@@ -71,8 +74,7 @@ public class BlobSidecarGossipManager implements GossipManager {
                       processor,
                       gossipEncoding,
                       forkInfo,
-                      SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
-                          .getSignedBlobSidecarSchema(),
+                      gossipType,
                       maxMessageSize);
               indexToTopicHandler.put(index, topicHandler);
             });

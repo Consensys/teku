@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -51,7 +52,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -260,6 +263,13 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestBlobSidecarsByRoot(
+      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener)
+      throws RpcException {
+    throw new UnsupportedOperationException("Not yet implemented");
+  }
+
+  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(final UInt64 slot) {
     final PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock> handler =
         PendingRequestHandler.createForSingleBlockRequest(
@@ -274,6 +284,12 @@ public class RespondingEth2Peer implements Eth2Peer {
         PendingRequestHandler.createForSingleBlockRequest(() -> findBlockByRoot(blockRoot));
 
     return createPendingBlockRequest(handler);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(
+      final BlobIdentifier blobIdentifier) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override
@@ -342,6 +358,12 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public boolean wantToReceiveBlobsSidecars(
       final ResponseCallback<BlobsSidecar> callback, final long blobsSidecarsCount) {
+    return true;
+  }
+
+  @Override
+  public boolean wantToReceiveBlobSidecars(
+      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return true;
   }
 
