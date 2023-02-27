@@ -19,6 +19,7 @@ import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -132,6 +134,8 @@ public interface BlockProcessor {
   void processSyncAggregate(
       MutableBeaconState state, SyncAggregate syncAggregate, BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException;
+
+  UInt64 computeParticipantReward(final BeaconStateAltair state);
 
   void processExecutionPayload(
       MutableBeaconState state,
