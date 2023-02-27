@@ -15,8 +15,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- Removed references to beacon block methods `/eth2/beacon_chain/req/beacon_blocks_by_root` and `/eth2/beacon_chain/req/beacon_blocks_by_range`.
-- `--Xmetrics-block-timing-tracking-enabled` option has been removed. The `--metrics-block-timing-tracking-enabled` option should be used instead (enabled by default).
 
 ### Additions and Improvements
 - Trigger the beacon nodes fallback mechanism when the execution layer is offline
