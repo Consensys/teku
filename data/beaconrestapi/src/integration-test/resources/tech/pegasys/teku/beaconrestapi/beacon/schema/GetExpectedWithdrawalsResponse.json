@@ -1,0 +1,19 @@
+{
+  "title" : "GetExpectedWithdrawalsResponse",
+  "type" : "object",
+  "required" : [ "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/Withdrawal"
+      }
+    }
+  }
+}
