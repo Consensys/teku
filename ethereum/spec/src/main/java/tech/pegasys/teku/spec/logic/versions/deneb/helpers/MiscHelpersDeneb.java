@@ -62,7 +62,8 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     return kzg;
   }
 
-  private void validateBlobSidecar(
+  // TODO: remove, dummy
+  private void validateBlobsSidecar(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
@@ -76,12 +77,7 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     checkArgument(
         kzgCommitments.size() == blobsSidecar.getBlobs().size(),
         "Number of KZG commitments should match number of blobs");
-    final boolean isValidProof =
-        kzg.verifyAggregateKzgProof(
-            blobsSidecar.getBlobs().stream().map(Blob::getBytes).collect(Collectors.toList()),
-            kzgCommitments,
-            blobsSidecar.getKZGAggregatedProof());
-    checkState(isValidProof, "Invalid aggregate KZG proof for the given blobs and commitments");
+    checkState(false, "Invalid aggregate KZG proof for the given blobs and commitments");
   }
 
   @Override
@@ -90,7 +86,7 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
       final BlobsSidecar blobsSidecar) {
-    validateBlobSidecar(slot, beaconBlockRoot, kzgCommitments, blobsSidecar);
+    validateBlobsSidecar(slot, beaconBlockRoot, kzgCommitments, blobsSidecar);
     return true;
   }
 
@@ -149,8 +145,10 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     return kzg.blobToKzgCommitment(blob.getBytes());
   }
 
+  // TODO: remove, dummy
+  @SuppressWarnings("unused")
   public KZGProof computeAggregatedKzgProof(final List<Bytes> blobs) {
-    return kzg.computeAggregateKzgProof(blobs);
+    return KZGProof.INFINITY;
   }
 
   @Override
