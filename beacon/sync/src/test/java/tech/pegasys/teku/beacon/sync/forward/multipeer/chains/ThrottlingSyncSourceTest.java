@@ -158,7 +158,6 @@ class ThrottlingSyncSourceTest {
     ignoreFuture(
         source.requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
 
-    // Both requests happen immediately
     ignoreFuture(
         verify(delegate).requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     verifyNoMoreInteractions(delegate);
