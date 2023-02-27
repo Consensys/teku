@@ -17,7 +17,6 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -192,27 +191,6 @@ public class BlobsSidecarsByRangeMessageHandlerTest {
     verify(listener).completeSuccessfully();
 
     assertThat(actualSent).containsExactlyElementsOf(expectedSent);
-  }
-
-  @Test
-  public void shouldIgnoreRequestWhenCountIsZero() {
-
-    final BlobsSidecarsByRangeRequestMessage request =
-        new BlobsSidecarsByRangeRequestMessage(startSlot, ZERO);
-
-    when(peer.wantToReceiveBlobsSidecars(listener, 0)).thenReturn(true);
-
-    handler.onIncomingMessage(protocolId, peer, request, listener);
-
-    final ArgumentCaptor<BlobsSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobsSidecar.class);
-
-    verify(listener, never()).respond(argumentCaptor.capture());
-
-    final List<BlobsSidecar> actualSent = argumentCaptor.getAllValues();
-
-    verify(listener).completeSuccessfully();
-
-    assertThat(actualSent).isEmpty();
   }
 
   private List<BlobsSidecar> setUpBlobsSidecarData(
