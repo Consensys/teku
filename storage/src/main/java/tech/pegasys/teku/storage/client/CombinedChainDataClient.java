@@ -488,9 +488,10 @@ public class CombinedChainDataClient {
     return historicalChainData.getBlobsSidecar(new SlotAndBlockRoot(slot, blockRoot));
   }
 
+  @SuppressWarnings("unused")
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
       final Bytes32 blockRoot, final UInt64 index) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
   }
 
   private boolean isRecentData(final UInt64 slot) {

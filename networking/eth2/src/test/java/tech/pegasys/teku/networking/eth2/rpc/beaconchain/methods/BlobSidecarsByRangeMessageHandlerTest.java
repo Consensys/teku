@@ -163,8 +163,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBlockAtSlotExact(any(), eq(headBlockRoot)))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock())));
-    when(combinedChainDataClient.getBlobSidecarBySlotIndexAndBlockRoot(any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(ZERO, count);
@@ -172,7 +170,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     verify(combinedChainDataClient, times(count.times(maxBlobsPerBlock).intValue()))
-        .getBlobSidecarBySlotIndexAndBlockRoot(any(), any(), any());
+        .getBlobSidecarByBlockRootAndIndex(any(), any());
 
     verify(listener, never()).respond(any());
 
@@ -254,25 +252,23 @@ public class BlobSidecarsByRangeMessageHandlerTest {
           .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
       final BlobSidecar blobSidecar0 =
           dataStructureUtil.randomBlobSidecar(
-              headBlockRoot,
+              block.getRoot(),
               ZERO,
               UInt64.valueOf(slot),
-              blockParentRoot,
+              block.getParentRoot(),
               dataStructureUtil.randomValidatorIndex());
+      when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(block.getRoot(), ZERO))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar0)));
+      blobSidecars.add(blobSidecar0);
       final BlobSidecar blobSidecar1 =
           dataStructureUtil.randomBlobSidecar(
-              headBlockRoot,
+              block.getRoot(),
               ONE,
               UInt64.valueOf(slot),
-              blockParentRoot,
+              block.getParentRoot(),
               dataStructureUtil.randomValidatorIndex());
-      when(combinedChainDataClient.getBlobSidecarBySlotIndexAndBlockRoot(
-              UInt64.valueOf(slot), ZERO, block.getRoot()))
-          .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar0)));
-      when(combinedChainDataClient.getBlobSidecarBySlotIndexAndBlockRoot(
-              UInt64.valueOf(slot), ONE, block.getRoot()))
+      when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(block.getRoot(), ONE))
           .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar1)));
-      blobSidecars.add(blobSidecar0);
       blobSidecars.add(blobSidecar1);
     }
 
