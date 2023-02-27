@@ -15,7 +15,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- `--Xbeacon-liveness-tracking-enabled` option will be removed (Temporarily kept for backward compatibility). The `--beacon-liveness-tracking-enabled` option should be used instead (disabled by default).
 
 ### Additions and Improvements
 - Trigger the beacon nodes fallback mechanism when the execution layer is offline
