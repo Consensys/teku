@@ -20,6 +20,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Trigger the beacon nodes fallback mechanism when the execution layer is offline
 - `--beacon-liveness-tracking-enabled` option (disabled by default) can be used instead of `--Xbeacon-liveness-tracking-enabled`
 - Added an optional query parameter `locally_submitted` to `/eth/v1/beacon/pool/bls_to_execution_changes` to allow users to query only bls changes submitted to the current node.
+- The `/eth/v1/beacon/rewards/sync_committee/{block_id}` endpoint has been created.
 
 ### Bug Fixes
 - Included All forks in fork schedule if they're defined in configuration.
