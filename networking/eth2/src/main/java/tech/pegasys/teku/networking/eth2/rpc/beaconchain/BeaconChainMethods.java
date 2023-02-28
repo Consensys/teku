@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -441,7 +441,7 @@ public class BeaconChainMethods {
             getDenebForkEpoch(spec),
             metricsSystem,
             combinedChainDataClient,
-            MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock),
+            MAX_REQUEST_BLOCKS_DENEB.times(maxBlobsPerBlock),
             UInt64.valueOf(maxBlobsPerBlock));
 
     return Optional.of(

@@ -40,8 +40,8 @@ public class BlobSidecarsByRangeRequestMessage
     }
   }
 
-  public static final BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema
-      SSZ_SCHEMA = new BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema();
+  public static final BlobSidecarsByRangeRequestMessageSchema SSZ_SCHEMA =
+      new BlobSidecarsByRangeRequestMessageSchema();
 
   private BlobSidecarsByRangeRequestMessage(
       final BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema type,
