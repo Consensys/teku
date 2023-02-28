@@ -20,10 +20,9 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -111,18 +110,9 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    LOG.trace("calling engineNewPayloadV1(executionPayload={})", executionPayload);
-    return executionEngineClient
-        .newPayloadV1(ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
-        .thenPeek(
-            payloadStatus ->
-                LOG.trace(
-                    "engineNewPayloadV1(executionPayload={}) -> {}",
-                    executionPayload,
-                    payloadStatus))
-        .exceptionally(PayloadStatus::failedExecution);
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+    return new EngineNewPayloadV1(executionEngineClient).execute(params);
   }
 
   @Override
