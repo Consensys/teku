@@ -25,17 +25,22 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import org.apache.commons.lang3.NotImplementedException;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetSyncCommitteeRewards extends RestApiEndpoint {
   private static final String ROUTE = "/eth/v1/beacon/rewards/sync_committee/{block_id}";
+  private final ChainDataProvider chainDataProvider;
 
   private static final SerializableTypeDefinition<Map.Entry<Integer, Long>> DATA_TYPE =
       SerializableTypeDefinition.<Map.Entry<Integer, Long>>object()
@@ -61,7 +66,11 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
               SyncCommitteeRewardData::getRewardData)
           .build();
 
-  public GetSyncCommitteeRewards() {
+  public GetSyncCommitteeRewards(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
+  }
+
+  public GetSyncCommitteeRewards(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("getSyncCommitteeRewards")
@@ -75,12 +84,21 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
             .withInternalErrorResponse()
-            .withNotImplementedResponse()
             .build());
+    this.chainDataProvider = chainDataProvider;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    throw new NotImplementedException();
+    final List<String> requestBody = request.getRequestBody();
+    request.respondAsync(
+        chainDataProvider
+            .getSyncCommitteeRewardsFromBlockId(
+                request.getPathParameter(PARAMETER_BLOCK_ID), new HashSet<>(requestBody))
+            .thenApply(
+                result ->
+                    result
+                        .map(AsyncApiResponse::respondOk)
+                        .orElse(AsyncApiResponse.respondNotFound())));
   }
 }
