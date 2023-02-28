@@ -174,6 +174,12 @@ public class ExecutionBuilderModule {
                     .getValue()
                     .multiply(builderBidChallengePercentage)
                     .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS))) {
+                  LOG.info(
+                      "Using local Execution Payload instead of Builder Bid as it's challenged. "
+                          + "Builder bid value: {}, local block value: {}, builderBidChallengePercentage: {}",
+                      signedBuilderBid.getMessage().getValue().toDecimalString(),
+                      localPayloadValue.toDecimalString(),
+                      builderBidChallengePercentage);
                   return getResultFromLocalExecutionPayload(
                       localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WIN);
                 }
