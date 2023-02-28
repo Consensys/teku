@@ -127,7 +127,7 @@ public class BeaconChainMethods {
         new ArrayList<>(
             List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange, getMetadata, ping));
     blobSidecarsByRoot.ifPresent(allMethods::add);
-    beaconBlockAndBlobsSidecarByRoot().ifPresent(allMethods::add);
+    beaconBlockAndBlobsSidecarByRoot.ifPresent(allMethods::add);
     blobsSidecarsByRange.ifPresent(allMethods::add);
     blobSidecarsByRange.ifPresent(allMethods::add);
   }
