@@ -231,6 +231,21 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
+  public SafeFuture<Void> requestBlobSidecarsByRange(
+      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
+    final long lastSlotExclusive = startSlot.longValue() + count.longValue();
+
+    final PendingRequestHandler<Void, BlobSidecar> handler =
+        PendingRequestHandler.createForBatchBlobSidecarRequest(
+            listener,
+            () ->
+                chain
+                    .streamBlobSidecars(startSlot.longValue(), lastSlotExclusive + 1)
+                    .collect(Collectors.toList()));
+    return createPendingBlobSidecarRequest(handler);
+  }
+
+  @Override
   public SafeFuture<Void> requestBlocksByRoot(
       final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener) {
     final PendingRequestHandler<Void, SignedBeaconBlock> handler =
@@ -326,6 +341,13 @@ public class RespondingEth2Peer implements Eth2Peer {
   private <T> SafeFuture<T> createPendingBlobsSidecarRequest(
       final PendingRequestHandler<T, BlobsSidecar> handler) {
     final PendingRequest<T, BlobsSidecar> request = new PendingRequest<>(handler);
+    pendingRequests.add(request);
+    return request.getFuture();
+  }
+
+  private <T> SafeFuture<T> createPendingBlobSidecarRequest(
+      final PendingRequestHandler<T, BlobSidecar> handler) {
+    final PendingRequest<T, BlobSidecar> request = new PendingRequest<>(handler);
     pendingRequests.add(request);
     return request.getFuture();
   }
@@ -592,6 +614,12 @@ public class RespondingEth2Peer implements Eth2Peer {
         final RpcResponseListener<BlobsSidecar> listener,
         final Supplier<List<BlobsSidecar>> blobsSidecarsSupplier) {
       return createForBatchRequest(listener, blobsSidecarsSupplier);
+    }
+
+    static PendingRequestHandler<Void, BlobSidecar> createForBatchBlobSidecarRequest(
+        final RpcResponseListener<BlobSidecar> listener,
+        final Supplier<List<BlobSidecar>> blobSidecarsSupplier) {
+      return createForBatchRequest(listener, blobSidecarsSupplier);
     }
 
     static PendingRequestHandler<Void, SignedBeaconBlockAndBlobsSidecar>

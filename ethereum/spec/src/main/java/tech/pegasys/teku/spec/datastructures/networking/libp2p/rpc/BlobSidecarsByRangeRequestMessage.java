@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,35 +20,36 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BlobsSidecarsByRangeRequestMessage
-    extends Container2<BlobsSidecarsByRangeRequestMessage, SszUInt64, SszUInt64>
+public class BlobSidecarsByRangeRequestMessage
+    extends Container2<BlobSidecarsByRangeRequestMessage, SszUInt64, SszUInt64>
     implements RpcRequest {
 
-  public static class BlobsSidecarsByRangeRequestMessageSchema
-      extends ContainerSchema2<BlobsSidecarsByRangeRequestMessage, SszUInt64, SszUInt64> {
+  public static class BlobSidecarsByRangeRequestMessageSchema
+      extends ContainerSchema2<BlobSidecarsByRangeRequestMessage, SszUInt64, SszUInt64> {
 
-    public BlobsSidecarsByRangeRequestMessageSchema() {
+    public BlobSidecarsByRangeRequestMessageSchema() {
       super(
-          "BlobsSidecarsByRangeRequestMessage",
+          "BlobSidecarsByRangeRequestMessage",
           namedSchema("start_slot", SszPrimitiveSchemas.UINT64_SCHEMA),
           namedSchema("count", SszPrimitiveSchemas.UINT64_SCHEMA));
     }
 
     @Override
-    public BlobsSidecarsByRangeRequestMessage createFromBackingNode(final TreeNode node) {
-      return new BlobsSidecarsByRangeRequestMessage(this, node);
+    public BlobSidecarsByRangeRequestMessage createFromBackingNode(final TreeNode node) {
+      return new BlobSidecarsByRangeRequestMessage(this, node);
     }
   }
 
-  public static final BlobsSidecarsByRangeRequestMessageSchema SSZ_SCHEMA =
-      new BlobsSidecarsByRangeRequestMessageSchema();
+  public static final BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema
+      SSZ_SCHEMA = new BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema();
 
-  private BlobsSidecarsByRangeRequestMessage(
-      final BlobsSidecarsByRangeRequestMessageSchema type, final TreeNode backingNode) {
+  private BlobSidecarsByRangeRequestMessage(
+      final BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema type,
+      final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public BlobsSidecarsByRangeRequestMessage(final UInt64 startSlot, final UInt64 count) {
+  public BlobSidecarsByRangeRequestMessage(final UInt64 startSlot, final UInt64 count) {
     super(SSZ_SCHEMA, SszUInt64.of(startSlot), SszUInt64.of(count));
   }
 
