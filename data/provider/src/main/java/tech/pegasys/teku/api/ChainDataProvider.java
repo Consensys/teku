@@ -50,7 +50,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
-import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -62,6 +61,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -73,6 +73,8 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -650,8 +652,63 @@ public class ChainDataProvider {
     return spec.atSlot(slot).getMilestone();
   }
 
-  public Version getVersionAtSlot(final UInt64 slot) {
-    return Version.fromMilestone(spec.atSlot(slot).getMilestone());
+  public SafeFuture<Optional<ObjectAndMetaData<List<Withdrawal>>>> getExpectedWithdrawals(
+      String stateParameter, Optional<UInt64> optionalProposalSlot) {
+    return defaultStateSelectorFactory
+        .defaultStateSelector(stateParameter)
+        .getState()
+        .thenApply(
+            maybeStateData ->
+                maybeStateData.map(
+                    stateAndMetaData -> {
+                      List<Withdrawal> withdrawals =
+                          getExpectedWithdrawalsFromState(
+                              stateAndMetaData.getData(), optionalProposalSlot);
+                      return new ObjectAndMetaData<>(
+                          withdrawals,
+                          stateAndMetaData.getMilestone(),
+                          stateAndMetaData.isExecutionOptimistic(),
+                          stateAndMetaData.isCanonical(),
+                          stateAndMetaData.isFinalized());
+                    }));
+  }
+
+  List<Withdrawal> getExpectedWithdrawalsFromState(
+      tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState data,
+      Optional<UInt64> optionalProposalSlot) {
+    final UInt64 proposalSlot = optionalProposalSlot.orElse(data.getSlot().increment());
+    // Apply some sanity checks prior to computing pre-state
+    if (!spec.atSlot(proposalSlot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      throw new BadRequestException(
+          "Requested withdrawals for a pre-capella slot: " + proposalSlot);
+    } else if (proposalSlot.isLessThanOrEqualTo(data.getSlot())) {
+      // expectedWithdrawals is computing a forward-looking set of withdrawals. if looking for
+      // withdrawals from a state, this is the incorrect endpoint.
+      throw new BadRequestException(
+          "Requested withdrawals for a historic slot, state slot: "
+              + data.getSlot()
+              + " vs. proposal slot: "
+              + proposalSlot);
+    } else if (proposalSlot.minusMinZero(128).isGreaterThan(data.getSlot())) {
+      // 128 slots is 4 epochs, which would suggest 4 epochs of empty blocks to process
+      throw new BadRequestException(
+          "Requested withdrawals for a proposal slot: "
+              + proposalSlot
+              + " that is more than 128 slots ahead of the supplied state slot: "
+              + data.getSlot());
+    }
+    try {
+      // need to get preState
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState preState =
+          spec.processSlots(data, proposalSlot);
+      return spec.atSlot(proposalSlot)
+          .getBlockProcessor()
+          .getExpectedWithdrawals(preState)
+          .orElse(List.of());
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      LOG.debug("Failed to get expected withdrawals for slot {}", proposalSlot, e);
+    }
+    return List.of();
   }
 
   public SafeFuture<Optional<Bytes32>> getFinalizedBlockRoot(final UInt64 slot) {
