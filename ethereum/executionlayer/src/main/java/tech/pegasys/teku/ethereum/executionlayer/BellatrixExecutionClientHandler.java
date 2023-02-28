@@ -18,12 +18,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
-import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -98,20 +97,9 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   @Override
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       final TransitionConfiguration transitionConfiguration) {
-    LOG.trace(
-        "calling engineExchangeTransitionConfiguration(transitionConfiguration={})",
-        transitionConfiguration);
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(transitionConfiguration).build();
 
-    return executionEngineClient
-        .exchangeTransitionConfiguration(
-            TransitionConfigurationV1.fromInternalTransitionConfiguration(transitionConfiguration))
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(TransitionConfigurationV1::asInternalTransitionConfiguration)
-        .thenPeek(
-            remoteTransitionConfiguration ->
-                LOG.trace(
-                    "engineExchangeTransitionConfiguration(transitionConfiguration={}) -> {}",
-                    transitionConfiguration,
-                    remoteTransitionConfiguration));
+    return new EngineExchangeTransitionConfigurationV1(executionEngineClient).execute(params);
   }
 }
