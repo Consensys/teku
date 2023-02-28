@@ -82,7 +82,7 @@ public class Eth2OutgoingRequestHandler<
       final TRequest request,
       Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
     this.timeoutRunner = timeoutRunner;
-    this.maximumResponseChunks = request.getMaximumRequestChunks();
+    this.maximumResponseChunks = request.getMaximumResponseChunks();
 
     this.responseHandler = responseHandler;
     responseStream = new ResponseStream<>(responseHandler);

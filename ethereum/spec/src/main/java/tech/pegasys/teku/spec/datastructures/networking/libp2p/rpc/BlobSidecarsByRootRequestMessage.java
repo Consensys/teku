@@ -55,7 +55,7 @@ public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return size();
   }
 
