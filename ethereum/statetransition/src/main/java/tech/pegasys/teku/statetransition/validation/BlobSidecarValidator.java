@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -65,6 +66,11 @@ public class BlobSidecarValidator {
         spec, invalidBlockRoots, validationHelper, LimitedSet.createSynchronized(validInfoSize));
   }
 
+  @VisibleForTesting
+  Set<SlotAndBlockRoot> getReceivedValidBlobSidecarInfoSet() {
+    return receivedValidBlobSidecarInfoSet;
+  }
+
   private BlobSidecarValidator(
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
@@ -95,11 +101,10 @@ public class BlobSidecarValidator {
     }
 
     /*
-    [IGNORE] The sidecar's block's parent (defined by sidecar.block_parent_root) has been seen
-    (via both gossip and non-gossip sources) (a client MAY queue sidecars for processing once the parent block is retrieved).
-
     [IGNORE] The sidecar is from a slot greater than the latest finalized slot
     -- i.e. validate that sidecar.slot > compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)
+
+    [IGNORE] The sidecar is the only sidecar with valid signature received for the tuple (sidecar.block_root, sidecar.index)
      */
     if (gossipValidationHelper.isSlotFinalized(blobSidecar.getSlot())
         || !blobSidecarIsFirstWithValidSignatureForSlot(blobSidecar)) {
