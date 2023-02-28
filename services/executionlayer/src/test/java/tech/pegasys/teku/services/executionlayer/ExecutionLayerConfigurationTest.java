@@ -35,6 +35,16 @@ public class ExecutionLayerConfigurationTest {
   }
 
   @Test
+  public void shouldThrowExceptionIfBidChallengePercentageNegative() {
+    final ExecutionLayerConfiguration.Builder builder =
+        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage(-100);
+
+    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining("Builder bid value challenge percentage should be >= 0");
+  }
+
+  @Test
   public void noExceptionThrownIfEeEndpointSpecified() {
     final ExecutionLayerConfiguration config =
         configBuilder.specProvider(bellatrixSpec).engineEndpoint("someEndpoint").build();

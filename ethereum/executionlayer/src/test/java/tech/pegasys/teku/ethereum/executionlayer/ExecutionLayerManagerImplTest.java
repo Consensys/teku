@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -196,7 +197,7 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayloadHeader header =
-        prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+        prepareBuilderGetHeaderResponse(executionPayloadContext, false).getExecutionPayloadHeader();
     prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
 
     // we expect result from the builder
@@ -234,9 +235,10 @@ class ExecutionLayerManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+    final UInt256 builderValue =
+        prepareBuilderGetHeaderResponse(executionPayloadContext, false).getValue();
     final ExecutionPayload localExecutionPayload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.MAX_VALUE, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, builderValue, slot);
 
     // we expect result from the local engine
     final ExecutionPayloadHeader expectedHeader =
@@ -251,10 +253,68 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             expectedHeader,
-            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER));
+            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WIN));
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(expectedResult);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
+  }
+
+  @Test
+  public void builderGetHeaderGetPayload_shouldReturnEnginePayloadWhenValueLowerButChallengeWon() {
+    // Setup requires local payload to have at lest 50% value of builder's to win
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, 50);
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    final UInt256 builderValue =
+        prepareBuilderGetHeaderResponse(executionPayloadContext, false).getValue();
+    final ExecutionPayload localExecutionPayload =
+        prepareEngineGetPayloadResponse(
+            executionPayloadContext, builderValue.multiply(51).divide(100), slot);
+
+    // we expect result from the local engine
+    final ExecutionPayloadHeader expectedHeader =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(localExecutionPayload);
+
+    // we expect local engine header as result
+    final HeaderWithFallbackData expectedResult =
+        HeaderWithFallbackData.create(
+            expectedHeader,
+            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WIN));
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+        .isCompletedWithValue(expectedResult);
+    verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
+  }
+
+  @Test
+  public void builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderWonChallenge() {
+    // Setup requires local payload to have at lest 50% value of builder's to win
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, 50);
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    final BuilderBid builderBid = prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+    prepareEngineGetPayloadResponse(
+        executionPayloadContext, builderBid.getValue().multiply(49).divide(100), slot);
+
+    // we expect result from the builder
+    final ExecutionPayloadHeader builderHeader = builderBid.getExecutionPayloadHeader();
+    final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+        .isCompletedWithValue(expectedResult);
   }
 
   @Test
@@ -577,7 +637,7 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionClientHandler);
   }
 
-  private ExecutionPayloadHeader prepareBuilderGetHeaderResponse(
+  private BuilderBid prepareBuilderGetHeaderResponse(
       final ExecutionPayloadContext executionPayloadContext, final boolean prepareEmptyResponse) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
@@ -599,7 +659,7 @@ class ExecutionLayerManagerImplTest {
                 .orElseThrow(),
             executionPayloadContext.getParentHash());
 
-    return signedBuilderBid.getMessage().getExecutionPayloadHeader();
+    return signedBuilderBid.getMessage();
   }
 
   private void verifyFallbackToLocalEL(
@@ -612,7 +672,7 @@ class ExecutionLayerManagerImplTest {
     final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
-        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_HIGHER) {
+        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_WIN) {
       // we expect both builder and local engine have been called
       verifyBuilderCalled(slot, executionPayloadContext);
     } else {
@@ -683,6 +743,13 @@ class ExecutionLayerManagerImplTest {
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled, final boolean builderValidatorEnabled) {
+    return createExecutionLayerChannelImpl(builderEnabled, builderValidatorEnabled, 100);
+  }
+
+  private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
+      final boolean builderEnabled,
+      final boolean builderValidatorEnabled,
+      final int builderBidChallengePercentaqe) {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(false);
     return ExecutionLayerManagerImpl.create(
         eventLogger,
@@ -694,7 +761,8 @@ class ExecutionLayerManagerImplTest {
             ? new BuilderBidValidatorImpl(eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
-        BlobsBundleValidator.NOOP);
+        BlobsBundleValidator.NOOP,
+        builderBidChallengePercentaqe);
   }
 
   private void updateBuilderStatus(final SafeFuture<Response<Void>> builderClientResponse) {

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.executionlayer;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
@@ -31,15 +32,18 @@ public class ExecutionLayerConfiguration {
 
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
 
+  public static final int DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE = 100;
+
   private final Spec spec;
   private final Optional<String> engineEndpoint;
   private final Version engineVersion;
   private final Optional<String> engineJwtSecretFile;
   private final Optional<String> builderEndpoint;
-  boolean isBuilderCircuitBreakerEnabled;
-  int builderCircuitBreakerWindow;
-  int builderCircuitBreakerAllowedFaults;
-  int builderCircuitBreakerAllowedConsecutiveFaults;
+  private final boolean isBuilderCircuitBreakerEnabled;
+  private final int builderCircuitBreakerWindow;
+  private final int builderCircuitBreakerAllowedFaults;
+  private final int builderCircuitBreakerAllowedConsecutiveFaults;
+  private final int builderBidChallengePercentage;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -50,7 +54,8 @@ public class ExecutionLayerConfiguration {
       final boolean isBuilderCircuitBreakerEnabled,
       final int builderCircuitBreakerWindow,
       final int builderCircuitBreakerAllowedFaults,
-      final int builderCircuitBreakerAllowedConsecutiveFaults) {
+      final int builderCircuitBreakerAllowedConsecutiveFaults,
+      final int builderBidChallengePercentage) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineVersion = engineVersion;
@@ -61,6 +66,7 @@ public class ExecutionLayerConfiguration {
     this.builderCircuitBreakerAllowedFaults = builderCircuitBreakerAllowedFaults;
     this.builderCircuitBreakerAllowedConsecutiveFaults =
         builderCircuitBreakerAllowedConsecutiveFaults;
+    this.builderBidChallengePercentage = builderBidChallengePercentage;
   }
 
   public static Builder builder() {
@@ -110,6 +116,10 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
+  public int getBuilderBidChallengePercentage() {
+    return builderBidChallengePercentage;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
@@ -121,12 +131,14 @@ public class ExecutionLayerConfiguration {
     private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
     private int builderCircuitBreakerAllowedConsecutiveFaults =
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
+    private int builderBidChallengePercentage = DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE;
 
     private Builder() {}
 
     public ExecutionLayerConfiguration build() {
       validateStubEndpoints();
       validateBuilderCircuitBreaker();
+      validateBuilderBidChallengePercentage();
       return new ExecutionLayerConfiguration(
           spec,
           engineEndpoint,
@@ -136,7 +148,8 @@ public class ExecutionLayerConfiguration {
           isBuilderCircuitBreakerEnabled,
           builderCircuitBreakerWindow,
           builderCircuitBreakerAllowedFaults,
-          builderCircuitBreakerAllowedConsecutiveFaults);
+          builderCircuitBreakerAllowedConsecutiveFaults,
+          builderBidChallengePercentage);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -187,6 +200,11 @@ public class ExecutionLayerConfiguration {
       return this;
     }
 
+    public Builder builderBidChallengePercentage(final int builderBidChallengePercentage) {
+      this.builderBidChallengePercentage = builderBidChallengePercentage;
+      return this;
+    }
+
     private void validateStubEndpoints() {
       final boolean engineIsStub =
           engineEndpoint.map(endpoint -> endpoint.equals(STUB_ENDPOINT_PREFIX)).orElse(false);
@@ -204,6 +222,12 @@ public class ExecutionLayerConfiguration {
             "Builder Circuit Breaker window cannot exceed "
                 + BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP);
       }
+    }
+
+    private void validateBuilderBidChallengePercentage() {
+      checkArgument(
+          builderBidChallengePercentage >= 0,
+          "Builder bid value challenge percentage should be >= 0");
     }
   }
 }

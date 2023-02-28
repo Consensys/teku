@@ -392,7 +392,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
-        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_HIGHER) {
+        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_WIN) {
       // we expect both builder and local engine have been called
       verifyBuilderCalled(slot, executionPayloadContext);
     } else {
@@ -469,7 +469,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
             ? new BuilderBidValidatorImpl(eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
-        BlobsBundleValidator.NOOP);
+        BlobsBundleValidator.NOOP,
+        100);
   }
 
   private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse, UInt64 slot) {

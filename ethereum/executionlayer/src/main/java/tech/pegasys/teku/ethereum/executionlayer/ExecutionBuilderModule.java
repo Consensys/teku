@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 public class ExecutionBuilderModule {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int HUNDRED_PERCENTS = 100;
 
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
@@ -58,6 +59,7 @@ public class ExecutionBuilderModule {
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
+  private final int builderBidChallengePercentage;
 
   public ExecutionBuilderModule(
       final Spec spec,
@@ -65,7 +67,8 @@ public class ExecutionBuilderModule {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
-      final EventLogger eventLogger) {
+      final EventLogger eventLogger,
+      final int builderBidChallengePercentage) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
@@ -73,6 +76,7 @@ public class ExecutionBuilderModule {
     this.builderCircuitBreaker = builderCircuitBreaker;
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
+    this.builderBidChallengePercentage = builderBidChallengePercentage;
   }
 
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
@@ -164,9 +168,14 @@ public class ExecutionBuilderModule {
                         .map(ExecutionPayloadWithValue::getValue)
                         .orElse(UInt256.ZERO);
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
-                if (signedBuilderBid.getMessage().getValue().lessOrEqualThan(localPayloadValue)) {
+                // 1 ETH is 10^18 wei, Uint256 max is more than 10^77
+                if (signedBuilderBid
+                    .getMessage()
+                    .getValue()
+                    .multiply(builderBidChallengePercentage)
+                    .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS))) {
                   return getResultFromLocalExecutionPayload(
-                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER);
+                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WIN);
                 }
                 final Optional<ExecutionPayload> localPayload =
                     maybeLocalExecutionPayload.map(ExecutionPayloadWithValue::getExecutionPayload);

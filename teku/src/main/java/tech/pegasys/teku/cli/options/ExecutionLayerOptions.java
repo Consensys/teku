@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
@@ -96,6 +97,17 @@ public class ExecutionLayerOptions {
   private int builderCircuitBreakerAllowedConsecutiveFaults =
       DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 
+  @Option(
+      names = {"--validators-builder-bid-challenge-percentage"},
+      paramLabel = "<INTEGER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Fallback to local payload, when builder bid is available but its value could be beat by local payload. "
+              + "Value is whole, percent (e.g. 100, default value, means use local payload when it at least matches builder bid, "
+              + "80 means use local payload when it's value is at least 80% of builder bid)",
+      arity = "1")
+  private int builderBidChallengePercentage = DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE;
+
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -107,7 +119,8 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerWindow(builderCircuitBreakerWindow)
                 .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults)
                 .builderCircuitBreakerAllowedConsecutiveFaults(
-                    builderCircuitBreakerAllowedConsecutiveFaults));
+                    builderCircuitBreakerAllowedConsecutiveFaults)
+                .builderBidChallengePercentage(builderBidChallengePercentage));
     depositOptions.configure(builder);
   }
 }
