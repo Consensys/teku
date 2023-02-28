@@ -28,11 +28,10 @@ public class Constants {
   public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
-  // Deneb Blobs
+  // Deneb
   public static final UInt64 MAX_REQUEST_BLOBS_SIDECARS = UInt64.valueOf(128);
   public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
-  public static final UInt64 MAX_REQUEST_BLOB_SIDECARS = UInt64.valueOf(128);
-
+  // ~18 days
   public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096;
 

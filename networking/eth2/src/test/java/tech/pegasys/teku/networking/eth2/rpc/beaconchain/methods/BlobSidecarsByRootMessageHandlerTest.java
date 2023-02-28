@@ -26,7 +26,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 import static tech.pegasys.teku.spec.config.Constants.SYNC_BLOB_SIDECARS_SIZE;
 
 import java.util.List;
@@ -119,7 +119,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
     final int maxRequestSize =
-        MAX_REQUEST_BLOB_SIDECARS
+        MAX_REQUEST_BLOCKS_DENEB
             .times(
                 SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig())
                     .getMaxBlobsPerBlock())
@@ -285,7 +285,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
           final int maxBlobsPerBlock =
               SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig())
                   .getMaxBlobsPerBlock();
-          final UInt64 maxRequestSize = MAX_REQUEST_BLOB_SIDECARS.times(maxBlobsPerBlock);
+          final UInt64 maxRequestSize = MAX_REQUEST_BLOCKS_DENEB.times(maxBlobsPerBlock);
           assertThat(SYNC_BLOB_SIDECARS_SIZE.isLessThanOrEqualTo(maxRequestSize)).isTrue();
         });
   }
