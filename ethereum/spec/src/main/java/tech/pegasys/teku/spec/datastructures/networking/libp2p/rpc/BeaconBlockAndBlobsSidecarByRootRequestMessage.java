@@ -57,7 +57,7 @@ public class BeaconBlockAndBlobsSidecarByRootRequestMessage extends SszListImpl<
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return size();
   }
 }

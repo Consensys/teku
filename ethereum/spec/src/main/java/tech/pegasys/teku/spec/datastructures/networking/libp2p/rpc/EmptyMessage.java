@@ -45,7 +45,7 @@ public class EmptyMessage extends SszListImpl<SszByte> implements RpcRequest {
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return 1;
   }
 }

@@ -56,7 +56,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return size();
   }
 
