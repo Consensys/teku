@@ -25,6 +25,7 @@ public class BeaconChainMethodIds {
   static final String BEACON_BLOCK_AND_BLOBS_SIDECAR_BY_ROOT =
       "/eth2/beacon_chain/req/beacon_block_and_blobs_sidecar_by_root";
   static final String BLOBS_SIDECARS_BY_RANGE = "/eth2/beacon_chain/req/blobs_sidecars_by_range";
+  static final String BLOB_SIDECARS_BY_RANGE = "/eth2/beacon_chain/req/blob_sidecars_by_range";
   static final String GET_METADATA = "/eth2/beacon_chain/req/metadata";
   static final String PING = "/eth2/beacon_chain/req/ping";
 
@@ -54,6 +55,11 @@ public class BeaconChainMethodIds {
   public static String getBlobsSidecarsByRangeMethodId(
       final int version, final RpcEncoding encoding) {
     return getMethodId(BLOBS_SIDECARS_BY_RANGE, version, encoding);
+  }
+
+  public static String getBlobSidecarsByRangeMethodId(
+      final int version, final RpcEncoding encoding) {
+    return getMethodId(BLOB_SIDECARS_BY_RANGE, version, encoding);
   }
 
   public static String getStatusMethodId(final int version, final RpcEncoding encoding) {

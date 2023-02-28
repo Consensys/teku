@@ -34,6 +34,7 @@ public class Constants {
   public static final UInt64 MAX_REQUEST_BLOB_SIDECARS = UInt64.valueOf(128);
 
   public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
+  public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096;
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
@@ -73,6 +74,7 @@ public class Constants {
   public static final UInt64 SYNC_BLOB_SIDECARS_SIZE = UInt64.valueOf(50);
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
   public static final int MAX_BLOBS_SIDECARS_PER_MINUTE = 500;
+  public static final int MAX_BLOB_SIDECARS_PER_MINUTE = 1000;
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);

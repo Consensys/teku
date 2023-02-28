@@ -53,7 +53,7 @@ public class PingMessage extends Container1<PingMessage, SszUInt64> implements R
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return 1;
   }
 }

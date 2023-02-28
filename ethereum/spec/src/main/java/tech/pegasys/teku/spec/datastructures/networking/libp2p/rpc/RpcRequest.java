@@ -17,5 +17,5 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 
 public interface RpcRequest extends SszData {
 
-  int getMaximumRequestChunks();
+  int getMaximumResponseChunks();
 }
