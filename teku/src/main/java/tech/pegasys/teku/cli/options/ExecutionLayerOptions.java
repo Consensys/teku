@@ -98,7 +98,7 @@ public class ExecutionLayerOptions {
       DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 
   @Option(
-      names = {"--validators-builder-bid-challenge-percentage"},
+      names = {"--Xvalidators-builder-bid-challenge-percentage"},
       paramLabel = "<STRING>",
       showDefaultValue = Visibility.ALWAYS,
       description =
@@ -106,7 +106,8 @@ public class ExecutionLayerOptions {
               + "Value is whole, percent (e.g. 100, default value, means use local payload when it at least matches builder bid, "
               + "80 means use local payload when its value is at least 80% of builder bid).\n"
               + "NEVER: ignore local value, use builder's bid whenever it passes validation",
-      arity = "1")
+      arity = "1",
+      hidden = true)
   private String builderBidChallengePercentage =
       Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
 
