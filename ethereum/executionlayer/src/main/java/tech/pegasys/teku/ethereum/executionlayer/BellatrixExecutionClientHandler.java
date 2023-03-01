@@ -21,6 +21,8 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByHash;
+import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByNumber;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -50,19 +52,15 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
 
   @Override
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
-    LOG.trace("calling eth1GetPowBlock(blockHash={})", blockHash);
-    return executionEngineClient
-        .getPowBlock(blockHash)
-        .thenPeek(
-            powBlock -> LOG.trace("eth1GetPowBlock(blockHash={}) -> {}", blockHash, powBlock));
+    final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
+
+    return new EthGetBlockByHash(executionEngineClient).execute(params);
   }
 
   @Override
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
-    LOG.trace("calling eth1GetPowChainHead()");
-    return executionEngineClient
-        .getPowChainHead()
-        .thenPeek(powBlock -> LOG.trace("eth1GetPowChainHead() -> {}", powBlock));
+    // uses LATEST as default block parameter on Eth1 JSON-RPC call
+    return new EthGetBlockByNumber(executionEngineClient).execute(JsonRpcRequestParams.NO_PARAMS);
   }
 
   @Override
