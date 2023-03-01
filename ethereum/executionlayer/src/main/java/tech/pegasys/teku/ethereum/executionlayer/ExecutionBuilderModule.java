@@ -176,7 +176,7 @@ public class ExecutionBuilderModule {
                     .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS))) {
                   LOG.info(
                       "Using local Execution Payload instead of Builder Bid as it's challenged. "
-                          + "Builder bid value: {}, local block value: {}, builderBidChallengePercentage: {}",
+                          + "Builder bid value: {}, local block value: {}, builderBidChallengePercentage: {}%",
                       signedBuilderBid.getMessage().getValue().toDecimalString(),
                       localPayloadValue.toDecimalString(),
                       builderBidChallengePercentage);
