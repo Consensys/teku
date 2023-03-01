@@ -14,14 +14,14 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByHash;
+import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByNumber;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 class BellatrixExecutionClientHandler implements ExecutionClientHandler {
-  private static final Logger LOG = LogManager.getLogger();
   protected final Spec spec;
   protected final ExecutionEngineClient executionEngineClient;
 
@@ -49,19 +48,15 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
 
   @Override
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
-    LOG.trace("calling eth1GetPowBlock(blockHash={})", blockHash);
-    return executionEngineClient
-        .getPowBlock(blockHash)
-        .thenPeek(
-            powBlock -> LOG.trace("eth1GetPowBlock(blockHash={}) -> {}", blockHash, powBlock));
+    final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
+
+    return new EthGetBlockByHash(executionEngineClient).execute(params);
   }
 
   @Override
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
-    LOG.trace("calling eth1GetPowChainHead()");
-    return executionEngineClient
-        .getPowChainHead()
-        .thenPeek(powBlock -> LOG.trace("eth1GetPowChainHead() -> {}", powBlock));
+    // uses LATEST as default block parameter on Eth1 JSON-RPC call
+    return new EthGetBlockByNumber(executionEngineClient).execute(JsonRpcRequestParams.NO_PARAMS);
   }
 
   @Override

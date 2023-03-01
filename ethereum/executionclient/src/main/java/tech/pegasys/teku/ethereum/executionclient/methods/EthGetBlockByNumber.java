@@ -13,28 +13,35 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
-public abstract class AbstractEngineJsonRpcMethod<T> implements EngineJsonRpcMethod<T> {
+public class EthGetBlockByNumber extends AbstractEngineJsonRpcMethod<PowBlock> {
 
-  protected final ExecutionEngineClient executionEngineClient;
+  private static final Logger LOG = LogManager.getLogger();
 
-  public AbstractEngineJsonRpcMethod(final ExecutionEngineClient executionEngineClient) {
-    this.executionEngineClient = executionEngineClient;
+  public EthGetBlockByNumber(final ExecutionEngineClient executionEngineClient) {
+    super(executionEngineClient);
   }
 
   @Override
-  public abstract String getName();
-
-  @Override
-  public abstract int getVersion();
-
-  @Override
-  public final String getVersionedName() {
-    return getVersion() == 0 ? getName() : getName() + "V" + getVersion();
+  public String getName() {
+    return "eth_getBlockByNumber";
   }
 
   @Override
-  public abstract SafeFuture<T> execute(JsonRpcRequestParams params);
+  public int getVersion() {
+    return 0;
+  }
+
+  @Override
+  public SafeFuture<PowBlock> execute(final JsonRpcRequestParams params) {
+    LOG.trace("calling eth1GetPowChainHead()");
+    return executionEngineClient
+        .getPowChainHead()
+        .thenPeek(powBlock -> LOG.trace("eth1GetPowChainHead() -> {}", powBlock));
+  }
 }
