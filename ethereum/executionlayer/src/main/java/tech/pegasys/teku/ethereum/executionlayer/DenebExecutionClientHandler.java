@@ -18,7 +18,6 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsBundleV1
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
-import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams.Builder;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -60,7 +59,8 @@ public class DenebExecutionClientHandler extends CapellaExecutionClientHandler
       return super.engineGetBlobsBundle(payloadId, slot);
     }
 
-    final JsonRpcRequestParams params = new Builder().add(payloadId).add(slot).build();
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(payloadId).add(slot).build();
 
     return new EngineGetBlobsBundleV1(executionEngineClient, spec).execute(params);
   }
