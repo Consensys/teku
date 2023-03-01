@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -60,5 +61,24 @@ public class BlobsBundle {
         .add("kzgs", kzgs)
         .add("blobs", blobs)
         .toString();
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final BlobsBundle that = (BlobsBundle) o;
+    return Objects.equals(blockHash, that.blockHash)
+        && Objects.equals(kzgs, that.kzgs)
+        && Objects.equals(blobs, that.blobs);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(blockHash, kzgs, blobs);
   }
 }
