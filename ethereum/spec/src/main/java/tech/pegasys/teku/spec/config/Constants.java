@@ -29,11 +29,11 @@ public class Constants {
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
   // Deneb
-  public static final UInt64 MAX_REQUEST_BLOBS_SIDECARS = UInt64.valueOf(128);
   public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
-  // ~18 days
+  public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
+  // TODO: remove when blobs decoupling sync is implemented
+  public static final UInt64 MAX_REQUEST_BLOBS_SIDECARS = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
-  public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096;
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
@@ -69,10 +69,8 @@ public class Constants {
   // Teku Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
   public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final UInt64 SYNC_BLOBS_SIDECARS_SIZE = UInt64.valueOf(50);
   public static final UInt64 SYNC_BLOB_SIDECARS_SIZE = UInt64.valueOf(50);
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
-  public static final int MAX_BLOBS_SIDECARS_PER_MINUTE = 500;
   public static final int MAX_BLOB_SIDECARS_PER_MINUTE = 1000;
 
   // Teku Validator Client Specific

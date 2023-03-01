@@ -68,7 +68,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -98,7 +97,6 @@ public class Eth2P2PNetworkBuilder {
   protected RecentChainData recentChainData;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
-  protected OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor;
   protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
   protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
@@ -281,7 +279,6 @@ public class Eth2P2PNetworkBuilder {
             gossipEncoding,
             gossipedBlockProcessor,
             gossipedBlobSidecarProcessor,
-            gossipedBlockAndBlobsProcessor,
             gossipedAttestationConsumer,
             gossipedAggregateProcessor,
             gossipedAttesterSlashingConsumer,
@@ -449,13 +446,6 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<SignedBlobSidecar> blobSidecarProcessor) {
     checkNotNull(blobSidecarProcessor);
     this.gossipedBlobSidecarProcessor = blobSidecarProcessor;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder gossipedBlockAndBlobsProcessor(
-      final OperationProcessor<SignedBeaconBlockAndBlobsSidecar> gossipedBlockAndBlobsProcessor) {
-    checkNotNull(gossipedBlockAndBlobsProcessor);
-    this.gossipedBlockAndBlobsProcessor = gossipedBlockAndBlobsProcessor;
     return this;
   }
 

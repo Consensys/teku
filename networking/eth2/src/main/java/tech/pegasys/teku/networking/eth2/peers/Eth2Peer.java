@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -47,7 +46,6 @@ public interface Eth2Peer extends Peer, SyncSource {
       final MetadataMessagesFactory metadataMessagesFactory,
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
-      final RateTracker blobsSidecarsRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker requestTracker) {
     return new DefaultEth2Peer(
@@ -58,7 +56,6 @@ public interface Eth2Peer extends Peer, SyncSource {
         metadataMessagesFactory,
         peerChainValidator,
         blockRequestTracker,
-        blobsSidecarsRequestTracker,
         blobSidecarsRequestTracker,
         requestTracker);
   }
@@ -91,10 +88,6 @@ public interface Eth2Peer extends Peer, SyncSource {
       List<Bytes32> blockRoots, RpcResponseListener<SignedBeaconBlock> listener)
       throws RpcException;
 
-  SafeFuture<Void> requestBlockAndBlobsSidecarByRoot(
-      List<Bytes32> blockRoots, RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener)
-      throws RpcException;
-
   SafeFuture<Void> requestBlobSidecarsByRoot(
       List<BlobIdentifier> blobIdentifiers, RpcResponseListener<BlobSidecar> listener)
       throws RpcException;
@@ -105,8 +98,13 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(BlobIdentifier blobIdentifier);
 
-  SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
-      Bytes32 blockRoot);
+  // TODO: remove when blobs decoupling sync is implemented
+  @Deprecated
+  @SuppressWarnings("unused")
+  default SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
+      Bytes32 blockRoot) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  }
 
   SafeFuture<MetadataMessage> requestMetadata();
 
@@ -114,12 +112,6 @@ public interface Eth2Peer extends Peer, SyncSource {
       final Eth2RpcMethod<I, O> method, final I request);
 
   boolean wantToReceiveBlocks(ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
-
-  boolean wantToReceiveBlockAndBlobsSidecars(
-      ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback, long blocksCount);
-
-  boolean wantToReceiveBlobsSidecars(
-      ResponseCallback<BlobsSidecar> callback, long blobsSidecarsCount);
 
   boolean wantToReceiveBlobSidecars(ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
 
