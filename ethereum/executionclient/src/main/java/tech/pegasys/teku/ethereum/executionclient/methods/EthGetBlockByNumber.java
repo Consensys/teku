@@ -34,12 +34,7 @@ public class EthGetBlockByNumber extends AbstractEngineJsonRpcMethod<PowBlock> {
 
   @Override
   public int getVersion() {
-    return Integer.MAX_VALUE;
-  }
-
-  @Override
-  public String getVersionedName() {
-    return getName();
+    return 0;
   }
 
   @Override

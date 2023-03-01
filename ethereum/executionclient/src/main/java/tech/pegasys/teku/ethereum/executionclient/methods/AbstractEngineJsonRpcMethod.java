@@ -29,11 +29,10 @@ public abstract class AbstractEngineJsonRpcMethod<T> implements EngineJsonRpcMet
 
   @Override
   public abstract int getVersion();
-  ;
 
   @Override
-  public String getVersionedName() {
-    return getName() + "V" + getVersion();
+  public final String getVersionedName() {
+    return getVersion() == 0 ? getName() : getName() + "V" + getVersion();
   }
 
   @Override

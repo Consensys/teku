@@ -50,7 +50,7 @@ class EthGetBlockByHashTest {
   @Test
   public void shouldReturnExpectedNameAndVersion() {
     assertThat(jsonRpcMethod.getName()).isEqualTo("eth_getBlockByHash");
-    assertThat(jsonRpcMethod.getVersion()).isEqualTo(Integer.MAX_VALUE); // no version
+    assertThat(jsonRpcMethod.getVersion()).isEqualTo(0); // no version
     assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("eth_getBlockByHash"); // no version
   }
 
