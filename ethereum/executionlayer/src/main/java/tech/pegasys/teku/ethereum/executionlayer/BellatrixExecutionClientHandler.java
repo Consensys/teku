@@ -14,8 +14,6 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
@@ -39,7 +37,6 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 class BellatrixExecutionClientHandler implements ExecutionClientHandler {
-  private static final Logger LOG = LogManager.getLogger();
   protected final Spec spec;
   protected final ExecutionEngineClient executionEngineClient;
 
