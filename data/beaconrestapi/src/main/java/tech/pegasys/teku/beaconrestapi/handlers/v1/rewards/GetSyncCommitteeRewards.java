@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 
 public class GetSyncCommitteeRewards extends RestApiEndpoint {
-  private static final String ROUTE = "/eth/v1/beacon/rewards/sync_committee/{block_id}";
+  public static final String ROUTE = "/eth/v1/beacon/rewards/sync_committee/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
   private static final SerializableTypeDefinition<Map.Entry<Integer, Long>> DATA_TYPE =
@@ -54,7 +54,7 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
               Map.Entry::getValue)
           .build();
 
-  private static final SerializableTypeDefinition<SyncCommitteeRewardData> RESPONSE_TYPE =
+  public static final SerializableTypeDefinition<SyncCommitteeRewardData> RESPONSE_TYPE =
       SerializableTypeDefinition.object(SyncCommitteeRewardData.class)
           .name("GetSyncCommitteeRewards")
           .withField(
