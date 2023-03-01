@@ -707,7 +707,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            __ -> {},
+            __ -> {}, // NOOP to be removed
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,
