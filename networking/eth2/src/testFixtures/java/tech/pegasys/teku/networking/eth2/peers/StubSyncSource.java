@@ -51,6 +51,7 @@ public class StubSyncSource implements SyncSource {
     currentBlockRequest.orElseThrow().complete(null);
   }
 
+  // TODO: remove when blobs decoupling sync is implemented
   public void receiveBlobsSidecars(final BlobsSidecar... blobsSidecars) {
     final RpcResponseListener<BlobsSidecar> listener = currentBlobsSidecarListener.orElseThrow();
     Stream.of(blobsSidecars)
@@ -82,6 +83,7 @@ public class StubSyncSource implements SyncSource {
     return request;
   }
 
+  // TODO: remove when blobs decoupling sync is implemented
   @Override
   public SafeFuture<Void> requestBlobsSidecarsByRange(
       final UInt64 startSlot,
@@ -116,6 +118,7 @@ public class StubSyncSource implements SyncSource {
         .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
   }
 
+  // TODO: remove when blobs decoupling sync is implemented
   public void assertRequestedBlobsSidecars(final long startSlot, final long count) {
     assertThat(blobsSidecarsRequests)
         .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));

@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +45,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
@@ -62,6 +62,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
+
+  private final SpecConfigDeneb specConfig =
+      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig());
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
 
@@ -88,7 +91,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       new BlobSidecarsByRangeMessageHandler(
           spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
 
-  private final UInt64 maxBlobsPerBlock = handler.getMaxBlobsPerBlock(startSlot);
+  private final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
 
   @BeforeEach
   public void setUp() {
@@ -227,7 +230,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .new RequestState(
             listener,
             maxBlobsPerBlock,
-            MAX_REQUEST_BLOCKS_DENEB.times(maxBlobsPerBlock),
+            specConfig.getMaxRequestBlobSidecars(),
             headBlockRoot,
             currentSlot,
             count);

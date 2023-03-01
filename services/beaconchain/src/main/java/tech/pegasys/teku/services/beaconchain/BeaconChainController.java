@@ -63,7 +63,6 @@ import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
-import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
@@ -699,8 +698,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final BlockGossipChannel blockGossipChannel =
         eventChannels.getPublisher(BlockGossipChannel.class);
-    final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel =
-        eventChannels.getPublisher(BlockAndBlobsSidecarGossipChannel.class);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient),
@@ -710,7 +707,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blockAndBlobsSidecarGossipChannel,
+            __ -> {}, // TODO: remove once the block publishing is switched to a decoupling version
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,
@@ -852,7 +849,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             // TODO: implement BlobSidecarManager
             .gossipedBlobSidecarProcessor(OperationProcessor.noop())
-            .gossipedBlockAndBlobsProcessor(blockManager::validateAndImportBlockAndBlobsSidecar)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
