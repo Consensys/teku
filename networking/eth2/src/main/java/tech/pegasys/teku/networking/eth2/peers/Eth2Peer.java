@@ -98,6 +98,7 @@ public interface Eth2Peer extends Peer, SyncSource {
 
   SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(BlobIdentifier blobIdentifier);
 
+  // TODO: remove when blobs decoupling sync is implemented
   @Deprecated
   @SuppressWarnings("unused")
   default SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
