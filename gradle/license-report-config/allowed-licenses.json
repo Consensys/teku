@@ -70,6 +70,9 @@
     },
     {
       "moduleName": "io.libp2p:jvm-libp2p-minimal"
+    },
+    {
+      "moduleName": "com.squareup.okio:okio"
     }
   ],
   "overrideLicenses" : [
@@ -185,6 +188,11 @@
     {
       "moduleName": "tech.pegasys:noise-java",
       "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "com.squareup.okio:okio",
+      "moduleLicense": "Apache License, Version 2.0",
+      "moduleLicenseUrl": "https://github.com/square/okio/blob/master/LICENSE.txt"
     }
   ]
 }
