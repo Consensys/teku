@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
@@ -84,15 +83,14 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    // MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK
-    final int maxRequestBlobSidecars = calculateMaxRequestBlobSidecars();
-    if (request.size() > maxRequestBlobSidecars) {
+    final UInt64 maxRequestBlobSidecars = getMaxRequestBlobSidecars();
+    if (request.size() > maxRequestBlobSidecars.intValue()) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
               INVALID_REQUEST_CODE,
               String.format(
-                  "Only a maximum of %d blob sidecars can be requested per request",
+                  "Only a maximum of %s blob sidecars can be requested per request",
                   maxRequestBlobSidecars)));
     }
     return Optional.empty();
@@ -144,11 +142,10 @@ public class BlobSidecarsByRootMessageHandler
     future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
   }
 
-  private int calculateMaxRequestBlobSidecars() {
+  private UInt64 getMaxRequestBlobSidecars() {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.atEpoch(currentEpoch).getConfig()).getMaxBlobsPerBlock();
-    return MAX_REQUEST_BLOCKS_DENEB.times(maxBlobsPerBlock).intValue();
+    return SpecConfigDeneb.required(spec.atEpoch(currentEpoch).getConfig())
+        .getMaxRequestBlobSidecars();
   }
 
   private UInt64 getFinalizedEpoch() {
