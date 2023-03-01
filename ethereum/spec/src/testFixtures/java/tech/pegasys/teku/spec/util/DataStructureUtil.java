@@ -2070,7 +2070,9 @@ public final class DataStructureUtil {
     private SchemaDefinitionsDeneb getSchemaDefinitionsDeneb() {
       final SchemaDefinitions schemaDefinitions =
           slot.map(s -> spec.atSlot(s).getSchemaDefinitions())
-              .orElse(spec.getGenesisSchemaDefinitions());
+              .orElse(
+                  spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                      .getSchemaDefinitions());
 
       return SchemaDefinitionsDeneb.required(schemaDefinitions);
     }
