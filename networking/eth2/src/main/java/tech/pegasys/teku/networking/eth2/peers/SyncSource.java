@@ -30,6 +30,7 @@ public interface SyncSource {
   SafeFuture<Void> requestBlocksByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<SignedBeaconBlock> listener);
 
+  // TODO: remove when blobs decoupling sync is implemented
   @Deprecated
   @SuppressWarnings("unused")
   default SafeFuture<Void> requestBlobsSidecarsByRange(
