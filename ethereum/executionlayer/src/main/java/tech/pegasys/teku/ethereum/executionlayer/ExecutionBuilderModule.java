@@ -59,7 +59,7 @@ public class ExecutionBuilderModule {
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
-  private final int builderBidChallengePercentage;
+  private final Optional<Integer> builderBidChallengePercentage;
 
   public ExecutionBuilderModule(
       final Spec spec,
@@ -68,7 +68,7 @@ public class ExecutionBuilderModule {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
-      final int builderBidChallengePercentage) {
+      final Optional<Integer> builderBidChallengePercentage) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
@@ -169,11 +169,12 @@ public class ExecutionBuilderModule {
                         .orElse(UInt256.ZERO);
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
                 // 1 ETH is 10^18 wei, Uint256 max is more than 10^77
-                if (signedBuilderBid
-                    .getMessage()
-                    .getValue()
-                    .multiply(builderBidChallengePercentage)
-                    .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS))) {
+                if (builderBidChallengePercentage.isPresent()
+                    && signedBuilderBid
+                        .getMessage()
+                        .getValue()
+                        .multiply(builderBidChallengePercentage.get())
+                        .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS))) {
                   LOG.info(
                       "Using local Execution Payload instead of Builder Bid as it's challenged. "
                           + "Builder bid value: {}, local block value: {}, builderBidChallengePercentage: {}%",

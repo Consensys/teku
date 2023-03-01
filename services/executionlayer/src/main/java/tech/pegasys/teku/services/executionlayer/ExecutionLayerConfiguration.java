@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
+import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -43,7 +44,7 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerWindow;
   private final int builderCircuitBreakerAllowedFaults;
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
-  private final int builderBidChallengePercentage;
+  private final Optional<Integer> builderBidChallengePercentage;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -55,7 +56,7 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerWindow,
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
-      final int builderBidChallengePercentage) {
+      final Optional<Integer> builderBidChallengePercentage) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineVersion = engineVersion;
@@ -116,7 +117,7 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
-  public int getBuilderBidChallengePercentage() {
+  public Optional<Integer> getBuilderBidChallengePercentage() {
     return builderBidChallengePercentage;
   }
 
@@ -131,14 +132,16 @@ public class ExecutionLayerConfiguration {
     private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
     private int builderCircuitBreakerAllowedConsecutiveFaults =
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
-    private int builderBidChallengePercentage = DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE;
+    private String builderBidChallengePercentage =
+        Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
 
     private Builder() {}
 
     public ExecutionLayerConfiguration build() {
       validateStubEndpoints();
       validateBuilderCircuitBreaker();
-      validateBuilderBidChallengePercentage();
+      Optional<Integer> builderChallengePercentage =
+          validateAndParseBuilderBidChallengePercentage();
       return new ExecutionLayerConfiguration(
           spec,
           engineEndpoint,
@@ -149,7 +152,7 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerWindow,
           builderCircuitBreakerAllowedFaults,
           builderCircuitBreakerAllowedConsecutiveFaults,
-          builderBidChallengePercentage);
+          builderChallengePercentage);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -200,7 +203,7 @@ public class ExecutionLayerConfiguration {
       return this;
     }
 
-    public Builder builderBidChallengePercentage(final int builderBidChallengePercentage) {
+    public Builder builderBidChallengePercentage(final String builderBidChallengePercentage) {
       this.builderBidChallengePercentage = builderBidChallengePercentage;
       return this;
     }
@@ -224,10 +227,25 @@ public class ExecutionLayerConfiguration {
       }
     }
 
-    private void validateBuilderBidChallengePercentage() {
+    private Optional<Integer> validateAndParseBuilderBidChallengePercentage() {
+      if (builderBidChallengePercentage.toUpperCase(Locale.ROOT).equals("NEVER")) {
+        return Optional.empty();
+      }
+      if (builderBidChallengePercentage.endsWith("%")) {
+        builderBidChallengePercentage =
+            builderBidChallengePercentage.substring(0, builderBidChallengePercentage.length() - 1);
+      }
+      final int builderBidChallengePercentageInt;
+      try {
+        builderBidChallengePercentageInt = Integer.parseInt(builderBidChallengePercentage);
+      } catch (final NumberFormatException ex) {
+        throw new InvalidConfigurationException(
+            "Expecting number, percentage or NEVER keyword for Builder bid challenge percentage");
+      }
       checkArgument(
-          builderBidChallengePercentage >= 0,
+          builderBidChallengePercentageInt >= 0,
           "Builder bid value challenge percentage should be >= 0");
+      return Optional.of(builderBidChallengePercentageInt);
     }
   }
 }

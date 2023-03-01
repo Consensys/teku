@@ -262,7 +262,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void builderGetHeaderGetPayload_shouldReturnEnginePayloadWhenValueLowerButChallengeWon() {
     // Setup requires local payload to have at lest 50% value of builder's to win
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, 50);
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -298,7 +298,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderWonChallenge() {
     // Setup requires local payload to have at lest 50% value of builder's to win
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, 50);
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -309,6 +309,29 @@ class ExecutionLayerManagerImplTest {
     final BuilderBid builderBid = prepareBuilderGetHeaderResponse(executionPayloadContext, false);
     prepareEngineGetPayloadResponse(
         executionPayloadContext, builderBid.getValue().multiply(49).divide(100), slot);
+
+    // we expect result from the builder
+    final ExecutionPayloadHeader builderHeader = builderBid.getExecutionPayloadHeader();
+    final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+        .isCompletedWithValue(expectedResult);
+  }
+
+  @Test
+  public void builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderChallengeIsNever() {
+    // Setup will always ignore local payload in favor of Builder bid
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.empty());
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    final BuilderBid builderBid = prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+    prepareEngineGetPayloadResponse(
+        // something tasty, but we should ignore it
+        executionPayloadContext, builderBid.getValue().multiply(100), slot);
 
     // we expect result from the builder
     final ExecutionPayloadHeader builderHeader = builderBid.getExecutionPayloadHeader();
@@ -743,13 +766,14 @@ class ExecutionLayerManagerImplTest {
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled, final boolean builderValidatorEnabled) {
-    return createExecutionLayerChannelImpl(builderEnabled, builderValidatorEnabled, 100);
+    return createExecutionLayerChannelImpl(
+        builderEnabled, builderValidatorEnabled, Optional.of(100));
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled,
       final boolean builderValidatorEnabled,
-      final int builderBidChallengePercentaqe) {
+      final Optional<Integer> builderBidChallengePercentaqe) {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(false);
     return ExecutionLayerManagerImpl.create(
         eventLogger,

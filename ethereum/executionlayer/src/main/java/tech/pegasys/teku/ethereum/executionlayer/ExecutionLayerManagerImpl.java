@@ -83,7 +83,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final BlobsBundleValidator blobsBundleValidator,
-      final int builderBidChallengePercentage) {
+      final Optional<Integer> builderBidChallengePercentage) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -124,7 +124,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final BlobsBundleValidator blobsBundleValidator,
-      final int builderBidChallengePercentage) {
+      final Optional<Integer> builderBidChallengePercentage) {
     final ExecutionClientHandler executionClientHandler;
 
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
@@ -186,7 +186,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
       final BlobsBundleValidator blobsBundleValidator,
-      final int builderBidChallengePercentage) {
+      final Optional<Integer> builderBidChallengePercentage) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
     this.blobsBundleValidator = blobsBundleValidator;

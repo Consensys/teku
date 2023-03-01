@@ -470,7 +470,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
         BlobsBundleValidator.NOOP,
-        100);
+        Optional.of(100));
   }
 
   private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse, UInt64 slot) {

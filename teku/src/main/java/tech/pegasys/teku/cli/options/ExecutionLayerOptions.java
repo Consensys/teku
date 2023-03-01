@@ -99,14 +99,16 @@ public class ExecutionLayerOptions {
 
   @Option(
       names = {"--validators-builder-bid-challenge-percentage"},
-      paramLabel = "<INTEGER>",
+      paramLabel = "<STRING>",
       showDefaultValue = Visibility.ALWAYS,
       description =
           "Fallback to local payload, when builder bid is available but its value could be beat by local payload. "
               + "Value is whole, percent (e.g. 100, default value, means use local payload when it at least matches builder bid, "
-              + "80 means use local payload when it's value is at least 80% of builder bid)",
+              + "80 means use local payload when its value is at least 80% of builder bid).\n"
+              + "NEVER: ignore local value, use builder's bid whenever it passed validation",
       arity = "1")
-  private int builderBidChallengePercentage = DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE;
+  private String builderBidChallengePercentage =
+      Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
 
   public void configure(final Builder builder) {
     builder.executionLayer(

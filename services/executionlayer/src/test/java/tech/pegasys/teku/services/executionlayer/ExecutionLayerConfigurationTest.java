@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.services.executionlayer;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -37,11 +39,41 @@ public class ExecutionLayerConfigurationTest {
   @Test
   public void shouldThrowExceptionIfBidChallengePercentageNegative() {
     final ExecutionLayerConfiguration.Builder builder =
-        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage(-100);
+        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("-100");
 
     Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(builder::build)
         .withMessageContaining("Builder bid value challenge percentage should be >= 0");
+  }
+
+  @Test
+  public void shouldThrowExceptionIfBidChallengePercentageWrongWord() {
+    final ExecutionLayerConfiguration.Builder builder =
+        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("OUCH");
+
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Expecting number, percentage or NEVER keyword for Builder bid challenge percentage");
+  }
+
+  @Test
+  public void shouldParseBidChallengePercentage() {
+    final ExecutionLayerConfiguration.Builder builder1 =
+        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("50");
+    assertThat(builder1.build().getBuilderBidChallengePercentage()).contains(50);
+    final ExecutionLayerConfiguration.Builder builder2 =
+        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("50%");
+    assertThat(builder2.build().getBuilderBidChallengePercentage()).contains(50);
+    final ExecutionLayerConfiguration.Builder builder3 =
+        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("NeveR");
+    assertThat(builder3.build().getBuilderBidChallengePercentage()).isEmpty();
+  }
+
+  @Test
+  public void shouldHaveCorrectDefaultBidChallengePercentage() {
+    final ExecutionLayerConfiguration.Builder builder1 = configBuilder.specProvider(bellatrixSpec);
+    assertThat(builder1.build().getBuilderBidChallengePercentage()).contains(100);
   }
 
   @Test
