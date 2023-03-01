@@ -39,9 +39,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class Eth2PeerTest {
@@ -56,7 +54,6 @@ class Eth2PeerTest {
       mock(MetadataMessagesFactory.class);
   private final PeerChainValidator peerChainValidator = mock(PeerChainValidator.class);
   private final RateTracker blockRateTracker = mock(RateTracker.class);
-  private final RateTracker blobsSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker blobSidecarsRateTracker = mock(RateTracker.class);
   private final RateTracker rateTracker = mock(RateTracker.class);
 
@@ -71,7 +68,6 @@ class Eth2PeerTest {
           metadataMessagesFactory,
           peerChainValidator,
           blockRateTracker,
-          blobsSidecarsRateTracker,
           blobSidecarsRateTracker,
           rateTracker);
 
@@ -168,25 +164,25 @@ class Eth2PeerTest {
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
   public void shouldModifyRequestSpanningTheDenebForkTransition() {
 
-    final Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>
-        blobsSidecarsByRangeMethod = mock(Eth2RpcMethod.class);
+    final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar> blobSidecarsByRangeMethod =
+        mock(Eth2RpcMethod.class);
 
     final RpcStreamController<RpcRequestHandler> rpcStreamController =
         mock(RpcStreamController.class);
 
-    when(rpcMethods.blobsSidecarsByRange()).thenReturn(Optional.of(blobsSidecarsByRangeMethod));
+    when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
 
     when(peer.sendRequest(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
-    peer.requestBlobsSidecarsByRange(UInt64.ONE, UInt64.valueOf(13), __ -> SafeFuture.COMPLETE);
+    peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(13), __ -> SafeFuture.COMPLETE);
 
-    final ArgumentCaptor<BlobsSidecarsByRangeRequestMessage> requestCaptor =
-        ArgumentCaptor.forClass(BlobsSidecarsByRangeRequestMessage.class);
+    final ArgumentCaptor<BlobSidecarsByRangeRequestMessage> requestCaptor =
+        ArgumentCaptor.forClass(BlobSidecarsByRangeRequestMessage.class);
 
     verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
 
-    final BlobsSidecarsByRangeRequestMessage request = requestCaptor.getValue();
+    final BlobSidecarsByRangeRequestMessage request = requestCaptor.getValue();
 
     // Deneb starts from epoch 1, so request start slot should be 8 and the count should be 6
     assertThat(request.getStartSlot()).isEqualTo(UInt64.valueOf(8));
@@ -208,7 +204,7 @@ class Eth2PeerTest {
     when(peer.sendRequest(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(rpcStreamController));
 
-    peer.requestBlobsSidecarsByRange(UInt64.ONE, UInt64.valueOf(7), __ -> SafeFuture.COMPLETE);
+    peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(7), __ -> SafeFuture.COMPLETE);
 
     verify(delegate, never()).sendRequest(any(), any(), any());
   }

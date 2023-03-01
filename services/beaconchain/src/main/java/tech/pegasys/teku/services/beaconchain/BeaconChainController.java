@@ -852,7 +852,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             // TODO: implement BlobSidecarManager
             .gossipedBlobSidecarProcessor(OperationProcessor.noop())
-            .gossipedBlockAndBlobsProcessor(blockManager::validateAndImportBlockAndBlobsSidecar)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)

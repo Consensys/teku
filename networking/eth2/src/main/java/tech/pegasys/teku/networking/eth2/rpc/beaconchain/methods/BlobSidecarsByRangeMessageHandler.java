@@ -152,9 +152,9 @@ public class BlobSidecarsByRangeMessageHandler
 
   private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final UInt64 minEpochForBlobsSidecar =
+    final UInt64 minEpochForBlobSidecars =
         denebForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS));
-    return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobsSidecar)
+    return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }
 

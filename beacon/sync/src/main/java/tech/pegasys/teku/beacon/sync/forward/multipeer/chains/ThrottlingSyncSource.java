@@ -27,7 +27,6 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 public class ThrottlingSyncSource implements SyncSource {
   private static final Logger LOG = LogManager.getLogger();
@@ -37,7 +36,6 @@ public class ThrottlingSyncSource implements SyncSource {
   private final SyncSource delegate;
 
   private final RateTracker blocksRateTracker;
-  private final RateTracker blobsSidecarsRateTracker;
   private final RateTracker blobSidecarsRateTracker;
 
   public ThrottlingSyncSource(
@@ -45,13 +43,10 @@ public class ThrottlingSyncSource implements SyncSource {
       final TimeProvider timeProvider,
       final SyncSource delegate,
       final int maxBlocksPerMinute,
-      final int maxBlobsSidecarsPerMinute,
       final int maxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
     this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, TIME_OUT, timeProvider);
-    this.blobsSidecarsRateTracker =
-        new RateTracker(maxBlobsSidecarsPerMinute, TIME_OUT, timeProvider);
     this.blobSidecarsRateTracker =
         new RateTracker(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider);
   }
@@ -67,20 +62,6 @@ public class ThrottlingSyncSource implements SyncSource {
     } else {
       return asyncRunner.runAfterDelay(
           () -> requestBlocksByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
-    }
-  }
-
-  @Override
-  public SafeFuture<Void> requestBlobsSidecarsByRange(
-      final UInt64 startSlot,
-      final UInt64 count,
-      final RpcResponseListener<BlobsSidecar> listener) {
-    if (blobsSidecarsRateTracker.wantToRequestObjects(count.longValue()) > 0) {
-      LOG.debug("Sending request for {} blobs sidecars", count);
-      return delegate.requestBlobsSidecarsByRange(startSlot, count, listener);
-    } else {
-      return asyncRunner.runAfterDelay(
-          () -> requestBlobsSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
     }
   }
 

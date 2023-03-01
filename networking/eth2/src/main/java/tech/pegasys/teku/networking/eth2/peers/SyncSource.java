@@ -30,8 +30,12 @@ public interface SyncSource {
   SafeFuture<Void> requestBlocksByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<SignedBeaconBlock> listener);
 
-  SafeFuture<Void> requestBlobsSidecarsByRange(
-      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobsSidecar> listener);
+  @Deprecated
+  @SuppressWarnings("unused")
+  default SafeFuture<Void> requestBlobsSidecarsByRange(
+      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobsSidecar> listener) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  }
 
   SafeFuture<Void> requestBlobSidecarsByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<BlobSidecar> listener);
