@@ -168,13 +168,8 @@ public class ExecutionBuilderModule {
                         .map(ExecutionPayloadWithValue::getValue)
                         .orElse(UInt256.ZERO);
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
-                // 1 ETH is 10^18 wei, Uint256 max is more than 10^77
-                if (builderBidChallengePercentage.isPresent()
-                    && signedBuilderBid
-                        .getMessage()
-                        .getValue()
-                        .multiply(builderBidChallengePercentage.get())
-                        .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS))) {
+
+                if (isLocalPayloadValueWinning(signedBuilderBid, localPayloadValue)) {
                   LOG.info(
                       "Using local Execution Payload instead of Builder Bid as it's challenged. "
                           + "Builder bid value: {}, local block value: {}, builderBidChallengePercentage: {}%",
@@ -182,8 +177,9 @@ public class ExecutionBuilderModule {
                       localPayloadValue.toDecimalString(),
                       builderBidChallengePercentage);
                   return getResultFromLocalExecutionPayload(
-                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WIN);
+                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
+
                 final Optional<ExecutionPayload> localPayload =
                     maybeLocalExecutionPayload.map(ExecutionPayloadWithValue::getExecutionPayload);
                 return getResultFromSignedBuilderBid(
@@ -198,6 +194,17 @@ public class ExecutionBuilderModule {
               return getResultFromLocalExecutionPayload(
                   localExecutionPayload, slot, FallbackReason.BUILDER_ERROR);
             });
+  }
+
+  /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
+  private boolean isLocalPayloadValueWinning(
+      final SignedBuilderBid signedBuilderBid, final UInt256 localPayloadValue) {
+    return builderBidChallengePercentage.isPresent()
+        && signedBuilderBid
+            .getMessage()
+            .getValue()
+            .multiply(builderBidChallengePercentage.get())
+            .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS));
   }
 
   private SafeFuture<HeaderWithFallbackData> getResultFromSignedBuilderBid(

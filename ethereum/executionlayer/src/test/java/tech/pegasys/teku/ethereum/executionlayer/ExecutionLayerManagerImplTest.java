@@ -253,7 +253,7 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             expectedHeader,
-            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WIN));
+            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WON));
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(expectedResult);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -289,7 +289,7 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             expectedHeader,
-            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WIN));
+            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WON));
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(expectedResult);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -695,7 +695,7 @@ class ExecutionLayerManagerImplTest {
     final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
-        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_WIN) {
+        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_WON) {
       // we expect both builder and local engine have been called
       verifyBuilderCalled(slot, executionPayloadContext);
     } else {

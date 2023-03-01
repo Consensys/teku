@@ -392,7 +392,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
-        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_WIN) {
+        || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_WON) {
       // we expect both builder and local engine have been called
       verifyBuilderCalled(slot, executionPayloadContext);
     } else {
