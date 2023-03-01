@@ -707,7 +707,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            __ -> {}, // TODO: remove when blobs decoupling block production is implemented
+            __ -> {}, // TODO: remove once the block publishing is switched to a decoupling version
             attestationPool,
             attestationManager,
             attestationTopicSubscriber,
