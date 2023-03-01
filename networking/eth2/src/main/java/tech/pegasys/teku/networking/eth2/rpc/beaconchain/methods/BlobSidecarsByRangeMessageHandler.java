@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -89,8 +88,10 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final UInt64 maxBlobsPerBlock = getMaxBlobsPerBlock(startSlot);
-    final UInt64 maxRequestBlobSidecars = MAX_REQUEST_BLOCKS_DENEB.times(maxBlobsPerBlock);
+    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(startSlot).getConfig());
+
+    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
+    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
 
     if (!peer.wantToMakeRequest()
         || !peer.wantToReceiveBlobSidecars(
@@ -142,13 +143,6 @@ public class BlobSidecarsByRangeMessageHandler
             error -> handleProcessingRequestError(error, callback));
   }
 
-  @VisibleForTesting
-  UInt64 getMaxBlobsPerBlock(final UInt64 slot) {
-    final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(spec.atSlot(slot).getConfig()).getMaxBlobsPerBlock();
-    return UInt64.valueOf(maxBlobsPerBlock);
-  }
-
   private boolean checkBlobSidecarsAreAvailable(
       final Optional<UInt64> earliestAvailableSidecarEpoch, final UInt64 requestEpoch) {
     return earliestAvailableSidecarEpoch
@@ -158,9 +152,9 @@ public class BlobSidecarsByRangeMessageHandler
 
   private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final UInt64 minEpochForBlobsSidecar =
+    final UInt64 minEpochForBlobSidecars =
         denebForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS));
-    return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobsSidecar)
+    return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }
 

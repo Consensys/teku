@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -213,6 +212,7 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingBlockRequest(handler);
   }
 
+  // TODO: remove when blobs decoupling sync is implemented
   @Override
   public SafeFuture<Void> requestBlobsSidecarsByRange(
       final UInt64 startSlot,
@@ -261,23 +261,6 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  @SuppressWarnings("unused")
-  public SafeFuture<Void> requestBlockAndBlobsSidecarByRoot(
-      final List<Bytes32> blockRoots,
-      final RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener) {
-    final PendingRequestHandler<Void, SignedBeaconBlockAndBlobsSidecar> handler =
-        PendingRequestHandler.createForBatchBlockAndBlobsSidecarRequest(
-            listener,
-            () ->
-                blockRoots.stream()
-                    .map(this::findBlockAndBlobsSidecarByRoot)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.toList()));
-
-    return createPendingBlockAndBlobsSidecarRequest(handler);
-  }
-
-  @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
       final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener)
       throws RpcException {
@@ -307,33 +290,12 @@ public class RespondingEth2Peer implements Eth2Peer {
     throw new UnsupportedOperationException("Not yet implemented");
   }
 
-  @Override
-  @SuppressWarnings("unused")
-  public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
-      final Bytes32 blockRoot) {
-    final PendingRequestHandler<
-            Optional<SignedBeaconBlockAndBlobsSidecar>, SignedBeaconBlockAndBlobsSidecar>
-        handler =
-            PendingRequestHandler.createForSingleBlockAndBlobsSidecarRequest(
-                () -> findBlockAndBlobsSidecarByRoot(blockRoot));
-
-    return createPendingBlockAndBlobsSidecarRequest(handler);
-  }
-
   private <T> SafeFuture<T> createPendingBlockRequest(
       final PendingRequestHandler<T, SignedBeaconBlock> handler) {
     final PendingRequestHandler<T, SignedBeaconBlock> filteredHandler =
         PendingRequestHandler.filterRequest(handler, blockRequestFilter);
     final PendingRequest<T, SignedBeaconBlock> request = new PendingRequest<>(filteredHandler);
 
-    pendingRequests.add(request);
-    return request.getFuture();
-  }
-
-  private <T> SafeFuture<T> createPendingBlockAndBlobsSidecarRequest(
-      final PendingRequestHandler<T, SignedBeaconBlockAndBlobsSidecar> handler) {
-    final PendingRequest<T, SignedBeaconBlockAndBlobsSidecar> request =
-        new PendingRequest<>(handler);
     pendingRequests.add(request);
     return request.getFuture();
   }
@@ -368,18 +330,6 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public boolean wantToReceiveBlocks(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return true;
-  }
-
-  @Override
-  public boolean wantToReceiveBlockAndBlobsSidecars(
-      final ResponseCallback<SignedBeaconBlockAndBlobsSidecar> callback, final long blocksCount) {
-    return true;
-  }
-
-  @Override
-  public boolean wantToReceiveBlobsSidecars(
-      final ResponseCallback<BlobsSidecar> callback, final long blobsSidecarsCount) {
     return true;
   }
 
@@ -495,11 +445,6 @@ public class RespondingEth2Peer implements Eth2Peer {
     return findObjectByRoot(root, ChainBuilder::getBlock);
   }
 
-  private Optional<SignedBeaconBlockAndBlobsSidecar> findBlockAndBlobsSidecarByRoot(
-      final Bytes32 root) {
-    return findObjectByRoot(root, ChainBuilder::getBlockAndBlobsSidecar);
-  }
-
   public static class PendingRequest<ResponseT, HandlerT> {
     private final SafeFuture<ResponseT> future = new SafeFuture<>();
     private final PendingRequestHandler<ResponseT, HandlerT> requestHandler;
@@ -576,14 +521,6 @@ public class RespondingEth2Peer implements Eth2Peer {
       return createForSingleRequest(blockSupplier);
     }
 
-    static PendingRequestHandler<
-            Optional<SignedBeaconBlockAndBlobsSidecar>, SignedBeaconBlockAndBlobsSidecar>
-        createForSingleBlockAndBlobsSidecarRequest(
-            final Supplier<Optional<SignedBeaconBlockAndBlobsSidecar>>
-                blockAndBlobsSidecarSupplier) {
-      return createForSingleRequest(blockAndBlobsSidecarSupplier);
-    }
-
     static <T> PendingRequestHandler<Void, T> createForBatchRequest(
         final RpcResponseListener<T> listener, final Supplier<List<T>> objectsSupplier) {
       return new PendingRequestHandler<>() {
@@ -620,13 +557,6 @@ public class RespondingEth2Peer implements Eth2Peer {
         final RpcResponseListener<BlobSidecar> listener,
         final Supplier<List<BlobSidecar>> blobSidecarsSupplier) {
       return createForBatchRequest(listener, blobSidecarsSupplier);
-    }
-
-    static PendingRequestHandler<Void, SignedBeaconBlockAndBlobsSidecar>
-        createForBatchBlockAndBlobsSidecarRequest(
-            final RpcResponseListener<SignedBeaconBlockAndBlobsSidecar> listener,
-            final Supplier<List<SignedBeaconBlockAndBlobsSidecar>> blocksAndBlobsSidecarsSupplier) {
-      return createForBatchRequest(listener, blocksAndBlobsSidecarsSupplier);
     }
   }
 }
