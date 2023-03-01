@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
@@ -50,8 +52,6 @@ public class BlobSidecarsByRangeMessageHandler
   private final Spec spec;
   private final UInt64 denebForkEpoch;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final UInt64 maxRequestSize;
-  private final UInt64 maxBlobsPerBlock;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobSidecarsRequestedCounter;
 
@@ -59,14 +59,10 @@ public class BlobSidecarsByRangeMessageHandler
       final Spec spec,
       final UInt64 denebForkEpoch,
       final MetricsSystem metricsSystem,
-      final CombinedChainDataClient combinedChainDataClient,
-      final UInt64 maxRequestSize,
-      final UInt64 maxBlobsPerBlock) {
+      final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
     this.denebForkEpoch = denebForkEpoch;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.maxRequestSize = maxRequestSize;
-    this.maxBlobsPerBlock = maxBlobsPerBlock;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -93,9 +89,12 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
+    final UInt64 maxBlobsPerBlock = getMaxBlobsPerBlock(startSlot);
+    final UInt64 maxRequestBlobSidecars = MAX_REQUEST_BLOCKS_DENEB.times(maxBlobsPerBlock);
+
     if (!peer.wantToMakeRequest()
         || !peer.wantToReceiveBlobSidecars(
-            callback, maxRequestSize.min(message.getCount()).longValue())) {
+            callback, maxRequestBlobSidecars.min(message.getCount()).longValue())) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -123,7 +122,12 @@ public class BlobSidecarsByRangeMessageHandler
               }
               final BlobSidecarsByRangeMessageHandler.RequestState initialState =
                   new BlobSidecarsByRangeMessageHandler.RequestState(
-                      callback, headBlockRoot, startSlot, message.getMaxSlot());
+                      callback,
+                      maxBlobsPerBlock,
+                      maxRequestBlobSidecars,
+                      headBlockRoot,
+                      startSlot,
+                      message.getMaxSlot());
               if (initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }
@@ -136,6 +140,13 @@ public class BlobSidecarsByRangeMessageHandler
               callback.completeSuccessfully();
             },
             error -> handleProcessingRequestError(error, callback));
+  }
+
+  @VisibleForTesting
+  UInt64 getMaxBlobsPerBlock(final UInt64 slot) {
+    final int maxBlobsPerBlock =
+        SpecConfigDeneb.required(spec.atSlot(slot).getConfig()).getMaxBlobsPerBlock();
+    return UInt64.valueOf(maxBlobsPerBlock);
   }
 
   private boolean checkBlobSidecarsAreAvailable(
@@ -192,6 +203,8 @@ public class BlobSidecarsByRangeMessageHandler
 
     private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     private final ResponseCallback<BlobSidecar> callback;
+    private final UInt64 maxBlobsPerBlock;
+    private final UInt64 maxRequestBlobSidecars;
     private final Bytes32 headBlockRoot;
     private final AtomicReference<UInt64> currentSlot;
     private final AtomicReference<UInt64> currentIndex;
@@ -201,10 +214,14 @@ public class BlobSidecarsByRangeMessageHandler
 
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
+        final UInt64 maxBlobsPerBlock,
+        final UInt64 maxRequestBlobSidecars,
         final Bytes32 headBlockRoot,
         final UInt64 currentSlot,
         final UInt64 maxSlot) {
       this.callback = callback;
+      this.maxBlobsPerBlock = maxBlobsPerBlock;
+      this.maxRequestBlobSidecars = maxRequestBlobSidecars;
       this.headBlockRoot = headBlockRoot;
       this.currentSlot = new AtomicReference<>(currentSlot);
       this.currentIndex = new AtomicReference<>(UInt64.ZERO);
@@ -242,7 +259,7 @@ public class BlobSidecarsByRangeMessageHandler
 
     boolean isComplete() {
       return currentSlot.get().isGreaterThan(maxSlot)
-          || maxRequestSize.isLessThanOrEqualTo(sentBlobSidecars.get());
+          || maxRequestBlobSidecars.isLessThanOrEqualTo(sentBlobSidecars.get());
     }
 
     void incrementSlotAndIndex() {

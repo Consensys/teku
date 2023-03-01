@@ -25,10 +25,11 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,9 +71,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final UInt64 count = UInt64.valueOf(5);
 
-  private final UInt64 maxRequestSize = UInt64.valueOf(10);
-  private final UInt64 maxBlobsPerBlock = UInt64.valueOf(2);
-
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
@@ -88,12 +86,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final BlobSidecarsByRangeMessageHandler handler =
       new BlobSidecarsByRangeMessageHandler(
-          spec,
-          denebForkEpoch,
-          metricsSystem,
-          combinedChainDataClient,
-          maxRequestSize,
-          maxBlobsPerBlock);
+          spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
+
+  private final UInt64 maxBlobsPerBlock = handler.getMaxBlobsPerBlock(startSlot);
 
   @BeforeEach
   public void setUp() {
@@ -228,7 +223,14 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     UInt64 count = UInt64.valueOf(5);
     UInt64 currentSlot = ZERO;
     BlobSidecarsByRangeMessageHandler.RequestState request =
-        handler.new RequestState(listener, headBlockRoot, currentSlot, count);
+        handler
+        .new RequestState(
+            listener,
+            maxBlobsPerBlock,
+            MAX_REQUEST_BLOCKS_DENEB.times(maxBlobsPerBlock),
+            headBlockRoot,
+            currentSlot,
+            count);
 
     for (int slot = currentSlot.intValue(); slot <= count.intValue(); slot++) {
       for (int index = 0; index < maxBlobsPerBlock.intValue(); index++) {
@@ -244,33 +246,34 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private List<BlobSidecar> setUpBlobSidecarsData(
       final UInt64 startSlot, final UInt64 maxSlot, final Bytes32 headBlockRoot) {
-    List<BlobSidecar> blobSidecars = new ArrayList<>();
-    for (int slot = startSlot.intValue(); slot <= maxSlot.intValue(); slot++) {
-      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-      when(combinedChainDataClient.getBlockAtSlotExact(UInt64.valueOf(slot), headBlockRoot))
-          .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
-      final BlobSidecar blobSidecar0 =
-          dataStructureUtil.randomBlobSidecar(
-              block.getRoot(),
-              ZERO,
-              UInt64.valueOf(slot),
-              block.getParentRoot(),
-              dataStructureUtil.randomValidatorIndex());
-      when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(block.getRoot(), ZERO))
-          .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar0)));
-      blobSidecars.add(blobSidecar0);
-      final BlobSidecar blobSidecar1 =
-          dataStructureUtil.randomBlobSidecar(
-              block.getRoot(),
-              ONE,
-              UInt64.valueOf(slot),
-              block.getParentRoot(),
-              dataStructureUtil.randomValidatorIndex());
-      when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(block.getRoot(), ONE))
-          .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar1)));
-      blobSidecars.add(blobSidecar1);
-    }
+    return UInt64.rangeClosed(startSlot, maxSlot)
+        .flatMap(
+            slot -> {
+              final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+              when(combinedChainDataClient.getBlockAtSlotExact(slot, headBlockRoot))
+                  .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+              return setUpBlobSidecarsDataForSlot(slot, block).stream();
+            })
+        .collect(Collectors.toList());
+  }
 
-    return blobSidecars;
+  private List<BlobSidecar> setUpBlobSidecarsDataForSlot(
+      final UInt64 slot, final SignedBeaconBlock block) {
+    return UInt64.range(ZERO, maxBlobsPerBlock)
+        .map(
+            index -> {
+              final BlobSidecar blobSidecar =
+                  dataStructureUtil.randomBlobSidecar(
+                      block.getRoot(),
+                      index,
+                      slot,
+                      block.getParentRoot(),
+                      dataStructureUtil.randomValidatorIndex());
+              when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+                      block.getRoot(), index))
+                  .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
+              return blobSidecar;
+            })
+        .collect(Collectors.toList());
   }
 }
