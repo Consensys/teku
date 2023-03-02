@@ -21,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.Response;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
@@ -86,8 +85,22 @@ public class GetSyncCommitteeRewardsIntegrationTest
   public void shouldGiveDecentErrorIfNoBody() throws IOException {
     Response response = post(GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"), "");
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    AssertionsForClassTypes.assertThat(response.body().string())
-        .contains("Array expected but got null");
+    assertThat(response.body().string()).contains("Array expected but got null");
+  }
+
+  @Test
+  public void shouldGiveDecentErrorIfNonNumberRequestList() throws IOException {
+    final List<String> requestBody = List.of("asdf");
+    Response response =
+        post(
+            GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
+            jsonProvider.objectToJSON(requestBody));
+
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.body().string())
+        .isEqualTo(
+            "{\"code\":400,\"message\":\"'asdf' is not a valid "
+                + "hex encoded public key or validator index in the committee\"}");
   }
 
   @Test
@@ -98,11 +111,11 @@ public class GetSyncCommitteeRewardsIntegrationTest
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
             jsonProvider.objectToJSON(requestBody));
 
-    final SyncCommitteeRewardData emptyData = new SyncCommitteeRewardData(false, false);
-    final String expectedResponse = serialize(emptyData, GetSyncCommitteeRewards.RESPONSE_TYPE);
-
-    assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.body().string()).isEqualTo(expectedResponse);
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.body().string())
+        .isEqualTo(
+            "{\"code\":400,\"message\":\"'99999999999999' is not a valid "
+                + "hex encoded public key or validator index in the committee\"}");
   }
 
   @Test
