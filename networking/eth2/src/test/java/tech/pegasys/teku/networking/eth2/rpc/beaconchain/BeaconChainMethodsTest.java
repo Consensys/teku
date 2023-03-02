@@ -131,32 +131,6 @@ public class BeaconChainMethodsTest {
   }
 
   @Test
-  public void shouldNotCreateBlobsSidecarsByRangeWithDenebDisabled() {
-    final BeaconChainMethods methods = getMethods();
-
-    assertThat(methods.blobsSidecarsByRange()).isEmpty();
-  }
-
-  @Test
-  public void shouldNotCreateBeaconBlockAndBlobsSidecarByRootWithDenebDisabled() {
-    final BeaconChainMethods methods = getMethods();
-
-    assertThat(methods.beaconBlockAndBlobsSidecarByRoot()).isEmpty();
-  }
-
-  @Test
-  public void shouldCreateBlobsSidecarsByRangeWithDenebEnabled() {
-    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalDeneb());
-
-    assertThat(methods.blobsSidecarsByRange())
-        .hasValueSatisfying(
-            method ->
-                assertThat(method.getIds())
-                    .containsExactly(
-                        "/eth2/beacon_chain/req/blobs_sidecars_by_range/1/ssz_snappy"));
-  }
-
-  @Test
   public void shouldCreateBlobSidecarsByRangeWithDenebEnabled() {
     final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalDeneb());
 
@@ -165,18 +139,6 @@ public class BeaconChainMethodsTest {
             method ->
                 assertThat(method.getIds())
                     .containsExactly("/eth2/beacon_chain/req/blob_sidecars_by_range/1/ssz_snappy"));
-  }
-
-  @Test
-  public void shouldCreateBeaconBlockAndBlobsSidecarsByRootWithDenebEnabled() {
-    final BeaconChainMethods methods = getMethods(TestSpecFactory.createMinimalDeneb());
-
-    assertThat(methods.beaconBlockAndBlobsSidecarByRoot())
-        .hasValueSatisfying(
-            method ->
-                assertThat(method.getIds())
-                    .containsExactly(
-                        "/eth2/beacon_chain/req/beacon_block_and_blobs_sidecar_by_root/1/ssz_snappy"));
   }
 
   private BeaconChainMethods getMethods() {

@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 import static tech.pegasys.teku.spec.config.Constants.SYNC_BLOB_SIDECARS_SIZE;
 
 import java.util.List;
@@ -119,7 +118,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
     final int maxRequestBlobSidecars =
-        calculateMaxRequestBlobSidecars(spec, SpecMilestone.DENEB).intValue();
+        getMaxRequestBlobSidecars(spec, SpecMilestone.DENEB).intValue();
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
             dataStructureUtil.randomBlobIdentifiers(maxRequestBlobSidecars + 1));
@@ -278,13 +277,13 @@ public class BlobSidecarsByRootMessageHandlerTest {
     shardingMilestones.forEach(
         milestone -> {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
-          final UInt64 maxRequestBlobSidecars = calculateMaxRequestBlobSidecars(spec, milestone);
+          final UInt64 maxRequestBlobSidecars = getMaxRequestBlobSidecars(spec, milestone);
           assertThat(SYNC_BLOB_SIDECARS_SIZE.isLessThanOrEqualTo(maxRequestBlobSidecars)).isTrue();
         });
   }
 
-  private UInt64 calculateMaxRequestBlobSidecars(final Spec spec, final SpecMilestone milestone) {
-    return MAX_REQUEST_BLOCKS_DENEB.times(
-        SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig()).getMaxBlobsPerBlock());
+  private UInt64 getMaxRequestBlobSidecars(final Spec spec, final SpecMilestone milestone) {
+    return SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig())
+        .getMaxRequestBlobSidecars();
   }
 }

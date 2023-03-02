@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.builder;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_IMPLEMENTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
@@ -24,10 +23,13 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -48,6 +50,7 @@ public class GetExpectedWithdrawals extends RestApiEndpoint {
           PROPOSAL_SLOT,
           CoreTypes.UINT64_TYPE.withDescription(
               "The slot of the block to be proposed. Defaults to the child slot of the state."));
+  private final ChainDataProvider chainDataProvider;
 
   public GetExpectedWithdrawals(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
@@ -71,11 +74,21 @@ public class GetExpectedWithdrawals extends RestApiEndpoint {
             .withNotFoundResponse()
             .withNotImplementedResponse()
             .build());
+    this.chainDataProvider = chainDataProvider;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    request.respondWithCode(SC_NOT_IMPLEMENTED);
+    final SafeFuture<Optional<ObjectAndMetaData<List<Withdrawal>>>> future =
+        chainDataProvider.getExpectedWithdrawals(
+            request.getPathParameter(PARAMETER_STATE_ID),
+            request.getOptionalQueryParameter(PROPOSAL_SLOT_PARAMETER));
+    request.respondAsync(
+        future.thenApply(
+            maybeObjectAndMetadata ->
+                maybeObjectAndMetadata
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 
   private static SerializableTypeDefinition<ObjectAndMetaData<List<Withdrawal>>> getResponseType(

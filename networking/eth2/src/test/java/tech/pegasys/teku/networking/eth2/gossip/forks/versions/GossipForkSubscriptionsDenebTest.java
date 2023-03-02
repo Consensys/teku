@@ -86,7 +86,6 @@ public class GossipForkSubscriptionsDenebTest {
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
-        noopOperationProcessor,
         noopOperationProcessor);
   }
 }

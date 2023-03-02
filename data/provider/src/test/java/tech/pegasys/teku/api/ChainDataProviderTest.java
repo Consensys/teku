@@ -55,6 +55,7 @@ import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
@@ -78,6 +80,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.util.BeaconStateBuilderAltair;
+import tech.pegasys.teku.spec.util.BeaconStateBuilderCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.ChainHead;
@@ -518,10 +522,12 @@ public class ChainDataProviderTest {
             data.randomPublicKey().toHexString(), // Validator not in committee
             "2", // Validator not in committee
             committeeKeys.get(5).toHexString());
-    final Map<Integer, Integer> committeeIndices =
-        provider.getCommitteeIndices(committeeKeys, validators, state);
 
-    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(5, 11));
+    assertThatThrownBy(() -> provider.getCommitteeIndices(committeeKeys, validators, state))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageMatching(
+            "'0xab26a22f1c8c779103154eb379a79af4928383e95d6d827a2bddd6263af6c3d9ae4be8e2949fd4827964b22b72368069' "
+                + "is not a valid hex encoded public key or validator index in the committee");
   }
 
   @Test
@@ -728,6 +734,100 @@ public class ChainDataProviderTest {
     assertThat(finalizedBlockRoot).isEmpty();
   }
 
+  @Test
+  void getExpectedWithdrawalsFailsForHistoricRequest() {
+    final Spec capella = TestSpecFactory.createMinimalCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    assertThatThrownBy(
+            () ->
+                chainDataProvider.getExpectedWithdrawalsFromState(
+                    dataStructureUtil.randomBeaconState(UInt64.ONE), Optional.of(UInt64.ONE)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("historic");
+  }
+
+  @Test
+  void getExpectedWithdrawalsFailsPreCapella() {
+    final ChainDataProvider chainDataProvider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    assertThatThrownBy(
+            () ->
+                chainDataProvider.getExpectedWithdrawalsFromState(
+                    data.randomBeaconState(UInt64.ONE), Optional.empty()))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("pre-capella");
+  }
+
+  @Test
+  void getExpectedWithdrawalsFailsTooFarInFutureRequest() {
+    final Spec capella = TestSpecFactory.createMinimalCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    assertThatThrownBy(
+            () ->
+                chainDataProvider.getExpectedWithdrawalsFromState(
+                    dataStructureUtil.randomBeaconState(UInt64.ZERO),
+                    Optional.of(UInt64.valueOf(129))))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("more than 128 slots ahead");
+  }
+
+  @Test
+  void getExpectedWithdrawalsGeneratesList() {
+    final Spec capella = TestSpecFactory.createMinimalCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
+    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+    final BeaconStateBuilderCapella capellaBuilder = dataStructureUtil.stateBuilderCapella();
+
+    capellaBuilder.slot(UInt64.valueOf(1024_000));
+    capellaBuilder.nextWithdrawalIndex(UInt64.valueOf(10));
+    final List<Validator> validators = new ArrayList<>();
+    while (validators.size() < 16) {
+      validators.add(
+          dataStructureUtil.randomValidator(
+              dataStructureUtil.randomPublicKey(),
+              dataStructureUtil.randomEth1WithdrawalCredentials(),
+              specConfig.getMaxEffectiveBalance()));
+    }
+    final UInt64 eff = specConfig.getMaxEffectiveBalance();
+    capellaBuilder.balances(
+        eff.plus(1024_000),
+        eff,
+        eff,
+        eff,
+        eff,
+        eff,
+        eff,
+        eff,
+        eff,
+        eff,
+        eff,
+        eff.plus(1),
+        eff,
+        eff,
+        eff,
+        eff);
+    capellaBuilder.validators(
+        dataStructureUtil
+            .getBeaconStateSchema()
+            .getValidatorsSchema()
+            .createFromElements(validators));
+
+    final List<Withdrawal> withdrawals =
+        chainDataProvider.getExpectedWithdrawalsFromState(capellaBuilder.build(), Optional.empty());
+
+    assertThat(withdrawals).hasSize(2);
+    assertThat(withdrawals.get(0).getValidatorIndex()).isEqualTo(UInt64.valueOf(11));
+    assertThat(withdrawals.get(0).getAddress())
+        .isEqualTo(Bytes20.fromHexString("0xaa8683942152c67b23383b1b6d351b3cbd3df4a7"));
+    assertThat(withdrawals.get(0).getAmount()).isEqualTo(UInt64.valueOf(1));
+    assertThat(withdrawals.get(1).getValidatorIndex()).isEqualTo(UInt64.valueOf(0));
+    assertThat(withdrawals.get(1).getAddress())
+        .isEqualTo(Bytes20.fromHexString("0xba2a1c95e2a3187d3b6bbeb2ef4f05681bef0dd4"));
+    assertThat(withdrawals.get(1).getAmount()).isEqualTo(UInt64.valueOf(1024_000));
+  }
+
   @ParameterizedTest(name = "given slot={0} when epoch={1} then randao={2}")
   @MethodSource("getRandaoIndexCases")
   void getRandaoIndex(
@@ -768,29 +868,37 @@ public class ChainDataProviderTest {
   private ChainDataProvider setupAltairState() {
     final Spec altair = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(altair);
+    return setupBySpec(altair, dataStructureUtil, 16);
+  }
+
+  private ChainDataProvider setupBySpec(
+      final Spec spec, final DataStructureUtil dataStructureUtil, final int validatorCount) {
     final ChainDataProvider provider =
-        new ChainDataProvider(altair, recentChainData, mockCombinedChainDataClient);
+        new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient);
 
-    final SszList<Validator> validators =
-        dataStructureUtil.randomSszList(
-            dataStructureUtil.getBeaconStateSchema().getValidatorsSchema(),
-            16,
-            dataStructureUtil::randomValidator);
-    final SyncCommittee currentSyncCommittee = dataStructureUtil.randomSyncCommittee(validators);
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      final SszList<Validator> validators =
+          dataStructureUtil.randomSszList(
+              dataStructureUtil.getBeaconStateSchema().getValidatorsSchema(),
+              validatorCount,
+              dataStructureUtil::randomValidator);
+      final SyncCommittee currentSyncCommittee = dataStructureUtil.randomSyncCommittee(validators);
 
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        dataStructureUtil
-            .stateBuilderAltair()
-            .validators(validators)
-            .currentSyncCommittee(currentSyncCommittee)
-            .build();
-    final SignedBlockAndState signedBlockAndState =
-        dataStructureUtil.randomSignedBlockAndState(internalState);
-    final ChainHead chainHead = ChainHead.create(StateAndBlockSummary.create(signedBlockAndState));
-    when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
-    when(mockCombinedChainDataClient.getStateByBlockRoot(
-            eq(signedBlockAndState.getBlock().getRoot())))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBlockAndState.getState())));
+      final BeaconStateBuilderAltair builder =
+          dataStructureUtil
+              .stateBuilderAltair()
+              .validators(validators)
+              .currentSyncCommittee(currentSyncCommittee);
+      final SignedBlockAndState signedBlockAndState =
+          dataStructureUtil.randomSignedBlockAndState(builder.build());
+      final ChainHead chainHead =
+          ChainHead.create(StateAndBlockSummary.create(signedBlockAndState));
+      when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.of(chainHead));
+      when(mockCombinedChainDataClient.getStateByBlockRoot(
+              eq(signedBlockAndState.getBlock().getRoot())))
+          .thenReturn(SafeFuture.completedFuture(Optional.of(signedBlockAndState.getState())));
+    }
+
     return provider;
   }
 

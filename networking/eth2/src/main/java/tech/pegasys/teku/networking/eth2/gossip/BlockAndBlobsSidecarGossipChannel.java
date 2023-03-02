@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 
+// TODO: remove once the block publishing is switched to a decoupling version
 public interface BlockAndBlobsSidecarGossipChannel extends VoidReturningChannelInterface {
   void publishBlockAndBlobsSidecar(SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar);
 }

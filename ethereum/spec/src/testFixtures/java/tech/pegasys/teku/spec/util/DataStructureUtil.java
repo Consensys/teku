@@ -1440,6 +1440,19 @@ public final class DataStructureUtil {
         FAR_FUTURE_EPOCH);
   }
 
+  public Validator randomValidator(
+      final BLSPublicKey publicKey, final Bytes32 withdrawalCredentials, final UInt64 balance) {
+    return new Validator(
+        publicKey,
+        withdrawalCredentials,
+        balance,
+        false,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH,
+        FAR_FUTURE_EPOCH);
+  }
+
   public Fork randomFork() {
     return new Fork(randomBytes4(), randomBytes4(), randomUInt64());
   }
