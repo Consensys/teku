@@ -169,11 +169,11 @@ public class BlobSidecarValidatorTest {
 
   @TestTemplate
   void shouldIgnoreIfStateIsUnavailable() {
-    when(gossipValidationHelper.getSlotForBlockRoot(blockParentRoot))
-        .thenReturn(Optional.of(parentSlot.plus(1)));
+    when(gossipValidationHelper.getParentStateInBlockEpoch(parentSlot, blockParentRoot, slot))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
-        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
   }
 
   @TestTemplate

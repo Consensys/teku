@@ -68,7 +68,9 @@ public class BlockValidatorTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
-    blockValidator = new BlockValidator(spec, recentChainData);
+    blockValidator =
+        new BlockValidator(
+            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
   }
 
   @TestTemplate
@@ -217,21 +219,23 @@ public class BlockValidatorTest {
   void shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
     List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
 
-    StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-    ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
-    ChainUpdater chainUpdater =
-        new ChainUpdater(storageSystem.recentChainData(), chainBuilder, spec);
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final RecentChainData localRecentChainData = storageSystem.recentChainData();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
-    BlockValidator blockValidator = new BlockValidator(spec, storageSystem.recentChainData());
+    final BlockValidator blockValidator =
+        new BlockValidator(
+            spec, localRecentChainData, new GossipValidationHelper(spec, localRecentChainData));
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
 
-    ChainBuilder chainBuilderFork = chainBuilder.fork();
-    ChainUpdater chainUpdaterFork =
+    final ChainBuilder chainBuilderFork = chainBuilder.fork();
+    final ChainUpdater chainUpdaterFork =
         new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork, spec);
 
-    UInt64 startSlotOfFinalizedEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(4));
+    final UInt64 startSlotOfFinalizedEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(4));
 
     chainUpdaterFork.advanceChain(20);
 
@@ -255,7 +259,9 @@ public class BlockValidatorTest {
         .initializeGenesisWithPayload(
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
-    blockValidator = new BlockValidator(spec, recentChainData);
+    blockValidator =
+        new BlockValidator(
+            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
@@ -276,7 +282,9 @@ public class BlockValidatorTest {
         .initializeGenesisWithPayload(
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
-    blockValidator = new BlockValidator(spec, recentChainData);
+    blockValidator =
+        new BlockValidator(
+            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);

@@ -179,7 +179,7 @@ public class BlobSidecarValidator {
               [REJECT] The proposer signature, signed_blob_sidecar.signature, is valid with respect to the
               sidecar.proposer_index pubkey.
                */
-              if (!signatureIsValidWithRespectToProposerIndex(signedBlobSidecar, postState)) {
+              if (!isSignatureValidWithRespectToProposerIndex(signedBlobSidecar, postState)) {
                 return reject("BlobSidecar signature is invalid");
               }
 
@@ -187,7 +187,7 @@ public class BlobSidecarValidator {
             });
   }
 
-  private boolean signatureIsValidWithRespectToProposerIndex(
+  private boolean isSignatureValidWithRespectToProposerIndex(
       SignedBlobSidecar signedBlobSidecar, BeaconState postState) {
 
     final Bytes32 domain =

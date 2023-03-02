@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -52,13 +51,6 @@ public class BlockValidator {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.gossipValidationHelper = gossipValidationHelper;
-  }
-
-  @VisibleForTesting
-  BlockValidator(final Spec spec, RecentChainData recentChainData) {
-    this.spec = spec;
-    this.recentChainData = recentChainData;
-    this.gossipValidationHelper = new GossipValidationHelper(spec, recentChainData);
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {

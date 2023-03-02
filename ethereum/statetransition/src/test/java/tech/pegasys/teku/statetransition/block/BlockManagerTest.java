@@ -37,6 +37,7 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRA
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
@@ -46,6 +47,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -95,6 +97,8 @@ public class BlockManagerTest {
           .createForBlocks(spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
+      LimitedMap.createSynchronized(500);
 
   private final StorageSystem localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final RecentChainData localRecentChainData = localChain.recentChainData();
@@ -129,6 +133,7 @@ public class BlockManagerTest {
           blockImporter,
           pendingBlocks,
           futureBlocks,
+          invalidBlockRoots,
           blockValidator,
           timeProvider,
           eventLogger,
@@ -272,6 +277,7 @@ public class BlockManagerTest {
             blockImporter,
             pendingBlocks,
             futureBlocks,
+            invalidBlockRoots,
             mock(BlockValidator.class),
             timeProvider,
             eventLogger,

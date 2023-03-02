@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -81,28 +79,6 @@ public class BlockManager extends Service
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportMetrics = blockImportMetrics;
-  }
-
-  @VisibleForTesting
-  public BlockManager(
-      final RecentChainData recentChainData,
-      final BlockImporter blockImporter,
-      final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final FutureItems<SignedBeaconBlock> futureBlocks,
-      final BlockValidator validator,
-      final TimeProvider timeProvider,
-      final EventLogger eventLogger,
-      final Optional<BlockImportMetrics> blockImportMetrics) {
-    this(
-        recentChainData,
-        blockImporter,
-        pendingBlocks,
-        futureBlocks,
-        LimitedMap.createSynchronized(500),
-        validator,
-        timeProvider,
-        eventLogger,
-        blockImportMetrics);
   }
 
   @Override
