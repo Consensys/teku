@@ -58,9 +58,6 @@ public class SpecConfigReader {
       ImmutableSet.of(
           PRESET_KEY,
           CONFIG_NAME_KEY,
-          // Unsupported, upcoming fork-related keys
-          "DENEB_FORK_VERSION",
-          "DENEB_FORK_EPOCH",
           // Old merge config item which is no longer used, ignore for backwards compatibility
           "TRANSITION_TOTAL_DIFFICULTY");
   private static final ImmutableSet<String> CONSTANT_KEYS =
