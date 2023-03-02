@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -611,6 +612,8 @@ public class ChainDataProvider {
           .collect(Collectors.<Integer, Integer, Integer>toMap(Function.identity(), result::get));
     }
 
+    checkValidatorsList(committeeKeys, validators);
+
     final Map<Integer, Integer> output = new HashMap<>();
     for (int i = 0; i < committeeKeys.size(); i++) {
       final BLSPublicKey key = committeeKeys.get(i);
@@ -623,6 +626,30 @@ public class ChainDataProvider {
     }
 
     return output;
+  }
+
+  private void checkValidatorsList(List<BLSPublicKey> committeeKeys, Set<String> validators) {
+    final Set<BLSPublicKey> keysSet = new HashSet<>(committeeKeys);
+    for (String v : validators) {
+      final String errorMessage =
+          String.format(
+              "'%s' is not a valid hex encoded public key or validator index in the committee", v);
+
+      if (v.startsWith("0x")) {
+        if (!keysSet.contains(BLSPublicKey.fromHexString(v))) {
+          throw new BadRequestException(errorMessage);
+        }
+      } else {
+        try {
+          final int index = Integer.parseInt(v);
+          if (index < 0 || index >= committeeKeys.size()) {
+            throw new BadRequestException(errorMessage);
+          }
+        } catch (NumberFormatException e) {
+          throw new BadRequestException(errorMessage);
+        }
+      }
+    }
   }
 
   @VisibleForTesting
