@@ -50,7 +50,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 public class ExecutionBuilderModule {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int HUNDRED_PERCENTS = 100;
+  private static final int HUNDRED_PERCENT = 100;
 
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
@@ -171,8 +171,8 @@ public class ExecutionBuilderModule {
 
                 if (isLocalPayloadValueWinning(signedBuilderBid, localPayloadValue)) {
                   LOG.info(
-                      "Using local Execution Payload instead of Builder Bid as it's challenged. "
-                          + "Builder bid value: {}, local block value: {}, builderBidChallengePercentage: {}%",
+                      "The local execution payload value ({}) was awarded the block over the builder payload ({}), "
+                          + "{}% challenge configured.",
                       signedBuilderBid.getMessage().getValue().toDecimalString(),
                       localPayloadValue.toDecimalString(),
                       builderBidChallengePercentage);
@@ -204,7 +204,7 @@ public class ExecutionBuilderModule {
             .getMessage()
             .getValue()
             .multiply(builderBidChallengePercentage.get())
-            .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENTS));
+            .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
   }
 
   private SafeFuture<HeaderWithFallbackData> getResultFromSignedBuilderBid(
