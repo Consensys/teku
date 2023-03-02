@@ -82,7 +82,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
-      final BlobsBundleValidator blobsBundleValidator) {
+      final BlobsBundleValidator blobsBundleValidator,
+      final Optional<Integer> builderBidChallengePercentage) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -110,7 +111,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderBidValidator,
         builderCircuitBreaker,
         executionPayloadSourceCounter,
-        blobsBundleValidator);
+        blobsBundleValidator,
+        builderBidChallengePercentage);
   }
 
   public static ExecutionLayerManagerImpl create(
@@ -121,7 +123,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
-      final BlobsBundleValidator blobsBundleValidator) {
+      final BlobsBundleValidator blobsBundleValidator,
+      final Optional<Integer> builderBidChallengePercentage) {
     final ExecutionClientHandler executionClientHandler;
 
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
@@ -140,7 +143,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         metricsSystem,
         builderBidValidator,
         builderCircuitBreaker,
-        blobsBundleValidator);
+        blobsBundleValidator,
+        builderBidChallengePercentage);
   }
 
   public static ExecutionEngineClient createEngineClient(
@@ -181,14 +185,21 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
-      final BlobsBundleValidator blobsBundleValidator) {
+      final BlobsBundleValidator blobsBundleValidator,
+      final Optional<Integer> builderBidChallengePercentage) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
     this.blobsBundleValidator = blobsBundleValidator;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
     this.executionBuilderModule =
         new ExecutionBuilderModule(
-            spec, this, builderBidValidator, builderCircuitBreaker, builderClient, eventLogger);
+            spec,
+            this,
+            builderBidValidator,
+            builderCircuitBreaker,
+            builderClient,
+            eventLogger,
+            builderBidChallengePercentage);
   }
 
   @Override
