@@ -70,6 +70,9 @@
     },
     {
       "moduleName": "io.libp2p:jvm-libp2p-minimal"
+    },
+    {
+      "moduleName": "com.squareup.okio:okio"
     }
   ],
   "overrideLicenses" : [
@@ -87,6 +90,10 @@
     },
     {
       "moduleName": "com.github.oshi:oshi-core-java11",
+      "moduleLicense": "MIT License"
+    },
+    {
+      "moduleName": "com.github.oshi:oshi-core",
       "moduleLicense": "MIT License"
     },
     {
@@ -185,6 +192,31 @@
     {
       "moduleName": "tech.pegasys:noise-java",
       "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "com.squareup.okio:okio",
+      "moduleLicense": "Apache License, Version 2.0",
+      "moduleLicenseUrl": "https://github.com/square/okio/blob/master/LICENSE.txt"
+    },
+    {
+      "moduleName": "org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "net.java.dev.jna:jna-platform",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "net.java.dev.jna:jna",
+      "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "jakarta.transaction:jakarta.transaction-api",
+      "moduleLicense": "Eclipse Public License - v 2.0"
+    },
+    {
+      "moduleName": "jakarta.annotation:jakarta.annotation-api",
+      "moduleLicense": "Eclipse Public License - v 2.0"
     }
   ]
 }

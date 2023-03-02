@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 public class ExecutionBuilderModule {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final int HUNDRED_PERCENT = 100;
 
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
@@ -58,6 +59,7 @@ public class ExecutionBuilderModule {
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
+  private final Optional<Integer> builderBidChallengePercentage;
 
   public ExecutionBuilderModule(
       final Spec spec,
@@ -65,7 +67,8 @@ public class ExecutionBuilderModule {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
-      final EventLogger eventLogger) {
+      final EventLogger eventLogger,
+      final Optional<Integer> builderBidChallengePercentage) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
@@ -73,6 +76,7 @@ public class ExecutionBuilderModule {
     this.builderCircuitBreaker = builderCircuitBreaker;
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
+    this.builderBidChallengePercentage = builderBidChallengePercentage;
   }
 
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
@@ -164,10 +168,18 @@ public class ExecutionBuilderModule {
                         .map(ExecutionPayloadWithValue::getValue)
                         .orElse(UInt256.ZERO);
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
-                if (signedBuilderBid.getMessage().getValue().lessOrEqualThan(localPayloadValue)) {
+
+                if (isLocalPayloadValueWinning(signedBuilderBid, localPayloadValue)) {
+                  LOG.info(
+                      "The local execution payload value ({}) was awarded the block over the builder payload ({}), "
+                          + "{}% challenge configured.",
+                      signedBuilderBid.getMessage().getValue().toDecimalString(),
+                      localPayloadValue.toDecimalString(),
+                      builderBidChallengePercentage);
                   return getResultFromLocalExecutionPayload(
-                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_HIGHER);
+                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
+
                 final Optional<ExecutionPayload> localPayload =
                     maybeLocalExecutionPayload.map(ExecutionPayloadWithValue::getExecutionPayload);
                 return getResultFromSignedBuilderBid(
@@ -182,6 +194,17 @@ public class ExecutionBuilderModule {
               return getResultFromLocalExecutionPayload(
                   localExecutionPayload, slot, FallbackReason.BUILDER_ERROR);
             });
+  }
+
+  /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
+  private boolean isLocalPayloadValueWinning(
+      final SignedBuilderBid signedBuilderBid, final UInt256 localPayloadValue) {
+    return builderBidChallengePercentage.isPresent()
+        && signedBuilderBid
+            .getMessage()
+            .getValue()
+            .multiply(builderBidChallengePercentage.get())
+            .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
   }
 
   private SafeFuture<HeaderWithFallbackData> getResultFromSignedBuilderBid(
