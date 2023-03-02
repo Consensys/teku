@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -600,6 +601,7 @@ public class ChainBuilder {
             options.getTransactions(),
             options.getTerminalBlockHash(),
             options.getExecutionPayload(),
+            options.getSyncAggregate(),
             options.getBlsToExecutionChange(),
             options.getKzgCommitments(),
             options.getSkipStateTransition()));
@@ -629,6 +631,7 @@ public class ChainBuilder {
                 options.getTransactions(),
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
+                options.getSyncAggregate(),
                 options.getBlsToExecutionChange(),
                 options.getKzgCommitments(),
                 options.getSkipStateTransition()));
@@ -679,6 +682,7 @@ public class ChainBuilder {
                 options.getTransactions(),
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
+                options.getSyncAggregate(),
                 options.getBlsToExecutionChange(),
                 randomBlobs,
                 options.getSkipStateTransition()));
@@ -818,6 +822,7 @@ public class ChainBuilder {
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
     private Optional<ExecutionPayload> executionPayload = Optional.empty();
+    private Optional<SyncAggregate> syncAggregate = Optional.empty();
     private Optional<SszList<SignedBlsToExecutionChange>> blsToExecutionChange = Optional.empty();
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
@@ -900,6 +905,11 @@ public class ChainBuilder {
       return this;
     }
 
+    public BlockOptions setSyncAggregate(final SyncAggregate syncAggregate) {
+      this.syncAggregate = Optional.of(syncAggregate);
+      return this;
+    }
+
     public BlockOptions setSkipStateTransition(boolean skipStateTransition) {
       this.skipStateTransition = skipStateTransition;
       return this;
@@ -928,6 +938,10 @@ public class ChainBuilder {
 
     public Optional<ExecutionPayload> getExecutionPayload() {
       return executionPayload;
+    }
+
+    public Optional<SyncAggregate> getSyncAggregate() {
+      return syncAggregate;
     }
 
     public Optional<SszList<SignedBlsToExecutionChange>> getBlsToExecutionChange() {

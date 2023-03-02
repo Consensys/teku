@@ -13,14 +13,11 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
-import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,12 +28,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class DenebExecutionClientHandler extends CapellaExecutionClientHandler
     implements ExecutionClientHandler {
-  private static final Logger LOG = LogManager.getLogger();
-
   public DenebExecutionClientHandler(
       final Spec spec, final ExecutionEngineClient executionEngineClient) {
     super(spec, executionEngineClient);
@@ -64,22 +58,10 @@ public class DenebExecutionClientHandler extends CapellaExecutionClientHandler
     if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       return super.engineGetBlobsBundle(payloadId, slot);
     }
-    LOG.trace("calling engineGetBlobsBundle(payloadId={}, slot={})", payloadId, slot);
-    return executionEngineClient
-        .getBlobsBundleV1(payloadId)
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-                        .getBlobSchema()),
-            BlobsBundleV1::asInternalBlobsBundle)
-        .thenPeek(
-            blobsBundle ->
-                LOG.trace(
-                    () ->
-                        String.format(
-                            "engineGetBlobsBundle(payloadId=%s, slot=%s) -> %s",
-                            payloadId, slot, blobsBundle.toBriefBlobsString())));
+
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(payloadId).add(slot).build();
+
+    return new EngineGetBlobsBundleV1(executionEngineClient, spec).execute(params);
   }
 }
