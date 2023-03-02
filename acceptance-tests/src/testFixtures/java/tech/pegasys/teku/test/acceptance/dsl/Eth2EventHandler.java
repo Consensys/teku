@@ -13,14 +13,14 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
+import com.launchdarkly.eventsource.background.BackgroundEventHandler;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Eth2EventHandler implements EventHandler {
+public class Eth2EventHandler implements BackgroundEventHandler {
   private static final Logger LOG = LogManager.getLogger();
   private final List<PackedMessage> eventList = new ArrayList<>();
 
@@ -61,8 +61,8 @@ public class Eth2EventHandler implements EventHandler {
   }
 
   public static class PackedMessage {
-    private String event;
-    private MessageEvent messageEvent;
+    private final String event;
+    private final MessageEvent messageEvent;
 
     public PackedMessage(final String event, final MessageEvent messageEvent) {
       this.event = event;
