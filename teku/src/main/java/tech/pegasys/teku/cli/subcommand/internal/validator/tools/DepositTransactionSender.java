@@ -79,13 +79,12 @@ public class DepositTransactionSender {
             commandStdOutput.accept(
                 String.format(
                     "Transaction for Validator Key [%s] Completed. Transaction Hash: [%s]%n",
-                    validatorKeyPair.getPublicKey().toString(),
-                    transactionReceipt.getTransactionHash())),
+                    validatorKeyPair.getPublicKey(), transactionReceipt.getTransactionHash())),
         exception ->
             commandErrorOutput.accept(
                 String.format(
                     "Transaction for Validator Key [%s] Failed: Message: [%s]%n",
-                    validatorKeyPair.getPublicKey().toString(), exception.getMessage())));
+                    validatorKeyPair.getPublicKey(), exception.getMessage())));
 
     return safeFuture;
   }
@@ -116,6 +115,7 @@ public class DepositTransactionSender {
     }
 
     @Override
+    @Deprecated
     public BigInteger getGasPrice() {
       try {
         return web3j.ethGasPrice().send().getGasPrice();
@@ -130,6 +130,7 @@ public class DepositTransactionSender {
     }
 
     @Override
+    @Deprecated
     public BigInteger getGasLimit() {
       return BigInteger.valueOf(200_000L);
     }
