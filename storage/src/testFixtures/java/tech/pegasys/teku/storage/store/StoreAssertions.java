@@ -25,6 +25,8 @@ public class StoreAssertions {
     assertThat(actualState)
         .usingRecursiveComparison(
             RecursiveComparisonConfiguration.builder()
+                // Preventing recursive comparator to fall inside Ssz's with its reflection
+                // comparison of all fields including caches etc.
                 .withComparatorForType((o1, o2) -> o1.equals(o2) ? 0 : 1, SszData.class)
                 .build())
         .ignoringFields(
