@@ -522,10 +522,12 @@ public class ChainDataProviderTest {
             data.randomPublicKey().toHexString(), // Validator not in committee
             "2", // Validator not in committee
             committeeKeys.get(5).toHexString());
-    final Map<Integer, Integer> committeeIndices =
-        provider.getCommitteeIndices(committeeKeys, validators, state);
 
-    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(5, 11));
+    assertThatThrownBy(() -> provider.getCommitteeIndices(committeeKeys, validators, state))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageMatching(
+            "'0xab26a22f1c8c779103154eb379a79af4928383e95d6d827a2bddd6263af6c3d9ae4be8e2949fd4827964b22b72368069' "
+                + "is not a valid hex encoded public key or validator index in the committee");
   }
 
   @Test
