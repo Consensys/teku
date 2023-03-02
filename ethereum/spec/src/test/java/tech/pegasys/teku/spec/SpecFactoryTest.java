@@ -55,6 +55,9 @@ public class SpecFactoryTest {
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0);
     } else if (NON_BELLATRIX_NETWORKS.contains(configName)) {
       assertThat(spec.getForkSchedule().getSupportedMilestones()).containsExactly(PHASE0, ALTAIR);
+    } else if (CAPELLA_NETWORKS.contains(configName)) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones())
+          .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
     } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX);
