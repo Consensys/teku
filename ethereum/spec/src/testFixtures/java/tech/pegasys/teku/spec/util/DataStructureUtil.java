@@ -565,7 +565,11 @@ public final class DataStructureUtil {
     return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
         .getBuilderBidSchema()
         .create(
-            randomExecutionPayloadHeader(spec.getGenesisSpec()), randomUInt256(), builderPublicKey);
+            randomExecutionPayloadHeader(spec.getGenesisSpec()),
+            // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid overflows in
+            // computation
+            randomUInt256().divide(1000),
+            builderPublicKey);
   }
 
   public BuilderBid randomBuilderBid(final Bytes32 withdrawalsRoot) {
