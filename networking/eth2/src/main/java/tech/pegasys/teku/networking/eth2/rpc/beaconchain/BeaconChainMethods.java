@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -197,7 +197,8 @@ public class BeaconChainMethods {
           final PeerLookup peerLookup,
           final RpcEncoding rpcEncoding) {
     final BeaconBlocksByRootMessageHandler beaconBlocksByRootHandler =
-        new BeaconBlocksByRootMessageHandler(spec, metricsSystem, recentChainData);
+        new BeaconBlocksByRootMessageHandler(
+            spec, metricsSystem, recentChainData, MAX_REQUEST_BLOCKS_DENEB);
 
     final BeaconBlocksByRootRequestMessageSchema requestType =
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA;
@@ -235,7 +236,7 @@ public class BeaconChainMethods {
           final RpcEncoding rpcEncoding) {
     final BeaconBlocksByRangeMessageHandler beaconBlocksByRangeHandler =
         new BeaconBlocksByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+            spec, metricsSystem, combinedChainDataClient, MAX_REQUEST_BLOCKS_DENEB);
 
     final BeaconBlocksByRangeRequestMessageSchema requestType =
         BeaconBlocksByRangeRequestMessage.SSZ_SCHEMA;

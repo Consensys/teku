@@ -16,7 +16,9 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -25,6 +27,7 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
@@ -46,11 +49,16 @@ public class BeaconBlocksByRootMessageHandler
   private final RecentChainData storageClient;
   private final Counter totalBlocksRequestedCounter;
   private final LabelledMetric<Counter> requestCounter;
+  private final UInt64 maxRequestSize;
 
   public BeaconBlocksByRootMessageHandler(
-      final Spec spec, final MetricsSystem metricsSystem, final RecentChainData storageClient) {
+      final Spec spec,
+      final MetricsSystem metricsSystem,
+      final RecentChainData storageClient,
+      final UInt64 maxRequestSize) {
     this.spec = spec;
     this.storageClient = storageClient;
+    this.maxRequestSize = maxRequestSize;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -73,14 +81,19 @@ public class BeaconBlocksByRootMessageHandler
     LOG.trace("Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message);
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
-      if (!peer.wantToMakeRequest() || !peer.wantToReceiveBlocks(callback, message.size())) {
+      if (!peer.wantToMakeRequest()
+          || !peer.wantToReceiveBlocks(
+              callback, maxRequestSize.min(UInt64.valueOf(message.size())).longValue())) {
         requestCounter.labels("rate_limited").inc();
         return;
       }
-
       requestCounter.labels("ok").inc();
       totalBlocksRequestedCounter.inc(message.size());
-      for (SszBytes32 blockRoot : message) {
+
+      final int count = Math.min(maxRequestSize.intValue(), message.size());
+      List<SszBytes32> blockRoots = message.stream().limit(count).collect(Collectors.toList());
+
+      for (SszBytes32 blockRoot : blockRoots) {
         future =
             future.thenCompose(
                 __ ->

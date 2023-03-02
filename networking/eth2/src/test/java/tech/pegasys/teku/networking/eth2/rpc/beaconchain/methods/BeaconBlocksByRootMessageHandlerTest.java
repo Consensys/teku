@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,11 +63,13 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(altairForkEpoch);
   private final UInt64 altairForkSlot = spec.computeStartSlotAtEpoch(altairForkEpoch);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  private final UInt64 maxRequestSize = UInt64.valueOf(8);
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   final UpdatableStore store = mock(UpdatableStore.class);
   final RecentChainData recentChainData = mock(RecentChainData.class);
   final BeaconBlocksByRootMessageHandler handler =
-      new BeaconBlocksByRootMessageHandler(spec, storageSystem.getMetricsSystem(), recentChainData);
+      new BeaconBlocksByRootMessageHandler(
+          spec, storageSystem.getMetricsSystem(), recentChainData, maxRequestSize);
   final Eth2Peer peer = mock(Eth2Peer.class);
 
   @SuppressWarnings("unchecked")
@@ -96,6 +99,23 @@ public class BeaconBlocksByRootMessageHandlerTest {
       verify(store).retrieveSignedBlock(block.getRoot());
       verify(callback).respond(block);
     }
+  }
+
+  @ParameterizedTest(name = "protocol={0}")
+  @MethodSource("protocolIdParams")
+  public void onIncomingMessage_limitToMaxRequestSize(final String protocolId) {
+    final List<SignedBeaconBlock> blocks = buildChain(maxRequestSize.plus(UInt64.ONE).intValue());
+
+    final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
+    handler.onIncomingMessage(protocolId, peer, message, callback);
+
+    for (int index = 0; index < maxRequestSize.intValue(); index++) {
+      verify(store).retrieveSignedBlock(blocks.get(index).getRoot());
+      verify(callback).respond(blocks.get(index));
+    }
+
+    verify(store, never()).retrieveSignedBlock(blocks.get(maxRequestSize.intValue()).getRoot());
+    verify(callback, never()).respond(blocks.get(maxRequestSize.intValue()));
   }
 
   @ParameterizedTest(name = "protocol={0}")
