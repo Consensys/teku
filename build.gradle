@@ -20,8 +20,8 @@ buildscript {
 }
 
 plugins {
-  id 'com.diffplug.spotless' version '6.15.0'
-  id 'com.github.ben-manes.versions' version '0.45.0'
+  id 'com.diffplug.spotless' version '6.16.0'
+  id 'com.github.ben-manes.versions' version '0.46.0'
   id 'com.github.jk1.dependency-license-report' version '2.1'
   id 'io.spring.dependency-management' version '1.1.0'
   id 'net.ltgt.errorprone' version '3.0.1' apply false
@@ -431,7 +431,9 @@ task autocomplete(type: JavaExec) {
   classpath sourceSets.main.runtimeClasspath
 }
 
-installDist { }
+installDist {
+  dependsOn checkLicense, autocomplete
+}
 
 distTar {
   dependsOn checkLicense, autocomplete

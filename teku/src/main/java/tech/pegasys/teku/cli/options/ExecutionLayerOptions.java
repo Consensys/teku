@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
@@ -96,6 +97,20 @@ public class ExecutionLayerOptions {
   private int builderCircuitBreakerAllowedConsecutiveFaults =
       DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 
+  @Option(
+      names = {"--Xvalidators-builder-bid-challenge-percentage"},
+      paramLabel = "<STRING>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Fallback to local payload whenever its value beats the builder bid. "
+              + "Value is whole, percent (e.g. 100, default value, means use local payload when it at least matches builder bid, "
+              + "80 means use local payload when its value is at least 80% of builder bid).\n"
+              + "NEVER: ignore local value, use builder's bid whenever it passes validation",
+      arity = "1",
+      hidden = true)
+  private String builderBidChallengePercentage =
+      Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
+
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -107,7 +122,8 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerWindow(builderCircuitBreakerWindow)
                 .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults)
                 .builderCircuitBreakerAllowedConsecutiveFaults(
-                    builderCircuitBreakerAllowedConsecutiveFaults));
+                    builderCircuitBreakerAllowedConsecutiveFaults)
+                .builderBidChallengePercentage(builderBidChallengePercentage));
     depositOptions.configure(builder);
   }
 }
