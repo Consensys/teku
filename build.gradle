@@ -431,7 +431,9 @@ task autocomplete(type: JavaExec) {
   classpath sourceSets.main.runtimeClasspath
 }
 
-installDist { }
+installDist {
+  dependsOn checkLicense, autocomplete
+}
 
 distTar {
   dependsOn checkLicense, autocomplete
