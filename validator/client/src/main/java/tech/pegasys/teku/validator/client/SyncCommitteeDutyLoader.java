@@ -71,7 +71,8 @@ public class SyncCommitteeDutyLoader
   @Override
   protected SafeFuture<SyncCommitteeScheduledDuties> scheduleAllDuties(
       final UInt64 epoch, final SyncCommitteeDuties duties) {
-    final UInt64 lastEpochInCommitteePeriod = spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(epoch))
+    final UInt64 lastEpochInCommitteePeriod =
+        spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(epoch))
             .computeFirstEpochOfNextSyncCommitteePeriod(epoch)
             .minusMinZero(1);
     final SyncCommitteeScheduledDuties.Builder dutyBuilder =
@@ -80,17 +81,16 @@ public class SyncCommitteeDutyLoader
             .validatorApiChannel(validatorApiChannel)
             .chainHeadTracker(chainHeadTracker)
             .spec(spec)
-            .lastEpochInCommitteePeriod(
-                    lastEpochInCommitteePeriod);
+            .lastEpochInCommitteePeriod(lastEpochInCommitteePeriod);
     duties.getDuties().forEach(duty -> scheduleDuty(dutyBuilder, duty));
     final SyncCommitteeScheduledDuties scheduledDuties = dutyBuilder.build();
     scheduledDuties.subscribeToSubnets();
 
     metricsSystem.createIntegerGauge(
-            TekuMetricCategory.VALIDATOR,
-            "current_sync_committee_last_epoch",
-            "The final epoch of the current sync committee period",
-            lastEpochInCommitteePeriod::intValue);
+        TekuMetricCategory.VALIDATOR,
+        "current_sync_committee_last_epoch",
+        "The final epoch of the current sync committee period",
+        lastEpochInCommitteePeriod::intValue);
     return SafeFuture.completedFuture(scheduledDuties);
   }
 

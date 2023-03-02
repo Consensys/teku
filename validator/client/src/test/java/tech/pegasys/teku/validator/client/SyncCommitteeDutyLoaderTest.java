@@ -119,6 +119,12 @@ class SyncCommitteeDutyLoaderTest {
                 .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
                 .getValue())
         .isEqualTo(2.0);
+
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.VALIDATOR, "current_sync_committee_last_epoch")
+                .getValue())
+        .isEqualTo(63.0);
   }
 
   @Test
@@ -134,6 +140,12 @@ class SyncCommitteeDutyLoaderTest {
                 .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
                 .getValue())
         .isEqualTo(0.0);
+
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.VALIDATOR, "current_sync_committee_last_epoch")
+                .getValue())
+        .isEqualTo(63.0);
   }
 
   @Test
@@ -149,6 +161,11 @@ class SyncCommitteeDutyLoaderTest {
                 .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
                 .getValue())
         .isEqualTo(0.0);
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.VALIDATOR, "current_sync_committee_last_epoch")
+                .getValue())
+        .isEqualTo(63.0);
   }
 
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {
