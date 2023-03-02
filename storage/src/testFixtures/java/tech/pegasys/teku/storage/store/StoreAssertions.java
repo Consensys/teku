@@ -15,12 +15,18 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.assertj.core.api.recursive.comparison.RecursiveComparisonConfiguration;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+
 public class StoreAssertions {
 
   public static void assertStoresMatch(
       final UpdatableStore actualState, final UpdatableStore expectedState) {
     assertThat(actualState)
-        .usingRecursiveComparison()
+        .usingRecursiveComparison(
+            RecursiveComparisonConfiguration.builder()
+                .withComparatorForType((o1, o2) -> o1.equals(o2) ? 0 : 1, SszData.class)
+                .build())
         .ignoringFields(
             "timeMillis",
             "stateCountGauge",
