@@ -13,15 +13,11 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsBundleV1;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
+import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,17 +25,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class DenebExecutionClientHandler extends CapellaExecutionClientHandler
     implements ExecutionClientHandler {
-  private static final Logger LOG = LogManager.getLogger();
-
   public DenebExecutionClientHandler(
       final Spec spec, final ExecutionEngineClient executionEngineClient) {
     super(spec, executionEngineClient);
@@ -48,53 +39,18 @@ public class DenebExecutionClientHandler extends CapellaExecutionClientHandler
   @Override
   public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    LOG.trace(
-        "calling engineGetPayloadV3(payloadId={}, slot={})",
-        executionPayloadContext.getPayloadId(),
-        slot);
-    return executionEngineClient
-        .getPayloadV3(executionPayloadContext.getPayloadId())
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(
-            response -> {
-              final ExecutionPayloadSchema<?> payloadSchema =
-                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                      .getExecutionPayloadSchema();
-              return new ExecutionPayloadWithValue(
-                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
-                  response.blockValue);
-            })
-        .thenPeek(
-            payloadAndValue ->
-                LOG.trace(
-                    "engineGetPayloadV3(payloadId={}, slot={}) -> {}",
-                    executionPayloadContext.getPayloadId(),
-                    slot,
-                    payloadAndValue));
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(slot).build();
+
+    return new EngineGetPayloadV3(executionEngineClient, spec).execute(params);
   }
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    LOG.trace("calling engineNewPayloadV3(executionPayload={})", executionPayload);
-    final ExecutionPayloadV1 executionPayloadV1;
-    if (executionPayload.toVersionDeneb().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
-    } else if (executionPayload.toVersionCapella().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
-    } else {
-      executionPayloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
-    }
-    return executionEngineClient
-        .newPayloadV3(executionPayloadV1)
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
-        .thenPeek(
-            payloadStatus ->
-                LOG.trace(
-                    "engineNewPayloadV3(executionPayload={}) -> {}",
-                    executionPayload,
-                    payloadStatus))
-        .exceptionally(PayloadStatus::failedExecution);
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+
+    return new EngineNewPayloadV3(executionEngineClient).execute(params);
   }
 
   @Override
@@ -102,22 +58,10 @@ public class DenebExecutionClientHandler extends CapellaExecutionClientHandler
     if (!spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
       return super.engineGetBlobsBundle(payloadId, slot);
     }
-    LOG.trace("calling engineGetBlobsBundle(payloadId={}, slot={})", payloadId, slot);
-    return executionEngineClient
-        .getBlobsBundleV1(payloadId)
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenCombine(
-            SafeFuture.of(
-                () ->
-                    SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-                        .getBlobSchema()),
-            BlobsBundleV1::asInternalBlobsBundle)
-        .thenPeek(
-            blobsBundle ->
-                LOG.trace(
-                    () ->
-                        String.format(
-                            "engineGetBlobsBundle(payloadId=%s, slot=%s) -> %s",
-                            payloadId, slot, blobsBundle.toBriefBlobsString())));
+
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(payloadId).add(slot).build();
+
+    return new EngineGetBlobsBundleV1(executionEngineClient, spec).execute(params);
   }
 }

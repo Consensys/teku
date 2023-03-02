@@ -14,31 +14,24 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
-import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandler
     implements ExecutionClientHandler {
-  private static final Logger LOG = LogManager.getLogger();
 
   public CapellaExecutionClientHandler(
       final Spec spec, final ExecutionEngineClient executionEngineClient) {
@@ -48,29 +41,10 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
   @Override
   public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    LOG.trace(
-        "calling engineGetPayloadV2(payloadId={}, slot={})",
-        executionPayloadContext.getPayloadId(),
-        slot);
-    return executionEngineClient
-        .getPayloadV2(executionPayloadContext.getPayloadId())
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(
-            response -> {
-              final ExecutionPayloadSchema<?> payloadSchema =
-                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
-                      .getExecutionPayloadSchema();
-              return new ExecutionPayloadWithValue(
-                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
-                  response.blockValue);
-            })
-        .thenPeek(
-            payloadAndValue ->
-                LOG.trace(
-                    "engineGetPayloadV2(payloadId={}, slot={}) -> {}",
-                    executionPayloadContext.getPayloadId(),
-                    slot,
-                    payloadAndValue));
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(slot).build();
+
+    return new EngineGetPayloadV2(executionEngineClient, spec).execute(params);
   }
 
   @Override
@@ -89,20 +63,9 @@ public class CapellaExecutionClientHandler extends BellatrixExecutionClientHandl
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
-    LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);
-    return executionEngineClient
-        .newPayloadV2(
-            executionPayload.toVersionCapella().isPresent()
-                ? ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload)
-                : ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
-        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
-        .thenApply(PayloadStatusV1::asInternalExecutionPayload)
-        .thenPeek(
-            payloadStatus ->
-                LOG.trace(
-                    "engineNewPayloadV2(executionPayload={}) -> {}",
-                    executionPayload,
-                    payloadStatus))
-        .exceptionally(PayloadStatus::failedExecution);
+    final JsonRpcRequestParams params =
+        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+
+    return new EngineNewPayloadV2(executionEngineClient).execute(params);
   }
 }

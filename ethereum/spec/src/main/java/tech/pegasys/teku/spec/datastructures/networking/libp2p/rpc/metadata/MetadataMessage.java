@@ -25,7 +25,7 @@ public interface MetadataMessage extends SszContainer, RpcRequest {
   SszBitvector getAttnets();
 
   @Override
-  default int getMaximumRequestChunks() {
+  default int getMaximumResponseChunks() {
     return 1;
   }
 

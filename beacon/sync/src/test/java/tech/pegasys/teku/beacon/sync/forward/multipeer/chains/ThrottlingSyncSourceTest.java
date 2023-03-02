@@ -29,12 +29,12 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 
 class ThrottlingSyncSourceTest {
 
   private static final int MAX_BLOCKS_PER_MINUTE = 100;
-  private static final int MAX_BLOBS_SIDECARS_PER_MINUTE = 100;
+  private static final int MAX_BLOB_SIDECARS_PER_MINUTE = 100;
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final SyncSource delegate = mock(SyncSource.class);
@@ -44,16 +44,12 @@ class ThrottlingSyncSourceTest {
       mock(RpcResponseListener.class);
 
   @SuppressWarnings("unchecked")
-  private final RpcResponseListener<BlobsSidecar> blobsSidecarsListener =
+  private final RpcResponseListener<BlobSidecar> blobSidecarsListener =
       mock(RpcResponseListener.class);
 
   private final ThrottlingSyncSource source =
       new ThrottlingSyncSource(
-          asyncRunner,
-          timeProvider,
-          delegate,
-          MAX_BLOCKS_PER_MINUTE,
-          MAX_BLOBS_SIDECARS_PER_MINUTE);
+          asyncRunner, timeProvider, delegate, MAX_BLOCKS_PER_MINUTE, MAX_BLOB_SIDECARS_PER_MINUTE);
 
   @Test
   void shouldDelegateDisconnectImmediately() {
@@ -79,18 +75,18 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
-  void shouldRequestBlobsSidecarsImmediatelyIfRateLimitNotExceeded() {
-    final UInt64 count = UInt64.valueOf(MAX_BLOBS_SIDECARS_PER_MINUTE - 1);
-    ignoreFuture(source.requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+  void shouldRequestBlobSidecarsImmediatelyIfRateLimitNotExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOB_SIDECARS_PER_MINUTE - 1);
+    ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(
-        source.requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+        source.requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
 
     // Both requests happen immediately
     ignoreFuture(
-        verify(delegate).requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+        verify(delegate).requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(
         verify(delegate)
-            .requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+            .requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
   }
 
   @Test
@@ -110,15 +106,14 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
-  void shouldDelayRequestIfBlobsSidecarsLimitAlreadyExceeded() {
-    final UInt64 count = UInt64.valueOf(MAX_BLOBS_SIDECARS_PER_MINUTE);
-    ignoreFuture(source.requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+  void shouldDelayRequestIfBlobSidecarsLimitAlreadyExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOB_SIDECARS_PER_MINUTE);
+    ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(
-        source.requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+        source.requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
 
-    // Both requests happen immediately
     ignoreFuture(
-        verify(delegate).requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+        verify(delegate).requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     verifyNoMoreInteractions(delegate);
 
     timeProvider.advanceTimeBySeconds(61);
@@ -126,7 +121,7 @@ class ThrottlingSyncSourceTest {
 
     ignoreFuture(
         verify(delegate)
-            .requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+            .requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
   }
 
   @Test
@@ -149,15 +144,15 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
-  void shouldContinueDelayingBlobsSidecarsRequestIfRequestStillExceeded() {
-    final UInt64 count = UInt64.valueOf(MAX_BLOBS_SIDECARS_PER_MINUTE);
-    ignoreFuture(source.requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+  void shouldContinueDelayingBlobSidecarsRequestIfRequestStillExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOB_SIDECARS_PER_MINUTE);
+    ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(
-        source.requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+        source.requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
 
     // Both requests happen immediately
     ignoreFuture(
-        verify(delegate).requestBlobsSidecarsByRange(UInt64.ZERO, count, blobsSidecarsListener));
+        verify(delegate).requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     verifyNoMoreInteractions(delegate);
 
     timeProvider.advanceTimeBySeconds(30);
@@ -168,6 +163,6 @@ class ThrottlingSyncSourceTest {
     asyncRunner.executeQueuedActions();
     ignoreFuture(
         verify(delegate)
-            .requestBlobsSidecarsByRange(UInt64.valueOf(100), count, blobsSidecarsListener));
+            .requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
   }
 }

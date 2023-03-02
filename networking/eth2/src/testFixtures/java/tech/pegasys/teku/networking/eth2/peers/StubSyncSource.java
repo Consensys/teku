@@ -27,19 +27,23 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 public class StubSyncSource implements SyncSource {
 
   private final List<Request> blocksRequests = new ArrayList<>();
   private final List<Request> blobsSidecarsRequests = new ArrayList<>();
+  private final List<Request> blobSidecarsRequests = new ArrayList<>();
 
   private Optional<SafeFuture<Void>> currentBlockRequest = Optional.empty();
   private Optional<RpcResponseListener<SignedBeaconBlock>> currentBlockListener = Optional.empty();
 
   private Optional<SafeFuture<Void>> currentBlobsSidecarRequest = Optional.empty();
+  private Optional<SafeFuture<Void>> currentBlobSidecarRequest = Optional.empty();
   private Optional<RpcResponseListener<BlobsSidecar>> currentBlobsSidecarListener =
       Optional.empty();
+  private Optional<RpcResponseListener<BlobSidecar>> currentBlobSidecarListener = Optional.empty();
 
   public void receiveBlocks(final SignedBeaconBlock... blocks) {
     final RpcResponseListener<SignedBeaconBlock> listener = currentBlockListener.orElseThrow();
@@ -47,11 +51,19 @@ public class StubSyncSource implements SyncSource {
     currentBlockRequest.orElseThrow().complete(null);
   }
 
+  // TODO: remove when blobs decoupling sync is implemented
   public void receiveBlobsSidecars(final BlobsSidecar... blobsSidecars) {
     final RpcResponseListener<BlobsSidecar> listener = currentBlobsSidecarListener.orElseThrow();
     Stream.of(blobsSidecars)
         .forEach(response -> assertThat(listener.onResponse(response)).isCompleted());
     currentBlobsSidecarRequest.orElseThrow().complete(null);
+  }
+
+  public void receiveBlobSidecars(final BlobSidecar... blobSidecars) {
+    final RpcResponseListener<BlobSidecar> listener = currentBlobSidecarListener.orElseThrow();
+    Stream.of(blobSidecars)
+        .forEach(response -> assertThat(listener.onResponse(response)).isCompleted());
+    currentBlobSidecarRequest.orElseThrow().complete(null);
   }
 
   public void failRequest(final Throwable error) {
@@ -71,6 +83,7 @@ public class StubSyncSource implements SyncSource {
     return request;
   }
 
+  // TODO: remove when blobs decoupling sync is implemented
   @Override
   public SafeFuture<Void> requestBlobsSidecarsByRange(
       final UInt64 startSlot,
@@ -85,6 +98,17 @@ public class StubSyncSource implements SyncSource {
   }
 
   @Override
+  public SafeFuture<Void> requestBlobSidecarsByRange(
+      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
+    checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
+    blobSidecarsRequests.add(new Request(startSlot, count));
+    final SafeFuture<Void> request = new SafeFuture<>();
+    currentBlobSidecarRequest = Optional.of(request);
+    currentBlobSidecarListener = Optional.of(listener);
+    return request;
+  }
+
+  @Override
   public SafeFuture<Void> disconnectCleanly(final DisconnectReason reason) {
     return SafeFuture.COMPLETE;
   }
@@ -94,6 +118,7 @@ public class StubSyncSource implements SyncSource {
         .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
   }
 
+  // TODO: remove when blobs decoupling sync is implemented
   public void assertRequestedBlobsSidecars(final long startSlot, final long count) {
     assertThat(blobsSidecarsRequests)
         .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));

@@ -19,6 +19,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 /**
@@ -29,8 +30,16 @@ public interface SyncSource {
   SafeFuture<Void> requestBlocksByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<SignedBeaconBlock> listener);
 
-  SafeFuture<Void> requestBlobsSidecarsByRange(
-      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobsSidecar> listener);
+  // TODO: remove when blobs decoupling sync is implemented
+  @Deprecated
+  @SuppressWarnings("unused")
+  default SafeFuture<Void> requestBlobsSidecarsByRange(
+      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobsSidecar> listener) {
+    return SafeFuture.failedFuture(new UnsupportedOperationException());
+  }
+
+  SafeFuture<Void> requestBlobSidecarsByRange(
+      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobSidecar> listener);
 
   void adjustReputation(final ReputationAdjustment adjustment);
 

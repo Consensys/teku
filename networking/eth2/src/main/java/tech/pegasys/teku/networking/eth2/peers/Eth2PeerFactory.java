@@ -26,6 +26,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class Eth2PeerFactory {
 
+  private static final long TIME_OUT = 60;
   private final Spec spec;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -65,8 +66,8 @@ public class Eth2PeerFactory {
         statusMessageFactory,
         metadataMessagesFactory,
         PeerChainValidator.create(spec, metricsSystem, chainDataClient, requiredCheckpoint),
-        new RateTracker(peerRateLimit, 60, timeProvider),
-        new RateTracker(peerRateLimit, 60, timeProvider),
-        new RateTracker(peerRequestLimit, 60, timeProvider));
+        new RateTracker(peerRateLimit, TIME_OUT, timeProvider),
+        new RateTracker(peerRateLimit, TIME_OUT, timeProvider),
+        new RateTracker(peerRequestLimit, TIME_OUT, timeProvider));
   }
 }

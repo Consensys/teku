@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -24,15 +24,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-class BlobsSidecarsByRangeRequestMessageTest {
+public class BlobSidecarsByRangeRequestMessageTest {
 
   @Test
   public void shouldRoundTripViaSsz() {
-    final BlobsSidecarsByRangeRequestMessage request =
-        new BlobsSidecarsByRangeRequestMessage(UInt64.valueOf(2), UInt64.valueOf(3));
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(2), UInt64.valueOf(3));
     final Bytes data = request.sszSerialize();
-    final BlobsSidecarsByRangeRequestMessage result =
-        BlobsSidecarsByRangeRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
+    final BlobSidecarsByRangeRequestMessage result =
+        BlobSidecarsByRangeRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
 
     assertThatSszData(result).isEqualByAllMeansTo(request);
   }
@@ -40,8 +40,8 @@ class BlobsSidecarsByRangeRequestMessageTest {
   @ParameterizedTest(name = "startSlot={0}, count={1}")
   @MethodSource("getMaxSlotParams")
   public void getMaxSlot(final long startSlot, final long count, final long expected) {
-    final BlobsSidecarsByRangeRequestMessage request =
-        new BlobsSidecarsByRangeRequestMessage(UInt64.valueOf(startSlot), UInt64.valueOf(count));
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(startSlot), UInt64.valueOf(count));
 
     assertThat(request.getMaxSlot()).isEqualTo(UInt64.valueOf(expected));
   }

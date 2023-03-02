@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,11 +26,10 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlockAndBlobsSidecarByRootMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRootMessageHandler;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootMessageHandler;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobsSidecarsByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.GoodbyeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
@@ -48,18 +46,13 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlockAndBlobsSidecarByRootRequestMessage.BeaconBlockAndBlobsSidecarByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage.BeaconBlocksByRangeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage;
-import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobsSidecarsByRangeRequestMessage.BlobsSidecarsByRangeRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage.EmptyMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -77,14 +70,10 @@ public class BeaconChainMethods {
       beaconBlocksByRoot;
   private final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock>
       beaconBlocksByRange;
-  private final Optional<
-          Eth2RpcMethod<
-              BeaconBlockAndBlobsSidecarByRootRequestMessage, SignedBeaconBlockAndBlobsSidecar>>
-      beaconBlockAndBlobsSidecarByRoot;
-  private final Optional<Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>>
-      blobsSidecarsByRange;
   private final Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>>
       blobSidecarsByRoot;
+  private final Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
+      blobSidecarsByRange;
   private final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata;
   private final Eth2RpcMethod<PingMessage, PingMessage> ping;
 
@@ -95,31 +84,25 @@ public class BeaconChainMethods {
       final Eth2RpcMethod<GoodbyeMessage, GoodbyeMessage> goodBye,
       final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> beaconBlocksByRoot,
       final Eth2RpcMethod<BeaconBlocksByRangeRequestMessage, SignedBeaconBlock> beaconBlocksByRange,
-      final Optional<
-              Eth2RpcMethod<
-                  BeaconBlockAndBlobsSidecarByRootRequestMessage, SignedBeaconBlockAndBlobsSidecar>>
-          beaconBlockAndBlobsSidecarByRoot,
-      final Optional<Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>>
-          blobsSidecarsByRange,
       final Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>>
           blobSidecarsByRoot,
+      final Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
+          blobSidecarsByRange,
       final Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata,
       final Eth2RpcMethod<PingMessage, PingMessage> ping) {
     this.status = status;
     this.goodBye = goodBye;
     this.beaconBlocksByRoot = beaconBlocksByRoot;
     this.beaconBlocksByRange = beaconBlocksByRange;
-    this.beaconBlockAndBlobsSidecarByRoot = beaconBlockAndBlobsSidecarByRoot;
-    this.blobsSidecarsByRange = blobsSidecarsByRange;
     this.blobSidecarsByRoot = blobSidecarsByRoot;
+    this.blobSidecarsByRange = blobSidecarsByRange;
     this.getMetadata = getMetadata;
     this.ping = ping;
     this.allMethods =
         new ArrayList<>(
             List.of(status, goodBye, beaconBlocksByRoot, beaconBlocksByRange, getMetadata, ping));
     blobSidecarsByRoot.ifPresent(allMethods::add);
-    beaconBlockAndBlobsSidecarByRoot().ifPresent(allMethods::add);
-    blobsSidecarsByRange.ifPresent(allMethods::add);
+    blobSidecarsByRange.ifPresent(allMethods::add);
   }
 
   public static BeaconChainMethods create(
@@ -145,9 +128,7 @@ public class BeaconChainMethods {
             combinedChainDataClient,
             peerLookup,
             rpcEncoding),
-        createBeaconBlockAndBlobsSidecarByRoot(
-            spec, metricsSystem, asyncRunner, recentChainData, peerLookup, rpcEncoding),
-        createBlobsSidecarsByRange(
+        createBlobSidecarsByRoot(
             spec,
             metricsSystem,
             asyncRunner,
@@ -155,7 +136,7 @@ public class BeaconChainMethods {
             peerLookup,
             rpcEncoding,
             recentChainData),
-        createBlobSidecarsByRoot(
+        createBlobSidecarsByRange(
             spec,
             metricsSystem,
             asyncRunner,
@@ -281,44 +262,6 @@ public class BeaconChainMethods {
         rpcEncoding, requestType, expectResponseToRequest, List.of(v2Method));
   }
 
-  private static Optional<
-          Eth2RpcMethod<
-              BeaconBlockAndBlobsSidecarByRootRequestMessage, SignedBeaconBlockAndBlobsSidecar>>
-      createBeaconBlockAndBlobsSidecarByRoot(
-          final Spec spec,
-          final MetricsSystem metricsSystem,
-          final AsyncRunner asyncRunner,
-          final RecentChainData recentChainData,
-          final PeerLookup peerLookup,
-          final RpcEncoding rpcEncoding) {
-    if (!spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      return Optional.empty();
-    }
-
-    final BeaconBlockAndBlobsSidecarByRootRequestMessageSchema requestType =
-        BeaconBlockAndBlobsSidecarByRootRequestMessage.SSZ_SCHEMA;
-
-    final RpcContextCodec<Bytes4, SignedBeaconBlockAndBlobsSidecar> forkDigestContextCodec =
-        RpcContextCodec.forkDigest(
-            spec, recentChainData, ForkDigestPayloadContext.SIGNED_BEACON_BLOCK_AND_BLOBS_SIDECAR);
-
-    final BeaconBlockAndBlobsSidecarByRootMessageHandler messageHandler =
-        new BeaconBlockAndBlobsSidecarByRootMessageHandler(
-            spec, getDenebForkEpoch(spec), metricsSystem, recentChainData);
-
-    return Optional.of(
-        new SingleProtocolEth2RpcMethod<>(
-            asyncRunner,
-            BeaconChainMethodIds.BEACON_BLOCK_AND_BLOBS_SIDECAR_BY_ROOT,
-            1,
-            rpcEncoding,
-            requestType,
-            true,
-            forkDigestContextCodec,
-            messageHandler,
-            peerLookup));
-  }
-
   private static Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>>
       createBlobSidecarsByRoot(
           final Spec spec,
@@ -352,8 +295,8 @@ public class BeaconChainMethods {
             peerLookup));
   }
 
-  private static Optional<Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>>
-      createBlobsSidecarsByRange(
+  private static Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
+      createBlobSidecarsByRange(
           final Spec spec,
           final MetricsSystem metricsSystem,
           final AsyncRunner asyncRunner,
@@ -366,30 +309,26 @@ public class BeaconChainMethods {
       return Optional.empty();
     }
 
-    final BlobsSidecarsByRangeRequestMessageSchema requestType =
-        BlobsSidecarsByRangeRequestMessage.SSZ_SCHEMA;
+    final BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema requestType =
+        BlobSidecarsByRangeRequestMessage.SSZ_SCHEMA;
 
-    final RpcContextCodec<Bytes4, BlobsSidecar> forkDigestContextCodec =
-        RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOBS_SIDECAR);
+    final RpcContextCodec<Bytes4, BlobSidecar> forkDigestContextCodec =
+        RpcContextCodec.forkDigest(spec, recentChainData, ForkDigestPayloadContext.BLOB_SIDECAR);
 
-    final BlobsSidecarsByRangeMessageHandler blobsSidecarsByRangeHandler =
-        new BlobsSidecarsByRangeMessageHandler(
-            spec,
-            getDenebForkEpoch(spec),
-            metricsSystem,
-            combinedChainDataClient,
-            MAX_REQUEST_BLOBS_SIDECARS);
+    final BlobSidecarsByRangeMessageHandler blobSidecarsByRangeHandler =
+        new BlobSidecarsByRangeMessageHandler(
+            spec, getDenebForkEpoch(spec), metricsSystem, combinedChainDataClient);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
             asyncRunner,
-            BeaconChainMethodIds.BLOBS_SIDECARS_BY_RANGE,
+            BeaconChainMethodIds.BLOB_SIDECARS_BY_RANGE,
             1,
             rpcEncoding,
             requestType,
             true,
             forkDigestContextCodec,
-            blobsSidecarsByRangeHandler,
+            blobSidecarsByRangeHandler,
             peerLookup));
   }
 
@@ -500,21 +439,14 @@ public class BeaconChainMethods {
     return beaconBlocksByRange;
   }
 
-  public Optional<
-          Eth2RpcMethod<
-              BeaconBlockAndBlobsSidecarByRootRequestMessage, SignedBeaconBlockAndBlobsSidecar>>
-      beaconBlockAndBlobsSidecarByRoot() {
-    return beaconBlockAndBlobsSidecarByRoot;
-  }
-
-  public Optional<Eth2RpcMethod<BlobsSidecarsByRangeRequestMessage, BlobsSidecar>>
-      blobsSidecarsByRange() {
-    return blobsSidecarsByRange;
-  }
-
   public Optional<Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar>>
       blobSidecarsByRoot() {
     return blobSidecarsByRoot;
+  }
+
+  public Optional<Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar>>
+      blobSidecarsByRange() {
+    return blobSidecarsByRange;
   }
 
   public Eth2RpcMethod<EmptyMessage, MetadataMessage> getMetadata() {

@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_BLOBS_SIDECARS_PER_MINUTE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_BLOB_SIDECARS_PER_MINUTE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCKS_PER_MINUTE;
 import static tech.pegasys.teku.spec.config.Constants.SYNC_BATCH_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.SYNC_BLOBS_SIDECARS_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.SYNC_BLOB_SIDECARS_SIZE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -39,13 +39,13 @@ public class SyncSourceFactory {
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer) {
     // Limit request rate to just a little under what we'd accept
     final int maxBlocksPerMinute = MAX_BLOCKS_PER_MINUTE - SYNC_BATCH_SIZE.intValue() - 1;
-    final int maxBlobsSidecarsPerMinute =
-        MAX_BLOBS_SIDECARS_PER_MINUTE - SYNC_BLOBS_SIDECARS_SIZE.intValue() - 1;
+    final int maxBlobSidecarsPerMinute =
+        MAX_BLOB_SIDECARS_PER_MINUTE - SYNC_BLOB_SIDECARS_SIZE.intValue() - 1;
     return syncSourcesByPeer.computeIfAbsent(
         peer,
         source ->
             new ThrottlingSyncSource(
-                asyncRunner, timeProvider, source, maxBlocksPerMinute, maxBlobsSidecarsPerMinute));
+                asyncRunner, timeProvider, source, maxBlocksPerMinute, maxBlobSidecarsPerMinute));
   }
 
   public void onPeerDisconnected(final Eth2Peer peer) {

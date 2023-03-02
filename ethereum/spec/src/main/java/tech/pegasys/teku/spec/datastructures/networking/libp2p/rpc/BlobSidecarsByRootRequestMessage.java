@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOB_SIDECARS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -25,9 +25,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier>
     implements SszList<BlobIdentifier>, RpcRequest {
 
-  // size validation according to the spec (MAX_REQUEST_BLOB_SIDECARS * MAX_BLOBS_PER_BLOCK) is done
+  // size validation according to the spec (MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK) is done
   // in the RPC handler
-  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOB_SIDECARS.times(128);
+  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOCKS_DENEB.times(128);
 
   public static class BlobSidecarsByRootRequestMessageSchema
       extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
@@ -55,7 +55,7 @@ public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier
   }
 
   @Override
-  public int getMaximumRequestChunks() {
+  public int getMaximumResponseChunks() {
     return size();
   }
 
