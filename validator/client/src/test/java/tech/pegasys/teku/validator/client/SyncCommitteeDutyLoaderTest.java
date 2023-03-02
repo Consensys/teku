@@ -28,6 +28,8 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -60,6 +62,8 @@ class SyncCommitteeDutyLoaderTest {
   private final ChainHeadTracker chainHeadTracker = mock(ChainHeadTracker.class);
   private final ForkProvider forkProvider = mock(ForkProvider.class);
 
+  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+
   private final SyncCommitteeDutyLoader dutyLoader =
       new SyncCommitteeDutyLoader(
           validators,
@@ -67,7 +71,8 @@ class SyncCommitteeDutyLoaderTest {
           spec,
           validatorApiChannel,
           chainHeadTracker,
-          forkProvider);
+          forkProvider,
+          metricsSystem);
 
   @BeforeEach
   void setUp() {
@@ -109,6 +114,41 @@ class SyncCommitteeDutyLoaderTest {
                     validator1Index, IntSet.of(1, 6, 25), untilEpoch.increment()),
                 new SyncCommitteeSubnetSubscription(
                     validator2Index, IntSet.of(7, 50, 38), untilEpoch.increment())));
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
+                .getValue())
+        .isEqualTo(2.0);
+  }
+
+  @Test
+  void shouldGetCountOfValidatorsInSyncCommitteeThroughMetrics() {
+    final UInt64 epoch = UInt64.valueOf(56);
+    when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(new SyncCommitteeDuties(false, List.of()))));
+    final SyncCommitteeScheduledDuties duties = loadDuties(epoch);
+    assertThat(duties.countDuties()).isEqualTo(0);
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
+                .getValue())
+        .isEqualTo(0.0);
+  }
+
+  @Test
+  void shouldGetCountOfValidatorsInSyncCommitteeThroughMetrics2() {
+    final UInt64 epoch = UInt64.valueOf(56);
+    when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(new SyncCommitteeDuties(false, List.of()))));
+    final SyncCommitteeScheduledDuties duties = loadDuties(epoch);
+    assertThat(duties.countDuties()).isEqualTo(0);
+    assertThat(
+            metricsSystem
+                .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
+                .getValue())
+        .isEqualTo(0.0);
   }
 
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {

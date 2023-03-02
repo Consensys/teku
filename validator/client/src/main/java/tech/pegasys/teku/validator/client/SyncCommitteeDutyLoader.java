@@ -15,7 +15,9 @@ package tech.pegasys.teku.validator.client;
 
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
@@ -33,29 +35,45 @@ public class SyncCommitteeDutyLoader
   private final ChainHeadTracker chainHeadTracker;
   private final ForkProvider forkProvider;
 
+  private final MetricsSystem metricsSystem;
+
   public SyncCommitteeDutyLoader(
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider,
       final Spec spec,
       final ValidatorApiChannel validatorApiChannel,
       final ChainHeadTracker chainHeadTracker,
-      final ForkProvider forkProvider) {
+      final ForkProvider forkProvider,
+      final MetricsSystem metricsSystem) {
     super(validators, validatorIndexProvider);
     this.spec = spec;
     this.validatorApiChannel = validatorApiChannel;
     this.chainHeadTracker = chainHeadTracker;
     this.forkProvider = forkProvider;
+    this.metricsSystem = metricsSystem;
   }
 
   @Override
   protected SafeFuture<Optional<SyncCommitteeDuties>> requestDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices);
+    return validatorApiChannel
+        .getSyncCommitteeDuties(epoch, validatorIndices)
+        .thenPeek(
+            maybeDuties -> {
+              metricsSystem.createIntegerGauge(
+                  TekuMetricCategory.VALIDATOR,
+                  "scheduled_sync_committee_duties_current",
+                  "Current number of Sync committee members performing duties",
+                  () -> maybeDuties.map(d -> d.getDuties().size()).orElse(0));
+            });
   }
 
   @Override
   protected SafeFuture<SyncCommitteeScheduledDuties> scheduleAllDuties(
       final UInt64 epoch, final SyncCommitteeDuties duties) {
+    final UInt64 lastEpochInCommitteePeriod = spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(epoch))
+            .computeFirstEpochOfNextSyncCommitteePeriod(epoch)
+            .minusMinZero(1);
     final SyncCommitteeScheduledDuties.Builder dutyBuilder =
         SyncCommitteeScheduledDuties.builder()
             .forkProvider(forkProvider)
@@ -63,12 +81,16 @@ public class SyncCommitteeDutyLoader
             .chainHeadTracker(chainHeadTracker)
             .spec(spec)
             .lastEpochInCommitteePeriod(
-                spec.getSyncCommitteeUtilRequired(spec.computeStartSlotAtEpoch(epoch))
-                    .computeFirstEpochOfNextSyncCommitteePeriod(epoch)
-                    .minusMinZero(1));
+                    lastEpochInCommitteePeriod);
     duties.getDuties().forEach(duty -> scheduleDuty(dutyBuilder, duty));
     final SyncCommitteeScheduledDuties scheduledDuties = dutyBuilder.build();
     scheduledDuties.subscribeToSubnets();
+
+    metricsSystem.createIntegerGauge(
+            TekuMetricCategory.VALIDATOR,
+            "current_sync_committee_last_epoch",
+            "The final epoch of the current sync committee period",
+            lastEpochInCommitteePeriod::intValue);
     return SafeFuture.completedFuture(scheduledDuties);
   }
 
