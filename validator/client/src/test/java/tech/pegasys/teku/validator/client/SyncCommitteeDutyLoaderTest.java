@@ -148,26 +148,6 @@ class SyncCommitteeDutyLoaderTest {
         .isEqualTo(63.0);
   }
 
-  @Test
-  void shouldGetCountOfValidatorsInSyncCommitteeThroughMetrics2() {
-    final UInt64 epoch = UInt64.valueOf(56);
-    when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
-        .thenReturn(
-            SafeFuture.completedFuture(Optional.of(new SyncCommitteeDuties(false, List.of()))));
-    final SyncCommitteeScheduledDuties duties = loadDuties(epoch);
-    assertThat(duties.countDuties()).isEqualTo(0);
-    assertThat(
-            metricsSystem
-                .getGauge(TekuMetricCategory.VALIDATOR, "scheduled_sync_committee_duties_current")
-                .getValue())
-        .isEqualTo(0.0);
-    assertThat(
-            metricsSystem
-                .getGauge(TekuMetricCategory.VALIDATOR, "current_sync_committee_last_epoch")
-                .getValue())
-        .isEqualTo(63.0);
-  }
-
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {
     final SafeFuture<Optional<SyncCommitteeScheduledDuties>> result =
         dutyLoader.loadDutiesForEpoch(epoch);
