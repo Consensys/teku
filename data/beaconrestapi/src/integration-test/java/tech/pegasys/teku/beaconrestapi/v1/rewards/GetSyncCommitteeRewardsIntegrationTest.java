@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +27,13 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetSyncCommitteeRewards;
+import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -104,7 +108,7 @@ public class GetSyncCommitteeRewardsIntegrationTest
   }
 
   @Test
-  public void shouldReturnEmptyDataWhenOutOfValidatorRange() throws IOException {
+  public void shouldReturnBadRequestWhenOutOfValidatorRange() throws IOException {
     final List<String> requestBody = List.of("99999999999999");
     Response response =
         post(
@@ -133,5 +137,38 @@ public class GetSyncCommitteeRewardsIntegrationTest
 
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.body().string()).isEqualTo(expectedResponse);
+  }
+
+  @Test
+  public void shouldReturnValueOnlyForValidatorsPublicKeysInCommittee() throws IOException {
+    final List<String> requestBody = getPubKeysRequestBody(0, 6);
+    Response response =
+        post(
+            GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
+            jsonProvider.objectToJSON(requestBody));
+
+    final SyncCommitteeRewardData data = new SyncCommitteeRewardData(false, false);
+    data.increaseReward(3, 11180L);
+    data.decreaseReward(11, 11180L);
+    final String expectedResponse = serialize(data, GetSyncCommitteeRewards.RESPONSE_TYPE);
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.body().string()).isEqualTo(expectedResponse);
+  }
+
+  private List<String> getPubKeysRequestBody(int... committeeIndices) {
+    final UInt64 slot = chainBuilder.getLatestSlot();
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    final SszVector<SszPublicKey> committee =
+        spec.getSyncCommitteeUtil(slot)
+            .orElseThrow()
+            .getSyncCommittee(chainBuilder.getStateAtSlot(slot), epoch)
+            .getPubkeys();
+
+    final List<String> requestBody = new ArrayList<>();
+    for (int i : committeeIndices) {
+      requestBody.add(committee.get(i).getBLSPublicKey().toHexString());
+    }
+    return requestBody;
   }
 }
