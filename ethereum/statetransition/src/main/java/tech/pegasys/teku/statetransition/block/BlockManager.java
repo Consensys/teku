@@ -21,7 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -29,11 +28,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -47,7 +43,6 @@ public class BlockManager extends Service
 
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
-  private final BlobsSidecarManager blobsSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator validator;
   private final TimeProvider timeProvider;
@@ -57,8 +52,7 @@ public class BlockManager extends Service
   // in the invalidBlockRoots map we are going to store blocks whose import result is invalid
   // and will not require any further retry. Descendants of these blocks will be considered invalid
   // as well.
-  private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
-      LimitedMap.createSynchronized(500);
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
       Subscribers.create(true);
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
@@ -69,18 +63,18 @@ public class BlockManager extends Service
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobsSidecarManager blobsSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
+      final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final BlockValidator validator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
       final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
-    this.blobsSidecarManager = blobsSidecarManager;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
+    this.invalidBlockRoots = invalidBlockRoots;
     this.validator = validator;
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
@@ -98,28 +92,14 @@ public class BlockManager extends Service
   }
 
   @Override
-  public SafeFuture<BlockImportResult> importBlock(
-      final SignedBeaconBlock block, final Optional<BlobsSidecar> blobsSidecar) {
+  public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
-    return doImportBlock(block, blobsSidecar, Optional.empty(), Optional.empty());
-  }
-
-  public SafeFuture<InternalValidationResult> validateAndImportBlock(
-      final SignedBeaconBlock block) {
-
-    return validateAndImportBlock(block, Optional.empty());
-  }
-
-  public SafeFuture<InternalValidationResult> validateAndImportBlockAndBlobsSidecar(
-      final SignedBeaconBlockAndBlobsSidecar signedBeaconBlockAndBlobsSidecar) {
-    return validateAndImportBlock(
-        signedBeaconBlockAndBlobsSidecar.getSignedBeaconBlock(),
-        Optional.of(signedBeaconBlockAndBlobsSidecar.getBlobsSidecar()));
+    return doImportBlock(block, Optional.empty());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
-      final SignedBeaconBlock block, final Optional<BlobsSidecar> blobsSidecar) {
+      final SignedBeaconBlock block) {
 
     final Optional<BlockImportPerformance> blockImportPerformance;
 
@@ -137,13 +117,12 @@ public class BlockManager extends Service
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
 
-    final SafeFuture<InternalValidationResult> validationResult =
-        validator.validate(block, blobsSidecar);
+    SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlock(block, blobsSidecar, Optional.of(result), blockImportPerformance)
+            doImportBlock(block, blockImportPerformance)
                 .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -182,18 +161,14 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty(), Optional.empty(), Optional.empty())
-        .ifExceptionGetsHereRaiseABug();
+    doImportBlock(block, Optional.empty()).ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
       final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar,
-      final Optional<InternalValidationResult> validationResult,
       final Optional<BlockImportPerformance> blockImportPerformance) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
-        .or(() -> handleBlobsSidecar(blobsSidecar, validationResult))
         .orElseGet(
             () ->
                 handleBlockImport(block, blockImportPerformance)
@@ -240,19 +215,6 @@ public class BlockManager extends Service
                 SafeFuture.completedFuture(BlockImportResult.knownBlock(block, isOptimistic)));
   }
 
-  private Optional<SafeFuture<BlockImportResult>> handleBlobsSidecar(
-      Optional<BlobsSidecar> blobsSidecar, Optional<InternalValidationResult> validationResult) {
-    if (blobsSidecar.isEmpty()) {
-      return Optional.empty();
-    }
-    if (validationResult.map(InternalValidationResult::isAccept).orElse(false)) {
-      blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobsSidecar.get());
-      return Optional.empty();
-    }
-    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar.get());
-    return Optional.empty();
-  }
-
   private SafeFuture<BlockImportResult> handleBlockImport(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance) {
@@ -287,7 +249,6 @@ public class BlockManager extends Service
                         getExecutionPayloadInfoForLog(block));
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
-                    // do not discard blobs: the block will be retried via FailedExecutionPool
                     break;
                   case FAILED_EXECUTION_PAYLOAD_EXECUTION:
                     LOG.error(
@@ -295,14 +256,6 @@ public class BlockManager extends Service
                         result.getFailureCause().map(Throwable::getMessage).orElse(""));
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
-                    // do not discard blobs: the block will be retried via FailedExecutionPool
-                    break;
-                  case FAILED_BLOBS_AVAILABILITY_CHECK:
-                    // TODO:
-                    //  Trigger the fetcher in the case the coupled BeaconBlockAndBlobsSidecar
-                    //  contains a valid block but the BlobsSidecar validation fails.
-                    //  Should be similar to what we do with pendingBlocks.
-                    blobsSidecarManager.discardBlobsSidecarByBlock(block);
                     break;
                   default:
                     LOG.trace(
@@ -330,7 +283,6 @@ public class BlockManager extends Service
 
     invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
     pendingBlocks.remove(block);
-    blobsSidecarManager.discardBlobsSidecarByBlock(block);
 
     pendingBlocks
         .getItemsDependingOn(blockRoot, true)
@@ -340,7 +292,6 @@ public class BlockManager extends Service
                   blockToDrop.getMessage().hashTreeRoot(),
                   BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
               pendingBlocks.remove(blockToDrop);
-              blobsSidecarManager.discardBlobsSidecarByBlock(block);
             });
   }
 
