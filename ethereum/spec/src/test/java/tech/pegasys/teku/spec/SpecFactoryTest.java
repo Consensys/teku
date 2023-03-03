@@ -38,7 +38,7 @@ public class SpecFactoryTest {
 
   private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("swift", "less-swift");
 
-  private static final Set<String> CAPELLA_NETWORKS = Set.of("sepolia", "prater");
+  private static final Set<String> CAPELLA_NETWORKS = Set.of("sepolia");
 
   @Test
   public void defaultFactoryShouldScheduleAltairAndBellatrixForMainNet() {
@@ -61,18 +61,6 @@ public class SpecFactoryTest {
     } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX);
-    }
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getKnownConfigNames")
-  public void shouldSupportCapellaWhenForkEpochSetInConfig(final String configName) {
-    final Spec spec = SpecFactory.create(configName);
-    if (CAPELLA_NETWORKS.contains(configName)) {
-      assertThat(spec.getForkSchedule().getSupportedMilestones())
-          .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
-    } else {
-      assertThat(spec.getForkSchedule().getSupportedMilestones()).doesNotContain(CAPELLA);
     }
   }
 

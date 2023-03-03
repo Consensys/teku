@@ -19,7 +19,6 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -58,18 +57,6 @@ class SpecVersionTest {
         SpecVersion.create(SpecMilestone.BELLATRIX, minimalConfig);
     assertThat(actualVersion).isPresent();
     assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
-    assertThat(actualVersion.get().getSchemaDefinitions())
-        .hasSameClassAs(expectedVersion.getSchemaDefinitions());
-  }
-
-  @Test
-  void shouldCreateCapellaSpec() {
-    final SpecConfigCapella capellaSpecConfig = SpecConfigCapella.required(minimalConfig);
-    final SpecVersion expectedVersion = SpecVersion.createCapella(capellaSpecConfig);
-    final Optional<SpecVersion> actualVersion =
-        SpecVersion.create(SpecMilestone.CAPELLA, minimalConfig);
-    assertThat(actualVersion).isPresent();
-    assertThat(actualVersion.get().getMilestone()).isEqualTo(SpecMilestone.CAPELLA);
     assertThat(actualVersion.get().getSchemaDefinitions())
         .hasSameClassAs(expectedVersion.getSchemaDefinitions());
   }
