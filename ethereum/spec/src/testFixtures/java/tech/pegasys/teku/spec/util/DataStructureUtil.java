@@ -2049,7 +2049,7 @@ public final class DataStructureUtil {
             .getMaxBlobsPerBlock();
 
     return randomSszList(
-        kzgCommitmentsSchema, randomInt(maxKzgCommitments + 1), this::randomSszKZGCommitment);
+        kzgCommitmentsSchema, randomInt(maxKzgCommitments) + 1, this::randomSszKZGCommitment);
   }
 
   public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
