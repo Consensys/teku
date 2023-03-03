@@ -302,19 +302,19 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public boolean wantToReceiveBlocks(
+  public boolean allowedToReceiveBlocks(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return true;
   }
 
   @Override
-  public boolean wantToReceiveBlobSidecars(
+  public boolean allowedToReceiveBlobSidecars(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return true;
   }
 
   @Override
-  public boolean wantToMakeRequest() {
+  public boolean allowedToMakeRequest() {
     return true;
   }
 

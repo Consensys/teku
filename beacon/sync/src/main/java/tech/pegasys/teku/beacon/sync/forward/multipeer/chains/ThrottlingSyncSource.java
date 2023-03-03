@@ -56,7 +56,7 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
-    if (blocksRateTracker.wantToRequestObjects(count.longValue()) > 0) {
+    if (blocksRateTracker.allowedRequestObjectsCount(count.longValue()) > 0) {
       LOG.debug("Sending request for {} blocks", count);
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
@@ -68,7 +68,7 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    if (blobSidecarsRateTracker.wantToRequestObjects(count.longValue()) > 0) {
+    if (blobSidecarsRateTracker.allowedRequestObjectsCount(count.longValue()) > 0) {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {

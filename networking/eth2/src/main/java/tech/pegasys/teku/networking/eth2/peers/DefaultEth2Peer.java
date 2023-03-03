@@ -312,21 +312,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public boolean wantToReceiveBlocks(
+  public boolean allowedToReceiveBlocks(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return wantToReceiveObjects("block", blockRequestTracker, callback, blocksCount);
   }
 
   @Override
-  public boolean wantToReceiveBlobSidecars(
+  public boolean allowedToReceiveBlobSidecars(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return wantToReceiveObjects(
         "blob sidecars", blobSidecarsRequestTracker, callback, blobSidecarsCount);
   }
 
   @Override
-  public boolean wantToMakeRequest() {
-    if (requestTracker.wantToRequestObjects(1L) == 0L) {
+  public boolean allowedToMakeRequest() {
+    if (requestTracker.allowedRequestObjectsCount(1L) == 0L) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
       return false;
@@ -362,7 +362,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker requestTracker,
       final ResponseCallback<T> callback,
       final long objectCount) {
-    if (requestTracker.wantToRequestObjects(objectCount) == 0L) {
+    if (requestTracker.allowedRequestObjectsCount(objectCount) == 0L) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));

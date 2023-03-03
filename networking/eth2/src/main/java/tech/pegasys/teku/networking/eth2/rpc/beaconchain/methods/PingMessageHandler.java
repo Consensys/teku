@@ -35,7 +35,7 @@ public class PingMessageHandler extends PeerRequiredLocalMessageHandler<PingMess
       final PingMessage message,
       final ResponseCallback<PingMessage> callback) {
     LOG.trace("Peer {} sent ping.", peer.getId());
-    if (!peer.wantToMakeRequest()) {
+    if (!peer.allowedToMakeRequest()) {
       return;
     }
     peer.updateMetadataSeqNumber(message.getSeqNumber());

@@ -73,7 +73,7 @@ public class BeaconBlocksByRootMessageHandler
     LOG.trace("Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message);
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
-      if (!peer.wantToMakeRequest() || !peer.wantToReceiveBlocks(callback, message.size())) {
+      if (!peer.allowedToMakeRequest() || !peer.allowedToReceiveBlocks(callback, message.size())) {
         requestCounter.labels("rate_limited").inc();
         return;
       }
