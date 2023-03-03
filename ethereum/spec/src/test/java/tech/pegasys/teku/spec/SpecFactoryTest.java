@@ -64,6 +64,18 @@ public class SpecFactoryTest {
     }
   }
 
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getKnownConfigNames")
+  public void shouldSupportCapellaWhenForkEpochSetInConfig(final String configName) {
+    final Spec spec = SpecFactory.create(configName);
+    if (CAPELLA_NETWORKS.contains(configName)) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones())
+          .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
+    } else {
+      assertThat(spec.getForkSchedule().getSupportedMilestones()).doesNotContain(CAPELLA);
+    }
+  }
+
   @Test
   void shouldSupportAltairWhenForkEpochSetInConfig() {
     final SpecConfig config =
