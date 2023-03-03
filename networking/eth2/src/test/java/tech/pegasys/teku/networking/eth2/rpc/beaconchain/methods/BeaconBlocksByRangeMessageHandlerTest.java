@@ -209,6 +209,29 @@ class BeaconBlocksByRangeMessageHandlerTest {
   }
 
   @Test
+  public void shouldReturnErrorWhenCountIsGreaterThanMaxRequestBlocks() {
+    final int startBlock = 15;
+    final UInt64 count = UInt64.valueOf(MAX_REQUEST_BLOCKS).plus(ONE);
+    final int skip = 5;
+
+    withCanonicalHeadBlock(blocksWStates.get(5));
+    withAncestorRoots(startBlock, maxRequestSize.intValue(), skip, hotBlocks());
+
+    handler.onIncomingMessage(
+        protocolId,
+        peer,
+        new BeaconBlocksByRangeRequestMessage(
+            UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
+        listener);
+
+    final RpcException expectedError =
+        new RpcException(
+            INVALID_REQUEST_CODE,
+            "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request");
+    verify(listener).completeWithErrorResponse(expectedError);
+  }
+
+  @Test
   public void shouldReturnRequestedNumberOfBlocksWhenFullySequential() {
     final int startBlock = 3;
     final int count = 5;
