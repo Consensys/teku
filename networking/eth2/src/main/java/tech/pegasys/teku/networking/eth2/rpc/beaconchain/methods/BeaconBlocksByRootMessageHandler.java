@@ -81,16 +81,14 @@ public class BeaconBlocksByRootMessageHandler
     LOG.trace("Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message);
     if (storageClient.getStore() != null) {
       SafeFuture<Void> future = SafeFuture.COMPLETE;
-      if (!peer.wantToMakeRequest()
-          || !peer.wantToReceiveBlocks(
-              callback, maxRequestSize.min(UInt64.valueOf(message.size())).longValue())) {
+      final long count = maxRequestSize.min(UInt64.valueOf(message.size())).longValue();
+      if (!peer.wantToMakeRequest() || !peer.wantToReceiveBlocks(callback, count)) {
         requestCounter.labels("rate_limited").inc();
         return;
       }
       requestCounter.labels("ok").inc();
       totalBlocksRequestedCounter.inc(message.size());
 
-      final int count = Math.min(maxRequestSize.intValue(), message.size());
       List<SszBytes32> blockRoots = message.stream().limit(count).collect(Collectors.toList());
 
       for (SszBytes32 blockRoot : blockRoots) {
