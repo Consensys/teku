@@ -404,7 +404,8 @@ public class ValidatorClientService extends Service {
                   spec,
                   validatorApiChannel,
                   chainHeadTracker,
-                  forkProvider));
+                  forkProvider,
+                  metricsSystem));
       validatorTimingChannels.add(
           new SyncCommitteeScheduler(
               metricsSystem, spec, syncCommitteeDutyLoader, new Random()::nextInt));
