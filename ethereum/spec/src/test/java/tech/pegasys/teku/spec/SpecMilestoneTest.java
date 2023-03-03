@@ -161,14 +161,14 @@ public class SpecMilestoneTest {
   }
 
   @Test
-  public void getForkSlot_altair() {
+  public void getForEpoch_altair() {
     final UInt64 expected = altairSpecConfig.getAltairForkEpoch();
     assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, SpecMilestone.ALTAIR))
         .contains(expected);
   }
 
   @Test
-  public void getForkSlot_bellatrix() {
+  public void getForkEpoch_bellatrix() {
     final UInt64 expected = bellatrixSpecConfig.getBellatrixForkEpoch();
     assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, SpecMilestone.BELLATRIX))
         .contains(expected);
