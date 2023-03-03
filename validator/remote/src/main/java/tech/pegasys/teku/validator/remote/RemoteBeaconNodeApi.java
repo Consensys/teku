@@ -103,8 +103,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
     }
 
-    final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel =
-        eventChannels.getPublisher(RemoteBeaconNodeSyncingChannel.class);
+    final BeaconNodeReadinessChannel beaconNodeReadinessChannel =
+        eventChannels.getPublisher(BeaconNodeReadinessChannel.class);
 
     final ValidatorTimingChannel validatorTimingChannel =
         eventChannels.getPublisher(ValidatorTimingChannel.class);
@@ -114,7 +114,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             primaryValidatorApi,
             failoverValidatorApis,
             ValidatorLogger.VALIDATOR_LOGGER,
-            remoteBeaconNodeSyncingChannel);
+            beaconNodeReadinessChannel);
 
     eventChannels.subscribe(ValidatorTimingChannel.class, beaconNodeReadinessManager);
 
@@ -146,7 +146,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             metricsSystem,
             validatorConfig.generateEarlyAttestations());
 
-    eventChannels.subscribe(RemoteBeaconNodeSyncingChannel.class, beaconChainEventAdapter);
+    eventChannels.subscribe(BeaconNodeReadinessChannel.class, beaconChainEventAdapter);
 
     return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApi);
   }

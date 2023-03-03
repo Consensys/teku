@@ -15,11 +15,12 @@ package tech.pegasys.teku.validator.remote;
 
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
-public interface RemoteBeaconNodeSyncingChannel extends VoidReturningChannelInterface {
+/** Readiness is determined by {@link BeaconNodeReadinessManager } */
+public interface BeaconNodeReadinessChannel extends VoidReturningChannelInterface {
 
-  void onPrimaryNodeNotInSync();
+  void onPrimaryNodeNotReady();
 
-  void onFailoverNodeNotInSync(RemoteValidatorApiChannel failoverNotInSync);
+  void onFailoverNodeNotReady(RemoteValidatorApiChannel failoverNotReady);
 
-  void onPrimaryNodeBackInSync();
+  void onPrimaryNodeBackReady();
 }

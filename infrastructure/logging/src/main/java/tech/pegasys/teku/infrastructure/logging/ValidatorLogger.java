@@ -81,25 +81,20 @@ public class ValidatorLogger {
             Color.YELLOW));
   }
 
-  public void primaryBeaconNodeNotReady(final boolean failoversConfigured) {
+  public void primaryBeaconNodeNotReady() {
     log.warn(
         ColorConsolePrinter.print(
             String.format(
-                "%sThe%s beacon node is not ready to accept requests (offline or not in sync). %s",
-                PREFIX,
-                failoversConfigured ? " primary" : "",
-                failoversConfigured
-                    ? "Future requests will use one of the configured failover beacon nodes until the primary one is ready again."
-                    : "Future requests to it are likely to fail."),
+                "%sThe primary beacon node is NOT ready to accept requests (offline or not in sync). Future requests will use one of the configured failover beacon nodes until the primary one is ready again.",
+                PREFIX),
             Color.YELLOW));
   }
 
-  public void primaryBeaconNodeIsBackAndReady(final boolean failoversConfigured) {
+  public void primaryBeaconNodeIsBackAndReady() {
     log.info(
         ColorConsolePrinter.print(
             String.format(
-                "%sThe%s beacon node is back in sync and ready to accept requests now",
-                PREFIX, failoversConfigured ? " primary" : ""),
+                "%sThe primary beacon node is back and ready to accept requests now", PREFIX),
             Color.GREEN));
   }
 
