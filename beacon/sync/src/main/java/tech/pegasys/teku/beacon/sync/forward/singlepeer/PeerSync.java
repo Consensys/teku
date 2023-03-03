@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
@@ -322,7 +322,7 @@ public class PeerSync {
   private RequestContext createRequestContext(final UInt64 startSlot, final PeerStatus status) {
 
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
-    final UInt64 requestCount = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final UInt64 requestCount = diff.min(MAX_REQUEST_BLOCKS_DENEB);
 
     if (blobsSidecarsAreRequired(startSlot, requestCount)) {
       return new RequestContext(requestCount.min(MAX_REQUEST_BLOBS_SIDECARS), true);
