@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -36,7 +35,6 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksService extends Service
@@ -178,7 +176,7 @@ public class FetchRecentBlocksService extends Service
   private void processFetchResult(final FetchBlockTask task, final FetchBlockResult result) {
     switch (result.getStatus()) {
       case SUCCESSFUL:
-        handleFetchedBlock(task, result.getBlock().orElseThrow(), result.getBlobsSidecar());
+        handleFetchedBlock(task, result.getBlock().orElseThrow());
         break;
       case NO_AVAILABLE_PEERS:
         // Wait a bit and then requeue
@@ -235,12 +233,9 @@ public class FetchRecentBlocksService extends Service
     queueTaskWithDelay(task, delay);
   }
 
-  private void handleFetchedBlock(
-      final FetchBlockTask task,
-      final SignedBeaconBlock block,
-      final Optional<BlobsSidecar> blobsSidecar) {
+  private void handleFetchedBlock(final FetchBlockTask task, final SignedBeaconBlock block) {
     LOG.trace("Successfully fetched block: {}", block);
-    blockSubscribers.forEach(s -> s.onBlockAndBlobsSidecar(block, blobsSidecar));
+    blockSubscribers.forEach(s -> s.onBlock(block));
     // After retrieved block has been processed, stop tracking it
     removeTask(task);
   }
