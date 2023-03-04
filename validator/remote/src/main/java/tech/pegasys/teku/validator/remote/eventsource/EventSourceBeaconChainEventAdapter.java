@@ -126,12 +126,12 @@ public class EventSourceBeaconChainEventAdapter
 
   private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
-    return new BackgroundEventSource.Builder(
-            eventSourceHandler,
-            new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
-                .retryDelayStrategy(
-                    RetryDelayStrategy.defaultStrategy()
-                        .maxDelay(MAX_RECONNECT_TIME.toMillis(), TimeUnit.MILLISECONDS)))
+    final EventSource.Builder eventSourceBuilder =
+        new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
+            .retryDelayStrategy(
+                RetryDelayStrategy.defaultStrategy()
+                    .maxDelay(MAX_RECONNECT_TIME.toMillis(), TimeUnit.MILLISECONDS));
+    return new BackgroundEventSource.Builder(eventSourceHandler, eventSourceBuilder)
         .connectionErrorHandler(
             __ -> {
               switchToFailoverEventStreamIfAvailable();
