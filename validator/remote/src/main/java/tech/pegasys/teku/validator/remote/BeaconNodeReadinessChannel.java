@@ -15,7 +15,10 @@ package tech.pegasys.teku.validator.remote;
 
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
-/** Readiness is determined by {@link BeaconNodeReadinessManager } */
+/**
+ * Readiness is determined by {@link BeaconNodeReadinessManager }. The callbacks are only triggered
+ * if failovers are configured.
+ */
 public interface BeaconNodeReadinessChannel extends VoidReturningChannelInterface {
 
   void onPrimaryNodeNotReady();

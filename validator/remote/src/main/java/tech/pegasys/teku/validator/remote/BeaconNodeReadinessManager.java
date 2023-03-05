@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote;
 
 import com.google.common.collect.Maps;
+import java.time.Duration;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -29,9 +30,16 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
+/**
+ * If there are failovers configured, this class will track the readiness of every Beacon Node by
+ * using the <a
+ * href="https://ethereum.github.io/beacon-APIs/#/ValidatorRequiredApi/getSyncingStatus">Syncing
+ * Status API</a>
+ */
 public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final Duration SYNCING_STATUS_CALL_TIMEOUT = Duration.ofSeconds(10);
 
   private final Map<RemoteValidatorApiChannel, Boolean> readinessStatusCache =
       Maps.newConcurrentMap();
@@ -127,6 +135,7 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
                   "{} is NOT ready to accept requests: {}", beaconNodeApiEndpoint, syncingStatus);
               return false;
             })
+        .orTimeout(SYNCING_STATUS_CALL_TIMEOUT)
         .exceptionally(
             throwable -> {
               LOG.debug(
