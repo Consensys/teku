@@ -56,6 +56,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -673,6 +674,18 @@ public class ChainDataProvider {
         });
 
     return data;
+  }
+
+  @VisibleForTesting
+  protected int calculateSyncAggregateBlockRewards(UInt64 proposerReward, SyncAggregate aggregate) {
+    final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
+    int total = 0;
+    for (int i = 0; i < syncCommitteeBits.size(); i++) {
+      if (syncCommitteeBits.getBit(i)) {
+        total += proposerReward.intValue();
+      }
+    }
+    return total;
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

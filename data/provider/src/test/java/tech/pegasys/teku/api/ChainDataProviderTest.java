@@ -67,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
@@ -546,6 +547,33 @@ public class ChainDataProviderTest {
     assertThat(syncCommitteeRewardData.isFinalized()).isFalse();
     assertThat(syncCommitteeRewardData.getRewardData())
         .containsExactlyInAnyOrder(Map.entry(2, -1 * reward), Map.entry(4, reward));
+  }
+
+  @Test
+  public void calculateSyncAggregateBlockRewards_manySyncAggregateIndices() {
+    final UInt64 reward = UInt64.valueOf(1234);
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+    final SyncAggregate syncAggregate =
+        data.randomSyncAggregate(0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30);
+
+    final int syncAggregateBlockRewards =
+        provider.calculateSyncAggregateBlockRewards(reward, syncAggregate);
+    assertThat(syncAggregateBlockRewards).isEqualTo(reward.times(12).intValue());
+  }
+
+  @Test
+  public void calculateSyncAggregateBlockRewards_emptySyncAggregate() {
+    final UInt64 reward = UInt64.valueOf(1234);
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+    final SyncAggregate syncAggregate = data.emptySyncAggregate();
+
+    final int syncAggregateBlockRewards =
+        provider.calculateSyncAggregateBlockRewards(reward, syncAggregate);
+    assertThat(syncAggregateBlockRewards).isEqualTo(0);
   }
 
   @Test
