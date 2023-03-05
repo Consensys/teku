@@ -351,7 +351,12 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
               final FailoverRequestException failoverRequestException =
                   new FailoverRequestException(method, capturedExceptions);
               return SafeFuture.failedFuture(failoverRequestException);
-            });
+            })
+        .thenPeek(
+            __ ->
+                LOG.debug(
+                    "Received a successful response from a failover for remote request ({})",
+                    method));
   }
 
   /**
