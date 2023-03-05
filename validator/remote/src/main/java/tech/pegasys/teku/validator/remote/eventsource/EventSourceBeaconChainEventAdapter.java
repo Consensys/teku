@@ -16,8 +16,11 @@ package tech.pegasys.teku.validator.remote.eventsource;
 import static java.util.Collections.emptyMap;
 
 import com.google.common.base.Preconditions;
-import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
+import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.RetryDelayStrategy;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
+import com.launchdarkly.eventsource.background.ConnectionErrorHandler.Action;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -47,7 +50,7 @@ public class EventSourceBeaconChainEventAdapter
 
   private final CountDownLatch runningLatch = new CountDownLatch(1);
 
-  private volatile EventSource eventSource;
+  private volatile BackgroundEventSource eventSource;
   private volatile RemoteValidatorApiChannel currentBeaconNodeUsedForEventStreaming;
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -121,16 +124,19 @@ public class EventSourceBeaconChainEventAdapter
     }
   }
 
-  private EventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
+  private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
-    return new EventSource.Builder(eventSourceHandler, eventSourceUrl)
-        .maxReconnectTime(MAX_RECONNECT_TIME.toMillis(), TimeUnit.MILLISECONDS)
+    final EventSource.Builder eventSourceBuilder =
+        new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
+            .retryDelayStrategy(
+                RetryDelayStrategy.defaultStrategy()
+                    .maxDelay(MAX_RECONNECT_TIME.toMillis(), TimeUnit.MILLISECONDS));
+    return new BackgroundEventSource.Builder(eventSourceHandler, eventSourceBuilder)
         .connectionErrorHandler(
             __ -> {
               switchToFailoverEventStreamIfAvailable();
               return Action.PROCEED;
             })
-        .client(okHttpClient)
         .build();
   }
 
@@ -166,7 +172,8 @@ public class EventSourceBeaconChainEventAdapter
     eventSource.close();
     eventSource = createEventSource(beaconNodeApi);
     currentBeaconNodeUsedForEventStreaming = beaconNodeApi;
-    validatorLogger.switchingToFailoverBeaconNodeForEventStreaming(eventSource.getUri());
+    validatorLogger.switchingToFailoverBeaconNodeForEventStreaming(
+        eventSource.getEventSource().getOrigin());
     eventSource.start();
   }
 

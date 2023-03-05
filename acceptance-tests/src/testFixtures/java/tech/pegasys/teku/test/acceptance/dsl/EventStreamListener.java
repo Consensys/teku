@@ -13,19 +13,25 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
+import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.EventSource;
 import com.launchdarkly.eventsource.ReadyState;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class EventStreamListener {
-  EventSource eventSource;
+  BackgroundEventSource eventSource;
   final Eth2EventHandler handler = new Eth2EventHandler();
 
   public EventStreamListener(final String url) {
     eventSource =
-        new EventSource.Builder(handler, URI.create(url)).readTimeout(5, TimeUnit.MINUTES).build();
+        new BackgroundEventSource.Builder(
+                handler,
+                new EventSource.Builder(
+                    ConnectStrategy.http(URI.create(url)).readTimeout(5, TimeUnit.MINUTES)))
+            .build();
     eventSource.start();
   }
 
@@ -34,7 +40,8 @@ public class EventStreamListener {
   }
 
   public boolean isReady() {
-    return eventSource.getState() == ReadyState.OPEN && handler.hasReceivedComment();
+    return eventSource.getEventSource().getState() == ReadyState.OPEN
+        && handler.hasReceivedComment();
   }
 
   public void close() {
