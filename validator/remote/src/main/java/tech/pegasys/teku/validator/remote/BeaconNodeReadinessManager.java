@@ -141,7 +141,7 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
               LOG.debug(
                   String.format(
                       "%s is NOT ready to accept requests because the syncing status request failed: %s",
-                      beaconNodeApiEndpoint, throwable.getMessage()));
+                      beaconNodeApiEndpoint, throwable));
               return false;
             })
         .thenAccept(
