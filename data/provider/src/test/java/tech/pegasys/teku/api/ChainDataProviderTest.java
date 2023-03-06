@@ -550,21 +550,22 @@ public class ChainDataProviderTest {
   }
 
   @Test
-  public void calculateSyncAggregateBlockRewards_manySyncAggregateIndices() {
+  public void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
     final UInt64 reward = UInt64.valueOf(1234);
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
-    final SyncAggregate syncAggregate =
-        data.randomSyncAggregate(0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30);
+    final int[] participantIndices = new int[] {0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30};
+    final SyncAggregate syncAggregate = data.randomSyncAggregate(participantIndices);
 
     final int syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(reward.times(12).intValue());
+    assertThat(syncAggregateBlockRewards)
+        .isEqualTo(reward.times(participantIndices.length).intValue());
   }
 
   @Test
-  public void calculateSyncAggregateBlockRewards_emptySyncAggregate() {
+  public void calculateProposerSyncAggregateBlockRewards_emptySyncAggregate() {
     final UInt64 reward = UInt64.valueOf(1234);
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
