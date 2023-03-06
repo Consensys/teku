@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 public class ExecutionLayerConfiguration {
   public static final boolean DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED = true;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW = 32;
-  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 8;
+  public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
 
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
