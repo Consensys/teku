@@ -559,7 +559,7 @@ public class ChainDataProviderTest {
         data.randomSyncAggregate(0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30);
 
     final int syncAggregateBlockRewards =
-        provider.calculateSyncAggregateBlockRewards(reward, syncAggregate);
+        provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
     assertThat(syncAggregateBlockRewards).isEqualTo(reward.times(12).intValue());
   }
 
@@ -572,7 +572,7 @@ public class ChainDataProviderTest {
     final SyncAggregate syncAggregate = data.emptySyncAggregate();
 
     final int syncAggregateBlockRewards =
-        provider.calculateSyncAggregateBlockRewards(reward, syncAggregate);
+        provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
     assertThat(syncAggregateBlockRewards).isEqualTo(0);
   }
 

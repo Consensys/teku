@@ -677,7 +677,7 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected int calculateSyncAggregateBlockRewards(UInt64 proposerReward, SyncAggregate aggregate) {
+  protected int calculateProposerSyncAggregateBlockRewards(UInt64 proposerReward, SyncAggregate aggregate) {
     final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
     int total = 0;
     for (int i = 0; i < syncCommitteeBits.size(); i++) {
