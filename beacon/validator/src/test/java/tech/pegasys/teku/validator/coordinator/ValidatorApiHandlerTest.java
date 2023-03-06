@@ -776,24 +776,24 @@ class ValidatorApiHandlerTest {
   @Test
   public void sendSignedBlock_shouldConvertSuccessfulResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test
   public void sendSignedBlock_shouldConvertFailedResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block);
     assertThat(result)
         .isCompletedWithValue(
             SendSignedBlockResult.notImported(DOES_NOT_DESCEND_FROM_LATEST_FINALIZED.name()));
@@ -802,12 +802,12 @@ class ValidatorApiHandlerTest {
   @Test
   public void sendSignedBlock_shouldConvertKnownBlockResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
@@ -825,14 +825,13 @@ class ValidatorApiHandlerTest {
             dataStructureUtil.randomBlobsSidecar());
     when(blockFactory.supplementBlockWithSidecar(block))
         .thenReturn(SafeFuture.completedFuture(blockAndBlobsSidecar));
-    when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
+    when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(blockAndBlobsSidecarGossipChannel).publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
     verifyNoInteractions(blockGossipChannel);
-    verify(blockImportChannel)
-        .importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
@@ -850,14 +849,13 @@ class ValidatorApiHandlerTest {
             dataStructureUtil.randomBlobsSidecar());
     when(blockFactory.supplementBlockWithSidecar(block))
         .thenReturn(SafeFuture.completedFuture(blockAndBlobsSidecar));
-    when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
+    when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(blockAndBlobsSidecarGossipChannel).publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
     verifyNoInteractions(blockGossipChannel);
-    verify(blockImportChannel)
-        .importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    verify(blockImportChannel).importBlock(block);
     assertThat(result)
         .isCompletedWithValue(
             SendSignedBlockResult.notImported(DOES_NOT_DESCEND_FROM_LATEST_FINALIZED.name()));
@@ -877,14 +875,13 @@ class ValidatorApiHandlerTest {
             dataStructureUtil.randomBlobsSidecar());
     when(blockFactory.supplementBlockWithSidecar(block))
         .thenReturn(SafeFuture.completedFuture(blockAndBlobsSidecar));
-    when(blockImportChannel.importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar())))
+    when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
 
     verify(blockAndBlobsSidecarGossipChannel).publishBlockAndBlobsSidecar(blockAndBlobsSidecar);
     verifyNoInteractions(blockGossipChannel);
-    verify(blockImportChannel)
-        .importBlock(block, Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 

@@ -266,12 +266,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .map(
             index -> {
               final BlobSidecar blobSidecar =
-                  dataStructureUtil.randomBlobSidecar(
-                      block.getRoot(),
-                      index,
-                      slot,
-                      block.getParentRoot(),
-                      dataStructureUtil.randomValidatorIndex());
+                  dataStructureUtil
+                      .createRandomBlobSidecarBuilder()
+                      .blockRoot(block.getRoot())
+                      .slot(slot)
+                      .index(index)
+                      .blockParentRoot(block.getParentRoot())
+                      .build();
               when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
                       block.getRoot(), index))
                   .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
