@@ -453,11 +453,22 @@ public class StatusLogger {
             Color.RED));
   }
 
-  public void loadingDepositSnapshot(final String snapshotResource) {
+  public void loadingDepositSnapshotResource(final String snapshotResource) {
     log.info("Loading deposit tree snapshot from {}", snapshotResource);
   }
 
-  public void loadedDepositSnapshotResource(final long deposits, final Bytes32 executionBlockHash) {
+  public void loadingDepositSnapshotFromDb() {
+    log.info("Loading deposit tree snapshot from database");
+  }
+
+  public void onDepositSnapshot(final long deposits, final Bytes32 executionBlockHash) {
+    log.info(
+        "Was read snapshot with {} deposits and {} execution block hash.",
+        deposits,
+        executionBlockHash);
+  }
+
+  public void loadedDepositSnapshot(final long deposits, final Bytes32 executionBlockHash) {
     log.info(
         "Loaded deposits tree state from snapshot with {} deposits and {} execution block hash.",
         deposits,
