@@ -450,6 +450,9 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         .handleComposed(
             (response, throwable) -> {
               if (throwable != null) {
+                LOG.trace(
+                    String.format("Request (%s) to %s failed", method, delegate.getEndpoint()),
+                    throwable);
                 recordFailedRequest(delegate, method);
                 return SafeFuture.failedFuture(throwable);
               }
