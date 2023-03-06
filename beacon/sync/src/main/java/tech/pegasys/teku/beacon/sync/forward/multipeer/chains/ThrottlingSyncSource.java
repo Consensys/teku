@@ -80,13 +80,13 @@ public class ThrottlingSyncSource implements SyncSource {
         count.min(
             UInt64.valueOf(blobSidecarsRateTracker.allowedRequestObjectsCount(count.longValue())));
     if (updatedCount.isGreaterThan(count)) {
-      LOG.debug(
+      LOG.info(
           "Peer blob sidecars request rate limit reached. Sending request for {} instead of {} blob sidecars",
           updatedCount,
           count);
     }
     if (updatedCount.isGreaterThan(UInt64.ZERO)) {
-      LOG.debug("Sending request for {} blob sidecars", updatedCount);
+      LOG.info("Sending request for {} blob sidecars", updatedCount);
       return delegate.requestBlobSidecarsByRange(startSlot, updatedCount, listener);
     } else {
       return asyncRunner.runAfterDelay(
