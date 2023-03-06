@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KILN;
@@ -75,6 +76,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
   private final Optional<Eth2Network> eth2Network;
+  private final int earliestAvailableBlockSlotFrequency;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -96,6 +98,7 @@ public class Eth2NetworkConfiguration {
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
+      int earliestAvailableBlockSlotFrequency,
       final Optional<Eth2Network> eth2Network) {
     this.spec = spec;
     this.constants = constants;
@@ -119,6 +122,7 @@ public class Eth2NetworkConfiguration {
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
+    this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
     this.eth2Network = eth2Network;
   }
 
@@ -210,6 +214,10 @@ public class Eth2NetworkConfiguration {
     return totalTerminalDifficultyOverride;
   }
 
+  public int getEarliestAvailableBlockSlotFrequency() {
+    return earliestAvailableBlockSlotFrequency;
+  }
+
   public Optional<UInt64> getTerminalBlockHashEpochOverride() {
     return terminalBlockHashEpochOverride;
   }
@@ -246,6 +254,8 @@ public class Eth2NetworkConfiguration {
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
+    private int earliestAvailableBlockSlotFrequency =
+        DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -322,6 +332,7 @@ public class Eth2NetworkConfiguration {
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
+          earliestAvailableBlockSlotFrequency,
           eth2Network);
     }
 
@@ -664,6 +675,12 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QBbaKRSX4SncCOxTTL611Kxlz-zYFrIn-k_63jGIPK_wbvFghVUHJICPCxufgTX5h79jvgfPr-2hEEQEdziGQ5MCh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhAMazo6Jc2VjcDI1NmsxoQKt-kbM9isuWp8djhyEq6-4MLv1Sy7dOXeMOMdPgwu9LohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               "enr:-Ly4QKJ5BzgFyJ6BaTlGY0C8ROzl508U3GA6qxdG5Gn2hxdke6nQO187pYlLvhp82Dez4PQn436Fts1F0WAm-_5l2LACh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhA-YLVKJc2VjcDI1NmsxoQI8_Lvr6p_TkcAu8KorKacfUEnoOon0tdO0qWhriPdBP4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               "enr:-Ly4QJMtoiX2bPnVbiQOJCLbtUlqdqZk7kCJQln_W1bp1vOHcxWowE-iMXkKC4_uOb0o73wAW71WYi80Dlsg-7a5wiICh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhDbP3KmJc2VjcDI1NmsxoQNvcfKYUqcemLFlpKxl7JcQJwQ3L9unYL44gY2aEiRnI4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
+    }
+
+    public Builder earliestAvailableBlockSlotFrequency(
+        int earliestAvailableBlockSlotQueryFrequency) {
+      this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotQueryFrequency;
+      return this;
     }
   }
 }

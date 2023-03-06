@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import org.apache.commons.lang3.StringUtils;
@@ -131,6 +132,16 @@ public class Eth2NetworkOptions {
   private UInt64 terminalBlockHashEpochOverride;
 
   @Option(
+      names = {"--Xnetwork-earliest-available-block-slot-cache-seconds"},
+      hidden = true,
+      paramLabel = "<seconds>",
+      description =
+          "Only call earliest-available-block-slot every <SECONDS> seconds, which can reduce database contention serving large numbers of peers",
+      arity = "1")
+  private int earliestAvailableBlockSlotQueryFrequency =
+      DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
+
+  @Option(
       names = {"--Xnetwork-safe-slots-to-import-optimistically"},
       hidden = true,
       paramLabel = "<NUMBER>",
@@ -234,6 +245,7 @@ public class Eth2NetworkOptions {
     }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
+        .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled);
   }
 

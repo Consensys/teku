@@ -143,6 +143,7 @@ public class Eth2P2PNetworkFactory {
     protected Integer eth2RpcOutstandingPingThreshold;
     protected Duration eth2StatusUpdateInterval;
     protected Spec spec = TestSpecFactory.createMinimalPhase0();
+    private int earliestAvailableBlockSlotFrequency = 0;
 
     public Eth2P2PNetwork startNetwork() throws Exception {
       setDefaults();
@@ -200,6 +201,7 @@ public class Eth2P2PNetworkFactory {
                 StubTimeProvider.withTimeInSeconds(1000),
                 500,
                 50,
+                earliestAvailableBlockSlotFrequency,
                 spec);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
@@ -444,6 +446,12 @@ public class Eth2P2PNetworkFactory {
     public Eth2P2PNetworkBuilder setRequiredCheckpoint(
         final Optional<Checkpoint> requiredCheckpoint) {
       this.requiredCheckpoint = requiredCheckpoint;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder earliestAvailableBlockSlotFrequency(
+        final int earliestAvailableBlockSlotFrequency) {
+      this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
       return this;
     }
 
