@@ -33,19 +33,19 @@ public class RateTracker {
     this.timeProvider = timeProvider;
   }
 
-  // boundary: if a request comes in and remaining capacity is at least 1, then
-  // they can have the objects they request otherwise they get none.
   public synchronized long allowedRequestObjectsCount(final long objectCount) {
     pruneRequests();
-    if ((peerRateLimit - requestsWithinWindow) <= 0) {
+    if (requestsWithinWindow >= peerRateLimit) {
       return 0L;
     }
 
-    requestsWithinWindow += objectCount;
+    final long allowedObjectsCount = Math.min(objectCount, peerRateLimit - requestsWithinWindow);
+
+    requestsWithinWindow += allowedObjectsCount;
     requestCount.compute(
         timeProvider.getTimeInSeconds(),
-        (key, val) -> val == null ? objectCount : val + objectCount);
-    return objectCount;
+        (key, val) -> val == null ? allowedObjectsCount : val + allowedObjectsCount);
+    return allowedObjectsCount;
   }
 
   void pruneRequests() {

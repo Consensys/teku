@@ -56,9 +56,17 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
-    if (blocksRateTracker.allowedRequestObjectsCount(count.longValue()) > 0) {
-      LOG.debug("Sending request for {} blocks", count);
-      return delegate.requestBlocksByRange(startSlot, count, listener);
+    final UInt64 updatedCount =
+        count.min(UInt64.valueOf(blocksRateTracker.allowedRequestObjectsCount(count.longValue())));
+    if (updatedCount.isGreaterThan(count)) {
+      LOG.debug(
+          "Peer blocks request rate limit reached. Sending request for {} instead of {} blocks",
+          updatedCount,
+          count);
+    }
+    if (updatedCount.isGreaterThan(UInt64.ZERO)) {
+      LOG.debug("Sending request for {} blocks", updatedCount);
+      return delegate.requestBlocksByRange(startSlot, updatedCount, listener);
     } else {
       return asyncRunner.runAfterDelay(
           () -> requestBlocksByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
@@ -68,9 +76,18 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    if (blobSidecarsRateTracker.allowedRequestObjectsCount(count.longValue()) > 0) {
-      LOG.debug("Sending request for {} blob sidecars", count);
-      return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
+    final UInt64 updatedCount =
+        count.min(
+            UInt64.valueOf(blobSidecarsRateTracker.allowedRequestObjectsCount(count.longValue())));
+    if (updatedCount.isGreaterThan(count)) {
+      LOG.debug(
+          "Peer blob sidecars request rate limit reached. Sending request for {} instead of {} blob sidecars",
+          updatedCount,
+          count);
+    }
+    if (updatedCount.isGreaterThan(UInt64.ZERO)) {
+      LOG.debug("Sending request for {} blob sidecars", updatedCount);
+      return delegate.requestBlobSidecarsByRange(startSlot, updatedCount, listener);
     } else {
       return asyncRunner.runAfterDelay(
           () -> requestBlobSidecarsByRange(startSlot, count, listener), PEER_REQUEST_DELAY);
