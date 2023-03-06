@@ -47,15 +47,15 @@ public class BeaconNodeReadinessManagerTest {
 
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
 
-  private final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel =
-      mock(RemoteBeaconNodeSyncingChannel.class);
+  private final BeaconNodeReadinessChannel beaconNodeReadinessChannel =
+      mock(BeaconNodeReadinessChannel.class);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager =
       new BeaconNodeReadinessManager(
           beaconNodeApi,
           List.of(failoverBeaconNodeApi),
           validatorLogger,
-          remoteBeaconNodeSyncingChannel);
+          beaconNodeReadinessChannel);
 
   @Test
   public void retrievesReadinessAndPublishesToAChannel() {
@@ -63,7 +63,7 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
 
-    verifyNoInteractions(validatorLogger, remoteBeaconNodeSyncingChannel);
+    verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
 
     when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
     when(failoverBeaconNodeApi.getSyncingStatus())
@@ -75,7 +75,7 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
 
     verifyNoInteractions(validatorLogger);
-    verify(remoteBeaconNodeSyncingChannel).onFailoverNodeNotInSync(failoverBeaconNodeApi);
+    verify(beaconNodeReadinessChannel).onFailoverNodeNotReady(failoverBeaconNodeApi);
 
     when(beaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
@@ -87,8 +87,8 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isFalse();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
 
-    verify(validatorLogger).primaryBeaconNodeNotReady(true);
-    verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeNotInSync();
+    verify(validatorLogger).primaryBeaconNodeNotReady();
+    verify(beaconNodeReadinessChannel).onPrimaryNodeNotReady();
 
     // primary node recovers
     when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
@@ -97,8 +97,8 @@ public class BeaconNodeReadinessManagerTest {
 
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
 
-    verify(validatorLogger).primaryBeaconNodeIsBackAndReady(true);
-    verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeBackInSync();
+    verify(validatorLogger).primaryBeaconNodeIsBackAndReady();
+    verify(beaconNodeReadinessChannel).onPrimaryNodeBackReady();
   }
 
   @Test
@@ -107,7 +107,7 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
 
-    verifyNoInteractions(validatorLogger, remoteBeaconNodeSyncingChannel);
+    verifyNoInteractions(validatorLogger, beaconNodeReadinessChannel);
 
     when(beaconNodeApi.getSyncingStatus())
         .thenReturn(SafeFuture.completedFuture(EL_OFFLINE_STATUS));
@@ -119,8 +119,8 @@ public class BeaconNodeReadinessManagerTest {
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isFalse();
     assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
 
-    verify(validatorLogger).primaryBeaconNodeNotReady(true);
-    verify(remoteBeaconNodeSyncingChannel).onPrimaryNodeNotInSync();
+    verify(validatorLogger).primaryBeaconNodeNotReady();
+    verify(beaconNodeReadinessChannel).onPrimaryNodeNotReady();
   }
 
   @Test
@@ -132,7 +132,7 @@ public class BeaconNodeReadinessManagerTest {
             beaconNodeApi,
             List.of(failoverBeaconNodeApi, anotherFailover, yetAnotherFailover),
             validatorLogger,
-            remoteBeaconNodeSyncingChannel);
+            beaconNodeReadinessChannel);
 
     when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCED_STATUS));
 

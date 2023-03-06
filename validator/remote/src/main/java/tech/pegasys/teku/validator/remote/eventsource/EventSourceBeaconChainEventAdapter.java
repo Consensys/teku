@@ -36,13 +36,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
+import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
-import tech.pegasys.teku.validator.remote.RemoteBeaconNodeSyncingChannel;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
 public class EventSourceBeaconChainEventAdapter
-    implements BeaconChainEventAdapter, RemoteBeaconNodeSyncingChannel {
+    implements BeaconChainEventAdapter, BeaconNodeReadinessChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -104,21 +104,21 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   @Override
-  public void onPrimaryNodeNotInSync() {
+  public void onPrimaryNodeNotReady() {
     if (currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
       switchToFailoverEventStreamIfAvailable();
     }
   }
 
   @Override
-  public void onFailoverNodeNotInSync(final RemoteValidatorApiChannel failoverNotInSync) {
+  public void onFailoverNodeNotReady(final RemoteValidatorApiChannel failoverNotInSync) {
     if (currentEventStreamHasSameEndpoint(failoverNotInSync)) {
       switchToFailoverEventStreamIfAvailable();
     }
   }
 
   @Override
-  public void onPrimaryNodeBackInSync() {
+  public void onPrimaryNodeBackReady() {
     if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
       switchBackToPrimaryEventStream();
     }
@@ -147,8 +147,7 @@ public class EventSourceBeaconChainEventAdapter
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
-  // synchronized because of the ConnectionErrorHandler and the RemoteBeaconNodeSyncingChannel
-  // callbacks
+  // synchronized because of the ConnectionErrorHandler and the BeaconNodeReadinessChannel callbacks
   private synchronized void switchToFailoverEventStreamIfAvailable() {
     if (failoverBeaconNodeApis.isEmpty()) {
       return;
