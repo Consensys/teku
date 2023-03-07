@@ -90,6 +90,7 @@ import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 
 public class KvStoreDatabase implements Database {
 
+  // We can run multiple batches per cycle, in cases where there are a lot of extra blocks
   protected static final int TX_BATCH_SIZE = 500;
   private static final Logger LOG = LogManager.getLogger();
   protected final Spec spec;
@@ -346,10 +347,20 @@ public class KvStoreDatabase implements Database {
     for (UInt64 batchStart = earliestBlockSlot.orElse(lastSlotToPrune);
         batchStart.isLessThanOrEqualTo(lastSlotToPrune);
         batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
+      final UInt64 lastSlotInBatch = lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE));
+      LOG.debug(
+          "Pruning finalized blocks by batch from slot {} to {}, target last slot is {}",
+          batchStart,
+          lastSlotInBatch,
+          lastSlotToPrune);
       try (final FinalizedUpdater updater = finalizedUpdater()) {
-        updater.pruneFinalizedBlocks(
-            batchStart, lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE)));
+        updater.pruneFinalizedBlocks(batchStart, lastSlotInBatch);
         updater.commit();
+      }
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        LOG.trace("Sleep interrupted", e);
       }
     }
   }

@@ -101,7 +101,7 @@ class BlockPrunerTest {
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(finalizedEpoch)));
     triggerNextPruning();
     // SlotToKeep = FinalizedEpoch (50) * SlotsPerEpoch(10) - EpochsToKeep(5) * SlotsPerEpoch(10)
-    // = 500 - 50 = 450, last slot to prune = 550 - 1 = 449.
+    // = 500 - 50 = 450, last slot to prune = 450 - 1 = 449.
     final UInt64 lastSlotToPrune = UInt64.valueOf(449);
     verify(database).pruneFinalizedBlocks(lastSlotToPrune);
   }
