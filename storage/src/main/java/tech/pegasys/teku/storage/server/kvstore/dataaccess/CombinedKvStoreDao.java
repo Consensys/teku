@@ -628,14 +628,9 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
     @Override
     public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
-          db.stream(schema.getColumnSlotsByFinalizedRoot())) {
-        stream
-            .filter(
-                entry ->
-                    entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
-                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-            .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
+      try (final Stream<ColumnEntry<UInt64, SignedBeaconBlock>> stream =
+          db.stream(schema.getColumnFinalizedBlocksBySlot(), firstSlotToPrune, lastSlotToPrune)) {
+        stream.forEach(entry -> deleteFinalizedBlock(entry.getKey(), entry.getValue().getRoot()));
       }
     }
 
