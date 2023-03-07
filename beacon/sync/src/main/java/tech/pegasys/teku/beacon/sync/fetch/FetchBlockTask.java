@@ -48,7 +48,7 @@ public class FetchBlockTask extends AbstractFetchTask {
    * the number of runs and the already queried peers.
    */
   public SafeFuture<FetchBlockResult> run() {
-    if (cancelled.get()) {
+    if (isCancelled()) {
       return SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.CANCELLED));
     }
 

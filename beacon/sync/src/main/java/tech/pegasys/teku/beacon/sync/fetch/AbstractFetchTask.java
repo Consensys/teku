@@ -29,8 +29,7 @@ public abstract class AbstractFetchTask {
       Comparator.comparing(p -> Math.random());
 
   private final Set<NodeId> queriedPeers = Collections.newSetFromMap(new ConcurrentHashMap<>());
-
-  protected final AtomicBoolean cancelled = new AtomicBoolean(false);
+  private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
   private final P2PNetwork<Eth2Peer> eth2Network;
 
@@ -53,5 +52,9 @@ public abstract class AbstractFetchTask {
 
   protected void cancel() {
     cancelled.set(true);
+  }
+
+  protected boolean isCancelled() {
+    return cancelled.get();
   }
 }
