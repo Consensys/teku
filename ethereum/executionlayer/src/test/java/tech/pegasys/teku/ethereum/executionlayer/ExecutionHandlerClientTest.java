@@ -61,7 +61,7 @@ public abstract class ExecutionHandlerClientTest {
     final Bytes32 root = dataStructureUtil.randomBytes32();
 
     when(executionEngineClient.getPowBlock(root))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+        .thenReturn(SafeFuture.completedFuture(null));
     handler.eth1GetPowBlock(root);
     verify(executionEngineClient).getPowBlock(root);
   }

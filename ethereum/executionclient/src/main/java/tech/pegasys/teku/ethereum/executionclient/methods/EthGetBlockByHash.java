@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -21,7 +20,7 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
-public class EthGetBlockByHash extends AbstractEngineJsonRpcMethod<Optional<PowBlock>> {
+public class EthGetBlockByHash extends AbstractEngineJsonRpcMethod<PowBlock> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -40,7 +39,7 @@ public class EthGetBlockByHash extends AbstractEngineJsonRpcMethod<Optional<PowB
   }
 
   @Override
-  public SafeFuture<Optional<PowBlock>> execute(final JsonRpcRequestParams params) {
+  public SafeFuture<PowBlock> execute(final JsonRpcRequestParams params) {
     final Bytes32 blockHash = params.getRequiredParameter(0, Bytes32.class);
 
     LOG.trace("Calling {}(blockHash={})", getVersionedName(), blockHash);

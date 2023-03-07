@@ -50,7 +50,9 @@ class BellatrixExecutionClientHandler implements ExecutionClientHandler {
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
     final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
 
-    return new EthGetBlockByHash(executionEngineClient).execute(params);
+    return new EthGetBlockByHash(executionEngineClient)
+        .execute(params)
+        .thenApply(Optional::ofNullable);
   }
 
   @Override
