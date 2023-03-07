@@ -65,7 +65,7 @@ public class MilestoneBasedExecutionJsonRpcMethodsProvider
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public <T> EngineJsonRpcMethod<T> getMethod(
       final EngineApiMethods method, final Class<T> resultType) {
     return methods.stream()
