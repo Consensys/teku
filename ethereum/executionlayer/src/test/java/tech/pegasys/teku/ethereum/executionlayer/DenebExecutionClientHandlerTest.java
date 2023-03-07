@@ -58,7 +58,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
   void engineGetPayload_bellatrixFork() throws ExecutionException, InterruptedException {
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     final ExecutionClientHandler handler =
-        new DenebExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(bellatrixSpec, executionEngineClient);
     final ExecutionPayloadContext context = randomContext();
 
     DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
@@ -84,7 +84,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
   void engineGetPayload_capellaFork() throws ExecutionException, InterruptedException {
     final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
     final ExecutionClientHandler handler =
-        new DenebExecutionClientHandler(capellaSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(capellaSpec, executionEngineClient);
     final ExecutionPayloadContext context = randomContext();
 
     DataStructureUtil data = new DataStructureUtil(capellaSpec);
@@ -128,7 +128,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
     final ExecutionClientHandler handler =
-        new DenebExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(bellatrixSpec, executionEngineClient);
     final ExecutionPayload payload = data.randomExecutionPayload();
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
@@ -148,7 +148,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
     DataStructureUtil data = new DataStructureUtil(capellaSpec);
     final ExecutionClientHandler handler =
-        new DenebExecutionClientHandler(capellaSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(capellaSpec, executionEngineClient);
     final ExecutionPayload payload = data.randomExecutionPayload();
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =

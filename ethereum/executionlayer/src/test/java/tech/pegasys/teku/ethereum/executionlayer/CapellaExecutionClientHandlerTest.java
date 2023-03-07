@@ -64,7 +64,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
     final ExecutionClientHandler handler =
-        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(bellatrixSpec, executionEngineClient);
     final UInt64 slot = data.randomUInt64(1_000_000);
     final ExecutionPayloadContext context =
         new ExecutionPayloadContext(
@@ -134,7 +134,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
     final ExecutionClientHandler handler =
-        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(bellatrixSpec, executionEngineClient);
     final ExecutionPayload payload = data.randomExecutionPayload();
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
@@ -184,7 +184,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
     final ExecutionClientHandler handler =
-        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(bellatrixSpec, executionEngineClient);
 
     final ForkChoiceState forkChoiceState = data.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
