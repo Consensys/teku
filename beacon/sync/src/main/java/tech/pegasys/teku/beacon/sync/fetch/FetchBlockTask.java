@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beacon.sync.fetch;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,15 +29,10 @@ public class FetchBlockTask extends AbstractFetchTask {
   protected final Bytes32 blockRoot;
 
   private final AtomicInteger numberOfRuns = new AtomicInteger(0);
-  private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
   public FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
     super(eth2Network);
     this.blockRoot = blockRoot;
-  }
-
-  public void cancel() {
-    cancelled.set(true);
   }
 
   public Bytes32 getBlockRoot() {
@@ -50,9 +44,8 @@ public class FetchBlockTask extends AbstractFetchTask {
   }
 
   /**
-   * Selects random {@link Eth2Peer} from the network and fetches a block by root using the
-   * implementation of {@link #fetchBlock(Eth2Peer)}. It also tracks the number of runs and the
-   * already queried peers.
+   * Selects random {@link Eth2Peer} from the network and fetches a block by root. It also tracks
+   * the number of runs and the already queried peers.
    */
   public SafeFuture<FetchBlockResult> run() {
     if (cancelled.get()) {
@@ -72,9 +65,7 @@ public class FetchBlockTask extends AbstractFetchTask {
     return fetchBlock(peer);
   }
 
-  /** Fetch block by root from an {@link Eth2Peer} */
-  public SafeFuture<FetchBlockResult> fetchBlock(final Eth2Peer peer) {
-
+  private SafeFuture<FetchBlockResult> fetchBlock(final Eth2Peer peer) {
     return peer.requestBlockByRoot(blockRoot)
         .thenApply(
             maybeBlock ->

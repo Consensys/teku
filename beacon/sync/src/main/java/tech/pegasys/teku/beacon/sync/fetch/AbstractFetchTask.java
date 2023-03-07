@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -28,6 +29,8 @@ public abstract class AbstractFetchTask {
       Comparator.comparing(p -> Math.random());
 
   private final Set<NodeId> queriedPeers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+  protected final AtomicBoolean cancelled = new AtomicBoolean(false);
 
   private final P2PNetwork<Eth2Peer> eth2Network;
 
@@ -46,5 +49,9 @@ public abstract class AbstractFetchTask {
 
   protected void trackQueriedPeer(final Eth2Peer peer) {
     queriedPeers.add(peer.getId());
+  }
+
+  public void cancel() {
+    cancelled.set(true);
   }
 }
