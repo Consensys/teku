@@ -33,7 +33,7 @@ public class EngineExchangeTransitionConfigurationV1
 
   @Override
   public String getName() {
-    return "engine_exchangeTransitionConfiguration";
+    return EngineApiMethods.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION.getName();
   }
 
   @Override
