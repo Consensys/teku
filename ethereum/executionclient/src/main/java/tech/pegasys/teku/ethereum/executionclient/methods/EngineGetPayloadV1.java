@@ -39,7 +39,7 @@ public class EngineGetPayloadV1 extends AbstractEngineJsonRpcMethod<ExecutionPay
 
   @Override
   public String getName() {
-    return "engine_getPayload";
+    return EngineApiMethods.ENGINE_GET_PAYLOAD.getName();
   }
 
   @Override
@@ -54,7 +54,8 @@ public class EngineGetPayloadV1 extends AbstractEngineJsonRpcMethod<ExecutionPay
     final UInt64 slot = params.getRequiredParameter(1, UInt64.class);
 
     LOG.trace(
-        "calling engineGetPayloadV1(payloadId={}, slot={})",
+        "Calling {}(payloadId={}, slot={})",
+        getVersionedName(),
         executionPayloadContext.getPayloadId(),
         slot);
 
@@ -72,7 +73,8 @@ public class EngineGetPayloadV1 extends AbstractEngineJsonRpcMethod<ExecutionPay
         .thenPeek(
             payloadAndValue ->
                 LOG.trace(
-                    "engineGetPayloadV1(payloadId={}, slot={}) -> {}",
+                    "Response {}(payloadId={}, slot={}) -> {}",
+                    getVersionedName(),
                     executionPayloadContext.getPayloadId(),
                     slot,
                     payloadAndValue));
