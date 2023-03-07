@@ -57,14 +57,14 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
     final UInt64 updatedCount =
-        count.min(UInt64.valueOf(blocksRateTracker.popObjectRequests(count.longValue())));
-    if (updatedCount.isLessThan(count)) {
-      LOG.debug(
-          "Peer blocks request rate limit reached. Sending request for {} instead of {} blocks",
-          updatedCount,
-          count);
-    }
+        UInt64.valueOf(blocksRateTracker.popObjectRequests(count.longValue()));
     if (updatedCount.isGreaterThan(UInt64.ZERO)) {
+      if (updatedCount.isLessThan(count)) {
+        LOG.debug(
+            "Peer blocks request rate limit reached. Sending request for {} instead of {} blocks",
+            updatedCount,
+            count);
+      }
       LOG.debug("Sending request for {} blocks", updatedCount);
       return delegate.requestBlocksByRange(startSlot, updatedCount, listener);
     } else {
@@ -77,14 +77,14 @@ public class ThrottlingSyncSource implements SyncSource {
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
     final UInt64 updatedCount =
-        count.min(UInt64.valueOf(blobSidecarsRateTracker.popObjectRequests(count.longValue())));
-    if (updatedCount.isLessThan(count)) {
-      LOG.info(
-          "Peer blob sidecars request rate limit reached. Sending request for {} instead of {} blob sidecars",
-          updatedCount,
-          count);
-    }
+        UInt64.valueOf(blobSidecarsRateTracker.popObjectRequests(count.longValue()));
     if (updatedCount.isGreaterThan(UInt64.ZERO)) {
+      if (updatedCount.isLessThan(count)) {
+        LOG.info(
+            "Peer blob sidecars request rate limit reached. Sending request for {} instead of {} blob sidecars",
+            updatedCount,
+            count);
+      }
       LOG.info("Sending request for {} blob sidecars", updatedCount);
       return delegate.requestBlobSidecarsByRange(startSlot, updatedCount, listener);
     } else {
