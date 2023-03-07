@@ -125,15 +125,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final BlobsBundleValidator blobsBundleValidator,
       final Optional<Integer> builderBidChallengePercentage) {
-    final ExecutionClientHandler executionClientHandler;
-
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      executionClientHandler = new DenebExecutionClientHandler(spec, executionEngineClient);
-    } else if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
-      executionClientHandler = new CapellaExecutionClientHandler(spec, executionEngineClient);
-    } else {
-      executionClientHandler = new BellatrixExecutionClientHandler(spec, executionEngineClient);
-    }
+    final ExecutionClientHandler executionClientHandler =
+        new MilestoneBasedExecutionClientHandler(spec, executionEngineClient);
 
     return create(
         eventLogger,

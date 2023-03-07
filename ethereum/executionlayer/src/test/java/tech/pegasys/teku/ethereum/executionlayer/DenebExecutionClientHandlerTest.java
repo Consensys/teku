@@ -201,9 +201,4 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         dataStructureUtil.randomForkChoiceState(false),
         dataStructureUtil.randomPayloadBuildingAttributes(false));
   }
-
-  @Override
-  public ExecutionClientHandler getHandler() {
-    return new DenebExecutionClientHandler(spec, executionEngineClient);
-  }
 }

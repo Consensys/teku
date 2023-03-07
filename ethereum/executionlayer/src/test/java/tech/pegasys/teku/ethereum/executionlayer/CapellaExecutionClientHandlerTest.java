@@ -223,12 +223,6 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 handler.engineGetBlobsBundle(
                     Bytes8.fromHexString("abcd1234abcd1234"), UInt64.valueOf(123)))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(
-            "Pre-Deneb execution client handler is called to get Deneb BlobsBundleV1 for payload `0xabcd1234abcd1234`, slot 123");
-  }
-
-  @Override
-  public ExecutionClientHandler getHandler() {
-    return new CapellaExecutionClientHandler(spec, executionEngineClient);
+        .hasMessage("Can't find method with name engine_getBlobsBundle");
   }
 }

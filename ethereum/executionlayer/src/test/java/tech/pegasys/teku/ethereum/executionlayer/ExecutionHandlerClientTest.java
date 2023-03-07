@@ -18,8 +18,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class ExecutionHandlerClientTest {
+
   protected Spec spec;
   protected DataStructureUtil dataStructureUtil;
   protected final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
@@ -58,29 +59,36 @@ public abstract class ExecutionHandlerClientTest {
   @Test
   void eth1GetPowBlock_shouldCallExecutionClient() {
     ExecutionClientHandler handler = getHandler();
-    final Bytes32 root = dataStructureUtil.randomBytes32();
+    final Bytes32 blockHash = Bytes32.random();
+    final PowBlock block = createPowBlock(blockHash);
 
-    when(executionEngineClient.getPowBlock(root))
-        .thenReturn(SafeFuture.completedFuture(null));
-    handler.eth1GetPowBlock(root);
-    verify(executionEngineClient).getPowBlock(root);
+    when(executionEngineClient.getPowBlock(blockHash))
+        .thenReturn(SafeFuture.completedFuture(block));
+    handler.eth1GetPowBlock(blockHash);
+    verify(executionEngineClient).getPowBlock(blockHash);
+  }
+
+  @NotNull
+  private PowBlock createPowBlock(final Bytes32 blockHash) {
+    return new PowBlock(
+        blockHash,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomUInt256(),
+        dataStructureUtil.randomUInt64());
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   @Test
   void eth1GetPowChainHead_shouldCallExecutionClient() {
     ExecutionClientHandler handler = getHandler();
-    PowBlock block =
-        new PowBlock(
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt256(),
-            dataStructureUtil.randomUInt64());
+    final PowBlock block = createPowBlock(Bytes32.random());
 
     when(executionEngineClient.getPowChainHead()).thenReturn(SafeFuture.completedFuture(block));
     handler.eth1GetPowChainHead();
     verify(executionEngineClient).getPowChainHead();
   }
 
-  public abstract ExecutionClientHandler getHandler();
+  final ExecutionClientHandler getHandler() {
+    return new MilestoneBasedExecutionClientHandler(spec, executionEngineClient);
+  }
 }
