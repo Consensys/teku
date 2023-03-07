@@ -75,8 +75,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @BeforeEach
   public void setup() {
     chainUpdater.initializeGenesis();
-    when(peer.allowedToMakeRequest()).thenReturn(true);
-    when(peer.allowedToReceiveBlocks(any(), anyLong())).thenReturn(true);
+    when(peer.popRequest()).thenReturn(true);
+    when(peer.popBlockRequests(any(), anyLong())).thenReturn(true);
     when(recentChainData.getStore()).thenReturn(store);
     // Forward block requests from the mock to the actual store
     when(store.retrieveSignedBlock(any()))

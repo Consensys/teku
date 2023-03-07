@@ -95,8 +95,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @BeforeEach
   public void setUp() {
-    when(peer.allowedToMakeRequest()).thenReturn(true);
-    when(peer.allowedToReceiveBlobSidecars(listener, count.longValue())).thenReturn(true);
+    when(peer.popRequest()).thenReturn(true);
+    when(peer.popBlobSidecarRequests(listener, count.longValue())).thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
@@ -114,7 +114,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.allowedToReceiveBlobSidecars(listener, 5)).thenReturn(false);
+    when(peer.popBlobSidecarRequests(listener, 5)).thenReturn(false);
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count);
@@ -205,7 +205,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO);
 
-    when(peer.allowedToReceiveBlobSidecars(listener, 0)).thenReturn(true);
+    when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(true);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 

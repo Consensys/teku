@@ -33,7 +33,7 @@ public class RateTracker {
     this.timeProvider = timeProvider;
   }
 
-  public synchronized long allowedRequestObjectsCount(final long objectCount) {
+  public synchronized long popObjectRequests(final long objectCount) {
     pruneRequests();
     if (requestsWithinWindow >= peerRateLimit) {
       return 0L;

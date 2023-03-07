@@ -25,77 +25,77 @@ public class RateTrackerTest {
   @Test
   public void shouldAllowAddingItemsWithinLimit() {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
   }
 
   @Test
   public void shouldNotUnderflowWhenTimeWindowGreaterThanCurrentTime() {
     final RateTracker tracker = new RateTracker(1, 15000, timeProvider);
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
   }
 
   @Test
   public void shouldAllowAddingItemsAfterTimeoutPasses() {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
     timeProvider.advanceTimeBySeconds(2L);
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
   }
 
   @Test
   public void shouldReturnFalseIfCacheFull() {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(0);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(0);
   }
 
   @Test
   public void shouldAddMultipleValuesToCache() throws InterruptedException {
     final RateTracker tracker = new RateTracker(10, 1, timeProvider);
-    assertThat(tracker.allowedRequestObjectsCount(10)).isEqualTo(10);
-    assertThat(tracker.allowedRequestObjectsCount(10)).isEqualTo(0);
+    assertThat(tracker.popObjectRequests(10)).isEqualTo(10);
+    assertThat(tracker.popObjectRequests(10)).isEqualTo(0);
     timeProvider.advanceTimeBySeconds(2L);
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
   }
 
   @Test
   public void shouldMaintainCounterOverTime() {
     final RateTracker tracker = new RateTracker(10, 2, timeProvider);
     // time:1000 limit: 10 - count: 0 - requested: 9 - allow: 9 - reject: 0
-    assertThat(tracker.allowedRequestObjectsCount(9)).isEqualTo(9);
+    assertThat(tracker.popObjectRequests(9)).isEqualTo(9);
 
     timeProvider.advanceTimeBySeconds(1L);
     // time:1001 limit: 10 - count: 9 - requested: 5 - allow: 1 - reject: 4
-    assertThat(tracker.allowedRequestObjectsCount(5)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(5)).isEqualTo(1);
 
     timeProvider.advanceTimeBySeconds(1L);
     // time:1002 limit: 10 - count: 10 - requested: 5 - allow: 0 - reject: 5
-    assertThat(tracker.allowedRequestObjectsCount(5)).isEqualTo(0);
+    assertThat(tracker.popObjectRequests(5)).isEqualTo(0);
 
     timeProvider.advanceTimeBySeconds(1L);
     // time:1003 limit: 10 - count: 1 - requested: 5 - allow: 5 - reject: 0
-    assertThat(tracker.allowedRequestObjectsCount(5)).isEqualTo(5);
+    assertThat(tracker.popObjectRequests(5)).isEqualTo(5);
     // time:1003 limit: 10 - count: 6 - requested: 5 - allow: 4 - reject: 1
-    assertThat(tracker.allowedRequestObjectsCount(5)).isEqualTo(4);
+    assertThat(tracker.popObjectRequests(5)).isEqualTo(4);
 
     timeProvider.advanceTimeBySeconds(3L);
     // time:1006 limit: 10 - count: 0 - requested: 9 - allow: 9 - reject: 0
-    assertThat(tracker.allowedRequestObjectsCount(9)).isEqualTo(9);
+    assertThat(tracker.popObjectRequests(9)).isEqualTo(9);
 
     timeProvider.advanceTimeBySeconds(1L);
     // time:1007 limit: 10 - count: 9 - requested: 5 - allow: 1 - reject: 4
-    assertThat(tracker.allowedRequestObjectsCount(5)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(5)).isEqualTo(1);
     // time:1007 limit: 10 - count: 10 - requested: 1 - allow: 0 - reject: 1
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(0);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(0);
 
     timeProvider.advanceTimeBySeconds(2L);
     // time:1009 limit: 10 - count: 1 - requested: 4 - allow: 4 - reject: 0
-    assertThat(tracker.allowedRequestObjectsCount(4)).isEqualTo(4);
+    assertThat(tracker.popObjectRequests(4)).isEqualTo(4);
     // time:1009 limit: 10 - count: 5 - requested: 1 - allow: 1 - reject: 0
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
     // time:1009 limit: 10 - count: 6 - requested: 1 - allow: 1 - reject: 0
-    assertThat(tracker.allowedRequestObjectsCount(1)).isEqualTo(1);
+    assertThat(tracker.popObjectRequests(1)).isEqualTo(1);
     // time:1009 limit: 10 - count: 7 - requested: 6 - allow: 3 - reject: 3
-    assertThat(tracker.allowedRequestObjectsCount(6)).isEqualTo(3);
+    assertThat(tracker.popObjectRequests(6)).isEqualTo(3);
   }
 }

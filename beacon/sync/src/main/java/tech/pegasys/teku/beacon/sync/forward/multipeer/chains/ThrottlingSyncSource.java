@@ -57,7 +57,7 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
     final UInt64 updatedCount =
-        count.min(UInt64.valueOf(blocksRateTracker.allowedRequestObjectsCount(count.longValue())));
+        count.min(UInt64.valueOf(blocksRateTracker.popObjectRequests(count.longValue())));
     if (updatedCount.isLessThan(count)) {
       LOG.debug(
           "Peer blocks request rate limit reached. Sending request for {} instead of {} blocks",
@@ -77,8 +77,7 @@ public class ThrottlingSyncSource implements SyncSource {
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
     final UInt64 updatedCount =
-        count.min(
-            UInt64.valueOf(blobSidecarsRateTracker.allowedRequestObjectsCount(count.longValue())));
+        count.min(UInt64.valueOf(blobSidecarsRateTracker.popObjectRequests(count.longValue())));
     if (updatedCount.isLessThan(count)) {
       LOG.info(
           "Peer blob sidecars request rate limit reached. Sending request for {} instead of {} blob sidecars",

@@ -39,7 +39,7 @@ public class MetadataMessageHandler
       Eth2Peer peer,
       EmptyMessage message,
       ResponseCallback<MetadataMessage> callback) {
-    if (!peer.allowedToMakeRequest()) {
+    if (!peer.popRequest()) {
       return;
     }
 
