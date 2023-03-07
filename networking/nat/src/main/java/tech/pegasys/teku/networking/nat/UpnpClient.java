@@ -42,13 +42,6 @@ public class UpnpClient {
   private final RegistryListener registryListener;
 
   public UpnpClient() {
-    // Workaround for an issue in the jupnp library: the ExecutorService used misconfigures
-    // its ThreadPoolExecutor, causing it to only launch a single thread. This prevents any work
-    // from getting done (effectively a deadlock). The issue is fixed here:
-    //   https://github.com/jupnp/jupnp/pull/117
-    // However, this fix has not made it into any releases yet.
-    // this(new UpnpServiceImpl(new DefaultUpnpServiceConfiguration()));
-    // TODO: once a new release is available, remove this @Override
     this(new UpnpServiceImpl(new TekuNatServiceConfiguration()));
   }
 
