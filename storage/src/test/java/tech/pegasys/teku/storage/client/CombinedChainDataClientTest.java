@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -48,7 +49,8 @@ class CombinedChainDataClientTest {
   private final ForkChoiceStrategy forkChoiceStrategy = mock(ForkChoiceStrategy.class);
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final CombinedChainDataClient client =
-      new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+      new CombinedChainDataClient(
+          recentChainData, historicalChainData, spec, new SystemTimeProvider(), 0);
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
