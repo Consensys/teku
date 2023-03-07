@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.storage.store.StoreConfig.DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
+
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -52,12 +54,23 @@ public class StoreOptions {
       arity = "1")
   private int checkpointStateCacheSize = StoreConfig.DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
 
+  @Option(
+      names = {"--Xstore-earliest-available-block-slot-cache-seconds"},
+      hidden = true,
+      paramLabel = "<seconds>",
+      description =
+          "Only call earliest-available-block-slot every <SECONDS> seconds, which can reduce database contention serving large numbers of peers",
+      arity = "1")
+  private int earliestAvailableBlockSlotQueryFrequency =
+      DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(
         b ->
             b.hotStatePersistenceFrequencyInEpochs(hotStatePersistenceFrequencyInEpochs)
                 .blockCacheSize(blockCacheSize)
                 .stateCacheSize(stateCacheSize)
+                .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
                 .checkpointStateCacheSize(checkpointStateCacheSize));
   }
 }

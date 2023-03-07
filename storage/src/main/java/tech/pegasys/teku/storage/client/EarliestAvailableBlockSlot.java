@@ -57,10 +57,9 @@ class EarliestAvailableBlockSlot {
   }
 
   private synchronized SafeFuture<Optional<UInt64>> actuallyGetEarliestBlockSlot() {
-    if (queryTime
-        .plus(earliestAvailableBlockSlotFrequency)
-        .isLessThanOrEqualTo(timeProvider.getTimeInSeconds())) {
-      queryTime = timeProvider.getTimeInSeconds();
+    final UInt64 timeInSeconds = timeProvider.getTimeInSeconds();
+    if (queryTime.plus(earliestAvailableBlockSlotFrequency).isLessThanOrEqualTo(timeInSeconds)) {
+      queryTime = timeInSeconds;
       LOG.trace("Setting earliestBlockSlot query time to {}", queryTime);
     } else {
       return earliestAvailableBlockSlotFuture;

@@ -608,7 +608,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             storageQueryChannel,
             spec,
             timeProvider,
-            beaconConfig.eth2NetworkConfig().getEarliestAvailableBlockSlotFrequency());
+            beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency());
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -891,7 +891,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
             .earliestAvailableBlockSlotFrequency(
-                beaconConfig.eth2NetworkConfig().getEarliestAvailableBlockSlotFrequency())
+                beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

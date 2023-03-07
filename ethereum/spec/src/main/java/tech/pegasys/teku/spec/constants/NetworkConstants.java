@@ -18,6 +18,4 @@ public class NetworkConstants {
   public static final int SYNC_COMMITTEE_SUBNET_COUNT = 4;
   public static final int INTERVALS_PER_SLOT = 3;
   public static final int DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128;
-
-  public static final int DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY = 0;
 }
