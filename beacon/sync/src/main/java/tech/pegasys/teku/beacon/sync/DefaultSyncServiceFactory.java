@@ -20,15 +20,14 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
-import tech.pegasys.teku.beacon.sync.fetch.MilestoneBasedFetchBlockTaskFactory;
+import tech.pegasys.teku.beacon.sync.fetch.DefaultFetchTaskFactory;
+import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -117,27 +116,25 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     final ForwardSyncService forwardSyncService = createForwardSyncService();
 
-    final FetchBlockTaskFactory fetchBlockTaskFactory =
-        new MilestoneBasedFetchBlockTaskFactory(spec, p2pNetwork);
+    final FetchTaskFactory fetchTaskFactory = new DefaultFetchTaskFactory(p2pNetwork);
 
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(
-            asyncRunner, pendingBlocks, forwardSyncService, fetchBlockTaskFactory);
-
-    eventChannels.subscribe(SlotEventsChannel.class, recentBlockFetcher);
+            asyncRunner, pendingBlocks, forwardSyncService, fetchTaskFactory);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
+
     eventChannels.subscribe(ExecutionClientEventsChannel.class, syncStateTracker);
+
     final HistoricalBlockSyncService historicalBlockSyncService =
-        createHistoricalSyncService(syncStateTracker, fetchBlockTaskFactory);
+        createHistoricalSyncService(syncStateTracker);
 
     return new DefaultSyncService(
         forwardSyncService, recentBlockFetcher, syncStateTracker, historicalBlockSyncService);
   }
 
   protected HistoricalBlockSyncService createHistoricalSyncService(
-      final SyncStateProvider syncStateProvider,
-      final FetchBlockTaskFactory fetchBlockTaskFactory) {
+      final SyncStateProvider syncStateProvider) {
     final AsyncRunner asyncRunner =
         asyncRunnerFactory.create(HistoricalBlockSyncService.class.getSimpleName(), 1);
     return HistoricalBlockSyncService.create(
@@ -152,9 +149,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         syncStateProvider,
         syncConfig.isReconstructHistoricStatesEnabled(),
         genesisStateResource,
-        syncConfig.fetchAllHistoricBlocks(),
-        fetchBlockTaskFactory,
-        blobsSidecarManager);
+        syncConfig.fetchAllHistoricBlocks());
   }
 
   protected SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {

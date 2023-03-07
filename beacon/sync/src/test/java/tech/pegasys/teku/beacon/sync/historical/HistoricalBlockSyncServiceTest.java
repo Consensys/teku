@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -53,8 +52,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -78,11 +75,6 @@ public class HistoricalBlockSyncServiceTest {
   private final SyncStateProvider syncStateProvider = mock(SyncStateProvider.class);
 
   private final CombinedChainDataClient chainData = mock(CombinedChainDataClient.class);
-
-  private final FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
-
-  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
-
   private final Optional<String> genesisStateResource =
       Optional.of("https://example.com/state.ssz");
   private final ReconstructHistoricalStatesService reconstructHistoricalStatesService =
@@ -102,9 +94,7 @@ public class HistoricalBlockSyncServiceTest {
           signatureVerificationService,
           batchSize,
           Optional.of(reconstructHistoricalStatesService),
-          false,
-          fetchBlockTaskFactory,
-          blobsSidecarManager);
+          false);
   private final Subscribers<SyncStateProvider.SyncStateSubscriber> syncStateSubscribers =
       Subscribers.create(false);
 
@@ -128,8 +118,6 @@ public class HistoricalBlockSyncServiceTest {
     when(syncStateProvider.getCurrentSyncState()).thenAnswer(i -> currentSyncState.get());
     when(signatureVerificationService.verify(any(), any(), (List<BLSSignature>) any()))
         .thenReturn(SafeFuture.completedFuture(true));
-    when(blobsSidecarManager.createAvailabilityChecker(any()))
-        .thenReturn(BlobsSidecarAvailabilityChecker.NOT_REQUIRED);
   }
 
   @Test
