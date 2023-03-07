@@ -51,7 +51,7 @@ public abstract class AbstractFetchTask {
     queriedPeers.add(peer.getId());
   }
 
-  public void cancel() {
+  protected void cancel() {
     cancelled.set(true);
   }
 }
