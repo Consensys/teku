@@ -190,14 +190,16 @@ public class HistoricalBatchFetcher {
         requestParams.getCount(),
         requestParams.getStartSlot(),
         requestParams.getEndSlot());
+
     final RequestManager requestManager =
         new RequestManager(lastBlockRoot, getLatestReceivedBlock(), blocksToImport::addLast);
+
     return peer.requestBlocksByRange(
             requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock)
-        .thenApply(__ -> shouldRetryBlockByRangeRequest());
+        .thenApply(__ -> shouldRetryBlocksByRangeRequest());
   }
 
-  private boolean shouldRetryBlockByRangeRequest() {
+  private boolean shouldRetryBlocksByRangeRequest() {
     return !batchIsComplete() && requestCount.incrementAndGet() < maxRequests;
   }
 
