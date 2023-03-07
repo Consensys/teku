@@ -40,7 +40,7 @@ public class EngineGetBlobsBundleV1 extends AbstractEngineJsonRpcMethod<BlobsBun
 
   @Override
   public String getName() {
-    return "engine_getBlobsBundle";
+    return EngineApiMethods.ENGINE_GET_BLOBS_BUNDLE.getName();
   }
 
   @Override
@@ -59,7 +59,7 @@ public class EngineGetBlobsBundleV1 extends AbstractEngineJsonRpcMethod<BlobsBun
               "Pre-Deneb execution client handler is called to get Deneb BlobsBundleV1 for payload `%s`, slot %s",
               payloadId, slot));
     }
-    LOG.trace("calling engineGetBlobsBundle(payloadId={}, slot={})", payloadId, slot);
+    LOG.trace("Calling {}(payloadId={}, slot={})", getVersionedName(), payloadId, slot);
     return executionEngineClient
         .getBlobsBundleV1(payloadId)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
@@ -72,9 +72,10 @@ public class EngineGetBlobsBundleV1 extends AbstractEngineJsonRpcMethod<BlobsBun
         .thenPeek(
             blobsBundle ->
                 LOG.trace(
-                    () ->
-                        String.format(
-                            "engineGetBlobsBundle(payloadId=%s, slot=%s) -> %s",
-                            payloadId, slot, blobsBundle.toBriefBlobsString())));
+                    "Response {}(payloadId={}}, slot={}) -> {}}",
+                    getVersionedName(),
+                    payloadId,
+                    slot,
+                    blobsBundle.toBriefBlobsString()));
   }
 }
