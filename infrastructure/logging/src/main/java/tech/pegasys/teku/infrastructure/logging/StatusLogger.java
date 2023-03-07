@@ -463,7 +463,7 @@ public class StatusLogger {
 
   public void onDepositSnapshot(final long deposits, final Bytes32 executionBlockHash) {
     log.info(
-        "Was read snapshot with {} deposits and {} execution block hash.",
+        "A deposit snapshot was read with {} deposits and {} execution block hash.",
         deposits,
         executionBlockHash);
   }
