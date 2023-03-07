@@ -31,7 +31,7 @@ public class EthGetBlockByHash extends AbstractEngineJsonRpcMethod<Optional<PowB
 
   @Override
   public String getName() {
-    return "eth_getBlockByHash";
+    return EngineApiMethods.ETH_GET_BLOCK_BY_HASH.getName();
   }
 
   @Override
@@ -43,10 +43,12 @@ public class EthGetBlockByHash extends AbstractEngineJsonRpcMethod<Optional<PowB
   public SafeFuture<Optional<PowBlock>> execute(final JsonRpcRequestParams params) {
     final Bytes32 blockHash = params.getRequiredParameter(0, Bytes32.class);
 
-    LOG.trace("calling eth1GetPowBlock(blockHash={})", blockHash);
+    LOG.trace("Calling {}(blockHash={})", getVersionedName(), blockHash);
     return executionEngineClient
         .getPowBlock(blockHash)
         .thenPeek(
-            powBlock -> LOG.trace("eth1GetPowBlock(blockHash={}) -> {}", blockHash, powBlock));
+            powBlock ->
+                LOG.trace(
+                    "Response {}(blockHash={}) -> {}", getVersionedName(), blockHash, powBlock));
   }
 }
