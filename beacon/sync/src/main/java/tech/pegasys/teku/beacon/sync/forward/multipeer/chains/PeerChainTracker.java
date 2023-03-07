@@ -76,7 +76,7 @@ public class PeerChainTracker {
 
   private void onPeerDisconnected(final Eth2Peer peer) {
     eventThread.checkOnEventThread();
-    final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer);
+    final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer, spec);
     finalizedChains.onPeerDisconnected(syncSource);
     nonfinalizedChains.onPeerDisconnected(syncSource);
     syncSourceFactory.onPeerDisconnected(peer);
@@ -88,7 +88,7 @@ public class PeerChainTracker {
       LOG.debug("Ignoring update from disconnected peer");
       return;
     }
-    final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer);
+    final SyncSource syncSource = syncSourceFactory.getOrCreateSyncSource(peer, spec);
     final SlotAndBlockRoot finalizedChainHead =
         new SlotAndBlockRoot(
             status.getFinalizedCheckpoint().getEpochStartSlot(spec), status.getFinalizedRoot());
