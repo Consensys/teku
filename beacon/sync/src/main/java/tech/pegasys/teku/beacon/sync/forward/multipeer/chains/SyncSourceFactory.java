@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_BLOBS_PER_BLOCK;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 import static tech.pegasys.teku.spec.config.Constants.SYNC_BATCH_SIZE;
@@ -47,7 +48,7 @@ public class SyncSourceFactory {
             .getConfig()
             .toVersionDeneb()
             .map(SpecConfigDeneb::getMaxBlobsPerBlock)
-            .orElse(0);
+            .orElse(MAX_BLOBS_PER_BLOCK);
     final int maxBlobSidecarsPerMinute =
         MAX_REQUEST_BLOCKS_DENEB
             .times(UInt64.valueOf(maxBlobsPerBlock))
