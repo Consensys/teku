@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.REQUIRE_PREPARED_PROPOSERS_PARAMETER;
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.TARGET_PEER_COUNT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -26,6 +28,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -36,6 +39,7 @@ public class Readiness extends RestApiEndpoint {
   private final SyncDataProvider syncProvider;
   private final ChainDataProvider chainDataProvider;
   private final NetworkDataProvider networkDataProvider;
+  private final NodeDataProvider nodeDataProvider;
 
   private final ExecutionClientDataProvider executionClientDataProvider;
 
@@ -45,6 +49,7 @@ public class Readiness extends RestApiEndpoint {
         provider.getSyncDataProvider(),
         provider.getChainDataProvider(),
         provider.getNetworkDataProvider(),
+        provider.getNodeDataProvider(),
         executionClientDataProvider);
   }
 
@@ -52,6 +57,7 @@ public class Readiness extends RestApiEndpoint {
       final SyncDataProvider syncProvider,
       final ChainDataProvider chainDataProvider,
       final NetworkDataProvider networkDataProvider,
+      final NodeDataProvider nodeDataProvider,
       final ExecutionClientDataProvider executionClientDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
@@ -60,24 +66,26 @@ public class Readiness extends RestApiEndpoint {
             .description("Returns 200 if the node is ready to accept traffic")
             .tags(TAG_TEKU)
             .queryParam(TARGET_PEER_COUNT_PARAMETER)
+            .queryParam(REQUIRE_PREPARED_PROPOSERS_PARAMETER)
+            .queryParam(REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER)
             .response(SC_OK, "Node is ready")
             .response(SC_SERVICE_UNAVAILABLE, "Node not initialized or having issues")
             .build());
     this.syncProvider = syncProvider;
     this.chainDataProvider = chainDataProvider;
     this.networkDataProvider = networkDataProvider;
+    this.nodeDataProvider = nodeDataProvider;
     this.executionClientDataProvider = executionClientDataProvider;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
-    final Optional<Integer> targetPeerCount =
-        request.getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER);
 
     if (!chainDataProvider.isStoreAvailable()
         || syncProvider.isSyncing()
-        || belowTargetPeerCount(targetPeerCount)
+        || belowTargetPeerCount(request)
+        || !requiredNodeDataIsAvailable(request)
         || !executionClientDataProvider.isExecutionClientAvailable()) {
       request.respondWithCode(SC_SERVICE_UNAVAILABLE);
     } else {
@@ -85,8 +93,32 @@ public class Readiness extends RestApiEndpoint {
     }
   }
 
-  private boolean belowTargetPeerCount(final Optional<Integer> targetPeerCount) {
+  private boolean belowTargetPeerCount(final RestApiRequest request) {
+    final Optional<Integer> targetPeerCount =
+        request.getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER);
     return targetPeerCount.isPresent()
         && networkDataProvider.getPeerCount() < targetPeerCount.get();
+  }
+
+  private boolean requiredNodeDataIsAvailable(final RestApiRequest request) {
+    return preparedProposersAreAvailable(request) && validatorRegistrationsAreAvailable(request);
+  }
+
+  private boolean preparedProposersAreAvailable(final RestApiRequest request) {
+    final boolean requirePreparedProposers =
+        request.getOptionalQueryParameter(REQUIRE_PREPARED_PROPOSERS_PARAMETER).orElse(false);
+    if (!requirePreparedProposers) {
+      return true;
+    }
+    return !nodeDataProvider.getPreparedProposerInfo().isEmpty();
+  }
+
+  private boolean validatorRegistrationsAreAvailable(final RestApiRequest request) {
+    final boolean requireValidatorRegistrations =
+        request.getOptionalQueryParameter(REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER).orElse(false);
+    if (!requireValidatorRegistrations) {
+      return true;
+    }
+    return !nodeDataProvider.getValidatorRegistrationInfo().isEmpty();
   }
 }

@@ -21,11 +21,14 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.REQUIRE_PREPARED_PROPOSERS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.REQUIRE_VALIDATOR_REGISTRATIONS;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TARGET_PEER_COUNT;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Map;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,15 +41,20 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
   @BeforeEach
   void setup() {
     setHandler(
-        new Readiness(syncDataProvider, chainDataProvider, network, executionClientDataProvider));
+        new Readiness(
+            syncDataProvider,
+            chainDataProvider,
+            network,
+            nodeDataProvider,
+            executionClientDataProvider));
+    // ready by default
+    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
   }
 
   @Test
   public void shouldReturnOkWhenInSyncAndReady() throws Exception {
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
-
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
@@ -57,9 +65,6 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldReturnOkWhenInSyncAndReadyAndTargetPeerCountReached() throws Exception {
     request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1");
     final Eth2Peer peer1 = mock(Eth2Peer.class);
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
     when(eth2P2PNetwork.streamPeers())
         .thenReturn(Stream.of(peer1, peer1))
         .thenReturn(Stream.of(peer1, peer1));
@@ -72,7 +77,6 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenStoreNotAvailable() throws Exception {
-    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
     when(chainDataProvider.isStoreAvailable()).thenReturn(false);
 
     handler.handleRequest(request);
@@ -83,8 +87,6 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenStartingUp() throws Exception {
-    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.START_UP);
 
     handler.handleRequest(request);
@@ -95,8 +97,6 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenSyncing() throws Exception {
-    request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
 
     handler.handleRequest(request);
@@ -108,8 +108,6 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldReturnBadRequestWhenWrongTargetPeerCountParam() {
     request.setOptionalQueryParameter(TARGET_PEER_COUNT, "a");
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(IllegalArgumentException.class);
@@ -119,8 +117,6 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
   public void shouldReturnUnavailableWhenTargetPeerCountNotReached() throws Exception {
     request.setOptionalQueryParameter(TARGET_PEER_COUNT, "1234");
     final Eth2Peer peer1 = mock(Eth2Peer.class);
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(eth2P2PNetwork.streamPeers()).thenReturn(Stream.of(peer1)).thenReturn(Stream.of(peer1));
 
     handler.handleRequest(request);
@@ -131,9 +127,31 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
 
   @Test
   public void shouldReturnUnavailableWhenExecutionClientIsNotAvailable() throws Exception {
-    when(chainDataProvider.isStoreAvailable()).thenReturn(true);
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(false);
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  public void shouldReturnUnavailableWheThereAreNoPreparedProposers() throws Exception {
+    request.setOptionalQueryParameter(REQUIRE_PREPARED_PROPOSERS, "true");
+
+    when(nodeDataProvider.getPreparedProposerInfo()).thenReturn(Map.of());
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_SERVICE_UNAVAILABLE);
+    assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  public void shouldReturnUnavailableWheThereAreNoValidatorRegistrations() throws Exception {
+    request.setOptionalQueryParameter(REQUIRE_VALIDATOR_REGISTRATIONS, "true");
+
+    when(nodeDataProvider.getValidatorRegistrationInfo()).thenReturn(Map.of());
 
     handler.handleRequest(request);
 
