@@ -56,12 +56,17 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
 
   @Test
   void engineGetPayload_bellatrixFork() throws ExecutionException, InterruptedException {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
+    final UInt64 bellatrixForkEpoch = UInt64.valueOf(0);
+    final UInt64 capellaForkEpoch = UInt64.valueOf(1);
+    final UInt64 denebForkEpoch = UInt64.valueOf(2);
+    final Spec denebSpecWithForkSchedule =
+        TestSpecFactory.createMinimalWithCapellaAndDenebForkEpoch(capellaForkEpoch, denebForkEpoch);
+
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(denebSpecWithForkSchedule, executionEngineClient);
+    final DataStructureUtil data = new DataStructureUtil(denebSpecWithForkSchedule);
     final ExecutionPayloadContext context = randomContext();
 
-    DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
     final SafeFuture<Response<GetPayloadV3Response>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(
@@ -70,8 +75,10 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                     dataStructureUtil.randomUInt256())));
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
-    final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
-    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
+    final UInt64 bellatrixSlot =
+        denebSpecWithForkSchedule.computeStartSlotAtEpoch(bellatrixForkEpoch);
+    final SafeFuture<ExecutionPayloadWithValue> future =
+        handler.engineGetPayload(context, bellatrixSlot);
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     verify(executionEngineClient, never()).getPayloadV2(any());
     verify(executionEngineClient, never()).getPayloadV1(any());
@@ -82,12 +89,15 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
 
   @Test
   void engineGetPayload_capellaFork() throws ExecutionException, InterruptedException {
-    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
+    final UInt64 capellaForkEpoch = UInt64.valueOf(0);
+    final UInt64 denebForkEpoch = UInt64.valueOf(1);
+    final Spec denebSpecWithForkSchedule =
+        TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(capellaSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(denebSpecWithForkSchedule, executionEngineClient);
+    final DataStructureUtil data = new DataStructureUtil(denebSpecWithForkSchedule);
     final ExecutionPayloadContext context = randomContext();
 
-    DataStructureUtil data = new DataStructureUtil(capellaSpec);
     final SafeFuture<Response<GetPayloadV3Response>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(
@@ -96,8 +106,9 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                     UInt256.MAX_VALUE)));
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
-    final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
-    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
+    final UInt64 capellaSlot = denebSpecWithForkSchedule.computeStartSlotAtEpoch(capellaForkEpoch);
+    final SafeFuture<ExecutionPayloadWithValue> future =
+        handler.engineGetPayload(context, capellaSlot);
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     assertThat(future).isCompleted();
     assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadCapella.class);
@@ -125,10 +136,16 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
 
   @Test
   void engineNewPayload_bellatrixFork() {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
-    DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
+    final UInt64 capellaForkEpoch = UInt64.valueOf(1);
+    final UInt64 denebForkEpoch = UInt64.valueOf(2);
+    final Spec denebSpecStartingAtBellatrix =
+        TestSpecFactory.createMinimalWithCapellaAndDenebForkEpoch(capellaForkEpoch, denebForkEpoch);
+
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(
+            denebSpecStartingAtBellatrix, executionEngineClient);
+    final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtBellatrix);
+
     final ExecutionPayload payload = data.randomExecutionPayload();
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
@@ -145,10 +162,13 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
 
   @Test
   void engineNewPayload_capellaFork() {
-    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
-    DataStructureUtil data = new DataStructureUtil(capellaSpec);
+    final Spec denebSpecStartingAtCapella =
+        TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.ONE);
+
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(capellaSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(denebSpecStartingAtCapella, executionEngineClient);
+    final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtCapella);
+
     final ExecutionPayload payload = data.randomExecutionPayload();
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
