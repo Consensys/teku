@@ -136,7 +136,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldReturnUnavailableWheThereAreNoPreparedProposers() throws Exception {
+  public void shouldReturnUnavailableWhenThereAreNoPreparedProposers() throws Exception {
     request.setOptionalQueryParameter(REQUIRE_PREPARED_PROPOSERS, "true");
 
     when(nodeDataProvider.getPreparedProposerInfo()).thenReturn(Map.of());
@@ -148,7 +148,7 @@ public class ReadinessTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldReturnUnavailableWheThereAreNoValidatorRegistrations() throws Exception {
+  public void shouldReturnUnavailableWhenThereAreNoValidatorRegistrations() throws Exception {
     request.setOptionalQueryParameter(REQUIRE_VALIDATOR_REGISTRATIONS, "true");
 
     when(nodeDataProvider.getValidatorRegistrationInfo()).thenReturn(Map.of());

@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
-import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
@@ -94,10 +93,10 @@ public class Readiness extends RestApiEndpoint {
   }
 
   private boolean belowTargetPeerCount(final RestApiRequest request) {
-    final Optional<Integer> targetPeerCount =
-        request.getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER);
-    return targetPeerCount.isPresent()
-        && networkDataProvider.getPeerCount() < targetPeerCount.get();
+    return request
+        .getOptionalQueryParameter(TARGET_PEER_COUNT_PARAMETER)
+        .map(targetPeerCount -> networkDataProvider.getPeerCount() < targetPeerCount)
+        .orElse(false);
   }
 
   private boolean requiredNodeDataIsAvailable(final RestApiRequest request) {
