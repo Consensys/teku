@@ -23,8 +23,8 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
-import tech.pegasys.teku.beacon.sync.fetch.MilestoneBasedFetchBlockTaskFactory;
+import tech.pegasys.teku.beacon.sync.fetch.DefaultFetchTaskFactory;
+import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncService;
@@ -110,7 +110,7 @@ public class SyncingNodeManager {
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
-    ForkChoice forkChoice =
+    final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             new InlineEventThread(),
@@ -118,7 +118,7 @@ public class SyncingNodeManager {
             BlobsSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             transitionBlockValidator);
-    BlockImporter blockImporter =
+    final BlockImporter blockImporter =
         new BlockImporter(
             spec,
             eventChannels.getPublisher(BlockImportNotifications.class),
@@ -127,7 +127,7 @@ public class SyncingNodeManager {
             WeakSubjectivityFactory.lenientValidator(),
             new ExecutionLayerChannelStub(spec, false, Optional.empty()));
 
-    BlockValidator blockValidator =
+    final BlockValidator blockValidator =
         new BlockValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
     final PendingPool<SignedBeaconBlock> pendingBlocks =
@@ -135,7 +135,7 @@ public class SyncingNodeManager {
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronized(500);
-    BlockManager blockManager =
+    final BlockManager blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
@@ -165,7 +165,7 @@ public class SyncingNodeManager {
 
     final Eth2P2PNetwork eth2P2PNetwork = networkBuilder.startNetwork();
 
-    SyncManager syncManager =
+    final SyncManager syncManager =
         SyncManager.create(
             asyncRunner,
             eth2P2PNetwork,
@@ -175,10 +175,9 @@ public class SyncingNodeManager {
             new NoOpMetricsSystem(),
             spec);
 
-    ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
+    final ForwardSyncService syncService = new SinglePeerSyncService(syncManager, recentChainData);
 
-    final FetchBlockTaskFactory fetchBlockTaskFactory =
-        new MilestoneBasedFetchBlockTaskFactory(spec, eth2P2PNetwork);
+    final FetchTaskFactory fetchBlockTaskFactory = new DefaultFetchTaskFactory(eth2P2PNetwork);
 
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(
@@ -222,7 +221,7 @@ public class SyncingNodeManager {
     return syncService;
   }
 
-  public void setSlot(UInt64 slot) {
+  public void setSlot(final UInt64 slot) {
     eventChannels().getPublisher(SlotEventsChannel.class).onSlot(slot);
     chainUtil().setSlot(slot);
   }
