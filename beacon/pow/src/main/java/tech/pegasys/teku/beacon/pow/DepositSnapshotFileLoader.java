@@ -58,9 +58,9 @@ public class DepositSnapshotFileLoader {
         snapshotPath -> {
           final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(snapshotPath);
           try {
-            STATUS_LOG.loadingDepositSnapshot(sanitizedResource);
+            STATUS_LOG.loadingDepositSnapshotResource(sanitizedResource);
             final DepositTreeSnapshot depositSnapshot = loadFromUrl(snapshotPath);
-            STATUS_LOG.loadedDepositSnapshotResource(
+            STATUS_LOG.onDepositSnapshot(
                 depositSnapshot.getDepositCount(), depositSnapshot.getExecutionBlockHash());
             return depositSnapshot;
           } catch (IOException e) {

@@ -28,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -66,13 +67,20 @@ public class CombinedChainDataClient {
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
 
+  private final EarliestAvailableBlockSlot earliestAvailableBlockSlot;
+
   public CombinedChainDataClient(
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
-      final Spec spec) {
+      final Spec spec,
+      final TimeProvider timeProvider,
+      int earliestAvailableBlockSlotFrequency) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
+    this.earliestAvailableBlockSlot =
+        new EarliestAvailableBlockSlot(
+            historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
   }
 
   /**
@@ -458,7 +466,7 @@ public class CombinedChainDataClient {
 
   /** @return The earliest available block's slot */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
-    return historicalChainData.getEarliestAvailableBlockSlot();
+    return earliestAvailableBlockSlot.get();
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot) {

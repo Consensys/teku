@@ -17,14 +17,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-- Trigger the beacon nodes fallback mechanism when the execution layer is offline
-- `--beacon-liveness-tracking-enabled` option (disabled by default) can be used instead of `--Xbeacon-liveness-tracking-enabled`
-- Added an optional query parameter `locally_submitted` to `/eth/v1/beacon/pool/bls_to_execution_changes` to allow users to query only bls changes submitted to the current node.
-- Added `/eth/v1/builder/states/{state_id}/expected_withdrawals` rest api endpoint.
-- Added `/eth/v1/beacon/rewards/sync_committee/{block_id}` rest api endpoint.
-- Added Capella fork information for Goerli network configuration.
-- Added `validator_scheduled_sync_committee_duties_current` metric - the number of validators that you have active with current sync committee duties
-- Added `validator_current_sync_committee_last_epoch` metric - the last epoch of the current sync committee.
 
 ### Bug Fixes
-- Included All forks in fork schedule if they're defined in configuration.

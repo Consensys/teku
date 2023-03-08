@@ -42,6 +42,7 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
@@ -120,7 +121,9 @@ public class HistoricalBatchFetcherTest {
     firstBlockInBatch = blockBatch.get(0);
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
     final RecentChainData recentChainData = storageSystem.recentChainData();
-    chainDataClient = new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+    chainDataClient =
+        new CombinedChainDataClient(
+            recentChainData, historicalChainData, spec, new SystemTimeProvider(), 0);
 
     peer = RespondingEth2Peer.create(spec, chainBuilder);
     fetcher =
