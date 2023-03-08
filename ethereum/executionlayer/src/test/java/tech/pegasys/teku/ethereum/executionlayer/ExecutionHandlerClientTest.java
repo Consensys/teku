@@ -19,7 +19,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.apache.tuweni.bytes.Bytes32;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -68,7 +67,6 @@ public abstract class ExecutionHandlerClientTest {
     verify(executionEngineClient).getPowBlock(blockHash);
   }
 
-  @NotNull
   private PowBlock createPowBlock(final Bytes32 blockHash) {
     return new PowBlock(
         blockHash,
