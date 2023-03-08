@@ -77,8 +77,6 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private volatile Optional<UInt64> nodeStartEpoch = Optional.empty();
   private final AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
 
-  private volatile SafeFuture<Void> ongoingReportingTasks = SafeFuture.COMPLETE;
-
   public DefaultPerformanceTracker(
       CombinedChainDataClient combinedChainDataClient,
       StatusLogger statusLogger,
@@ -103,12 +101,6 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
   @Override
   public void onSlot(UInt64 slot) {
-    synchronized (this) {
-      if (!ongoingReportingTasks.isDone()) {
-        return;
-      }
-      ongoingReportingTasks = new SafeFuture<>();
-    }
     // Ensure a consistent view as the field is volatile.
     final Optional<UInt64> nodeStartEpoch = this.nodeStartEpoch;
     if (nodeStartEpoch.isEmpty() || combinedChainDataClient.getChainHead().isEmpty()) {
@@ -144,8 +136,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       reportingTasks.add(reportSyncCommitteePerformance(currentEpoch));
     }
 
-    ongoingReportingTasks = SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new));
-    ongoingReportingTasks.ifExceptionGetsHereRaiseABug();
+    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<?> reportBlockPerformance(final UInt64 currentEpoch) {

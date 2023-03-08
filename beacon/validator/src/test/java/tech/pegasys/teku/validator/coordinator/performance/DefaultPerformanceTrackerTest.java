@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
@@ -361,25 +360,6 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(epoch));
     verify(log).performance(performance.toString());
     verify(validatorPerformanceMetrics).updateSyncCommitteePerformance(performance);
-  }
-
-  @Test
-  void shouldNotOverlapExecutions() {
-    final SafeFuture<SyncCommitteePerformance> syncCommitteePerformance = new SafeFuture<>();
-    final UInt64 epoch = UInt64.valueOf(2);
-    when(syncCommitteePerformanceTracker.calculatePerformance(epoch.minus(1)))
-        .thenReturn(syncCommitteePerformance);
-
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(epoch));
-    verify(log, never()).performance(anyString());
-    performanceTracker.onSlot(spec.computeStartSlotAtEpoch(epoch));
-    verify(log, never()).performance(anyString());
-
-    final SyncCommitteePerformance performance = new SyncCommitteePerformance(epoch, 10, 9, 8, 7);
-    syncCommitteePerformance.complete(performance);
-
-    verify(log, times(1)).performance(performance.toString());
-    verify(validatorPerformanceMetrics, times(1)).updateSyncCommitteePerformance(performance);
   }
 
   private Attestation createAttestation(
