@@ -15,8 +15,6 @@ package tech.pegasys.teku.beacon.sync.fetch;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 public final class FetchBlockResult {
 
@@ -29,31 +27,18 @@ public final class FetchBlockResult {
 
   private final Status status;
   private final Optional<SignedBeaconBlock> block;
-  private final Optional<BlobsSidecar> blobsSidecar;
 
-  private FetchBlockResult(
-      final Status status,
-      final Optional<SignedBeaconBlock> block,
-      final Optional<BlobsSidecar> blobsSidecar) {
+  private FetchBlockResult(final Status status, final Optional<SignedBeaconBlock> block) {
     this.status = status;
     this.block = block;
-    this.blobsSidecar = blobsSidecar;
   }
 
   public static FetchBlockResult createSuccessful(final SignedBeaconBlock block) {
-    return new FetchBlockResult(Status.SUCCESSFUL, Optional.of(block), Optional.empty());
-  }
-
-  public static FetchBlockResult createSuccessful(
-      final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar) {
-    return new FetchBlockResult(
-        Status.SUCCESSFUL,
-        Optional.of(blockAndBlobsSidecar.getSignedBeaconBlock()),
-        Optional.of(blockAndBlobsSidecar.getBlobsSidecar()));
+    return new FetchBlockResult(Status.SUCCESSFUL, Optional.of(block));
   }
 
   public static FetchBlockResult createFailed(final Status failureStatus) {
-    return new FetchBlockResult(failureStatus, Optional.empty(), Optional.empty());
+    return new FetchBlockResult(failureStatus, Optional.empty());
   }
 
   public boolean isSuccessful() {
@@ -62,10 +47,6 @@ public final class FetchBlockResult {
 
   public Optional<SignedBeaconBlock> getBlock() {
     return block;
-  }
-
-  public Optional<BlobsSidecar> getBlobsSidecar() {
-    return blobsSidecar;
   }
 
   public FetchBlockResult.Status getStatus() {
