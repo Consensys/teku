@@ -13,6 +13,20 @@
         "example" : "1",
         "format" : "integer"
       }
+    }, {
+      "name" : "require_prepared_proposers",
+      "in" : "query",
+      "schema" : {
+        "type" : "boolean",
+        "description" : "Returns 503 status code if set to true and no proposers have been prepared"
+      }
+    }, {
+      "name" : "require_validator_registrations",
+      "in" : "query",
+      "schema" : {
+        "type" : "boolean",
+        "description" : "Returns 503 status code if set to true and no validators have been registered with the builder"
+      }
     } ],
     "responses" : {
       "200" : {
