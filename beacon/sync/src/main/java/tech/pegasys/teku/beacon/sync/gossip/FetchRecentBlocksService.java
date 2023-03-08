@@ -25,20 +25,17 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
+import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.RetryDelayFunction;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
-public class FetchRecentBlocksService extends Service
-    implements RecentBlockFetcherService, SlotEventsChannel {
+public class FetchRecentBlocksService extends Service implements RecentBlockFetcherService {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;
@@ -54,36 +51,30 @@ public class FetchRecentBlocksService extends Service
   private final Queue<FetchBlockTask> pendingTasks = new ConcurrentLinkedQueue<>();
   private final Collection<FetchBlockTask> activeTasks = new ConcurrentLinkedQueue<>();
 
-  private final FetchBlockTaskFactory fetchBlockTaskFactory;
+  private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
   private final AsyncRunner asyncRunner;
-
-  private volatile UInt64 currentSlot = UInt64.ZERO;
 
   FetchRecentBlocksService(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final ForwardSync forwardSync,
-      final FetchBlockTaskFactory fetchBlockTaskFactory,
+      final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
     this.asyncRunner = asyncRunner;
     this.forwardSync = forwardSync;
     this.maxConcurrentRequests = maxConcurrentRequests;
     this.pendingBlocksPool = pendingBlocksPool;
-    this.fetchBlockTaskFactory = fetchBlockTaskFactory;
+    this.fetchTaskFactory = fetchTaskFactory;
   }
 
   public static FetchRecentBlocksService create(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final ForwardSync forwardSync,
-      final FetchBlockTaskFactory fetchBlockTaskFactory) {
+      final FetchTaskFactory fetchTaskFactory) {
     return new FetchRecentBlocksService(
-        asyncRunner,
-        pendingBlocksPool,
-        forwardSync,
-        fetchBlockTaskFactory,
-        MAX_CONCURRENT_REQUESTS);
+        asyncRunner, pendingBlocksPool, forwardSync, fetchTaskFactory, MAX_CONCURRENT_REQUESTS);
   }
 
   @Override
@@ -127,7 +118,7 @@ public class FetchRecentBlocksService extends Service
       // We've already got this block
       return;
     }
-    final FetchBlockTask task = fetchBlockTaskFactory.create(currentSlot, blockRoot);
+    final FetchBlockTask task = fetchTaskFactory.createFetchBlockTask(blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {
       // We're already tracking this task
       task.cancel();
@@ -143,11 +134,6 @@ public class FetchRecentBlocksService extends Service
     if (task != null) {
       task.cancel();
     }
-  }
-
-  @Override
-  public void onSlot(final UInt64 slot) {
-    currentSlot = slot;
   }
 
   private synchronized void checkTasks() {

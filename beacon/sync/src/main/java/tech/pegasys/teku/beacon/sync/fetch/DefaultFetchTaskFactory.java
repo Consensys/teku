@@ -14,9 +14,19 @@
 package tech.pegasys.teku.beacon.sync.fetch;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 
-public interface FetchBlockTaskFactory {
+public class DefaultFetchTaskFactory implements FetchTaskFactory {
 
-  FetchBlockTask create(UInt64 slot, Bytes32 blockRoot);
+  private final P2PNetwork<Eth2Peer> eth2Network;
+
+  public DefaultFetchTaskFactory(final P2PNetwork<Eth2Peer> eth2Network) {
+    this.eth2Network = eth2Network;
+  }
+
+  @Override
+  public FetchBlockTask createFetchBlockTask(final Bytes32 blockRoot) {
+    return new FetchBlockTask(eth2Network, blockRoot);
+  }
 }
