@@ -498,11 +498,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      finalizedUpdater.pruneFinalizedBlocks(firstSlotToPrune, lastSlotToPrune);
-    }
-
-    @Override
     public void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots) {
       finalizedUpdater.addNonCanonicalRootAtSlot(slot, blockRoots);
     }

@@ -353,14 +353,16 @@ public class KvStoreDatabase implements Database {
           batchStart,
           lastSlotInBatch,
           lastSlotToPrune);
-      try (final FinalizedUpdater updater = finalizedUpdater()) {
-        updater.pruneFinalizedBlocks(batchStart, lastSlotInBatch);
-        updater.commit();
+      final Map<UInt64, Bytes32> candidates;
+      try (final Stream<SignedBeaconBlock> stream =
+          dao.streamFinalizedBlocks(batchStart, lastSlotInBatch)) {
+        candidates =
+            stream.collect(
+                Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
       }
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        LOG.trace("Sleep interrupted", e);
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        candidates.forEach(updater::deleteFinalizedBlock);
+        updater.commit();
       }
     }
   }

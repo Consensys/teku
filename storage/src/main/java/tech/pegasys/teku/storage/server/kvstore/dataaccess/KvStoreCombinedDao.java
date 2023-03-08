@@ -215,8 +215,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
 
-    void pruneFinalizedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
-
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
     void addReconstructedFinalizedState(final Bytes32 blockRoot, final BeaconState state);
