@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
@@ -48,7 +49,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class HistoricalBatchFetcherTest {
-  private final Spec spec = TestSpecFactory.createDefault();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault();
   private final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
