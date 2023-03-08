@@ -33,7 +33,6 @@ public class Constants {
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
   // TODO: remove when blobs decoupling sync is implemented
   public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
-  public static final int MAX_BLOBS_PER_BLOCK = 4;
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
