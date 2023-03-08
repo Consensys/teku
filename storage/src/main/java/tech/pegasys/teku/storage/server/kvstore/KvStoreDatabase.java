@@ -343,13 +343,26 @@ public class KvStoreDatabase implements Database {
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
-    for (UInt64 batchStart = earliestBlockSlot.orElse(lastSlotToPrune);
-        batchStart.isLessThanOrEqualTo(lastSlotToPrune);
-        batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
-      try (final FinalizedUpdater updater = finalizedUpdater()) {
-        updater.pruneFinalizedBlocks(
-            batchStart, lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE)));
-        updater.commit();
+    for (UInt64 lastSlotInBatch = earliestBlockSlot.orElse(lastSlotToPrune);
+        lastSlotInBatch.isLessThan(lastSlotToPrune);
+        lastSlotInBatch = lastSlotToPrune.min(lastSlotInBatch.plus(PRUNE_BATCH_SIZE))) {
+      LOG.debug(
+          "Pruning finalized blocks by batch from to slot {}, target last slot is {}",
+          lastSlotInBatch,
+          lastSlotToPrune);
+      final Map<UInt64, Bytes32> blocksToPrune;
+      final UInt64 streamLimit = lastSlotInBatch;
+      try (final Stream<Map.Entry<Bytes32, UInt64>> stream =
+          dao.getFinalizedBlockRoots()
+              .filter(entry -> entry.getValue().isLessThanOrEqualTo(streamLimit))) {
+        blocksToPrune =
+            stream.collect(Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
+      }
+      if (blocksToPrune.size() > 0) {
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          blocksToPrune.forEach(updater::deleteFinalizedBlock);
+          updater.commit();
+        }
       }
     }
   }

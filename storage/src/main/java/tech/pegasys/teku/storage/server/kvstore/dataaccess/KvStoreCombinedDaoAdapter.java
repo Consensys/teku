@@ -270,6 +270,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedBlockRoots() {
+    return finalizedDao.getFinalizedBlockRoots();
+  }
+
+  @Override
   public void ingest(
       final KvStoreCombinedDao dao, final int batchSize, final Consumer<String> logger) {
     throw new UnsupportedOperationException("Cannot migrate to a split database format");
@@ -495,11 +501,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       finalizedUpdater.deleteNonCanonicalBlockOnly(blockRoot);
-    }
-
-    @Override
-    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      finalizedUpdater.pruneFinalizedBlocks(firstSlotToPrune, lastSlotToPrune);
     }
 
     @Override
