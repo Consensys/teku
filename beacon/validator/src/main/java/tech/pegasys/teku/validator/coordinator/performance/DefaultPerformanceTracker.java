@@ -136,7 +136,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       reportingTasks.add(reportSyncCommitteePerformance(currentEpoch));
     }
 
-    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).ifExceptionGetsHereRaiseABug();
+    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).join();
   }
 
   private SafeFuture<?> reportBlockPerformance(final UInt64 currentEpoch) {
