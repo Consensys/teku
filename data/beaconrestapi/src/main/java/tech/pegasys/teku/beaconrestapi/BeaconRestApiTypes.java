@@ -35,6 +35,10 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_STATU
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_VALIDATOR_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARENT_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.REQUIRE_PREPARED_PROPOSERS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.REQUIRE_PREPARED_PROPOSERS_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.REQUIRE_VALIDATOR_REGISTRATIONS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.REQUIRE_VALIDATOR_REGISTRATIONS_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.START_PERIOD;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.STATUS;
@@ -179,6 +183,16 @@ public class BeaconRestApiTypes {
   public static final ParameterMetadata<Integer> TARGET_PEER_COUNT_PARAMETER =
       new ParameterMetadata<>(
           TARGET_PEER_COUNT, INTEGER_TYPE.withDescription(TARGET_PEER_COUNT_DESCRIPTION));
+
+  public static final ParameterMetadata<Boolean> REQUIRE_PREPARED_PROPOSERS_PARAMETER =
+      new ParameterMetadata<>(
+          REQUIRE_PREPARED_PROPOSERS,
+          BOOLEAN_TYPE.withDescription(REQUIRE_PREPARED_PROPOSERS_DESCRIPTION));
+
+  public static final ParameterMetadata<Boolean> REQUIRE_VALIDATOR_REGISTRATIONS_PARAMETER =
+      new ParameterMetadata<>(
+          REQUIRE_VALIDATOR_REGISTRATIONS,
+          BOOLEAN_TYPE.withDescription(REQUIRE_VALIDATOR_REGISTRATIONS_DESCRIPTION));
 
   public static final ParameterMetadata<String> TOPICS_PARAMETER =
       new ParameterMetadata<>(

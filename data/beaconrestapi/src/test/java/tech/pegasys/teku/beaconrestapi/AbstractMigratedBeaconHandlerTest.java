@@ -19,6 +19,7 @@ import java.util.function.IntSupplier;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.NetworkDataProvider;
+import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beacon.sync.SyncService;
@@ -51,6 +52,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
 
   protected ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
+  protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ExecutionClientDataProvider executionClientDataProvider =
       mock(ExecutionClientDataProvider.class);
 
