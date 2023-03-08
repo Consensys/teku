@@ -18,8 +18,10 @@ import static tech.pegasys.teku.infrastructure.events.TestExceptionHandler.TEST_
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
 import tech.pegasys.teku.beacon.sync.fetch.MilestoneBasedFetchBlockTaskFactory;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -61,6 +65,7 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -122,18 +127,21 @@ public class SyncingNodeManager {
             WeakSubjectivityFactory.lenientValidator(),
             new ExecutionLayerChannelStub(spec, false, Optional.empty()));
 
-    BlockValidator blockValidator = new BlockValidator(spec, recentChainData);
+    BlockValidator blockValidator =
+        new BlockValidator(
+            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         new PendingPoolFactory(new NoOpMetricsSystem()).createForBlocks(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
+    final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronized(500);
     BlockManager blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            BlobsSidecarManager.NOOP,
             pendingBlocks,
             futureBlocks,
+            invalidBlockRoots,
             blockValidator,
             new SystemTimeProvider(),
             EVENT_LOG,

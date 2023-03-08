@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
@@ -64,7 +63,6 @@ public class FetchRecentBlocksServiceTest {
   private final List<FetchBlockTask> tasks = new ArrayList<>();
   private final List<SafeFuture<FetchBlockResult>> taskFutures = new ArrayList<>();
   private final List<SignedBeaconBlock> importedBlocks = new ArrayList<>();
-  private final List<BlobsSidecar> importedBlobsSidecars = new ArrayList<>();
 
   private FetchRecentBlocksService recentBlockFetcher;
 
@@ -79,11 +77,7 @@ public class FetchRecentBlocksServiceTest {
             maxConcurrentRequests);
 
     lenient().when(fetchBlockTaskFactory.create(any(), any())).thenAnswer(this::createMockTask);
-    recentBlockFetcher.subscribeBlockFetched(
-        (block, blobsSidecar) -> {
-          blobsSidecar.ifPresent(importedBlobsSidecars::add);
-          importedBlocks.add(block);
-        });
+    recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
@@ -108,14 +102,12 @@ public class FetchRecentBlocksServiceTest {
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
-    assertThat(importedBlobsSidecars).isEmpty();
     assertTaskCounts(0, 0, 0);
   }
 
@@ -126,18 +118,15 @@ public class FetchRecentBlocksServiceTest {
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar(UInt64.ONE);
     final SignedBeaconBlock block = blockAndBlobsSidecar.getSignedBeaconBlock();
-    final BlobsSidecar blobsSidecar = blockAndBlobsSidecar.getBlobsSidecar();
 
     future.complete(FetchBlockResult.createSuccessful(blockAndBlobsSidecar));
 
     assertThat(importedBlocks).containsExactly(block);
-    assertThat(importedBlobsSidecars).containsExactly(blobsSidecar);
     assertTaskCounts(0, 0, 0);
   }
 
@@ -149,14 +138,12 @@ public class FetchRecentBlocksServiceTest {
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     future.complete(FetchBlockResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
-    assertThat(importedBlobsSidecars).isEmpty();
     assertTaskCounts(0, 0, 0);
   }
 
@@ -168,7 +155,6 @@ public class FetchRecentBlocksServiceTest {
 
     assertTaskCounts(0, 0, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
   }
 
   @Test
@@ -184,7 +170,6 @@ public class FetchRecentBlocksServiceTest {
     // Task should be removed
     assertTaskCounts(0, 0, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
   }
 
   @Test
@@ -194,7 +179,6 @@ public class FetchRecentBlocksServiceTest {
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     future.complete(FetchBlockResult.createFailed(Status.FETCH_FAILED));
@@ -217,7 +201,6 @@ public class FetchRecentBlocksServiceTest {
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     future.complete(FetchBlockResult.createFailed(Status.FETCH_FAILED));
@@ -245,7 +228,6 @@ public class FetchRecentBlocksServiceTest {
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
-    assertThat(importedBlobsSidecars).isEmpty();
 
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     future.complete(FetchBlockResult.createFailed(Status.NO_AVAILABLE_PEERS));

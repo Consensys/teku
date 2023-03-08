@@ -17,8 +17,8 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.base.Throwables;
-import com.launchdarkly.eventsource.EventHandler;
 import com.launchdarkly.eventsource.MessageEvent;
+import com.launchdarkly.eventsource.background.BackgroundEventHandler;
 import java.net.SocketTimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-class EventSourceHandler implements EventHandler {
+class EventSourceHandler implements BackgroundEventHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 

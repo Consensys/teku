@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -38,6 +37,7 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRA
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
@@ -47,6 +47,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -56,8 +57,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -85,8 +84,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 public class BlockManagerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
-  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
@@ -99,6 +97,8 @@ public class BlockManagerTest {
           .createForBlocks(spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
+  private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
+      LimitedMap.createSynchronized(500);
 
   private final StorageSystem localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final RecentChainData localRecentChainData = localChain.recentChainData();
@@ -131,24 +131,15 @@ public class BlockManagerTest {
       new BlockManager(
           localRecentChainData,
           blockImporter,
-          blobsSidecarManager,
           pendingBlocks,
           futureBlocks,
+          invalidBlockRoots,
           blockValidator,
           timeProvider,
           eventLogger,
           Optional.of(mock(BlockImportMetrics.class)));
 
   private UInt64 currentSlot = GENESIS_SLOT;
-
-  private final List<FailureReason> nonDiscardingBlobsFailureReasons =
-      List.of(
-          FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION,
-          FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING,
-          FailureReason.BLOCK_IS_FROM_FUTURE,
-          FailureReason.UNKNOWN_PARENT);
-  private final List<FailureReason> nonStoringBlobsFailureReasons =
-      List.of(FailureReason.DESCENDANT_OF_INVALID_BLOCK);
 
   @BeforeAll
   public static void initSession() {
@@ -284,9 +275,9 @@ public class BlockManagerTest {
         new BlockManager(
             localRecentChainData,
             blockImporter,
-            BlobsSidecarManager.NOOP,
             pendingBlocks,
             futureBlocks,
+            invalidBlockRoots,
             mock(BlockValidator.class),
             timeProvider,
             eventLogger,
@@ -586,7 +577,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.validate(any(), any()))
+    when(blockValidator.validate(any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 3000ms
@@ -629,7 +620,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.validate(any(), any()))
+    when(blockValidator.validate(any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 500ms
@@ -643,89 +634,26 @@ public class BlockManagerTest {
     verifyNoInteractions(eventLogger);
   }
 
-  @Test
-  void onGossipWithBlobs_shouldStoreValidatedBlobs() {
-    final SignedBeaconBlock block =
-        localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
-    final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-
-    final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getSignedBeaconBlockAndBlobsSidecarSchema()
-            .create(block, blobsSidecar);
-
-    when(blockValidator.validate(block, Optional.of(blobsSidecar)))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-
-    blockManager.validateAndImportBlockAndBlobsSidecar(blockAndBlobsSidecar);
-
-    verify(blobsSidecarManager).storeUnconfirmedValidatedBlobsSidecar(blobsSidecar);
-    verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
-  }
-
-  @Test
-  void onBlockImportWithoutBlobs_shouldNotInteractWithBlobsManager() {
-    final SignedBeaconBlock block =
-        localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
-
-    blockManager.importBlock(block, Optional.empty());
-
-    verifyNoInteractions(blobsSidecarManager);
-  }
-
   private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {
-    BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    assertThat(blockManager.importBlock(block, Optional.of(blobsSidecar)))
+    assertThat(blockManager.importBlock(block))
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
-
-    if (nonStoringBlobsFailureReasons.contains(failureReason)) {
-      verify(blobsSidecarManager, never()).storeUnconfirmedBlobsSidecar(blobsSidecar);
-    } else {
-      verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar);
-    }
-    if (nonDiscardingBlobsFailureReasons.contains(failureReason)) {
-      // no discard for these reason
-      verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
-    } else {
-      verify(blobsSidecarManager, atLeastOnce()).discardBlobsSidecarByBlock(block);
-    }
   }
 
   private void assertImportBlockWithResult(
       SignedBeaconBlock block, BlockImportResult importResult) {
-    BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    assertThat(blockManager.importBlock(block, Optional.of(blobsSidecar)))
+    assertThat(blockManager.importBlock(block))
         .isCompletedWithValueMatching(result -> result.equals(importResult));
-    if (nonStoringBlobsFailureReasons.contains(importResult.getFailureReason())) {
-      verify(blobsSidecarManager, never()).storeUnconfirmedBlobsSidecar(blobsSidecar);
-    } else {
-      verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar);
-    }
-    if (nonDiscardingBlobsFailureReasons.contains(importResult.getFailureReason())) {
-      // no discard for these reasons
-      verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
-    } else {
-      verify(blobsSidecarManager, atLeastOnce()).discardBlobsSidecarByBlock(block);
-    }
   }
 
   private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
-    BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    assertThat(blockManager.validateAndImportBlock(block, Optional.of(blobsSidecar)))
+    assertThat(blockManager.validateAndImportBlock(block))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
-    verify(blockValidator, never()).validate(block, Optional.of(blobsSidecar));
-    verify(blobsSidecarManager, never()).storeUnconfirmedBlobsSidecar(blobsSidecar);
-    verify(blobsSidecarManager, atLeastOnce()).discardBlobsSidecarByBlock(block);
+    verify(blockValidator, never()).validate(block);
   }
 
   private void assertImportBlockSuccessfully(SignedBeaconBlock block) {
-    BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    assertThat(blockManager.importBlock(block, Optional.of(blobsSidecar)))
+    assertThat(blockManager.importBlock(block))
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-    verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar);
-    verify(blobsSidecarManager, never()).discardBlobsSidecarByBlock(block);
   }
 
   private UInt64 incrementSlot() {

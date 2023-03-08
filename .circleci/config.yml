@@ -235,7 +235,7 @@ jobs:
           name: Install trivy
           command: |
             apk add --update-cache --upgrade curl bash
-            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.37.3
       - run:
           name: Scan with trivy
           shell: /bin/sh

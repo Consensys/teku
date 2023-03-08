@@ -36,10 +36,10 @@ import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
+import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
 import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeEndpoints;
-import tech.pegasys.teku.validator.remote.RemoteBeaconNodeSyncingChannel;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.eventsource.EventSourceBeaconChainEventAdapter;
@@ -84,8 +84,8 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final EventChannels eventChannels = serviceConfig.getEventChannels();
     final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
 
-    final RemoteBeaconNodeSyncingChannel remoteBeaconNodeSyncingChannel =
-        eventChannels.getPublisher(RemoteBeaconNodeSyncingChannel.class);
+    final BeaconNodeReadinessChannel beaconNodeReadinessChannel =
+        eventChannels.getPublisher(BeaconNodeReadinessChannel.class);
 
     final ValidatorTimingChannel validatorTimingChannel =
         eventChannels.getPublisher(ValidatorTimingChannel.class);
@@ -95,7 +95,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             dutiesProviderPrimaryValidatorApiChannel,
             dutiesProviderFailoverValidatorApiChannel,
             ValidatorLogger.VALIDATOR_LOGGER,
-            remoteBeaconNodeSyncingChannel);
+            beaconNodeReadinessChannel);
 
     eventChannels.subscribe(ValidatorTimingChannel.class, beaconNodeReadinessManager);
 
@@ -160,7 +160,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             serviceConfig.getMetricsSystem(),
             validatorConfig.generateEarlyAttestations());
 
-    eventChannels.subscribe(RemoteBeaconNodeSyncingChannel.class, beaconChainEventAdapter);
+    eventChannels.subscribe(BeaconNodeReadinessChannel.class, beaconChainEventAdapter);
 
     return new SentryBeaconNodeApi(beaconChainEventAdapter, sentryValidatorApi);
   }

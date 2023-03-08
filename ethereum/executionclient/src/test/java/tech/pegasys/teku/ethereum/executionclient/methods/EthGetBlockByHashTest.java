@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.tuweni.bytes.Bytes32;
@@ -93,11 +92,11 @@ class EthGetBlockByHashTest {
             dataStructureUtil.randomUInt64());
 
     when(executionEngineClient.getPowBlock(eq(blockHash)))
-        .thenReturn(dummySuccessfulResponse(Optional.of(block)));
+        .thenReturn(dummySuccessfulResponse(block));
 
     final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
 
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(Optional.of(block));
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(block);
 
     verify(executionEngineClient).getPowBlock(eq(blockHash));
     verifyNoMoreInteractions(executionEngineClient);
@@ -108,21 +107,21 @@ class EthGetBlockByHashTest {
     final Bytes32 blockHash = Bytes32.random();
 
     when(executionEngineClient.getPowBlock(eq(blockHash)))
-        .thenReturn(dummySuccessfulResponse(Optional.empty()));
+        .thenReturn(dummySuccessfulResponse(null));
 
     final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
 
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(Optional.empty());
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(null);
 
     verify(executionEngineClient).getPowBlock(eq(blockHash));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
-  private SafeFuture<Optional<PowBlock>> dummySuccessfulResponse(Optional<PowBlock> block) {
+  private SafeFuture<PowBlock> dummySuccessfulResponse(PowBlock block) {
     return SafeFuture.completedFuture(block);
   }
 
-  private SafeFuture<Optional<PowBlock>> dummyFailedResponse(final String errorMessage) {
+  private SafeFuture<PowBlock> dummyFailedResponse(final String errorMessage) {
     return SafeFuture.failedFuture(new RuntimeException(errorMessage));
   }
 }

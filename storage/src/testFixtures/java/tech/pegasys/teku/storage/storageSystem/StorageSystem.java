@@ -18,12 +18,11 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 
 import tech.pegasys.teku.beacon.pow.api.TrackingEth1EventsChannel;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManagerImpl;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
@@ -110,16 +109,10 @@ public class StorageSystem implements AutoCloseable {
 
     // Create combined client
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, chainStorageServer, spec);
+        new CombinedChainDataClient(
+            recentChainData, chainStorageServer, spec, new SystemTimeProvider(), 0);
 
-    final BlobsSidecarManager blobsSidecarManager;
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      blobsSidecarManager =
-          new BlobsSidecarManagerImpl(
-              spec, recentChainData, chainStorageServer, chainStorageServer);
-    } else {
-      blobsSidecarManager = BlobsSidecarManager.NOOP;
-    }
+    final BlobsSidecarManager blobsSidecarManager = BlobsSidecarManager.NOOP;
 
     // Return storage system
     return new StorageSystem(

@@ -109,9 +109,4 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
     handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
     verify(executionEngineClient).forkChoiceUpdatedV1(forkChoiceStateV1, payloadAttributes);
   }
-
-  @Override
-  public ExecutionClientHandler getHandler() {
-    return new BellatrixExecutionClientHandler(spec, executionEngineClient);
-  }
 }

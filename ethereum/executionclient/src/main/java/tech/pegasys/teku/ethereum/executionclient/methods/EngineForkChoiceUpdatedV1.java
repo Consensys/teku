@@ -37,7 +37,7 @@ public class EngineForkChoiceUpdatedV1
 
   @Override
   public String getName() {
-    return "engine_forkChoiceUpdated";
+    return EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED.getName();
   }
 
   @Override
@@ -53,7 +53,8 @@ public class EngineForkChoiceUpdatedV1
         params.getOptionalParameter(1, PayloadBuildingAttributes.class);
 
     LOG.trace(
-        "calling engineForkChoiceUpdatedV1(forkChoiceState={}, payloadAttributes={})",
+        "Calling {}(forkChoiceState={}, payloadAttributes={})",
+        getVersionedName(),
         forkChoiceState,
         payloadBuildingAttributes);
 
@@ -66,7 +67,8 @@ public class EngineForkChoiceUpdatedV1
         .thenPeek(
             forkChoiceUpdatedResult ->
                 LOG.trace(
-                    "engineForkChoiceUpdatedV1(forkChoiceState={}, payloadAttributes={}) -> {}",
+                    "Response {}(forkChoiceState={}, payloadAttributes={}) -> {}",
+                    getVersionedName(),
                     forkChoiceState,
                     payloadBuildingAttributes,
                     forkChoiceUpdatedResult));

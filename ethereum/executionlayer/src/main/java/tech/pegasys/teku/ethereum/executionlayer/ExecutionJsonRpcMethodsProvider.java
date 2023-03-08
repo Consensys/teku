@@ -11,11 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 
-public interface BlockSubscriber {
+public interface ExecutionJsonRpcMethodsProvider {
 
-  void onBlock(SignedBeaconBlock block);
+  <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethods method, Class<T> resultType);
 }

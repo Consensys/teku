@@ -16,8 +16,11 @@ package tech.pegasys.teku.validator.remote.eventsource;
 import static java.util.Collections.emptyMap;
 
 import com.google.common.base.Preconditions;
-import com.launchdarkly.eventsource.ConnectionErrorHandler.Action;
+import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.EventSource;
+import com.launchdarkly.eventsource.RetryDelayStrategy;
+import com.launchdarkly.eventsource.background.BackgroundEventSource;
+import com.launchdarkly.eventsource.background.ConnectionErrorHandler.Action;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -33,13 +36,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
+import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
-import tech.pegasys.teku.validator.remote.RemoteBeaconNodeSyncingChannel;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 
 public class EventSourceBeaconChainEventAdapter
-    implements BeaconChainEventAdapter, RemoteBeaconNodeSyncingChannel {
+    implements BeaconChainEventAdapter, BeaconNodeReadinessChannel {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -47,7 +50,7 @@ public class EventSourceBeaconChainEventAdapter
 
   private final CountDownLatch runningLatch = new CountDownLatch(1);
 
-  private volatile EventSource eventSource;
+  private volatile BackgroundEventSource eventSource;
   private volatile RemoteValidatorApiChannel currentBeaconNodeUsedForEventStreaming;
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
@@ -101,36 +104,39 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   @Override
-  public void onPrimaryNodeNotInSync() {
+  public void onPrimaryNodeNotReady() {
     if (currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
       switchToFailoverEventStreamIfAvailable();
     }
   }
 
   @Override
-  public void onFailoverNodeNotInSync(final RemoteValidatorApiChannel failoverNotInSync) {
+  public void onFailoverNodeNotReady(final RemoteValidatorApiChannel failoverNotInSync) {
     if (currentEventStreamHasSameEndpoint(failoverNotInSync)) {
       switchToFailoverEventStreamIfAvailable();
     }
   }
 
   @Override
-  public void onPrimaryNodeBackInSync() {
+  public void onPrimaryNodeBackReady() {
     if (!currentEventStreamHasSameEndpoint(primaryBeaconNodeApi)) {
       switchBackToPrimaryEventStream();
     }
   }
 
-  private EventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
+  private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
-    return new EventSource.Builder(eventSourceHandler, eventSourceUrl)
-        .maxReconnectTime(MAX_RECONNECT_TIME.toMillis(), TimeUnit.MILLISECONDS)
+    final EventSource.Builder eventSourceBuilder =
+        new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
+            .retryDelayStrategy(
+                RetryDelayStrategy.defaultStrategy()
+                    .maxDelay(MAX_RECONNECT_TIME.toMillis(), TimeUnit.MILLISECONDS));
+    return new BackgroundEventSource.Builder(eventSourceHandler, eventSourceBuilder)
         .connectionErrorHandler(
             __ -> {
               switchToFailoverEventStreamIfAvailable();
               return Action.PROCEED;
             })
-        .client(okHttpClient)
         .build();
   }
 
@@ -141,8 +147,7 @@ public class EventSourceBeaconChainEventAdapter
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
-  // synchronized because of the ConnectionErrorHandler and the RemoteBeaconNodeSyncingChannel
-  // callbacks
+  // synchronized because of the ConnectionErrorHandler and the BeaconNodeReadinessChannel callbacks
   private synchronized void switchToFailoverEventStreamIfAvailable() {
     if (failoverBeaconNodeApis.isEmpty()) {
       return;
@@ -166,7 +171,8 @@ public class EventSourceBeaconChainEventAdapter
     eventSource.close();
     eventSource = createEventSource(beaconNodeApi);
     currentBeaconNodeUsedForEventStreaming = beaconNodeApi;
-    validatorLogger.switchingToFailoverBeaconNodeForEventStreaming(eventSource.getUri());
+    validatorLogger.switchingToFailoverBeaconNodeForEventStreaming(
+        eventSource.getEventSource().getOrigin());
     eventSource.start();
   }
 
