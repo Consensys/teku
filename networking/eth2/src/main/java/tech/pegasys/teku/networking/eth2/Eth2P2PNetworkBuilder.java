@@ -121,6 +121,7 @@ public class Eth2P2PNetworkBuilder {
       gossipedSignedContributionAndProofProcessor;
   protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
+  private int earliestAvailableBlockSlotFrequency = 0;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -155,6 +156,7 @@ public class Eth2P2PNetworkBuilder {
             timeProvider,
             config.getPeerRateLimit(),
             config.getPeerRequestLimit(),
+            earliestAvailableBlockSlotFrequency,
             spec);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -559,6 +561,12 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder specProvider(final Spec spec) {
     checkNotNull(spec);
     this.spec = spec;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder earliestAvailableBlockSlotFrequency(
+      final int earliestAvailableBlockSlotFrequency) {
+    this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
     return this;
   }
 }

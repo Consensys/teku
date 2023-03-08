@@ -603,7 +603,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
     combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, storageQueryChannel, spec);
+        new CombinedChainDataClient(
+            recentChainData,
+            storageQueryChannel,
+            spec,
+            timeProvider,
+            beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency());
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -885,6 +890,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .keyValueStore(keyValueStore)
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
+            .earliestAvailableBlockSlotFrequency(
+                beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

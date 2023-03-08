@@ -115,6 +115,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final TimeProvider timeProvider,
       final int peerRateLimit,
       final int peerRequestLimit,
+      final int earliestAvailableBlockSlotFrequency,
       final Spec spec) {
 
     final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
@@ -124,7 +125,12 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
     syncCommitteeSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateSyncCommitteeSubnetIds);
     final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+        new CombinedChainDataClient(
+            recentChainData,
+            historicalChainData,
+            spec,
+            timeProvider,
+            earliestAvailableBlockSlotFrequency);
 
     return new Eth2PeerManager(
         spec,
