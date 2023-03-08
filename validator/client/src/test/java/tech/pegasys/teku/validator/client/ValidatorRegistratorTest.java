@@ -306,9 +306,36 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void doesNotRegisterValidatorsOnPossibleMissedEvents_ifNotReady() {
+    when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
+
+    validatorRegistrator.onPossibleMissedEvents();
+
+    verifyNoInteractions(ownedValidators, validatorRegistrationBatchSender, signer);
+  }
+
+  @TestTemplate
+  void registerValidatorsOnPossibleMissedEvents() {
+    setActiveValidators(validator1, validator2, validator3);
+
+    validatorRegistrator.onPossibleMissedEvents();
+
+    final List<SignedValidatorRegistration> registrationCall = captureRegistrationCall();
+
+    verifyRegistrations(registrationCall, List.of(validator1, validator2, validator3));
+  }
+
+  @TestTemplate
   void doesNotRegisterNewlyAddedValidators_ifNotReady() {
     when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(false);
 
+    validatorRegistrator.onValidatorsAdded();
+
+    verifyNoInteractions(ownedValidators, validatorRegistrationBatchSender, signer);
+  }
+
+  @TestTemplate
+  void doesNotRegisterNewlyAddedValidators_ifFirstCallHasNotBeenDone() {
     validatorRegistrator.onValidatorsAdded();
 
     verifyNoInteractions(ownedValidators, validatorRegistrationBatchSender, signer);

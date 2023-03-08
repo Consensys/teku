@@ -17,5 +17,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
+- Send validator registrations to the Beacon node when the Validator client has reconnected to the event stream
 
 ### Bug Fixes
