@@ -61,11 +61,14 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
 
   @Test
   void engineGetPayload_bellatrixFork() throws ExecutionException, InterruptedException {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
-    DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
+    final Spec capellaStartingAtEpochOneSpec =
+        TestSpecFactory.createMinimalWithCapellaForkEpoch(UInt64.ONE);
     final ExecutionClientHandler handler =
-        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
-    final UInt64 slot = data.randomUInt64(1_000_000);
+        new MilestoneBasedExecutionClientHandler(
+            capellaStartingAtEpochOneSpec, executionEngineClient);
+    final DataStructureUtil data = new DataStructureUtil(capellaStartingAtEpochOneSpec);
+
+    final UInt64 bellatrixSlot = UInt64.ONE;
     final ExecutionPayloadContext context =
         new ExecutionPayloadContext(
             data.randomBytes8(),
@@ -80,7 +83,8 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                     data.randomUInt256())));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
-    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
+    final SafeFuture<ExecutionPayloadWithValue> future =
+        handler.engineGetPayload(context, bellatrixSlot);
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
     verify(executionEngineClient, never()).getPayloadV1(any());
 
@@ -131,10 +135,9 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
 
   @Test
   void engineNewPayload_bellatrixFork() {
+    final ExecutionClientHandler handler = getHandler();
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
-    final ExecutionClientHandler handler =
-        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
     final ExecutionPayload payload = data.randomExecutionPayload();
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
@@ -181,14 +184,17 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
 
   @Test
   void engineForkChoiceUpdated_bellatrixFork() {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
-    DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
+    final Spec capellaStartingAtEpochOneSpec =
+        TestSpecFactory.createMinimalWithCapellaForkEpoch(UInt64.ONE);
     final ExecutionClientHandler handler =
-        new CapellaExecutionClientHandler(bellatrixSpec, executionEngineClient);
+        new MilestoneBasedExecutionClientHandler(
+            capellaStartingAtEpochOneSpec, executionEngineClient);
+    final DataStructureUtil data = new DataStructureUtil(capellaStartingAtEpochOneSpec);
 
     final ForkChoiceState forkChoiceState = data.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final UInt64 bellatrixSlot = UInt64.ZERO;
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             data.randomUInt64(),
@@ -196,7 +202,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             data.randomEth1Address(),
             Optional.empty(),
             Optional.empty(),
-            UInt64.ZERO);
+            bellatrixSlot);
     final Optional<PayloadAttributesV1> payloadAttributes =
         PayloadAttributesV1.fromInternalPayloadBuildingAttributes(Optional.of(attributes));
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
@@ -223,12 +229,6 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 handler.engineGetBlobsBundle(
                     Bytes8.fromHexString("abcd1234abcd1234"), UInt64.valueOf(123)))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage(
-            "Pre-Deneb execution client handler is called to get Deneb BlobsBundleV1 for payload `0xabcd1234abcd1234`, slot 123");
-  }
-
-  @Override
-  public ExecutionClientHandler getHandler() {
-    return new CapellaExecutionClientHandler(spec, executionEngineClient);
+        .hasMessage("Can't find method with name engine_getBlobsBundle");
   }
 }

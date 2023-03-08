@@ -367,4 +367,12 @@ public class TestSpecFactory {
               configAdapter.accept(builder);
             }));
   }
+
+  public static Spec createMinimalWithCapellaAndDenebForkEpoch(
+      final UInt64 capellaForkEpoch, final UInt64 denebForkEpoch) {
+    final SpecConfigBellatrix config =
+        getDenebSpecConfig(
+            Eth2Network.MINIMAL, UInt64.ZERO, UInt64.ZERO, capellaForkEpoch, denebForkEpoch);
+    return create(config, SpecMilestone.DENEB);
+  }
 }

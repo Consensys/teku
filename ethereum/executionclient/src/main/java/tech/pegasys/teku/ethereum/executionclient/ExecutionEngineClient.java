@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 
 public interface ExecutionEngineClient {
   // eth namespace
-  SafeFuture<Optional<PowBlock>> getPowBlock(Bytes32 blockHash);
+  SafeFuture<PowBlock> getPowBlock(Bytes32 blockHash);
 
   SafeFuture<PowBlock> getPowChainHead();
 

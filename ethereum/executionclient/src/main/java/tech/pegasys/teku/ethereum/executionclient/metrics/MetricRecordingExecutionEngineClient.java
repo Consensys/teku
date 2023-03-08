@@ -74,7 +74,7 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   }
 
   @Override
-  public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
+  public SafeFuture<PowBlock> getPowBlock(final Bytes32 blockHash) {
     return delegate.getPowBlock(blockHash);
   }
 
