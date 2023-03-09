@@ -149,9 +149,6 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     String str = getCommandLineOutput();
 
-    // --Xbeacon-liveness-tracking-enabled is kept temporarily for backward compatibility
-    str = str.replace("--Xbeacon-liveness-tracking-enabled", "");
-
     assertThat(str).doesNotContain("--X");
   }
 
