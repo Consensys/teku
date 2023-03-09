@@ -45,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   private static final Duration EXCHANGE_TRANSITION_CONFIGURATION_TIMEOUT = Duration.ofSeconds(8);
+  private static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(8);
 
   private final Web3JClient web3JClient;
 
@@ -198,6 +199,17 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
     return web3JClient.doRequest(web3jRequest, EXCHANGE_TRANSITION_CONFIGURATION_TIMEOUT);
   }
 
+  @Override
+  public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
+    Request<?, ExchangeCapabilitiesWeb3jResponse> web3jRequest =
+        new Request<>(
+            "engine_exchangeCapabilities",
+            Collections.singletonList(capabilities),
+            web3JClient.getWeb3jService(),
+            ExchangeCapabilitiesWeb3jResponse.class);
+    return web3JClient.doRequest(web3jRequest, EXCHANGE_CAPABILITIES_TIMEOUT);
+  }
+
   static class ExecutionPayloadV1Web3jResponse
       extends org.web3j.protocol.core.Response<ExecutionPayloadV1> {}
 
@@ -217,6 +229,9 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class TransitionConfigurationV1Web3jResponse
       extends org.web3j.protocol.core.Response<TransitionConfigurationV1> {}
+
+  static class ExchangeCapabilitiesWeb3jResponse
+      extends org.web3j.protocol.core.Response<List<String>> {}
 
   /**
    * Returns a list that supports null items.

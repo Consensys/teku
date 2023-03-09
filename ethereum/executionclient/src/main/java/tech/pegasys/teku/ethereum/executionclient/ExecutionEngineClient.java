@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
@@ -58,4 +59,6 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
       TransitionConfigurationV1 transitionConfiguration);
+
+  SafeFuture<Response<List<String>>> exchangeCapabilities(List<String> capabilities);
 }
