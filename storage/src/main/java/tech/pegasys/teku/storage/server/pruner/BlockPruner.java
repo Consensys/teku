@@ -83,6 +83,7 @@ public class BlockPruner extends Service {
     LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
     try {
       database.pruneFinalizedBlocks(earliestSlotToKeep.decrement());
+      LOG.info("Finalized blocks before slot {} have been pruned.", earliestSlotToKeep);
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }

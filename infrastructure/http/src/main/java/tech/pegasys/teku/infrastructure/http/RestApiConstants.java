@@ -135,6 +135,17 @@ public class RestApiConstants {
           + SC_SERVICE_UNAVAILABLE
           + " status code when current peer count is below than target";
 
+  public static final String REQUIRE_PREPARED_PROPOSERS = "require_prepared_proposers";
+  public static final String REQUIRE_PREPARED_PROPOSERS_DESCRIPTION =
+      "Returns "
+          + SC_SERVICE_UNAVAILABLE
+          + " status code if set to true and no proposers have been prepared";
+  public static final String REQUIRE_VALIDATOR_REGISTRATIONS = "require_validator_registrations";
+  public static final String REQUIRE_VALIDATOR_REGISTRATIONS_DESCRIPTION =
+      "Returns "
+          + SC_SERVICE_UNAVAILABLE
+          + " status code if set to true and no validators have been registered with the builder";
+
   public static final String HEADER_ACCEPT = "Accept";
 
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
