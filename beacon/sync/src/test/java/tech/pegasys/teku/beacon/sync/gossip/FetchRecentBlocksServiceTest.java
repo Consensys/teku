@@ -33,27 +33,25 @@ import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult.Status;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTaskFactory;
+import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksServiceTest {
 
   private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
+      new DataStructureUtil(TestSpecFactory.createDefault());
 
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
 
-  private final FetchBlockTaskFactory fetchBlockTaskFactory = mock(FetchBlockTaskFactory.class);
+  private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
   private final ForwardSync forwardSync = mock(ForwardSync.class);
 
@@ -70,18 +68,14 @@ public class FetchRecentBlocksServiceTest {
   public void setup() {
     recentBlockFetcher =
         new FetchRecentBlocksService(
-            asyncRunner,
-            pendingBlocksPool,
-            forwardSync,
-            fetchBlockTaskFactory,
-            maxConcurrentRequests);
+            asyncRunner, pendingBlocksPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
 
-    lenient().when(fetchBlockTaskFactory.create(any(), any())).thenAnswer(this::createMockTask);
+    lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
   }
 
   private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
-    Bytes32 blockRoot = invocationOnMock.getArgument(1);
+    Bytes32 blockRoot = invocationOnMock.getArgument(0);
     final FetchBlockTask task = mock(FetchBlockTask.class);
 
     lenient().when(task.getBlockRoot()).thenReturn(blockRoot);
@@ -106,25 +100,6 @@ public class FetchRecentBlocksServiceTest {
     final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
     future.complete(FetchBlockResult.createSuccessful(block));
-
-    assertThat(importedBlocks).containsExactly(block);
-    assertTaskCounts(0, 0, 0);
-  }
-
-  @Test
-  public void fetchSingleBlockAndBlobsSidecarSuccessfully() {
-    final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
-
-    assertTaskCounts(1, 1, 0);
-    assertThat(importedBlocks).isEmpty();
-
-    final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
-    final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
-        dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar(UInt64.ONE);
-    final SignedBeaconBlock block = blockAndBlobsSidecar.getSignedBeaconBlock();
-
-    future.complete(FetchBlockResult.createSuccessful(blockAndBlobsSidecar));
 
     assertThat(importedBlocks).containsExactly(block);
     assertTaskCounts(0, 0, 0);

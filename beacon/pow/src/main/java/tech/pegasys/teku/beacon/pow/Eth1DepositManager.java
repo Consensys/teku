@@ -24,6 +24,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.web3j.protocol.core.methods.response.EthBlock;
+import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.api.schema.ReplayDepositsResult;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -86,11 +87,12 @@ public class Eth1DepositManager {
                 LOG.debug("No deposit tree snapshot loaded, processing full replay of deposits");
                 return eth1DepositStorageChannel.replayDepositEvents();
               } else {
-                LOG.debug(
-                    "Finalized deposit tree snapshot loaded: {}",
-                    depositSnapshotLoadingResult.getDepositTreeSnapshot().get());
-                eth1EventsPublisher.onInitialDepositTreeSnapshot(
-                    depositSnapshotLoadingResult.getDepositTreeSnapshot().get());
+                final DepositTreeSnapshot depositTreeSnapshot =
+                    depositSnapshotLoadingResult.getDepositTreeSnapshot().get();
+                STATUS_LOG.loadedDepositSnapshot(
+                    depositTreeSnapshot.getDepositCount(),
+                    depositTreeSnapshot.getExecutionBlockHash());
+                eth1EventsPublisher.onInitialDepositTreeSnapshot(depositTreeSnapshot);
                 return SafeFuture.completedFuture(
                     depositSnapshotLoadingResult.getReplayDepositsResult());
               }
@@ -124,11 +126,19 @@ public class Eth1DepositManager {
     }
 
     if (takeBestDepositSnapshot) {
+      STATUS_LOG.loadingDepositSnapshotFromDb();
       return depositSnapshotStorageLoader
           .loadDepositSnapshot()
           .thenApply(
-              storageDepositSnapshotResult ->
-                  ObjectUtils.max(storageDepositSnapshotResult, fileDepositSnapshotResult));
+              storageDepositSnapshotResult -> {
+                if (storageDepositSnapshotResult.getDepositTreeSnapshot().isPresent()) {
+                  final DepositTreeSnapshot storageSnapshot =
+                      storageDepositSnapshotResult.getDepositTreeSnapshot().get();
+                  STATUS_LOG.onDepositSnapshot(
+                      storageSnapshot.getDepositCount(), storageSnapshot.getExecutionBlockHash());
+                }
+                return ObjectUtils.max(storageDepositSnapshotResult, fileDepositSnapshotResult);
+              });
     } else {
       return depositSnapshotStorageLoader.loadDepositSnapshot();
     }

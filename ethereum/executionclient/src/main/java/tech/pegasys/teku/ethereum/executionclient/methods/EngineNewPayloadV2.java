@@ -34,7 +34,7 @@ public class EngineNewPayloadV2 extends AbstractEngineJsonRpcMethod<PayloadStatu
 
   @Override
   public String getName() {
-    return "engine_newPayload";
+    return EngineApiMethods.ENGINE_NEW_PAYLOAD.getName();
   }
 
   @Override
@@ -47,7 +47,7 @@ public class EngineNewPayloadV2 extends AbstractEngineJsonRpcMethod<PayloadStatu
     final ExecutionPayload executionPayload =
         params.getRequiredParameter(0, ExecutionPayload.class);
 
-    LOG.trace("calling engineNewPayloadV2(executionPayload={})", executionPayload);
+    LOG.trace("Calling {}(executionPayload={})", getVersionedName(), executionPayload);
 
     return executionEngineClient
         .newPayloadV2(
@@ -59,7 +59,8 @@ public class EngineNewPayloadV2 extends AbstractEngineJsonRpcMethod<PayloadStatu
         .thenPeek(
             payloadStatus ->
                 LOG.trace(
-                    "engineNewPayloadV2(executionPayload={}) -> {}",
+                    "Response {}(executionPayload={}) -> {}",
+                    getVersionedName(),
                     executionPayload,
                     payloadStatus))
         .exceptionally(PayloadStatus::failedExecution);

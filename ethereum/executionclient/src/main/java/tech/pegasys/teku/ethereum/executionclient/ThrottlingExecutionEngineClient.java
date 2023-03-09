@@ -50,7 +50,7 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Optional<PowBlock>> getPowBlock(final Bytes32 blockHash) {
+  public SafeFuture<PowBlock> getPowBlock(final Bytes32 blockHash) {
     return taskQueue.queueTask(() -> delegate.getPowBlock(blockHash));
   }
 

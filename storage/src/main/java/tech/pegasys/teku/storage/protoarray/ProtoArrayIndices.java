@@ -32,7 +32,7 @@ public class ProtoArrayIndices {
   }
 
   public Optional<Integer> get(final Bytes32 root) {
-    return Optional.ofNullable(rootIndices.getOrDefault(root, null));
+    return rootIndices.containsKey(root) ? Optional.of(rootIndices.getInt(root)) : Optional.empty();
   }
 
   public void remove(final Bytes32 root) {

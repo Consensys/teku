@@ -29,6 +29,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -142,7 +143,8 @@ public class StateSelectorFactoryTest {
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
     final RecentChainData recentChainData = mock(RecentChainData.class);
     final CombinedChainDataClient client1 =
-        new CombinedChainDataClient(recentChainData, historicalChainData, spec);
+        new CombinedChainDataClient(
+            recentChainData, historicalChainData, spec, new SystemTimeProvider(), 0);
     final StateSelectorFactory factory = new StateSelectorFactory(spec, client1);
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.isPreForkChoice()).thenReturn(true);

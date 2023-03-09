@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.fetch;
+package tech.pegasys.teku.validator.remote;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
-public interface FetchBlockTaskFactory {
+/**
+ * Readiness is determined by the {@link BeaconNodeReadinessManager}. The callbacks are only
+ * triggered if failovers are configured.
+ */
+public interface BeaconNodeReadinessChannel extends VoidReturningChannelInterface {
 
-  FetchBlockTask create(UInt64 slot, Bytes32 blockRoot);
+  void onPrimaryNodeNotReady();
+
+  void onFailoverNodeNotReady(RemoteValidatorApiChannel failoverNotReady);
+
+  void onPrimaryNodeBackReady();
 }

@@ -74,42 +74,36 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     if (!isReadyToRegister()) {
       return;
     }
     if (registrationNeedsToBeRun(slot)) {
       final UInt64 epoch = spec.computeEpochAtSlot(slot);
       lastRunEpoch.set(epoch);
-      final List<Validator> activeValidators = ownedValidators.getActiveValidators();
-      LOG.debug(
-          "Checking if registration is required for {} validator(s) at epoch {}",
-          activeValidators.size(),
-          epoch);
-      registrationInProgress.set(true);
-      registerValidators(activeValidators)
-          .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
-          .always(
-              () -> {
-                registrationInProgress.set(false);
-                cleanupCache(activeValidators);
-              });
+      registerValidators();
     }
   }
 
   @Override
   public void onHeadUpdate(
-      UInt64 slot,
-      Bytes32 previousDutyDependentRoot,
-      Bytes32 currentDutyDependentRoot,
-      Bytes32 headBlockRoot) {}
+      final UInt64 slot,
+      final Bytes32 previousDutyDependentRoot,
+      final Bytes32 currentDutyDependentRoot,
+      final Bytes32 headBlockRoot) {}
 
   @Override
-  public void onPossibleMissedEvents() {}
+  public void onPossibleMissedEvents() {
+    if (!isReadyToRegister()) {
+      return;
+    }
+    registerValidators();
+  }
 
   @Override
   public void onValidatorsAdded() {
-    if (!isReadyToRegister() || lastRunEpoch.get() == null) {
+    // don't execute if the first call hasn't been done yet
+    if (!isReadyToRegister() || !firstCallDone.get()) {
       return;
     }
 
@@ -123,13 +117,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onBlockProductionDue(UInt64 slot) {}
+  public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(UInt64 slot) {}
+  public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(UInt64 slot) {}
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 
   public int getNumberOfCachedRegistrations() {
     return cachedValidatorRegistrations.size();
@@ -152,17 +146,26 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final boolean slotIsApplicable =
         slot.mod(spec.getSlotsPerEpoch(slot))
             .equals(SLOT_IN_THE_EPOCH_TO_RUN_REGISTRATION.minus(1));
-    if (slotIsApplicable && registrationInProgress.get()) {
-      LOG.warn(
-          "Validator registration(s) for epoch {} is still in progress. Will skip registration(s) for the current epoch {}.",
-          lastRunEpoch.get(),
-          currentEpoch);
-      return false;
-    }
     return slotIsApplicable
         && currentEpoch
             .minus(lastRunEpoch.get())
             .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
+  }
+
+  private void registerValidators() {
+    if (!registrationInProgress.compareAndSet(false, true)) {
+      LOG.debug(
+          "Validator registration(s) is still in progress. Will skip sending registration(s).");
+      return;
+    }
+    final List<Validator> activeValidators = ownedValidators.getActiveValidators();
+    registerValidators(activeValidators)
+        .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
+        .always(
+            () -> {
+              registrationInProgress.set(false);
+              cleanupCache(activeValidators);
+            });
   }
 
   private SafeFuture<Void> registerValidators(final List<Validator> validators) {

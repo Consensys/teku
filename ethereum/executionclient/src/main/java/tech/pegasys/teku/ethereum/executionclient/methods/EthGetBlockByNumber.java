@@ -29,7 +29,7 @@ public class EthGetBlockByNumber extends AbstractEngineJsonRpcMethod<PowBlock> {
 
   @Override
   public String getName() {
-    return "eth_getBlockByNumber";
+    return EngineApiMethods.ETH_GET_BLOCK_BY_NUMBER.getName();
   }
 
   @Override
@@ -39,9 +39,9 @@ public class EthGetBlockByNumber extends AbstractEngineJsonRpcMethod<PowBlock> {
 
   @Override
   public SafeFuture<PowBlock> execute(final JsonRpcRequestParams params) {
-    LOG.trace("calling eth1GetPowChainHead()");
+    LOG.trace("Calling {}()", getVersionedName());
     return executionEngineClient
         .getPowChainHead()
-        .thenPeek(powBlock -> LOG.trace("eth1GetPowChainHead() -> {}", powBlock));
+        .thenPeek(powBlock -> LOG.trace("Response {}() -> {}", getVersionedName(), powBlock));
   }
 }

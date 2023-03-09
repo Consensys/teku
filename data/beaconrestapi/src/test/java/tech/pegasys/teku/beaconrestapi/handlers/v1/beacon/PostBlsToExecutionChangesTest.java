@@ -17,7 +17,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
@@ -34,7 +33,6 @@ import java.util.List;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -47,13 +45,11 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 
 class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
 
-  private final NodeDataProvider provider = mock(NodeDataProvider.class);
-
   @BeforeEach
   public void setup() {
     spec = TestSpecFactory.createMinimalCapella();
     dataStructureUtil = new DataStructureUtil(spec);
-    setHandler(new PostBlsToExecutionChanges(provider, schemaDefinitionCache));
+    setHandler(new PostBlsToExecutionChanges(nodeDataProvider, schemaDefinitionCache));
   }
 
   @Test
@@ -62,7 +58,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
         dataStructureUtil.randomSignedBlsToExecutionChange();
     request.setRequestBody(List.of(blsToExecutionChange));
     when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.CAPELLA);
-    when(provider.postBlsToExecutionChanges(anyList()))
+    when(nodeDataProvider.postBlsToExecutionChanges(anyList()))
         .thenReturn(SafeFuture.completedFuture(List.of()));
 
     handler.handleRequest(request);
@@ -70,7 +66,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isNull();
 
-    verify(provider).postBlsToExecutionChanges(eq(List.of(blsToExecutionChange)));
+    verify(nodeDataProvider).postBlsToExecutionChanges(eq(List.of(blsToExecutionChange)));
   }
 
   @Test
@@ -79,7 +75,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
         dataStructureUtil.randomSignedBlsToExecutionChange();
     request.setRequestBody(List.of(blsToExecutionChange));
     when(chainDataProvider.getMilestoneAtHead()).thenReturn(SpecMilestone.CAPELLA);
-    when(provider.postBlsToExecutionChanges(List.of(blsToExecutionChange)))
+    when(nodeDataProvider.postBlsToExecutionChanges(List.of(blsToExecutionChange)))
         .thenReturn(
             SafeFuture.completedFuture(
                 List.of(new SubmitDataError(UInt64.ZERO, "Operation invalid"))));

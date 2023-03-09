@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 
-public interface RemoteBeaconNodeSyncingChannel extends VoidReturningChannelInterface {
+public interface ExecutionJsonRpcMethodsProvider {
 
-  void onPrimaryNodeNotInSync();
-
-  void onFailoverNodeNotInSync(RemoteValidatorApiChannel failoverNotInSync);
-
-  void onPrimaryNodeBackInSync();
+  <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethods method, Class<T> resultType);
 }
