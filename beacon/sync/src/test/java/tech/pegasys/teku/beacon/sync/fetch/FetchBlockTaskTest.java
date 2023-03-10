@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class FetchBlockTaskTest extends AbstractFetchBlockTask {
+public class FetchBlockTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_successful() {
@@ -42,7 +42,6 @@ public class FetchBlockTaskTest extends AbstractFetchBlockTask {
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
     assertThat(fetchBlockResult.getBlock()).hasValue(block);
-    assertThat(fetchBlockResult.getBlobsSidecar()).isEmpty();
   }
 
   @Test
@@ -112,7 +111,6 @@ public class FetchBlockTaskTest extends AbstractFetchBlockTask {
     final FetchBlockResult fetchBlockResult2 = result2.getNow(null);
     assertThat(fetchBlockResult2.isSuccessful()).isTrue();
     assertThat(fetchBlockResult2.getBlock()).hasValue(block);
-    assertThat(fetchBlockResult2.getBlobsSidecar()).isEmpty();
     assertThat(task.getNumberOfRetries()).isEqualTo(1);
   }
 
@@ -138,7 +136,6 @@ public class FetchBlockTaskTest extends AbstractFetchBlockTask {
     final FetchBlockResult fetchBlockResult = result.getNow(null);
     assertThat(fetchBlockResult.isSuccessful()).isTrue();
     assertThat(fetchBlockResult.getBlock()).hasValue(block);
-    assertThat(fetchBlockResult.getBlobsSidecar()).isEmpty();
   }
 
   @Test

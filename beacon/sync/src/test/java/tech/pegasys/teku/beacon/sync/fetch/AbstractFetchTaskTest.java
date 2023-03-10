@@ -25,7 +25,7 @@ import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class AbstractFetchBlockTask {
+public class AbstractFetchTaskTest {
 
   protected final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalDeneb());

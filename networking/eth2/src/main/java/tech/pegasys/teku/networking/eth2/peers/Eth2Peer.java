@@ -30,7 +30,6 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -97,14 +96,6 @@ public interface Eth2Peer extends Peer, SyncSource {
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(Bytes32 blockRoot);
 
   SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(BlobIdentifier blobIdentifier);
-
-  // TODO: remove when blobs decoupling sync is implemented
-  @Deprecated
-  @SuppressWarnings("unused")
-  default SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> requestBlockAndBlobsSidecarByRoot(
-      Bytes32 blockRoot) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException());
-  }
 
   SafeFuture<MetadataMessage> requestMetadata();
 

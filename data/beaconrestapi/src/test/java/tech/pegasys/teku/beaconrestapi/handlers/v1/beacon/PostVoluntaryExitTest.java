@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -26,7 +25,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
@@ -34,18 +32,17 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class PostVoluntaryExitTest extends AbstractMigratedBeaconHandlerTest {
-  private final NodeDataProvider provider = mock(NodeDataProvider.class);
 
   @BeforeEach
   public void setup() {
-    setHandler(new PostVoluntaryExit(provider));
+    setHandler(new PostVoluntaryExit(nodeDataProvider));
   }
 
   @Test
   void shouldBeAbleToSubmitSlashing() throws Exception {
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     request.setRequestBody(exit);
-    when(provider.postVoluntaryExit(exit))
+    when(nodeDataProvider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     handler.handleRequest(request);
@@ -58,7 +55,7 @@ public class PostVoluntaryExitTest extends AbstractMigratedBeaconHandlerTest {
   void shouldReturnBadRequest_ifVoluntaryExitInvalid() throws Exception {
     final SignedVoluntaryExit exit = dataStructureUtil.randomSignedVoluntaryExit();
     request.setRequestBody(exit);
-    when(provider.postVoluntaryExit(exit))
+    when(nodeDataProvider.postVoluntaryExit(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Oh dear")));
 
     handler.handleRequest(request);
