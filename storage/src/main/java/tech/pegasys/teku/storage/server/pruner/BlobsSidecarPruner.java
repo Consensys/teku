@@ -45,14 +45,14 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
-  private int pruneLimit;
+  private final int pruneLimit;
   private final TimeProvider timeProvider;
   private final boolean blobsSidecarStorageCountersEnabled;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<UInt64> genesisTime = Optional.empty();
 
-  private AtomicReference<Optional<UInt64>> latestFinalizedSlot =
+  private final AtomicReference<Optional<UInt64>> latestFinalizedSlot =
       new AtomicReference<>(Optional.empty());
 
   private final Map<String, Long> blobsColumnsSize = new ConcurrentHashMap<>();

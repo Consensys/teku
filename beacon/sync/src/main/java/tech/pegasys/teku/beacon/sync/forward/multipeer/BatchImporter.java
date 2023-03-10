@@ -16,37 +16,27 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 public class BatchImporter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
-  private final BlobsSidecarManager blobsSidecarManager;
   private final AsyncRunner asyncRunner;
 
-  public BatchImporter(
-      final BlockImporter blockImporter,
-      final BlobsSidecarManager blobsSidecarManager,
-      final AsyncRunner asyncRunner) {
+  public BatchImporter(final BlockImporter blockImporter, final AsyncRunner asyncRunner) {
     this.blockImporter = blockImporter;
-    this.blobsSidecarManager = blobsSidecarManager;
     this.asyncRunner = asyncRunner;
   }
 
@@ -61,8 +51,6 @@ public class BatchImporter {
   public SafeFuture<BatchImportResult> importBatch(final Batch batch) {
     // Copy the data from batch as we're going to use them from off the event thread.
     final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
-    final Map<UInt64, BlobsSidecar> blobsSidecarsBySlot =
-        new HashMap<>(batch.getBlobsSidecarsBySlot());
     final Optional<SyncSource> source = batch.getSource();
 
     checkState(!blocks.isEmpty(), "Batch has no blocks to import");
@@ -70,20 +58,14 @@ public class BatchImporter {
         () -> {
           final SignedBeaconBlock firstBlock = blocks.get(0);
           SafeFuture<BlockImportResult> importResult =
-              storeBlobsSidecarAndImportBlock(
-                  Optional.ofNullable(blobsSidecarsBySlot.get(firstBlock.getSlot())),
-                  firstBlock,
-                  source.orElseThrow());
+              importBlock(firstBlock, source.orElseThrow());
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
                 importResult.thenCompose(
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
-                        return storeBlobsSidecarAndImportBlock(
-                            Optional.ofNullable(blobsSidecarsBySlot.get(block.getSlot())),
-                            block,
-                            source.orElseThrow());
+                        return importBlock(block, source.orElseThrow());
                       } else {
                         return SafeFuture.completedFuture(previousResult);
                       }
@@ -106,11 +88,8 @@ public class BatchImporter {
         });
   }
 
-  private SafeFuture<BlockImportResult> storeBlobsSidecarAndImportBlock(
-      final Optional<BlobsSidecar> blobsSidecar,
-      final SignedBeaconBlock block,
-      final SyncSource source) {
-    blobsSidecar.ifPresent(blobsSidecarManager::storeUnconfirmedBlobsSidecar);
+  private SafeFuture<BlockImportResult> importBlock(
+      final SignedBeaconBlock block, final SyncSource source) {
     return blockImporter
         .importBlock(block)
         .thenApply(

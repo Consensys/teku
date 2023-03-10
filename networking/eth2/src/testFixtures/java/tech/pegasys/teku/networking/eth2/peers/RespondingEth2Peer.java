@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
@@ -212,24 +211,6 @@ public class RespondingEth2Peer implements Eth2Peer {
     return createPendingBlockRequest(handler);
   }
 
-  // TODO: remove when blobs decoupling sync is implemented
-  @Override
-  public SafeFuture<Void> requestBlobsSidecarsByRange(
-      final UInt64 startSlot,
-      final UInt64 count,
-      final RpcResponseListener<BlobsSidecar> listener) {
-    final long lastSlotExclusive = startSlot.longValue() + count.longValue();
-
-    final PendingRequestHandler<Void, BlobsSidecar> handler =
-        PendingRequestHandler.createForBatchBlobsSidecarRequest(
-            listener,
-            () ->
-                chain
-                    .streamBlobsSidecars(startSlot.longValue(), lastSlotExclusive + 1)
-                    .collect(Collectors.toList()));
-    return createPendingBlobsSidecarRequest(handler);
-  }
-
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
@@ -296,13 +277,6 @@ public class RespondingEth2Peer implements Eth2Peer {
         PendingRequestHandler.filterRequest(handler, blockRequestFilter);
     final PendingRequest<T, SignedBeaconBlock> request = new PendingRequest<>(filteredHandler);
 
-    pendingRequests.add(request);
-    return request.getFuture();
-  }
-
-  private <T> SafeFuture<T> createPendingBlobsSidecarRequest(
-      final PendingRequestHandler<T, BlobsSidecar> handler) {
-    final PendingRequest<T, BlobsSidecar> request = new PendingRequest<>(handler);
     pendingRequests.add(request);
     return request.getFuture();
   }
@@ -545,12 +519,6 @@ public class RespondingEth2Peer implements Eth2Peer {
         final RpcResponseListener<SignedBeaconBlock> listener,
         final Supplier<List<SignedBeaconBlock>> blocksSupplier) {
       return createForBatchRequest(listener, blocksSupplier);
-    }
-
-    static PendingRequestHandler<Void, BlobsSidecar> createForBatchBlobsSidecarRequest(
-        final RpcResponseListener<BlobsSidecar> listener,
-        final Supplier<List<BlobsSidecar>> blobsSidecarsSupplier) {
-      return createForBatchRequest(listener, blobsSidecarsSupplier);
     }
 
     static PendingRequestHandler<Void, BlobSidecar> createForBatchBlobSidecarRequest(

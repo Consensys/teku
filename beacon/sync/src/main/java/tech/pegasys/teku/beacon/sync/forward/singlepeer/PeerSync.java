@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOBS_SIDECARS;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
@@ -36,12 +35,9 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -71,13 +67,10 @@ public class PeerSync {
   private final Spec spec;
   private final RecentChainData storageClient;
   private final BlockImporter blockImporter;
-  private final BlobsSidecarManager blobsSidecarManager;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
-  private final Counter blobsSidecarImportSuccessResult;
-  private final Counter blobsSidecarImportFailureResult;
 
   private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
 
@@ -87,29 +80,19 @@ public class PeerSync {
       final AsyncRunner asyncRunner,
       final RecentChainData storageClient,
       final BlockImporter blockImporter,
-      final BlobsSidecarManager blobsSidecarManager,
       final MetricsSystem metricsSystem) {
     this.spec = storageClient.getSpec();
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
-    this.blobsSidecarManager = blobsSidecarManager;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
             "block_import_total",
             "The number of block imports performed",
             "result");
-    final LabelledMetric<Counter> blobsSidecarImportCounter =
-        metricsSystem.createLabelledCounter(
-            TekuMetricCategory.BEACON,
-            "blobs_sidecar_import_total",
-            "The number of blobs sidecar imports performed",
-            "result");
     this.blockImportSuccessResult = blockImportCounter.labels("imported");
     this.blockImportFailureResult = blockImportCounter.labels("rejected");
-    this.blobsSidecarImportSuccessResult = blobsSidecarImportCounter.labels("imported");
-    this.blobsSidecarImportFailureResult = blobsSidecarImportCounter.labels("rejected");
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
@@ -181,42 +164,12 @@ public class PeerSync {
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
 
-              final BlockAndBlobsSidecarMatcher blockAndBlobsSidecarMatcher =
-                  new BlockAndBlobsSidecarMatcher(
-                      blobsSidecarManager,
-                      this::storeBlobsSidecarAndImportBlock,
-                      this::importBlock);
-
-              final RpcResponseListener<SignedBeaconBlock> blockListener;
-              final SafeFuture<Void> blobsSidecarsRequest;
-
-              if (requestContext.areBlobsSidecarsRequired()) {
-                blockListener = blockAndBlobsSidecarMatcher::recordBlock;
-                LOG.debug(
-                    "Request {} blobs sidecars starting at {} from peer {}",
-                    count,
-                    ancestorStartSlot,
-                    peer.getId());
-                blobsSidecarsRequest =
-                    peer.requestBlobsSidecarsByRange(
-                        ancestorStartSlot, count, blockAndBlobsSidecarMatcher::recordBlobsSidecar);
-              } else {
-                blockListener = this::importBlock;
-                blobsSidecarsRequest = SafeFuture.COMPLETE;
-              }
-
-              final PeerSyncBlockRequest request =
+              final PeerSyncBlockRequest blockRequest =
                   new PeerSyncBlockRequest(
-                      readyForNextRequest, ancestorStartSlot, count, blockListener);
+                      readyForNextRequest, ancestorStartSlot, count, this::importBlock);
 
-              return SafeFuture.allOfFailFast(
-                      peer.requestBlocksByRange(ancestorStartSlot, count, request),
-                      blobsSidecarsRequest)
-                  .thenApply(
-                      __ -> {
-                        blockAndBlobsSidecarMatcher.clearCache();
-                        return request;
-                      });
+              return peer.requestBlocksByRange(ancestorStartSlot, count, blockRequest)
+                  .thenApply(__ -> blockRequest);
             })
         .thenCompose(
             (blockRequest) -> {
@@ -320,44 +273,21 @@ public class PeerSync {
   }
 
   private RequestContext createRequestContext(final UInt64 startSlot, final PeerStatus status) {
-
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
     final UInt64 requestCount = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
-
-    if (blobsSidecarsAreRequired(startSlot, requestCount)) {
-      return new RequestContext(requestCount.min(MAX_REQUEST_BLOBS_SIDECARS), true);
-    }
-
-    return new RequestContext(requestCount, false);
-  }
-
-  private boolean blobsSidecarsAreRequired(final UInt64 startSlot, final UInt64 requestCount) {
-    final UInt64 requestEndSlot =
-        startSlot.plus(requestCount.min(MAX_REQUEST_BLOBS_SIDECARS)).minusMinZero(1);
-    return blobsSidecarManager.isStorageOfBlobsSidecarRequired(requestEndSlot);
+    return new RequestContext(requestCount);
   }
 
   private static class RequestContext {
     private final UInt64 count;
-    private final boolean blobsSidecarsRequired;
 
-    private RequestContext(final UInt64 count, final boolean blobsSidecarsRequired) {
+    private RequestContext(final UInt64 count) {
       this.count = count;
-      this.blobsSidecarsRequired = blobsSidecarsRequired;
     }
 
     public UInt64 getCount() {
       return count;
     }
-
-    public boolean areBlobsSidecarsRequired() {
-      return blobsSidecarsRequired;
-    }
-  }
-
-  private SafeFuture<Void> storeBlobsSidecarAndImportBlock(
-      final SignedBeaconBlock block, final BlobsSidecar blobsSidecar) {
-    return storeBlobsSidecar(blobsSidecar).thenCompose(__ -> importBlock(block));
   }
 
   private SafeFuture<Void> importBlock(final SignedBeaconBlock block) {
@@ -375,31 +305,6 @@ public class PeerSync {
               } else {
                 blockImportSuccessResult.inc();
               }
-            });
-  }
-
-  private SafeFuture<Void> storeBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    if (stopped.get()) {
-      throw new CancellationException("Peer sync was cancelled");
-    }
-    return SafeFuture.fromRunnable(
-            () -> blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar))
-        .whenSuccess(
-            () -> {
-              LOG.trace(
-                  "Blobs sidecar stored for slot {} with block root: {}",
-                  blobsSidecar.getBeaconBlockSlot(),
-                  blobsSidecar.getBeaconBlockRoot());
-              blobsSidecarImportSuccessResult.inc();
-            })
-        .whenException(
-            throwable -> {
-              LOG.trace(
-                  String.format(
-                      "Error while storing blobs sidecar for slot %s with block root: %s",
-                      blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
-                  throwable);
-              blobsSidecarImportFailureResult.inc();
             });
   }
 

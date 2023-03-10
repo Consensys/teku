@@ -1024,7 +1024,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
         storageUpdateChannel,
         p2pNetwork,
         blockImporter,
-        blobsSidecarManager,
         pendingBlocks,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
