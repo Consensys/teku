@@ -20,23 +20,14 @@ import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 /**
- * Represents an external source of blocks (and blobs sidecars post Deneb) to sync. Typically, a
+ * Represents an external source of blocks (and blob sidecars post Deneb) to sync. Typically, a
  * peer, but this provides the minimal interface required by the sync system.
  */
 public interface SyncSource {
   SafeFuture<Void> requestBlocksByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<SignedBeaconBlock> listener);
-
-  // TODO: remove when blobs decoupling sync is implemented
-  @Deprecated
-  @SuppressWarnings("unused")
-  default SafeFuture<Void> requestBlobsSidecarsByRange(
-      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobsSidecar> listener) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException());
-  }
 
   SafeFuture<Void> requestBlobSidecarsByRange(
       UInt64 startSlot, UInt64 count, RpcResponseListener<BlobSidecar> listener);
