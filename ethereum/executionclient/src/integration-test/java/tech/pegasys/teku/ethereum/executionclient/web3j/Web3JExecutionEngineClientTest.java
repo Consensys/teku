@@ -14,10 +14,13 @@
 package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
+import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.mockito.Mockito.mock;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +32,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -53,8 +57,9 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = SpecMilestone.BELLATRIX)
+@TestSpecContext(milestone = SpecMilestone.CAPELLA)
 public class Web3JExecutionEngineClientTest {
+
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
   private final MockWebServer mockWebServer = new MockWebServer();
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
@@ -162,7 +167,8 @@ public class Web3JExecutionEngineClientTest {
     assertThat(payloadAttributes.get("suggestedFeeRecipient"))
         .isEqualTo("0xfd18cf40cc907a739be483f1ca0ee23ad65cdd3d");
 
-    assertThat(futureResponseForkChoiceUpdatedResult.join())
+    assertThat(futureResponseForkChoiceUpdatedResult)
+        .succeedsWithin(1, TimeUnit.SECONDS)
         .matches(
             forkChoiceUpdatedResultResponse ->
                 forkChoiceUpdatedResultResponse
@@ -172,9 +178,72 @@ public class Web3JExecutionEngineClientTest {
                     .equals(payloadStatusResponse));
   }
 
+  @TestTemplate
+  public void exchangeCapabilities_shouldBuildRequestAndResponseSuccessfully() throws Exception {
+    final List<String> consensusCapabilities = List.of("foo", "bar");
+    final List<String> executionCapabilities = List.of("ziz");
+
+    final JsonRpcResponse responseBody = new JsonRpcResponse(executionCapabilities);
+    mockSuccessfulResponse(objectMapper.writeValueAsString(responseBody));
+
+    final SafeFuture<Response<List<String>>> response =
+        eeClient.exchangeCapabilities(consensusCapabilities);
+    assertThat(response)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .isEqualTo(new Response<>(executionCapabilities));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_exchangeCapabilities");
+    assertThat(requestData.get("params")).asInstanceOf(LIST).containsExactly(consensusCapabilities);
+  }
+
+  private void mockSuccessfulResponse(String responseBody) {
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(responseBody)
+            .addHeader("Content-Type", "application/json"));
+  }
+
+  private Map<String, Object> takeRequest() {
+    try {
+      final RecordedRequest request = mockWebServer.takeRequest(5, TimeUnit.SECONDS);
+      return JsonTestUtil.parse(request.getBody().readString(StandardCharsets.UTF_8));
+    } catch (final Exception e) {
+      fail("Error taking request from mock server", e);
+      throw new RuntimeException(e);
+    }
+  }
+
   private void verifyJsonRpcMethodCall(Map<String, Object> data, final String method) {
     assertThat(data.get("method")).asInstanceOf(STRING).isEqualTo(method);
     assertThat(data.get("id")).asInstanceOf(INTEGER).isGreaterThanOrEqualTo(0);
     assertThat(data.get("jsonrpc")).asInstanceOf(STRING).isEqualTo("2.0");
+  }
+
+  public static class JsonRpcResponse {
+
+    private final String jsonrpc = "2.0";
+    private final String id = "0";
+    private final Object result;
+
+    public JsonRpcResponse(final Object result) {
+      this.result = result;
+    }
+
+    @JsonProperty
+    public String getJsonrpc() {
+      return jsonrpc;
+    }
+
+    @JsonProperty
+    public String getId() {
+      return id;
+    }
+
+    @JsonProperty
+    public Object getResult() {
+      return result;
+    }
   }
 }

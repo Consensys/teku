@@ -148,4 +148,9 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       final TransitionConfigurationV1 transitionConfiguration) {
     return delegate.exchangeTransitionConfiguration(transitionConfiguration);
   }
+
+  @Override
+  public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
+    return delegate.exchangeCapabilities(capabilities);
+  }
 }
