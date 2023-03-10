@@ -1881,6 +1881,32 @@ public class DatabaseTest {
     assertThat(database.getFinalizedDepositSnapshot()).contains(depositTreeSnapshot);
   }
 
+  @TestTemplate
+  public void pruneFinalizedBlocks_shouldRemoveFinalizedBlocks(final DatabaseContext context)
+      throws Exception {
+    initialize(context, StateStorageMode.ARCHIVE);
+    final List<SignedBlockAndState> blockAndStates = chainBuilder.generateBlocksUpToSlot(6);
+    addBlocks(blockAndStates);
+    final SignedBlockAndState finalizedBlock = chainBuilder.generateBlockAtSlot(7);
+    addBlocks(finalizedBlock);
+    justifyAndFinalizeEpoch(
+        spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
+    database.pruneFinalizedBlocks(UInt64.valueOf(3));
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(2))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(3))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isPresent();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
+
+    database.pruneFinalizedBlocks(UInt64.valueOf(5));
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
+  }
+
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
     try (final Stream<Map.Entry<Bytes32, UInt64>> roots = database.getFinalizedStateRoots()) {
       return roots.map(entry -> Map.entry(entry.getKey(), entry.getValue())).collect(toList());

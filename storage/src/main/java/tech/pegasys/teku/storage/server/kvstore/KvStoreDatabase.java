@@ -343,6 +343,30 @@ public class KvStoreDatabase implements Database {
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
+    if (lastSlotToPrune
+        .minusMinZero(earliestBlockSlot.orElse(lastSlotToPrune))
+        .isLessThanOrEqualTo(500)) {
+      pruneToBlock(earliestBlockSlot, lastSlotToPrune);
+    } else {
+      pruneInBatchesToBlock(earliestBlockSlot, lastSlotToPrune);
+    }
+  }
+
+  private void pruneToBlock(Optional<UInt64> earliestBlockSlot, UInt64 lastSlotToPrune) {
+    final Map<UInt64, Bytes32> blocksToPrune;
+    LOG.debug(
+        "Pruning finalized blocks from to slot {} to {}",
+        earliestBlockSlot.orElse(UInt64.ZERO),
+        lastSlotToPrune);
+    try (final Stream<SignedBeaconBlock> stream =
+        dao.streamFinalizedBlocks(earliestBlockSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
+      blocksToPrune =
+          stream.collect(Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
+    }
+    deleteFinalizedBlocks(blocksToPrune);
+  }
+
+  private void pruneInBatchesToBlock(Optional<UInt64> earliestBlockSlot, UInt64 lastSlotToPrune) {
     for (UInt64 lastSlotInBatch = earliestBlockSlot.orElse(lastSlotToPrune);
         lastSlotInBatch.isLessThan(lastSlotToPrune);
         lastSlotInBatch = lastSlotToPrune.min(lastSlotInBatch.plus(PRUNE_BATCH_SIZE))) {
@@ -358,11 +382,16 @@ public class KvStoreDatabase implements Database {
         blocksToPrune =
             stream.collect(Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
       }
-      if (blocksToPrune.size() > 0) {
-        try (final FinalizedUpdater updater = finalizedUpdater()) {
-          blocksToPrune.forEach(updater::deleteFinalizedBlock);
-          updater.commit();
-        }
+      deleteFinalizedBlocks(blocksToPrune);
+    }
+  }
+
+  private void deleteFinalizedBlocks(final Map<UInt64, Bytes32> blocksToPrune) {
+    if (blocksToPrune.size() > 0) {
+      LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        blocksToPrune.forEach(updater::deleteFinalizedBlock);
+        updater.commit();
       }
     }
   }

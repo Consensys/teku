@@ -42,7 +42,7 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 
 public interface Database extends AutoCloseable {
 
-  int PRUNE_BATCH_SIZE = 10000;
+  int PRUNE_BATCH_SIZE = 10_000;
 
   void storeInitialAnchor(AnchorPoint genesis);
 
