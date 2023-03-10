@@ -164,12 +164,12 @@ public class PeerSync {
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
 
-              final PeerSyncBlockRequest request =
+              final PeerSyncBlockRequest blockRequest =
                   new PeerSyncBlockRequest(
                       readyForNextRequest, ancestorStartSlot, count, this::importBlock);
 
-              return peer.requestBlocksByRange(ancestorStartSlot, count, request)
-                  .thenApply(__ -> request);
+              return peer.requestBlocksByRange(ancestorStartSlot, count, blockRequest)
+                  .thenApply(__ -> blockRequest);
             })
         .thenCompose(
             (blockRequest) -> {
