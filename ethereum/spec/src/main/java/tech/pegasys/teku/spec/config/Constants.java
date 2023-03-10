@@ -32,7 +32,6 @@ public class Constants {
   public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
   // TODO: remove when blobs decoupling sync is implemented
-  public static final UInt64 MAX_REQUEST_BLOBS_SIDECARS = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
 
   // Teku Networking Specific

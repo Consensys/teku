@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.common.collect.Streams;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -36,10 +35,8 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -49,7 +46,6 @@ public abstract class AbstractSyncTest {
   protected final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
-  protected final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   protected final RecentChainData storageClient = mock(RecentChainData.class);
 
   private final DataStructureUtil preDenebDataStructureUtil = new DataStructureUtil(spec);
@@ -66,11 +62,6 @@ public abstract class AbstractSyncTest {
   protected final ArgumentCaptor<RpcResponseListener<SignedBeaconBlock>>
       blockResponseListenerArgumentCaptor = ArgumentCaptor.forClass(RpcResponseListener.class);
 
-  @SuppressWarnings("unchecked")
-  protected final ArgumentCaptor<RpcResponseListener<BlobsSidecar>>
-      blobsSidecarResponseListenerArgumentCaptor =
-          ArgumentCaptor.forClass(RpcResponseListener.class);
-
   protected void completeRequestWithBlockAtSlot(
       final SafeFuture<Void> request, final int lastBlockSlot) {
     completeRequestWithBlockAtSlot(request, UInt64.valueOf(lastBlockSlot));
@@ -83,7 +74,6 @@ public abstract class AbstractSyncTest {
         .requestBlocksByRange(any(), any(), blockResponseListenerArgumentCaptor.capture());
     final RpcResponseListener<SignedBeaconBlock> responseListener =
         blockResponseListenerArgumentCaptor.getValue();
-
     final List<SignedBeaconBlock> blocks =
         respondWithBlocksAtSlots(responseListener, lastBlockSlot);
     for (SignedBeaconBlock block : blocks) {
@@ -103,7 +93,6 @@ public abstract class AbstractSyncTest {
       } else {
         block = preDenebDataStructureUtil.randomSignedBeaconBlock(slot);
       }
-
       blocks.add(block);
       responseListener.onResponse(block).join();
     }
@@ -115,73 +104,6 @@ public abstract class AbstractSyncTest {
       final UInt64 startSlot,
       final UInt64 count) {
     return respondWithBlocksAtSlots(responseListener, getSlotsRange(startSlot, count));
-  }
-
-  protected List<BlobsSidecar> respondWithBlobsSidecarsAtSlots(
-      final RpcResponseListener<BlobsSidecar> responseListener, final UInt64... slots) {
-    final List<BlobsSidecar> blobsSidecars = new ArrayList<>();
-    for (final UInt64 slot : slots) {
-      final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar(slot);
-      responseListener.onResponse(blobsSidecar).join();
-    }
-    return blobsSidecars;
-  }
-
-  protected List<BlobsSidecar> respondWithBlobsSidecarsAtSlots(
-      final RpcResponseListener<BlobsSidecar> responseListener,
-      final UInt64 startSlot,
-      final UInt64 count) {
-    return respondWithBlobsSidecarsAtSlots(responseListener, getSlotsRange(startSlot, count));
-  }
-
-  protected void completeRequestsWithBlocksAndBlobsSidecars(
-      final List<SafeFuture<Void>> blocksRequests,
-      final List<SafeFuture<Void>> blobsSidecarsRequests) {
-
-    Streams.forEachPair(
-        blocksRequests.stream(),
-        blobsSidecarsRequests.stream(),
-        (blockRequest, blobsSidecarRequest) -> {
-          final ArgumentCaptor<UInt64> blocksByRangeStartSlotArgumentCaptor =
-              ArgumentCaptor.forClass(UInt64.class);
-          final ArgumentCaptor<UInt64> blocksByRangeCountArgumentCaptor =
-              ArgumentCaptor.forClass(UInt64.class);
-          verify(peer, atLeastOnce())
-              .requestBlocksByRange(
-                  blocksByRangeStartSlotArgumentCaptor.capture(),
-                  blocksByRangeCountArgumentCaptor.capture(),
-                  blockResponseListenerArgumentCaptor.capture());
-          final ArgumentCaptor<UInt64> sidecarsByRangeStartSlotArgumentCaptor =
-              ArgumentCaptor.forClass(UInt64.class);
-          final ArgumentCaptor<UInt64> sidecarsByRangeCountArgumentCaptor =
-              ArgumentCaptor.forClass(UInt64.class);
-          verify(peer, atLeastOnce())
-              .requestBlobsSidecarsByRange(
-                  sidecarsByRangeStartSlotArgumentCaptor.capture(),
-                  sidecarsByRangeCountArgumentCaptor.capture(),
-                  blobsSidecarResponseListenerArgumentCaptor.capture());
-          // responding with blocks and sidecars for the requested slots
-          final RpcResponseListener<SignedBeaconBlock> blockListener =
-              blockResponseListenerArgumentCaptor.getValue();
-          final RpcResponseListener<BlobsSidecar> blobsSidecarListener =
-              blobsSidecarResponseListenerArgumentCaptor.getValue();
-          final List<SignedBeaconBlock> blocks =
-              respondWithBlocksAtSlots(
-                  blockListener,
-                  blocksByRangeStartSlotArgumentCaptor.getValue(),
-                  blocksByRangeCountArgumentCaptor.getValue());
-          final List<BlobsSidecar> blobsSidecars =
-              respondWithBlobsSidecarsAtSlots(
-                  blobsSidecarListener,
-                  sidecarsByRangeStartSlotArgumentCaptor.getValue(),
-                  sidecarsByRangeCountArgumentCaptor.getValue());
-          blocks.forEach(block -> verify(blockImporter).importBlock(block));
-          blobsSidecars.forEach(
-              sidecar -> verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(sidecar));
-          blockRequest.complete(null);
-          blobsSidecarRequest.complete(null);
-          asyncRunner.executeQueuedActions();
-        });
   }
 
   protected PeerStatus withPeerHeadSlot(
