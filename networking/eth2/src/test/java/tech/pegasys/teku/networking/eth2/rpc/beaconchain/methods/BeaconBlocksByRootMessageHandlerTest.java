@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
@@ -87,26 +86,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
   @Test
   public void onIncomingMessage_shouldRejectRequestWhenCountIsTooBig() {
-    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(altairForkEpoch));
-
-    final List<Bytes32> roots =
-        UInt64.range(UInt64.ZERO, MAX_REQUEST_BLOCKS.increment())
-            .map(__ -> Bytes32.ZERO)
-            .collect(Collectors.toList());
-
-    handler.onIncomingMessage(
-        V2_PROTOCOL_ID, peer, new BeaconBlocksByRootRequestMessage(roots), callback);
-
-    verify(callback)
-        .completeWithErrorResponse(
-            new RpcException(
-                INVALID_REQUEST_CODE,
-                "Only a maximum of 1024 blocks can be requested per request"));
-  }
-
-  @Test
-  public void onIncomingMessage_shouldRejectRequestWhenCountIsTooBigForDeneb() {
     final UInt64 denebForkEpoch = UInt64.valueOf(4);
+    // Testing for Deneb since can't initialize BeaconBlocksByRootMessageHandler with size more
+    // than MAX_REQUEST_BLOCKS
     final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
 
     when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(denebForkEpoch));

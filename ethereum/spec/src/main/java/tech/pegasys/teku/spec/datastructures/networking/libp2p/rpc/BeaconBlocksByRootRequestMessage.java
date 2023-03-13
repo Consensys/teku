@@ -30,7 +30,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     implements SszList<SszBytes32>, RpcRequest {
 
   // size validation according to the spec is done in the RPC handler
-  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOCKS.times(2);
+  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOCKS;
 
   public static class BeaconBlocksByRootRequestMessageSchema
       extends AbstractSszListSchema<SszBytes32, BeaconBlocksByRootRequestMessage> {
