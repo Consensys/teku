@@ -64,55 +64,19 @@ class ThrottlingSyncSourceTest {
   }
 
   @Test
-  void shouldLimitBlocksRequestToRemainingCapacity() {
-    final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.valueOf(10));
+  void shouldRequestBlocksImmediatelyIfRateLimitNotExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE - 1);
     ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
     ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, blocksListener));
 
     // Both requests happen immediately
     ignoreFuture(verify(delegate).requestBlocksByRange(UInt64.ZERO, count, blocksListener));
-    ignoreFuture(
-        verify(delegate)
-            .requestBlocksByRange(UInt64.valueOf(100), UInt64.valueOf(10), blocksListener));
+    ignoreFuture(verify(delegate).requestBlocksByRange(UInt64.valueOf(100), count, blocksListener));
   }
 
   @Test
-  void shouldResetBlocksRequestCapacityAfterTimeout() {
-    final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.ONE);
-    ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, count, blocksListener));
-    ignoreFuture(source.requestBlocksByRange(UInt64.valueOf(100), count, blocksListener));
-
-    // Both requests happen immediately
-    ignoreFuture(verify(delegate).requestBlocksByRange(UInt64.ZERO, count, blocksListener));
-    ignoreFuture(
-        verify(delegate).requestBlocksByRange(UInt64.valueOf(100), UInt64.ONE, blocksListener));
-
-    timeProvider.advanceTimeBySeconds(61);
-    ignoreFuture(
-        source.requestBlocksByRange(
-            UInt64.ZERO,
-            UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.valueOf(10)),
-            blocksListener));
-    ignoreFuture(
-        verify(delegate)
-            .requestBlocksByRange(
-                UInt64.ZERO,
-                UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.valueOf(10)),
-                blocksListener));
-
-    ignoreFuture(source.requestBlocksByRange(UInt64.ZERO, UInt64.valueOf(20), blocksListener));
-    ignoreFuture(
-        verify(delegate)
-            .requestBlocksByRange(
-                UInt64.ZERO,
-                UInt64.valueOf(MAX_BLOCKS_PER_MINUTE)
-                    .minus(UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.valueOf(10))),
-                blocksListener));
-  }
-
-  @Test
-  void shouldLimitBlobSidecarsRequestToRemainingCapacity() {
-    final UInt64 count = UInt64.valueOf(MAX_BLOB_SIDECARS_PER_MINUTE).minus(UInt64.valueOf(10));
+  void shouldRequestBlobSidecarsImmediatelyIfRateLimitNotExceeded() {
+    final UInt64 count = UInt64.valueOf(MAX_BLOB_SIDECARS_PER_MINUTE - 1);
     ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(
         source.requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
@@ -122,46 +86,7 @@ class ThrottlingSyncSourceTest {
         verify(delegate).requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
     ignoreFuture(
         verify(delegate)
-            .requestBlobSidecarsByRange(
-                UInt64.valueOf(100), UInt64.valueOf(10), blobSidecarsListener));
-  }
-
-  @Test
-  void shouldResetBlobSidecarsRequestCapacityAfterTimeout() {
-    final UInt64 count = UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.ONE);
-    ignoreFuture(source.requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
-    ignoreFuture(
-        source.requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
-
-    // Both requests happen immediately
-    ignoreFuture(
-        verify(delegate).requestBlobSidecarsByRange(UInt64.ZERO, count, blobSidecarsListener));
-    ignoreFuture(
-        verify(delegate)
-            .requestBlobSidecarsByRange(UInt64.valueOf(100), UInt64.ONE, blobSidecarsListener));
-
-    timeProvider.advanceTimeBySeconds(61);
-    ignoreFuture(
-        source.requestBlobSidecarsByRange(
-            UInt64.ZERO,
-            UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.valueOf(10)),
-            blobSidecarsListener));
-    ignoreFuture(
-        verify(delegate)
-            .requestBlobSidecarsByRange(
-                UInt64.ZERO,
-                UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.valueOf(10)),
-                blobSidecarsListener));
-
-    ignoreFuture(
-        source.requestBlobSidecarsByRange(UInt64.ZERO, UInt64.valueOf(20), blobSidecarsListener));
-    ignoreFuture(
-        verify(delegate)
-            .requestBlobSidecarsByRange(
-                UInt64.ZERO,
-                UInt64.valueOf(MAX_BLOCKS_PER_MINUTE)
-                    .minus(UInt64.valueOf(MAX_BLOCKS_PER_MINUTE).minus(UInt64.valueOf(10))),
-                blobSidecarsListener));
+            .requestBlobSidecarsByRange(UInt64.valueOf(100), count, blobSidecarsListener));
   }
 
   @Test

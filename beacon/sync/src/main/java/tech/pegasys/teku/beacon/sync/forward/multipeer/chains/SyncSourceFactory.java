@@ -13,21 +13,19 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCKS_PER_MINUTE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 import static tech.pegasys.teku.spec.config.Constants.SYNC_BATCH_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.SYNC_BLOB_SIDECARS_SIZE;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public class SyncSourceFactory {
 
@@ -42,21 +40,9 @@ public class SyncSourceFactory {
 
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
     // Limit request rate to just a little under what we'd accept
-    final int maxBlocksPerMinute = MAX_REQUEST_BLOCKS - SYNC_BATCH_SIZE.intValue() - 1;
+    final int maxBlocksPerMinute = MAX_BLOCKS_PER_MINUTE - SYNC_BATCH_SIZE.intValue() - 1;
 
-    final int initMaxBlobs =
-        Optional.ofNullable(spec.forMilestone(SpecMilestone.DENEB))
-            .map(
-                specDeneb ->
-                    specDeneb.getConfig().toVersionDeneb().orElseThrow().getMaxBlobsPerBlock())
-            .orElse(0);
-
-    final int maxBlobsPerBlock =
-        spec.atEpoch(peer.finalizedEpoch())
-            .getConfig()
-            .toVersionDeneb()
-            .map(specConfigDeneb -> specConfigDeneb.getMaxRequestBlobSidecars().intValue())
-            .orElse(initMaxBlobs);
+    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElse(0);
 
     final int maxBlobSidecarsPerMinute =
         MAX_REQUEST_BLOCKS_DENEB
