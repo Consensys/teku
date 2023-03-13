@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
-class ExecutionClientHandlerImpl implements ExecutionClientHandler {
+public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
   private final ExecutionJsonRpcMethodsResolver methodsResolver;
 

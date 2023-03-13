@@ -115,35 +115,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderBidChallengePercentage);
   }
 
-  public static ExecutionLayerManagerImpl create(
-      final EventLogger eventLogger,
-      final ExecutionEngineClient executionEngineClient,
-      final Optional<BuilderClient> builderClient,
-      final Spec spec,
-      final MetricsSystem metricsSystem,
-      final BuilderBidValidator builderBidValidator,
-      final BuilderCircuitBreaker builderCircuitBreaker,
-      final BlobsBundleValidator blobsBundleValidator,
-      final Optional<Integer> builderBidChallengePercentage) {
-    final EngineApiCapabilitiesProvider localEngineApiCapabilitiesProvider =
-        new LocallySupportedEngineApiCapabilitiesProvider(spec, executionEngineClient);
-    final MilestoneBasedExecutionJsonRpcMethodsResolver milestoneBasedMethodResolver =
-        new MilestoneBasedExecutionJsonRpcMethodsResolver(spec, localEngineApiCapabilitiesProvider);
-    final ExecutionClientHandler executionClientHandler =
-        new ExecutionClientHandlerImpl(milestoneBasedMethodResolver);
-
-    return create(
-        eventLogger,
-        executionClientHandler,
-        builderClient,
-        spec,
-        metricsSystem,
-        builderBidValidator,
-        builderCircuitBreaker,
-        blobsBundleValidator,
-        builderBidChallengePercentage);
-  }
-
   public static ExecutionEngineClient createEngineClient(
       final Version version,
       final Web3JClient web3JClient,
