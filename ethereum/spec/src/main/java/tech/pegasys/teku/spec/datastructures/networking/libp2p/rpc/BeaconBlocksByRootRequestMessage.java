@@ -24,15 +24,19 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     implements SszList<SszBytes32>, RpcRequest {
+
+  // size validation according to the spec is done in the RPC handler
+  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOCKS.times(2);
 
   public static class BeaconBlocksByRootRequestMessageSchema
       extends AbstractSszListSchema<SszBytes32, BeaconBlocksByRootRequestMessage> {
 
     private BeaconBlocksByRootRequestMessageSchema() {
-      super(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_REQUEST_BLOCKS);
+      super(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_LENGTH.longValue());
     }
 
     @Override

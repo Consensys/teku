@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -43,6 +44,11 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
+/**
+ * <a
+ * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#blobsidecarsbyrange-v1">BlobSidecarsByRange
+ * v1</a>
+ */
 public class BlobSidecarsByRangeMessageHandler
     extends PeerRequiredLocalMessageHandler<BlobSidecarsByRangeRequestMessage, BlobSidecar> {
 
@@ -82,16 +88,30 @@ public class BlobSidecarsByRangeMessageHandler
       final BlobSidecarsByRangeRequestMessage message,
       final ResponseCallback<BlobSidecar> callback) {
     final UInt64 startSlot = message.getStartSlot();
+    final UInt64 maxSlot = message.getMaxSlot();
+
     LOG.trace(
-        "Peer {} requested {} blob sidecars starting at slot {}.",
+        "Peer {} requested {} slots of blob sidecars starting at slot {}.",
         peer.getId(),
         message.getCount(),
         startSlot);
 
-    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(startSlot).getConfig());
-
+    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(maxSlot).getConfig());
     final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
     final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+
+    final UInt64 requestedCount = message.getCount().times(maxBlobsPerBlock);
+
+    if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
+      requestCounter.labels("count_too_big").inc();
+      callback.completeWithErrorResponse(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              String.format(
+                  "Only a maximum of %s blob sidecars can be requested per request",
+                  maxRequestBlobSidecars)));
+      return;
+    }
 
     if (!peer.popRequest()
         || !peer.popBlobSidecarRequests(
@@ -99,8 +119,9 @@ public class BlobSidecarsByRangeMessageHandler
       requestCounter.labels("rate_limited").inc();
       return;
     }
+
     requestCounter.labels("ok").inc();
-    totalBlobSidecarsRequestedCounter.inc(message.getCount().longValue());
+    totalBlobSidecarsRequestedCounter.inc(requestedCount.longValue());
 
     final Bytes32 headBlockRoot =
         combinedChainDataClient
@@ -128,7 +149,7 @@ public class BlobSidecarsByRangeMessageHandler
                       maxRequestBlobSidecars,
                       headBlockRoot,
                       startSlot,
-                      message.getMaxSlot());
+                      maxSlot);
               if (initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }

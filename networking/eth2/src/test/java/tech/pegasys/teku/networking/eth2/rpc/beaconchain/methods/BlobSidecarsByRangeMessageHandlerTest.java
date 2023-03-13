@@ -24,6 +24,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.List;
@@ -96,7 +97,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @BeforeEach
   public void setUp() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlobSidecarRequests(listener, count.longValue())).thenReturn(true);
+    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue())).thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
@@ -112,9 +113,33 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
+  public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
+    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, maxRequestBlobSidecars.increment());
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    final long rateLimitedCount =
+        metricsSystem
+            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
+            .getValue("count_too_big");
+
+    assertThat(rateLimitedCount).isOne();
+
+    verify(listener)
+        .completeWithErrorResponse(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
+  }
+
+  @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.popBlobSidecarRequests(listener, 5)).thenReturn(false);
+    when(peer.popBlobSidecarRequests(listener, 20)).thenReturn(false);
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count);

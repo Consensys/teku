@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
@@ -210,13 +209,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener)
-      throws RpcException {
-    if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
-      throw new RpcException(
-          INVALID_REQUEST_CODE,
-          "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request");
-    }
+      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener) {
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
