@@ -113,8 +113,7 @@ public class BlobSidecarsByRangeMessageHandler
       return;
     }
 
-    if (!peer.popRequest()
-        || !peer.popBlobSidecarRequests(callback, message.getCount().longValue())) {
+    if (!peer.popRequest() || !peer.popBlobSidecarRequests(callback, requestedCount.longValue())) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
