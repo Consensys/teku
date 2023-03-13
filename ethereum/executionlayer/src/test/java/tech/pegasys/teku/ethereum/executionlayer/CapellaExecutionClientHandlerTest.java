@@ -64,8 +64,11 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final Spec capellaStartingAtEpochOneSpec =
         TestSpecFactory.createMinimalWithCapellaForkEpoch(UInt64.ONE);
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(
-            capellaStartingAtEpochOneSpec, executionEngineClient);
+        new ExecutionClientHandlerImpl(
+            new MilestoneBasedExecutionJsonRpcMethodsResolver(
+                capellaStartingAtEpochOneSpec,
+                new LocallySupportedEngineApiCapabilitiesProvider(
+                    capellaStartingAtEpochOneSpec, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(capellaStartingAtEpochOneSpec);
 
     final UInt64 bellatrixSlot = UInt64.ONE;
@@ -187,8 +190,11 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final Spec capellaStartingAtEpochOneSpec =
         TestSpecFactory.createMinimalWithCapellaForkEpoch(UInt64.ONE);
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(
-            capellaStartingAtEpochOneSpec, executionEngineClient);
+        new ExecutionClientHandlerImpl(
+            new MilestoneBasedExecutionJsonRpcMethodsResolver(
+                capellaStartingAtEpochOneSpec,
+                new LocallySupportedEngineApiCapabilitiesProvider(
+                    capellaStartingAtEpochOneSpec, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(capellaStartingAtEpochOneSpec);
 
     final ForkChoiceState forkChoiceState = data.randomForkChoiceState(false);
