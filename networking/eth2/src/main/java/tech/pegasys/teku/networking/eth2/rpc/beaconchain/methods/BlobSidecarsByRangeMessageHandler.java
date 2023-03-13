@@ -93,8 +93,8 @@ public class BlobSidecarsByRangeMessageHandler
     final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
     final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
 
-    if (!peer.wantToMakeRequest()
-        || !peer.wantToReceiveBlobSidecars(
+    if (!peer.popRequest()
+        || !peer.popBlobSidecarRequests(
             callback, maxRequestBlobSidecars.min(message.getCount()).longValue())) {
       requestCounter.labels("rate_limited").inc();
       return;

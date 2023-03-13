@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -842,6 +843,13 @@ public class Spec {
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
         .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS);
+  }
+
+  public Optional<Integer> getMaxBlobsPerBlock() {
+    return forMilestone(getForkSchedule().getHighestSupportedMilestone())
+        .getConfig()
+        .toVersionDeneb()
+        .map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
   // Private helpers
