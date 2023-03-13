@@ -114,8 +114,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     if (!peer.popRequest()
-        || !peer.popBlobSidecarRequests(
-            callback, maxRequestBlobSidecars.min(message.getCount()).longValue())) {
+        || !peer.popBlobSidecarRequests(callback, message.getCount().longValue())) {
       requestCounter.labels("rate_limited").inc();
       return;
     }

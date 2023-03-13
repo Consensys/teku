@@ -90,7 +90,7 @@ public class BeaconBlocksByRangeMessageHandler
           new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
     }
 
-    if (request.getStep().compareTo(ONE) < 0) {
+    if (request.getStep().isLessThan(ONE)) {
       requestCounter.labels("invalid_step").inc();
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     }
@@ -121,8 +121,7 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
 
-    if (!peer.wantToMakeRequest()
-        || !peer.wantToReceiveBlocks(callback, message.getCount().longValue())) {
+    if (!peer.popRequest() || !peer.popBlockRequests(callback, message.getCount().longValue())) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
