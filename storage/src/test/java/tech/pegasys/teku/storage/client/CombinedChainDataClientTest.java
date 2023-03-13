@@ -50,7 +50,10 @@ class CombinedChainDataClientTest {
   private final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
   private final CombinedChainDataClient client =
       new CombinedChainDataClient(
-          recentChainData, historicalChainData, spec, new SystemTimeProvider(), 0);
+          recentChainData,
+          historicalChainData,
+          spec,
+          new EarliestAvailableBlockSlot(historicalChainData, new SystemTimeProvider(), 0));
   private final ChainHead chainHead = mock(ChainHead.class);
 
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
