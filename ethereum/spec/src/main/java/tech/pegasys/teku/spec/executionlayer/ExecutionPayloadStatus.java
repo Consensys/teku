@@ -17,8 +17,7 @@ public enum ExecutionPayloadStatus {
   VALID(Validity.VALID),
   INVALID(Validity.INVALID),
   SYNCING(Validity.NOT_VALIDATED),
-  ACCEPTED(Validity.NOT_VALIDATED),
-  INVALID_BLOCK_HASH(Validity.INVALID);
+  ACCEPTED(Validity.NOT_VALIDATED);
 
   private final Validity validity;
 
