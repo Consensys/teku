@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 
-class EarliestAvailableBlockSlot {
+public class EarliestAvailableBlockSlot {
   private static final Logger LOG = LogManager.getLogger();
   private final StorageQueryChannel historicalChainData;
   private final TimeProvider timeProvider;
