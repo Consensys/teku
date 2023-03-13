@@ -97,7 +97,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @BeforeEach
   public void setUp() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue())).thenReturn(true);
+    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue()))
+        .thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
