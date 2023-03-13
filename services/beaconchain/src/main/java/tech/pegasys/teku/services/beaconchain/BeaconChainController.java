@@ -150,6 +150,7 @@ import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
+import tech.pegasys.teku.storage.api.ThrottlingStorageQueryChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
@@ -219,6 +220,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile AttestationManager attestationManager;
   protected volatile SignatureVerificationService signatureVerificationService;
   protected volatile CombinedChainDataClient combinedChainDataClient;
+  protected volatile CombinedChainDataClient throttlingCombinedChainDataClient;
   protected volatile Eth1DataCache eth1DataCache;
   protected volatile SlotProcessor slotProcessor;
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
@@ -245,6 +247,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
+  protected volatile StorageQueryChannel throttlingStorageQueryChannel;
   protected volatile StorageUpdateChannel storageUpdateChannel;
 
   protected UInt64 genesisTimeTracker = ZERO;
@@ -357,6 +360,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
     storageQueryChannel = combinedStorageChannel;
     storageUpdateChannel = combinedStorageChannel;
+    throttlingStorageQueryChannel =
+        new ThrottlingStorageQueryChannel(storageQueryChannel, 4, metricsSystem);
+
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
@@ -612,6 +618,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     combinedChainDataClient =
         new CombinedChainDataClient(
             recentChainData, storageQueryChannel, spec, earliestAvailableBlockSlot);
+
+    throttlingCombinedChainDataClient =
+        new CombinedChainDataClient(
+            recentChainData, throttlingStorageQueryChannel, spec, earliestAvailableBlockSlot);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -873,7 +883,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
-            .combinedChainDataClient(combinedChainDataClient)
+            .combinedChainDataClient(throttlingCombinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobsSidecarManager::validateAndImportBlobSidecar)
             .gossipedAttestationProcessor(attestationManager::addAttestation)

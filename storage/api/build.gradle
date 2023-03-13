@@ -3,6 +3,7 @@ dependencies {
     implementation project(':infrastructure:events')
     implementation project(':ethereum:pow:api')
     implementation project(':ethereum:spec')
+    implementation project(':infrastructure:metrics')
 
     implementation 'org.apache.tuweni:tuweni-bytes'
 }
