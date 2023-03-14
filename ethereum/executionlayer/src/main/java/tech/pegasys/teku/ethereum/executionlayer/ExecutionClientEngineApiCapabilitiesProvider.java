@@ -118,13 +118,13 @@ public class ExecutionClientEngineApiCapabilitiesProvider
       sb.append(". ").append(errorResponse);
     }
 
-    if (failedAttempts >= EXCHANGE_CAPABILITIES_ATTEMPTS_BEFORE_LOG_WARN) {
-      LOG.warn(sb.toString());
+    if (!remoteSupportedMethodNames.isEmpty()) {
+      if (failedAttempts >= EXCHANGE_CAPABILITIES_ATTEMPTS_BEFORE_LOG_WARN) {
+        LOG.warn(sb.toString());
+      } else {
+        LOG.trace(sb.toString());
+      }
     } else {
-      LOG.trace(sb.toString());
-    }
-
-    if (remoteSupportedMethodNames.isEmpty()) {
       LOG.error(
           "Unable to fetch remote capabilities from Execution Client. Check if your Execution Client "
               + "supports engine_exchangeCapabilities method.");
