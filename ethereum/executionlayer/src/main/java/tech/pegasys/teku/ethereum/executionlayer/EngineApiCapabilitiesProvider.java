@@ -14,11 +14,18 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 
 public interface EngineApiCapabilitiesProvider {
 
   Collection<EngineJsonRpcMethod<?>> supportedMethods();
+
+  default Collection<String> supportedMethodsVersionedNames() {
+    return supportedMethods().stream()
+        .map(EngineJsonRpcMethod::getVersionedName)
+        .collect(Collectors.toUnmodifiableList());
+  }
 
   boolean isAvailable();
 }

@@ -195,7 +195,10 @@ public class ExecutionLayerService extends Service {
     if (config.isExchangeCapabilitiesEnabled()) {
       final ExecutionClientEngineApiCapabilitiesProvider remoteEngineApiCapabilitiesProvider =
           new ExecutionClientEngineApiCapabilitiesProvider(
-              asyncRunnerSupplier.get(), executionEngineClient, localEngineApiCapabilitiesProvider);
+              asyncRunnerSupplier.get(),
+              executionEngineClient,
+              localEngineApiCapabilitiesProvider,
+              serviceConfig.getEventChannels());
 
       final NegotiatedExecutionJsonRpcMethodsResolver negotiatedMethodsResolver =
           new NegotiatedExecutionJsonRpcMethodsResolver(
