@@ -69,7 +69,7 @@ class PeerChainTrackerTest {
 
   @BeforeEach
   void setUp() {
-    when(syncSourceFactory.getOrCreateSyncSource(peer)).thenReturn(syncSource);
+    when(syncSourceFactory.getOrCreateSyncSource(peer, spec)).thenReturn(syncSource);
     tracker.start();
   }
 

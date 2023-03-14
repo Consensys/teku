@@ -78,8 +78,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validate
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 /**
@@ -94,7 +93,7 @@ public class Eth2P2PNetworkBuilder {
 
   protected P2PConfig config;
   protected EventChannels eventChannels;
-  protected RecentChainData recentChainData;
+  protected CombinedChainDataClient combinedChainDataClient;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
@@ -105,7 +104,6 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<SignedBlsToExecutionChange>
       gossipedSignedBlsToExecutionChangeProcessor;
   protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
-  protected StorageQueryChannel historicalChainData;
   protected MetricsSystem metricsSystem;
   protected final List<RpcMethod<?, ?, ?>> rpcMethods = new ArrayList<>();
   protected final List<PeerHandler> peerHandlers = new ArrayList<>();
@@ -121,7 +119,6 @@ public class Eth2P2PNetworkBuilder {
       gossipedSignedContributionAndProofProcessor;
   protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
-  private int earliestAvailableBlockSlotFrequency = 0;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -143,8 +140,7 @@ public class Eth2P2PNetworkBuilder {
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
-            recentChainData,
-            historicalChainData,
+            combinedChainDataClient,
             metricsSystem,
             attestationSubnetService,
             syncCommitteeSubnetService,
@@ -156,7 +152,6 @@ public class Eth2P2PNetworkBuilder {
             timeProvider,
             config.getPeerRateLimit(),
             config.getPeerRequestLimit(),
-            earliestAvailableBlockSlotFrequency,
             spec);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
@@ -176,7 +171,7 @@ public class Eth2P2PNetworkBuilder {
         eth2PeerManager,
         gossipForkManager,
         eventChannels,
-        recentChainData,
+        combinedChainDataClient.getRecentChainData(),
         attestationSubnetService,
         syncCommitteeSubnetService,
         gossipEncoding,
@@ -187,7 +182,9 @@ public class Eth2P2PNetworkBuilder {
   private GossipForkManager buildGossipForkManager(
       final GossipEncoding gossipEncoding, final DiscoveryNetwork<?> network) {
     final GossipForkManager.Builder gossipForkManagerBuilder =
-        GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
+        GossipForkManager.builder()
+            .spec(spec)
+            .recentChainData(combinedChainDataClient.getRecentChainData());
     spec.getEnabledMilestones().stream()
         .map(
             forkAndSpecMilestone ->
@@ -208,7 +205,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             metricsSystem,
             network,
-            recentChainData,
+            combinedChainDataClient.getRecentChainData(),
             gossipEncoding,
             gossipedBlockProcessor,
             gossipedAttestationConsumer,
@@ -223,7 +220,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             metricsSystem,
             network,
-            recentChainData,
+            combinedChainDataClient.getRecentChainData(),
             gossipEncoding,
             gossipedBlockProcessor,
             gossipedAttestationConsumer,
@@ -240,7 +237,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             metricsSystem,
             network,
-            recentChainData,
+            combinedChainDataClient.getRecentChainData(),
             gossipEncoding,
             gossipedBlockProcessor,
             gossipedAttestationConsumer,
@@ -258,7 +255,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             metricsSystem,
             network,
-            recentChainData,
+            combinedChainDataClient.getRecentChainData(),
             gossipEncoding,
             gossipedBlockProcessor,
             gossipedAttestationConsumer,
@@ -277,7 +274,7 @@ public class Eth2P2PNetworkBuilder {
             asyncRunner,
             metricsSystem,
             network,
-            recentChainData,
+            combinedChainDataClient.getRecentChainData(),
             gossipEncoding,
             gossipedBlockProcessor,
             gossipedBlobSidecarProcessor,
@@ -302,9 +299,10 @@ public class Eth2P2PNetworkBuilder {
         new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
     PreparedGossipMessageFactory defaultMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
-            recentChainData::getMilestoneByForkDigest);
+            combinedChainDataClient.getRecentChainData()::getMilestoneByForkDigest);
     final GossipTopicFilter gossipTopicsFilter =
-        new Eth2GossipTopicFilter(recentChainData, gossipEncoding, spec);
+        new Eth2GossipTopicFilter(
+            combinedChainDataClient.getRecentChainData(), gossipEncoding, spec);
     final NetworkConfig networkConfig = config.getNetworkConfig();
     final DiscoveryConfig discoConfig = config.getDiscoveryConfig();
 
@@ -323,9 +321,11 @@ public class Eth2P2PNetworkBuilder {
             .build();
 
     final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
-        new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
+        new AttestationSubnetTopicProvider(
+            combinedChainDataClient.getRecentChainData(), gossipEncoding);
     final SyncCommitteeSubnetTopicProvider syncCommitteeSubnetTopicProvider =
-        new SyncCommitteeSubnetTopicProvider(recentChainData, gossipEncoding);
+        new SyncCommitteeSubnetTopicProvider(
+            combinedChainDataClient.getRecentChainData(), gossipEncoding);
 
     final TargetPeerRange targetPeerRange =
         new TargetPeerRange(
@@ -333,7 +333,7 @@ public class Eth2P2PNetworkBuilder {
             discoConfig.getMaxPeers(),
             discoConfig.getMinRandomlySelectedPeers());
     final SchemaDefinitionsSupplier currentSchemaDefinitions =
-        () -> recentChainData.getCurrentSpec().getSchemaDefinitions();
+        () -> combinedChainDataClient.getRecentChainData().getCurrentSpec().getSchemaDefinitions();
     final SettableLabelledGauge subnetPeerCountGauge =
         SettableLabelledGauge.create(
             metricsSystem,
@@ -379,7 +379,7 @@ public class Eth2P2PNetworkBuilder {
     assertNotNull("config", config);
     assertNotNull("eventChannels", eventChannels);
     assertNotNull("metricsSystem", metricsSystem);
-    assertNotNull("chainStorageClient", recentChainData);
+    assertNotNull("combinedChainDataClient", combinedChainDataClient);
     assertNotNull("keyValueStore", keyValueStore);
     assertNotNull("timeProvider", timeProvider);
     assertNotNull("gossipedBlockProcessor", gossipedBlockProcessor);
@@ -412,15 +412,10 @@ public class Eth2P2PNetworkBuilder {
     return this;
   }
 
-  public Eth2P2PNetworkBuilder historicalChainData(final StorageQueryChannel historicalChainData) {
-    checkNotNull(historicalChainData);
-    this.historicalChainData = historicalChainData;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder recentChainData(final RecentChainData recentChainData) {
-    checkNotNull(recentChainData);
-    this.recentChainData = recentChainData;
+  public Eth2P2PNetworkBuilder combinedChainDataClient(
+      final CombinedChainDataClient combinedChainDataClient) {
+    checkNotNull(combinedChainDataClient);
+    this.combinedChainDataClient = combinedChainDataClient;
     return this;
   }
 
@@ -561,12 +556,6 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder specProvider(final Spec spec) {
     checkNotNull(spec);
     this.spec = spec;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder earliestAvailableBlockSlotFrequency(
-      final int earliestAvailableBlockSlotFrequency) {
-    this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
     return this;
   }
 }

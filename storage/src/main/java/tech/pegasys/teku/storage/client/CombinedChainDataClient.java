@@ -28,7 +28,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -73,14 +72,12 @@ public class CombinedChainDataClient {
       final RecentChainData recentChainData,
       final StorageQueryChannel historicalChainData,
       final Spec spec,
-      final TimeProvider timeProvider,
-      int earliestAvailableBlockSlotFrequency) {
+      final EarliestAvailableBlockSlot earliestAvailableBlockSlot) {
     this.recentChainData = recentChainData;
     this.historicalChainData = historicalChainData;
     this.spec = spec;
-    this.earliestAvailableBlockSlot =
-        new EarliestAvailableBlockSlot(
-            historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
+    this.earliestAvailableBlockSlot = earliestAvailableBlockSlot;
+    ;
   }
 
   /**
@@ -580,6 +577,10 @@ public class CombinedChainDataClient {
         .map(forkChoice -> isOptimistic(blockRoot, forkChoice))
         // Can't be optimistically imported if we don't have a Store yet.
         .orElse(false);
+  }
+
+  public RecentChainData getRecentChainData() {
+    return recentChainData;
   }
 
   private boolean isCanonicalBlockCalculated(
