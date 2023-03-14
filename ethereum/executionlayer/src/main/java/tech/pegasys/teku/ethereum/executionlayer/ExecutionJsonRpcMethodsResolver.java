@@ -16,7 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 
-public interface ExecutionJsonRpcMethodsProvider {
+public interface ExecutionJsonRpcMethodsResolver {
 
   <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethods method, Class<T> resultType);
 }
