@@ -360,8 +360,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
         eventChannels.getPublisher(CombinedStorageChannel.class, beaconAsyncRunner);
     storageQueryChannel = combinedStorageChannel;
     storageUpdateChannel = combinedStorageChannel;
-    throttlingStorageQueryChannel =
-        new ThrottlingStorageQueryChannel(storageQueryChannel, 4, metricsSystem);
+    if (storeConfig.getHistoricalDataQueryThrottlingLimit() > 0) {
+      throttlingStorageQueryChannel =
+          new ThrottlingStorageQueryChannel(
+              storageQueryChannel,
+              storeConfig.getHistoricalDataQueryThrottlingLimit(),
+              metricsSystem);
+    } else {
+      throttlingStorageQueryChannel = storageQueryChannel;
+    }
 
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
     // Init other services

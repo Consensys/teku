@@ -65,6 +65,11 @@ public class Constants {
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
 
+  // rocksDB DEFAULT_MAX_BACKGROUND_JOBS and DEFAULT_BACKGROUND_THREAD_COUNT are set to 6
+  // and STORAGE_QUERY_CHANNEL_PARALLELISM is 10
+  // to be sure we leave some room for other queries we set the throttled limit to 5
+  public static final int DEFAULT_THROTTLED_STORAGE_QUERY_CHANNEL_LIMIT = 5;
+
   // Teku Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
   public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);

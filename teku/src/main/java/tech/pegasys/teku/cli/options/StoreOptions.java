@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.spec.config.Constants.DEFAULT_THROTTLED_STORAGE_QUERY_CHANNEL_LIMIT;
 import static tech.pegasys.teku.storage.store.StoreConfig.DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -64,6 +66,16 @@ public class StoreOptions {
   private int earliestAvailableBlockSlotQueryFrequency =
       DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
 
+  @Option(
+      names = {"--Xstore-historical-data-query-limit"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description =
+          "Activates throttling on queries to historical data when requested from non core flows (ie serving Network RPC to serve blocks). Set to 0 to disable the throttling.",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "1")
+  private int historicalDataQueryThrottlingLimit = DEFAULT_THROTTLED_STORAGE_QUERY_CHANNEL_LIMIT;
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.store(
         b ->
@@ -71,6 +83,7 @@ public class StoreOptions {
                 .blockCacheSize(blockCacheSize)
                 .stateCacheSize(stateCacheSize)
                 .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
-                .checkpointStateCacheSize(checkpointStateCacheSize));
+                .checkpointStateCacheSize(checkpointStateCacheSize)
+                .historicalDataQueryThrottlingLimit(historicalDataQueryThrottlingLimit));
   }
 }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.config.Constants.DEFAULT_THROTTLED_STORAGE_QUERY_CHANNEL_LIMIT;
 
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -27,24 +28,28 @@ public class StoreConfig {
   public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
 
   public static final int DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY = 0;
+  public static final boolean DEFAULT_HISTORICAL_DATA_QUERY_THROTTLING_ENABLED = true;
 
   private final int stateCacheSize;
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
   private final int earliestAvailableBlockSlotFrequency;
+  private final int historicalDataQueryThrottlingLimit;
 
   private StoreConfig(
       final int stateCacheSize,
       final int blockCacheSize,
       final int checkpointStateCacheSize,
       final int hotStatePersistenceFrequencyInEpochs,
-      int earliestAvailableBlockSlotFrequency) {
+      final int earliestAvailableBlockSlotFrequency,
+      final int historicalDataQueryThrottlingLimit) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
+    this.historicalDataQueryThrottlingLimit = historicalDataQueryThrottlingLimit;
   }
 
   public static Builder builder() {
@@ -71,6 +76,10 @@ public class StoreConfig {
     return earliestAvailableBlockSlotFrequency;
   }
 
+  public int getHistoricalDataQueryThrottlingLimit() {
+    return historicalDataQueryThrottlingLimit;
+  }
+
   public int getHotStatePersistenceFrequencyInEpochs() {
     return hotStatePersistenceFrequencyInEpochs;
   }
@@ -87,7 +96,9 @@ public class StoreConfig {
     return stateCacheSize == that.stateCacheSize
         && blockCacheSize == that.blockCacheSize
         && checkpointStateCacheSize == that.checkpointStateCacheSize
-        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs;
+        && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs
+        && earliestAvailableBlockSlotFrequency == that.earliestAvailableBlockSlotFrequency
+        && historicalDataQueryThrottlingLimit == that.historicalDataQueryThrottlingLimit;
   }
 
   @Override
@@ -96,7 +107,9 @@ public class StoreConfig {
         stateCacheSize,
         blockCacheSize,
         checkpointStateCacheSize,
-        hotStatePersistenceFrequencyInEpochs);
+        hotStatePersistenceFrequencyInEpochs,
+        earliestAvailableBlockSlotFrequency,
+        historicalDataQueryThrottlingLimit);
   }
 
   public static class Builder {
@@ -105,7 +118,9 @@ public class StoreConfig {
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
         DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS;
-    private int earliestAvailableBlockSlotFrequency = 0;
+    private int earliestAvailableBlockSlotFrequency =
+        DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY;
+    private int historicalDataQueryThrottlingLimit = DEFAULT_THROTTLED_STORAGE_QUERY_CHANNEL_LIMIT;
 
     private Builder() {}
 
@@ -115,7 +130,8 @@ public class StoreConfig {
           blockCacheSize,
           checkpointStateCacheSize,
           hotStatePersistenceFrequencyInEpochs,
-          earliestAvailableBlockSlotFrequency);
+          earliestAvailableBlockSlotFrequency,
+          historicalDataQueryThrottlingLimit);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
@@ -137,8 +153,14 @@ public class StoreConfig {
     }
 
     public Builder earliestAvailableBlockSlotFrequency(
-        int earliestAvailableBlockSlotQueryFrequency) {
+        final int earliestAvailableBlockSlotQueryFrequency) {
       this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotQueryFrequency;
+      return this;
+    }
+
+    public Builder historicalDataQueryThrottlingLimit(
+        final int historicalDataQueryThrottlingLimit) {
+      this.historicalDataQueryThrottlingLimit = historicalDataQueryThrottlingLimit;
       return this;
     }
 
