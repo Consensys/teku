@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.spec.Spec;
@@ -29,11 +28,6 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
 
   @SuppressWarnings("rawtypes")
   private final List<EngineJsonRpcMethod> methods = new ArrayList<>();
-
-  public MilestoneBasedExecutionJsonRpcMethodsResolver(
-      final Spec spec, final ExecutionEngineClient executionEngineClient) {
-    this(spec, new LocallySupportedEngineApiCapabilitiesProvider(spec, executionEngineClient));
-  }
 
   public MilestoneBasedExecutionJsonRpcMethodsResolver(
       final Spec spec, final EngineApiCapabilitiesProvider capabilitiesProvider) {

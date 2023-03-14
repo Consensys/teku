@@ -32,12 +32,11 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByHash;
 import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByNumber;
 import tech.pegasys.teku.spec.Spec;
 
-public class LocallySupportedEngineApiCapabilitiesProvider
-    implements EngineApiCapabilitiesProvider {
+public class LocalEngineApiCapabilitiesProvider implements EngineApiCapabilitiesProvider {
 
   private final Collection<EngineJsonRpcMethod<?>> supportedMethods = new HashSet<>();
 
-  public LocallySupportedEngineApiCapabilitiesProvider(
+  public LocalEngineApiCapabilitiesProvider(
       final Spec spec, final ExecutionEngineClient executionEngineClient) {
     // Eth1 methods
     supportedMethods.add(new EthGetBlockByHash(executionEngineClient));

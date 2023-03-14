@@ -28,16 +28,16 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 
-class LocallySupportedEngineApiCapabilitiesProviderTest {
+class LocalEngineApiCapabilitiesProviderTest {
 
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
 
-  LocallySupportedEngineApiCapabilitiesProvider factory;
+  LocalEngineApiCapabilitiesProvider factory;
 
   @BeforeEach
   public void setUp() {
-    factory = new LocallySupportedEngineApiCapabilitiesProvider(spec, executionEngineClient);
+    factory = new LocalEngineApiCapabilitiesProvider(spec, executionEngineClient);
   }
 
   @Test

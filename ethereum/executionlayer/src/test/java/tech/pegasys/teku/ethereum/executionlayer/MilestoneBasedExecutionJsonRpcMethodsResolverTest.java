@@ -55,8 +55,8 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
       EngineApiMethods method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
 
-    final LocallySupportedEngineApiCapabilitiesProvider capabilitiesProvider =
-        new LocallySupportedEngineApiCapabilitiesProvider(bellatrixSpec, executionEngineClient);
+    final LocalEngineApiCapabilitiesProvider capabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(bellatrixSpec, executionEngineClient);
     final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
         new MilestoneBasedExecutionJsonRpcMethodsResolver(bellatrixSpec, capabilitiesProvider);
 
@@ -84,8 +84,8 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
       EngineApiMethods method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
 
-    final LocallySupportedEngineApiCapabilitiesProvider capabilitiesProvider =
-        new LocallySupportedEngineApiCapabilitiesProvider(capellaSpec, executionEngineClient);
+    final LocalEngineApiCapabilitiesProvider capabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(capellaSpec, executionEngineClient);
     final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
         new MilestoneBasedExecutionJsonRpcMethodsResolver(capellaSpec, capabilitiesProvider);
 
@@ -113,8 +113,8 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
       EngineApiMethods method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
 
-    final LocallySupportedEngineApiCapabilitiesProvider capabilitiesProvider =
-        new LocallySupportedEngineApiCapabilitiesProvider(denebSpec, executionEngineClient);
+    final LocalEngineApiCapabilitiesProvider capabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(denebSpec, executionEngineClient);
     final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
         new MilestoneBasedExecutionJsonRpcMethodsResolver(denebSpec, capabilitiesProvider);
 

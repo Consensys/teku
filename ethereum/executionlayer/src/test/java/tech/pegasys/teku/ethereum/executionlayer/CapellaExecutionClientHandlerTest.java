@@ -67,7 +67,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
         new ExecutionClientHandlerImpl(
             new MilestoneBasedExecutionJsonRpcMethodsResolver(
                 capellaStartingAtEpochOneSpec,
-                new LocallySupportedEngineApiCapabilitiesProvider(
+                new LocalEngineApiCapabilitiesProvider(
                     capellaStartingAtEpochOneSpec, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(capellaStartingAtEpochOneSpec);
 
@@ -193,7 +193,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
         new ExecutionClientHandlerImpl(
             new MilestoneBasedExecutionJsonRpcMethodsResolver(
                 capellaStartingAtEpochOneSpec,
-                new LocallySupportedEngineApiCapabilitiesProvider(
+                new LocalEngineApiCapabilitiesProvider(
                     capellaStartingAtEpochOneSpec, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(capellaStartingAtEpochOneSpec);
 

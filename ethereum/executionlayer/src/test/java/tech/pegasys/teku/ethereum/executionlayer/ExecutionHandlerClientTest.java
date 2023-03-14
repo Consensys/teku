@@ -87,8 +87,8 @@ public abstract class ExecutionHandlerClientTest {
   }
 
   final ExecutionClientHandler getHandler() {
-    final LocallySupportedEngineApiCapabilitiesProvider capabilitiesProvider =
-        new LocallySupportedEngineApiCapabilitiesProvider(spec, executionEngineClient);
+    final LocalEngineApiCapabilitiesProvider capabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(spec, executionEngineClient);
     return new ExecutionClientHandlerImpl(
         new MilestoneBasedExecutionJsonRpcMethodsResolver(spec, capabilitiesProvider));
   }

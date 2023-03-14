@@ -44,7 +44,7 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandlerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
-import tech.pegasys.teku.ethereum.executionlayer.LocallySupportedEngineApiCapabilitiesProvider;
+import tech.pegasys.teku.ethereum.executionlayer.LocalEngineApiCapabilitiesProvider;
 import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedExecutionJsonRpcMethodsResolver;
 import tech.pegasys.teku.ethereum.executionlayer.NegotiatedExecutionJsonRpcMethodsResolver;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -186,7 +186,7 @@ public class ExecutionLayerService extends Service {
             metricsSystem);
 
     final EngineApiCapabilitiesProvider localEngineApiCapabilitiesProvider =
-        new LocallySupportedEngineApiCapabilitiesProvider(config.getSpec(), executionEngineClient);
+        new LocalEngineApiCapabilitiesProvider(config.getSpec(), executionEngineClient);
     final MilestoneBasedExecutionJsonRpcMethodsResolver milestoneBasedMethodResolver =
         new MilestoneBasedExecutionJsonRpcMethodsResolver(
             config.getSpec(), localEngineApiCapabilitiesProvider);
