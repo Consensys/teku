@@ -92,8 +92,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   @BeforeEach
   public void setup() {
-    when(peer.wantToMakeRequest()).thenReturn(true);
-    when(peer.wantToReceiveBlobSidecars(eq(callback), anyLong())).thenReturn(true);
+    when(peer.popRequest()).thenReturn(true);
+    when(peer.popBlobSidecarRequests(eq(callback), anyLong())).thenReturn(true);
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -146,7 +146,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.wantToReceiveBlobSidecars(callback, 5)).thenReturn(false);
+    when(peer.popBlobSidecarRequests(callback, 5)).thenReturn(false);
 
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(dataStructureUtil.randomBlobIdentifiers(5));

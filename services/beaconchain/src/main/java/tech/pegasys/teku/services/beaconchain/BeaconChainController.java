@@ -152,6 +152,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
@@ -602,13 +603,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initCombinedChainDataClient() {
     LOG.debug("BeaconChainController.initCombinedChainDataClient()");
-    combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
+    final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
+        new EarliestAvailableBlockSlot(
             storageQueryChannel,
-            spec,
             timeProvider,
             beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency());
+
+    combinedChainDataClient =
+        new CombinedChainDataClient(
+            recentChainData, storageQueryChannel, spec, earliestAvailableBlockSlot);
   }
 
   protected SafeFuture<Void> initWeakSubjectivity(
@@ -870,7 +873,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
             .eventChannels(eventChannels)
-            .recentChainData(recentChainData)
+            .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
             .gossipedBlobSidecarProcessor(blobsSidecarManager::validateAndImportBlobSidecar)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
@@ -883,15 +886,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .gossipedSignedBlsToExecutionChangeProcessor(blsToExecutionChangePool::addRemote)
             .processedAttestationSubscriptionProvider(
                 attestationManager::subscribeToAttestationsToSend)
-            .historicalChainData(storageQueryChannel)
             .metricsSystem(metricsSystem)
             .timeProvider(timeProvider)
             .asyncRunner(networkAsyncRunner)
             .keyValueStore(keyValueStore)
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
-            .earliestAvailableBlockSlotFrequency(
-                beaconConfig.storeConfig().getEarliestAvailableBlockSlotFrequency())
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

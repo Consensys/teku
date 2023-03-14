@@ -70,7 +70,6 @@ public class Constants {
   public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
   public static final UInt64 SYNC_BLOB_SIDECARS_SIZE = UInt64.valueOf(50);
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
-  public static final int MAX_BLOB_SIDECARS_PER_MINUTE = 1000;
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);
