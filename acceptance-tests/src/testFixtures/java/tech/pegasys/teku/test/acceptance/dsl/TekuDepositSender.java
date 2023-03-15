@@ -39,7 +39,7 @@ public class TekuDepositSender extends Node {
   private final ValidatorKeyGenerator validatorKeyGenerator = new ValidatorKeyGenerator();
 
   public TekuDepositSender(final Network network, final Spec spec) {
-    super(network, TekuNode.TEKU_DOCKER_IMAGE_NAME, DockerVersion.LOCAL_BUILD, LOG);
+    super(network, TekuNode.TEKU_DOCKER_IMAGE_NAME, TekuDockerVersion.LOCAL_BUILD, LOG);
     this.spec = spec;
   }
 
