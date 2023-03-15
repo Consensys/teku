@@ -21,7 +21,7 @@ public class Constants {
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
   public static final int GOSSIP_MAX_SIZE_BELLATRIX = 10485760; // bytes
-  public static final int MAX_REQUEST_BLOCKS = 1024;
+  public static final UInt64 MAX_REQUEST_BLOCKS = UInt64.valueOf(1024);
   public static final int MAX_CHUNK_SIZE = 1048576; // bytes
   public static final int MAX_CHUNK_SIZE_BELLATRIX = 10485760; // bytes
   public static final int ATTESTATION_SUBNET_COUNT = 64;
@@ -68,7 +68,6 @@ public class Constants {
   // Teku Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
   public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final UInt64 SYNC_BLOB_SIDECARS_SIZE = UInt64.valueOf(50);
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
 
   // Teku Validator Client Specific

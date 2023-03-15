@@ -14,7 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
@@ -190,7 +190,7 @@ public class BlobSidecarsByRootMessageHandler
   private UInt64 computeMinimumRequestEpoch(final UInt64 finalizedEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     return finalizedEpoch
-        .max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS))
+        .max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS))
         .max(denebForkEpoch);
   }
 
