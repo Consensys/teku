@@ -45,7 +45,7 @@ public enum SpecMilestone {
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones preceding the supplied milestone
    */
-  public static List<SpecMilestone> getAllPriorMilestones(SpecMilestone milestone) {
+  public static List<SpecMilestone> getAllPriorMilestones(final SpecMilestone milestone) {
     final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
     final int milestoneIndex = allMilestones.indexOf(milestone);
     return allMilestones.subList(0, milestoneIndex);
@@ -55,7 +55,7 @@ public enum SpecMilestone {
    * @param milestone The milestone being inspected
    * @return An ordered list of the supplied milestone and all milestones succeeding it
    */
-  public static List<SpecMilestone> getAllMilestonesFrom(SpecMilestone milestone) {
+  public static List<SpecMilestone> getAllMilestonesFrom(final SpecMilestone milestone) {
     final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
     final int milestoneIndex = allMilestones.indexOf(milestone);
     return allMilestones.subList(milestoneIndex, SpecMilestone.values().length);
@@ -65,7 +65,7 @@ public enum SpecMilestone {
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones up to and included the specified milestone
    */
-  static List<SpecMilestone> getMilestonesUpTo(SpecMilestone milestone) {
+  static List<SpecMilestone> getMilestonesUpTo(final SpecMilestone milestone) {
     final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
     final int milestoneIndex = allMilestones.indexOf(milestone);
     return allMilestones.subList(0, milestoneIndex + 1);
