@@ -71,7 +71,7 @@ public class ExecutionLayerService extends Service {
     final Path beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
     final Supplier<AsyncRunner> asyncRunnerSupplier =
-        () -> serviceConfig.createAsyncRunner("executionlayer", 1);
+        () -> serviceConfig.createAsyncRunner("executionLayer", 1);
 
     final ExecutionClientEventsChannel executionClientEventsPublisher =
         serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
@@ -193,8 +193,7 @@ public class ExecutionLayerService extends Service {
 
     final ExecutionClientHandler executionClientHandler;
     if (config.isExchangeCapabilitiesEnabled()) {
-      LOG.info(
-          "Using Engine API method negotiation with Execution Client (engine_exchangeCapabilities)");
+      LOG.info("Negotiating Engine API methods to use with execution client");
 
       final ExecutionClientEngineApiCapabilitiesProvider remoteEngineApiCapabilitiesProvider =
           new ExecutionClientEngineApiCapabilitiesProvider(

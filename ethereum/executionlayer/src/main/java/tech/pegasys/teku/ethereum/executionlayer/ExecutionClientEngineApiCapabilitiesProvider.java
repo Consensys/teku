@@ -96,7 +96,7 @@ public class ExecutionClientEngineApiCapabilitiesProvider
   }
 
   private void handleSuccessfulResponse(final Response<List<String>> response) {
-    LOG.info("Handling successful response (response = {})", response.getPayload());
+    LOG.trace("Handling successful response (response = {})", response.getPayload());
 
     final List<String> remoteCapabilities =
         response.getPayload() != null ? response.getPayload() : List.of();
@@ -122,7 +122,7 @@ public class ExecutionClientEngineApiCapabilitiesProvider
       if (failedAttempts >= EXCHANGE_CAPABILITIES_ATTEMPTS_BEFORE_LOG_WARN) {
         LOG.warn(sb.toString());
       } else {
-        LOG.info(sb.toString());
+        LOG.trace(sb.toString());
       }
     } else {
       LOG.error(
