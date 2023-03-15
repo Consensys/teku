@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,19 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import java.util.Collection;
-import java.util.stream.Collectors;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
-
-public interface EngineApiCapabilitiesProvider {
-
-  Collection<EngineJsonRpcMethod<?>> supportedMethods();
-
-  default Collection<String> supportedMethodsVersionedNames() {
-    return supportedMethods().stream()
-        .map(EngineJsonRpcMethod::getVersionedName)
-        .collect(Collectors.toUnmodifiableList());
+public class ExchangeCapabilitiesException extends RuntimeException {
+  public ExchangeCapabilitiesException(final String message) {
+    super(message);
   }
-
-  boolean isAvailable();
 }

@@ -66,7 +66,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         new ExecutionClientHandlerImpl(
             new MilestoneBasedExecutionJsonRpcMethodsResolver(
                 denebSpecWithForkSchedule,
-                new LocallySupportedEngineApiCapabilitiesProvider(
+                new LocalEngineApiCapabilitiesProvider(
                     denebSpecWithForkSchedule, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecWithForkSchedule);
     final ExecutionPayloadContext context = randomContext();
@@ -101,7 +101,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         new ExecutionClientHandlerImpl(
             new MilestoneBasedExecutionJsonRpcMethodsResolver(
                 denebSpecWithForkSchedule,
-                new LocallySupportedEngineApiCapabilitiesProvider(
+                new LocalEngineApiCapabilitiesProvider(
                     denebSpecWithForkSchedule, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecWithForkSchedule);
     final ExecutionPayloadContext context = randomContext();
@@ -153,7 +153,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         new ExecutionClientHandlerImpl(
             new MilestoneBasedExecutionJsonRpcMethodsResolver(
                 denebSpecStartingAtBellatrix,
-                new LocallySupportedEngineApiCapabilitiesProvider(
+                new LocalEngineApiCapabilitiesProvider(
                     denebSpecStartingAtBellatrix, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtBellatrix);
 
@@ -180,7 +180,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         new ExecutionClientHandlerImpl(
             new MilestoneBasedExecutionJsonRpcMethodsResolver(
                 denebSpecStartingAtCapella,
-                new LocallySupportedEngineApiCapabilitiesProvider(
+                new LocalEngineApiCapabilitiesProvider(
                     denebSpecStartingAtCapella, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtCapella);
 
