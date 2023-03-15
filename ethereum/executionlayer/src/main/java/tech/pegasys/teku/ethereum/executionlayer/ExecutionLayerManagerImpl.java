@@ -125,8 +125,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final BlobsBundleValidator blobsBundleValidator,
       final Optional<Integer> builderBidChallengePercentage) {
+    final EngineApiCapabilitiesProvider localEngineApiCapabilitiesProvider =
+        new LocallySupportedEngineApiCapabilitiesProvider(spec, executionEngineClient);
+    final MilestoneBasedExecutionJsonRpcMethodsResolver milestoneBasedMethodResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(spec, localEngineApiCapabilitiesProvider);
     final ExecutionClientHandler executionClientHandler =
-        new MilestoneBasedExecutionClientHandler(spec, executionEngineClient);
+        new ExecutionClientHandlerImpl(milestoneBasedMethodResolver);
 
     return create(
         eventLogger,
