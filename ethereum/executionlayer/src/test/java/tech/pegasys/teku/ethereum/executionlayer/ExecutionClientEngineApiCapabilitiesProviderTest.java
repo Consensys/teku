@@ -318,6 +318,7 @@ class ExecutionClientEngineApiCapabilitiesProviderTest {
     verifyNoMoreInteractions(executionEngineClient);
 
     remoteCapabilitiesProvider.onAvailabilityUpdated(true);
+    assertThat(remoteCapabilitiesProvider.supportedMethods()).isEmpty();
     asyncRunner.executeQueuedActions();
     verify(executionEngineClient, times(2)).exchangeCapabilities(any());
   }

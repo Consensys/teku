@@ -155,6 +155,7 @@ public class ExecutionClientEngineApiCapabilitiesProvider
       }
 
       if (isAvailable) {
+        remoteSupportedMethodNames.clear();
         fetchTask = runFetchTask();
       }
     }
