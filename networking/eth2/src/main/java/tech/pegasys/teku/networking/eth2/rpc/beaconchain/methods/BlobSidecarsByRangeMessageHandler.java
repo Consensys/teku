@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 /**
@@ -225,6 +226,8 @@ public class BlobSidecarsByRangeMessageHandler
 
     private Optional<SignedBeaconBlock> maybeCurrentBlock = Optional.empty();
 
+    private int blobSidecarsCount = 0;
+
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
         final UInt64 maxBlobsPerBlock,
@@ -263,7 +266,18 @@ public class BlobSidecarsByRangeMessageHandler
             .thenCompose(
                 block -> {
                   maybeCurrentBlock = block;
-                  return retrieveBlobSidecar();
+                  final MiscHelpersDeneb miscHelpersDeneb =
+                      spec.atSlot(currentSlot.get()).miscHelpers().toVersionDeneb().orElseThrow();
+                  blobSidecarsCount = miscHelpersDeneb.getBlobSidecarsCount(block);
+                  if (blobSidecarsCount > maxBlobsPerBlock.intValue()) {
+                    return SafeFuture.failedFuture(
+                        new RpcException.ResourceUnavailableException(
+                            String.format(
+                                "Blob Sidecars count %d is greater than max allowed Blob Sidecars per block %d",
+                                blobSidecarsCount, maxBlobsPerBlock.intValue())));
+                  } else {
+                    return retrieveBlobSidecar();
+                  }
                 });
       } else {
         return retrieveBlobSidecar();
@@ -272,11 +286,11 @@ public class BlobSidecarsByRangeMessageHandler
 
     boolean isComplete() {
       return currentSlot.get().isGreaterThan(maxSlot)
-          || maxRequestBlobSidecars.isLessThanOrEqualTo(sentBlobSidecars.get());
+          || UInt64.valueOf(sentBlobSidecars.get()).isGreaterThanOrEqualTo(maxRequestBlobSidecars);
     }
 
     void incrementSlotAndIndex() {
-      if (currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE))) {
+      if (currentIndex.get().equals(UInt64.valueOf(blobSidecarsCount).minusMinZero(UInt64.ONE))) {
         currentIndex.set(UInt64.ZERO);
         currentSlot.updateAndGet(UInt64::increment);
       } else {
@@ -304,7 +318,9 @@ public class BlobSidecarsByRangeMessageHandler
       maybeCurrentBlock.ifPresent(
           block -> {
             if (block.getSlot().equals(currentSlot.get())
-                && currentIndex.get().equals(maxBlobsPerBlock.minus(UInt64.ONE))) {
+                && currentIndex
+                    .get()
+                    .equals(UInt64.valueOf(blobSidecarsCount).minusMinZero(UInt64.ONE))) {
               maybeCurrentBlock = Optional.empty();
             }
           });
