@@ -193,6 +193,8 @@ public class ExecutionLayerService extends Service {
 
     final ExecutionClientHandler executionClientHandler;
     if (config.isExchangeCapabilitiesEnabled()) {
+      LOG.info("Using Engine API method negotiation with Execution Client (engine_exchangeCapabilities)");
+
       final ExecutionClientEngineApiCapabilitiesProvider remoteEngineApiCapabilitiesProvider =
           new ExecutionClientEngineApiCapabilitiesProvider(
               asyncRunnerSupplier.get(),
