@@ -50,7 +50,7 @@ class BlobSidecarsByRootRequestMessageTest {
   @Test
   public void verifyMaxLengthOfContainerIsGreaterOrEqualToMaxRequestBlobSidecars() {
     final List<SpecMilestone> shardingMilestones =
-        SpecMilestone.getAllFutureMilestones(SpecMilestone.CAPELLA);
+        SpecMilestone.getAllMilestonesFrom(SpecMilestone.DENEB);
 
     shardingMilestones.forEach(
         milestone -> {

@@ -53,12 +53,12 @@ public enum SpecMilestone {
 
   /**
    * @param milestone The milestone being inspected
-   * @return An ordered list of all milestones succeeding the supplied milestone
+   * @return An ordered list of the supplied milestone and all milestones succeeding it
    */
-  public static List<SpecMilestone> getAllFutureMilestones(SpecMilestone milestone) {
+  public static List<SpecMilestone> getAllMilestonesFrom(SpecMilestone milestone) {
     final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
     final int milestoneIndex = allMilestones.indexOf(milestone);
-    return allMilestones.subList(milestoneIndex + 1, SpecMilestone.values().length);
+    return allMilestones.subList(milestoneIndex, SpecMilestone.values().length);
   }
 
   /**
