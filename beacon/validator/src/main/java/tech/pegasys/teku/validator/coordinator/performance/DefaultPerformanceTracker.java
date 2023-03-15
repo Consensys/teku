@@ -283,8 +283,8 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
         new HashMap<>();
     for (Map.Entry<UInt64, List<Attestation>> entry : attestationsIncludedOnChain.entrySet()) {
       for (Attestation attestation : entry.getValue()) {
-        Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
-        NavigableMap<UInt64, SszBitlist> slotToBitlists =
+        final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
+        final NavigableMap<UInt64, SszBitlist> slotToBitlists =
             slotAndBitlistsByAttestationDataHash.computeIfAbsent(
                 attestationDataHash, __ -> new TreeMap<>());
         slotToBitlists.merge(
@@ -325,7 +325,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
 
     // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list
     // is empty.
-    int numberOfProducedAttestations = producedAttestations.size();
+    final int numberOfProducedAttestations = producedAttestations.size();
     return producedAttestations.size() > 0
         ? new AttestationPerformance(
             analyzedEpoch,
@@ -350,11 +350,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     final Set<BeaconBlock> blocksInEpoch = new HashSet<>();
     final AtomicReference<UInt64> currSlot = new AtomicReference<>(inclusiveEndEpochEndSlot);
     return SafeFuture.asyncDoWhile(
-            () -> getBlockInEffectAtSlot(blocksInEpoch, epochStartSlot, currSlot))
+            () -> fillBlockInEffectAtSlot(blocksInEpoch, epochStartSlot, currSlot))
         .thenApply(__ -> blocksInEpoch);
   }
 
-  private SafeFuture<Boolean> getBlockInEffectAtSlot(
+  private SafeFuture<Boolean> fillBlockInEffectAtSlot(
       final Set<BeaconBlock> blocksInEpoch,
       final UInt64 epochStartSlot,
       final AtomicReference<UInt64> currSlot) {
