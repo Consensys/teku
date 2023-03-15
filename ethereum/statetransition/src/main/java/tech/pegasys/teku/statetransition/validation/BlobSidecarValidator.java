@@ -139,7 +139,6 @@ public class BlobSidecarValidator {
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
     /*
-     TODO: I just proposed this rule in spec
     [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by sidecar.block_parent_root).
      */
     if (parentBlockSlot.isGreaterThanOrEqualTo(blobSidecar.getSlot())) {

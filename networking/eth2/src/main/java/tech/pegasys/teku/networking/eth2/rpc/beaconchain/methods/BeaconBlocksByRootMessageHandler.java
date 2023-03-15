@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
@@ -25,6 +29,7 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
@@ -70,8 +75,21 @@ public class BeaconBlocksByRootMessageHandler
       final Eth2Peer peer,
       final BeaconBlocksByRootRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
-    LOG.trace("Peer {} requested BeaconBlocks with roots: {}", peer.getId(), message);
+    LOG.trace(
+        "Peer {} requested {} BeaconBlocks with roots: {}", peer.getId(), message.size(), message);
     if (storageClient.getStore() != null) {
+
+      final UInt64 maxRequestBlocks = getMaxRequestBlocks();
+
+      if (message.size() > maxRequestBlocks.intValue()) {
+        requestCounter.labels("count_too_big").inc();
+        callback.completeWithErrorResponse(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                "Only a maximum of " + maxRequestBlocks + " blocks can be requested per request"));
+        return;
+      }
+
       SafeFuture<Void> future = SafeFuture.COMPLETE;
       if (!peer.popRequest() || !peer.popBlockRequests(callback, message.size())) {
         requestCounter.labels("rate_limited").inc();
@@ -102,6 +120,14 @@ public class BeaconBlocksByRootMessageHandler
       requestCounter.labels("ok").inc();
       callback.completeSuccessfully();
     }
+  }
+
+  private UInt64 getMaxRequestBlocks() {
+    final UInt64 currentEpoch = storageClient.getCurrentEpoch().orElse(UInt64.ZERO);
+    final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
+    return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
+        ? MAX_REQUEST_BLOCKS_DENEB
+        : MAX_REQUEST_BLOCKS;
   }
 
   private void handleError(
