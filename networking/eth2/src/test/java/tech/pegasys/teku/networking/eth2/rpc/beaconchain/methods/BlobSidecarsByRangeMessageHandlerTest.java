@@ -336,8 +336,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(beaconBlock.getBody()).thenReturn(beaconBlockBody);
     Optional<BeaconBlock> maybeBeaconBlock = Optional.of(beaconBlock);
     when(signedBeaconBlock.getBeaconBlock()).thenReturn(maybeBeaconBlock);
-    Optional<SignedBeaconBlock> maybeSignedBeaconBlock = Optional.of(signedBeaconBlock);
     when(combinedChainDataClient.getBlockAtSlotExact(eq(UInt64.valueOf(slot)), any()))
-        .thenReturn(SafeFuture.completedFuture(maybeSignedBeaconBlock));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
   }
 }
