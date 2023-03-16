@@ -240,7 +240,7 @@ public class P2POptions {
       P2PConfig.DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
 
   @Option(
-      names = {"--Xp2p-discovery-site-local-addresses-enabled"},
+      names = {"--p2p-discovery-site-local-addresses-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
