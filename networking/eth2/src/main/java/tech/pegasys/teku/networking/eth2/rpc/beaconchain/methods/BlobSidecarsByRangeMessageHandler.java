@@ -143,11 +143,7 @@ public class BlobSidecarsByRangeMessageHandler
               }
               final BlobSidecarsByRangeMessageHandler.RequestState initialState =
                   new BlobSidecarsByRangeMessageHandler.RequestState(
-                      callback,
-                      maxRequestBlobSidecars,
-                      headBlockRoot,
-                      startSlot,
-                      maxSlot);
+                      callback, maxRequestBlobSidecars, headBlockRoot, startSlot, maxSlot);
               if (initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }
