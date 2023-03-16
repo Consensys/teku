@@ -35,7 +35,7 @@ public class EventLogger {
       new EventLogger(LoggingConfigurator.EVENT_LOGGER_NAME);
 
   private static final String EXECUTION_CLIENT_READINESS_USER_REMINDER =
-      "Make sure the Execution Client is online and in sync.";
+      "Make sure the Execution Client is online and can respond to requests.";
 
   @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger log;
@@ -134,6 +134,13 @@ public class EventLogger {
 
   public void executionClientIsOnline() {
     info("Execution Client is online", Color.GREEN);
+  }
+
+  public void executionClientIsOffline() {
+    error(
+        "Execution Client is offline or there is a problem connecting to it. "
+            + EXECUTION_CLIENT_READINESS_USER_REMINDER,
+        Color.RED);
   }
 
   public void executionClientRequestFailed(final Throwable error, final boolean couldBeAuthError) {

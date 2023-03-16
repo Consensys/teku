@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -96,20 +97,13 @@ public abstract class Web3JClient {
   }
 
   protected void handleError(final Throwable error, final boolean couldBeAuthError) {
-    final long timeNow = timeProvider.getTimeInMillis().longValue();
-    final long maybeUpdatedTime =
-        lastError.accumulateAndGet(
-            timeNow,
-            (lastErrorTime, givenErrorTimeUpdate) -> {
-              if (lastErrorTime == NO_ERROR_TIME
-                  || givenErrorTimeUpdate - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
-                return givenErrorTimeUpdate;
-              }
-              return lastErrorTime;
-            });
-    if (maybeUpdatedTime == timeNow) {
-      logExecutionClientError(error, couldBeAuthError);
+    if (error instanceof SocketException) { // indicates that EL is offline
+      eventLog.executionClientIsOffline();
       executionClientEventsPublisher.onAvailabilityUpdated(false);
+    } else {
+      if (shouldReportError()) {
+        logExecutionClientError(error, couldBeAuthError);
+      }
     }
   }
 
@@ -144,6 +138,21 @@ public abstract class Web3JClient {
     }
     final String message = exception.getMessage();
     return message.contains("received: 401") || message.contains("received: 403");
+  }
+
+  private boolean shouldReportError() {
+    final long timeNow = timeProvider.getTimeInMillis().longValue();
+    final long maybeUpdatedTime =
+        lastError.accumulateAndGet(
+            timeNow,
+            (lastErrorTime, givenErrorTimeUpdate) -> {
+              if (lastErrorTime == NO_ERROR_TIME
+                  || givenErrorTimeUpdate - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
+                return givenErrorTimeUpdate;
+              }
+              return lastErrorTime;
+            });
+    return maybeUpdatedTime == timeNow;
   }
 
   private void logExecutionClientError(final Throwable error, final boolean couldBeAuthError) {
