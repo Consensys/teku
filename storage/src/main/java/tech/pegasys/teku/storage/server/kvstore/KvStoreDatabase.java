@@ -346,53 +346,60 @@ public class KvStoreDatabase implements Database {
     LOG.debug(
         "Earliest block slot stored is {}",
         earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
-    if (earliestBlockSlot.isEmpty()
-        || lastSlotToPrune.minusMinZero(earliestBlockSlot.get()).isLessThanOrEqualTo(2_500)) {
-      pruneToBlock(earliestBlockSlot, lastSlotToPrune);
+    if (earliestBlockSlot.isPresent()
+        && lastSlotToPrune
+            .minusMinZero(earliestBlockSlot.get())
+            .isLessThanOrEqualTo(PRUNE_BLOCK_STREAM_LIMIT)) {
+      pruneToBlock(lastSlotToPrune);
     } else {
-      pruneInBatchesToBlock(earliestBlockSlot, lastSlotToPrune);
+      pruneInBatchesToBlock(lastSlotToPrune);
     }
   }
 
-  private void pruneToBlock(Optional<UInt64> earliestBlockSlot, UInt64 lastSlotToPrune) {
+  private void pruneToBlock(UInt64 lastSlotToPrune) {
     final Map<UInt64, Bytes32> blocksToPrune;
-    LOG.debug(
-        "Pruning finalized blocks from to slot {} to {}",
-        earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString(),
-        lastSlotToPrune);
+    LOG.debug("Pruning finalized blocks to slot {}", lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
-        dao.streamFinalizedBlocks(earliestBlockSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
+        dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
       blocksToPrune =
           stream
-              .limit(PRUNE_BATCH_SIZE / 4)
+              .limit(PRUNE_BLOCK_STREAM_LIMIT)
               .collect(Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
     }
+    LOG.debug(
+        "Pruning {} finalized blocks, target last slot is {}",
+        blocksToPrune.size(),
+        lastSlotToPrune);
     deleteFinalizedBlocks(blocksToPrune);
   }
 
-  private void pruneInBatchesToBlock(Optional<UInt64> earliestBlockSlot, UInt64 lastSlotToPrune) {
-    for (UInt64 lastSlotInBatch = earliestBlockSlot.orElse(lastSlotToPrune);
-        lastSlotInBatch.isLessThan(lastSlotToPrune);
-        lastSlotInBatch = lastSlotToPrune.min(lastSlotInBatch.plus(PRUNE_BATCH_SIZE))) {
-      LOG.debug(
-          "Pruning finalized blocks by batch from to slot {}, target last slot is {}",
-          lastSlotInBatch,
-          lastSlotToPrune);
-      final Map<UInt64, Bytes32> blocksToPrune;
-      final UInt64 streamLimit = lastSlotInBatch;
-      try (final Stream<Map.Entry<Bytes32, UInt64>> stream =
-          dao.getFinalizedBlockRoots()
-              .filter(entry -> entry.getValue().isLessThanOrEqualTo(streamLimit))) {
+  private void pruneInBatchesToBlock(UInt64 lastSlotToPrune) {
+    Map<UInt64, Bytes32> blocksToPrune;
+    do {
+      try (final Stream<Map.Entry<Bytes32, UInt64>> stream = dao.getFinalizedBlockRoots()) {
         blocksToPrune =
-            stream.collect(Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
+            stream
+                .filter(entry -> entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
+                .limit(PRUNE_BATCH_SIZE)
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
       }
+      LOG.debug(
+          "Pruning finalized blocks; batch size: {}, target last slot is {}",
+          blocksToPrune.size(),
+          lastSlotToPrune);
       deleteFinalizedBlocks(blocksToPrune);
-    }
+
+    } while (blocksToPrune.size() > 0);
   }
 
   private void deleteFinalizedBlocks(final Map<UInt64, Bytes32> blocksToPrune) {
     if (blocksToPrune.size() > 0) {
-      LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
+      if (blocksToPrune.size() < 20) {
+        LOG.debug("Received blocks ({}) to delete", blocksToPrune.values());
+      } else {
+        LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
+      }
+
       try (final FinalizedUpdater updater = finalizedUpdater()) {
         blocksToPrune.forEach(updater::deleteFinalizedBlock);
         updater.commit();
