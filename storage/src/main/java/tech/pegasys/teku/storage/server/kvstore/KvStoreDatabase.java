@@ -395,7 +395,7 @@ public class KvStoreDatabase implements Database {
   private void deleteFinalizedBlocks(final Map<UInt64, Bytes32> blocksToPrune) {
     if (blocksToPrune.size() > 0) {
       if (blocksToPrune.size() < 20) {
-        LOG.debug("Received blocks ({}) to delete", blocksToPrune.values());
+        LOG.debug("Received blocks ({}) to delete", blocksToPrune.keySet());
       } else {
         LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
       }
