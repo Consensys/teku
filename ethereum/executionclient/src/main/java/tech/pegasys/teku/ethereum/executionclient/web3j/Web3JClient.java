@@ -98,7 +98,9 @@ public abstract class Web3JClient {
 
   protected void handleError(final Throwable error, final boolean couldBeAuthError) {
     if (error instanceof SocketException) { // indicates that EL is offline
-      eventLog.executionClientIsOffline();
+      if (shouldReportError()) {
+        eventLog.executionClientIsOffline();
+      }
       executionClientEventsPublisher.onAvailabilityUpdated(false);
     } else {
       if (shouldReportError()) {
