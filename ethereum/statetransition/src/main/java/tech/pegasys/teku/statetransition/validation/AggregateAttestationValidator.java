@@ -245,8 +245,6 @@ public class AggregateAttestationValidator {
     final UInt64 aggregateEpoch = spec.computeEpochAtSlot(aggregateSlot);
     final Fork aggregateFork = spec.fork(aggregateEpoch);
 
-    System.out.println(
-        "isSelectionProofValid: fork: " + aggregateFork + " epoch: " + aggregateEpoch);
     final Bytes32 domain =
         spec.getDomain(
             Domain.SELECTION_PROOF,
