@@ -269,15 +269,7 @@ public class BlobSidecarsByRangeMessageHandler
                   final MiscHelpersDeneb miscHelpersDeneb =
                       spec.atSlot(currentSlot.get()).miscHelpers().toVersionDeneb().orElseThrow();
                   blobSidecarsCount = miscHelpersDeneb.getBlobSidecarsCount(block);
-                  if (blobSidecarsCount > maxBlobsPerBlock.intValue()) {
-                    return SafeFuture.failedFuture(
-                        new RpcException.ResourceUnavailableException(
-                            String.format(
-                                "Blob Sidecars count %d is greater than max allowed Blob Sidecars per block %d",
-                                blobSidecarsCount, maxBlobsPerBlock.intValue())));
-                  } else {
-                    return retrieveBlobSidecar();
-                  }
+                  return retrieveBlobSidecar();
                 });
       } else {
         return retrieveBlobSidecar();
