@@ -343,9 +343,11 @@ public class KvStoreDatabase implements Database {
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
-    if (lastSlotToPrune
-        .minusMinZero(earliestBlockSlot.orElse(lastSlotToPrune))
-        .isLessThanOrEqualTo(500)) {
+    LOG.debug(
+        "Earliest block slot stored is {}",
+        earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
+    if (earliestBlockSlot.isEmpty()
+        || lastSlotToPrune.minusMinZero(earliestBlockSlot.get()).isLessThanOrEqualTo(2_500)) {
       pruneToBlock(earliestBlockSlot, lastSlotToPrune);
     } else {
       pruneInBatchesToBlock(earliestBlockSlot, lastSlotToPrune);
@@ -356,12 +358,14 @@ public class KvStoreDatabase implements Database {
     final Map<UInt64, Bytes32> blocksToPrune;
     LOG.debug(
         "Pruning finalized blocks from to slot {} to {}",
-        earliestBlockSlot.orElse(UInt64.ZERO),
+        earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString(),
         lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(earliestBlockSlot.orElse(UInt64.ZERO), lastSlotToPrune)) {
       blocksToPrune =
-          stream.collect(Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
+          stream
+              .limit(PRUNE_BATCH_SIZE / 4)
+              .collect(Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
     }
     deleteFinalizedBlocks(blocksToPrune);
   }
