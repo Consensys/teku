@@ -102,12 +102,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       new BlobSidecarsByRangeMessageHandler(
           spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
 
-  private final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
-
   @BeforeEach
   public void setUp() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue()))
+    when(peer.popBlobSidecarRequests(listener, count.longValue()))
         .thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
@@ -264,12 +262,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     BlobSidecarsByRangeMessageHandler.RequestState request =
         handler
         .new RequestState(
-            listener,
-            maxBlobsPerBlock,
-            specConfig.getMaxRequestBlobSidecars(),
-            headBlockRoot,
-            currentSlot,
-            count);
+            listener, specConfig.getMaxRequestBlobSidecars(), headBlockRoot, currentSlot, count);
 
     for (int slot = currentSlot.intValue(); slot <= count.intValue(); slot++) {
 

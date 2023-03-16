@@ -144,7 +144,6 @@ public class BlobSidecarsByRangeMessageHandler
               final BlobSidecarsByRangeMessageHandler.RequestState initialState =
                   new BlobSidecarsByRangeMessageHandler.RequestState(
                       callback,
-                      maxBlobsPerBlock,
                       maxRequestBlobSidecars,
                       headBlockRoot,
                       startSlot,
@@ -217,7 +216,6 @@ public class BlobSidecarsByRangeMessageHandler
 
     private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     private final ResponseCallback<BlobSidecar> callback;
-    private final UInt64 maxBlobsPerBlock;
     private final UInt64 maxRequestBlobSidecars;
     private final Bytes32 headBlockRoot;
     private final AtomicReference<UInt64> currentSlot;
@@ -230,13 +228,11 @@ public class BlobSidecarsByRangeMessageHandler
 
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
-        final UInt64 maxBlobsPerBlock,
         final UInt64 maxRequestBlobSidecars,
         final Bytes32 headBlockRoot,
         final UInt64 currentSlot,
         final UInt64 maxSlot) {
       this.callback = callback;
-      this.maxBlobsPerBlock = maxBlobsPerBlock;
       this.maxRequestBlobSidecars = maxRequestBlobSidecars;
       this.headBlockRoot = headBlockRoot;
       this.currentSlot = new AtomicReference<>(currentSlot);
