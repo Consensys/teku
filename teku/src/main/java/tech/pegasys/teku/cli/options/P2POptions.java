@@ -244,7 +244,7 @@ public class P2POptions {
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Whether discover accepts messages and peer records with site local (RFC1918) addresses",
+          "Whether discovery accepts messages and peer records with site local (RFC1918) addresses",
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
