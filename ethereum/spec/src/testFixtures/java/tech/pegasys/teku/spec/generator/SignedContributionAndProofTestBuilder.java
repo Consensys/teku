@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -159,8 +160,11 @@ public class SignedContributionAndProofTestBuilder {
         "Validator %s is not assigned to subcommittee %s",
         validatorIndex,
         subcommitteeIndex);
+    final ForkInfo forkInfo =
+        new ForkInfo(spec.fork(spec.computeEpochAtSlot(slot)), state.getGenesisValidatorsRoot());
+
     final BLSSignature syncSignature =
-        signer.signSyncCommitteeMessage(slot, beaconBlockRoot, state.getForkInfo()).join();
+        signer.signSyncCommitteeMessage(slot, beaconBlockRoot, forkInfo).join();
     final IntSet participationIndices = assignments.getParticipationBitIndices(subcommitteeIndex);
     // Have to add signature once for each time the validator appears in the subcommittee
     syncSignatures.addAll(Collections.nCopies(participationIndices.size(), syncSignature));
@@ -210,12 +214,12 @@ public class SignedContributionAndProofTestBuilder {
         syncCommitteeUtil.createContributionAndProof(
             aggregatorIndex, syncCommitteeContribution, selectionProof);
 
+    final ForkInfo forkInfo =
+        new ForkInfo(spec.fork(spec.computeEpochAtSlot(slot)), state.getGenesisValidatorsRoot());
+
     final BLSSignature signature =
         signedContributionAndProofSignature.orElseGet(
-            () ->
-                aggregatorSigner
-                    .signContributionAndProof(contributionAndProof, state.getForkInfo())
-                    .join());
+            () -> aggregatorSigner.signContributionAndProof(contributionAndProof, forkInfo).join());
     return syncCommitteeUtil.createSignedContributionAndProof(contributionAndProof, signature);
   }
 }
