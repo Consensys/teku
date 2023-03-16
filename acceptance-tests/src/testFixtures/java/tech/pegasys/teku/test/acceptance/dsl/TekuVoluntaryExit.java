@@ -34,7 +34,7 @@ public class TekuVoluntaryExit extends Node {
   private Set<File> configFiles;
 
   private TekuVoluntaryExit(final Network network, final TekuVoluntaryExit.Config config) {
-    super(network, TEKU_DOCKER_IMAGE_NAME, DockerVersion.LOCAL_BUILD, LOG);
+    super(network, TEKU_DOCKER_IMAGE_NAME, TekuDockerVersion.LOCAL_BUILD, LOG);
     this.config = config;
 
     container
