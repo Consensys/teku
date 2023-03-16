@@ -310,9 +310,7 @@ public class BlobSidecarsByRangeMessageHandler
       maybeCurrentBlock.ifPresent(
           block -> {
             if (block.getSlot().equals(currentSlot.get())
-                && currentIndex
-                    .get()
-                    .equals(getMaxBlobSidecarIndex())) {
+                && currentIndex.get().equals(getMaxBlobSidecarIndex())) {
               maybeCurrentBlock = Optional.empty();
             }
           });
