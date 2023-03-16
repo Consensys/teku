@@ -90,6 +90,11 @@ public class SigningRootUtil {
       final AggregateAndProof aggregateAndProof, final ForkInfo forkInfo) {
     final UInt64 slot = aggregateAndProof.getAggregate().getData().getSlot();
     final SpecVersion specVersion = spec.atSlot(slot);
+    System.out.println(
+        "signingRootForSignAggregateAndProof: forkInfo: "
+            + forkInfo
+            + " epoch: "
+            + spec.computeEpochAtSlot(slot));
     final Bytes32 domain =
         spec.getDomain(
             Domain.AGGREGATE_AND_PROOF,

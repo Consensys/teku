@@ -196,6 +196,11 @@ public class SignedContributionAndProofValidator {
     final AsyncBatchBLSSignatureVerifier signatureVerifier =
         new AsyncBatchBLSSignatureVerifier(this.signatureVerifier);
 
+    final ForkInfo contributionSignatureForkInfo =
+        new ForkInfo(
+            spec.fork(spec.computeEpochAtSlot(contribution.getSlot())),
+            state.getGenesisValidatorsRoot());
+
     // [REJECT] The contribution_and_proof.selection_proof is a valid signature of the
     // contribution.slot by the validator with index
     // contribution_and_proof.aggregator_index.
@@ -203,7 +208,7 @@ public class SignedContributionAndProofValidator {
         syncCommitteeUtil.getSyncAggregatorSelectionDataSigningRoot(
             syncCommitteeUtil.createSyncAggregatorSelectionData(
                 contribution.getSlot(), contribution.getSubcommitteeIndex()),
-            new ForkInfo(spec.fork(contributionEpoch), state.getGenesisValidatorsRoot()));
+            contributionSignatureForkInfo);
     if (!signatureVerifier.verify(
         aggregatorPublicKey.get(), signingRoot, contributionAndProof.getSelectionProof())) {
       return futureFailureResult(
@@ -215,7 +220,8 @@ public class SignedContributionAndProofValidator {
     // valid.
     if (!signatureVerifier.verify(
         aggregatorPublicKey.get(),
-        syncCommitteeUtil.getContributionAndProofSigningRoot(state, contributionAndProof),
+        syncCommitteeUtil.getContributionAndProofSigningRoot(
+            contributionAndProof, contributionSignatureForkInfo),
         proof.getSignature())) {
       return futureFailureResult(
           "Rejecting proof %s because aggregator signature is invalid", proof.getSignature());
@@ -243,7 +249,7 @@ public class SignedContributionAndProofValidator {
     if (!signatureVerifier.verify(
         contributorPublicKeys,
         syncCommitteeUtil.getSyncCommitteeMessageSigningRoot(
-            contribution.getBeaconBlockRoot(), contributionEpoch, state.getForkInfo()),
+            contribution.getBeaconBlockRoot(), contributionEpoch, contributionSignatureForkInfo),
         contribution.getSignature())) {
       return futureFailureResult(
           "Rejecting proof because aggregate signature %s is invalid", contribution.getSignature());
