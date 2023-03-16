@@ -282,7 +282,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     void incrementSlotAndIndex() {
-      if (currentIndex.get().equals(UInt64.valueOf(blobSidecarsCount).minusMinZero(UInt64.ONE))) {
+      if (currentIndex.get().equals(getMaxBlobSidecarIndex())) {
         currentIndex.set(UInt64.ZERO);
         currentSlot.updateAndGet(UInt64::increment);
       } else {
@@ -312,10 +312,14 @@ public class BlobSidecarsByRangeMessageHandler
             if (block.getSlot().equals(currentSlot.get())
                 && currentIndex
                     .get()
-                    .equals(UInt64.valueOf(blobSidecarsCount).minusMinZero(UInt64.ONE))) {
+                    .equals(getMaxBlobSidecarIndex())) {
               maybeCurrentBlock = Optional.empty();
             }
           });
+    }
+
+    private UInt64 getMaxBlobSidecarIndex() {
+      return UInt64.valueOf(blobSidecarsCount).minusMinZero(UInt64.ONE);
     }
   }
 }
