@@ -343,12 +343,65 @@ public class KvStoreDatabase implements Database {
   public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
-    for (UInt64 batchStart = earliestBlockSlot.orElse(lastSlotToPrune);
-        batchStart.isLessThanOrEqualTo(lastSlotToPrune);
-        batchStart = batchStart.plus(PRUNE_BATCH_SIZE)) {
+    LOG.debug(
+        "Earliest block slot stored is {}",
+        earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
+    if (earliestBlockSlot.isPresent()
+        && lastSlotToPrune
+            .minusMinZero(earliestBlockSlot.get())
+            .isLessThanOrEqualTo(PRUNE_BLOCK_STREAM_LIMIT)) {
+      pruneToBlock(lastSlotToPrune);
+    } else {
+      pruneInBatchesToBlock(lastSlotToPrune);
+    }
+  }
+
+  private void pruneToBlock(UInt64 lastSlotToPrune) {
+    final Map<UInt64, Bytes32> blocksToPrune;
+    LOG.debug("Pruning finalized blocks to slot {}", lastSlotToPrune);
+    try (final Stream<SignedBeaconBlock> stream =
+        dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
+      blocksToPrune =
+          stream
+              .limit(PRUNE_BLOCK_STREAM_LIMIT)
+              .collect(Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
+    }
+    LOG.debug(
+        "Pruning {} finalized blocks, target last slot is {}",
+        blocksToPrune.size(),
+        lastSlotToPrune);
+    deleteFinalizedBlocks(blocksToPrune);
+  }
+
+  private void pruneInBatchesToBlock(UInt64 lastSlotToPrune) {
+    Map<UInt64, Bytes32> blocksToPrune;
+    do {
+      try (final Stream<Map.Entry<Bytes32, UInt64>> stream = dao.getFinalizedBlockRoots()) {
+        blocksToPrune =
+            stream
+                .filter(entry -> entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
+                .limit(PRUNE_BATCH_SIZE)
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
+      }
+      LOG.debug(
+          "Pruning finalized blocks; batch size: {}, target last slot is {}",
+          blocksToPrune.size(),
+          lastSlotToPrune);
+      deleteFinalizedBlocks(blocksToPrune);
+
+    } while (blocksToPrune.size() > 0);
+  }
+
+  private void deleteFinalizedBlocks(final Map<UInt64, Bytes32> blocksToPrune) {
+    if (blocksToPrune.size() > 0) {
+      if (blocksToPrune.size() < 20) {
+        LOG.debug("Received blocks ({}) to delete", blocksToPrune.keySet());
+      } else {
+        LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
+      }
+
       try (final FinalizedUpdater updater = finalizedUpdater()) {
-        updater.pruneFinalizedBlocks(
-            batchStart, lastSlotToPrune.min(batchStart.plus(PRUNE_BATCH_SIZE)));
+        blocksToPrune.forEach(updater::deleteFinalizedBlock);
         updater.commit();
       }
     }

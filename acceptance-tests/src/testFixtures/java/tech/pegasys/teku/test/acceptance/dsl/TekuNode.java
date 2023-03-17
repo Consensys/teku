@@ -114,7 +114,7 @@ public class TekuNode extends Node {
   private boolean started = false;
   private Set<File> configFiles;
 
-  private TekuNode(final Network network, final DockerVersion version, final Config config) {
+  private TekuNode(final Network network, final TekuDockerVersion version, final Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
 
@@ -133,7 +133,7 @@ public class TekuNode extends Node {
   }
 
   public static TekuNode create(
-      final Network network, final DockerVersion version, final Consumer<Config> configOptions)
+      final Network network, final TekuDockerVersion version, final Consumer<Config> configOptions)
       throws TimeoutException, IOException {
 
     final Config config = new Config();
