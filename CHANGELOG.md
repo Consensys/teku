@@ -18,5 +18,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - The commandline option `--network` of the `validator-client` subcommand has been **un**deprecated for values other than `auto`.
 - Send validator registrations to the Beacon node when the Validator client has reconnected to the event stream
 - Added optional query parameters `require_prepared_proposers` and `require_validator_registrations` to the `teku/v1/admin/readiness` endpoint
+- Added mainnet configuration for CAPELLA network fork due epoch 194048, April 12, 2023; 10:27:35pm UTC
 
 ### Bug Fixes
