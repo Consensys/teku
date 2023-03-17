@@ -269,7 +269,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
                 updateLastValidation(Result.FAILED);
                 return Result.FAILED;
               } else {
-                LOG.debug("Endpoint {} is valid", this.id);
+                LOG.debug("Endpoint {} passed validation", this.id);
                 updateLastValidation(Result.SUCCESS);
                 return Result.SUCCESS;
               }
