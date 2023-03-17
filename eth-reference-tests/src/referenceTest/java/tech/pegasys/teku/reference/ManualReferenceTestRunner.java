@@ -48,7 +48,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   private static final String MILESTONE = null;
 
   /** Filter tests to run only those where the display name contains this string. */
-  private static final String DISPLAY_NAME = "withholding_attack";
+  private static final String DISPLAY_NAME = "";
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")
