@@ -275,6 +275,9 @@ public class Eth2NetworkConfiguration {
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
                       });
+                  builder.capellaBuilder(
+                      capellaBuilder ->
+                          capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch));
                   builder.denebBuilder(
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
