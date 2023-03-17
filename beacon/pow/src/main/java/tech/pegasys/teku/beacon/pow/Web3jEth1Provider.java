@@ -229,7 +229,7 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
           .exceptionally(
               error -> {
                 LOG.warn(
-                    "Endpoint {} is INVALID | {}",
+                    "Endpoint {} encountered an issue | {}",
                     this.id,
                     Throwables.getRootCause(error).getMessage());
                 updateLastValidation(Result.FAILED);
@@ -265,11 +265,11 @@ public class Web3jEth1Provider extends AbstractMonitorableEth1Provider {
         .thenApply(
             syncing -> {
               if (syncing) {
-                LOG.warn("Endpoint {} is INVALID | Still syncing", this.id);
+                LOG.debug("Endpoint {} failed validation | Still syncing", this.id);
                 updateLastValidation(Result.FAILED);
                 return Result.FAILED;
               } else {
-                LOG.debug("Endpoint {} is VALID", this.id);
+                LOG.debug("Endpoint {} passed validation", this.id);
                 updateLastValidation(Result.SUCCESS);
                 return Result.SUCCESS;
               }
