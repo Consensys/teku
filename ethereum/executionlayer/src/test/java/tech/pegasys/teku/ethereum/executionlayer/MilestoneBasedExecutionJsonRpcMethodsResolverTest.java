@@ -40,7 +40,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByNumber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 
-class MilestoneBasedExecutionJsonRpcMethodsProviderTest {
+class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
 
   private ExecutionEngineClient executionEngineClient;
 
@@ -55,11 +55,13 @@ class MilestoneBasedExecutionJsonRpcMethodsProviderTest {
       EngineApiMethods method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
 
-    final MilestoneBasedExecutionJsonRpcMethodsProvider methodsProvider =
-        new MilestoneBasedExecutionJsonRpcMethodsProvider(bellatrixSpec, executionEngineClient);
+    final LocalEngineApiCapabilitiesProvider capabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(bellatrixSpec, executionEngineClient);
+    final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(bellatrixSpec, capabilitiesProvider);
 
     final EngineJsonRpcMethod<Object> providedMethod =
-        methodsProvider.getMethod(method, Object.class);
+        methodsResolver.getMethod(method, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
   }
@@ -82,11 +84,13 @@ class MilestoneBasedExecutionJsonRpcMethodsProviderTest {
       EngineApiMethods method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
 
-    final MilestoneBasedExecutionJsonRpcMethodsProvider methodsProvider =
-        new MilestoneBasedExecutionJsonRpcMethodsProvider(capellaSpec, executionEngineClient);
+    final LocalEngineApiCapabilitiesProvider capabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(capellaSpec, executionEngineClient);
+    final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(capellaSpec, capabilitiesProvider);
 
     final EngineJsonRpcMethod<Object> providedMethod =
-        methodsProvider.getMethod(method, Object.class);
+        methodsResolver.getMethod(method, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
   }
@@ -109,11 +113,13 @@ class MilestoneBasedExecutionJsonRpcMethodsProviderTest {
       EngineApiMethods method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
 
-    final MilestoneBasedExecutionJsonRpcMethodsProvider methodsProvider =
-        new MilestoneBasedExecutionJsonRpcMethodsProvider(denebSpec, executionEngineClient);
+    final LocalEngineApiCapabilitiesProvider capabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(denebSpec, executionEngineClient);
+    final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(denebSpec, capabilitiesProvider);
 
     final EngineJsonRpcMethod<Object> providedMethod =
-        methodsProvider.getMethod(method, Object.class);
+        methodsResolver.getMethod(method, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
   }

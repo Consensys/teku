@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,18 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-public enum BesuDockerVersion {
-  STABLE("23.1.1");
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 
-  private final String version;
+public interface ExecutionJsonRpcMethodsResolver {
 
-  BesuDockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
-  }
+  <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethods method, Class<T> resultType);
 }

@@ -58,7 +58,9 @@ public class TekuValidatorNode extends Node {
           new TrustingSimpleHttpsClient(), this::getValidatorApiUrl, this::getApiPassword);
 
   private TekuValidatorNode(
-      final Network network, final DockerVersion version, final TekuValidatorNode.Config config) {
+      final Network network,
+      final TekuDockerVersion version,
+      final TekuValidatorNode.Config config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
     if (config.configMap.containsKey("validator-api-enabled")) {
@@ -73,7 +75,7 @@ public class TekuValidatorNode extends Node {
 
   public static TekuValidatorNode create(
       final Network network,
-      final DockerVersion version,
+      final TekuDockerVersion version,
       Consumer<TekuValidatorNode.Config> configOptions) {
 
     final TekuValidatorNode.Config config = new TekuValidatorNode.Config();

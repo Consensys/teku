@@ -111,6 +111,16 @@ public class ExecutionLayerOptions {
   private String builderBidChallengePercentage =
       Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
 
+  @Option(
+      hidden = true,
+      names = {"--Xexchange-capabilities-enabled"},
+      paramLabel = "<BOOLEAN>",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables Engine API capabilities negotiation with Execution Client",
+      arity = "0..1")
+  private boolean exchangeCapabilitiesEnabled = false;
+
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -123,7 +133,8 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults)
                 .builderCircuitBreakerAllowedConsecutiveFaults(
                     builderCircuitBreakerAllowedConsecutiveFaults)
-                .builderBidChallengePercentage(builderBidChallengePercentage));
+                .builderBidChallengePercentage(builderBidChallengePercentage)
+                .exchangeCapabilitiesEnabled(exchangeCapabilitiesEnabled));
     depositOptions.configure(builder);
   }
 }

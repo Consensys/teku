@@ -155,4 +155,34 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(config.executionLayer()::getEngineEndpoint)
         .isInstanceOf(InvalidConfigurationException.class);
   }
+
+  @Test
+  public void shouldRespectExchangeCapabilitiesToggleOn() {
+    final String[] args = {"--Xexchange-capabilities-enabled", "true"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldRespectExchangeCapabilitiesToggleOff() {
+    final String[] args = {"--Xexchange-capabilities-enabled", "false"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldRespectExchangeCapabilitiesFallbackOption() {
+    final String[] args = {"--Xexchange-capabilities-enabled"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldRespectExchangeCapabilitiesDefaultOption() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isFalse();
+  }
 }

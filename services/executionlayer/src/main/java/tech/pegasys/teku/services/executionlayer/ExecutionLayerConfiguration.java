@@ -30,9 +30,7 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW = 32;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
-
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
-
   public static final int DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE = 100;
 
   private final Spec spec;
@@ -45,6 +43,7 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerAllowedFaults;
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
   private final Optional<Integer> builderBidChallengePercentage;
+  private final boolean exchangeCapabilitiesEnabled;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -56,7 +55,8 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerWindow,
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
-      final Optional<Integer> builderBidChallengePercentage) {
+      final Optional<Integer> builderBidChallengePercentage,
+      final boolean exchangeCapabilitiesEnabled) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineVersion = engineVersion;
@@ -68,6 +68,7 @@ public class ExecutionLayerConfiguration {
     this.builderCircuitBreakerAllowedConsecutiveFaults =
         builderCircuitBreakerAllowedConsecutiveFaults;
     this.builderBidChallengePercentage = builderBidChallengePercentage;
+    this.exchangeCapabilitiesEnabled = exchangeCapabilitiesEnabled;
   }
 
   public static Builder builder() {
@@ -117,6 +118,10 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
+  public boolean isExchangeCapabilitiesEnabled() {
+    return exchangeCapabilitiesEnabled;
+  }
+
   public Optional<Integer> getBuilderBidChallengePercentage() {
     return builderBidChallengePercentage;
   }
@@ -134,6 +139,7 @@ public class ExecutionLayerConfiguration {
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
     private String builderBidChallengePercentage =
         Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
+    private boolean exchangeCapabilitiesEnabled = false;
 
     private Builder() {}
 
@@ -152,7 +158,8 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerWindow,
           builderCircuitBreakerAllowedFaults,
           builderCircuitBreakerAllowedConsecutiveFaults,
-          builderChallengePercentage);
+          builderChallengePercentage,
+          exchangeCapabilitiesEnabled);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -205,6 +212,11 @@ public class ExecutionLayerConfiguration {
 
     public Builder builderBidChallengePercentage(final String builderBidChallengePercentage) {
       this.builderBidChallengePercentage = builderBidChallengePercentage;
+      return this;
+    }
+
+    public Builder exchangeCapabilitiesEnabled(boolean enabled) {
+      this.exchangeCapabilitiesEnabled = enabled;
       return this;
     }
 

@@ -18,7 +18,7 @@ public enum EngineApiMethods {
   ETH_GET_BLOCK_BY_NUMBER("eth_getBlockByNumber"),
   ENGINE_NEW_PAYLOAD("engine_newPayload"),
   ENGINE_GET_PAYLOAD("engine_getPayload"),
-  ENGINE_FORK_CHOICE_UPDATED("engine_forkChoiceUpdated"),
+  ENGINE_FORK_CHOICE_UPDATED("engine_forkchoiceUpdated"),
   ENGINE_EXCHANGE_TRANSITION_CONFIGURATION("engine_exchangeTransitionConfiguration"),
   ENGINE_GET_BLOBS_BUNDLE("engine_getBlobsBundle");
 

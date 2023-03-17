@@ -24,7 +24,7 @@ public class StorageConfiguration {
 
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
-  public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofHours(1);
+  public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
   public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 32;
 

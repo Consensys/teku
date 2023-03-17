@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_E
 
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -36,9 +37,17 @@ import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
+import tech.pegasys.teku.ethereum.executionlayer.EngineApiCapabilitiesProvider;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientEngineApiCapabilitiesProvider;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandler;
+import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandlerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
+import tech.pegasys.teku.ethereum.executionlayer.LocalEngineApiCapabilitiesProvider;
+import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedExecutionJsonRpcMethodsResolver;
+import tech.pegasys.teku.ethereum.executionlayer.NegotiatedExecutionJsonRpcMethodsResolver;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -61,6 +70,8 @@ public class ExecutionLayerService extends Service {
 
     final Path beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
+    final Supplier<AsyncRunner> asyncRunnerSupplier =
+        () -> serviceConfig.createAsyncRunner("executionLayer", 1);
 
     final ExecutionClientEventsChannel executionClientEventsPublisher =
         serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
@@ -113,66 +124,120 @@ public class ExecutionLayerService extends Service {
 
     final ExecutionLayerManager executionLayerManager;
     if (engineWeb3jClientProvider.isStub()) {
-      EVENT_LOG.executionLayerStubEnabled();
-      Optional<Bytes32> terminalBlockHashInTTDMode = Optional.empty();
-      if (config.getEngineEndpoint().startsWith(STUB_ENDPOINT_PREFIX + ":0x")) {
-        try {
-          terminalBlockHashInTTDMode =
-              Optional.of(
-                  Bytes32.fromHexStringStrict(
-                      config
-                          .getEngineEndpoint()
-                          .substring(STUB_ENDPOINT_PREFIX.length() + ":0x".length())));
-        } catch (Exception ex) {
-          LOG.warn("Unable to parse terminal block hash from stub endpoint.", ex);
-        }
-      }
       executionLayerManager =
-          new ExecutionLayerManagerStub(
-              config.getSpec(),
-              timeProvider,
-              true,
-              terminalBlockHashInTTDMode,
-              builderCircuitBreaker);
+          createStubExecutionLayerManager(serviceConfig, config, builderCircuitBreaker);
     } else {
-      final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
-
-      final ExecutionEngineClient executionEngineClient =
-          ExecutionLayerManagerImpl.createEngineClient(
-              config.getEngineVersion(),
-              engineWeb3jClientProvider.getWeb3JClient(),
-              timeProvider,
-              metricsSystem);
-      final Optional<BuilderClient> builderClient =
-          builderRestClientProvider.map(
-              restClientProvider ->
-                  ExecutionLayerManagerImpl.createBuilderClient(
-                      restClientProvider.getRestClient(),
-                      config.getSpec(),
-                      timeProvider,
-                      metricsSystem));
-
-      final BlobsBundleValidator blobsBundleValidator =
-          config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)
-              ? new BlobsBundleValidatorImpl(
-                  (MiscHelpersDeneb)
-                      config.getSpec().forMilestone(SpecMilestone.DENEB).miscHelpers())
-              : BlobsBundleValidator.NOOP;
       executionLayerManager =
-          ExecutionLayerManagerImpl.create(
-              EVENT_LOG,
-              executionEngineClient,
-              builderClient,
-              config.getSpec(),
-              metricsSystem,
-              new BuilderBidValidatorImpl(EVENT_LOG),
-              builderCircuitBreaker,
-              blobsBundleValidator,
-              config.getBuilderBidChallengePercentage());
+          createRealExecutionLayerManager(
+              serviceConfig,
+              config,
+              asyncRunnerSupplier,
+              engineWeb3jClientProvider,
+              builderRestClientProvider,
+              builderCircuitBreaker);
     }
 
     return new ExecutionLayerService(
         serviceConfig.getEventChannels(), engineWeb3jClientProvider, executionLayerManager);
+  }
+
+  private static ExecutionLayerManager createStubExecutionLayerManager(
+      final ServiceConfig serviceConfig,
+      final ExecutionLayerConfiguration config,
+      final BuilderCircuitBreaker builderCircuitBreaker) {
+    EVENT_LOG.executionLayerStubEnabled();
+    Optional<Bytes32> terminalBlockHashInTTDMode = Optional.empty();
+    if (config.getEngineEndpoint().startsWith(STUB_ENDPOINT_PREFIX + ":0x")) {
+      try {
+        terminalBlockHashInTTDMode =
+            Optional.of(
+                Bytes32.fromHexStringStrict(
+                    config
+                        .getEngineEndpoint()
+                        .substring(STUB_ENDPOINT_PREFIX.length() + ":0x".length())));
+      } catch (Exception ex) {
+        LOG.warn("Unable to parse terminal block hash from stub endpoint.", ex);
+      }
+    }
+
+    return new ExecutionLayerManagerStub(
+        config.getSpec(),
+        serviceConfig.getTimeProvider(),
+        true,
+        terminalBlockHashInTTDMode,
+        builderCircuitBreaker);
+  }
+
+  private static ExecutionLayerManager createRealExecutionLayerManager(
+      final ServiceConfig serviceConfig,
+      final ExecutionLayerConfiguration config,
+      final Supplier<AsyncRunner> asyncRunnerSupplier,
+      final ExecutionWeb3jClientProvider engineWeb3jClientProvider,
+      final Optional<RestClientProvider> builderRestClientProvider,
+      final BuilderCircuitBreaker builderCircuitBreaker) {
+    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+    final TimeProvider timeProvider = serviceConfig.getTimeProvider();
+
+    final ExecutionEngineClient executionEngineClient =
+        ExecutionLayerManagerImpl.createEngineClient(
+            config.getEngineVersion(),
+            engineWeb3jClientProvider.getWeb3JClient(),
+            timeProvider,
+            metricsSystem);
+
+    final EngineApiCapabilitiesProvider localEngineApiCapabilitiesProvider =
+        new LocalEngineApiCapabilitiesProvider(config.getSpec(), executionEngineClient);
+    final MilestoneBasedExecutionJsonRpcMethodsResolver milestoneBasedMethodResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(
+            config.getSpec(), localEngineApiCapabilitiesProvider);
+
+    final ExecutionClientHandler executionClientHandler;
+    if (config.isExchangeCapabilitiesEnabled()) {
+      LOG.info("Negotiating Engine API methods to use with execution client");
+
+      final ExecutionClientEngineApiCapabilitiesProvider remoteEngineApiCapabilitiesProvider =
+          new ExecutionClientEngineApiCapabilitiesProvider(
+              asyncRunnerSupplier.get(),
+              executionEngineClient,
+              localEngineApiCapabilitiesProvider,
+              serviceConfig.getEventChannels());
+
+      final NegotiatedExecutionJsonRpcMethodsResolver negotiatedMethodsResolver =
+          new NegotiatedExecutionJsonRpcMethodsResolver(
+              localEngineApiCapabilitiesProvider,
+              remoteEngineApiCapabilitiesProvider,
+              milestoneBasedMethodResolver);
+
+      executionClientHandler = new ExecutionClientHandlerImpl(negotiatedMethodsResolver);
+    } else {
+      executionClientHandler = new ExecutionClientHandlerImpl(milestoneBasedMethodResolver);
+    }
+
+    final Optional<BuilderClient> builderClient =
+        builderRestClientProvider.map(
+            restClientProvider ->
+                ExecutionLayerManagerImpl.createBuilderClient(
+                    restClientProvider.getRestClient(),
+                    config.getSpec(),
+                    timeProvider,
+                    metricsSystem));
+
+    final BlobsBundleValidator blobsBundleValidator =
+        config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)
+            ? new BlobsBundleValidatorImpl(
+                (MiscHelpersDeneb) config.getSpec().forMilestone(SpecMilestone.DENEB).miscHelpers())
+            : BlobsBundleValidator.NOOP;
+
+    return ExecutionLayerManagerImpl.create(
+        EVENT_LOG,
+        executionClientHandler,
+        builderClient,
+        config.getSpec(),
+        metricsSystem,
+        new BuilderBidValidatorImpl(EVENT_LOG),
+        builderCircuitBreaker,
+        blobsBundleValidator,
+        config.getBuilderBidChallengePercentage());
   }
 
   ExecutionLayerService(
