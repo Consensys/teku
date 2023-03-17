@@ -411,6 +411,12 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return db.stream(schema.getColumnSlotsByFinalizedStateRoot()).map(entry -> entry);
   }
 
+  @Override
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedBlockRoots() {
+    return db.stream(schema.getColumnSlotsByFinalizedRoot()).map(entry -> entry);
+  }
+
   private Optional<UInt64> displayCopyColumnMessage(
       final String key,
       final Map<String, KvStoreColumn<?, ?>> oldColumns,
@@ -624,19 +630,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
-    }
-
-    @Override
-    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
-          db.stream(schema.getColumnSlotsByFinalizedRoot())) {
-        stream
-            .filter(
-                entry ->
-                    entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
-                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-            .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
-      }
     }
 
     @Override

@@ -193,6 +193,11 @@ public class V4FinalizedKvStoreDao {
     return db.stream(schema.getColumnSlotsByFinalizedStateRoot()).map(entry -> entry);
   }
 
+  @MustBeClosed
+  public Stream<Map.Entry<Bytes32, UInt64>> getFinalizedBlockRoots() {
+    return db.stream(schema.getColumnSlotsByFinalizedRoot()).map(entry -> entry);
+  }
+
   public Set<Bytes32> getNonCanonicalBlockRootsAtSlot(final UInt64 slot) {
     return db.get(schema.getColumnNonCanonicalRootsBySlot(), slot).orElseGet(HashSet::new);
   }
@@ -268,19 +273,6 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot) {
       transaction.delete(schema.getColumnNonCanonicalBlocksByRoot(), blockRoot);
-    }
-
-    @Override
-    public void pruneFinalizedBlocks(final UInt64 firstSlotToPrune, final UInt64 lastSlotToPrune) {
-      try (final Stream<ColumnEntry<Bytes32, UInt64>> stream =
-          db.stream(schema.getColumnSlotsByFinalizedRoot())) {
-        stream
-            .filter(
-                entry ->
-                    entry.getValue().isGreaterThanOrEqualTo(firstSlotToPrune)
-                        && entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-            .forEach(entry -> deleteFinalizedBlock(entry.getValue(), entry.getKey()));
-      }
     }
 
     @Override

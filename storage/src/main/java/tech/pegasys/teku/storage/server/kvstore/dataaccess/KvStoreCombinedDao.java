@@ -120,6 +120,9 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   @MustBeClosed
   Stream<Map.Entry<Bytes32, UInt64>> getFinalizedStateRoots();
 
+  @MustBeClosed
+  Stream<Map.Entry<Bytes32, UInt64>> getFinalizedBlockRoots();
+
   Set<Bytes32> getNonCanonicalBlockRootsAtSlot(UInt64 slot);
 
   Optional<UInt64> getOptimisticTransitionBlockSlot();
@@ -214,8 +217,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
     void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
 
     void deleteNonCanonicalBlockOnly(final Bytes32 blockRoot);
-
-    void pruneFinalizedBlocks(UInt64 firstSlotToPrune, UInt64 lastSlotToPrune);
 
     void addFinalizedState(final Bytes32 blockRoot, final BeaconState state);
 
