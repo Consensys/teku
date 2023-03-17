@@ -82,6 +82,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/reorg", new ForkChoiceTestExecutor())
           .put("fork_choice/on_block", new ForkChoiceTestExecutor())
           .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
+          .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
           .build();
 

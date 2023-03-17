@@ -42,13 +42,13 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   private static final String TEST_TYPE = "fork_choice";
 
   /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
-  private static final String SPEC = "minimal";
+  private static final String SPEC = "";
 
   /** Filter test to run only those for a specific milestone. Use values from TestFork. */
-  private static final String MILESTONE = "phase0";
+  private static final String MILESTONE = null;
 
   /** Filter tests to run only those where the display name contains this string. */
-  private static final String DISPLAY_NAME = "";
+  private static final String DISPLAY_NAME = "withholding_attack";
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("loadReferenceTests")

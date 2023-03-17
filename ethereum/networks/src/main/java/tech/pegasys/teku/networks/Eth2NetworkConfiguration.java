@@ -16,7 +16,6 @@ package tech.pegasys.teku.networks;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
-import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.KILN;
@@ -50,7 +49,7 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
   public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
-      ProgressiveBalancesMode.USED;
+      ProgressiveBalancesMode.FULL;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
 
@@ -275,20 +274,6 @@ public class Eth2NetworkConfiguration {
                         terminalBlockHashEpochOverride.ifPresent(
                             bellatrixBuilder::terminalBlockHashActivationEpoch);
                         terminalBlockHashOverride.ifPresent(bellatrixBuilder::terminalBlockHash);
-                      });
-                  builder.capellaBuilder(
-                      capellaBuilder -> {
-                        capellaForkEpoch.ifPresent(capellaBuilder::capellaForkEpoch);
-
-                        // set progressiveBalancesMode to FULL for all milestones if capella is
-                        // defined and no commandline override has been specified
-                        final boolean isCapellaConfigured =
-                            Optional.ofNullable(capellaBuilder.getCapellaForkEpoch())
-                                .map(fork -> !fork.equals(FAR_FUTURE_EPOCH))
-                                .orElse(false);
-                        if (isCapellaConfigured) {
-                          builder.progressiveBalancesMode(ProgressiveBalancesMode.FULL);
-                        }
                       });
                   builder.denebBuilder(
                       denebBuilder -> {
