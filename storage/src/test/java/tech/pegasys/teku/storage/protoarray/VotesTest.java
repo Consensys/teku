@@ -42,7 +42,7 @@ public class VotesTest {
 
   private final TestStoreImpl store = createStoreToManipulateVotes();
   private final ForkChoiceStrategy forkChoice =
-      createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
+      createProtoArrayForkChoiceStrategy(spec, getHash(0), UInt64.valueOf(8), ONE, ONE);
   private List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
 
   @Test
@@ -59,7 +59,7 @@ public class VotesTest {
     //          0
     //         /
     //        2
-    processBlock(ZERO, getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(UInt64.valueOf(9), getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is 2
     //
@@ -77,7 +77,7 @@ public class VotesTest {
     //          0
     //         / \
     //        2   1
-    processBlock(ZERO, getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(UInt64.valueOf(9), getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
@@ -130,7 +130,7 @@ public class VotesTest {
     //        2   1
     //            |
     //            3
-    processBlock(ZERO, getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(UInt64.valueOf(10), getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
@@ -196,7 +196,7 @@ public class VotesTest {
     //            3
     //            |
     //            4
-    processBlock(ZERO, getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    processBlock(UInt64.valueOf(16), getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is now 4
     //
@@ -224,7 +224,13 @@ public class VotesTest {
     //           /
     //          5 <- justified epoch = 2
     processBlock(
-        ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(17),
+        getHash(5),
+        getHash(4),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Ensure that 5 is filtered out and the head stays at 4.
     //
@@ -254,7 +260,13 @@ public class VotesTest {
     //           / \
     //          5   6 <- justified epoch = 0
     processBlock(
-        ZERO, getHash(6), getHash(4), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(17),
+        getHash(6),
+        getHash(4),
+        Bytes32.ZERO,
+        unsigned(1),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Move both votes to 5.
     //
@@ -289,11 +301,29 @@ public class VotesTest {
     //         /
     //         9
     processBlock(
-        ZERO, getHash(7), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(18),
+        getHash(7),
+        getHash(5),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
     processBlock(
-        ZERO, getHash(8), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(19),
+        getHash(8),
+        getHash(7),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
     processBlock(
-        ZERO, getHash(9), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(20),
+        getHash(9),
+        getHash(8),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Ensure that 6 is the head, even though 5 has all the votes. This is testing to ensure
     // that 5 is filtered out due to a differing justified epoch.
@@ -338,7 +368,7 @@ public class VotesTest {
     //          8
     //         /
     // head-> 9
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Move both votes to block 9
@@ -378,10 +408,16 @@ public class VotesTest {
     //         / \
     //        9  10
     processBlock(
-        ZERO, getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(20),
+        getHash(10),
+        getHash(8),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Double-check the head is still 9
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Introduce 2 more validators into the system
@@ -425,7 +461,7 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <- head
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(10));
 
     // Set the balances of the last two validators to zero
@@ -440,7 +476,7 @@ public class VotesTest {
     //          8
     //         / \
     // head-> 9  10
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Set the balances of the last two validators back to 1
@@ -455,7 +491,7 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <- head
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(10));
 
     // Equivocate one of the votes on 10
@@ -471,7 +507,7 @@ public class VotesTest {
     //          8
     //         / \
     // head-> 9  10
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Add 1 validator
@@ -488,7 +524,7 @@ public class VotesTest {
     //          8
     //         / \
     //        9  10 <-head
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(10));
 
     // Remove the last two validators
@@ -504,7 +540,7 @@ public class VotesTest {
     //          8
     //         / \
     // head-> 9  10
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Ensure that pruning below the prune threshold does not prune.
@@ -513,7 +549,7 @@ public class VotesTest {
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Ensure that pruning above the prune threshold does prune.
@@ -535,11 +571,11 @@ public class VotesTest {
     //         / \
     //        9  10
     forkChoice.setPruneThreshold(1);
-    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(5)));
-    assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(6);
+    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(4)));
+    assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(7);
 
     // Run find-head, ensure the prune didn't change the head.
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Add block 11
@@ -554,7 +590,13 @@ public class VotesTest {
     //        |
     //        11
     processBlock(
-        ZERO, getHash(11), getHash(9), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(21),
+        getHash(11),
+        getHash(9),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Ensure the head is now 11
     //
@@ -567,7 +609,7 @@ public class VotesTest {
     //        9  10
     //        |
     // head-> 11
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(11));
   }
 
