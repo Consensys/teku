@@ -13,10 +13,19 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
+import java.util.Collection;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 
-public interface ExecutionJsonRpcMethodsProvider {
+public interface EngineApiCapabilitiesProvider {
 
-  <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethods method, Class<T> resultType);
+  Collection<EngineJsonRpcMethod<?>> supportedMethods();
+
+  default Collection<String> supportedMethodsVersionedNames() {
+    return supportedMethods().stream()
+        .map(EngineJsonRpcMethod::getVersionedName)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  boolean isAvailable();
 }

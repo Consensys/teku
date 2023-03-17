@@ -21,6 +21,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
+import static tech.pegasys.teku.spec.config.Constants.SYNC_BATCH_SIZE;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -207,6 +210,13 @@ class Eth2PeerTest {
     peer.requestBlobSidecarsByRange(UInt64.ONE, UInt64.valueOf(7), __ -> SafeFuture.COMPLETE);
 
     verify(delegate, never()).sendRequest(any(), any(), any());
+  }
+
+  @Test
+  public void verifySyncBatchSizeIsNotLargerThanMaxRequestBlocks() {
+    assertThat(SYNC_BATCH_SIZE.longValue())
+        .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
+        .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
   }
 
   private PeerStatus randomPeerStatus() {

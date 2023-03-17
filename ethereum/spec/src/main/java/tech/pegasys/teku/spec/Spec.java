@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -42,6 +44,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -824,6 +827,29 @@ public class Spec {
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
     return atState(state).miscHelpers().isMergeTransitionComplete(state);
+  }
+
+  // Deneb Utils
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtSlot(
+      final ReadOnlyStore store, final UInt64 slot) {
+    return isAvailabilityOfBlobSidecarsRequiredAtEpoch(store, computeEpochAtSlot(slot));
+  }
+
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+      final ReadOnlyStore store, final UInt64 epoch) {
+    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(DENEB)) {
+      return false;
+    }
+    return getCurrentEpoch(store)
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS);
+  }
+
+  public Optional<Integer> getMaxBlobsPerBlock() {
+    return forMilestone(getForkSchedule().getHighestSupportedMilestone())
+        .getConfig()
+        .toVersionDeneb()
+        .map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
   // Private helpers

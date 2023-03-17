@@ -35,7 +35,7 @@ public class RateTracker {
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
-  public synchronized long wantToRequestObjects(final long objectCount) {
+  public synchronized long popObjectRequests(final long objectCount) {
     pruneRequests();
     if ((peerRateLimit - requestsWithinWindow) <= 0) {
       return 0L;

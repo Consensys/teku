@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Suppliers;
@@ -210,13 +209,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlocksByRoot(
-      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener)
-      throws RpcException {
-    if (blockRoots.size() > MAX_REQUEST_BLOCKS) {
-      throw new RpcException(
-          INVALID_REQUEST_CODE,
-          "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request");
-    }
+      final List<Bytes32> blockRoots, final RpcResponseListener<SignedBeaconBlock> listener) {
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
     return requestStream(blockByRoot, new BeaconBlocksByRootRequestMessage(blockRoots), listener);
@@ -312,21 +305,21 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public boolean wantToReceiveBlocks(
+  public boolean popBlockRequests(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return wantToReceiveObjects("block", blockRequestTracker, callback, blocksCount);
+    return popObjectRequests("block", blockRequestTracker, callback, blocksCount);
   }
 
   @Override
-  public boolean wantToReceiveBlobSidecars(
+  public boolean popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return wantToReceiveObjects(
+    return popObjectRequests(
         "blob sidecars", blobSidecarsRequestTracker, callback, blobSidecarsCount);
   }
 
   @Override
-  public boolean wantToMakeRequest() {
-    if (requestTracker.wantToRequestObjects(1L) == 0L) {
+  public boolean popRequest() {
+    if (requestTracker.popObjectRequests(1L) == 0L) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
       return false;
@@ -357,12 +350,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .thenCompose(__ -> responseHandler.getResult());
   }
 
-  private <T> boolean wantToReceiveObjects(
+  private <T> boolean popObjectRequests(
       final String requestType,
       final RateTracker requestTracker,
       final ResponseCallback<T> callback,
       final long objectCount) {
-    if (requestTracker.wantToRequestObjects(objectCount) == 0L) {
+    if (requestTracker.popObjectRequests(objectCount) == 0L) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));

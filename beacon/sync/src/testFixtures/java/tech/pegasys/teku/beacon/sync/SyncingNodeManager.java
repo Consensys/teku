@@ -171,7 +171,6 @@ public class SyncingNodeManager {
             eth2P2PNetwork,
             recentChainData,
             blockImporter,
-            BlobsSidecarManager.NOOP,
             new NoOpMetricsSystem(),
             spec);
 

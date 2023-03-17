@@ -44,6 +44,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
@@ -91,6 +92,8 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StubStorageQueryChannel;
+import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.KeyValueStore;
@@ -182,14 +185,21 @@ public class Eth2P2PNetworkFactory {
     protected Eth2P2PNetwork buildNetwork(final P2PConfig config) {
       {
         // Setup eth2 handlers
+        final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
         final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
         final SubnetSubscriptionService syncCommitteeSubnetService =
             new SubnetSubscriptionService();
+        final EarliestAvailableBlockSlot earliestAvailableBlockSlot =
+            new EarliestAvailableBlockSlot(
+                historicalChainData, timeProvider, earliestAvailableBlockSlotFrequency);
+        final CombinedChainDataClient combinedChainDataClient =
+            new CombinedChainDataClient(
+                recentChainData, historicalChainData, spec, earliestAvailableBlockSlot);
+
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
-                recentChainData,
-                historicalChainData,
+                combinedChainDataClient,
                 METRICS_SYSTEM,
                 attestationSubnetService,
                 syncCommitteeSubnetService,
@@ -198,10 +208,9 @@ public class Eth2P2PNetworkFactory {
                 eth2RpcPingInterval,
                 eth2RpcOutstandingPingThreshold,
                 eth2StatusUpdateInterval,
-                StubTimeProvider.withTimeInSeconds(1000),
+                timeProvider,
                 500,
                 50,
-                earliestAvailableBlockSlotFrequency,
                 spec);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =

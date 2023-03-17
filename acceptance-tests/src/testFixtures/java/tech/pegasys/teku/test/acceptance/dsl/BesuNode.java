@@ -202,6 +202,7 @@ public class BesuNode extends Node {
       configMap.put("host-allowlist", new String[] {"*"});
       configMap.put("discovery-enabled", false);
       configMap.put("genesis-file", "/genesis.json");
+      configMap.put("tx-pool-limit-by-account-percentage", "1");
     }
 
     public BesuNode.Config withMiningEnabled(final boolean enabled) {

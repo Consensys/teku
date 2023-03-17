@@ -51,11 +51,11 @@ public class AcceptanceTestBase {
   }
 
   protected TekuNode createTekuNode(final Consumer<TekuNode.Config> configOptions) {
-    return createTekuNode(DockerVersion.LOCAL_BUILD, configOptions);
+    return createTekuNode(TekuDockerVersion.LOCAL_BUILD, configOptions);
   }
 
   protected TekuNode createTekuNode(
-      final DockerVersion version, final Consumer<TekuNode.Config> configOptions) {
+      final TekuDockerVersion version, final Consumer<TekuNode.Config> configOptions) {
     try {
       return addNode(TekuNode.create(network, version, configOptions));
     } catch (IOException | TimeoutException e) {
@@ -74,11 +74,11 @@ public class AcceptanceTestBase {
 
   protected TekuValidatorNode createValidatorNode(
       final Consumer<TekuValidatorNode.Config> configOptions) {
-    return createValidatorNode(DockerVersion.LOCAL_BUILD, configOptions);
+    return createValidatorNode(TekuDockerVersion.LOCAL_BUILD, configOptions);
   }
 
   protected TekuValidatorNode createValidatorNode(
-      final DockerVersion version, final Consumer<TekuValidatorNode.Config> configOptions) {
+      final TekuDockerVersion version, final Consumer<TekuValidatorNode.Config> configOptions) {
     return addNode(TekuValidatorNode.create(network, version, configOptions));
   }
 

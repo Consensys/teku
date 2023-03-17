@@ -63,7 +63,11 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         TestSpecFactory.createMinimalWithCapellaAndDenebForkEpoch(capellaForkEpoch, denebForkEpoch);
 
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(denebSpecWithForkSchedule, executionEngineClient);
+        new ExecutionClientHandlerImpl(
+            new MilestoneBasedExecutionJsonRpcMethodsResolver(
+                denebSpecWithForkSchedule,
+                new LocalEngineApiCapabilitiesProvider(
+                    denebSpecWithForkSchedule, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecWithForkSchedule);
     final ExecutionPayloadContext context = randomContext();
 
@@ -94,7 +98,11 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final Spec denebSpecWithForkSchedule =
         TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(denebSpecWithForkSchedule, executionEngineClient);
+        new ExecutionClientHandlerImpl(
+            new MilestoneBasedExecutionJsonRpcMethodsResolver(
+                denebSpecWithForkSchedule,
+                new LocalEngineApiCapabilitiesProvider(
+                    denebSpecWithForkSchedule, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecWithForkSchedule);
     final ExecutionPayloadContext context = randomContext();
 
@@ -142,8 +150,11 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         TestSpecFactory.createMinimalWithCapellaAndDenebForkEpoch(capellaForkEpoch, denebForkEpoch);
 
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(
-            denebSpecStartingAtBellatrix, executionEngineClient);
+        new ExecutionClientHandlerImpl(
+            new MilestoneBasedExecutionJsonRpcMethodsResolver(
+                denebSpecStartingAtBellatrix,
+                new LocalEngineApiCapabilitiesProvider(
+                    denebSpecStartingAtBellatrix, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtBellatrix);
 
     final ExecutionPayload payload = data.randomExecutionPayload();
@@ -166,7 +177,11 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.ONE);
 
     final ExecutionClientHandler handler =
-        new MilestoneBasedExecutionClientHandler(denebSpecStartingAtCapella, executionEngineClient);
+        new ExecutionClientHandlerImpl(
+            new MilestoneBasedExecutionJsonRpcMethodsResolver(
+                denebSpecStartingAtCapella,
+                new LocalEngineApiCapabilitiesProvider(
+                    denebSpecStartingAtCapella, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtCapella);
 
     final ExecutionPayload payload = data.randomExecutionPayload();

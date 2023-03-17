@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
@@ -53,18 +54,15 @@ public class BeaconBlocksByRangeMessageHandler
 
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
-  private final UInt64 maxRequestSize;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlocksRequestedCounter;
 
   public BeaconBlocksByRangeMessageHandler(
       final Spec spec,
       final MetricsSystem metricsSystem,
-      final CombinedChainDataClient combinedChainDataClient,
-      final UInt64 maxRequestSize) {
+      final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
-    this.maxRequestSize = maxRequestSize;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -92,6 +90,21 @@ public class BeaconBlocksByRangeMessageHandler
           new InvalidRpcMethodVersion("Must request altair blocks using v2 protocol"));
     }
 
+    if (request.getStep().isLessThan(ONE)) {
+      requestCounter.labels("invalid_step").inc();
+      return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
+    }
+
+    final UInt64 maxRequestBlocks = getMaxRequestBlocks(latestMilestoneRequested);
+
+    if (request.getCount().isGreaterThan(maxRequestBlocks)) {
+      requestCounter.labels("count_too_big").inc();
+      return Optional.of(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "Only a maximum of " + maxRequestBlocks + " blocks can be requested per request"));
+    }
+
     return Optional.empty();
   }
 
@@ -107,23 +120,8 @@ public class BeaconBlocksByRangeMessageHandler
         message.getCount(),
         message.getStartSlot(),
         message.getStep());
-    if (message.getStep().compareTo(ONE) < 0) {
-      requestCounter.labels("invalid_step").inc();
-      callback.completeWithErrorResponse(
-          new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
-      return;
-    }
-    if (message.getCount().compareTo(UInt64.valueOf(MAX_REQUEST_BLOCKS)) > 0) {
-      requestCounter.labels("count_too_big").inc();
-      callback.completeWithErrorResponse(
-          new RpcException(
-              INVALID_REQUEST_CODE,
-              "Only a maximum of " + MAX_REQUEST_BLOCKS + " blocks can be requested per request"));
-      return;
-    }
-    if (!peer.wantToMakeRequest()
-        || !peer.wantToReceiveBlocks(
-            callback, maxRequestSize.min(message.getCount()).longValue())) {
+
+    if (!peer.popRequest() || !peer.popBlockRequests(callback, message.getCount().longValue())) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -150,23 +148,30 @@ public class BeaconBlocksByRangeMessageHandler
             });
   }
 
+  private UInt64 getMaxRequestBlocks(final SpecMilestone milestone) {
+    return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
+        ? MAX_REQUEST_BLOCKS_DENEB
+        : MAX_REQUEST_BLOCKS;
+  }
+
   private SafeFuture<?> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
-    final UInt64 count = maxRequestSize.min(message.getCount());
-    final UInt64 endSlot = message.getStartSlot().plus(message.getStep().times(count)).minus(ONE);
+    final UInt64 startSlot = message.getStartSlot();
+    final UInt64 count = message.getCount();
+    final UInt64 step = message.getStep();
+    final UInt64 endSlot = startSlot.plus(step.times(count)).minus(ONE);
 
     return combinedChainDataClient
         .getEarliestAvailableBlockSlot()
         .thenCompose(
             earliestSlot -> {
-              if (earliestSlot.map(s -> s.isGreaterThan(message.getStartSlot())).orElse(true)) {
+              if (earliestSlot.map(s -> s.isGreaterThan(startSlot)).orElse(true)) {
                 // We're missing the first block so return an error
                 return SafeFuture.failedFuture(
                     new RpcException.ResourceUnavailableException(
                         "Requested historical blocks are currently unavailable"));
               }
-
               final UInt64 headBlockSlot =
                   combinedChainDataClient
                       .getChainHead()
@@ -177,9 +182,7 @@ public class BeaconBlocksByRangeMessageHandler
                 // All blocks are finalized so skip scanning the protoarray
                 hotRoots = new TreeMap<>();
               } else {
-                hotRoots =
-                    combinedChainDataClient.getAncestorRoots(
-                        message.getStartSlot(), message.getStep(), count);
+                hotRoots = combinedChainDataClient.getAncestorRoots(startSlot, step, count);
               }
               // Don't send anything past the last slot found in protoarray to ensure blocks are
               // consistent
@@ -188,13 +191,7 @@ public class BeaconBlocksByRangeMessageHandler
               // so we don't need to worry about inconsistent blocks
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
               return sendNextBlock(
-                      new RequestState(
-                          message.getStartSlot(),
-                          message.getStep(),
-                          count,
-                          headSlot,
-                          hotRoots,
-                          callback))
+                      new RequestState(startSlot, step, count, headSlot, hotRoots, callback))
                   .toVoid();
             });
   }

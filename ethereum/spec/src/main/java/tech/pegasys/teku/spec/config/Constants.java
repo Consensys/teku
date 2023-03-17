@@ -21,7 +21,7 @@ public class Constants {
   // Networking
   public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
   public static final int GOSSIP_MAX_SIZE_BELLATRIX = 10485760; // bytes
-  public static final int MAX_REQUEST_BLOCKS = 1024;
+  public static final UInt64 MAX_REQUEST_BLOCKS = UInt64.valueOf(1024);
   public static final int MAX_CHUNK_SIZE = 1048576; // bytes
   public static final int MAX_CHUNK_SIZE_BELLATRIX = 10485760; // bytes
   public static final int ATTESTATION_SUBNET_COUNT = 64;
@@ -32,7 +32,6 @@ public class Constants {
   public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
   // TODO: remove when blobs decoupling sync is implemented
-  public static final UInt64 MAX_REQUEST_BLOBS_SIDECARS = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 4096;
 
   // Teku Networking Specific
@@ -69,9 +68,7 @@ public class Constants {
   // Teku Sync
   public static final UInt64 MAX_BLOCK_BY_RANGE_REQUEST_SIZE = UInt64.valueOf(200);
   public static final UInt64 SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final UInt64 SYNC_BLOB_SIDECARS_SIZE = UInt64.valueOf(50);
   public static final int MAX_BLOCKS_PER_MINUTE = 500;
-  public static final int MAX_BLOB_SIDECARS_PER_MINUTE = 1000;
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);

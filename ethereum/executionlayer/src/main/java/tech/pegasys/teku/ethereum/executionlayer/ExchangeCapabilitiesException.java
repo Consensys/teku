@@ -11,20 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.ethereum.executionlayer;
 
-public enum DockerVersion {
-  LOCAL_BUILD("develop"),
-  LAST_RELEASE("latest"),
-  V22_8_1("22.8.1");
-
-  private final String version;
-
-  DockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
+public class ExchangeCapabilitiesException extends RuntimeException {
+  public ExchangeCapabilitiesException(final String message) {
+    super(message);
   }
 }

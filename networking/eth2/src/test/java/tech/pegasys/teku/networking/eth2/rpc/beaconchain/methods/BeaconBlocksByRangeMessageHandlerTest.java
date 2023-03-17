@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import java.util.NavigableMap;
@@ -66,7 +67,6 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final UInt64 maxRequestSize = UInt64.valueOf(8);
   private final List<StateAndBlockSummary> blocksWStates =
       IntStream.rangeClosed(0, 10)
           .mapToObj(dataStructureUtil::randomSignedBlockAndState)
@@ -88,13 +88,12 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final String protocolId = BeaconChainMethodIds.getBlocksByRangeMethodId(2, RPC_ENCODING);
   private final BeaconBlocksByRangeMessageHandler handler =
-      new BeaconBlocksByRangeMessageHandler(
-          spec, metricsSystem, combinedChainDataClient, maxRequestSize);
+      new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
   @BeforeEach
   public void setup() {
-    when(peer.wantToMakeRequest()).thenReturn(true);
-    when(peer.wantToReceiveBlocks(any(), anyLong())).thenReturn(true);
+    when(peer.popRequest()).thenReturn(true);
+    when(peer.popBlockRequests(any(), anyLong())).thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.of(ZERO)));
   }
@@ -112,8 +111,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v2RequestForPhase0Block() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -126,8 +124,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v2RequestForAltairBlock() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -140,8 +137,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
   public void validateRequest_altairSpec_v2RequestForRangeOfBlocksAcrossForkBoundary() {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.valueOf(4));
     final BeaconBlocksByRangeMessageHandler handler =
-        new BeaconBlocksByRangeMessageHandler(
-            spec, metricsSystem, combinedChainDataClient, maxRequestSize);
+        new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
     final Optional<RpcException> result =
         handler.validateRequest(
@@ -149,6 +145,63 @@ class BeaconBlocksByRangeMessageHandlerTest {
             new BeaconBlocksByRangeRequestMessage(UInt64.valueOf(30), UInt64.valueOf(10), ONE));
 
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  public void validateRequest_shouldRejectRequestWhenStepIsZero() {
+    final int startBlock = 15;
+    final int skip = 0;
+
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BeaconBlocksByRangeRequestMessage(
+                UInt64.valueOf(startBlock), MAX_REQUEST_BLOCKS, UInt64.valueOf(skip)));
+
+    assertThat(result)
+        .hasValue(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
+  }
+
+  @Test
+  public void validateRequest_shouldRejectRequestWhenCountIsTooBig() {
+    final int startBlock = 15;
+    final int skip = 1;
+
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BeaconBlocksByRangeRequestMessage(
+                UInt64.valueOf(startBlock), MAX_REQUEST_BLOCKS.increment(), UInt64.valueOf(skip)));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                "Only a maximum of 1024 blocks can be requested per request"));
+  }
+
+  @Test
+  public void validateRequest_shouldRejectRequestWhenCountIsTooBigForDeneb() {
+    final int startBlock = 15;
+    final int skip = 1;
+
+    final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(ONE);
+
+    final BeaconBlocksByRangeMessageHandler handler =
+        new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
+
+    final Optional<RpcException> result =
+        handler.validateRequest(
+            protocolId,
+            new BeaconBlocksByRangeRequestMessage(
+                UInt64.valueOf(startBlock),
+                MAX_REQUEST_BLOCKS_DENEB.increment(),
+                UInt64.valueOf(skip)));
+
+    assertThat(result)
+        .hasValue(
+            new RpcException(
+                INVALID_REQUEST_CODE, "Only a maximum of 128 blocks can be requested per request"));
   }
 
   @Test
@@ -279,64 +332,23 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
   @Test
   public void shouldStopAtBestSlot() {
+    final int count = 50;
     final int startBlock = 15;
-    final UInt64 count = UInt64.valueOf(MAX_REQUEST_BLOCKS);
     final int skip = 5;
 
     withCanonicalHeadBlock(blocksWStates.get(5));
-    withAncestorRoots(startBlock, maxRequestSize.intValue(), skip, hotBlocks());
+    withAncestorRoots(startBlock, count, skip, hotBlocks());
 
     handler.onIncomingMessage(
         protocolId,
         peer,
         new BeaconBlocksByRangeRequestMessage(
-            UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
+            UInt64.valueOf(startBlock), UInt64.valueOf(count), UInt64.valueOf(skip)),
         listener);
 
     verifyNoBlocksReturned();
-    // The first block is after the best block available so we shouldn't request anything
+    // The first block is after the best block available, so we shouldn't request anything
     verify(combinedChainDataClient, never()).getBlockAtSlotExact(any(), any());
-  }
-
-  @Test
-  public void shouldRejectRequestWhenStepIsZero() {
-    final int startBlock = 15;
-    final UInt64 count = UInt64.valueOf(MAX_REQUEST_BLOCKS);
-    final int skip = 0;
-
-    withCanonicalHeadBlock(blocksWStates.get(5));
-
-    handler.onIncomingMessage(
-        protocolId,
-        peer,
-        new BeaconBlocksByRangeRequestMessage(
-            UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
-        listener);
-
-    verify(listener)
-        .completeWithErrorResponse(
-            new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
-    verifyNoMoreInteractions(listener);
-    verifyNoMoreInteractions(combinedChainDataClient);
-  }
-
-  @Test
-  void shouldLimitNumberOfBlocksReturned() {
-    final int startBlock = 1;
-    final UInt64 count = maxRequestSize.plus(ONE);
-    final int skip = 1;
-
-    withCanonicalHeadBlock(blocksWStates.get(10));
-    withAncestorRoots(startBlock, maxRequestSize.intValue(), skip, hotBlocks(1, 2, 3, 6, 7, 8, 9));
-
-    handler.onIncomingMessage(
-        protocolId,
-        peer,
-        new BeaconBlocksByRangeRequestMessage(
-            UInt64.valueOf(startBlock), count, UInt64.valueOf(skip)),
-        listener);
-
-    verifyBlocksReturned(1, 2, 3, 6, 7, 8);
   }
 
   @Test

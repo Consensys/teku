@@ -46,7 +46,7 @@ public class StatusMessageHandler
       final StatusMessage message,
       final ResponseCallback<StatusMessage> callback) {
     LOG.trace("Peer {} sent status {}", peer.getId(), message);
-    if (!peer.wantToMakeRequest()) {
+    if (!peer.popRequest()) {
       return;
     }
     final PeerStatus status = PeerStatus.fromStatusMessage(message);

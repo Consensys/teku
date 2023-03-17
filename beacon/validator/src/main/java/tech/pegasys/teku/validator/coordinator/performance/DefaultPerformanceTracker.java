@@ -240,7 +240,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   private SafeFuture<AttestationPerformance> getAttestationPerformanceForEpoch(
-      UInt64 currentEpoch, UInt64 analyzedEpoch) {
+      final UInt64 currentEpoch, final UInt64 analyzedEpoch) {
     checkArgument(
         analyzedEpoch.isLessThanOrEqualTo(currentEpoch.minus(ATTESTATION_INCLUSION_RANGE)),
         "Epoch to analyze attestation performance must be at least 2 epochs less than the current epoch");
@@ -248,122 +248,146 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     // Attestations can be included in either the epoch they were produced in or in
     // the following epoch. Thus, the most recent epoch for which we can evaluate attestation
     // performance is current epoch - 2.
-    UInt64 analysisRangeEndEpoch = analyzedEpoch.plus(ATTESTATION_INCLUSION_RANGE);
+    final UInt64 analysisRangeEndEpoch = analyzedEpoch.plus(ATTESTATION_INCLUSION_RANGE);
 
     // Get included attestations for the given epochs in a map from slot to attestations
     // included in block.
-    Map<UInt64, List<Attestation>> attestationsIncludedOnChain =
+    final SafeFuture<Map<UInt64, List<Attestation>>> attestationsIncludedOnChainFuture =
         getAttestationsIncludedInEpochs(analyzedEpoch, analysisRangeEndEpoch);
 
     // Get sent attestations in range
-    Set<Attestation> producedAttestations =
+    final Set<Attestation> producedAttestations =
         producedAttestationsByEpoch.getOrDefault(analyzedEpoch, Collections.emptySet());
     return combinedChainDataClient
         .getBestState()
         .orElseThrow()
-        .thenApply(
-            state -> {
-              int correctTargetCount = 0;
-              int correctHeadBlockCount = 0;
-              IntList inclusionDistances = new IntArrayList();
-
-              // Pre-process attestations included on chain to group them by
-              // data hash to inclusion slot to aggregation bitlist
-              Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
-                  new HashMap<>();
-              for (Map.Entry<UInt64, List<Attestation>> entry :
-                  attestationsIncludedOnChain.entrySet()) {
-                for (Attestation attestation : entry.getValue()) {
-                  Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
-                  NavigableMap<UInt64, SszBitlist> slotToBitlists =
-                      slotAndBitlistsByAttestationDataHash.computeIfAbsent(
-                          attestationDataHash, __ -> new TreeMap<>());
-                  slotToBitlists.merge(
-                      entry.getKey(), attestation.getAggregationBits(), SszBitlist::nullableOr);
-                }
-              }
-
-              for (Attestation sentAttestation : producedAttestations) {
-                Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
-                UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
-                if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
-                  continue;
-                }
-                NavigableMap<UInt64, SszBitlist> slotAndBitlists =
-                    slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
-                for (UInt64 slot : slotAndBitlists.keySet()) {
-                  if (slotAndBitlists
-                      .get(slot)
-                      .isSuperSetOf(sentAttestation.getAggregationBits())) {
-                    inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
-                    break;
-                  }
-                }
-
-                // Check if the attestation had correct target
-                Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
-                if (attestationTargetRoot.equals(spec.getBlockRoot(state, analyzedEpoch))) {
-                  correctTargetCount++;
-
-                  // Check if the attestation had correct head block root
-                  Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeaconBlockRoot();
-                  if (attestationHeadBlockRoot.equals(
-                      spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
-                    correctHeadBlockCount++;
-                  }
-                }
-              }
-
-              IntSummaryStatistics inclusionDistanceStatistics =
-                  inclusionDistances.intStream().summaryStatistics();
-
-              // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list
-              // is empty.
-              int numberOfProducedAttestations = producedAttestations.size();
-              return producedAttestations.size() > 0
-                  ? new AttestationPerformance(
-                      analyzedEpoch,
-                      validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch),
-                      numberOfProducedAttestations,
-                      (int) inclusionDistanceStatistics.getCount(),
-                      inclusionDistanceStatistics.getMax(),
-                      inclusionDistanceStatistics.getMin(),
-                      inclusionDistanceStatistics.getAverage(),
-                      correctTargetCount,
-                      correctHeadBlockCount)
-                  : AttestationPerformance.empty(
-                      analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
-            });
+        .thenCombine(
+            attestationsIncludedOnChainFuture,
+            (state, attestationsIncludedOnChain) ->
+                calculateAttestationPerformance(
+                    analyzedEpoch, state, producedAttestations, attestationsIncludedOnChain));
   }
 
-  private Set<BeaconBlock> getBlocksInEpochs(UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
-    UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(startEpochInclusive);
-    UInt64 inclusiveEndEpochEndSlot = spec.computeStartSlotAtEpoch(endEpochExclusive).decrement();
+  private AttestationPerformance calculateAttestationPerformance(
+      final UInt64 analyzedEpoch,
+      final BeaconState state,
+      final Set<Attestation> producedAttestations,
+      final Map<UInt64, List<Attestation>> attestationsIncludedOnChain) {
+    final IntList inclusionDistances = new IntArrayList();
+    int correctTargetCount = 0;
+    int correctHeadBlockCount = 0;
 
-    Set<BeaconBlock> blocksInEpoch = new HashSet<>();
-    UInt64 currSlot = inclusiveEndEpochEndSlot;
-    while (currSlot.isGreaterThanOrEqualTo(epochStartSlot)) {
-      Optional<BeaconBlock> block =
-          combinedChainDataClient
-              .getBlockInEffectAtSlot(currSlot)
-              .join()
-              .map(SignedBeaconBlock::getMessage);
-      block.ifPresent(blocksInEpoch::add);
-
-      if (block.isEmpty() || block.get().getSlot().equals(UInt64.ZERO)) {
-        break;
+    // Pre-process attestations included on chain to group them by
+    // data hash to inclusion slot to aggregation bitlist
+    final Map<Bytes32, NavigableMap<UInt64, SszBitlist>> slotAndBitlistsByAttestationDataHash =
+        new HashMap<>();
+    for (Map.Entry<UInt64, List<Attestation>> entry : attestationsIncludedOnChain.entrySet()) {
+      for (Attestation attestation : entry.getValue()) {
+        final Bytes32 attestationDataHash = attestation.getData().hashTreeRoot();
+        final NavigableMap<UInt64, SszBitlist> slotToBitlists =
+            slotAndBitlistsByAttestationDataHash.computeIfAbsent(
+                attestationDataHash, __ -> new TreeMap<>());
+        slotToBitlists.merge(
+            entry.getKey(), attestation.getAggregationBits(), SszBitlist::nullableOr);
       }
-      currSlot = block.get().getSlot().decrement();
     }
-    return blocksInEpoch;
+
+    for (Attestation sentAttestation : producedAttestations) {
+      final Bytes32 sentAttestationDataHash = sentAttestation.getData().hashTreeRoot();
+      final UInt64 sentAttestationSlot = sentAttestation.getData().getSlot();
+      if (!slotAndBitlistsByAttestationDataHash.containsKey(sentAttestationDataHash)) {
+        continue;
+      }
+      final NavigableMap<UInt64, SszBitlist> slotAndBitlists =
+          slotAndBitlistsByAttestationDataHash.get(sentAttestationDataHash);
+      for (UInt64 slot : slotAndBitlists.keySet()) {
+        if (slotAndBitlists.get(slot).isSuperSetOf(sentAttestation.getAggregationBits())) {
+          inclusionDistances.add(slot.minus(sentAttestationSlot).intValue());
+          break;
+        }
+      }
+
+      // Check if the attestation had correct target
+      final Bytes32 attestationTargetRoot = sentAttestation.getData().getTarget().getRoot();
+      if (attestationTargetRoot.equals(spec.getBlockRoot(state, analyzedEpoch))) {
+        correctTargetCount++;
+
+        // Check if the attestation had correct head block root
+        final Bytes32 attestationHeadBlockRoot = sentAttestation.getData().getBeaconBlockRoot();
+        if (attestationHeadBlockRoot.equals(spec.getBlockRootAtSlot(state, sentAttestationSlot))) {
+          correctHeadBlockCount++;
+        }
+      }
+    }
+
+    final IntSummaryStatistics inclusionDistanceStatistics =
+        inclusionDistances.intStream().summaryStatistics();
+
+    // IntSummaryStatistics returns Integer.MIN and MAX when the summarized integer list
+    // is empty.
+    final int numberOfProducedAttestations = producedAttestations.size();
+    return producedAttestations.size() > 0
+        ? new AttestationPerformance(
+            analyzedEpoch,
+            validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch),
+            numberOfProducedAttestations,
+            (int) inclusionDistanceStatistics.getCount(),
+            inclusionDistanceStatistics.getMax(),
+            inclusionDistanceStatistics.getMin(),
+            inclusionDistanceStatistics.getAverage(),
+            correctTargetCount,
+            correctHeadBlockCount)
+        : AttestationPerformance.empty(
+            analyzedEpoch, validatorTracker.getNumberOfValidatorsForEpoch(analyzedEpoch));
   }
 
-  private Map<UInt64, List<Attestation>> getAttestationsIncludedInEpochs(
+  private SafeFuture<Set<BeaconBlock>> getBlocksInEpochs(
       UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
-    return getBlocksInEpochs(startEpochInclusive, endEpochExclusive).stream()
-        .collect(
-            Collectors.toMap(
-                BeaconBlock::getSlot, block -> block.getBody().getAttestations().asList()));
+    final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(startEpochInclusive);
+    final UInt64 inclusiveEndEpochEndSlot =
+        spec.computeStartSlotAtEpoch(endEpochExclusive).decrement();
+
+    final Set<BeaconBlock> blocksInEpoch = new HashSet<>();
+    final AtomicReference<UInt64> currSlot = new AtomicReference<>(inclusiveEndEpochEndSlot);
+    return SafeFuture.asyncDoWhile(
+            () -> fillBlockInEffectAtSlot(blocksInEpoch, epochStartSlot, currSlot))
+        .thenApply(__ -> blocksInEpoch);
+  }
+
+  private SafeFuture<Boolean> fillBlockInEffectAtSlot(
+      final Set<BeaconBlock> blocksInEpoch,
+      final UInt64 epochStartSlot,
+      final AtomicReference<UInt64> currSlot) {
+    if (currSlot.get().isGreaterThanOrEqualTo(epochStartSlot)) {
+      return combinedChainDataClient
+          .getBlockInEffectAtSlot(currSlot.get())
+          .thenApply(maybeSignedBlock -> maybeSignedBlock.map(SignedBeaconBlock::getMessage))
+          .thenPeek(
+              maybeBlock ->
+                  maybeBlock.ifPresent(
+                      block -> {
+                        blocksInEpoch.add(block);
+                        currSlot.set(currSlot.get().minusMinZero(1));
+                      }))
+          .thenApply(
+              maybeBlock ->
+                  maybeBlock.map(block -> !block.getSlot().equals(UInt64.ZERO)).orElse(false));
+
+    } else {
+      return SafeFuture.completedFuture(false);
+    }
+  }
+
+  private SafeFuture<Map<UInt64, List<Attestation>>> getAttestationsIncludedInEpochs(
+      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+    return getBlocksInEpochs(startEpochInclusive, endEpochExclusive)
+        .thenApply(
+            beaconBlocks ->
+                beaconBlocks.stream()
+                    .collect(
+                        Collectors.toMap(
+                            BeaconBlock::getSlot,
+                            block -> block.getBody().getAttestations().asList())));
   }
 
   @Override
