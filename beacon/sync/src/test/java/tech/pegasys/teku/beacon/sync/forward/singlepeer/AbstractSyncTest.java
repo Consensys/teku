@@ -35,77 +35,127 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public abstract class AbstractSyncTest {
 
-  protected final UInt64 denebForkEpoch = UInt64.valueOf(112260);
+  protected final UInt64 denebForkEpoch = UInt64.valueOf(100);
   protected final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+  protected final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
   protected final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
-  protected final RecentChainData storageClient = mock(RecentChainData.class);
+  protected final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+  protected final ChainUpdater chainUpdater = storageSystem.chainUpdater();
+  protected final RecentChainData recentChainData = storageSystem.recentChainData();
+  /** this mock is used in the {@link CommonAncestorTest} */
+  protected final RecentChainData mockRecentChainData = mock(RecentChainData.class);
 
-  private final DataStructureUtil preDenebDataStructureUtil = new DataStructureUtil(spec);
-  protected final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
+  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @BeforeEach
   public void setup() {
-    when(storageClient.getSpec()).thenReturn(spec);
+    chainUpdater.initializeGenesis();
   }
 
   @SuppressWarnings("unchecked")
   protected final ArgumentCaptor<RpcResponseListener<SignedBeaconBlock>>
       blockResponseListenerArgumentCaptor = ArgumentCaptor.forClass(RpcResponseListener.class);
 
-  protected void completeRequestWithBlockAtSlot(
-      final SafeFuture<Void> request, final int lastBlockSlot) {
-    completeRequestWithBlockAtSlot(request, UInt64.valueOf(lastBlockSlot));
+  @SuppressWarnings("unchecked")
+  protected final ArgumentCaptor<RpcResponseListener<BlobSidecar>>
+      blobSidecarResponseListenerArgumentCaptor =
+          ArgumentCaptor.forClass(RpcResponseListener.class);
+
+  protected void completeRequestWithBlockAtSlot(final SafeFuture<Void> request, final UInt64 slot) {
+    completeRequestWithBlocksAtSlots(request, slot, UInt64.ONE);
   }
 
-  protected void completeRequestWithBlockAtSlot(
-      final SafeFuture<Void> request, final UInt64 lastBlockSlot) {
+  protected void completeRequestWithBlocksAtSlots(
+      final SafeFuture<Void> request, final UInt64 startSlot, final UInt64 count) {
     // Capture latest response listener
     verify(peer, atLeastOnce())
         .requestBlocksByRange(any(), any(), blockResponseListenerArgumentCaptor.capture());
     final RpcResponseListener<SignedBeaconBlock> responseListener =
         blockResponseListenerArgumentCaptor.getValue();
     final List<SignedBeaconBlock> blocks =
-        respondWithBlocksAtSlots(responseListener, lastBlockSlot);
-    for (SignedBeaconBlock block : blocks) {
+        respondWithBlocksAtSlots(request, responseListener, startSlot, count);
+    for (final SignedBeaconBlock block : blocks) {
       verify(blockImporter).importBlock(block);
     }
     request.complete(null);
     asyncRunner.executeQueuedActions();
   }
 
+  protected void completeRequestWithBlobSidecarsAtSlots(
+      final SafeFuture<Void> request, final UInt64 startSlot, final UInt64 count) {
+    // Capture latest response listener
+    verify(peer, atLeastOnce())
+        .requestBlobSidecarsByRange(
+            any(), any(), blobSidecarResponseListenerArgumentCaptor.capture());
+    final RpcResponseListener<BlobSidecar> responseListener =
+        blobSidecarResponseListenerArgumentCaptor.getValue();
+    final List<BlobSidecar> blobSidecars =
+        respondWithBlobSidecarsAtSlots(request, responseListener, startSlot, count);
+    for (final BlobSidecar blobSidecar : blobSidecars) {
+      verify(blobsSidecarManager).importBlobSidecar(blobSidecar);
+    }
+    request.complete(null);
+    asyncRunner.executeQueuedActions();
+  }
+
   protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
-      final RpcResponseListener<SignedBeaconBlock> responseListener, final UInt64... slots) {
+      final SafeFuture<Void> request,
+      final RpcResponseListener<SignedBeaconBlock> responseListener,
+      final UInt64 startSlot,
+      final UInt64 count) {
+    return respondWithBlocksAtSlots(request, responseListener, getSlotsRange(startSlot, count));
+  }
+
+  protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
+      final SafeFuture<Void> request,
+      final RpcResponseListener<SignedBeaconBlock> responseListener,
+      final UInt64... slots) {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     for (final UInt64 slot : slots) {
-      final SignedBeaconBlock block;
-      if (spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(denebForkEpoch)) {
-        block = dataStructureUtil.randomSignedBeaconBlock(slot);
-      } else {
-        block = preDenebDataStructureUtil.randomSignedBeaconBlock(slot);
-      }
+      final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
       blocks.add(block);
-      responseListener.onResponse(block).join();
+      responseListener.onResponse(block).propagateExceptionTo(request);
     }
     return blocks;
   }
 
-  protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
-      final RpcResponseListener<SignedBeaconBlock> responseListener,
+  protected List<BlobSidecar> respondWithBlobSidecarsAtSlots(
+      final SafeFuture<Void> request,
+      final RpcResponseListener<BlobSidecar> responseListener,
       final UInt64 startSlot,
       final UInt64 count) {
-    return respondWithBlocksAtSlots(responseListener, getSlotsRange(startSlot, count));
+    return respondWithBlobSidecarsAtSlots(
+        request, responseListener, getSlotsRange(startSlot, count));
+  }
+
+  protected List<BlobSidecar> respondWithBlobSidecarsAtSlots(
+      final SafeFuture<Void> request,
+      final RpcResponseListener<BlobSidecar> responseListener,
+      final UInt64... slots) {
+    final List<BlobSidecar> blobSidecars = new ArrayList<>();
+    for (final UInt64 slot : slots) {
+      final BlobSidecar blobSidecar =
+          dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
+      blobSidecars.add(blobSidecar);
+      responseListener.onResponse(blobSidecar).propagateExceptionTo(request);
+    }
+    return blobSidecars;
   }
 
   protected PeerStatus withPeerHeadSlot(
@@ -121,6 +171,16 @@ public abstract class AbstractSyncTest {
 
     when(peer.getStatus()).thenReturn(peerStatus);
     return peerStatus;
+  }
+
+  protected void advanceChain(final UInt64 slot) {
+    final SignedBlockAndState block = chainUpdater.advanceChain(slot);
+    chainUpdater.updateBestBlock(block);
+  }
+
+  protected void advanceChainToDeneb() {
+    advanceChain(denebFirstSlot);
+    chainUpdater.finalizeEpoch(denebForkEpoch);
   }
 
   private UInt64[] getSlotsRange(final UInt64 startSlot, final UInt64 count) {

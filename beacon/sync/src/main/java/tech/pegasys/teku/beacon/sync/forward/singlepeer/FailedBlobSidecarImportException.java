@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
-enum PeerSyncResult {
-  SUCCESSFUL_SYNC,
-  FAULTY_ADVERTISEMENT,
-  CANCELLED,
-  BAD_BLOCK,
-  BLOCK_IMPORT_FAILED,
-  BLOB_SIDECAR_IMPORT_FAILED,
-  EXCESSIVE_THROTTLING,
-  INVALID_RESPONSE
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+
+public class FailedBlobSidecarImportException extends RuntimeException {
+
+  public FailedBlobSidecarImportException(final BlobSidecar blobSidecar, final Throwable cause) {
+    super(
+        String.format(
+            "Unable to import blob sidecar for slot %s due to an error: %s",
+            blobSidecar.getSlot(), cause));
+  }
 }

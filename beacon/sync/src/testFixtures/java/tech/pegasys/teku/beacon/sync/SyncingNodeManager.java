@@ -73,7 +73,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 
 public class SyncingNodeManager {
   private final EventChannels eventChannels;
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
   private final BeaconChainUtil chainUtil;
   private final Eth2P2PNetwork eth2P2PNetwork;
   private final ForwardSync syncService;
@@ -81,12 +81,12 @@ public class SyncingNodeManager {
 
   private SyncingNodeManager(
       final EventChannels eventChannels,
-      final RecentChainData storageClient,
+      final RecentChainData recentChainData,
       final BeaconChainUtil chainUtil,
       final Eth2P2PNetwork eth2P2PNetwork,
       final ForwardSync syncService) {
     this.eventChannels = eventChannels;
-    this.storageClient = storageClient;
+    this.recentChainData = recentChainData;
     this.chainUtil = chainUtil;
     this.eth2P2PNetwork = eth2P2PNetwork;
     this.syncService = syncService;
@@ -215,7 +215,7 @@ public class SyncingNodeManager {
   }
 
   public RecentChainData recentChainData() {
-    return storageClient;
+    return recentChainData;
   }
 
   public ForwardSync syncService() {
