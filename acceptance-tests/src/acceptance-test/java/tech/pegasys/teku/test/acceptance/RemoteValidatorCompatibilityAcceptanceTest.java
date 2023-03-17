@@ -15,7 +15,7 @@ package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.DockerVersion;
+import tech.pegasys.teku.test.acceptance.dsl.TekuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
@@ -27,21 +27,21 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
 
   @Test
   void shouldRunUpdatedValidatorAgainstOldBeaconNode() throws Exception {
-    verifyCompatibility(DockerVersion.V22_8_1, DockerVersion.LOCAL_BUILD);
+    verifyCompatibility(TekuDockerVersion.V22_8_1, TekuDockerVersion.LOCAL_BUILD);
   }
 
   @Test
   void shouldRunUpdatedValidatorAgainstLastReleaseBeaconNode() throws Exception {
-    verifyCompatibility(DockerVersion.LAST_RELEASE, DockerVersion.LOCAL_BUILD);
+    verifyCompatibility(TekuDockerVersion.LAST_RELEASE, TekuDockerVersion.LOCAL_BUILD);
   }
 
   @Test
   void shouldRunLastReleaseValidatorAgainstUpdatedBeaconNode() throws Exception {
-    verifyCompatibility(DockerVersion.LOCAL_BUILD, DockerVersion.LAST_RELEASE);
+    verifyCompatibility(TekuDockerVersion.LOCAL_BUILD, TekuDockerVersion.LAST_RELEASE);
   }
 
   private void verifyCompatibility(
-      final DockerVersion beaconNodeVersion, final DockerVersion validatorNodeVersion)
+      final TekuDockerVersion beaconNodeVersion, final TekuDockerVersion validatorNodeVersion)
       throws Exception {
     createBeaconNode(beaconNodeVersion);
     createValidatorClient(validatorNodeVersion);
@@ -54,7 +54,7 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
     validatorClient.waitForLogMessageContaining("Published aggregate");
   }
 
-  private void createValidatorClient(final DockerVersion version) {
+  private void createValidatorClient(final TekuDockerVersion version) {
     validatorClient =
         createValidatorNode(
             version,
@@ -65,7 +65,7 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
                     .withBeaconNode(beaconNode));
   }
 
-  private void createBeaconNode(final DockerVersion version) {
+  private void createBeaconNode(final TekuDockerVersion version) {
     beaconNode =
         createTekuNode(
             version,

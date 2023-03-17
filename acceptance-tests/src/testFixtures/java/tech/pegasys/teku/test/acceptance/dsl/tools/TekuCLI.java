@@ -20,14 +20,14 @@ import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame.OutputType;
 import org.testcontainers.containers.output.WaitingConsumer;
-import tech.pegasys.teku.test.acceptance.dsl.DockerVersion;
+import tech.pegasys.teku.test.acceptance.dsl.TekuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 class TekuCLI extends GenericContainer<TekuCLI> {
   private static final Logger LOG = LogManager.getLogger();
 
   public TekuCLI() {
-    super(TekuNode.TEKU_DOCKER_IMAGE_NAME + ":" + DockerVersion.LOCAL_BUILD.getVersion());
+    super(TekuNode.TEKU_DOCKER_IMAGE_NAME + ":" + TekuDockerVersion.LOCAL_BUILD.getVersion());
     this.withLogConsumer(frame -> LOG.info(frame.getUtf8String().trim()));
   }
 

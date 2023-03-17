@@ -13,14 +13,14 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-public enum DockerVersion {
+public enum TekuDockerVersion {
   LOCAL_BUILD("develop"),
   LAST_RELEASE("latest"),
   V22_8_1("22.8.1");
 
   private final String version;
 
-  DockerVersion(final String version) {
+  TekuDockerVersion(final String version) {
     this.version = version;
   }
 
