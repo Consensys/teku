@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 
 import java.io.IOException;
-import java.net.SocketException;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -97,15 +96,9 @@ public abstract class Web3JClient {
   }
 
   protected void handleError(final Throwable error, final boolean couldBeAuthError) {
-    if (error instanceof SocketException) { // indicates that EL is offline
-      if (shouldReportError()) {
-        eventLog.executionClientIsOffline();
-      }
+    if (shouldReportError()) {
+      logExecutionClientError(error, couldBeAuthError);
       executionClientEventsPublisher.onAvailabilityUpdated(false);
-    } else {
-      if (shouldReportError()) {
-        logExecutionClientError(error, couldBeAuthError);
-      }
     }
   }
 

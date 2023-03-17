@@ -136,13 +136,6 @@ public class EventLogger {
     info("Execution Client is online", Color.GREEN);
   }
 
-  public void executionClientIsOffline() {
-    error(
-        "Execution Client is offline or there is a problem connecting to it. "
-            + EXECUTION_CLIENT_READINESS_USER_REMINDER,
-        Color.RED);
-  }
-
   public void executionClientRequestFailed(final Throwable error, final boolean couldBeAuthError) {
     error(
         "Execution Client request failed. "
