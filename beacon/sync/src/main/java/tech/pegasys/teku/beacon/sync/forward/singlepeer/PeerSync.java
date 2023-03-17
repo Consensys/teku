@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
@@ -37,7 +37,9 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -51,7 +53,7 @@ public class PeerSync {
    * may be empty we check that we're progressing through slots, even if not many blocks are being
    * returned.
    */
-  static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = UInt64.valueOf(50);
+  static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = FORWARD_SYNC_BATCH_SIZE.dividedBy(4);
 
   private static final List<FailureReason> BAD_BLOCK_FAILURE_REASONS =
       List.of(
@@ -67,6 +69,7 @@ public class PeerSync {
   private final Spec spec;
   private final RecentChainData storageClient;
   private final BlockImporter blockImporter;
+  private final BlobsSidecarManager blobsSidecarManager;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
@@ -80,11 +83,13 @@ public class PeerSync {
       final AsyncRunner asyncRunner,
       final RecentChainData storageClient,
       final BlockImporter blockImporter,
+      final BlobsSidecarManager blobsSidecarManager,
       final MetricsSystem metricsSystem) {
     this.spec = storageClient.getSpec();
     this.asyncRunner = asyncRunner;
     this.storageClient = storageClient;
     this.blockImporter = blockImporter;
+    this.blobsSidecarManager = blobsSidecarManager;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -153,34 +158,53 @@ public class PeerSync {
 
               final RequestContext requestContext = createRequestContext(ancestorStartSlot, status);
 
-              final UInt64 count = requestContext.getCount();
+              final SafeFuture<Void> blobSidecarsRequest;
 
-              LOG.debug(
-                  "Request {} blocks starting at {} from peer {}",
-                  count,
-                  ancestorStartSlot,
-                  peer.getId());
+              if (requestContext.blobSidecarsRequired) {
+                LOG.debug(
+                    "Request {} blob sidecars starting at {} from peer {}",
+                    requestContext.count,
+                    ancestorStartSlot,
+                    peer.getId());
+                blobSidecarsRequest =
+                    peer.requestBlobSidecarsByRange(
+                        ancestorStartSlot, requestContext.count, this::importBlobSidecar);
+              } else {
+                blobSidecarsRequest = SafeFuture.COMPLETE;
+              }
 
               final SafeFuture<Void> readyForNextRequest =
                   asyncRunner.getDelayedFuture(NEXT_REQUEST_TIMEOUT);
 
-              final PeerSyncBlockRequest blockRequest =
-                  new PeerSyncBlockRequest(
-                      readyForNextRequest, ancestorStartSlot, count, this::importBlock);
+              LOG.debug(
+                  "Request {} blocks starting at {} from peer {}",
+                  requestContext.count,
+                  ancestorStartSlot,
+                  peer.getId());
 
-              return peer.requestBlocksByRange(ancestorStartSlot, count, blockRequest)
-                  .thenApply(__ -> blockRequest);
+              final PeerSyncBlockListener blockListener =
+                  new PeerSyncBlockListener(
+                      readyForNextRequest,
+                      ancestorStartSlot,
+                      requestContext.count,
+                      this::importBlock);
+
+              final SafeFuture<Void> blocksRequest =
+                  peer.requestBlocksByRange(ancestorStartSlot, requestContext.count, blockListener);
+
+              return SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest)
+                  .thenApply(__ -> blockListener);
             })
         .thenCompose(
-            (blockRequest) -> {
-              final UInt64 nextSlot = blockRequest.getActualEndSlot().plus(UInt64.ONE);
+            (blockListener) -> {
+              final UInt64 nextSlot = blockListener.getActualEndSlot().plus(UInt64.ONE);
               LOG.trace(
                   "Completed request for {} slots from peer {}. Next request starts from {}",
-                  blockRequest.getCount(),
+                  blockListener.getCount(),
                   peer.getId(),
                   nextSlot);
-              if (blockRequest.getCount().isGreaterThan(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
-                  && blockRequest
+              if (blockListener.getCount().isGreaterThan(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
+                  && blockListener
                       .getStartSlot()
                       .plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
                       .isGreaterThan(nextSlot)) {
@@ -198,7 +222,7 @@ public class PeerSync {
               } else {
                 throttledRequestCount.set(0);
               }
-              return executeSync(peer, nextSlot, blockRequest.getReadyForNextRequest(), false);
+              return executeSync(peer, nextSlot, blockListener.getReadyForNextRequest(), false);
             })
         .exceptionally(err -> handleFailedRequestToPeer(peer, status, err));
   }
@@ -274,19 +298,20 @@ public class PeerSync {
 
   private RequestContext createRequestContext(final UInt64 startSlot, final PeerStatus status) {
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
-    final UInt64 requestCount = diff.min(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
-    return new RequestContext(requestCount);
+    final UInt64 requestCount = diff.min(FORWARD_SYNC_BATCH_SIZE); // limit the request count
+    final UInt64 endSlot = startSlot.plus(requestCount).decrement();
+    final boolean blobSidecarsRequired =
+        spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(storageClient.getStore(), endSlot);
+    return new RequestContext(requestCount, blobSidecarsRequired);
   }
 
   private static class RequestContext {
     private final UInt64 count;
+    private final boolean blobSidecarsRequired;
 
-    private RequestContext(final UInt64 count) {
+    private RequestContext(final UInt64 count, final boolean blobSidecarsRequired) {
       this.count = count;
-    }
-
-    public UInt64 getCount() {
-      return count;
+      this.blobSidecarsRequired = blobSidecarsRequired;
     }
   }
 
@@ -306,6 +331,13 @@ public class PeerSync {
                 blockImportSuccessResult.inc();
               }
             });
+  }
+
+  private SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
+    if (stopped.get()) {
+      throw new CancellationException("Peer sync was cancelled");
+    }
+    return blobsSidecarManager.importBlobSidecar(blobSidecar);
   }
 
   private void disconnectFromPeer(final Eth2Peer peer) {

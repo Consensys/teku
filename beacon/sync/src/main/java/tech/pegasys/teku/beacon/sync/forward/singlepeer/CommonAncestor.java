@@ -55,13 +55,14 @@ public class CommonAncestor {
         lastSlot,
         peerHeadSlot);
 
-    final BestBlockListener blockListener = new BestBlockListener(storageClient, firstNonFinalSlot);
-    final PeerSyncBlockRequest request =
-        new PeerSyncBlockRequest(
-            SafeFuture.COMPLETE, firstRequestedSlot, BLOCK_COUNT, blockListener);
+    final BestBlockListener blockResponseListener =
+        new BestBlockListener(storageClient, firstNonFinalSlot);
+    final PeerSyncBlockListener blockListener =
+        new PeerSyncBlockListener(
+            SafeFuture.COMPLETE, firstRequestedSlot, BLOCK_COUNT, blockResponseListener);
 
-    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, request)
-        .thenApply(__ -> blockListener.getBestSlot());
+    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, blockListener)
+        .thenApply(__ -> blockResponseListener.getBestSlot());
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {

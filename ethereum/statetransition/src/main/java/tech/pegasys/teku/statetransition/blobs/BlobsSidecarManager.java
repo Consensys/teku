@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.blobs;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -28,6 +29,11 @@ public interface BlobsSidecarManager {
         public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
             SignedBlobSidecar blobsSidecar) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+        }
+
+        @Override
+        public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
+          return SafeFuture.COMPLETE;
         }
 
         @Override
@@ -47,6 +53,8 @@ public interface BlobsSidecarManager {
       };
 
   SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(SignedBlobSidecar blobsSidecar);
+
+  SafeFuture<Void> importBlobSidecar(BlobSidecar blobSidecar);
 
   void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
 

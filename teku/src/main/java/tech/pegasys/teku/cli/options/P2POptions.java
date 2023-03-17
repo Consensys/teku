@@ -152,7 +152,7 @@ public class P2POptions {
       names = {"--Xp2p-multipeer-sync-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enables experimental multipeer sync",
+      description = "Enables multipeer sync",
       fallbackValue = "true",
       hidden = true,
       arity = "1")

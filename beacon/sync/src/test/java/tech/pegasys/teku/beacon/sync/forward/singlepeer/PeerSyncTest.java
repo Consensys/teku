@@ -22,7 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +81,13 @@ public class PeerSyncTest extends AbstractSyncTest {
     when(blockImporter.importBlock(any())).thenReturn(result);
     when(storageClient.getHeadSlot()).thenReturn(UInt64.ONE);
 
-    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
+    peerSync =
+        new PeerSync(
+            asyncRunner,
+            storageClient,
+            blockImporter,
+            blobsSidecarManager,
+            new NoOpMetricsSystem());
   }
 
   @Test
@@ -239,7 +245,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_longSyncWithTwoRequests() {
     final UInt64 secondRequestSize = UInt64.ONE;
-    final UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    final UInt64 peerHeadSlot = FORWARD_SYNC_BATCH_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -256,7 +262,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(FORWARD_SYNC_BATCH_SIZE),
             blockResponseListenerArgumentCaptor.capture());
 
     final int lastReceivedBlockSlot = peerHeadSlot.intValue() - secondRequestSize.intValue();
@@ -325,7 +331,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_handleEmptyResponse() {
     final UInt64 secondRequestSize = UInt64.valueOf(5);
-    final UInt64 peerHeadSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(secondRequestSize);
+    final UInt64 peerHeadSlot = FORWARD_SYNC_BATCH_SIZE.plus(secondRequestSize);
 
     withPeerHeadSlot(peerHeadSlot);
 
@@ -344,7 +350,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(FORWARD_SYNC_BATCH_SIZE),
             blockResponseListenerArgumentCaptor.capture());
 
     // Complete request with no returned blocks
@@ -356,7 +362,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     assertThat(syncStatusStartingSlot).isEqualTo(startSlot);
 
     asyncRunner.executeQueuedActions();
-    final UInt64 nextSlotStart = startSlot.plus(MAX_BLOCK_BY_RANGE_REQUEST_SIZE);
+    final UInt64 nextSlotStart = startSlot.plus(FORWARD_SYNC_BATCH_SIZE);
     verify(peer)
         .requestBlocksByRange(
             eq(nextSlotStart),
@@ -403,7 +409,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_failSyncIfPeerThrottlesTooAggressively() {
     final UInt64 startSlot = UInt64.ONE;
-    final UInt64 minPeerSlot = MAX_BLOCK_BY_RANGE_REQUEST_SIZE.plus(startSlot);
+    final UInt64 minPeerSlot = FORWARD_SYNC_BATCH_SIZE.plus(startSlot);
     withPeerFinalizedEpoch(spec.computeEpochAtSlot(minPeerSlot));
 
     final List<SafeFuture<Void>> requestFutures = new ArrayList<>();
@@ -421,7 +427,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(FORWARD_SYNC_BATCH_SIZE),
             blockResponseListenerArgumentCaptor.capture());
 
     // Peer only returns a couple of blocks for each request
@@ -461,7 +467,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(FORWARD_SYNC_BATCH_SIZE),
             blockResponseListenerArgumentCaptor.capture());
 
     requestFuture.completeExceptionally(
@@ -495,7 +501,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer)
         .requestBlocksByRange(
             eq(startSlot),
-            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
+            eq(FORWARD_SYNC_BATCH_SIZE),
             blockResponseListenerArgumentCaptor.capture());
 
     // Peer only returns some blocks but not as many as were requested
@@ -507,9 +513,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     // Next request should start after the last received block
     verify(peer)
         .requestBlocksByRange(
-            eq(UInt64.valueOf(lastReceivedBlockSlot + 1)),
-            eq(MAX_BLOCK_BY_RANGE_REQUEST_SIZE),
-            any());
+            eq(UInt64.valueOf(lastReceivedBlockSlot + 1)), eq(FORWARD_SYNC_BATCH_SIZE), any());
     verify(peer, never()).disconnectCleanly(any());
   }
 

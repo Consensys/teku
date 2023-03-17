@@ -83,7 +83,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlobSidecar(blobsSidecar.getBlobSidecar())
+            importBlobSidecar(blobsSidecar.getBlobSidecar())
                 .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
           }
         });
@@ -91,8 +91,9 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
     return validationResult;
   }
 
-  @SuppressWarnings("UnusedVariable")
-  private SafeFuture<Void> doImportBlobSidecar(final BlobSidecar blobsSidecar) {
+  @Override
+  @SuppressWarnings("unused")
+  public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobsSidecar) {
     // TODO implement import
     return SafeFuture.COMPLETE;
   }

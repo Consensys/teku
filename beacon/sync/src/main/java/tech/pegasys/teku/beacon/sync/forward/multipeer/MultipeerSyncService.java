@@ -89,7 +89,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
             new BatchFactory(eventThread, new PeerScoringConflictResolutionStrategy()),
-            Constants.SYNC_BATCH_SIZE,
+            Constants.FORWARD_SYNC_BATCH_SIZE,
             MultipeerCommonAncestorFinder.create(recentChainData, eventThread, spec),
             timeProvider);
     final SyncController syncController =
