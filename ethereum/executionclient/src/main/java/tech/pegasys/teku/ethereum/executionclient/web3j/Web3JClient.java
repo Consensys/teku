@@ -96,18 +96,7 @@ public abstract class Web3JClient {
   }
 
   protected void handleError(final Throwable error, final boolean couldBeAuthError) {
-    final long timeNow = timeProvider.getTimeInMillis().longValue();
-    final long maybeUpdatedTime =
-        lastError.accumulateAndGet(
-            timeNow,
-            (lastErrorTime, givenErrorTimeUpdate) -> {
-              if (lastErrorTime == NO_ERROR_TIME
-                  || givenErrorTimeUpdate - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
-                return givenErrorTimeUpdate;
-              }
-              return lastErrorTime;
-            });
-    if (maybeUpdatedTime == timeNow) {
+    if (shouldReportError()) {
       logExecutionClientError(error, couldBeAuthError);
       executionClientEventsPublisher.onAvailabilityUpdated(false);
     }
@@ -144,6 +133,21 @@ public abstract class Web3JClient {
     }
     final String message = exception.getMessage();
     return message.contains("received: 401") || message.contains("received: 403");
+  }
+
+  private boolean shouldReportError() {
+    final long timeNow = timeProvider.getTimeInMillis().longValue();
+    final long maybeUpdatedTime =
+        lastError.accumulateAndGet(
+            timeNow,
+            (lastErrorTime, givenErrorTimeUpdate) -> {
+              if (lastErrorTime == NO_ERROR_TIME
+                  || givenErrorTimeUpdate - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
+                return givenErrorTimeUpdate;
+              }
+              return lastErrorTime;
+            });
+    return maybeUpdatedTime == timeNow;
   }
 
   private void logExecutionClientError(final Throwable error, final boolean couldBeAuthError) {
