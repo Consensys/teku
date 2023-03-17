@@ -39,7 +39,7 @@ public class NoVotesTest {
   private final TestStoreImpl store = createStoreToManipulateVotes();
 
   private final ForkChoiceStrategy forkChoice =
-      createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
+      createProtoArrayForkChoiceStrategy(spec, getHash(0), UInt64.valueOf(8), ONE, ONE);
 
   private final List<UInt64> balances = new ArrayList<>(Collections.nCopies(16, ZERO));
 
@@ -56,7 +56,13 @@ public class NoVotesTest {
     //        /
     //        2
     processBlock(
-        ZERO, getHash(2), getHash(0), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(9),
+        getHash(2),
+        getHash(0),
+        Bytes32.ZERO,
+        unsigned(1),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Ensure the head is 2
     //
@@ -72,7 +78,13 @@ public class NoVotesTest {
     //        / \
     //        2  1
     processBlock(
-        ZERO, getHash(0), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(9),
+        getHash(0),
+        getHash(1),
+        Bytes32.ZERO,
+        unsigned(1),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Ensure the head is still 2
     //
@@ -90,7 +102,13 @@ public class NoVotesTest {
     //           |
     //           3
     processBlock(
-        ZERO, getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(10),
+        getHash(3),
+        getHash(1),
+        Bytes32.ZERO,
+        unsigned(1),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Ensure 2 is still the head
     //
@@ -110,7 +128,13 @@ public class NoVotesTest {
     //        |  |
     //        4  3
     processBlock(
-        ZERO, getHash(4), getHash(2), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(10),
+        getHash(4),
+        getHash(2),
+        Bytes32.ZERO,
+        unsigned(1),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Ensure the head is 4.
     //
@@ -132,7 +156,13 @@ public class NoVotesTest {
     //        |
     //        5 <- justified epoch = 2
     processBlock(
-        ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(11),
+        getHash(5),
+        getHash(4),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Ensure the head is still 4 whilst the justified epoch is 0.
     //
@@ -182,7 +212,13 @@ public class NoVotesTest {
     //     |
     //     6
     processBlock(
-        ZERO, getHash(6), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(12),
+        getHash(6),
+        getHash(5),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Ensure 6 is the head
     //
