@@ -22,6 +22,7 @@ import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTR
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA;
 
+import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.ArrayList;
 import java.util.List;
@@ -978,7 +979,7 @@ public final class DataStructureUtil {
 
   private BeaconBlockAndState randomBlockAndState(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
-    final BeaconBlockBody body = randomBeaconBlockBody();
+    final BeaconBlockBody body = randomBeaconBlockBody(slot, state.getValidators().size());
     final UInt64 proposerIndex = randomUInt64();
     final BeaconBlockHeader latestHeader =
         new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
@@ -1143,6 +1144,55 @@ public final class DataStructureUtil {
                   .proposerSlashings(
                       randomSszList(
                           schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                  .attesterSlashings(
+                      randomSszList(
+                          schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                  .attestations(
+                      randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                  .deposits(
+                      randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                  .voluntaryExits(
+                      randomSszList(
+                          schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1));
+              if (builder.supportsSyncAggregate()) {
+                builder.syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema));
+              }
+              if (builder.supportsExecutionPayload()) {
+                builder.executionPayload(
+                    SafeFuture.completedFuture(randomExecutionPayload(spec.getGenesisSpec())));
+              }
+              if (builder.supportsBlsToExecutionChanges()) {
+                builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
+              }
+              if (builder.supportsKzgCommitments()) {
+                builder.blobKzgCommitments(
+                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+              }
+            })
+        .join();
+  }
+
+  public BeaconBlockBody randomBeaconBlockBody(
+      final UInt64 proposalSlot, final int validatorCount) {
+    Preconditions.checkArgument(
+        proposalSlot.isGreaterThan(1), "Proposal slot must be greater than 1");
+    BeaconBlockBodySchema<?> schema =
+        spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
+    return schema
+        .createBlockBody(
+            builder -> {
+              builder
+                  .randaoReveal(randomSignature())
+                  .eth1Data(randomEth1Data())
+                  .graffiti(Bytes32.ZERO)
+                  .proposerSlashings(
+                      randomSszList(
+                          schema.getProposerSlashingsSchema(),
+                          () ->
+                              randomProposerSlashing(
+                                  randomUInt64(proposalSlot.decrement().longValue()),
+                                  randomUInt64(validatorCount - 1)),
+                          1))
                   .attesterSlashings(
                       randomSszList(
                           schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
