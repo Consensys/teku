@@ -77,7 +77,7 @@ public abstract class Node {
   protected Node(
       final Network network,
       final String dockerImageName,
-      final DockerVersion dockerImageVersion,
+      final TekuDockerVersion dockerImageVersion,
       final Logger log) {
     this(network, dockerImageName + ":" + dockerImageVersion.getVersion(), log);
   }
@@ -88,7 +88,7 @@ public abstract class Node {
     this.container =
         new NodeContainer(dockerImage)
             .withImagePullPolicy(
-                dockerImage.endsWith(DockerVersion.LOCAL_BUILD.getVersion())
+                dockerImage.endsWith(TekuDockerVersion.LOCAL_BUILD.getVersion())
                     ? PullPolicy.defaultPolicy()
                     : PullPolicy.ageBased(Duration.ofMinutes(5)))
             .withNetwork(network)

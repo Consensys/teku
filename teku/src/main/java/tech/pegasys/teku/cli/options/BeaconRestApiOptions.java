@@ -113,7 +113,7 @@ public class BeaconRestApiOptions {
   }
 
   @Option(
-      names = {"--beacon-liveness-tracking-enabled", "--Xbeacon-liveness-tracking-enabled"},
+      names = {"--beacon-liveness-tracking-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description = "Track validator liveness and enable requests to the liveness rest api.",

@@ -21,18 +21,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -75,8 +73,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @BeforeEach
   public void setup() {
     chainUpdater.initializeGenesis();
-    when(peer.wantToMakeRequest()).thenReturn(true);
-    when(peer.wantToReceiveBlocks(any(), anyLong())).thenReturn(true);
+    when(peer.popRequest()).thenReturn(true);
+    when(peer.popBlockRequests(any(), anyLong())).thenReturn(true);
     when(recentChainData.getStore()).thenReturn(store);
     // Forward block requests from the mock to the actual store
     when(store.retrieveSignedBlock(any()))
@@ -84,13 +82,39 @@ public class BeaconBlocksByRootMessageHandlerTest {
             i -> storageSystem.recentChainData().getStore().retrieveSignedBlock(i.getArgument(0)));
   }
 
-  @ParameterizedTest(name = "protocol={0}")
-  @MethodSource("protocolIdParams")
-  public void onIncomingMessage_respondsWithAllBlocks(final String protocolId) {
+  @Test
+  public void onIncomingMessage_shouldRejectRequestWhenCountIsTooBig() {
+    final UInt64 denebForkEpoch = UInt64.valueOf(4);
+    // Testing for Deneb since can't initialize BeaconBlocksByRootMessageHandler with size more
+    // than MAX_REQUEST_BLOCKS
+    final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+
+    when(recentChainData.getCurrentEpoch()).thenReturn(Optional.of(denebForkEpoch));
+
+    final BeaconBlocksByRootMessageHandler handler =
+        new BeaconBlocksByRootMessageHandler(
+            spec, storageSystem.getMetricsSystem(), recentChainData);
+
+    final List<Bytes32> roots =
+        UInt64.range(UInt64.ZERO, MAX_REQUEST_BLOCKS_DENEB.increment())
+            .map(__ -> Bytes32.ZERO)
+            .collect(Collectors.toList());
+
+    handler.onIncomingMessage(
+        V2_PROTOCOL_ID, peer, new BeaconBlocksByRootRequestMessage(roots), callback);
+
+    verify(callback)
+        .completeWithErrorResponse(
+            new RpcException(
+                INVALID_REQUEST_CODE, "Only a maximum of 128 blocks can be requested per request"));
+  }
+
+  @Test
+  public void onIncomingMessage_respondsWithAllBlocks() {
     final List<SignedBeaconBlock> blocks = buildChain(5);
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
-    handler.onIncomingMessage(protocolId, peer, message, callback);
+    handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
@@ -98,16 +122,15 @@ public class BeaconBlocksByRootMessageHandlerTest {
     }
   }
 
-  @ParameterizedTest(name = "protocol={0}")
-  @MethodSource("protocolIdParams")
-  public void onIncomingMessage_interruptedByClosedStream(final String protocolId) {
+  @Test
+  public void onIncomingMessage_interruptedByClosedStream() {
     final List<SignedBeaconBlock> blocks = buildChain(5);
 
     // Mock callback to appear to be closed
     doThrow(new StreamClosedException()).when(callback).respond(any());
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
-    handler.onIncomingMessage(protocolId, peer, message, callback);
+    handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
 
     // Check that we only asked for the first block
     verify(store, times(1)).retrieveSignedBlock(any());
@@ -154,10 +177,6 @@ public class BeaconBlocksByRootMessageHandlerTest {
             V2_PROTOCOL_ID, chainUpdater.advanceChain(altairForkSlot.plus(1)).getBlock());
 
     assertThat(result).isEmpty();
-  }
-
-  public static Stream<Arguments> protocolIdParams() {
-    return Stream.of(Arguments.of(V2_PROTOCOL_ID));
   }
 
   private BeaconBlocksByRootRequestMessage createRequest(final List<SignedBeaconBlock> forBlocks) {

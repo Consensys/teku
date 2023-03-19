@@ -19,9 +19,12 @@ import static com.google.common.net.InetAddresses.isInetAddress;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Enumeration;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
@@ -124,7 +127,7 @@ public class NetworkConfig {
     try {
       final InetAddress advertisedAddress = InetAddress.getByName(ipAddress);
       if (advertisedAddress.isAnyLocalAddress()) {
-        return InetAddress.getLocalHost().getHostAddress();
+        return getSiteLocalAddress();
       } else {
         return ipAddress;
       }
@@ -133,6 +136,31 @@ public class NetworkConfig {
           "Unable to start LibP2PNetwork due to failed attempt at obtaining host address", err);
       return ipAddress;
     }
+  }
+
+  private String getSiteLocalAddress() throws UnknownHostException {
+    try {
+      final InetAddress address = InetAddress.getLocalHost();
+      if (address.isAnyLocalAddress()) {
+        return address.getHostAddress();
+      }
+      final Enumeration<NetworkInterface> networkInterfaces =
+          NetworkInterface.getNetworkInterfaces();
+      while (networkInterfaces.hasMoreElements()) {
+        NetworkInterface n = networkInterfaces.nextElement();
+        final Enumeration<InetAddress> inetAddresses = n.getInetAddresses();
+        while (inetAddresses.hasMoreElements()) {
+          InetAddress i = inetAddresses.nextElement();
+          if (i.isSiteLocalAddress()) {
+            return i.getHostAddress();
+          }
+        }
+      }
+    } catch (SocketException e) {
+      LOG.error("Failed to find site local address", e);
+      throw new UnknownHostException(e.getMessage());
+    }
+    throw new UnknownHostException("Unable to determine local IP Address");
   }
 
   public static class Builder {

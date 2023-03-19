@@ -24,10 +24,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCK_BY_RANGE_REQUEST_SIZE;
 
-import com.google.common.base.Suppliers;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
@@ -45,7 +43,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedE
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -74,24 +71,17 @@ public class PeerSyncTest extends AbstractSyncTest {
   @BeforeEach
   public void setUp() {
     super.setup();
-    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(false);
     when(storageClient.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
-    // By default set up block import to succeed
+    // By default, set up block import to succeed
     final SignedBeaconBlock block = mock(SignedBeaconBlock.class);
     final SafeFuture<BlockImportResult> result =
         SafeFuture.completedFuture(BlockImportResult.successful(block));
     when(blockImporter.importBlock(any())).thenReturn(result);
     when(storageClient.getHeadSlot()).thenReturn(UInt64.ONE);
 
-    peerSync =
-        new PeerSync(
-            asyncRunner,
-            storageClient,
-            blockImporter,
-            blobsSidecarManager,
-            new NoOpMetricsSystem());
+    peerSync = new PeerSync(asyncRunner, storageClient, blockImporter, new NoOpMetricsSystem());
   }
 
   @Test
@@ -129,60 +119,23 @@ public class PeerSyncTest extends AbstractSyncTest {
     testFailedBlockImport(() -> BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE, false);
   }
 
-  @Test
-  void sync_failedImport_failedBlobsAvailabilityChecks() {
-    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(true);
-    testFailedBlockImport(
-        () -> BlockImportResult.failedBlobsAvailabilityCheck(Optional.empty()), true, true);
-  }
-
-  void testFailedBlockImport(
-      final Supplier<BlockImportResult> importResult,
-      final boolean shouldDisconnect,
-      final boolean shouldMakeSidecarRequest) {
-    testFailedBlockImport(importResult, shouldDisconnect, block, shouldMakeSidecarRequest);
-  }
-
   void testFailedBlockImport(
       final Supplier<BlockImportResult> importResult, final boolean shouldDisconnect) {
-    testFailedBlockImport(importResult, shouldDisconnect, block, false);
+    testFailedBlockImport(importResult, shouldDisconnect, block);
   }
 
   void testFailedBlockImport(
       final Supplier<BlockImportResult> importResult,
       final boolean shouldDisconnect,
       final SignedBeaconBlock block) {
-    testFailedBlockImport(importResult, shouldDisconnect, block, false);
-  }
-
-  void testFailedBlockImport(
-      final Supplier<BlockImportResult> importResult,
-      final boolean shouldDisconnect,
-      final SignedBeaconBlock block,
-      final boolean shouldMakeSidecarRequest) {
     final SafeFuture<Void> requestFuture = new SafeFuture<>();
-    final SafeFuture<Void> sidecarRequestFuture = new SafeFuture<>();
 
     when(peer.requestBlocksByRange(any(), any(), any())).thenReturn(requestFuture);
-    when(peer.requestBlobsSidecarsByRange(any(), any(), any())).thenReturn(sidecarRequestFuture);
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isNotDone();
 
     verify(peer).requestBlocksByRange(any(), any(), blockResponseListenerArgumentCaptor.capture());
-
-    final Supplier<BlobsSidecar> blobsSidecar =
-        Suppliers.memoize(() -> dataStructureUtil.randomBlobsSidecarForBlock(block));
-
-    if (shouldMakeSidecarRequest) {
-      verify(peer)
-          .requestBlobsSidecarsByRange(
-              any(), any(), blobsSidecarResponseListenerArgumentCaptor.capture());
-      final RpcResponseListener<BlobsSidecar> sidecarResponseListener =
-          blobsSidecarResponseListenerArgumentCaptor.getValue();
-      sidecarResponseListener.onResponse(blobsSidecar.get()).join();
-      sidecarRequestFuture.complete(null);
-    }
 
     // Respond with blocks and check they're passed to the block importer.
     final RpcResponseListener<SignedBeaconBlock> responseListener =
@@ -200,10 +153,6 @@ public class PeerSyncTest extends AbstractSyncTest {
       // response
       assertThat(e).hasCauseInstanceOf(FailedBlockImportException.class);
       requestFuture.completeExceptionally(e);
-    }
-
-    if (shouldMakeSidecarRequest) {
-      verify(blobsSidecarManager).storeUnconfirmedBlobsSidecar(blobsSidecar.get());
     }
 
     assertThat(syncFuture).isCompleted();
@@ -571,87 +520,6 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
     assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.INVALID_RESPONSE);
-  }
-
-  @Test
-  void sync_withDenebBlobsSidecars() {
-    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any())).thenReturn(true);
-
-    // peer has finalized 35 epochs after the Deneb fork epoch
-    final UInt64 peerFinalizedEpoch = denebForkEpoch.plus(35);
-    withPeerFinalizedEpoch(peerFinalizedEpoch);
-    // Teku has finalized until the Deneb fork epoch
-    when(storageClient.getFinalizedEpoch()).thenReturn(denebForkEpoch);
-    // current epoch is 1 ahead of the peer
-    when(storageClient.getCurrentEpoch()).thenReturn(Optional.of(peerFinalizedEpoch.plus(1)));
-
-    final SafeFuture<Void> blocksRequest1 = new SafeFuture<>();
-    final SafeFuture<Void> blocksRequest2 = new SafeFuture<>();
-    final SafeFuture<Void> blocksRequest3 = new SafeFuture<>();
-
-    final SafeFuture<Void> blobsSidecarsRequest1 = new SafeFuture<>();
-    final SafeFuture<Void> blobsSidecarsRequest2 = new SafeFuture<>();
-    final SafeFuture<Void> blobsSidecarsRequest3 = new SafeFuture<>();
-
-    when(peer.requestBlocksByRange(any(), any(), any()))
-        .thenReturn(blocksRequest1)
-        .thenReturn(blocksRequest2)
-        .thenReturn(blocksRequest3);
-
-    when(peer.requestBlobsSidecarsByRange(any(), any(), any()))
-        .thenReturn(blobsSidecarsRequest1)
-        .thenReturn(blobsSidecarsRequest2)
-        .thenReturn(blobsSidecarsRequest3);
-
-    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
-
-    // updating the finalized epoch
-    when(storageClient.getFinalizedEpoch()).thenReturn(peerFinalizedEpoch);
-
-    completeRequestsWithBlocksAndBlobsSidecars(
-        List.of(blocksRequest1, blocksRequest2, blocksRequest3),
-        List.of(blobsSidecarsRequest1, blobsSidecarsRequest2, blobsSidecarsRequest3));
-
-    // Check that the sync is done and the peer was not disconnected.
-    assertThat(syncFuture).isCompleted();
-    verify(peer, never()).disconnectCleanly(any());
-  }
-
-  @Test
-  void sync_withRequestDuringTheDenebForkTransition() {
-    when(blobsSidecarManager.isStorageOfBlobsSidecarRequired(any()))
-        .thenAnswer(
-            i -> {
-              final UInt64 slot = i.getArgument(0);
-              return spec.computeEpochAtSlot(slot).isGreaterThanOrEqualTo(denebForkEpoch);
-            });
-
-    // peer has finalized 1 epoch after the Deneb fork epoch
-    final UInt64 peerFinalizedEpoch = denebForkEpoch.plus(1);
-    withPeerFinalizedEpoch(peerFinalizedEpoch);
-    // Teku has finalized until the 1 epoch before Deneb fork epoch
-    when(storageClient.getFinalizedEpoch()).thenReturn(denebForkEpoch.minusMinZero(1));
-    // current epoch is 1 ahead of the peer
-    when(storageClient.getCurrentEpoch()).thenReturn(Optional.of(peerFinalizedEpoch.plus(1)));
-
-    final SafeFuture<Void> blocksRequest = new SafeFuture<>();
-    final SafeFuture<Void> blobsSidecarsRequest = new SafeFuture<>();
-
-    when(peer.requestBlocksByRange(any(), any(), any())).thenReturn(blocksRequest);
-    when(peer.requestBlobsSidecarsByRange(any(), any(), any())).thenReturn(blobsSidecarsRequest);
-
-    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
-
-    // updating the finalized epoch
-    when(storageClient.getFinalizedEpoch()).thenReturn(peerFinalizedEpoch);
-
-    // the requests will span Capella and Deneb
-    completeRequestsWithBlocksAndBlobsSidecars(
-        List.of(blocksRequest), List.of(blobsSidecarsRequest));
-
-    // Check that the sync is done and the peer was not disconnected.
-    assertThat(syncFuture).isCompleted();
-    verify(peer, never()).disconnectCleanly(any());
   }
 
   private void withPeerHeadSlot(final UInt64 peerHeadSlot) {

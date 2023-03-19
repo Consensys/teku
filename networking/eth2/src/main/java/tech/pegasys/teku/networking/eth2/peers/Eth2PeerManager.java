@@ -44,7 +44,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -102,8 +101,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
 
   public static Eth2PeerManager create(
       final AsyncRunner asyncRunner,
-      final RecentChainData recentChainData,
-      final StorageQueryChannel historicalChainData,
+      final CombinedChainDataClient combinedChainDataClient,
       final MetricsSystem metricsSystem,
       final SubnetSubscriptionService attestationSubnetService,
       final SubnetSubscriptionService syncCommitteeSubnetService,
@@ -115,28 +113,21 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final TimeProvider timeProvider,
       final int peerRateLimit,
       final int peerRequestLimit,
-      final int earliestAvailableBlockSlotFrequency,
       final Spec spec) {
 
-    final StatusMessageFactory statusMessageFactory = new StatusMessageFactory(recentChainData);
+    final StatusMessageFactory statusMessageFactory =
+        new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     final MetadataMessagesFactory metadataMessagesFactory = new MetadataMessagesFactory();
     attestationSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateAttestationSubnetIds);
     syncCommitteeSubnetService.subscribeToUpdates(
         metadataMessagesFactory::updateSyncCommitteeSubnetIds);
-    final CombinedChainDataClient combinedChainDataClient =
-        new CombinedChainDataClient(
-            recentChainData,
-            historicalChainData,
-            spec,
-            timeProvider,
-            earliestAvailableBlockSlotFrequency);
 
     return new Eth2PeerManager(
         spec,
         asyncRunner,
         combinedChainDataClient,
-        recentChainData,
+        combinedChainDataClient.getRecentChainData(),
         metricsSystem,
         new Eth2PeerFactory(
             spec,

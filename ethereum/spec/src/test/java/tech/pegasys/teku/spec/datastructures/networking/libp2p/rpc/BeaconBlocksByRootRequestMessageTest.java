@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -35,5 +38,12 @@ class BeaconBlocksByRootRequestMessageTest {
     final BeaconBlocksByRootRequestMessage result =
         BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
     assertThatSszData(result).isEqualByAllMeansTo(request);
+  }
+
+  @Test
+  public void verifyMaxLengthOfContainerIsGreaterOrEqualToMaxRequestBlocks() {
+    assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
+        .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
+        .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
   }
 }

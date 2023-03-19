@@ -56,9 +56,9 @@ class EngineForkChoiceUpdatedV1Test {
 
   @Test
   public void shouldReturnExpectedNameAndVersion() {
-    assertThat(jsonRpcMethod.getName()).isEqualTo("engine_forkChoiceUpdated");
+    assertThat(jsonRpcMethod.getName()).isEqualTo("engine_forkchoiceUpdated");
     assertThat(jsonRpcMethod.getVersion()).isEqualTo(1);
-    assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("engine_forkChoiceUpdatedV1");
+    assertThat(jsonRpcMethod.getVersionedName()).isEqualTo("engine_forkchoiceUpdatedV1");
   }
 
   @Test

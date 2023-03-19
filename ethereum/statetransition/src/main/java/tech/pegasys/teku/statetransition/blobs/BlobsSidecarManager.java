@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
@@ -29,11 +28,6 @@ public interface BlobsSidecarManager {
         public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
             SignedBlobSidecar blobsSidecar) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
-        }
-
-        @Override
-        public boolean isStorageOfBlobsSidecarRequired(final UInt64 slot) {
-          return false;
         }
 
         @Override
@@ -53,8 +47,6 @@ public interface BlobsSidecarManager {
       };
 
   SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(SignedBlobSidecar blobsSidecar);
-
-  boolean isStorageOfBlobsSidecarRequired(UInt64 slot);
 
   void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
 

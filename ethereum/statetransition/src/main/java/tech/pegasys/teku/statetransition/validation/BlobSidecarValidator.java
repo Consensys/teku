@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
@@ -54,11 +53,7 @@ public class BlobSidecarValidator {
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper validationHelper) {
 
-    final Optional<Integer> maybeMaxBlobsPerBlock =
-        spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
-            .getConfig()
-            .toVersionDeneb()
-            .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlock();
 
     final int validInfoSize = VALID_BLOCK_SET_SIZE * maybeMaxBlobsPerBlock.orElse(1);
 
@@ -144,7 +139,6 @@ public class BlobSidecarValidator {
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
 
     /*
-     TODO: I just proposed this rule in spec
     [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by sidecar.block_parent_root).
      */
     if (parentBlockSlot.isGreaterThanOrEqualTo(blobSidecar.getSlot())) {

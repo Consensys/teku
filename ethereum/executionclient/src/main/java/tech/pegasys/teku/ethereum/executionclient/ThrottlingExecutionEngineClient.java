@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -118,5 +119,10 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final TransitionConfigurationV1 transitionConfiguration) {
     return taskQueue.queueTask(
         () -> delegate.exchangeTransitionConfiguration(transitionConfiguration));
+  }
+
+  @Override
+  public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
+    return taskQueue.queueTask(() -> delegate.exchangeCapabilities(capabilities));
   }
 }

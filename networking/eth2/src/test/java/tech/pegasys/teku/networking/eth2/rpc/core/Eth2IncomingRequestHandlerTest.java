@@ -56,7 +56,7 @@ public class Eth2IncomingRequestHandlerTest
     lenient()
         .when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenAnswer(i -> getBlockAtSlot(i.getArgument(0)));
-    when(peer.wantToMakeRequest()).thenReturn(true);
+    when(peer.popRequest()).thenReturn(true);
   }
 
   @Override

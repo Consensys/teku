@@ -14,8 +14,9 @@
 package tech.pegasys.teku.services.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
@@ -30,7 +31,7 @@ public class ExecutionLayerConfigurationTest {
   public void shouldThrowExceptionIfNoEeEndpointSpecified() {
     final ExecutionLayerConfiguration config = configBuilder.specProvider(bellatrixSpec).build();
 
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+    assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(config::getEngineEndpoint)
         .withMessageContaining(
             "Invalid configuration. --ee-endpoint parameter is mandatory when Bellatrix milestone is enabled");
@@ -41,7 +42,7 @@ public class ExecutionLayerConfigurationTest {
     final ExecutionLayerConfiguration.Builder builder =
         configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("-100");
 
-    Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
+    assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(builder::build)
         .withMessageContaining("Builder bid value challenge percentage should be >= 0");
   }
@@ -51,7 +52,7 @@ public class ExecutionLayerConfigurationTest {
     final ExecutionLayerConfiguration.Builder builder =
         configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("OUCH");
 
-    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+    assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
             "Expecting number, percentage or NEVER keyword for Builder bid challenge percentage");
@@ -81,6 +82,21 @@ public class ExecutionLayerConfigurationTest {
     final ExecutionLayerConfiguration config =
         configBuilder.specProvider(bellatrixSpec).engineEndpoint("someEndpoint").build();
 
-    Assertions.assertThatCode(config::getEngineEndpoint).doesNotThrowAnyException();
+    assertThatCode(config::getEngineEndpoint).doesNotThrowAnyException();
+  }
+
+  @Test
+  public void exchangeCapabilitiesToggleIsOffByDefault() {
+    final ExecutionLayerConfiguration config = configBuilder.build();
+
+    assertThat(config.isExchangeCapabilitiesEnabled()).isFalse();
+  }
+
+  @Test
+  public void exchangeCapabilitiesToggleCanBeToggledOn() {
+    final ExecutionLayerConfiguration config =
+        configBuilder.exchangeCapabilitiesEnabled(true).build();
+
+    assertThat(config.isExchangeCapabilitiesEnabled()).isTrue();
   }
 }

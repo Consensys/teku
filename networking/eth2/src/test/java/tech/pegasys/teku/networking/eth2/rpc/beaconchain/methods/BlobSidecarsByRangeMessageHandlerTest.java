@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -22,8 +23,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.List;
@@ -37,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -44,11 +48,17 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -77,6 +87,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
+  private final MiscHelpersDeneb miscHelpers =
+      spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
 
   @SuppressWarnings("unchecked")
   private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
@@ -91,12 +103,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       new BlobSidecarsByRangeMessageHandler(
           spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
 
-  private final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
-
   @BeforeEach
   public void setUp() {
-    when(peer.wantToMakeRequest()).thenReturn(true);
-    when(peer.wantToReceiveBlobSidecars(listener, count.longValue())).thenReturn(true);
+    when(peer.popRequest()).thenReturn(true);
+    when(peer.popBlobSidecarRequests(eq(listener), anyLong())).thenReturn(true);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
@@ -112,9 +122,33 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
+  public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
+    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, maxRequestBlobSidecars.increment());
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    final long rateLimitedCount =
+        metricsSystem
+            .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_range_requests_total")
+            .getValue("count_too_big");
+
+    assertThat(rateLimitedCount).isOne();
+
+    verify(listener)
+        .completeWithErrorResponse(
+            new RpcException(
+                INVALID_REQUEST_CODE,
+                String.format(
+                    "Only a maximum of %s blob sidecars can be requested per request",
+                    maxRequestBlobSidecars)));
+  }
+
+  @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.wantToReceiveBlobSidecars(listener, 5)).thenReturn(false);
+    when(peer.popBlobSidecarRequests(listener, 20)).thenReturn(false);
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count);
@@ -157,16 +191,17 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldCompleteSuccessfullyIfRequestNotWithinRange() {
+    SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
+    int blobSidecarsCount = miscHelpers.getBlobSidecarsCount(Optional.of(signedBeaconBlock));
     when(combinedChainDataClient.getBlockAtSlotExact(any(), eq(headBlockRoot)))
-        .thenReturn(
-            SafeFuture.completedFuture(Optional.of(dataStructureUtil.randomSignedBeaconBlock())));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(ZERO, count);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
-    verify(combinedChainDataClient, times(count.times(maxBlobsPerBlock).intValue()))
+    verify(combinedChainDataClient, times(count.times(blobSidecarsCount).intValue()))
         .getBlobSidecarByBlockRootAndIndex(any(), any());
 
     verify(listener, never()).respond(any());
@@ -187,8 +222,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
-    verify(listener, times(count.times(maxBlobsPerBlock).intValue()))
-        .respond(argumentCaptor.capture());
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
 
     verify(combinedChainDataClient, times(count.intValue())).getBlockAtSlotExact(any(), any());
 
@@ -205,7 +239,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO);
 
-    when(peer.wantToReceiveBlobSidecars(listener, 0)).thenReturn(true);
+    when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(true);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -223,23 +257,23 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldIterateThroughIndicesAndSlots() {
 
-    UInt64 count = UInt64.valueOf(5);
     UInt64 currentSlot = ZERO;
+    UInt64 count = UInt64.valueOf(5);
     BlobSidecarsByRangeMessageHandler.RequestState request =
         handler
         .new RequestState(
-            listener,
-            maxBlobsPerBlock,
-            specConfig.getMaxRequestBlobSidecars(),
-            headBlockRoot,
-            currentSlot,
-            count);
+            listener, specConfig.getMaxRequestBlobSidecars(), headBlockRoot, currentSlot, count);
 
     for (int slot = currentSlot.intValue(); slot <= count.intValue(); slot++) {
-      for (int index = 0; index < maxBlobsPerBlock.intValue(); index++) {
+
+      SszList<SszKZGCommitment> randomCommitments = dataStructureUtil.randomSszKzgCommitmentList();
+      mockSignedBeaconBlock(slot, randomCommitments);
+
+      for (int index = 0; index < randomCommitments.size(); index++) {
         assertThat(request.isComplete()).isFalse();
         assertThat(request.getCurrentSlot()).isEqualTo(UInt64.valueOf(slot));
         assertThat(request.getCurrentIndex()).isEqualTo(UInt64.valueOf(index));
+        ignoreFuture(request.loadNextBlobSidecar());
         request.incrementSlotAndIndex();
       }
     }
@@ -261,23 +295,41 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   private List<BlobSidecar> setUpBlobSidecarsDataForSlot(
-      final UInt64 slot, final SignedBeaconBlock block) {
-    return UInt64.range(ZERO, maxBlobsPerBlock)
+      final UInt64 slot, final SignedBeaconBlock signedBeaconBlock) {
+    return UInt64.range(
+            ZERO, UInt64.valueOf(miscHelpers.getBlobSidecarsCount(Optional.of(signedBeaconBlock))))
         .map(
             index -> {
               final BlobSidecar blobSidecar =
                   dataStructureUtil
                       .createRandomBlobSidecarBuilder()
-                      .blockRoot(block.getRoot())
+                      .blockRoot(signedBeaconBlock.getRoot())
                       .slot(slot)
                       .index(index)
-                      .blockParentRoot(block.getParentRoot())
+                      .blockParentRoot(signedBeaconBlock.getParentRoot())
                       .build();
               when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
-                      block.getRoot(), index))
+                      signedBeaconBlock.getRoot(), index))
                   .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
               return blobSidecar;
             })
         .collect(Collectors.toList());
+  }
+
+  private void mockSignedBeaconBlock(
+      final int slot, final SszList<SszKZGCommitment> randomCommitments) {
+    SignedBeaconBlock signedBeaconBlock = mock(SignedBeaconBlock.class);
+    when(signedBeaconBlock.getSlot()).thenReturn(UInt64.valueOf(slot));
+    BeaconBlockBody beaconBlockBody = mock(BeaconBlockBody.class);
+    BeaconBlockBodyDeneb beaconBlockBodyDeneb = mock(BeaconBlockBodyDeneb.class);
+    when(beaconBlockBodyDeneb.getBlobKzgCommitments()).thenReturn(randomCommitments);
+    Optional<BeaconBlockBodyDeneb> maybeBeaconBlockBodyDeneb = Optional.of(beaconBlockBodyDeneb);
+    when(beaconBlockBody.toVersionDeneb()).thenReturn(maybeBeaconBlockBodyDeneb);
+    BeaconBlock beaconBlock = mock(BeaconBlock.class);
+    when(beaconBlock.getBody()).thenReturn(beaconBlockBody);
+    Optional<BeaconBlock> maybeBeaconBlock = Optional.of(beaconBlock);
+    when(signedBeaconBlock.getBeaconBlock()).thenReturn(maybeBeaconBlock);
+    when(combinedChainDataClient.getBlockAtSlotExact(eq(UInt64.valueOf(slot)), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
   }
 }
