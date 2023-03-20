@@ -35,6 +35,7 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
@@ -88,6 +89,14 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
       final BlobsSidecar blobsSidecar) {
     validateBlobsSidecar(slot, beaconBlockRoot, kzgCommitments, blobsSidecar);
     return true;
+  }
+
+  public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
+    return signedBeaconBlock
+        .flatMap(SignedBeaconBlock::getBeaconBlock)
+        .flatMap(beaconBlock -> beaconBlock.getBody().toVersionDeneb())
+        .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
+        .orElse(0);
   }
 
   @VisibleForTesting
