@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -500,9 +501,17 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     assertThat(lastUnjustifiedData.getCheckpoints().getJustifiedCheckpoint())
         .isNotEqualTo(currentJustified);
 
-    // Invalidate blocks that updated the justified checkpoint
+    // Invalidate blocks that are viable for head (all blocks after the justified one)
+    final UInt64 justifiedSlot =
+        SafeFutureAssert.safeJoin(recentChainData.retrieveBlockByRoot(currentJustified.getRoot()))
+            .orElseThrow()
+            .getSlot();
+
+    final Bytes32 rootToBeInvalidated =
+        recentChainData.getBlockRootBySlot(justifiedSlot.increment()).orElseThrow();
+
     protoArray.onExecutionPayloadResult(
-        firstJustifiedData.getRoot(),
+        rootToBeInvalidated,
         PayloadStatus.invalid(Optional.empty(), Optional.of("No good, very bad block")),
         true);
     // And validate the justified checkpoint
