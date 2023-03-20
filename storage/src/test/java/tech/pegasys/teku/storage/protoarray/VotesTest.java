@@ -42,7 +42,7 @@ public class VotesTest {
 
   private final TestStoreImpl store = createStoreToManipulateVotes();
   private final ForkChoiceStrategy forkChoice =
-      createProtoArrayForkChoiceStrategy(spec, getHash(0), ZERO, ONE, ONE);
+      createProtoArrayForkChoiceStrategy(spec, getHash(0), UInt64.valueOf(8), ONE, ONE);
   private List<UInt64> balances = new ArrayList<>(List.of(unsigned(1), unsigned(1)));
 
   @Test
@@ -56,16 +56,17 @@ public class VotesTest {
 
     // Add a block with a hash of 2.
     //
-    //          0
-    //         /
-    //        2
-    processBlock(ZERO, getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    // ------- epoch 1 begins ------
+    // 8         0 <- justified and finalized
+    //          /
+    // 9       2
+    processBlock(UInt64.valueOf(9), getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is 2
     //
-    //          0
-    //         /
-    // head-> 2
+    // 8            0
+    //             /
+    // 9   head-> 2
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -74,16 +75,16 @@ public class VotesTest {
     // Add a block with a hash of 1 that comes off the genesis block (this is a fork compared
     // to the previous block).
     //
-    //          0
-    //         / \
-    //        2   1
-    processBlock(ZERO, getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    // 8         0
+    //          / \
+    // 9       2   1
+    processBlock(UInt64.valueOf(9), getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
-    //          0
-    //         / \
-    // head-> 2   1
+    // 8           0
+    //            / \
+    // 9  head-> 2   1
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -91,16 +92,16 @@ public class VotesTest {
 
     // Add a vote to block 1
     //
-    //          0
-    //         / \
-    //        2   1 <- +vote
+    // 8          0
+    //           / \
+    // 9        2   1 <- +vote
     forkChoice.processAttestation(store, unsigned(0), getHash(1), unsigned(2));
 
     // Ensure that the head is now 1, because 1 has a vote.
     //
-    //          0
-    //         / \
-    //        2   1 <- head
+    // 8         0
+    //          / \
+    // 9       2   1 <- head
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -108,16 +109,16 @@ public class VotesTest {
 
     // Add a vote to block 2
     //
-    //           0
-    //          / \
-    // +vote-> 2   1
+    // 8            0
+    //             / \
+    // 9   +vote-> 2   1
     forkChoice.processAttestation(store, unsigned(1), getHash(2), unsigned(2));
 
     // Ensure that the head is 2 since 1 and 2 both have a vote
     //
-    //          0
-    //         / \
-    // head-> 2   1
+    // 8           0
+    //            / \
+    // 9   head-> 2   1
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -125,20 +126,20 @@ public class VotesTest {
 
     // Add block 3.
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    processBlock(ZERO, getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    // 8         0
+    //          / \
+    // 9       2   1
+    //             |
+    // 10          3
+    processBlock(UInt64.valueOf(10), getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is still 2
     //
-    //          0
-    //         / \
-    // head-> 2   1
-    //            |
-    //            3
+    // 8           0
+    //            / \
+    // 9  head-> 2   1
+    //               |
+    // 10            3
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -146,20 +147,20 @@ public class VotesTest {
 
     // Move validator #0 vote from 1 to 3
     //
-    //          0
-    //         / \
-    //        2   1 <- -vote
-    //            |
-    //            3 <- +vote
+    // 8         0
+    //          / \
+    // 9       2   1 <- -vote
+    //             |
+    // 10          3 <- +vote
     forkChoice.processAttestation(store, unsigned(0), getHash(3), unsigned(3));
 
     // Ensure that the head is still 2
     //
-    //          0
-    //         / \
-    // head-> 2   1
-    //            |
-    //            3
+    // 8           0
+    //            / \
+    // 9  head-> 2   1
+    //               |
+    // 10            3
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -168,20 +169,20 @@ public class VotesTest {
     // Move validator #1 vote from 2 to 1 (this is an equivocation, but fork choice doesn't
     // care)
     //
-    //           0
-    //          / \
-    // -vote-> 2   1 <- +vote
-    //             |
-    //             3
+    // 8            0
+    //             / \
+    // 9  -vote-> 2   1 <- +vote
+    //                |
+    // 10             3
     forkChoice.processAttestation(store, unsigned(1), getHash(1), unsigned(3));
 
     // Ensure that the head is now 3
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3 <- head
+    // 8         0
+    //          / \
+    // 9       2   1
+    //             |
+    // 10          3 <- head
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -189,24 +190,28 @@ public class VotesTest {
 
     // Add block 4.
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    processBlock(ZERO, getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
+    // 8         0
+    //          / \
+    // 9       2   1
+    //             |
+    // 10          3
+    //             |
+    // ------- epoch 2 begins ------
+    //             |
+    // 16          4
+    processBlock(UInt64.valueOf(16), getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE, Bytes32.ZERO);
 
     // Ensure that the head is now 4
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4 <- head
+    // 8         0
+    //          / \
+    // 9       2   1
+    //             |
+    // 10          3
+    //             |
+    // ------- epoch 2 begins ------
+    //             |
+    // 16          4   <- head
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -214,29 +219,39 @@ public class VotesTest {
 
     // Add block 5, which has a justified epoch of 2.
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           /
-    //          5 <- justified epoch = 2
+    // 8         0
+    //          / \
+    // 9       2   1
+    //             |
+    // 10          3
+    //             |
+    // ------- epoch 2 begins ------
+    //             |
+    // 16          4
+    //            /
+    // 17        5 <- justified epoch = 2
     processBlock(
-        ZERO, getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(17),
+        getHash(5),
+        getHash(4),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Ensure that 5 is filtered out and the head stays at 4.
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4 <- head
-    //           /
-    //          5
+    // 8         0
+    //          / \
+    // 9       2   1
+    //             |
+    // 10          3
+    //             |
+    // ------- epoch 2 begins ------
+    //             |
+    // 16          4 <- head
+    //            /
+    // 17        5
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -244,75 +259,107 @@ public class VotesTest {
 
     // Add block 6, which has a justified epoch of 0.
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6 <- justified epoch = 0
+    // 8         0
+    //          / \
+    // 9       2   1
+    //             |
+    // 10          3
+    //             |
+    // ------- epoch 2 begins ------
+    //             |
+    // 16          4
+    //            / \
+    // 17        5   6 <- justified epoch = 0
     processBlock(
-        ZERO, getHash(6), getHash(4), Bytes32.ZERO, unsigned(1), unsigned(1), Bytes32.ZERO);
+        UInt64.valueOf(17),
+        getHash(6),
+        getHash(4),
+        Bytes32.ZERO,
+        unsigned(1),
+        unsigned(1),
+        Bytes32.ZERO);
 
     // Move both votes to 5.
     //
-    //           0
-    //          / \
-    //         2   1
-    //             |
-    //             3
-    //             |
-    //             4
-    //            / \
-    // +2 vote-> 5   6
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17  +2 vote-> 5   6
     forkChoice.processAttestation(store, unsigned(0), getHash(5), unsigned(4));
     forkChoice.processAttestation(store, unsigned(1), getHash(5), unsigned(4));
 
     // Add blocks 7, 8 and 9. Adding these blocks helps test the `best_descendant`
     // functionality.
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         /
-    //         9
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              /
+    // 20          9
     processBlock(
-        ZERO, getHash(7), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(18),
+        getHash(7),
+        getHash(5),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
     processBlock(
-        ZERO, getHash(8), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(19),
+        getHash(8),
+        getHash(7),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
     processBlock(
-        ZERO, getHash(9), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(20),
+        getHash(9),
+        getHash(8),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Ensure that 6 is the head, even though 5 has all the votes. This is testing to ensure
     // that 5 is filtered out due to a differing justified epoch.
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6 <- head
-    //          |
-    //          7
-    //          |
-    //          8
-    //         /
-    //         9
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6 <- head
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              /
+    // 20          9
     assertThat(
             applyPendingVotes(
                 new Checkpoint(ONE, getHash(0)), new Checkpoint(ONE, getHash(0)), balances))
@@ -323,65 +370,77 @@ public class VotesTest {
     //
     // << Change justified epoch to 1 >>
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         /
-    // head-> 9
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              /
+    // 20  head -> 9
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Move both votes to block 9
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         /
-    //        9 <- +2 votes
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              /
+    // 20          9 <- +2 votes
     forkChoice.processAttestation(store, unsigned(0), getHash(9), unsigned(5));
     forkChoice.processAttestation(store, unsigned(1), getHash(9), unsigned(5));
 
     // Add block 10
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    //        9  10
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              / \
+    // 20          9   10
     processBlock(
-        ZERO, getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(20),
+        getHash(10),
+        getHash(8),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Double-check the head is still 9
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Introduce 2 more validators into the system
@@ -389,43 +448,47 @@ public class VotesTest {
 
     // Have the two new validators vote for 10
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    //        9  10 <- +2 votes
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              / \
+    // 20          9   10 <- +2 votes
     forkChoice.processAttestation(store, unsigned(2), getHash(10), unsigned(5));
     forkChoice.processAttestation(store, unsigned(3), getHash(10), unsigned(5));
 
     // Check the head is now 10. (due to lexicographical ordering
     // (when blocks have the same amount of votes))
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    //           / \
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    //        9  10 <- head
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- epoch 2 begins ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              / \
+    // 20          9   10 <- head
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(10));
 
     // Set the balances of the last two validators to zero
@@ -433,14 +496,14 @@ public class VotesTest {
 
     // Check the head is 9 again.
     //
-    //          .
-    //          .
-    //          .
-    //          |
-    //          8
-    //         / \
-    // head-> 9  10
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    //               .
+    //               .
+    //               .
+    //               |
+    // 19            8
+    //              / \
+    // 20  head->  9   10
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Set the balances of the last two validators back to 1
@@ -448,14 +511,14 @@ public class VotesTest {
 
     // Check the head is 10.
     //
-    //          .
-    //          .
-    //          .
-    //          |
-    //          8
-    //         / \
-    //        9  10 <- head
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    //         .
+    //         .
+    //         .
+    //         |
+    // 19      8
+    //        / \
+    // 20    9   10 <- head
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(10));
 
     // Equivocate one of the votes on 10
@@ -464,14 +527,14 @@ public class VotesTest {
 
     // Ensure the head is now 9 again (2 votes > 1)
     //
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    // head-> 9  10
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              / \
+    // 20 head->   9   10
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Add 1 validator
@@ -481,14 +544,14 @@ public class VotesTest {
 
     // Ensure the head is 10 back
     //
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    //        9  10 <-head
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              / \
+    // 20          9   10 <- head
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(10));
 
     // Remove the last two validators
@@ -497,14 +560,14 @@ public class VotesTest {
     // Check the head is 9 again.
     //
     //  (prior blocks omitted for brevity)
-    //          .
-    //          .
-    //          .
-    //          |
-    //          8
-    //         / \
-    // head-> 9  10
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    //               .
+    //               .
+    //               .
+    //               |
+    // 19            8
+    //              / \
+    // 20  head->  9   10
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Ensure that pruning below the prune threshold does not prune.
@@ -513,61 +576,71 @@ public class VotesTest {
     assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(11);
 
     // Run find-head, ensure the no-op prune didn't change the head.
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Ensure that pruning above the prune threshold does prune.
     //
     //
-    //          0
-    //         / \
-    //        2   1
-    //            |
-    //            3
-    //            |
-    //            4
-    // -------pruned here ------
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    //        9  10
+    // 8             0
+    //              / \
+    // 9           2   1
+    //                 |
+    // 10              3
+    //                 |
+    //     ------- pruned here ------
+    //                 |
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              / \
+    // 20          9   10
     forkChoice.setPruneThreshold(1);
-    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(5)));
-    assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(6);
+    forkChoice.applyUpdate(emptyList(), emptySet(), emptyMap(), new Checkpoint(ONE, getHash(4)));
+    assertThat(forkChoice.getTotalTrackedNodeCount()).isEqualTo(7);
 
     // Run find-head, ensure the prune didn't change the head.
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(9));
 
     // Add block 11
-    //
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    //        9  10
-    //        |
-    //        11
+    // 16              4
+    //                / \
+    // 17            5   6
+    //               |
+    // 18            7
+    //               |
+    // 19            8
+    //              / \
+    // 20          9   10
+    //             |
+    // 21         11
     processBlock(
-        ZERO, getHash(11), getHash(9), Bytes32.ZERO, unsigned(2), unsigned(2), Bytes32.ZERO);
+        UInt64.valueOf(21),
+        getHash(11),
+        getHash(9),
+        Bytes32.ZERO,
+        unsigned(2),
+        unsigned(2),
+        Bytes32.ZERO);
 
     // Ensure the head is now 11
-    //
-    //          5   6
-    //          |
-    //          7
-    //          |
-    //          8
-    //         / \
-    //        9  10
-    //        |
-    // head-> 11
-    assertThat(applyPendingVotes(checkpoint(2, 0), checkpoint(2, 5), balances))
+    // 16             4
+    //               / \
+    // 17           5   6
+    //              |
+    // 18           7
+    //              |
+    // 19           8
+    //             / \
+    // 20         9   10
+    //            |
+    // 21 head->  11
+    assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
         .isEqualTo(getHash(11));
   }
 

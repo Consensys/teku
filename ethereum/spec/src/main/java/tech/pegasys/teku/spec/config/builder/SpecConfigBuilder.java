@@ -102,7 +102,7 @@ public class SpecConfigBuilder {
   private Long depositNetworkId;
   private Eth1Address depositContractAddress;
 
-  private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.USED;
+  private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.FULL;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
