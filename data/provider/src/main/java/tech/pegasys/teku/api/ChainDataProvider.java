@@ -700,11 +700,11 @@ public class ChainDataProvider {
     final SszList<ProposerSlashing> proposerSlashings =
         beaconBlock.getBody().getProposerSlashings();
 
+    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
+    final SpecConfig specConfig = spec.getSpecConfig(epoch);
+
     UInt64 proposerSlashingsRewards = ZERO;
     for (ProposerSlashing slashing : proposerSlashings) {
-      final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
-      final SpecConfig specConfig = spec.getSpecConfig(epoch);
-
       final int slashedIndex = slashing.getHeader1().getMessage().getProposerIndex().intValue();
       final Validator validator = state.getValidators().get(slashedIndex);
 
