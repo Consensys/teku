@@ -124,7 +124,8 @@ public class LocalSigner implements Signer {
   }
 
   @Override
-  public SafeFuture<BLSSignature> signBlobSidecar(BlobSidecar blobSidecar, ForkInfo forkInfo) {
+  public SafeFuture<BLSSignature> signBlobSidecar(
+      final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
     return sign(signingRootUtil.signingRootForBlobSidecar(blobSidecar, forkInfo));
   }
 
