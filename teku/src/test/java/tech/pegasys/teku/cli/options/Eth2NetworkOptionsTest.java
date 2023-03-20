@@ -97,12 +97,22 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest
   @EnumSource(value = ProgressiveBalancesMode.class)
-  void shouldUseCustomProgressiveBalancesMode(final ProgressiveBalancesMode mode) {
+  void shouldUseCustomProgressiveBalancesModeOnMinimal(final ProgressiveBalancesMode mode) {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
             "--network", "minimal", "--Xprogressive-balances-mode", mode.name());
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getGenesisSpecConfig().getProgressiveBalancesMode()).isEqualTo(mode);
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = ProgressiveBalancesMode.class)
+  void shouldNotUseCustomProgressiveBalancesModeOnMainnet(final ProgressiveBalancesMode mode) {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xprogressive-balances-mode", mode.name());
+    final Spec spec = config.eth2NetworkConfiguration().getSpec();
+    assertThat(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
+        .isEqualTo(ProgressiveBalancesMode.FULL);
   }
 
   @ParameterizedTest
