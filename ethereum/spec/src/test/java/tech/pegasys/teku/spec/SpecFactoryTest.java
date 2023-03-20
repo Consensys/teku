@@ -38,13 +38,13 @@ public class SpecFactoryTest {
 
   private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("swift", "less-swift");
 
-  private static final Set<String> CAPELLA_NETWORKS = Set.of("sepolia", "prater");
+  private static final Set<String> CAPELLA_NETWORKS = Set.of("sepolia", "prater", "mainnet");
 
   @Test
-  public void defaultFactoryShouldScheduleAltairAndBellatrixForMainNet() {
+  public void defaultFactoryShouldScheduleBellatrixAndCapellaForMainNet() {
     final Spec spec = SpecFactory.create("mainnet");
     assertThat(spec.getForkSchedule().getSupportedMilestones())
-        .containsExactly(PHASE0, ALTAIR, BELLATRIX);
+        .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
   }
 
   @ParameterizedTest(name = "{0}")
