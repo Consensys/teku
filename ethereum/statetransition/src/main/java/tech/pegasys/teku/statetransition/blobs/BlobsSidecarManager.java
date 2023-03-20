@@ -27,7 +27,7 @@ public interface BlobsSidecarManager {
 
         @Override
         public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
-            SignedBlobSidecar blobsSidecar) {
+            final SignedBlobSidecar signedBlobSidecar) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
@@ -52,7 +52,8 @@ public interface BlobsSidecarManager {
         }
       };
 
-  SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(SignedBlobSidecar blobsSidecar);
+  SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
+      SignedBlobSidecar signedBlobSidecar);
 
   SafeFuture<Void> importBlobSidecar(BlobSidecar blobSidecar);
 
