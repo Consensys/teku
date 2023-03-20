@@ -712,7 +712,10 @@ public class ChainDataProvider {
           validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
       final UInt64 proposerReward =
           whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
-      proposerSlashingsRewards = proposerSlashingsRewards.plus(proposerReward);
+      proposerSlashingsRewards =
+          proposerSlashingsRewards
+              .plus(proposerReward)
+              .plus(whistleblowerReward.minus(proposerReward));
     }
 
     return proposerSlashingsRewards;
