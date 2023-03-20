@@ -27,7 +27,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 
 public class CommonAncestorTest extends AbstractSyncTest {
 
-  private final CommonAncestor commonAncestor = new CommonAncestor(mockRecentChainData);
+  private final CommonAncestor commonAncestor = new CommonAncestor(recentChainData);
 
   @Test
   void shouldNotSearchCommonAncestorWithoutSufficientLocalData()
@@ -41,7 +41,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
             spec.computeEpochAtSlot(currentLocalHead),
             dataStructureUtil.randomBytes32());
 
-    when(mockRecentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
 
     assertThat(
             commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot()).get())
@@ -63,7 +63,7 @@ public class CommonAncestorTest extends AbstractSyncTest {
             spec.computeEpochAtSlot(currentRemoteHead),
             dataStructureUtil.randomBytes32());
 
-    when(mockRecentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
 
     assertThat(
             commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot()).get())
@@ -88,8 +88,8 @@ public class CommonAncestorTest extends AbstractSyncTest {
             spec.computeEpochAtSlot(currentRemoteHead),
             dataStructureUtil.randomBytes32());
 
-    when(mockRecentChainData.getHeadSlot()).thenReturn(currentLocalHead);
-    when(mockRecentChainData.containsBlock(any())).thenReturn(true);
+    when(recentChainData.getHeadSlot()).thenReturn(currentLocalHead);
+    when(recentChainData.containsBlock(any())).thenReturn(true);
 
     SafeFuture<UInt64> futureSlot =
         commonAncestor.getCommonAncestor(peer, firstNonFinalSlot, status.getHeadSlot());

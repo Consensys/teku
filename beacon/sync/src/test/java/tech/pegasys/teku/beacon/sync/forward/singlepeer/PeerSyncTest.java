@@ -76,6 +76,8 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   @BeforeEach
   public void setUp() {
+    when(recentChainData.getFinalizedEpoch()).thenReturn(UInt64.ZERO);
+    when(recentChainData.getHeadSlot()).thenReturn(UInt64.ONE);
     when(peer.getStatus()).thenReturn(PEER_STATUS);
     when(peer.disconnectCleanly(any())).thenReturn(SafeFuture.COMPLETE);
     // By default, set up block and blob sidecar import to succeed
@@ -83,9 +85,8 @@ public class PeerSyncTest extends AbstractSyncTest {
     final SafeFuture<BlockImportResult> result =
         SafeFuture.completedFuture(BlockImportResult.successful(block));
     when(blockImporter.importBlock(any())).thenReturn(result);
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
     when(blobsSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
-
-    advanceChain(UInt64.ONE);
 
     peerSync =
         new PeerSync(
@@ -238,7 +239,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     // Now that we've imported the block, our finalized epoch has updated but hasn't reached what
     // the peer claimed
-    chainUpdater.finalizeEpoch(PEER_FINALIZED_EPOCH.minus(UInt64.ONE));
+    when(recentChainData.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH.minus(UInt64.ONE));
 
     // Signal the request for data from the peer is complete.
     requestFuture.complete(null);
@@ -274,7 +275,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     verify(peer).requestBlocksByRange(eq(nextSlotStart), eq(secondRequestSize), any());
 
-    chainUpdater.finalizeEpoch(PEER_FINALIZED_EPOCH);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
     // Respond with blocks and check they are passed to the block importer.
     completeRequestWithBlocksAtSlots(requestFuture2, nextSlotStart, secondRequestSize);
 
@@ -310,7 +311,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     verify(peer).requestBlocksByRange(eq(nextSlotStart), eq(secondRequestSize), any());
 
-    chainUpdater.finalizeEpoch(PEER_FINALIZED_EPOCH);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
 
     // Respond with blocks and check they're passed to the block importer.
     completeRequestWithBlocksAtSlots(requestFuture2, nextSlotStart, secondRequestSize);
@@ -352,7 +353,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     asyncRunner.executeQueuedActions();
     final UInt64 nextSlotStart = startSlot.plus(FORWARD_SYNC_BATCH_SIZE);
 
-    chainUpdater.finalizeEpoch(PEER_FINALIZED_EPOCH);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(PEER_FINALIZED_EPOCH);
 
     verify(peer).requestBlocksByRange(eq(nextSlotStart), eq(secondRequestSize), any());
 
@@ -504,7 +505,8 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   @Test
   void sync_blocksAndBlobSidecarsForDeneb() {
-    advanceChainToDeneb();
+    when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
 
@@ -522,7 +524,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     assertThat(syncFuture).isNotDone();
 
     // update the chain with the peer finalized epoch
-    chainUpdater.finalizeEpoch(denebPeerFinalizedEpoch);
+    when(recentChainData.getFinalizedEpoch()).thenReturn(denebPeerFinalizedEpoch);
 
     verify(peer).requestBlocksByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
     verify(peer).requestBlobSidecarsByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
@@ -538,7 +540,8 @@ public class PeerSyncTest extends AbstractSyncTest {
 
   @Test
   void sync_testFailedBlobSidecarImport() {
-    advanceChainToDeneb();
+    when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
 

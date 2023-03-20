@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
+import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
+
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
@@ -35,7 +37,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -89,7 +90,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             recentChainData,
             new BatchImporter(blockImporter, asyncRunner),
             new BatchFactory(eventThread, new PeerScoringConflictResolutionStrategy()),
-            Constants.FORWARD_SYNC_BATCH_SIZE,
+            FORWARD_SYNC_BATCH_SIZE,
             MultipeerCommonAncestorFinder.create(recentChainData, eventThread, spec),
             timeProvider);
     final SyncController syncController =

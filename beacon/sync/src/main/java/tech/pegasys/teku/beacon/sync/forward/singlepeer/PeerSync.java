@@ -315,8 +315,7 @@ public class PeerSync {
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
     final UInt64 requestCount = diff.min(FORWARD_SYNC_BATCH_SIZE); // limit the request count
     final UInt64 endSlot = startSlot.plus(requestCount).decrement();
-    final boolean blobSidecarsRequired =
-        spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(recentChainData.getStore(), endSlot);
+    final boolean blobSidecarsRequired = blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot);
     return new RequestContext(requestCount, blobSidecarsRequired);
   }
 

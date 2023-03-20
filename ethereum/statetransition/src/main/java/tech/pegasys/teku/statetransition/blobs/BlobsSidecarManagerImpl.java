@@ -101,6 +101,11 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   }
 
   @Override
+  public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
+    return spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(recentChainData.getStore(), slot);
+  }
+
+  @Override
   public void storeUnconfirmedValidatedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     // cache already validated blobs
     validatedPendingBlobs

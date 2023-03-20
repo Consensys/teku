@@ -35,16 +35,12 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
-import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public abstract class AbstractSyncTest {
 
@@ -54,18 +50,14 @@ public abstract class AbstractSyncTest {
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
   protected final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
-  protected final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
-  protected final ChainUpdater chainUpdater = storageSystem.chainUpdater();
-  protected final RecentChainData recentChainData = storageSystem.recentChainData();
-  /** this mock is used in the {@link CommonAncestorTest} */
-  protected final RecentChainData mockRecentChainData = mock(RecentChainData.class);
+  protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   @BeforeEach
   public void setup() {
-    chainUpdater.initializeGenesis();
+    when(recentChainData.getSpec()).thenReturn(spec);
   }
 
   @SuppressWarnings("unchecked")
@@ -171,16 +163,6 @@ public abstract class AbstractSyncTest {
 
     when(peer.getStatus()).thenReturn(peerStatus);
     return peerStatus;
-  }
-
-  protected void advanceChain(final UInt64 slot) {
-    final SignedBlockAndState block = chainUpdater.advanceChain(slot);
-    chainUpdater.updateBestBlock(block);
-  }
-
-  protected void advanceChainToDeneb() {
-    advanceChain(denebFirstSlot);
-    chainUpdater.finalizeEpoch(denebForkEpoch);
   }
 
   private UInt64[] getSlotsRange(final UInt64 startSlot, final UInt64 count) {
