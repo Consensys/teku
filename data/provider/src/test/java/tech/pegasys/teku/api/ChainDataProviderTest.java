@@ -590,7 +590,7 @@ public class ChainDataProviderTest {
     final UInt64 result =
         provider.calculateProposerSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    final UInt64 expectedReward = UInt64.valueOf(7812500);
+    final UInt64 expectedReward = UInt64.valueOf(62500000);
     assertThat(result).isEqualTo(expectedReward);
   }
 
