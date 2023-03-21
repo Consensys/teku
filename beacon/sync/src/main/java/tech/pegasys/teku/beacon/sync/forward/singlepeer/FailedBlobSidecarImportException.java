@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
+import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 
-public class FailedBlobSidecarImportException extends RuntimeException {
+public class FailedBlobSidecarImportException extends InvalidResponseException {
 
   public FailedBlobSidecarImportException(final BlobSidecar blobSidecar, final Throwable cause) {
     super(
