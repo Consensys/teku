@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -575,6 +576,20 @@ public class ChainDataProviderTest {
     final int syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
     assertThat(syncAggregateBlockRewards).isEqualTo(0);
+  }
+
+  @Test
+  public void calculateProposerSlashingsRewards_shouldCalculateRewards() {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+    final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
+
+    final UInt64 result =
+        provider.calculateProposerSlashingsRewards(
+            blockAndState.getBlock(), blockAndState.getState());
+    final UInt64 expectedReward = UInt64.valueOf(62500000);
+    assertThat(result).isEqualTo(expectedReward);
   }
 
   @Test

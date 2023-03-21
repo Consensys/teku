@@ -501,7 +501,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.applyMinimalNetworkDefaults()
                     .eth1DepositContractAddress(address)
-                    .progressiveBalancesEnabled(ProgressiveBalancesMode.USED))
+                    .progressiveBalancesEnabled(ProgressiveBalancesMode.FULL))
         .executionLayer(b -> b.engineEndpoint("http://localhost:8550"))
         .powchain(
             b ->

@@ -96,7 +96,7 @@ public class TestDefinition {
         TestSpecFactory.create(
             highestSupportedMilestone,
             network,
-            builder -> builder.progressiveBalancesMode(ProgressiveBalancesMode.CHECKED));
+            builder -> builder.progressiveBalancesMode(ProgressiveBalancesMode.FULL));
   }
 
   public String getTestType() {
