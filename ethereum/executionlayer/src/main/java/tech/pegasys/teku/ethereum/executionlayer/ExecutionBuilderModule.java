@@ -81,7 +81,7 @@ public class ExecutionBuilderModule {
     if (builderClient.isPresent() && builderBidChallengePercentage.isPresent()) {
       LOG.info(
           "During block production, the builder bid will be considered at {}% of its value when compared to locally produced payload."
-              + "Configure with --validators-builder-bid-compare-factor",
+              + "Configure with --Xvalidators-builder-bid-challenge-percentage",
           builderBidChallengePercentage.get());
     }
   }
