@@ -78,6 +78,12 @@ public class ExecutionBuilderModule {
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
     this.builderBidChallengePercentage = builderBidChallengePercentage;
+    if (builderClient.isPresent() && builderBidChallengePercentage.isPresent()) {
+      LOG.info(
+          "During block production, the builder bid will be considered at {}% of its value when compared to locally produced payload."
+              + "Configure with --validators-builder-bid-compare-factor",
+          builderBidChallengePercentage.get());
+    }
   }
 
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
@@ -171,7 +177,7 @@ public class ExecutionBuilderModule {
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
                 if (isLocalPayloadValueWinning(signedBuilderBid, localPayloadValue)) {
-                  logLocalPayloadWin(signedBuilderBid, localPayloadValue);
+                  logLocalPayloadWin(signedBuilderBid.getMessage().getValue(), localPayloadValue);
                   return getResultFromLocalExecutionPayload(
                       localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
@@ -410,12 +416,19 @@ public class ExecutionBuilderModule {
   }
 
   private void logLocalPayloadWin(
-      final SignedBuilderBid signedBuilderBid, final UInt256 localPayloadValue) {
-    LOG.info(
-        "The local execution payload value ({} Gwei) was awarded the block over the builder payload ({} Gwei), "
-            + "{}% challenge configured.",
-        localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
-        signedBuilderBid.getMessage().getValue().divide(WEI_TO_GWEI).toDecimalString(),
-        builderBidChallengePercentage.orElseThrow());
+      final UInt256 builderPayloadValue, final UInt256 localPayloadValue) {
+    final Integer challengePct = builderBidChallengePercentage.orElseThrow();
+    if (challengePct == HUNDRED_PERCENT) {
+      LOG.info(
+          "Local execution payload with value ({} Gwei) is chosen over builder payload ({} Gwei).",
+          localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
+          builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString());
+    } else {
+      LOG.info(
+          "Local execution payload with value ({} Gwei) is chosen over builder payload (original {} Gwei, effective {}%).",
+          localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
+          builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
+          challengePct);
+    }
   }
 }
