@@ -240,11 +240,11 @@ public class P2POptions {
       P2PConfig.DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
 
   @Option(
-      names = {"--Xp2p-discovery-site-local-addresses-enabled"},
+      names = {"--p2p-discovery-site-local-addresses-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Whether discover accepts messages and peer records with site local (RFC1918) addresses",
+          "Whether discovery accepts messages and peer records with site local (RFC1918) addresses",
       arity = "0..1",
       hidden = true,
       fallbackValue = "true")
