@@ -31,7 +31,7 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
-  public static final int DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE = 100;
+  public static final int DEFAULT_BUILDER_BID_COMPARE_FACTOR = 100;
 
   private final Spec spec;
   private final Optional<String> engineEndpoint;
@@ -42,7 +42,7 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerWindow;
   private final int builderCircuitBreakerAllowedFaults;
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
-  private final Optional<Integer> builderBidChallengePercentage;
+  private final Optional<Integer> builderBidCompareFactor;
   private final boolean exchangeCapabilitiesEnabled;
 
   private ExecutionLayerConfiguration(
@@ -55,7 +55,7 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerWindow,
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
-      final Optional<Integer> builderBidChallengePercentage,
+      final Optional<Integer> builderBidCompareFactor,
       final boolean exchangeCapabilitiesEnabled) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
@@ -67,7 +67,7 @@ public class ExecutionLayerConfiguration {
     this.builderCircuitBreakerAllowedFaults = builderCircuitBreakerAllowedFaults;
     this.builderCircuitBreakerAllowedConsecutiveFaults =
         builderCircuitBreakerAllowedConsecutiveFaults;
-    this.builderBidChallengePercentage = builderBidChallengePercentage;
+    this.builderBidCompareFactor = builderBidCompareFactor;
     this.exchangeCapabilitiesEnabled = exchangeCapabilitiesEnabled;
   }
 
@@ -122,8 +122,8 @@ public class ExecutionLayerConfiguration {
     return exchangeCapabilitiesEnabled;
   }
 
-  public Optional<Integer> getBuilderBidChallengePercentage() {
-    return builderBidChallengePercentage;
+  public Optional<Integer> getBuilderBidCompareFactor() {
+    return builderBidCompareFactor;
   }
 
   public static class Builder {
@@ -137,8 +137,7 @@ public class ExecutionLayerConfiguration {
     private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
     private int builderCircuitBreakerAllowedConsecutiveFaults =
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
-    private String builderBidChallengePercentage =
-        Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
+    private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
     private boolean exchangeCapabilitiesEnabled = false;
 
     private Builder() {}
@@ -146,8 +145,7 @@ public class ExecutionLayerConfiguration {
     public ExecutionLayerConfiguration build() {
       validateStubEndpoints();
       validateBuilderCircuitBreaker();
-      Optional<Integer> builderChallengePercentage =
-          validateAndParseBuilderBidChallengePercentage();
+      Optional<Integer> builderBidCompareFactor = validateAndParseBuilderBidCompareFactor();
       return new ExecutionLayerConfiguration(
           spec,
           engineEndpoint,
@@ -158,7 +156,7 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerWindow,
           builderCircuitBreakerAllowedFaults,
           builderCircuitBreakerAllowedConsecutiveFaults,
-          builderChallengePercentage,
+          builderBidCompareFactor,
           exchangeCapabilitiesEnabled);
     }
 
@@ -210,8 +208,8 @@ public class ExecutionLayerConfiguration {
       return this;
     }
 
-    public Builder builderBidChallengePercentage(final String builderBidChallengePercentage) {
-      this.builderBidChallengePercentage = builderBidChallengePercentage;
+    public Builder builderBidCompareFactor(final String builderBidCompareFactor) {
+      this.builderBidCompareFactor = builderBidCompareFactor;
       return this;
     }
 
@@ -239,25 +237,24 @@ public class ExecutionLayerConfiguration {
       }
     }
 
-    private Optional<Integer> validateAndParseBuilderBidChallengePercentage() {
-      if (builderBidChallengePercentage.toUpperCase(Locale.ROOT).equals("NEVER")) {
+    private Optional<Integer> validateAndParseBuilderBidCompareFactor() {
+      if (builderBidCompareFactor.toUpperCase(Locale.ROOT).equals("NEVER")) {
         return Optional.empty();
       }
-      if (builderBidChallengePercentage.endsWith("%")) {
-        builderBidChallengePercentage =
-            builderBidChallengePercentage.substring(0, builderBidChallengePercentage.length() - 1);
+      if (builderBidCompareFactor.endsWith("%")) {
+        builderBidCompareFactor =
+            builderBidCompareFactor.substring(0, builderBidCompareFactor.length() - 1);
       }
-      final int builderBidChallengePercentageInt;
+      final int builderBidCompareFactorInt;
       try {
-        builderBidChallengePercentageInt = Integer.parseInt(builderBidChallengePercentage);
+        builderBidCompareFactorInt = Integer.parseInt(builderBidCompareFactor);
       } catch (final NumberFormatException ex) {
         throw new InvalidConfigurationException(
-            "Expecting number, percentage or NEVER keyword for Builder bid challenge percentage");
+            "Expecting number, percentage or NEVER keyword for Builder bid compare factor");
       }
       checkArgument(
-          builderBidChallengePercentageInt >= 0,
-          "Builder bid value challenge percentage should be >= 0");
-      return Optional.of(builderBidChallengePercentageInt);
+          builderBidCompareFactorInt >= 0, "Builder bid compare factor percentage should be >= 0");
+      return Optional.of(builderBidCompareFactorInt);
     }
   }
 }

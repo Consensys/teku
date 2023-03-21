@@ -38,43 +38,43 @@ public class ExecutionLayerConfigurationTest {
   }
 
   @Test
-  public void shouldThrowExceptionIfBidChallengePercentageNegative() {
+  public void shouldThrowExceptionIfBuilderBidCompareFactorNegative() {
     final ExecutionLayerConfiguration.Builder builder =
-        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("-100");
+        configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("-100");
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(builder::build)
-        .withMessageContaining("Builder bid value challenge percentage should be >= 0");
+        .withMessageContaining("Builder bid compare factor percentage should be >= 0");
   }
 
   @Test
-  public void shouldThrowExceptionIfBidChallengePercentageWrongWord() {
+  public void shouldThrowExceptionIfBuilderBidCompareFactorWrongWord() {
     final ExecutionLayerConfiguration.Builder builder =
-        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("OUCH");
+        configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("OUCH");
 
     assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
-            "Expecting number, percentage or NEVER keyword for Builder bid challenge percentage");
+            "Expecting number, percentage or NEVER keyword for Builder bid compare factor");
   }
 
   @Test
-  public void shouldParseBidChallengePercentage() {
+  public void shouldParseBuilderBidCompareFactor() {
     final ExecutionLayerConfiguration.Builder builder1 =
-        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("50");
-    assertThat(builder1.build().getBuilderBidChallengePercentage()).contains(50);
+        configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("50");
+    assertThat(builder1.build().getBuilderBidCompareFactor()).contains(50);
     final ExecutionLayerConfiguration.Builder builder2 =
-        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("50%");
-    assertThat(builder2.build().getBuilderBidChallengePercentage()).contains(50);
+        configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("50%");
+    assertThat(builder2.build().getBuilderBidCompareFactor()).contains(50);
     final ExecutionLayerConfiguration.Builder builder3 =
-        configBuilder.specProvider(bellatrixSpec).builderBidChallengePercentage("NeveR");
-    assertThat(builder3.build().getBuilderBidChallengePercentage()).isEmpty();
+        configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("NeveR");
+    assertThat(builder3.build().getBuilderBidCompareFactor()).isEmpty();
   }
 
   @Test
-  public void shouldHaveCorrectDefaultBidChallengePercentage() {
+  public void shouldHaveCorrectDefaultBuilderBidCompareFactor() {
     final ExecutionLayerConfiguration.Builder builder1 = configBuilder.specProvider(bellatrixSpec);
-    assertThat(builder1.build().getBuilderBidChallengePercentage()).contains(100);
+    assertThat(builder1.build().getBuilderBidCompareFactor()).contains(100);
   }
 
   @Test

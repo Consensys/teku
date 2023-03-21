@@ -60,7 +60,7 @@ public class ExecutionBuilderModule {
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
-  private final Optional<Integer> builderBidChallengePercentage;
+  private final Optional<Integer> builderBidCompareFactor;
 
   public ExecutionBuilderModule(
       final Spec spec,
@@ -69,7 +69,7 @@ public class ExecutionBuilderModule {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
-      final Optional<Integer> builderBidChallengePercentage) {
+      final Optional<Integer> builderBidCompareFactor) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
@@ -77,12 +77,12 @@ public class ExecutionBuilderModule {
     this.builderCircuitBreaker = builderCircuitBreaker;
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
-    this.builderBidChallengePercentage = builderBidChallengePercentage;
-    if (builderClient.isPresent() && builderBidChallengePercentage.isPresent()) {
+    this.builderBidCompareFactor = builderBidCompareFactor;
+    if (builderClient.isPresent() && builderBidCompareFactor.isPresent()) {
       LOG.info(
           "During block production, the builder bid will be considered at {}% of its value when compared to locally produced payload."
-              + " Configure with --Xvalidators-builder-bid-challenge-percentage",
-          builderBidChallengePercentage.get());
+              + " Configure with --validators-builder-bid-compare-factor",
+          builderBidCompareFactor.get());
     }
   }
 
@@ -201,11 +201,11 @@ public class ExecutionBuilderModule {
   /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
   private boolean isLocalPayloadValueWinning(
       final SignedBuilderBid signedBuilderBid, final UInt256 localPayloadValue) {
-    return builderBidChallengePercentage.isPresent()
+    return builderBidCompareFactor.isPresent()
         && signedBuilderBid
             .getMessage()
             .getValue()
-            .multiply(builderBidChallengePercentage.get())
+            .multiply(builderBidCompareFactor.get())
             .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
   }
 
@@ -417,8 +417,8 @@ public class ExecutionBuilderModule {
 
   private void logLocalPayloadWin(
       final UInt256 builderPayloadValue, final UInt256 localPayloadValue) {
-    final Integer challengePct = builderBidChallengePercentage.orElseThrow();
-    if (challengePct == HUNDRED_PERCENT) {
+    final Integer compareFactor = builderBidCompareFactor.orElseThrow();
+    if (compareFactor == HUNDRED_PERCENT) {
       LOG.info(
           "Local execution payload with value ({} Gwei) is chosen over builder payload ({} Gwei).",
           localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
@@ -428,7 +428,7 @@ public class ExecutionBuilderModule {
           "Local execution payload with value ({} Gwei) is chosen over builder payload (original {} Gwei, effective {}%).",
           localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
           builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
-          challengePct);
+          compareFactor);
     }
   }
 }
