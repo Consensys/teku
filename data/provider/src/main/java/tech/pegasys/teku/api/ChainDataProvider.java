@@ -56,10 +56,12 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -71,8 +73,10 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
@@ -687,6 +691,34 @@ public class ChainDataProvider {
       }
     }
     return total;
+  }
+
+  @VisibleForTesting
+  protected UInt64 calculateProposerSlashingsRewards(
+      final BeaconBlock beaconBlock,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    final SszList<ProposerSlashing> proposerSlashings =
+        beaconBlock.getBody().getProposerSlashings();
+
+    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
+    final SpecConfig specConfig = spec.getSpecConfig(epoch);
+
+    UInt64 proposerSlashingsRewards = ZERO;
+    for (ProposerSlashing slashing : proposerSlashings) {
+      final int slashedIndex = slashing.getHeader1().getMessage().getProposerIndex().intValue();
+      final Validator validator = state.getValidators().get(slashedIndex);
+
+      final UInt64 whistleblowerReward =
+          validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
+      final UInt64 proposerReward =
+          whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
+      proposerSlashingsRewards =
+          proposerSlashingsRewards
+              .plus(proposerReward)
+              .plus(whistleblowerReward.minus(proposerReward));
+    }
+
+    return proposerSlashingsRewards;
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
