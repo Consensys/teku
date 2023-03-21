@@ -523,7 +523,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     assertThat(syncFuture).isNotDone();
 
-    // update the chain with the peer finalized epoch
+    // update the chain with the peer finalized epoch to ensure next time the sync completes
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebPeerFinalizedEpoch);
 
     verify(peer).requestBlocksByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());

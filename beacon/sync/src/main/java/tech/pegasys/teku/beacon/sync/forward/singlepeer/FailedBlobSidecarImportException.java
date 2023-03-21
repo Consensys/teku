@@ -18,6 +18,10 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 
 public class FailedBlobSidecarImportException extends InvalidResponseException {
 
+  public FailedBlobSidecarImportException(final String message) {
+    super(message);
+  }
+
   public FailedBlobSidecarImportException(final BlobSidecar blobSidecar, final Throwable cause) {
     super(
         String.format(

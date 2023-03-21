@@ -53,7 +53,7 @@ public class PeerSync {
    * may be empty we check that we're progressing through slots, even if not many blocks are being
    * returned.
    */
-  static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = FORWARD_SYNC_BATCH_SIZE.dividedBy(2);
+  static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = FORWARD_SYNC_BATCH_SIZE.dividedBy(4);
 
   private static final List<FailureReason> BAD_BLOCK_FAILURE_REASONS =
       List.of(
@@ -174,11 +174,15 @@ public class PeerSync {
                 LOG.debug(
                     "Request {} blob sidecars starting at {} from peer {}",
                     requestContext.count,
-                    ancestorStartSlot,
+                    requestContext.startSlot,
                     peer.getId());
                 blobSidecarsRequest =
                     peer.requestBlobSidecarsByRange(
-                        ancestorStartSlot, requestContext.count, this::importBlobSidecar);
+                        requestContext.startSlot,
+                        requestContext.count,
+                        blobSidecar ->
+                            importBlobSidecar(
+                                blobSidecar, requestContext.startSlot, requestContext.endSlot));
               } else {
                 blobSidecarsRequest = SafeFuture.COMPLETE;
               }
@@ -189,18 +193,19 @@ public class PeerSync {
               final PeerSyncBlockListener blockListener =
                   new PeerSyncBlockListener(
                       readyForNextRequest,
-                      ancestorStartSlot,
+                      requestContext.startSlot,
                       requestContext.count,
                       this::importBlock);
 
               LOG.debug(
                   "Request {} blocks starting at {} from peer {}",
                   requestContext.count,
-                  ancestorStartSlot,
+                  requestContext.startSlot,
                   peer.getId());
 
               final SafeFuture<Void> blocksRequest =
-                  peer.requestBlocksByRange(ancestorStartSlot, requestContext.count, blockListener);
+                  peer.requestBlocksByRange(
+                      requestContext.startSlot, requestContext.count, blockListener);
 
               return SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest)
                   .thenApply(__ -> blockListener);
@@ -313,19 +318,21 @@ public class PeerSync {
 
   private RequestContext createRequestContext(final UInt64 startSlot, final PeerStatus status) {
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
-    final UInt64 requestCount = diff.min(FORWARD_SYNC_BATCH_SIZE); // limit the request count
-    final UInt64 endSlot = startSlot.plus(requestCount).decrement();
-    final boolean blobSidecarsRequired = blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot);
-    return new RequestContext(requestCount, blobSidecarsRequired);
+    final UInt64 count = diff.min(FORWARD_SYNC_BATCH_SIZE); // limit the request count
+    return new RequestContext(startSlot, count);
   }
 
-  private static class RequestContext {
+  private class RequestContext {
+    private final UInt64 startSlot;
     private final UInt64 count;
+    private final UInt64 endSlot;
     private final boolean blobSidecarsRequired;
 
-    private RequestContext(final UInt64 count, final boolean blobSidecarsRequired) {
+    private RequestContext(final UInt64 startSlot, final UInt64 count) {
+      this.startSlot = startSlot;
       this.count = count;
-      this.blobSidecarsRequired = blobSidecarsRequired;
+      this.endSlot = startSlot.plus(count).decrement();
+      this.blobSidecarsRequired = blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot);
     }
   }
 
@@ -347,15 +354,24 @@ public class PeerSync {
             });
   }
 
-  private SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
+  private SafeFuture<Void> importBlobSidecar(
+      final BlobSidecar blobSidecar, final UInt64 startSlot, final UInt64 endSlot) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
+    }
+    final UInt64 sidecarSlot = blobSidecar.getSlot();
+    if (sidecarSlot.isLessThan(startSlot) || sidecarSlot.isGreaterThan(endSlot)) {
+      final String exceptionMessage =
+          String.format(
+              "Blob sidecar with slot %s is not in the requested slot range (%s - %s)",
+              sidecarSlot, startSlot, endSlot);
+      return SafeFuture.failedFuture(new FailedBlobSidecarImportException(exceptionMessage));
     }
     return blobsSidecarManager
         .importBlobSidecar(blobSidecar)
         .exceptionallyCompose(
             error -> {
-              LOG.debug("Blob sidecar import failed at slot {}", blobSidecar.getSlot());
+              LOG.debug("Blob sidecar import failed at slot {}", sidecarSlot);
               blobSidecarImportFailureResult.inc();
               return SafeFuture.failedFuture(
                   new FailedBlobSidecarImportException(blobSidecar, error));
