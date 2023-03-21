@@ -51,6 +51,7 @@ public class ExecutionBuilderModule {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final int HUNDRED_PERCENT = 100;
+  private static final UInt256 WEI_TO_GWEI = UInt256.valueOf(10).pow(9);
 
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
@@ -170,12 +171,7 @@ public class ExecutionBuilderModule {
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
                 if (isLocalPayloadValueWinning(signedBuilderBid, localPayloadValue)) {
-                  LOG.info(
-                      "The local execution payload value ({}) was awarded the block over the builder payload ({}), "
-                          + "{}% challenge configured.",
-                      signedBuilderBid.getMessage().getValue().toDecimalString(),
-                      localPayloadValue.toDecimalString(),
-                      builderBidChallengePercentage);
+                  logLocalPayloadWin(signedBuilderBid, localPayloadValue);
                   return getResultFromLocalExecutionPayload(
                       localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
@@ -411,5 +407,15 @@ public class ExecutionBuilderModule {
         builderBid.getValue().toDecimalString(),
         payloadHeader.getGasLimit(),
         payloadHeader.getGasUsed());
+  }
+
+  private void logLocalPayloadWin(
+      final SignedBuilderBid signedBuilderBid, final UInt256 localPayloadValue) {
+    LOG.info(
+        "The local execution payload value ({} Gwei) was awarded the block over the builder payload ({} Gwei), "
+            + "{}% challenge configured.",
+        localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
+        signedBuilderBid.getMessage().getValue().divide(WEI_TO_GWEI).toDecimalString(),
+        builderBidChallengePercentage.orElseThrow());
   }
 }
