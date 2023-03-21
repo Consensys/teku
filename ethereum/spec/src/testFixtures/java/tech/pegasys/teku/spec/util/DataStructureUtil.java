@@ -977,7 +977,32 @@ public final class DataStructureUtil {
     return randomBlockAndState(state.getSlot(), state, randomBytes32());
   }
 
+  public BeaconBlockAndState randomBlockAndState(final int validatorCount) {
+    final BeaconState state = randomBeaconState(validatorCount);
+    return randomBlockAndStateWithValidatorLogic(state.getSlot(), state, randomBytes32());
+  }
+
   private BeaconBlockAndState randomBlockAndState(
+      final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
+    final BeaconBlockBody body = randomBeaconBlockBody();
+    final UInt64 proposerIndex = randomUInt64();
+    final BeaconBlockHeader latestHeader =
+        new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
+
+    final BeaconState matchingState = state.updated(s -> s.setLatestBlockHeader(latestHeader));
+    final BeaconBlock block =
+        new BeaconBlock(
+            spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema(),
+            slot,
+            proposerIndex,
+            parentRoot,
+            matchingState.hashTreeRoot(),
+            body);
+
+    return new BeaconBlockAndState(block, matchingState);
+  }
+
+  private BeaconBlockAndState randomBlockAndStateWithValidatorLogic(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody(slot, state.getValidators().size());
     final UInt64 proposerIndex = randomUInt64();

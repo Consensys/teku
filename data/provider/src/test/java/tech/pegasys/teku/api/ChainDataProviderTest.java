@@ -583,9 +583,7 @@ public class ChainDataProviderTest {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(100);
-    final BeaconBlockAndState blockAndState = data.randomBlockAndState(state);
+    final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
 
     final UInt64 result =
         provider.calculateProposerSlashingsRewards(
