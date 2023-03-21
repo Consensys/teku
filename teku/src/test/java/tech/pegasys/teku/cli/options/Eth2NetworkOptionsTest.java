@@ -33,11 +33,24 @@ import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 
 class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
-  void shouldEnableBellatrixByDefault() {
+  void shouldEnableCapellaByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.BELLATRIX);
+        .isEqualTo(SpecMilestone.CAPELLA);
+  }
+
+  @Test
+  void shouldEnableProgressiveModeFullByDefault() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    final Spec spec = config.eth2NetworkConfiguration().getSpec();
+    spec.getForkSchedule()
+        .getSupportedMilestones()
+        .forEach(
+            specMilestone ->
+                assertThat(
+                        spec.forMilestone(specMilestone).getConfig().getProgressiveBalancesMode())
+                    .isEqualTo(ProgressiveBalancesMode.FULL));
   }
 
   @Test
@@ -101,7 +114,13 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--Xprogressive-balances-mode", mode.name());
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
-    assertThat(spec.getGenesisSpecConfig().getProgressiveBalancesMode()).isEqualTo(mode);
+    spec.getForkSchedule()
+        .getSupportedMilestones()
+        .forEach(
+            specMilestone ->
+                assertThat(
+                        spec.forMilestone(specMilestone).getConfig().getProgressiveBalancesMode())
+                    .isEqualTo(mode));
   }
 
   @ParameterizedTest
