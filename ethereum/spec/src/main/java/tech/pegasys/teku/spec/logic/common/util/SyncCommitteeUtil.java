@@ -236,12 +236,6 @@ public class SyncCommitteeUtil {
   }
 
   public Bytes getContributionAndProofSigningRoot(
-      final BeaconState state, final ContributionAndProof contributionAndProof) {
-    final ForkInfo forkInfo = state.getForkInfo();
-    return getContributionAndProofSigningRoot(contributionAndProof, forkInfo);
-  }
-
-  public Bytes getContributionAndProofSigningRoot(
       final ContributionAndProof contributionAndProof, final ForkInfo forkInfo) {
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
     final Bytes32 domain =
