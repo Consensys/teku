@@ -48,7 +48,8 @@ public interface KZG {
         }
 
         @Override
-        public KZGProof computeBlobKzgProof(final Bytes blob) throws KZGException {
+        public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
+            throws KZGException {
           return KZGProof.INFINITY;
         }
       };
@@ -65,5 +66,5 @@ public interface KZG {
 
   KZGCommitment blobToKzgCommitment(Bytes blob) throws KZGException;
 
-  KZGProof computeBlobKzgProof(Bytes blob) throws KZGException;
+  KZGProof computeBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment) throws KZGException;
 }
