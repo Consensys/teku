@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -123,6 +125,13 @@ public class ExternalSigner implements Signer {
         blockRequestProvider.getSignType(),
         blockRequestProvider.getBlockMetadata(Map.of(FORK_INFO, forkInfo(forkInfo))),
         slashableBlockMessage(block.getSlot()));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signBlobSidecar(
+      final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
+    return SafeFuture.failedFuture(
+        new NotImplementedException("Blob sidecars external signing is not implemented yet."));
   }
 
   @Override
