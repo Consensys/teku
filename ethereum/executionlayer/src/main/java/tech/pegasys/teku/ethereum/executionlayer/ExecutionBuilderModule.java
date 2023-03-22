@@ -409,20 +409,18 @@ public class ExecutionBuilderModule {
         payloadHeader.getGasUsed());
   }
 
-  private void logLocalPayloadWin(
-      final UInt256 builderPayloadValue, final UInt256 localPayloadValue) {
-    final Integer compareFactor = builderBidCompareFactor.orElseThrow();
-    if (compareFactor == HUNDRED_PERCENT) {
+  private void logLocalPayloadWin(final UInt256 builderBidValue, final UInt256 localPayloadValue) {
+    if (builderBidCompareFactor.isEmpty() || builderBidCompareFactor.get() == HUNDRED_PERCENT) {
       LOG.info(
-          "Local execution payload with value ({} Gwei) is chosen over builder payload ({} Gwei).",
+          "Local execution payload ({} Gwei) is chosen over builder bid ({} Gwei).",
           localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
-          builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString());
+          builderBidValue.divide(WEI_TO_GWEI).toDecimalString());
     } else {
       LOG.info(
-          "Local execution payload with value ({} Gwei) is chosen over builder payload ({} Gwei, compare factor {}%).",
+          "Local execution payload ({} Gwei) is chosen over builder bid ({} Gwei, compare factor {}%).",
           localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
-          builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
-          compareFactor);
+          builderBidValue.divide(WEI_TO_GWEI).toDecimalString(),
+          builderBidCompareFactor.get());
     }
   }
 }
