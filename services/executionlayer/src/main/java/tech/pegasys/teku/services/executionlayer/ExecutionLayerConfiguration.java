@@ -274,7 +274,7 @@ public class ExecutionLayerConfiguration {
         throw new InvalidConfigurationException(
             "Expecting number, percentage or "
                 + BUILDER_ALWAYS_KEYWORD
-                + "+ keyword for Builder bid compare factor");
+                + " keyword for Builder bid compare factor");
       }
       checkArgument(
           builderBidCompareFactorInt >= 0, "Builder bid compare factor percentage should be >= 0");

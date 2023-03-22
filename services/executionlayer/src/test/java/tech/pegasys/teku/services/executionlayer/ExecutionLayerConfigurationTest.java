@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.executionlayer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.BUILDER_ALWAYS_KEYWORD;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -55,7 +56,9 @@ public class ExecutionLayerConfigurationTest {
     assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
-            "Expecting number, percentage or NEVER keyword for Builder bid compare factor");
+            "Expecting number, percentage or "
+                + BUILDER_ALWAYS_KEYWORD
+                + " keyword for Builder bid compare factor");
   }
 
   @Test
@@ -67,7 +70,7 @@ public class ExecutionLayerConfigurationTest {
         configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("50%");
     assertThat(builder2.build().getBuilderBidCompareFactor()).contains(50);
     final ExecutionLayerConfiguration.Builder builder3 =
-        configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("NeveR");
+        configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("Builder_ALWAYS");
     assertThat(builder3.build().getBuilderBidCompareFactor()).isEmpty();
   }
 
