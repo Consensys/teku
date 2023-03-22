@@ -159,12 +159,12 @@ public class ExecutionLayerConfiguration {
         } else {
           final String additionalHint =
               builderBidCompareFactor.get() == DEFAULT_BUILDER_BID_COMPARE_FACTOR
-                  ? " Configure with --builder-bid-compare-factor"
+                  ? " Can be configured via --builder-bid-compare-factor"
                   : "";
           LOG.info(
               "During block production, locally produced payload will be chosen when its value is equal or greater than {}% of the builder bid value."
                   + additionalHint,
-              builderBidCompareFactor);
+              builderBidCompareFactor.get());
         }
       }
 
