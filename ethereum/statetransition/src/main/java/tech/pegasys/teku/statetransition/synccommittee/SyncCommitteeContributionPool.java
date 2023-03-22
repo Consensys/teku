@@ -85,9 +85,7 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
     final int subcommitteeIndex = contribution.getSubcommitteeIndex().intValue();
     contributionsBySlotAndBlockRoot
         .computeIfAbsent(contribution.getSlot(), __ -> new HashMap<>())
-        .computeIfAbsent(
-            contribution.getBeaconBlockRoot(),
-            __ -> new Int2ObjectOpenHashMap<SyncCommitteeContribution>())
+        .computeIfAbsent(contribution.getBeaconBlockRoot(), __ -> new Int2ObjectOpenHashMap<>())
         .compute(
             subcommitteeIndex,
             (subcommittee, existingContribution) ->
