@@ -108,9 +108,12 @@ public class BatchImporter {
     if (!blobSidecars.containsKey(blockRoot)) {
       return importBlock(block, source);
     }
-    LOG.debug("Importing {} blob sidecars for block with root {}", blobSidecars, blockRoot);
-    return importBlobSidecars(blobSidecars.get(blockRoot))
-        .thenCompose(__ -> importBlock(block, source));
+    final List<BlobSidecar> blobSidecarsForBlock = blobSidecars.get(blockRoot);
+    LOG.debug(
+        "Importing {} blob sidecars for block with root {}",
+        blobSidecarsForBlock.size(),
+        blockRoot);
+    return importBlobSidecars(blobSidecarsForBlock).thenCompose(__ -> importBlock(block, source));
   }
 
   private SafeFuture<Void> importBlobSidecars(final List<BlobSidecar> blobSidecars) {
