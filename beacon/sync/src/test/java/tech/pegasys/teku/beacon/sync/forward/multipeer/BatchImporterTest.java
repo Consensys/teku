@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,21 +39,25 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 class BatchImporterTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalCapella());
   private final BlockImporter blockImporter = mock(BlockImporter.class);
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Batch batch = mock(Batch.class);
   final SyncSource syncSource = mock(SyncSource.class);
 
-  private final BatchImporter importer = new BatchImporter(blockImporter, asyncRunner);
+  private final BatchImporter importer =
+      new BatchImporter(blockImporter, blobsSidecarManager, asyncRunner);
 
   @BeforeEach
   public void setup() {
     when(batch.getSource()).thenReturn(Optional.of(syncSource));
+    when(batch.getBlobSidecars()).thenReturn(Map.of());
   }
 
   @Test
@@ -77,6 +82,7 @@ class BatchImporterTest {
     // We should have copied the blocks to avoid accessing the Batch data from
     // other threads
     verify(batch).getBlocks();
+    verify(batch).getBlobSidecars();
     verify(batch).getSource();
 
     asyncRunner.executeQueuedActions();

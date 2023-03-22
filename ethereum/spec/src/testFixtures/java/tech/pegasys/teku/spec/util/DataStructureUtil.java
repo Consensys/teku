@@ -1974,21 +1974,8 @@ public final class DataStructureUtil {
     return randomBlob().getBytes();
   }
 
-  public BlobsSidecar randomBlobsSidecarForBlock(final SignedBeaconBlock block) {
-    return randomBlobsSidecar(
-        block.getRoot(),
-        block.getSlot(),
-        BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
-            .getBlobKzgCommitments()
-            .size());
-  }
-
   public BlobsSidecar randomBlobsSidecar() {
     return randomBlobsSidecar(randomBytes32(), randomUInt64());
-  }
-
-  public BlobsSidecar randomBlobsSidecar(final UInt64 slot) {
-    return randomBlobsSidecar(randomBytes32(), slot);
   }
 
   public BlobsSidecar randomBlobsSidecar(final Bytes32 blockRoot, final UInt64 slot) {
@@ -1998,6 +1985,22 @@ public final class DataStructureUtil {
 
     return randomBlobsSidecar(
         blockRoot, slot, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()));
+  }
+
+  public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
+    final int numberOfKzgCommitments =
+        BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
+            .getBlobKzgCommitments()
+            .size();
+    return IntStream.range(0, numberOfKzgCommitments)
+        .mapToObj(
+            index ->
+                createRandomBlobSidecarBuilder()
+                    .slot(block.getSlot())
+                    .blockRoot(block.getRoot())
+                    .index(UInt64.valueOf(index))
+                    .build())
+        .collect(toList());
   }
 
   public BlobSidecar randomBlobSidecar() {

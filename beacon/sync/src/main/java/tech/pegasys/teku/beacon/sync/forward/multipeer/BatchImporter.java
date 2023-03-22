@@ -17,31 +17,40 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.batches.Batch;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 public class BatchImporter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final AsyncRunner asyncRunner;
 
-  public BatchImporter(final BlockImporter blockImporter, final AsyncRunner asyncRunner) {
+  public BatchImporter(
+      final BlockImporter blockImporter,
+      final BlobsSidecarManager blobsSidecarManager,
+      final AsyncRunner asyncRunner) {
     this.blockImporter = blockImporter;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.asyncRunner = asyncRunner;
   }
 
   /**
-   * Import the blocks in the specified batch.
+   * Import the blocks and blob sidecars (if any) in the specified batch.
    *
    * <p>Guaranteed to return immediately and perform the import on worker threads.
    *
@@ -51,6 +60,8 @@ public class BatchImporter {
   public SafeFuture<BatchImportResult> importBatch(final Batch batch) {
     // Copy the data from batch as we're going to use them from off the event thread.
     final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
+    final Map<Bytes32, List<BlobSidecar>> blobSidecars = Map.copyOf(batch.getBlobSidecars());
+
     final Optional<SyncSource> source = batch.getSource();
 
     checkState(!blocks.isEmpty(), "Batch has no blocks to import");
@@ -58,14 +69,15 @@ public class BatchImporter {
         () -> {
           final SignedBeaconBlock firstBlock = blocks.get(0);
           SafeFuture<BlockImportResult> importResult =
-              importBlock(firstBlock, source.orElseThrow());
+              importBlobSidecarsAndBlock(firstBlock, blobSidecars, source.orElseThrow());
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
                 importResult.thenCompose(
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
-                        return importBlock(block, source.orElseThrow());
+                        return importBlobSidecarsAndBlock(
+                            block, blobSidecars, source.orElseThrow());
                       } else {
                         return SafeFuture.completedFuture(previousResult);
                       }
@@ -86,6 +98,24 @@ public class BatchImporter {
                 return BatchImportResult.IMPORT_FAILED;
               });
         });
+  }
+
+  private SafeFuture<BlockImportResult> importBlobSidecarsAndBlock(
+      final SignedBeaconBlock block,
+      final Map<Bytes32, List<BlobSidecar>> blobSidecars,
+      final SyncSource source) {
+    final Bytes32 blockRoot = block.getRoot();
+    if (!blobSidecars.containsKey(blockRoot)) {
+      return importBlock(block, source);
+    }
+    LOG.debug("Importing {} blob sidecars for block with root {}", blobSidecars, blockRoot);
+    return importBlobSidecars(blobSidecars.get(blockRoot))
+        .thenCompose(__ -> importBlock(block, source));
+  }
+
+  private SafeFuture<Void> importBlobSidecars(final List<BlobSidecar> blobSidecars) {
+    return SafeFuture.allOfFailFast(
+        blobSidecars.stream().map(blobsSidecarManager::importBlobSidecar));
   }
 
   private SafeFuture<BlockImportResult> importBlock(
