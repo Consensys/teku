@@ -22,7 +22,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Added mainnet configuration for CAPELLA network fork due epoch 194048, April 12, 2023; 10:27:35pm UTC
 - Added experimental feature `--Xdeposit-snapshot-enabled` to use bundled deposit contract tree snapshot and persist it after finalization to decrease EL pressure and speed up node startup
 - Added `--p2p-discovery-site-local-addresses-enabled` option to allow discovery connections to local (RFC1918) addresses.
-
+- Improved `Completed regeneration` info message so that is more technically accurate.
 
 ### Bug Fixes
 - Fixed a bug in signature verification on fork boundaries when first blocks of the new fork are missing.

@@ -94,7 +94,7 @@ public class StateGenerator {
         .thenPeek(
             result ->
                 LOG.info(
-                    "Completed regeneration of block {} at slot {} by replaying {} blocks. Took {}ms",
+                    "Completed regeneration of state for block {} at slot {} by replaying {} blocks. Took {}ms",
                     blockRoot,
                     result.getSlot(),
                     blockCount,

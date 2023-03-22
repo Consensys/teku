@@ -13,21 +13,50 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import com.google.common.io.Resources;
+import java.net.URL;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
+import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 
 public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
 
+  private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
+
   @Test
   void shouldUpgradeToCapella() throws Exception {
+    BesuNode primaryEL =
+        createBesuNode(
+            c -> {
+              c.withMergeSupport(true);
+              c.withGenesisFile("besu/mergedGenesis.json");
+              c.withP2pEnabled(true);
+              c.withJwtTokenAuthorization(JWT_FILE);
+            });
+    primaryEL.start();
+
+    BesuNode secondaryEL =
+        createBesuNode(
+            c -> {
+              c.withMergeSupport(true);
+              c.withGenesisFile("besu/mergedGenesis.json");
+              c.withP2pEnabled(true);
+              c.withJwtTokenAuthorization(JWT_FILE);
+            });
+    secondaryEL.start();
+    secondaryEL.addPeer(primaryEL);
+
     TekuNode primaryNode =
         createTekuNode(
             c -> {
               c.withRealNetwork().withStartupTargetPeerCount(0);
+              c.withExecutionEngine(primaryEL);
+              c.withJwtSecretFile(JWT_FILE);
+              c.withEngineApiMethodNegotiation();
               applyMilestoneConfig(c);
             });
 
@@ -39,21 +68,25 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     TekuNode lateJoiningNode =
         createTekuNode(
             c -> {
-              c.withGenesisTime(genesisTime.intValue())
-                  .withRealNetwork()
-                  .withPeers(primaryNode)
-                  .withInteropValidators(0, 0);
+              c.withGenesisTime(genesisTime.intValue());
+              c.withRealNetwork();
+              c.withPeers(primaryNode);
+              c.withInteropValidators(0, 0);
+              c.withExecutionEngine(primaryEL);
+              c.withJwtSecretFile(JWT_FILE);
+              c.withEngineApiMethodNegotiation();
               applyMilestoneConfig(c);
             });
 
     lateJoiningNode.start();
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
+
+    primaryNode.waitForNewBlock();
   }
 
   private static void applyMilestoneConfig(final Config c) {
     c.withAltairEpoch(UInt64.ZERO);
     c.withBellatrixEpoch(UInt64.ZERO);
     c.withCapellaEpoch(UInt64.ONE);
-    c.withStubExecutionEngine();
   }
 }
