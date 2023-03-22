@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -44,6 +45,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class DeletableSignerTest {
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final DataStructureUtil dataStructureUtilDeneb =
+      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
   final SyncCommitteeUtil syncCommitteeUtil = spec.getSyncCommitteeUtilRequired(UInt64.ONE);
 
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
@@ -67,6 +70,27 @@ public class DeletableSignerTest {
     assertThatSafeFuture(signer.signBlock(block, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signBlock(block, forkInfo);
+  }
+
+  @Test
+  void signBlobSidecar_shouldSignWhenActive() {
+    final BeaconBlock block = dataStructureUtilDeneb.randomBeaconBlock(6);
+    final BlobSidecar blobSidecar =
+        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
+    when(delegate.signBlobSidecar(blobSidecar, forkInfo)).thenReturn(signatureFuture);
+    assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signBlobSidecar_shouldNotSignWhenDisabled() {
+    final BeaconBlock block = dataStructureUtilDeneb.randomBeaconBlock(6);
+    final BlobSidecar blobSidecar =
+        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
+    signer.delete();
+    assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+    verify(delegate, never()).signBlobSidecar(blobSidecar, forkInfo);
   }
 
   @Test

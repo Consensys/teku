@@ -1,0 +1,2 @@
+# Only applicable when parsing yaml from untrusted sources
+CVE-2022-1471

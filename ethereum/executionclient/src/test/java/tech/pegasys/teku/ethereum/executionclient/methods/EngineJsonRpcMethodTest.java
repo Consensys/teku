@@ -13,19 +13,27 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
-public interface EngineJsonRpcMethod<T> {
+import org.junit.jupiter.api.Test;
 
-  String getName();
+class EngineJsonRpcMethodTest {
 
-  int getVersion();
+  @Test
+  public void shouldNotBeNegotiableWhenVersionIsZero() {
+    EngineJsonRpcMethod<?> method = spy(EngineJsonRpcMethod.class);
+    when(method.getVersion()).thenReturn(0);
 
-  String getVersionedName();
+    assertThat(method.isNegotiable()).isFalse();
+  }
 
-  SafeFuture<T> execute(JsonRpcRequestParams params);
+  @Test
+  public void shouldBeNegotiableWhenVersionIsNotZero() {
+    EngineJsonRpcMethod<?> method = spy(EngineJsonRpcMethod.class);
+    when(method.getVersion()).thenReturn(1);
 
-  default boolean isNegotiable() {
-    return getVersion() != 0;
+    assertThat(method.isNegotiable()).isTrue();
   }
 }
