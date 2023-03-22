@@ -48,14 +48,14 @@ public class BeaconBlocksByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
   private final Counter totalBlocksRequestedCounter;
   private final LabelledMetric<Counter> requestCounter;
 
   public BeaconBlocksByRootMessageHandler(
-      final Spec spec, final MetricsSystem metricsSystem, final RecentChainData storageClient) {
+      final Spec spec, final MetricsSystem metricsSystem, final RecentChainData recentChainData) {
     this.spec = spec;
-    this.storageClient = storageClient;
+    this.recentChainData = recentChainData;
     requestCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.NETWORK,
@@ -77,7 +77,7 @@ public class BeaconBlocksByRootMessageHandler
       final ResponseCallback<SignedBeaconBlock> callback) {
     LOG.trace(
         "Peer {} requested {} BeaconBlocks with roots: {}", peer.getId(), message.size(), message);
-    if (storageClient.getStore() != null) {
+    if (recentChainData.getStore() != null) {
 
       final UInt64 maxRequestBlocks = getMaxRequestBlocks();
 
@@ -102,7 +102,7 @@ public class BeaconBlocksByRootMessageHandler
         future =
             future.thenCompose(
                 __ ->
-                    storageClient
+                    recentChainData
                         .getStore()
                         .retrieveSignedBlock(blockRoot.get())
                         .thenCompose(
@@ -123,7 +123,7 @@ public class BeaconBlocksByRootMessageHandler
   }
 
   private UInt64 getMaxRequestBlocks() {
-    final UInt64 currentEpoch = storageClient.getCurrentEpoch().orElse(UInt64.ZERO);
+    final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
     return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
         ? MAX_REQUEST_BLOCKS_DENEB

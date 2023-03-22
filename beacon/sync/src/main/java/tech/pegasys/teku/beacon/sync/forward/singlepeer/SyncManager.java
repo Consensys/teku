@@ -39,6 +39,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -49,7 +50,7 @@ public class SyncManager extends Service {
 
   private static final Logger LOG = LogManager.getLogger();
   private final P2PNetwork<Eth2Peer> network;
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
   private final PeerSync peerSync;
   private final Subscribers<SyncSubscriber> syncSubscribers = Subscribers.create(true);
 
@@ -72,12 +73,12 @@ public class SyncManager extends Service {
   SyncManager(
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
-      final RecentChainData storageClient,
+      final RecentChainData recentChainData,
       final PeerSync peerSync,
       final Spec spec) {
     this.asyncRunner = asyncRunner;
     this.network = network;
-    this.storageClient = storageClient;
+    this.recentChainData = recentChainData;
     this.peerSync = peerSync;
     this.spec = spec;
   }
@@ -85,13 +86,15 @@ public class SyncManager extends Service {
   public static SyncManager create(
       final AsyncRunner asyncRunner,
       final P2PNetwork<Eth2Peer> network,
-      final RecentChainData storageClient,
+      final RecentChainData recentChainData,
       final BlockImporter blockImporter,
+      final BlobsSidecarManager blobsSidecarManager,
       final MetricsSystem metricsSystem,
       final Spec spec) {
     final PeerSync peerSync =
-        new PeerSync(asyncRunner, storageClient, blockImporter, metricsSystem);
-    return new SyncManager(asyncRunner, network, storageClient, peerSync, spec);
+        new PeerSync(
+            asyncRunner, recentChainData, blockImporter, blobsSidecarManager, metricsSystem);
+    return new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);
   }
 
   @Override
@@ -173,10 +176,10 @@ public class SyncManager extends Service {
       if (bestPeer.isPresent()) {
         UInt64 highestSlot = bestPeer.get().getStatus().getHeadSlot();
         return new SyncingStatus(
-            true, storageClient.getHeadSlot(), peerSync.getStartingSlot(), highestSlot);
+            true, recentChainData.getHeadSlot(), peerSync.getStartingSlot(), highestSlot);
       }
     }
-    return new SyncingStatus(false, storageClient.getHeadSlot());
+    return new SyncingStatus(false, recentChainData.getHeadSlot());
   }
 
   private SafeFuture<Void> executeSync() {
@@ -254,7 +257,7 @@ public class SyncManager extends Service {
   }
 
   private boolean isPeerSyncSuitable(Eth2Peer peer) {
-    UInt64 ourFinalizedEpoch = storageClient.getFinalizedEpoch();
+    UInt64 ourFinalizedEpoch = recentChainData.getFinalizedEpoch();
     LOG.trace(
         "Looking for suitable peer (out of {}) with finalized epoch > {}.",
         network.getPeerCount(),
@@ -268,10 +271,10 @@ public class SyncManager extends Service {
 
   /** Make sure remote peer is not broadcasting a chain state from the future. */
   private boolean peerStatusIsConsistentWithOurNode(final PeerStatus peerStatus) {
-    final UInt64 currentSlot = storageClient.getCurrentSlot().orElse(UInt64.ZERO);
+    final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
     final UInt64 currentEpoch =
         currentSlot.dividedBy(
-            spec.getSlotsPerEpoch(storageClient.getCurrentSlot().orElse(UInt64.ZERO)));
+            spec.getSlotsPerEpoch(recentChainData.getCurrentSlot().orElse(UInt64.ZERO)));
     final UInt64 slotErrorThreshold = UInt64.ONE;
 
     return peerStatus.getFinalizedEpoch().isLessThanOrEqualTo(currentEpoch)
@@ -287,7 +290,7 @@ public class SyncManager extends Service {
   }
 
   private boolean isPeerHeadSlotAhead(final PeerStatus peerStatus) {
-    final UInt64 ourHeadSlot = storageClient.getHeadSlot();
+    final UInt64 ourHeadSlot = recentChainData.getHeadSlot();
 
     final UInt64 syncThresholdInSlots =
         SYNC_THRESHOLD_IN_EPOCHS.times(spec.getSlotsPerEpoch(ourHeadSlot));

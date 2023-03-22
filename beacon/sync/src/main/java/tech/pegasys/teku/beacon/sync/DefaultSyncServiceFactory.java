@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -172,7 +173,14 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       LOG.info("Using single peer sync");
       forwardSync =
           SinglePeerSyncServiceFactory.create(
-              metrics, asyncRunner, p2pNetwork, recentChainData, blockImporter, spec);
+              metrics,
+              asyncRunner,
+              p2pNetwork,
+              recentChainData,
+              blockImporter,
+              // TODO: change to the real value when renamed and initialized
+              BlobsSidecarManager.NOOP,
+              spec);
     }
     return forwardSync;
   }
