@@ -78,12 +78,6 @@ public class ExecutionBuilderModule {
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
     this.builderBidCompareFactor = builderBidCompareFactor;
-    if (builderClient.isPresent() && builderBidCompareFactor.isPresent()) {
-      LOG.info(
-          "During block production, the builder bid will be considered at {}% of its value when compared to locally produced payload."
-              + " Configure with --validators-builder-bid-compare-factor",
-          builderBidCompareFactor.get());
-    }
   }
 
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
@@ -174,10 +168,12 @@ public class ExecutionBuilderModule {
                     maybeLocalExecutionPayload
                         .map(ExecutionPayloadWithValue::getValue)
                         .orElse(UInt256.ZERO);
+                final UInt256 builderBidValue = signedBuilderBid.getMessage().getValue();
+
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
-                if (isLocalPayloadValueWinning(signedBuilderBid, localPayloadValue)) {
-                  logLocalPayloadWin(signedBuilderBid.getMessage().getValue(), localPayloadValue);
+                if (isLocalPayloadValueWinning(builderBidValue, localPayloadValue)) {
+                  logLocalPayloadWin(builderBidValue, localPayloadValue);
                   return getResultFromLocalExecutionPayload(
                       localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
@@ -200,11 +196,9 @@ public class ExecutionBuilderModule {
 
   /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
   private boolean isLocalPayloadValueWinning(
-      final SignedBuilderBid signedBuilderBid, final UInt256 localPayloadValue) {
+      final UInt256 builderBidValue, final UInt256 localPayloadValue) {
     return builderBidCompareFactor.isPresent()
-        && signedBuilderBid
-            .getMessage()
-            .getValue()
+        && builderBidValue
             .multiply(builderBidCompareFactor.get())
             .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
   }
@@ -425,7 +419,7 @@ public class ExecutionBuilderModule {
           builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString());
     } else {
       LOG.info(
-          "Local execution payload with value ({} Gwei) is chosen over builder payload (original {} Gwei, effective {}%).",
+          "Local execution payload with value ({} Gwei) is chosen over builder payload ({} Gwei, compare factor {}%).",
           localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
           builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
           compareFactor);

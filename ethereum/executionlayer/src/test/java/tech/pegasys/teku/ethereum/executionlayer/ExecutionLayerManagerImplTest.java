@@ -319,7 +319,8 @@ class ExecutionLayerManagerImplTest {
   }
 
   @Test
-  public void builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderFactorIsNever() {
+  public void
+      builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderFactorIsAlwaysBuilder() {
     // Setup will always ignore local payload in favor of Builder bid
     executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.empty());
     setBuilderOnline();
@@ -339,6 +340,40 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(expectedResult);
+  }
+
+  @Test
+  public void
+      builderGetHeaderGetPayload_shouldReturnLocalPayloadWhenBuilderFactorIsAlwaysBuilderAndBidValidationFails() {
+    // Setup will always ignore local payload in favor of Builder bid
+    executionLayerManager = createExecutionLayerChannelImpl(true, true, Optional.empty());
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+    final ExecutionPayload payload =
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+
+    final ExecutionPayloadHeader header =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(payload);
+
+    // we expect local engine header as result
+    final HeaderWithFallbackData expectedResult =
+        HeaderWithFallbackData.create(
+            header, new FallbackData(payload, FallbackReason.BUILDER_ERROR));
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+        .isCompletedWithValue(expectedResult);
+
+    verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
   }
 
   @Test

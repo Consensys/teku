@@ -20,18 +20,23 @@ import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_E
 import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerConfiguration {
+  private static final Logger LOG = LogManager.getLogger();
+
   public static final boolean DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED = true;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW = 32;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
   public static final int DEFAULT_BUILDER_BID_COMPARE_FACTOR = 100;
+  public static final String BUILDER_ALWAYS_KEYWORD = "BUILDER_ALWAYS";
 
   private final Spec spec;
   private final Optional<String> engineEndpoint;
@@ -145,7 +150,24 @@ public class ExecutionLayerConfiguration {
     public ExecutionLayerConfiguration build() {
       validateStubEndpoints();
       validateBuilderCircuitBreaker();
-      Optional<Integer> builderBidCompareFactor = validateAndParseBuilderBidCompareFactor();
+      final Optional<Integer> builderBidCompareFactor = validateAndParseBuilderBidCompareFactor();
+
+      if (builderEndpoint.isPresent()) {
+        if (builderBidCompareFactor.isEmpty()) {
+          LOG.info(
+              "During block production, a valid builder bid will always be chosen over locally produced payload.");
+        } else {
+          final String additionalHint =
+              builderBidCompareFactor.get() == DEFAULT_BUILDER_BID_COMPARE_FACTOR
+                  ? " Configure with --builder-bid-compare-factor"
+                  : "";
+          LOG.info(
+              "During block production, locally produced payload will be chosen when its value is equal or greater than {}% of the builder bid value."
+                  + additionalHint,
+              builderBidCompareFactor);
+        }
+      }
+
       return new ExecutionLayerConfiguration(
           spec,
           engineEndpoint,
@@ -238,7 +260,7 @@ public class ExecutionLayerConfiguration {
     }
 
     private Optional<Integer> validateAndParseBuilderBidCompareFactor() {
-      if (builderBidCompareFactor.toUpperCase(Locale.ROOT).equals("NEVER")) {
+      if (builderBidCompareFactor.toUpperCase(Locale.ROOT).equals(BUILDER_ALWAYS_KEYWORD)) {
         return Optional.empty();
       }
       if (builderBidCompareFactor.endsWith("%")) {
@@ -250,7 +272,9 @@ public class ExecutionLayerConfiguration {
         builderBidCompareFactorInt = Integer.parseInt(builderBidCompareFactor);
       } catch (final NumberFormatException ex) {
         throw new InvalidConfigurationException(
-            "Expecting number, percentage or NEVER keyword for Builder bid compare factor");
+            "Expecting number, percentage or "
+                + BUILDER_ALWAYS_KEYWORD
+                + "+ keyword for Builder bid compare factor");
       }
       checkArgument(
           builderBidCompareFactorInt >= 0, "Builder bid compare factor percentage should be >= 0");
