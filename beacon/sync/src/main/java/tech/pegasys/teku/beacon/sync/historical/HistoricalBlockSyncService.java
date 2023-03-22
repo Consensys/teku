@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.historical;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.spec.config.Constants.HISTORICAL_SYNC_BATCH_SIZE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
@@ -55,7 +56,6 @@ public class HistoricalBlockSyncService extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration RETRY_TIMEOUT = Duration.ofMinutes(1);
-  private static final UInt64 BATCH_SIZE = UInt64.valueOf(50);
 
   private final Spec spec;
   private final SettableGauge historicSyncGauge;
@@ -151,7 +151,7 @@ public class HistoricalBlockSyncService extends Service {
         chainData,
         syncStateProvider,
         signatureVerifier,
-        BATCH_SIZE,
+        HISTORICAL_SYNC_BATCH_SIZE,
         reconstructHistoricalStatesService,
         fetchAllHistoricBlocks);
   }

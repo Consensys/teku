@@ -237,7 +237,7 @@ public class ExecutionLayerService extends Service {
         new BuilderBidValidatorImpl(EVENT_LOG),
         builderCircuitBreaker,
         blobsBundleValidator,
-        config.getBuilderBidChallengePercentage());
+        config.getBuilderBidCompareFactor());
   }
 
   ExecutionLayerService(

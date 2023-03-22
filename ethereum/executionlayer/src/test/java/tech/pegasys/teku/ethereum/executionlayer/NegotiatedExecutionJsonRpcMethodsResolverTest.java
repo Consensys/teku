@@ -37,6 +37,8 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
+import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByHash;
+import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -167,6 +169,27 @@ class NegotiatedExecutionJsonRpcMethodsResolverTest {
     methodProvider.getMethod(EngineApiMethods.ENGINE_NEW_PAYLOAD, PayloadStatus.class);
 
     verify(fallbackResolver, times(1)).getMethod(any(), any());
+  }
+
+  @Test
+  public void shouldSkipNegotiationWhenMethodIsNotNegotiable() {
+    final EthGetBlockByHash method = new EthGetBlockByHash(executionEngineClient);
+    assertThat(method.isNegotiable()).isFalse();
+
+    final EngineApiCapabilitiesProvider localCapabilitiesProvider =
+        StubEngineApiCapabilitiesProvider.withMethods(method);
+    final EngineApiCapabilitiesProvider remoteCapabilitiesProvider =
+        mock(EngineApiCapabilitiesProvider.class);
+    when(remoteCapabilitiesProvider.isAvailable()).thenReturn(true);
+
+    final NegotiatedExecutionJsonRpcMethodsResolver methodProvider =
+        new NegotiatedExecutionJsonRpcMethodsResolver(
+            localCapabilitiesProvider, remoteCapabilitiesProvider, fallbackResolver);
+
+    final EngineJsonRpcMethod<PowBlock> resolvedMethod =
+        methodProvider.getMethod(EngineApiMethods.ETH_GET_BLOCK_BY_HASH, PowBlock.class);
+    assertThat(resolvedMethod).isInstanceOf(EthGetBlockByHash.class);
+    verify(remoteCapabilitiesProvider, times(0)).supportedMethods();
   }
 
   private EngineApiCapabilitiesProvider stubCapabilitiesProvider(

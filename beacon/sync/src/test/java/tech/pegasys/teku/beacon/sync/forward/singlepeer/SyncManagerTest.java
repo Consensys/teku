@@ -61,12 +61,12 @@ public class SyncManagerTest {
               PEER_HEAD_BLOCK_ROOT,
               peerHeadSlot));
 
-  private final RecentChainData storageClient = mock(RecentChainData.class);
+  private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
   private final PeerSync peerSync = mock(PeerSync.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final SyncManager syncManager =
-      new SyncManager(asyncRunner, network, storageClient, peerSync, spec);
+      new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);
   private final Eth2Peer peer = mock(Eth2Peer.class);
   private final SyncSubscriber syncSubscriber = mock(SyncSubscriber.class);
 
@@ -81,9 +81,9 @@ public class SyncManagerTest {
   @BeforeEach
   public void setUp() {
     when(network.subscribeConnect(any())).thenReturn(SUBSCRIPTION_ID);
-    when(storageClient.getFinalizedEpoch()).thenAnswer((__) -> localFinalizedEpoch.get());
-    when(storageClient.getCurrentSlot()).thenAnswer((__) -> Optional.ofNullable(localSlot.get()));
-    when(storageClient.getHeadSlot()).thenAnswer((__) -> localHeadSlot.get());
+    when(recentChainData.getFinalizedEpoch()).thenAnswer((__) -> localFinalizedEpoch.get());
+    when(recentChainData.getCurrentSlot()).thenAnswer((__) -> Optional.ofNullable(localSlot.get()));
+    when(recentChainData.getHeadSlot()).thenAnswer((__) -> localHeadSlot.get());
     when(peer.getStatus()).thenReturn(peerStatus);
   }
 

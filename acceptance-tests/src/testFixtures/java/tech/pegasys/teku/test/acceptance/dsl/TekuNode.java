@@ -971,6 +971,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withEngineApiMethodNegotiation() {
+      configMap.put("Xexchange-capabilities-enabled", "true");
+      return this;
+    }
+
     public Config withJwtSecretFile(final URL jwtFile) {
       this.maybeJwtFile = Optional.of(jwtFile);
       configMap.put(EE_JWT_SECRET_FILE_KEY, JWT_SECRET_FILE_PATH);

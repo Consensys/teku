@@ -22,7 +22,7 @@ public class FailedBlockImportException extends InvalidResponseException {
   private final BlockImportResult result;
 
   public FailedBlockImportException(final SignedBeaconBlock block, final BlockImportResult result) {
-    super("Unable to import block due to error " + result.getFailureReason() + ": " + block);
+    super("Unable to import block due to an error " + result.getFailureReason() + ": " + block);
     this.block = block;
     this.result = result;
   }

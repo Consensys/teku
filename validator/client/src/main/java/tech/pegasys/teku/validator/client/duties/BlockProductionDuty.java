@@ -26,8 +26,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -110,6 +114,30 @@ public class BlockProductionDuty implements Duty {
         .getSigner()
         .signBlock(unsignedBlock, forkInfo)
         .thenApply(signature -> SignedBeaconBlock.create(spec, unsignedBlock, signature));
+  }
+
+  @SuppressWarnings("unused")
+  public SafeFuture<SignedBlobSidecar> signBlobSidecar(
+      final ForkInfo forkInfo, final Optional<BlobSidecar> maybeBlobSidecar) {
+    final BlobSidecar unsignedBlobSidecar =
+        maybeBlobSidecar.orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Node was not syncing but could not create blob sidecar"));
+    checkArgument(
+        unsignedBlobSidecar.getSlot().equals(slot),
+        "Unsigned blob sidecar slot (%s) does not match expected slot %s",
+        unsignedBlobSidecar.getSlot(),
+        slot);
+
+    final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
+    final SignedBlobSidecarSchema signedBlobSidecarSchema =
+        schemaDefinitions.toVersionDeneb().orElseThrow().getSignedBlobSidecarSchema();
+
+    return validator
+        .getSigner()
+        .signBlobSidecar(unsignedBlobSidecar, forkInfo)
+        .thenApply(signature -> signedBlobSidecarSchema.create(unsignedBlobSidecar, signature));
   }
 
   @Override

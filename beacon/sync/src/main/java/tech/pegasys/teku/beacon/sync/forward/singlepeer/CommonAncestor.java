@@ -24,24 +24,23 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class CommonAncestor {
   private static final Logger LOG = LogManager.getLogger();
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
 
   static final UInt64 OPTIMISTIC_HISTORY_LENGTH = UInt64.valueOf(3000);
   // prysm allows a maximum range of 1000 blocks (endSlot - startSlot) due to database limitations
   static final UInt64 BLOCK_COUNT = UInt64.valueOf(100);
 
-  public CommonAncestor(final RecentChainData storageClient) {
-    this.storageClient = storageClient;
+  public CommonAncestor(final RecentChainData recentChainData) {
+    this.recentChainData = recentChainData;
   }
 
   public SafeFuture<UInt64> getCommonAncestor(
       final SyncSource peer, final UInt64 firstNonFinalSlot, final UInt64 peerHeadSlot) {
-    final UInt64 ourHeadSlot = storageClient.getHeadSlot();
+    final UInt64 ourHeadSlot = recentChainData.getHeadSlot();
     final UInt64 lowestHeadSlot = ourHeadSlot.min(peerHeadSlot);
     if (lowestHeadSlot.isLessThan(firstNonFinalSlot.plus(OPTIMISTIC_HISTORY_LENGTH))) {
       return SafeFuture.completedFuture(firstNonFinalSlot);
     }
-
     final UInt64 localNonFinalisedSlotCount = lowestHeadSlot.minus(firstNonFinalSlot);
     final UInt64 firstRequestedSlot = lowestHeadSlot.minus(OPTIMISTIC_HISTORY_LENGTH);
     final UInt64 lastSlot = firstRequestedSlot.plus(BLOCK_COUNT);
@@ -55,21 +54,22 @@ public class CommonAncestor {
         lastSlot,
         peerHeadSlot);
 
-    final BestBlockListener blockListener = new BestBlockListener(storageClient, firstNonFinalSlot);
-    final PeerSyncBlockRequest request =
-        new PeerSyncBlockRequest(
-            SafeFuture.COMPLETE, firstRequestedSlot, BLOCK_COUNT, blockListener);
+    final BestBlockListener blockResponseListener =
+        new BestBlockListener(recentChainData, firstNonFinalSlot);
+    final PeerSyncBlockListener blockListener =
+        new PeerSyncBlockListener(
+            SafeFuture.COMPLETE, firstRequestedSlot, BLOCK_COUNT, blockResponseListener);
 
-    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, request)
-        .thenApply(__ -> blockListener.getBestSlot());
+    return peer.requestBlocksByRange(firstRequestedSlot, BLOCK_COUNT, blockListener)
+        .thenApply(__ -> blockResponseListener.getBestSlot());
   }
 
   private static class BestBlockListener implements RpcResponseListener<SignedBeaconBlock> {
-    private final RecentChainData storageClient;
+    private final RecentChainData recentChainData;
     private UInt64 bestSlot;
 
-    BestBlockListener(final RecentChainData storageClient, final UInt64 bestSlot) {
-      this.storageClient = storageClient;
+    BestBlockListener(final RecentChainData recentChainData, final UInt64 bestSlot) {
+      this.recentChainData = recentChainData;
       this.bestSlot = bestSlot;
     }
 
@@ -79,7 +79,7 @@ public class CommonAncestor {
 
     @Override
     public SafeFuture<?> onResponse(final SignedBeaconBlock block) {
-      if (storageClient.containsBlock(block.getRoot())) {
+      if (recentChainData.containsBlock(block.getRoot())) {
         bestSlot = bestSlot.max(block.getSlot());
       }
 
