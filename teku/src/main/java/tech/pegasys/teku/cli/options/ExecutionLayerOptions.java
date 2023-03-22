@@ -108,7 +108,7 @@ public class ExecutionLayerOptions {
               + "'80' means local payload will be chosen when its value is at least 80% of builder bid value).\n"
               + "Set it to '"
               + BUILDER_ALWAYS_KEYWORD
-              + "' to always use builder bid. Locally produced payload will be used only when the bid is invalid.",
+              + "' to always use builder bid. In this configuration locally produced payload will be used only when the bid is invalid.",
       arity = "1")
   private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
 
