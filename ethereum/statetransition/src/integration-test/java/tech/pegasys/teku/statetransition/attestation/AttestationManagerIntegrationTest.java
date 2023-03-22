@@ -36,9 +36,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.generator.AggregateGenerator;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -66,6 +68,9 @@ class AttestationManagerIntegrationTest {
           .numberOfValidators(spec.getSlotsPerEpoch(UInt64.ZERO))
           .build();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
+
+  private final AggregateGenerator generator =
+      new AggregateGenerator(spec, storageSystem.chainBuilder().getValidatorKeys());
 
   private final AggregatingAttestationPool attestationPool =
       new AggregatingAttestationPool(
@@ -193,6 +198,24 @@ class AttestationManagerIntegrationTest {
 
     final SafeFuture<InternalValidationResult> result =
         attestationManager.addAttestation(attestation);
+    assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
+  }
+
+  @Test
+  void shouldAcceptAttestationAggregatesAfterForkWithNewForkId_emptySlots() {
+    final UInt64 attestationSlot = spec.computeStartSlotAtEpoch(UInt64.ONE);
+
+    // Fork choice only runs attestations one slot after they're sent.
+    storageSystem.chainUpdater().setCurrentSlot(attestationSlot.plus(1));
+
+    final SignedAggregateAndProof aggregate =
+        generator.validAggregateAndProof(storageSystem.getChainHead(), attestationSlot);
+    ValidateableAttestation attestation =
+        ValidateableAttestation.aggregateFromValidator(spec, aggregate);
+
+    final SafeFuture<InternalValidationResult> result =
+        attestationManager.addAggregate(attestation);
+
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 

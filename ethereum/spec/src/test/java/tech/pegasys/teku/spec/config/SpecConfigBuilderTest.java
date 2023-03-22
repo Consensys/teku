@@ -33,7 +33,7 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldLoadAltairForkEpoch() {
-    final UInt64 randomEpoch = dataStructureUtil.randomEpoch();
+    final UInt64 randomEpoch = dataStructureUtil.randomUInt64(100_000);
     final Spec spec =
         getSpec(
             phase0Builder ->
@@ -49,7 +49,7 @@ class SpecConfigBuilderTest {
 
   @Test
   public void shouldLoadBellatrixForkEpoch() {
-    final UInt64 randomEpoch = dataStructureUtil.randomEpoch();
+    final UInt64 randomEpoch = dataStructureUtil.randomUInt64(100_000);
     final Spec spec =
         getSpec(
             phase0Builder ->
