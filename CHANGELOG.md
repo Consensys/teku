@@ -25,3 +25,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 
 ### Bug Fixes
+ - Improved `Completed regeneration` info message so that is more technically accurate.
