@@ -21,6 +21,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -166,20 +167,13 @@ public class ForkChoiceUpdateData {
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    LOG.debug(
-        "send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadBuildingAttributes);
+    logSendingForkChoiceUpdated();
     final SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
         executionLayer.engineForkChoiceUpdated(forkChoiceState, payloadBuildingAttributes);
 
     forkChoiceUpdatedResult
         .thenApply(ForkChoiceUpdatedResult::getPayloadId)
-        .thenPeek(
-            payloadId ->
-                LOG.debug(
-                    "send - forkChoiceUpdated returned payload id {} for {}, {}",
-                    payloadId,
-                    forkChoiceState,
-                    payloadBuildingAttributes))
+        .thenPeek(this::logSendForkChoiceUpdatedComplete)
         .thenApply(
             maybePayloadId ->
                 maybePayloadId.map(
@@ -194,6 +188,29 @@ public class ForkChoiceUpdateData {
         .propagateTo(executionPayloadContext);
 
     return forkChoiceUpdatedResult.thenApply(Optional::of);
+  }
+
+  private void logSendForkChoiceUpdatedComplete(Optional<Bytes8> payloadId) {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(
+          "send - forkChoiceUpdated returned payload id {} for {}, {}",
+          payloadId,
+          forkChoiceState,
+          payloadBuildingAttributes);
+    }
+  }
+
+  private void logSendingForkChoiceUpdated() {
+    if (LOG.isDebugEnabled()) {
+      LOG.debug(
+          "send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadBuildingAttributes);
+    } else {
+      payloadBuildingAttributes.ifPresent(
+          buildingAttributes ->
+              LOG.info(
+                  "Calling local execution layer to start block production (block slot: {})",
+                  buildingAttributes.getBlockSlot()));
+    }
   }
 
   public boolean hasHeadBlockHash() {
