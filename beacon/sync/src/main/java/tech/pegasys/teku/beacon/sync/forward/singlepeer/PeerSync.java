@@ -319,20 +319,26 @@ public class PeerSync {
   private RequestContext createRequestContext(final UInt64 startSlot, final PeerStatus status) {
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
     final UInt64 count = diff.min(FORWARD_SYNC_BATCH_SIZE); // limit the request count
-    return new RequestContext(startSlot, count);
+    final UInt64 endSlot = startSlot.plus(count).decrement();
+    final boolean blobSidecarsRequired = blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot);
+    return new RequestContext(startSlot, count, endSlot, blobSidecarsRequired);
   }
 
-  private class RequestContext {
+  private static class RequestContext {
     private final UInt64 startSlot;
     private final UInt64 count;
     private final UInt64 endSlot;
     private final boolean blobSidecarsRequired;
 
-    private RequestContext(final UInt64 startSlot, final UInt64 count) {
+    private RequestContext(
+        final UInt64 startSlot,
+        final UInt64 count,
+        final UInt64 endSlot,
+        final boolean blobSidecarsRequired) {
       this.startSlot = startSlot;
       this.count = count;
-      this.endSlot = startSlot.plus(count).decrement();
-      this.blobSidecarsRequired = blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot);
+      this.endSlot = endSlot;
+      this.blobSidecarsRequired = blobSidecarsRequired;
     }
   }
 
