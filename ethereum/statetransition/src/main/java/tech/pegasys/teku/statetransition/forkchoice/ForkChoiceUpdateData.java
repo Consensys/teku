@@ -197,17 +197,6 @@ public class ForkChoiceUpdateData {
           payloadId,
           forkChoiceState,
           payloadBuildingAttributes);
-    } else {
-      if (payloadBuildingAttributes.isPresent()) {
-        LOG.info(
-            "Builder returned payload id {}, (block slot: {})",
-            payloadId.isPresent() ? payloadId.get() : "EMPTY",
-            payloadBuildingAttributes.get().getBlockSlot());
-      } else {
-        LOG.info(
-            "Local execution layer returned payload id {}",
-            payloadId.isPresent() ? payloadId.get() : "EMPTY");
-      }
     }
   }
 
@@ -216,15 +205,11 @@ public class ForkChoiceUpdateData {
       LOG.debug(
           "send - calling forkChoiceUpdated({}, {})", forkChoiceState, payloadBuildingAttributes);
     } else {
-      if (payloadBuildingAttributes.isEmpty()) {
-        LOG.info(
-            "Calling local execution layer to start block production (slot: {})",
-            forkChoiceState.getHeadBlockSlot());
-      } else {
-        LOG.info(
-            "Calling builder to start block production (block slot: {})",
-            payloadBuildingAttributes.get().getBlockSlot());
-      }
+      payloadBuildingAttributes.ifPresent(
+          buildingAttributes ->
+              LOG.info(
+                  "Calling local execution layer to start block production (block slot: {})",
+                  buildingAttributes.getBlockSlot()));
     }
   }
 
