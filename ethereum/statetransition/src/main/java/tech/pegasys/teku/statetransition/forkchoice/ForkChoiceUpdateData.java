@@ -218,7 +218,7 @@ public class ForkChoiceUpdateData {
     } else {
       if (payloadBuildingAttributes.isEmpty()) {
         LOG.info(
-            "Calling local execution layer to start block production (parent slot: {})",
+            "Calling local execution layer to start block production (slot: {})",
             forkChoiceState.getHeadBlockSlot());
       } else {
         LOG.info(
