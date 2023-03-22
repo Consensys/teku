@@ -51,6 +51,7 @@ public class ExecutionBuilderModule {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final int HUNDRED_PERCENT = 100;
+  private static final UInt256 WEI_TO_GWEI = UInt256.valueOf(10).pow(9);
 
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
@@ -59,7 +60,7 @@ public class ExecutionBuilderModule {
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
-  private final Optional<Integer> builderBidChallengePercentage;
+  private final Optional<Integer> builderBidCompareFactor;
 
   public ExecutionBuilderModule(
       final Spec spec,
@@ -68,7 +69,7 @@ public class ExecutionBuilderModule {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
-      final Optional<Integer> builderBidChallengePercentage) {
+      final Optional<Integer> builderBidCompareFactor) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
@@ -76,7 +77,7 @@ public class ExecutionBuilderModule {
     this.builderCircuitBreaker = builderCircuitBreaker;
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
-    this.builderBidChallengePercentage = builderBidChallengePercentage;
+    this.builderBidCompareFactor = builderBidCompareFactor;
   }
 
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
@@ -167,15 +168,12 @@ public class ExecutionBuilderModule {
                     maybeLocalExecutionPayload
                         .map(ExecutionPayloadWithValue::getValue)
                         .orElse(UInt256.ZERO);
+                final UInt256 builderBidValue = signedBuilderBid.getMessage().getValue();
+
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
-                if (isLocalPayloadValueWinning(signedBuilderBid, localPayloadValue)) {
-                  LOG.info(
-                      "The local execution payload value ({}) was awarded the block over the builder payload ({}), "
-                          + "{}% challenge configured.",
-                      signedBuilderBid.getMessage().getValue().toDecimalString(),
-                      localPayloadValue.toDecimalString(),
-                      builderBidChallengePercentage);
+                if (isLocalPayloadValueWinning(builderBidValue, localPayloadValue)) {
+                  logLocalPayloadWin(builderBidValue, localPayloadValue);
                   return getResultFromLocalExecutionPayload(
                       localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
@@ -198,12 +196,10 @@ public class ExecutionBuilderModule {
 
   /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
   private boolean isLocalPayloadValueWinning(
-      final SignedBuilderBid signedBuilderBid, final UInt256 localPayloadValue) {
-    return builderBidChallengePercentage.isPresent()
-        && signedBuilderBid
-            .getMessage()
-            .getValue()
-            .multiply(builderBidChallengePercentage.get())
+      final UInt256 builderBidValue, final UInt256 localPayloadValue) {
+    return builderBidCompareFactor.isPresent()
+        && builderBidValue
+            .multiply(builderBidCompareFactor.get())
             .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
   }
 
@@ -411,5 +407,22 @@ public class ExecutionBuilderModule {
         builderBid.getValue().toDecimalString(),
         payloadHeader.getGasLimit(),
         payloadHeader.getGasUsed());
+  }
+
+  private void logLocalPayloadWin(
+      final UInt256 builderPayloadValue, final UInt256 localPayloadValue) {
+    final Integer compareFactor = builderBidCompareFactor.orElseThrow();
+    if (compareFactor == HUNDRED_PERCENT) {
+      LOG.info(
+          "Local execution payload with value ({} Gwei) is chosen over builder payload ({} Gwei).",
+          localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
+          builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString());
+    } else {
+      LOG.info(
+          "Local execution payload with value ({} Gwei) is chosen over builder payload ({} Gwei, compare factor {}%).",
+          localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
+          builderPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
+          compareFactor);
+    }
   }
 }
