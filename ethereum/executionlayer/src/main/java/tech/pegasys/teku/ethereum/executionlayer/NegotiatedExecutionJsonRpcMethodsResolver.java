@@ -41,6 +41,7 @@ public class NegotiatedExecutionJsonRpcMethodsResolver implements ExecutionJsonR
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <T> EngineJsonRpcMethod<T> getMethod(
       final EngineApiMethods method, final Class<T> resultType) {
     if (!remoteEngineApiCapabilitiesProvider.isAvailable()) {
@@ -49,6 +50,9 @@ public class NegotiatedExecutionJsonRpcMethodsResolver implements ExecutionJsonR
 
     final List<EngineJsonRpcMethod<?>> availableLocalMethodVersions =
         getAvailableMethodVersions(method, localEngineApiCapabilitiesProvider.supportedMethods());
+    if (shouldSkipNegotiation(availableLocalMethodVersions)) {
+      return (EngineJsonRpcMethod<T>) availableLocalMethodVersions.get(0);
+    }
 
     final List<EngineJsonRpcMethod<?>> availableRemoteMethodVersions =
         getAvailableMethodVersions(method, remoteEngineApiCapabilitiesProvider.supportedMethods());
@@ -64,6 +68,12 @@ public class NegotiatedExecutionJsonRpcMethodsResolver implements ExecutionJsonR
     }
 
     return negotiatedMethod;
+  }
+
+  private boolean shouldSkipNegotiation(
+      final List<EngineJsonRpcMethod<?>> availableLocalMethodVersions) {
+    return availableLocalMethodVersions.size() == 1
+        && !availableLocalMethodVersions.get(0).isNegotiable();
   }
 
   private List<EngineJsonRpcMethod<?>> getAvailableMethodVersions(
