@@ -69,14 +69,14 @@ public class BatchImporter {
         () -> {
           final SignedBeaconBlock firstBlock = blocks.get(0);
           SafeFuture<BlockImportResult> importResult =
-              importBlobSidecarsAndBlock(firstBlock, blobSidecars, source.orElseThrow());
+              importBlockAndBlobSidecars(firstBlock, blobSidecars, source.orElseThrow());
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
                 importResult.thenCompose(
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
-                        return importBlobSidecarsAndBlock(
+                        return importBlockAndBlobSidecars(
                             block, blobSidecars, source.orElseThrow());
                       } else {
                         return SafeFuture.completedFuture(previousResult);
@@ -100,7 +100,7 @@ public class BatchImporter {
         });
   }
 
-  private SafeFuture<BlockImportResult> importBlobSidecarsAndBlock(
+  private SafeFuture<BlockImportResult> importBlockAndBlobSidecars(
       final SignedBeaconBlock block,
       final Map<Bytes32, List<BlobSidecar>> blobSidecars,
       final SyncSource source) {
@@ -114,11 +114,6 @@ public class BatchImporter {
         blobSidecarsForBlock.size(),
         blockRoot);
     return importBlobSidecars(blobSidecarsForBlock).thenCompose(__ -> importBlock(block, source));
-  }
-
-  private SafeFuture<Void> importBlobSidecars(final List<BlobSidecar> blobSidecars) {
-    return SafeFuture.allOfFailFast(
-        blobSidecars.stream().map(blobsSidecarManager::importBlobSidecar));
   }
 
   private SafeFuture<BlockImportResult> importBlock(
@@ -139,6 +134,11 @@ public class BatchImporter {
               }
               return result;
             });
+  }
+
+  private SafeFuture<Void> importBlobSidecars(final List<BlobSidecar> blobSidecars) {
+    return SafeFuture.allOfFailFast(
+        blobSidecars.stream().map(blobsSidecarManager::importBlobSidecar));
   }
 
   public enum BatchImportResult {
