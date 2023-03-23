@@ -162,12 +162,14 @@ public final class CKZG4844 implements KZG {
   }
 
   @Override
-  public KZGProof computeBlobKzgProof(final Bytes blob) throws KZGException {
+  public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
+      throws KZGException {
     try {
-      final byte[] proof = CKZG4844JNI.computeBlobKzgProof(blob.toArray());
+      final byte[] proof = CKZG4844JNI.computeBlobKzgProof(blob.toArray(), kzgCommitment.toArray());
       return KZGProof.fromArray(proof);
     } catch (final Exception ex) {
-      throw new KZGException("Failed to compute KZG proof for blob", ex);
+      throw new KZGException(
+          "Failed to compute KZG proof for blob with commitment " + kzgCommitment, ex);
     }
   }
 }

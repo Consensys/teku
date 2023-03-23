@@ -58,7 +58,8 @@ public class CKZG4844PropertyTest {
   void fuzzBlobToKzgProof(
       final KZG kzg, @ForAll(supplier = DiverseBlobBytesSupplier.class) final Bytes blob) {
     try {
-      kzg.computeBlobKzgProof(blob);
+      final KZGCommitment kzgCommitment = kzg.blobToKzgCommitment(blob);
+      kzg.computeBlobKzgProof(blob, kzgCommitment);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
     }
