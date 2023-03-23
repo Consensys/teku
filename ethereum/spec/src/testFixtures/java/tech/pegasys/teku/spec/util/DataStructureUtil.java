@@ -1220,7 +1220,9 @@ public final class DataStructureUtil {
                           1))
                   .attesterSlashings(
                       randomSszList(
-                          schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                          schema.getAttesterSlashingsSchema(),
+                          () -> randomAttesterSlashing(randomUInt64(validatorCount - 1)),
+                          1))
                   .attestations(
                       randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
                   .deposits(

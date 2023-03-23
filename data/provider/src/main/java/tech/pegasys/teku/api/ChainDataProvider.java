@@ -74,7 +74,6 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
@@ -727,15 +726,10 @@ public class ChainDataProvider {
 
     UInt64 attesterSlashingsRewards = ZERO;
     for (AttesterSlashing slashing : attesterSlashings) {
-      IndexedAttestation attestation1 = slashing.getAttestation1();
-      final int slashedIndex1 = attestation1.getData().getIndex().intValue();
-      attesterSlashingsRewards =
-          calculateSlashingRewards(specConfig, state, slashedIndex1, attesterSlashingsRewards);
-
-      IndexedAttestation attestation2 = slashing.getAttestation2();
-      final int slashedIndex2 = attestation2.getData().getIndex().intValue();
-      attesterSlashingsRewards =
-          calculateSlashingRewards(specConfig, state, slashedIndex2, attesterSlashingsRewards);
+      for (final UInt64 index : slashing.getIntersectingValidatorIndices()) {
+        attesterSlashingsRewards =
+            calculateSlashingRewards(specConfig, state, index.intValue(), attesterSlashingsRewards);
+      }
     }
 
     return attesterSlashingsRewards;
