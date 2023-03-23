@@ -14,9 +14,8 @@
 package tech.pegasys.teku.beacon.sync.fetch;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public final class FetchBlockResult {
+public final class FetchResult<T> {
 
   public enum Status {
     SUCCESSFUL,
@@ -26,30 +25,30 @@ public final class FetchBlockResult {
   }
 
   private final Status status;
-  private final Optional<SignedBeaconBlock> block;
+  private final Optional<T> result;
 
-  private FetchBlockResult(final Status status, final Optional<SignedBeaconBlock> block) {
+  private FetchResult(final Status status, final Optional<T> result) {
     this.status = status;
-    this.block = block;
+    this.result = result;
   }
 
-  public static FetchBlockResult createSuccessful(final SignedBeaconBlock block) {
-    return new FetchBlockResult(Status.SUCCESSFUL, Optional.of(block));
+  public static <T> FetchResult<T> createSuccessful(final T result) {
+    return new FetchResult<>(Status.SUCCESSFUL, Optional.of(result));
   }
 
-  public static FetchBlockResult createFailed(final Status failureStatus) {
-    return new FetchBlockResult(failureStatus, Optional.empty());
+  public static <T> FetchResult<T> createFailed(final Status failureStatus) {
+    return new FetchResult<>(failureStatus, Optional.empty());
   }
 
   public boolean isSuccessful() {
     return status == Status.SUCCESSFUL;
   }
 
-  public Optional<SignedBeaconBlock> getBlock() {
-    return block;
+  public Optional<T> getResult() {
+    return result;
   }
 
-  public FetchBlockResult.Status getStatus() {
+  public Status getStatus() {
     return status;
   }
 }
