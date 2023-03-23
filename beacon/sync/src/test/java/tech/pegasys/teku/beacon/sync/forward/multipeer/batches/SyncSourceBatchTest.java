@@ -159,7 +159,9 @@ public class SyncSourceBatchTest {
 
     assertThat(batch.isComplete()).isTrue();
     assertThat(batch.getBlocks()).containsExactly(block);
-    assertThat(batch.getBlobSidecars()).hasSize(1).containsEntry(block.getRoot(), blobSidecars);
+    assertThat(batch.getBlobSidecarsByBlockRoot())
+        .hasSize(1)
+        .containsEntry(block.getRoot(), blobSidecars);
   }
 
   @Test

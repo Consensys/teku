@@ -60,7 +60,7 @@ class BatchImporterTest {
   @BeforeEach
   public void setup() {
     when(batch.getSource()).thenReturn(Optional.of(syncSource));
-    when(batch.getBlobSidecars()).thenReturn(Map.of());
+    when(batch.getBlobSidecarsByBlockRoot()).thenReturn(Map.of());
     when(blobsSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
@@ -87,7 +87,7 @@ class BatchImporterTest {
     // We should have copied the blocks and blob sidecars to avoid accessing the Batch data from
     // other threads
     verify(batch).getBlocks();
-    verify(batch).getBlobSidecars();
+    verify(batch).getBlobSidecarsByBlockRoot();
     verify(batch).getSource();
 
     asyncRunner.executeQueuedActions();
@@ -119,7 +119,7 @@ class BatchImporterTest {
         Map.of(block1.getRoot(), blobSidecars1, block2.getRoot(), blobSidecars2);
 
     when(batch.getBlocks()).thenReturn(blocks);
-    when(batch.getBlobSidecars()).thenReturn(blobSidecars);
+    when(batch.getBlobSidecarsByBlockRoot()).thenReturn(blobSidecars);
 
     when(blockImporter.importBlock(block1)).thenReturn(importResult1);
     when(blockImporter.importBlock(block2)).thenReturn(importResult2);
@@ -133,7 +133,7 @@ class BatchImporterTest {
     // We should have copied the blocks and blob sidecars  to avoid accessing the Batch data from
     // other threads
     verify(batch).getBlocks();
-    verify(batch).getBlobSidecars();
+    verify(batch).getBlobSidecarsByBlockRoot();
     verify(batch).getSource();
 
     asyncRunner.executeQueuedActions();

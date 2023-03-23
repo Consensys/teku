@@ -71,9 +71,9 @@ public class EventThreadOnlyBatch implements Batch {
   }
 
   @Override
-  public Map<Bytes32, List<BlobSidecar>> getBlobSidecars() {
+  public Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot() {
     eventThread.checkOnEventThread();
-    return delegate.getBlobSidecars();
+    return delegate.getBlobSidecarsByBlockRoot();
   }
 
   @Override

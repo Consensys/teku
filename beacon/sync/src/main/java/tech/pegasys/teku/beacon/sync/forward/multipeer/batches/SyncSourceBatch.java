@@ -117,7 +117,7 @@ public class SyncSourceBatch implements Batch {
   }
 
   @Override
-  public Map<Bytes32, List<BlobSidecar>> getBlobSidecars() {
+  public Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot() {
     return blobSidecarsByBlockRoot;
   }
 

@@ -37,7 +37,7 @@ public interface Batch {
 
   List<SignedBeaconBlock> getBlocks();
 
-  Map<Bytes32, List<BlobSidecar>> getBlobSidecars();
+  Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot();
 
   Optional<SyncSource> getSource();
 

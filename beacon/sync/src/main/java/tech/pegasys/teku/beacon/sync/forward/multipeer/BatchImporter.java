@@ -60,7 +60,8 @@ public class BatchImporter {
   public SafeFuture<BatchImportResult> importBatch(final Batch batch) {
     // Copy the data from batch as we're going to use them from off the event thread.
     final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
-    final Map<Bytes32, List<BlobSidecar>> blobSidecars = Map.copyOf(batch.getBlobSidecars());
+    final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot =
+        Map.copyOf(batch.getBlobSidecarsByBlockRoot());
 
     final Optional<SyncSource> source = batch.getSource();
 
@@ -69,7 +70,7 @@ public class BatchImporter {
         () -> {
           final SignedBeaconBlock firstBlock = blocks.get(0);
           SafeFuture<BlockImportResult> importResult =
-              importBlockAndBlobSidecars(firstBlock, blobSidecars, source.orElseThrow());
+              importBlockAndBlobSidecars(firstBlock, blobSidecarsByBlockRoot, source.orElseThrow());
           for (int i = 1; i < blocks.size(); i++) {
             final SignedBeaconBlock block = blocks.get(i);
             importResult =
@@ -77,7 +78,7 @@ public class BatchImporter {
                     previousResult -> {
                       if (previousResult.isSuccessful()) {
                         return importBlockAndBlobSidecars(
-                            block, blobSidecars, source.orElseThrow());
+                            block, blobSidecarsByBlockRoot, source.orElseThrow());
                       } else {
                         return SafeFuture.completedFuture(previousResult);
                       }
@@ -102,18 +103,15 @@ public class BatchImporter {
 
   private SafeFuture<BlockImportResult> importBlockAndBlobSidecars(
       final SignedBeaconBlock block,
-      final Map<Bytes32, List<BlobSidecar>> blobSidecars,
+      final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot,
       final SyncSource source) {
     final Bytes32 blockRoot = block.getRoot();
-    if (!blobSidecars.containsKey(blockRoot)) {
+    if (!blobSidecarsByBlockRoot.containsKey(blockRoot)) {
       return importBlock(block, source);
     }
-    final List<BlobSidecar> blobSidecarsForBlock = blobSidecars.get(blockRoot);
-    LOG.debug(
-        "Importing {} blob sidecars for block with root {}",
-        blobSidecarsForBlock.size(),
-        blockRoot);
-    return importBlobSidecars(blobSidecarsForBlock).thenCompose(__ -> importBlock(block, source));
+    final List<BlobSidecar> blobSidecars = blobSidecarsByBlockRoot.get(blockRoot);
+    LOG.debug("Importing {} blob sidecars for block with root {}", blobSidecars.size(), blockRoot);
+    return importBlobSidecars(blobSidecars).thenCompose(__ -> importBlock(block, source));
   }
 
   private SafeFuture<BlockImportResult> importBlock(
