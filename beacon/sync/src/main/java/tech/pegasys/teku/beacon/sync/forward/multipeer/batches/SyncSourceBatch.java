@@ -409,7 +409,8 @@ public class SyncSourceBatch implements Batch {
         Sets.difference(newBlobSidecarsByBlockRoot.keySet(), blockRootsWithKzgCommitments);
     if (!unexpectedBlobSidecarsRoots.isEmpty()) {
       LOG.debug(
-          "Unexpected blob sidecars with roots {} were received", unexpectedBlobSidecarsRoots);
+          "Marking batch invalid because unexpected blob sidecars with roots {} were received",
+          unexpectedBlobSidecarsRoots);
       return false;
     }
 
