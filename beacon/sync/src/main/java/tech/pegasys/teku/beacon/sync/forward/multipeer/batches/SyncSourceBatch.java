@@ -18,11 +18,15 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Throwables;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -365,6 +369,7 @@ public class SyncSourceBatch implements Batch {
   private boolean validateNewBlobSidecars(
       final List<SignedBeaconBlock> newBlocks,
       final Map<Bytes32, List<BlobSidecar>> newBlobSidecarsByBlockRoot) {
+    final Set<Bytes32> blockRootsWithKzgCommitments = new HashSet<>(newBlocks.size());
     for (final SignedBeaconBlock block : newBlocks) {
       final Bytes32 blockRoot = block.getRoot();
       final List<BlobSidecar> blobSidecars =
@@ -377,6 +382,9 @@ public class SyncSourceBatch implements Batch {
               .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
               .map(SszList::size)
               .orElse(0);
+      if (numberOfKzgCommitments > 0) {
+        blockRootsWithKzgCommitments.add(blockRoot);
+      }
       if (blobSidecars.size() != numberOfKzgCommitments) {
         LOG.debug(
             "Marking batch invalid because {} blob sidecars were received, but the number of KZG commitments in a block ({}) were {}",
@@ -397,6 +405,14 @@ public class SyncSourceBatch implements Batch {
         }
       }
     }
+    final SetView<Bytes32> unexpectedBlobSidecarsRoots =
+        Sets.difference(newBlobSidecarsByBlockRoot.keySet(), blockRootsWithKzgCommitments);
+    if (!unexpectedBlobSidecarsRoots.isEmpty()) {
+      LOG.debug(
+          "Unexpected blob sidecars with roots {} were received", unexpectedBlobSidecarsRoots);
+      return false;
+    }
+
     return true;
   }
 

@@ -229,6 +229,30 @@ public class SyncSourceBatchTest {
   }
 
   @Test
+  void shouldReportAsInvalidWhenUnexpectedBlobSidecarsRootsWereReceived() {
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+
+    final Batch batch = createBatch(10, 10);
+
+    batch.requestMoreBlocks(() -> {});
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(19);
+
+    final List<BlobSidecar> blobSidecars =
+        new ArrayList<>(dataStructureUtil.randomBlobSidecarsForBlock(block));
+    // receiving more unexpected sidecars
+    blobSidecars.addAll(
+        dataStructureUtil.randomBlobSidecarsForBlock(
+            dataStructureUtil.randomSignedBeaconBlock(18)));
+
+    receiveBlocks(batch, block);
+    receiveBlobSidecars(batch, blobSidecars);
+
+    // batch should be reported as invalid
+    verify(conflictResolutionStrategy).reportInvalidBatch(batch, getSyncSource(batch));
+  }
+
+  @Test
   void shouldReportAsInvalidWhenUnexpectedNumberOfBlobSidecarsWereReceived() {
     when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
