@@ -8,6 +8,7 @@
 - The `--p2p-discovery-site-local-addresses-enabled` option will be set to `false` by default. If you use the client's discovery inside the local network, update its launch command to toggle the option.  
 
 ## Current Releases
+For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
 
