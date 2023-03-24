@@ -191,7 +191,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     final Optional<StatusMessage> statusMessage = statusMessageFactory.createStatusMessage();
     if (statusMessage.isEmpty()) {
       final Exception error =
-          new IllegalStateException("Unable to generate local status message.  Node is not ready.");
+          new IllegalStateException("Unable to generate local status message. Node is not ready.");
       return SafeFuture.failedFuture(error);
     }
     LOG.trace("Sending status message {} to {}", statusMessage.get(), getAddress());

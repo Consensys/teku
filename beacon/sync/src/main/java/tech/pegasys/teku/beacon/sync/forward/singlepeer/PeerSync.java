@@ -170,7 +170,7 @@ public class PeerSync {
 
               final SafeFuture<Void> blobSidecarsRequest;
 
-              if (requestContext.blobSidecarsRequired) {
+              if (blobsSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
                     "Request {} blob sidecars starting at {} from peer {}",
                     requestContext.count,
@@ -320,25 +320,18 @@ public class PeerSync {
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
     final UInt64 count = diff.min(FORWARD_SYNC_BATCH_SIZE); // limit the request count
     final UInt64 endSlot = startSlot.plus(count).decrement();
-    final boolean blobSidecarsRequired = blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot);
-    return new RequestContext(startSlot, count, endSlot, blobSidecarsRequired);
+    return new RequestContext(startSlot, count, endSlot);
   }
 
   private static class RequestContext {
     private final UInt64 startSlot;
     private final UInt64 count;
     private final UInt64 endSlot;
-    private final boolean blobSidecarsRequired;
 
-    private RequestContext(
-        final UInt64 startSlot,
-        final UInt64 count,
-        final UInt64 endSlot,
-        final boolean blobSidecarsRequired) {
+    private RequestContext(final UInt64 startSlot, final UInt64 count, final UInt64 endSlot) {
       this.startSlot = startSlot;
       this.count = count;
       this.endSlot = endSlot;
-      this.blobSidecarsRequired = blobSidecarsRequired;
     }
   }
 
