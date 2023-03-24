@@ -41,6 +41,17 @@ public interface ConflictResolutionStrategy {
   void reportInvalidBatch(Batch batch, SyncSource source);
 
   /**
+   * Report that a batch is inconsistent so that any reputation changes can be applied. An
+   * inconsistent batch is still valid, so penalisation shouldn't be very harsh. For example, a peer
+   * could send blocks for a certain range, but then provide more blob sidecars than expected for
+   * the same range.
+   *
+   * @param batch the inconsistent batch
+   * @param source the source that provided the batch data
+   */
+  void reportInconsistentBatch(Batch batch, SyncSource source);
+
+  /**
    * Report that a batch was confirmed as part of the target chain. This is called before the blocks
    * are actually imported and only indicates that the first and last block matches the
    *

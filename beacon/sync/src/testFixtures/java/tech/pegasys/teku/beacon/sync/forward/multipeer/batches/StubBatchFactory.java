@@ -150,6 +150,9 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
     }
 
     @Override
+    public void reportInconsistentBatch(final Batch batch, final SyncSource source) {}
+
+    @Override
     public void reportConfirmedBatch(final Batch batch, final SyncSource source) {}
 
     @Override

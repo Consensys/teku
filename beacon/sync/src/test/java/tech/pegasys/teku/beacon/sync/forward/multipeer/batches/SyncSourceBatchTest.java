@@ -42,7 +42,6 @@ import tech.pegasys.teku.networking.eth2.peers.StubSyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
-import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -286,7 +285,7 @@ public class SyncSourceBatchTest {
   }
 
   @Test
-  void shouldApplyMinorPenaltyToPeerWhenUnexpectedBlobSidecarsWithRootsWereReceived() {
+  void shouldMarkBatchAsInconsistentWhenUnexpectedBlobSidecarsWithRootsWereReceived() {
     when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Batch batch = createBatch(10, 10);
@@ -312,8 +311,7 @@ public class SyncSourceBatchTest {
         .containsEntry(block.getRoot(), blobSidecars);
 
     // reputation of the peer should have been adjusted
-    assertThat(getSyncSource(batch).getReceivedReputationAdjustments())
-        .containsExactly(ReputationAdjustment.SMALL_PENALTY);
+    verify(conflictResolutionStrategy).reportInconsistentBatch(batch, getSyncSource(batch));
   }
 
   @Test
