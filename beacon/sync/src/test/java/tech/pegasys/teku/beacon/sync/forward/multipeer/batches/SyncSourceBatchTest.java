@@ -295,15 +295,15 @@ public class SyncSourceBatchTest {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(19);
 
-    final List<BlobSidecar> blobSidecars =
-        new ArrayList<>(dataStructureUtil.randomBlobSidecarsForBlock(block));
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecar> unexpectedBlobSidecars = new ArrayList<>(blobSidecars);
     // receiving sidecars with unknown roots
-    blobSidecars.addAll(
+    unexpectedBlobSidecars.addAll(
         dataStructureUtil.randomBlobSidecarsForBlock(
             dataStructureUtil.randomSignedBeaconBlock(18)));
 
     receiveBlocks(batch, block);
-    receiveBlobSidecars(batch, blobSidecars);
+    receiveBlobSidecars(batch, unexpectedBlobSidecars);
 
     assertThat(batch.isComplete()).isTrue();
     assertThat(batch.getBlocks()).containsExactly(block);

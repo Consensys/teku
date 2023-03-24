@@ -409,6 +409,7 @@ public class SyncSourceBatch implements Batch {
         }
       }
     }
+
     final SetView<Bytes32> unexpectedBlobSidecarsRoots =
         Sets.difference(newBlobSidecarsByBlockRoot.keySet(), blockRootsWithKzgCommitments);
     if (!unexpectedBlobSidecarsRoots.isEmpty()) {
@@ -417,6 +418,8 @@ public class SyncSourceBatch implements Batch {
           syncSource,
           unexpectedBlobSidecarsRoots);
       syncSource.adjustReputation(ReputationAdjustment.SMALL_PENALTY);
+      // clearing the unexpected blob sidecars from the batch
+      unexpectedBlobSidecarsRoots.immutableCopy().forEach(newBlobSidecarsByBlockRoot::remove);
     }
 
     return true;
