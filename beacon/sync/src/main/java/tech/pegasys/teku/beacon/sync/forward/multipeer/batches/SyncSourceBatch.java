@@ -410,16 +410,16 @@ public class SyncSourceBatch implements Batch {
       }
     }
 
-    final SetView<Bytes32> unexpectedBlobSidecarsRoots =
+    final SetView<Bytes32> unexpectedBlobSidecarsBlockRoots =
         Sets.difference(newBlobSidecarsByBlockRoot.keySet(), blockRootsWithKzgCommitments);
-    if (!unexpectedBlobSidecarsRoots.isEmpty()) {
+    if (!unexpectedBlobSidecarsBlockRoots.isEmpty()) {
       LOG.debug(
           "Applying minor penalty to peer {} because unexpected blob sidecars with roots {} were received",
           syncSource,
-          unexpectedBlobSidecarsRoots);
+          unexpectedBlobSidecarsBlockRoots);
       syncSource.adjustReputation(ReputationAdjustment.SMALL_PENALTY);
       // clearing the unexpected blob sidecars from the batch
-      unexpectedBlobSidecarsRoots.immutableCopy().forEach(newBlobSidecarsByBlockRoot::remove);
+      unexpectedBlobSidecarsBlockRoots.immutableCopy().forEach(newBlobSidecarsByBlockRoot::remove);
     }
 
     return true;
