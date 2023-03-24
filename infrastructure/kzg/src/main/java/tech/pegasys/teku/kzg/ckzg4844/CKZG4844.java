@@ -166,7 +166,7 @@ public final class CKZG4844 implements KZG {
       throws KZGException {
     try {
       final byte[] proof =
-          CKZG4844JNI.computeBlobKzgProof(blob.toArrayUnsafe(), kzgCommitment.toArray());
+          CKZG4844JNI.computeBlobKzgProof(blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe());
       return KZGProof.fromArray(proof);
     } catch (final Exception ex) {
       throw new KZGException(
