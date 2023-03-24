@@ -89,10 +89,10 @@ public class ExecutionLayerConfigurationTest {
   }
 
   @Test
-  public void exchangeCapabilitiesToggleIsOffByDefault() {
+  public void exchangeCapabilitiesToggleIsEnabledByDefault() {
     final ExecutionLayerConfiguration config = configBuilder.build();
 
-    assertThat(config.isExchangeCapabilitiesEnabled()).isFalse();
+    assertThat(config.isExchangeCapabilitiesEnabled()).isTrue();
   }
 
   @Test
