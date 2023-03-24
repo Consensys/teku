@@ -34,6 +34,8 @@ public class StubSyncSource implements SyncSource {
   private final List<Request> blocksRequests = new ArrayList<>();
   private final List<Request> blobSidecarsRequests = new ArrayList<>();
 
+  private final List<ReputationAdjustment> reputationAdjustments = new ArrayList<>();
+
   private Optional<SafeFuture<Void>> currentBlockRequest = Optional.empty();
   private Optional<RpcResponseListener<SignedBeaconBlock>> currentBlockListener = Optional.empty();
 
@@ -96,8 +98,14 @@ public class StubSyncSource implements SyncSource {
         .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
   }
 
+  public List<ReputationAdjustment> getReceivedReputationAdjustments() {
+    return reputationAdjustments;
+  }
+
   @Override
-  public void adjustReputation(final ReputationAdjustment adjustment) {}
+  public void adjustReputation(final ReputationAdjustment adjustment) {
+    reputationAdjustments.add(adjustment);
+  }
 
   private static final class Request {
     private final UInt64 start;

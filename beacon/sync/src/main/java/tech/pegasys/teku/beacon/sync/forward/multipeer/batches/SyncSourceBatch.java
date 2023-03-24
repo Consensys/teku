@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -252,7 +253,8 @@ public class SyncSourceBatch implements Batch {
 
     SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest)
         .thenRunAsync(
-            () -> onRequestComplete(blockRequestHandler, maybeBlobSidecarRequestHandler),
+            () ->
+                onRequestComplete(syncSource, blockRequestHandler, maybeBlobSidecarRequestHandler),
             eventThread)
         .handleAsync(
             (__, error) -> {
@@ -299,6 +301,7 @@ public class SyncSourceBatch implements Batch {
   }
 
   private void onRequestComplete(
+      final SyncSource syncSource,
       final BlockRequestHandler blockRequestHandler,
       final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler) {
     eventThread.checkOnEventThread();
@@ -315,7 +318,7 @@ public class SyncSourceBatch implements Batch {
     if (maybeBlobSidecarRequestHandler.isPresent()) {
       final Map<Bytes32, List<BlobSidecar>> newBlobSidecarsByBlockRoot =
           maybeBlobSidecarRequestHandler.get().complete();
-      if (!validateNewBlobSidecars(newBlocks, newBlobSidecarsByBlockRoot)) {
+      if (!validateNewBlobSidecars(syncSource, newBlocks, newBlobSidecarsByBlockRoot)) {
         markAsInvalid();
         return;
       }
@@ -367,6 +370,7 @@ public class SyncSourceBatch implements Batch {
   }
 
   private boolean validateNewBlobSidecars(
+      final SyncSource syncSource,
       final List<SignedBeaconBlock> newBlocks,
       final Map<Bytes32, List<BlobSidecar>> newBlobSidecarsByBlockRoot) {
     final Set<Bytes32> blockRootsWithKzgCommitments = new HashSet<>(newBlocks.size());
@@ -409,9 +413,10 @@ public class SyncSourceBatch implements Batch {
         Sets.difference(newBlobSidecarsByBlockRoot.keySet(), blockRootsWithKzgCommitments);
     if (!unexpectedBlobSidecarsRoots.isEmpty()) {
       LOG.debug(
-          "Marking batch invalid because unexpected blob sidecars with roots {} were received",
+          "Applying minor penalty to peer {} because unexpected blob sidecars with roots {} were received",
+          syncSource,
           unexpectedBlobSidecarsRoots);
-      return false;
+      syncSource.adjustReputation(ReputationAdjustment.SMALL_PENALTY);
     }
 
     return true;
