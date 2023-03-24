@@ -22,9 +22,10 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 public class Eth1Address extends Bytes20 {
+  private static final String ZERO_ADDRESS_STRING = "0x0000000000000000000000000000000000000000";
+  private static final int HEX_ADDRESS_STRING_LENGTH = ZERO_ADDRESS_STRING.length();
 
-  public static final Eth1Address ZERO =
-      new Eth1Address("0x0000000000000000000000000000000000000000");
+  public static final Eth1Address ZERO = new Eth1Address(ZERO_ADDRESS_STRING);
 
   private final String encodedAddress;
 
@@ -39,7 +40,7 @@ public class Eth1Address extends Bytes20 {
 
   private Eth1Address(Bytes bytes) {
     super(bytes);
-    String value = bytes.toHexString();
+    final String value = bytes.toHexString();
     this.encodedAddress = toChecksumAddress(value);
     validate(value);
   }
@@ -74,21 +75,21 @@ public class Eth1Address extends Bytes20 {
    * @return The encoded address with mixed-case checksum.
    */
   private static String toChecksumAddress(String value) {
-    String address = value.replace("0x", "").toLowerCase();
-    String hashString =
+    final String address = value.replace("0x", "").toLowerCase();
+    final String hashString =
         Hash.keccak256(Bytes.wrap(address.getBytes(StandardCharsets.US_ASCII)))
             .toString()
             .replace("0x", "");
-    String ret = "0x";
+    final StringBuilder ret = new StringBuilder(HEX_ADDRESS_STRING_LENGTH).append("0x");
     for (int i = 0; i < address.length(); i++) {
-      String letter = String.valueOf(hashString.charAt(i));
+      final String letter = String.valueOf(hashString.charAt(i));
       if (Integer.parseInt(letter, 16) >= 8) {
-        ret += Character.toUpperCase(address.charAt(i));
+        ret.append(Character.toUpperCase(address.charAt(i)));
       } else {
-        ret += address.charAt(i);
+        ret.append(address.charAt(i));
       }
     }
-    return ret;
+    return ret.toString();
   }
 
   @Override
