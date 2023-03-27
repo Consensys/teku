@@ -91,6 +91,11 @@ public class StubSyncSource implements SyncSource {
         .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
   }
 
+  public void assertRequestedBlobSidecars(final long startSlot, final long count) {
+    assertThat(blobSidecarsRequests)
+        .contains(new Request(UInt64.valueOf(startSlot), UInt64.valueOf(count)));
+  }
+
   @Override
   public void adjustReputation(final ReputationAdjustment adjustment) {}
 

@@ -64,6 +64,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final StorageUpdateChannel storageUpdateChannel;
   private final Eth2P2PNetwork p2pNetwork;
   private final BlockImporter blockImporter;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
@@ -82,6 +83,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final StorageUpdateChannel storageUpdateChannel,
       final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
+      final BlobsSidecarManager blobsSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
@@ -98,6 +100,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.storageUpdateChannel = storageUpdateChannel;
     this.p2pNetwork = p2pNetwork;
     this.blockImporter = blockImporter;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.pendingBlocks = pendingBlocks;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
@@ -168,6 +171,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               pendingBlocks,
               p2pNetwork,
               blockImporter,
+              blobsSidecarManager,
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -178,8 +182,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               p2pNetwork,
               recentChainData,
               blockImporter,
-              // TODO: change to the real value when renamed and initialized
-              BlobsSidecarManager.NOOP,
+              blobsSidecarManager,
               spec);
     }
     return forwardSync;
