@@ -100,9 +100,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
     final ProgressiveTotalBalancesUpdates progressiveTotalBalances =
         transitionCaches.getProgressiveTotalBalances();
-    progressiveTotalBalances.checkResult(specConfig, state.getSlot(), totalBalances);
+
     progressiveTotalBalances.onEpochTransition(validatorStatuses.getStatuses());
-    processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
+    processJustificationAndFinalization(state, totalBalances);
     processInactivityUpdates(state, validatorStatuses);
     processRewardsAndPenalties(state, validatorStatuses);
     processRegistryUpdates(state, validatorStatuses.getStatuses());

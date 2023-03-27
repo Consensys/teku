@@ -196,6 +196,6 @@ public class EpochTransitionBenchmark {
     EpochTransitionBenchmark benchmark = new EpochTransitionBenchmark();
     benchmark.init();
 
-    new CustomRunner(20, 100000).withBench(benchmark::epochTransition).run();
+    new CustomRunner(1, 100).withBench(benchmark::createValidatorStatuses).run();
   }
 }
