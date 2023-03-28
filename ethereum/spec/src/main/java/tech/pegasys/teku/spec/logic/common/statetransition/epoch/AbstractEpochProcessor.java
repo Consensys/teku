@@ -306,6 +306,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       SszMutableList<Validator> validators = state.getValidators();
       final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(state);
       final UInt64 finalizedEpoch = state.getFinalizedCheckpoint().getEpoch();
+      final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
+      final UInt64 ejectionBalance = specConfig.getEjectionBalance();
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
@@ -314,9 +316,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         // or if effective balance is too low.  Only get the validator if both those checks pass to
         // confirm it isn't already in the queue.
         if (!status.isActiveInCurrentEpoch()
-            && status
-                .getCurrentEpochEffectiveBalance()
-                .equals(specConfig.getMaxEffectiveBalance())) {
+            && status.getCurrentEpochEffectiveBalance().equals(maxEffectiveBalance)) {
           final Validator validator = validators.get(index);
           if (validator.getActivationEligibilityEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH)) {
             validators.set(
@@ -325,9 +325,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         }
 
         if (status.isActiveInCurrentEpoch()
-            && status
-                .getCurrentEpochEffectiveBalance()
-                .isLessThanOrEqualTo(specConfig.getEjectionBalance())) {
+            && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(ejectionBalance)) {
           beaconStateMutators.initiateValidatorExit(state, index);
         }
       }
@@ -426,23 +424,30 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   public void processEffectiveBalanceUpdates(
       final MutableBeaconState state, final List<ValidatorStatus> statuses) {
     // Update effective balances with hysteresis
-    SszMutableList<Validator> validators = state.getValidators();
-    SszUInt64List balances = state.getBalances();
+    final SszMutableList<Validator> validators = state.getValidators();
+    final SszUInt64List balances = state.getBalances();
+    final UInt64 hysteresisUpwardMultiplier = specConfig.getHysteresisUpwardMultiplier();
+    final UInt64 hysteresisDownwardMultiplier = specConfig.getHysteresisDownwardMultiplier();
+    final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
+    final UInt64 hysteresisQuotient = specConfig.getHysteresisQuotient();
+    final UInt64 effectiveBalanceIncrement = specConfig.getEffectiveBalanceIncrement();
     for (int index = 0; index < validators.size(); index++) {
-      ValidatorStatus status = statuses.get(index);
-      UInt64 balance = balances.getElement(index);
+      final ValidatorStatus status = statuses.get(index);
+      final UInt64 balance = balances.getElement(index);
 
-      final UInt64 hysteresisIncrement =
-          specConfig.getEffectiveBalanceIncrement().dividedBy(specConfig.getHysteresisQuotient());
+      final UInt64 hysteresisIncrement = effectiveBalanceIncrement.dividedBy(hysteresisQuotient);
       final UInt64 currentEffectiveBalance = status.getCurrentEpochEffectiveBalance();
-      if (shouldDecreaseEffectiveBalance(balance, hysteresisIncrement, currentEffectiveBalance)
+      if (shouldDecreaseEffectiveBalance(
+              balance, hysteresisIncrement, currentEffectiveBalance, hysteresisDownwardMultiplier)
           || shouldIncreaseEffectiveBalance(
-              balance, hysteresisIncrement, currentEffectiveBalance)) {
-        Validator validator = validators.get(index);
+              balance,
+              hysteresisIncrement,
+              currentEffectiveBalance,
+              hysteresisUpwardMultiplier,
+              maxEffectiveBalance)) {
+        final Validator validator = validators.get(index);
         final UInt64 newEffectiveBalance =
-            balance
-                .minus(balance.mod(specConfig.getEffectiveBalanceIncrement()))
-                .min(specConfig.getMaxEffectiveBalance());
+            balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance);
         BeaconStateCache.getTransitionCaches(state)
             .getProgressiveTotalBalances()
             .onEffectiveBalanceChange(status, newEffectiveBalance);
@@ -454,21 +459,22 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   private boolean shouldIncreaseEffectiveBalance(
       final UInt64 balance,
       final UInt64 hysteresisIncrement,
-      final UInt64 currentEffectiveBalance) {
-    final UInt64 upwardThreshold =
-        hysteresisIncrement.times(specConfig.getHysteresisUpwardMultiplier());
+      final UInt64 currentEffectiveBalance,
+      final UInt64 hysteresisUpwardMultiplier,
+      final UInt64 maxEffectiveBalance) {
+    final UInt64 upwardThreshold = hysteresisIncrement.times(hysteresisUpwardMultiplier);
     // This condition doesn't match the spec but is an optimisation to avoid creating a new
     // validator with the same effective balance when it's already at the maximum.
-    return !currentEffectiveBalance.equals(specConfig.getMaxEffectiveBalance())
+    return !currentEffectiveBalance.equals(maxEffectiveBalance)
         && currentEffectiveBalance.plus(upwardThreshold).isLessThan(balance);
   }
 
   private boolean shouldDecreaseEffectiveBalance(
       final UInt64 balance,
       final UInt64 hysteresisIncrement,
-      final UInt64 currentEffectiveBalance) {
-    final UInt64 downwardThreshold =
-        hysteresisIncrement.times(specConfig.getHysteresisDownwardMultiplier());
+      final UInt64 currentEffectiveBalance,
+      final UInt64 hysteresisDownwardMultiplier) {
+    final UInt64 downwardThreshold = hysteresisIncrement.times(hysteresisDownwardMultiplier);
     return balance.plus(downwardThreshold).isLessThan(currentEffectiveBalance);
   }
 

@@ -73,8 +73,8 @@ public class NoopSyncService
   public void unsubscribeFromSyncChanges(final long subscriberId) {}
 
   @Override
-  public long subscribeBlockFetched(final BlockSubscriber subscriber) {
-    return 0;
+  public void subscribeBlockFetched(final BlockSubscriber subscriber) {
+    // No-op
   }
 
   @Override
