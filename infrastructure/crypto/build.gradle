@@ -2,6 +2,7 @@ dependencies {
   api 'org.bouncycastle:bcprov-jdk15on'
   api 'org.apache.tuweni:tuweni-bytes'
 
+  implementation 'software.amazon.cryptools:AmazonCorrettoCryptoProvider:2.+:linux-x86_64'
 
   jmhImplementation 'org.bouncycastle:bcprov-jdk15on'
   jmhImplementation project(':infrastructure:crypto')

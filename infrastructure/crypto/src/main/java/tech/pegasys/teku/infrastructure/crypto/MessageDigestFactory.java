@@ -17,9 +17,14 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
+
+import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import static com.amazon.corretto.crypto.provider.SelfTestStatus.PASSED;
+import static com.google.common.base.Preconditions.checkState;
 
 public class MessageDigestFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -61,12 +66,27 @@ public class MessageDigestFactory {
    */
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
   private static Provider selectSha256SecurityProvider() {
+    com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
+    final Provider amazonProvider = Security.getProvider(AmazonCorrettoCryptoProvider.PROVIDER_NAME);
+    if(amazonProvider != null) {
+      try {
+        MessageDigest.getInstance(SHA_256, amazonProvider);
+        checkState(((AmazonCorrettoCryptoProvider)amazonProvider).runSelfTests().equals(PASSED),"self test not passed");
+        printSha256ProviderInfo(amazonProvider);
+        return amazonProvider;
+      } catch (Throwable t) {
+        LOG.info(
+                "Amazon Corretto security provider available but does not support SHA-256, falling back to SUN security provider.",
+                t);
+      }
+    }
     final Provider sunProvider = Security.getProvider("SUN");
     if (sunProvider == null) {
       return new BouncyCastleProvider();
     }
     try {
       MessageDigest.getInstance(SHA_256, sunProvider);
+      printSha256ProviderInfo(sunProvider);
       return sunProvider;
     } catch (final Throwable t) {
       LOG.warn(
@@ -74,5 +94,11 @@ public class MessageDigestFactory {
           t);
       return BOUNCY_CASTLE_PROVIDER;
     }
+  }
+
+  private static void printSha256ProviderInfo(final Provider amazonProvider) {
+    System.out.println("Sha256Provider: " + amazonProvider.getName());
+    System.out.println("Sha256Provider info: " + amazonProvider.getInfo());
+    System.out.println("Sha256Provider data: " + amazonProvider);
   }
 }
