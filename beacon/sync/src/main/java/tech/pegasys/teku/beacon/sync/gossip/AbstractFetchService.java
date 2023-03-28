@@ -37,14 +37,13 @@ public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>,
 
   private static final Logger LOG = LogManager.getLogger();
 
-  protected static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(30);
-
+  private static final Duration WAIT_FOR_PEERS_DURATION = Duration.ofSeconds(30);
   private static final RetryDelayFunction RETRY_DELAY_FUNCTION =
       RetryDelayFunction.createExponentialRetry(2, Duration.ofSeconds(5), Duration.ofMinutes(5));
 
   protected final Map<K, T> allTasks = new ConcurrentHashMap<>();
-  protected final Queue<T> pendingTasks = new ConcurrentLinkedQueue<>();
 
+  private final Queue<T> pendingTasks = new ConcurrentLinkedQueue<>();
   private final Collection<T> activeTasks = new ConcurrentLinkedQueue<>();
 
   private final AsyncRunner asyncRunner;

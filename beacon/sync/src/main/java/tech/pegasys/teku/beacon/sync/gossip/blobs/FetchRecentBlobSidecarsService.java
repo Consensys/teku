@@ -27,7 +27,8 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 
 public class FetchRecentBlobSidecarsService
     extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecar>
-    implements RecentBlobSidecarFetcherService {
+    implements RecentBlobSidecarFetcher {
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;

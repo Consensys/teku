@@ -28,7 +28,7 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksService
     extends AbstractFetchService<Bytes32, FetchBlockTask, SignedBeaconBlock>
-    implements RecentBlockFetcherService {
+    implements RecentBlockFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
 

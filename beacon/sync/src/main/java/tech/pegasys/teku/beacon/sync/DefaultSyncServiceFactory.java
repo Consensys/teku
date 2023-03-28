@@ -119,11 +119,11 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     final FetchTaskFactory fetchTaskFactory = new DefaultFetchTaskFactory(p2pNetwork);
 
-    final FetchRecentBlocksService recentBlockFetcher =
+    final FetchRecentBlocksService fetchRecentBlocksService =
         FetchRecentBlocksService.create(
             asyncRunner, pendingBlocks, forwardSyncService, fetchTaskFactory);
 
-    final FetchRecentBlobSidecarsService recentBlobSidecarsFetcher =
+    final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService =
         FetchRecentBlobSidecarsService.create(asyncRunner, forwardSyncService, fetchTaskFactory);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
@@ -135,8 +135,8 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     return new DefaultSyncService(
         forwardSyncService,
-        recentBlockFetcher,
-        recentBlobSidecarsFetcher,
+        fetchRecentBlocksService,
+        fetchRecentBlobSidecarsService,
         syncStateTracker,
         historicalBlockSyncService);
   }

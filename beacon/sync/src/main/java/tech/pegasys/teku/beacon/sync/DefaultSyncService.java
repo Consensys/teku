@@ -17,31 +17,32 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.FetchRecentBlobSidecarsService;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
-import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcherService;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcher;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcherService;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 
 public class DefaultSyncService extends Service implements SyncService {
+
   private final ForwardSyncService forwardSyncService;
-  private final RecentBlockFetcherService blockFetcherService;
-  private final RecentBlobSidecarFetcherService blobSidecarFetcherService;
+  private final FetchRecentBlocksService fetchRecentBlocksService;
+  private final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService;
   private final SyncStateTracker syncStateTracker;
   private final HistoricalBlockSyncService historicalBlockSyncService;
 
   public DefaultSyncService(
       final ForwardSyncService forwardSyncService,
-      final RecentBlockFetcherService blockFetcherService,
-      final RecentBlobSidecarFetcherService blobSidecarFetcherService,
+      final FetchRecentBlocksService fetchRecentBlocksService,
+      final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService,
       final SyncStateTracker syncStateTracker,
       final HistoricalBlockSyncService historicalBlockSyncService) {
     this.forwardSyncService = forwardSyncService;
-    this.blockFetcherService = blockFetcherService;
-    this.blobSidecarFetcherService = blobSidecarFetcherService;
+    this.fetchRecentBlocksService = fetchRecentBlocksService;
+    this.fetchRecentBlobSidecarsService = fetchRecentBlobSidecarsService;
     this.syncStateTracker = syncStateTracker;
     this.historicalBlockSyncService = historicalBlockSyncService;
   }
@@ -50,8 +51,8 @@ public class DefaultSyncService extends Service implements SyncService {
   protected SafeFuture<?> doStart() {
     return SafeFuture.allOfFailFast(
         forwardSyncService.start(),
-        blockFetcherService.start(),
-        blobSidecarFetcherService.start(),
+        fetchRecentBlocksService.start(),
+        fetchRecentBlobSidecarsService.start(),
         syncStateTracker.start(),
         historicalBlockSyncService.start());
   }
@@ -60,8 +61,8 @@ public class DefaultSyncService extends Service implements SyncService {
   protected SafeFuture<?> doStop() {
     return SafeFuture.allOf(
         forwardSyncService.stop(),
-        blockFetcherService.stop(),
-        blobSidecarFetcherService.stop(),
+        fetchRecentBlocksService.stop(),
+        fetchRecentBlobSidecarsService.stop(),
         syncStateTracker.stop(),
         historicalBlockSyncService.stop());
   }
@@ -73,12 +74,12 @@ public class DefaultSyncService extends Service implements SyncService {
 
   @Override
   public RecentBlockFetcher getRecentBlockFetcher() {
-    return blockFetcherService;
+    return fetchRecentBlocksService;
   }
 
   @Override
   public RecentBlobSidecarFetcher getRecentBlobSidecarFetcher() {
-    return blobSidecarFetcherService;
+    return fetchRecentBlobSidecarsService;
   }
 
   @Override
