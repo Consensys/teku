@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.gossip.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,7 +78,7 @@ public class FetchRecentBlocksServiceTest {
     Bytes32 blockRoot = invocationOnMock.getArgument(0);
     final FetchBlockTask task = mock(FetchBlockTask.class);
 
-    lenient().when(task.getBlockRoot()).thenReturn(blockRoot);
+    lenient().when(task.getKey()).thenReturn(blockRoot);
     lenient().when(task.getNumberOfRetries()).thenReturn(0);
     final SafeFuture<FetchResult<SignedBeaconBlock>> future = new SafeFuture<>();
     lenient().when(task.run()).thenReturn(future);
@@ -260,7 +260,7 @@ public class FetchRecentBlocksServiceTest {
     syncSubscriber.onSyncingChange(false);
     assertTaskCounts(2, 2, 0);
     final Set<Bytes32> requestingRoots =
-        tasks.stream().map(FetchBlockTask::getBlockRoot).collect(Collectors.toSet());
+        tasks.stream().map(FetchBlockTask::getKey).collect(Collectors.toSet());
     assertThat(requestingRoots).containsExactlyInAnyOrderElementsOf(requestingRoots);
   }
 

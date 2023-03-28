@@ -11,13 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.gossip.blocks;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import org.apache.tuweni.bytes.Bytes32;
 
-public interface RecentBlockFetcherService extends RecentBlockFetcher {
+public interface RecentBlockFetcher {
 
-  SafeFuture<?> start();
+  void subscribeBlockFetched(BlockSubscriber subscriber);
 
-  SafeFuture<?> stop();
+  void requestRecentBlock(Bytes32 blockRoot);
+
+  void cancelRecentBlockRequest(Bytes32 blockRoot);
 }

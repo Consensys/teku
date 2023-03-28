@@ -22,7 +22,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-public class FetchBlockTask extends AbstractFetchTask<SignedBeaconBlock> {
+public class FetchBlockTask extends AbstractFetchTask<Bytes32, SignedBeaconBlock> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -33,7 +33,8 @@ public class FetchBlockTask extends AbstractFetchTask<SignedBeaconBlock> {
     this.blockRoot = blockRoot;
   }
 
-  public Bytes32 getBlockRoot() {
+  @Override
+  public Bytes32 getKey() {
     return blockRoot;
   }
 

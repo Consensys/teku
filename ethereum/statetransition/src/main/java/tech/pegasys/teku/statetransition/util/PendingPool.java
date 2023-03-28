@@ -249,21 +249,13 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
         .collect(Collectors.toList());
   }
 
-  public long subscribeRequiredBlockRoot(final RequiredBlockRootSubscriber subscriber) {
-    return requiredBlockRootSubscribers.subscribe(subscriber);
+  public void subscribeRequiredBlockRoot(final RequiredBlockRootSubscriber subscriber) {
+    requiredBlockRootSubscribers.subscribe(subscriber);
   }
 
-  public boolean unsubscribeRequiredBlockRoot(final long subscriberId) {
-    return requiredBlockRootSubscribers.unsubscribe(subscriberId);
-  }
-
-  public long subscribeRequiredBlockRootDropped(
+  public void subscribeRequiredBlockRootDropped(
       final RequiredBlockRootDroppedSubscriber subscriber) {
-    return requiredBlockRootDroppedSubscribers.subscribe(subscriber);
-  }
-
-  public boolean unsubscribeRequiredBlockRootDropped(final long subscriberId) {
-    return requiredBlockRootDroppedSubscribers.unsubscribe(subscriberId);
+    requiredBlockRootDroppedSubscribers.subscribe(subscriber);
   }
 
   @Override

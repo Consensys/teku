@@ -26,7 +26,8 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
-import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.FetchRecentBlobSidecarsService;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -122,6 +123,9 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         FetchRecentBlocksService.create(
             asyncRunner, pendingBlocks, forwardSyncService, fetchTaskFactory);
 
+    final FetchRecentBlobSidecarsService recentBlobSidecarsFetcher =
+        FetchRecentBlobSidecarsService.create(asyncRunner, forwardSyncService, fetchTaskFactory);
+
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 
     eventChannels.subscribe(ExecutionClientEventsChannel.class, syncStateTracker);
@@ -130,7 +134,11 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         createHistoricalSyncService(syncStateTracker);
 
     return new DefaultSyncService(
-        forwardSyncService, recentBlockFetcher, syncStateTracker, historicalBlockSyncService);
+        forwardSyncService,
+        recentBlockFetcher,
+        recentBlobSidecarsFetcher,
+        syncStateTracker,
+        historicalBlockSyncService);
   }
 
   protected HistoricalBlockSyncService createHistoricalSyncService(

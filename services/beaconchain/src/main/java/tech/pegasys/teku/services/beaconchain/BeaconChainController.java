@@ -45,6 +45,8 @@ import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -292,16 +294,22 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void startServices() {
-    syncService
-        .getRecentBlockFetcher()
-        .subscribeBlockFetched(
-            (block) ->
-                blockManager
-                    .importBlock(block)
-                    .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
+    final RecentBlockFetcher recentBlockFetcher = syncService.getRecentBlockFetcher();
+    recentBlockFetcher.subscribeBlockFetched(
+        (block) ->
+            blockManager
+                .importBlock(block)
+                .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
-        (block, executionOptimistic) ->
-            syncService.getRecentBlockFetcher().cancelRecentBlockRequest(block.getRoot()));
+        (block, __) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
+    final RecentBlobSidecarFetcher recentBlobSidecarFetcher =
+        syncService.getRecentBlobSidecarFetcher();
+    recentBlobSidecarFetcher.subscribeBlobSidecarFetched(
+        (blobSidecar) ->
+            blobsSidecarManager
+                .importBlobSidecar(blobSidecar)
+                .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
+    // TODO: add subscription to received blob sidecars and cancel requests similar to blocks
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),

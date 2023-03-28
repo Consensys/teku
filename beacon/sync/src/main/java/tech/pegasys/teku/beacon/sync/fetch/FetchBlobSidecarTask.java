@@ -22,7 +22,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public class FetchBlobSidecarTask extends AbstractFetchTask<BlobSidecar> {
+public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, BlobSidecar> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -34,7 +34,8 @@ public class FetchBlobSidecarTask extends AbstractFetchTask<BlobSidecar> {
     this.blobIdentifier = blobIdentifier;
   }
 
-  public BlobIdentifier getBlobIdentifier() {
+  @Override
+  public BlobIdentifier getKey() {
     return blobIdentifier;
   }
 
