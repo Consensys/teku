@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 
-public class BlsToExecutionOperationPoolTest {
+public class MappedOperationPoolTest {
 
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -62,7 +62,7 @@ public class BlsToExecutionOperationPoolTest {
               .andThen(Optional::orElseThrow)
               .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema);
   private final OperationPool<SignedBlsToExecutionChange> pool =
-      new BlsToExecutionOperationPool(
+      new MappedOperationPool<>(
           "BlsToExecutionOperationPool", metricsSystem, blsToExecutionSchemaSupplier, validator);
 
   @BeforeEach

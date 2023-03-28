@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -42,7 +43,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
   private final OperationPool<AttesterSlashing> attesterSlashingPool;
   private final AttestationManager attestationManager;
   private final AggregatingAttestationPool attestationPool;
-  private final BlsToExecutionOperationPool blsToExecutionOperationPool;
+  private final MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool;
   private final RecentChainData recentChainData;
 
   public OperationsReOrgManager(
@@ -51,7 +52,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
       final OperationPool<SignedVoluntaryExit> exitPool,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
-      final BlsToExecutionOperationPool blsToExecutionOperationPool,
+      final MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool,
       final RecentChainData recentChainData) {
     this.exitPool = exitPool;
     this.proposerSlashingPool = proposerSlashingPool;
