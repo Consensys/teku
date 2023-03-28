@@ -18,10 +18,12 @@ import static org.mockito.Mockito.mock;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public class DefaultFetchBlockTaskFactoryTest {
+public class DefaultFetchTaskFactoryTest {
 
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Eth2Peer> eth2Network = mock(P2PNetwork.class);
@@ -31,6 +33,13 @@ public class DefaultFetchBlockTaskFactoryTest {
   @Test
   public void createsFetchBlockTask() {
     final FetchBlockTask task = fetchTaskFactory.createFetchBlockTask(Bytes32.ZERO);
+    assertThat(task).isNotNull();
+  }
+
+  @Test
+  public void createsFetchBlobSidecarTask() {
+    final FetchBlobSidecarTask task =
+        fetchTaskFactory.createFetchBlobSidecarTask(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO));
     assertThat(task).isNotNull();
   }
 }

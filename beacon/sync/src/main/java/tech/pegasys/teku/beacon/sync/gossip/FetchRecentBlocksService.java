@@ -23,8 +23,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
+import tech.pegasys.teku.beacon.sync.fetch.FetchResult;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.RetryDelayFunction;
@@ -89,8 +89,8 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
   }
 
   @Override
-  public long subscribeBlockFetched(final BlockSubscriber subscriber) {
-    return blockSubscribers.subscribe(subscriber);
+  public void subscribeBlockFetched(final BlockSubscriber subscriber) {
+    blockSubscribers.subscribe(subscriber);
   }
 
   private void setupSubscribers() {
@@ -159,10 +159,11 @@ public class FetchRecentBlocksService extends Service implements RecentBlockFetc
         .always(() -> deregisterActiveTask(task));
   }
 
-  private void processFetchResult(final FetchBlockTask task, final FetchBlockResult result) {
+  private void processFetchResult(
+      final FetchBlockTask task, final FetchResult<SignedBeaconBlock> result) {
     switch (result.getStatus()) {
       case SUCCESSFUL:
-        handleFetchedBlock(task, result.getBlock().orElseThrow());
+        handleFetchedBlock(task, result.getResult().orElseThrow());
         break;
       case NO_AVAILABLE_PEERS:
         // Wait a bit and then requeue
