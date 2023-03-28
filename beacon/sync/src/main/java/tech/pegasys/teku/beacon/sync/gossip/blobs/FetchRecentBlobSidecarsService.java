@@ -74,6 +74,11 @@ public class FetchRecentBlobSidecarsService
 
   @Override
   public void requestRecentBlobSidecar(final BlobIdentifier blobIdentifier) {
+    if (forwardSync.isSyncActive()) {
+      // Forward sync already in progress, assume it will fetch any missing blob sidecars
+      return;
+    }
+    // TODO: add a check that pending does not have this blob sidecar
     final FetchBlobSidecarTask task = createTask(blobIdentifier);
     if (allTasks.putIfAbsent(blobIdentifier, task) != null) {
       // We're already tracking this task
@@ -81,6 +86,7 @@ public class FetchRecentBlobSidecarsService
       return;
     }
     LOG.trace("Queue blob sidecar to be fetched: {}", blobIdentifier);
+    queueTask(task);
   }
 
   @Override
@@ -97,7 +103,7 @@ public class FetchRecentBlobSidecarsService
     if (syncActive) {
       return;
     }
-    // TODO: implement
+    // TODO: implement similar to FetchRecentBlocksService
   }
 
   @Override
