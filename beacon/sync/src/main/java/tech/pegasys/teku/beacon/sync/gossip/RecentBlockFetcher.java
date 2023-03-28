@@ -17,7 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 
 public interface RecentBlockFetcher {
 
-  long subscribeBlockFetched(BlockSubscriber subscriber);
+  void subscribeBlockFetched(BlockSubscriber subscriber);
 
   void requestRecentBlock(Bytes32 blockRoot);
 
