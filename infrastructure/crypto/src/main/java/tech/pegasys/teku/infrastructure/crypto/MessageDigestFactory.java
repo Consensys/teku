@@ -13,18 +13,17 @@
 
 package tech.pegasys.teku.infrastructure.crypto;
 
+import static com.amazon.corretto.crypto.provider.SelfTestStatus.PASSED;
+import static com.google.common.base.Preconditions.checkState;
+
+import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
-
-import com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import static com.amazon.corretto.crypto.provider.SelfTestStatus.PASSED;
-import static com.google.common.base.Preconditions.checkState;
 
 public class MessageDigestFactory {
   private static final Logger LOG = LogManager.getLogger();
@@ -66,18 +65,21 @@ public class MessageDigestFactory {
    */
   @SuppressWarnings("DoNotInvokeMessageDigestDirectly")
   private static Provider selectSha256SecurityProvider() {
-    com.amazon.corretto.crypto.provider.AmazonCorrettoCryptoProvider.install();
-    final Provider amazonProvider = Security.getProvider(AmazonCorrettoCryptoProvider.PROVIDER_NAME);
-    if(amazonProvider != null) {
+    AmazonCorrettoCryptoProvider.install();
+    final Provider amazonProvider =
+        Security.getProvider(AmazonCorrettoCryptoProvider.PROVIDER_NAME);
+    if (amazonProvider != null) {
       try {
         MessageDigest.getInstance(SHA_256, amazonProvider);
-        checkState(((AmazonCorrettoCryptoProvider)amazonProvider).runSelfTests().equals(PASSED),"self test not passed");
+        checkState(
+            ((AmazonCorrettoCryptoProvider) amazonProvider).runSelfTests().equals(PASSED),
+            "self test not passed");
         printSha256ProviderInfo(amazonProvider);
         return amazonProvider;
       } catch (Throwable t) {
         LOG.info(
-                "Amazon Corretto security provider available but does not support SHA-256, falling back to SUN security provider.",
-                t);
+            "Amazon Corretto security provider available but does not support SHA-256, falling back to SUN security provider.",
+            t);
       }
     }
     final Provider sunProvider = Security.getProvider("SUN");
