@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.gossip;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
@@ -137,6 +136,18 @@ public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>,
     queueTaskWithDelay(task, delay);
   }
 
+  public int countPendingTasks() {
+    return pendingTasks.size();
+  }
+
+  public int countActiveTasks() {
+    return activeTasks.size();
+  }
+
+  public int countTrackedTasks() {
+    return allTasks.size();
+  }
+
   private void registerActiveTask(final T task) {
     LOG.trace("{} {}", getTaskName(task), task.getKey());
     activeTasks.add(task);
@@ -154,19 +165,4 @@ public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>,
   public abstract T createTask(K key);
 
   public abstract void processFetchedResult(T task, R result);
-
-  @VisibleForTesting
-  public int countPendingTasks() {
-    return pendingTasks.size();
-  }
-
-  @VisibleForTesting
-  public int countActiveTasks() {
-    return activeTasks.size();
-  }
-
-  @VisibleForTesting
-  public int countTrackedTasks() {
-    return allTasks.size();
-  }
 }
