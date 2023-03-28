@@ -26,8 +26,6 @@ public final class UInt64 implements Comparable<UInt64> {
   private static final long HIGH_MASK = 0xffffffff00000000L;
   private static final long LOW_MASK = 0x00000000ffffffffL;
 
-  public static final int BYTES = 8;
-
   public static final UInt64 ZERO = new UInt64(0);
   public static final UInt64 ONE = new UInt64(1);
   public static final UInt64 MAX_VALUE = new UInt64(-1L);
@@ -106,7 +104,7 @@ public final class UInt64 implements Comparable<UInt64> {
    * @return The result of incrementing this value by 1.
    */
   public UInt64 increment() {
-    return plus(1);
+    return plus(value, 1);
   }
 
   /**
@@ -115,7 +113,7 @@ public final class UInt64 implements Comparable<UInt64> {
    * @return The result of decrementing this value by 1.
    */
   public UInt64 decrement() {
-    return minus(1);
+    return minus(value, 1);
   }
 
   /**

@@ -264,6 +264,8 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         specConfigCapella.getMaxValidatorsPerWithdrawalSweep();
     final int bound = Math.min(validatorCount, maxValidatorsPerWithdrawalsSweep);
 
+    final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
+
     UInt64 withdrawalIndex = preState.getNextWithdrawalIndex();
     int validatorIndex = preState.getNextWithdrawalValidatorIndex().intValue();
 
@@ -288,7 +290,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
                   withdrawalIndex,
                   UInt64.valueOf(validatorIndex),
                   new Bytes20(validator.getWithdrawalCredentials().slice(12)),
-                  balance.minus(specConfig.getMaxEffectiveBalance())));
+                  balance.minus(maxEffectiveBalance)));
           withdrawalIndex = withdrawalIndex.increment();
         }
 

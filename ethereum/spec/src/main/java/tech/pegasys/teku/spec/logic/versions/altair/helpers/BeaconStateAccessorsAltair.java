@@ -105,7 +105,10 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     int i = 0;
     final SszList<Validator> validators = state.getValidators();
     final IntList syncCommitteeIndices = new IntArrayList();
-    while (syncCommitteeIndices.size() < altairConfig.getSyncCommitteeSize()) {
+    final UInt64 maxEffectiveBalance = config.getMaxEffectiveBalance();
+    final int syncCommitteeSize = altairConfig.getSyncCommitteeSize();
+
+    while (syncCommitteeIndices.size() < syncCommitteeSize) {
       final int shuffledIndex =
           miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
       final int candidateIndex = activeValidatorIndices.getInt(shuffledIndex);
@@ -114,7 +117,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       final UInt64 effectiveBalance = validators.get(candidateIndex).getEffectiveBalance();
       if (effectiveBalance
           .times(MAX_RANDOM_BYTE)
-          .isGreaterThanOrEqualTo(config.getMaxEffectiveBalance().times(randomByte))) {
+          .isGreaterThanOrEqualTo(maxEffectiveBalance.times(randomByte))) {
         syncCommitteeIndices.add(candidateIndex);
       }
       i++;
