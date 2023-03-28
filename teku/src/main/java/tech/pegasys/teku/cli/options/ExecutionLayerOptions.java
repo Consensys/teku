@@ -105,7 +105,7 @@ public class ExecutionLayerOptions {
       description =
           "Set the compare factor applied to the builder bid value when comparing it with locally produced payload."
               + " Factor is expressed in percentage (e.g. '100' means locally produced payload will be chosen when its value is equal or greater than the entire builder bid value, "
-              + "'80' means local payload will be chosen when its value is at least 80% of builder bid value).\n"
+              + "'80' means local payload will be chosen when its value is at least 80%% of builder bid value).\n"
               + "Set it to '"
               + BUILDER_ALWAYS_KEYWORD
               + "' to always use builder bid. In this configuration locally produced payload will be used only when the bid is invalid.",
