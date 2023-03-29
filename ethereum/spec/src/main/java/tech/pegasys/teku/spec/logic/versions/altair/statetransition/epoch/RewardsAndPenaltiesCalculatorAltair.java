@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FL
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
 import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
@@ -139,6 +140,9 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
    */
   public void processInactivityPenaltyDeltas(final RewardAndPenaltyDeltas deltas) {
     final List<ValidatorStatus> statusList = validatorStatuses.getStatuses();
+    final SszUInt64List inactivityScores = stateAltair.getInactivityScores();
+    final UInt64 penaltyDenominator =
+        specConfigAltair.getInactivityScoreBias().times(getInactivityPenaltyQuotient());
     for (int i = 0; i < statusList.size(); i++) {
       final ValidatorStatus validator = statusList.get(i);
       if (!validator.isEligibleValidator()) {
@@ -149,11 +153,8 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
       }
 
       final UInt64 penaltyNumerator =
-          validator
-              .getCurrentEpochEffectiveBalance()
-              .times(stateAltair.getInactivityScores().get(i).get());
-      final UInt64 penaltyDenominator =
-          specConfigAltair.getInactivityScoreBias().times(getInactivityPenaltyQuotient());
+          validator.getCurrentEpochEffectiveBalance().times(inactivityScores.get(i).get());
+
       final UInt64 penalty = penaltyNumerator.dividedBy(penaltyDenominator);
       deltas.getDelta(i).penalize(penalty);
     }

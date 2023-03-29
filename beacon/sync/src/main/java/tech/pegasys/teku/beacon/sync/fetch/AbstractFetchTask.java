@@ -19,15 +19,19 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-public abstract class AbstractFetchTask {
+public abstract class AbstractFetchTask<T> {
 
   private static final Comparator<Eth2Peer> SHUFFLING_COMPARATOR =
       Comparator.comparing(p -> Math.random());
 
+  private final AtomicInteger numberOfRuns = new AtomicInteger(0);
   private final Set<NodeId> queriedPeers = Collections.newSetFromMap(new ConcurrentHashMap<>());
   private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
@@ -46,15 +50,44 @@ public abstract class AbstractFetchTask {
                 .thenComparing(SHUFFLING_COMPARATOR));
   }
 
-  protected void trackQueriedPeer(final Eth2Peer peer) {
-    queriedPeers.add(peer.getId());
+  public int getNumberOfRetries() {
+    return Math.max(0, numberOfRuns.get() - 1);
   }
 
   public void cancel() {
     cancelled.set(true);
   }
 
+  protected void trackQueriedPeer(final Eth2Peer peer) {
+    queriedPeers.add(peer.getId());
+  }
+
   protected boolean isCancelled() {
     return cancelled.get();
   }
+
+  /**
+   * Selects random {@link Eth2Peer} from the network and gets a result using the {@link
+   * #fetch(Eth2Peer)} implementation. It also tracks the number of runs and the already queried
+   * peers.
+   */
+  public SafeFuture<FetchResult<T>> run() {
+    if (isCancelled()) {
+      return SafeFuture.completedFuture(FetchResult.createFailed(Status.CANCELLED));
+    }
+
+    final Optional<Eth2Peer> maybePeer = findRandomPeer();
+
+    if (maybePeer.isEmpty()) {
+      return SafeFuture.completedFuture(FetchResult.createFailed(Status.NO_AVAILABLE_PEERS));
+    }
+    final Eth2Peer peer = maybePeer.get();
+
+    numberOfRuns.incrementAndGet();
+    trackQueriedPeer(peer);
+
+    return fetch(peer);
+  }
+
+  abstract SafeFuture<FetchResult<T>> fetch(final Eth2Peer peer);
 }

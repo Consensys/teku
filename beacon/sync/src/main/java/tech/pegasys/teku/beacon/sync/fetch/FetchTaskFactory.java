@@ -14,8 +14,11 @@
 package tech.pegasys.teku.beacon.sync.fetch;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public interface FetchTaskFactory {
 
   FetchBlockTask createFetchBlockTask(Bytes32 blockRoot);
+
+  FetchBlobSidecarTask createFetchBlobSidecarTask(BlobIdentifier blobIdentifier);
 }

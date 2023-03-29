@@ -74,8 +74,8 @@ public final class KZGCommitment {
     return bytesCompressed;
   }
 
-  public byte[] toArray() {
-    return bytesCompressed.toArray();
+  public byte[] toArrayUnsafe() {
+    return bytesCompressed.toArrayUnsafe();
   }
 
   public String toAbbreviatedString() {

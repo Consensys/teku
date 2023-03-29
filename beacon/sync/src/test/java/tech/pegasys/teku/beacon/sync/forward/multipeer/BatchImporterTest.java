@@ -25,7 +25,9 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.BatchImporter.BatchImportResult;
@@ -34,25 +36,32 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 class BatchImporterTest {
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalCapella());
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Batch batch = mock(Batch.class);
   final SyncSource syncSource = mock(SyncSource.class);
 
-  private final BatchImporter importer = new BatchImporter(blockImporter, asyncRunner);
+  private final BatchImporter importer =
+      new BatchImporter(blockImporter, blobsSidecarManager, asyncRunner);
 
   @BeforeEach
   public void setup() {
     when(batch.getSource()).thenReturn(Optional.of(syncSource));
+    when(batch.getBlobSidecarsByBlockRoot()).thenReturn(Map.of());
+    when(blobsSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -73,10 +82,12 @@ class BatchImporterTest {
 
     // Should not be started on the calling thread
     verifyNoInteractions(blockImporter);
+    verifyNoInteractions(blobsSidecarManager);
 
-    // We should have copied the blocks to avoid accessing the Batch data from
+    // We should have copied the blocks and blob sidecars to avoid accessing the Batch data from
     // other threads
     verify(batch).getBlocks();
+    verify(batch).getBlobSidecarsByBlockRoot();
     verify(batch).getSource();
 
     asyncRunner.executeQueuedActions();
@@ -86,6 +97,52 @@ class BatchImporterTest {
     blockImportedSuccessfully(block2, importResult2);
     assertThat(result).isNotDone();
     blockImportedSuccessfully(block3, importResult3);
+    assertThat(result).isCompletedWithValue(BatchImportResult.IMPORTED_ALL_BLOCKS);
+
+    // And check we didn't touch the batch from a different thread
+    verifyNoMoreInteractions(batch);
+  }
+
+  @Test
+  void shouldImportBlobSidecarsAndBlocksInOrder() {
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
+
+    final List<BlobSidecar> blobSidecars1 = dataStructureUtil.randomBlobSidecarsForBlock(block1);
+    final List<BlobSidecar> blobSidecars2 = dataStructureUtil.randomBlobSidecarsForBlock(block2);
+
+    final SafeFuture<BlockImportResult> importResult1 = new SafeFuture<>();
+    final SafeFuture<BlockImportResult> importResult2 = new SafeFuture<>();
+
+    final List<SignedBeaconBlock> blocks = new ArrayList<>(List.of(block1, block2));
+    final Map<Bytes32, List<BlobSidecar>> blobSidecars =
+        Map.of(block1.getRoot(), blobSidecars1, block2.getRoot(), blobSidecars2);
+
+    when(batch.getBlocks()).thenReturn(blocks);
+    when(batch.getBlobSidecarsByBlockRoot()).thenReturn(blobSidecars);
+
+    when(blockImporter.importBlock(block1)).thenReturn(importResult1);
+    when(blockImporter.importBlock(block2)).thenReturn(importResult2);
+
+    final SafeFuture<BatchImportResult> result = importer.importBatch(batch);
+
+    // Should not be started on the calling thread
+    verifyNoInteractions(blockImporter);
+    verifyNoInteractions(blobsSidecarManager);
+
+    // We should have copied the blocks and blob sidecars  to avoid accessing the Batch data from
+    // other threads
+    verify(batch).getBlocks();
+    verify(batch).getBlobSidecarsByBlockRoot();
+    verify(batch).getSource();
+
+    asyncRunner.executeQueuedActions();
+
+    blobSidecarsImportedSuccessfully(blobSidecars1);
+    blockImportedSuccessfully(block1, importResult1);
+    assertThat(result).isNotDone();
+    blobSidecarsImportedSuccessfully(blobSidecars2);
+    blockImportedSuccessfully(block2, importResult2);
     assertThat(result).isCompletedWithValue(BatchImportResult.IMPORTED_ALL_BLOCKS);
 
     // And check we didn't touch the batch from a different thread
@@ -192,11 +249,16 @@ class BatchImporterTest {
     verifyNoMoreInteractions(blockImporter);
   }
 
+  private void blobSidecarsImportedSuccessfully(final List<BlobSidecar> blobSidecars) {
+    blobSidecars.forEach(
+        blobSidecar -> ignoreFuture(verify(blobsSidecarManager).importBlobSidecar(blobSidecar)));
+    verifyNoMoreInteractions(blobsSidecarManager);
+  }
+
   private void blockImportedSuccessfully(
-      final SignedBeaconBlock block, final SafeFuture<BlockImportResult> importResult1) {
+      final SignedBeaconBlock block, final SafeFuture<BlockImportResult> importResult) {
     ignoreFuture(verify(blockImporter).importBlock(block));
     verifyNoMoreInteractions(blockImporter);
-
-    importResult1.complete(BlockImportResult.successful(block));
+    importResult.complete(BlockImportResult.successful(block));
   }
 }
