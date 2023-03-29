@@ -38,6 +38,7 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -124,7 +125,8 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
             asyncRunner, pendingBlocks, forwardSyncService, fetchTaskFactory);
 
     final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService =
-        FetchRecentBlobSidecarsService.create(asyncRunner, forwardSyncService, fetchTaskFactory);
+        FetchRecentBlobSidecarsService.create(
+            asyncRunner, BlobSidecarPool.NOOP, forwardSyncService, fetchTaskFactory);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 

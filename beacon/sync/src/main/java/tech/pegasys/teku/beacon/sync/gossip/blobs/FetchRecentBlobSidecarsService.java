@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 
 public class FetchRecentBlobSidecarsService
     extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecar>
@@ -33,6 +34,7 @@ public class FetchRecentBlobSidecarsService
 
   private static final int MAX_CONCURRENT_REQUESTS = 3;
 
+  private final BlobSidecarPool blobSidecarPool;
   private final ForwardSync forwardSync;
   private final FetchTaskFactory fetchTaskFactory;
 
@@ -41,20 +43,23 @@ public class FetchRecentBlobSidecarsService
 
   FetchRecentBlobSidecarsService(
       final AsyncRunner asyncRunner,
+      final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
     super(asyncRunner, maxConcurrentRequests);
+    this.blobSidecarPool = blobSidecarPool;
     this.forwardSync = forwardSync;
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
   public static FetchRecentBlobSidecarsService create(
       final AsyncRunner asyncRunner,
+      final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
     return new FetchRecentBlobSidecarsService(
-        asyncRunner, forwardSync, fetchTaskFactory, MAX_CONCURRENT_REQUESTS);
+        asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, MAX_CONCURRENT_REQUESTS);
   }
 
   @Override
@@ -79,7 +84,10 @@ public class FetchRecentBlobSidecarsService
       // Forward sync already in progress, assume it will fetch any missing blob sidecars
       return;
     }
-    // TODO: add a check that pending does not have this blob sidecar
+    if (blobSidecarPool.containsBlobSidecar(blobIdentifier)) {
+      // We've already got this blob sidecar
+      return;
+    }
     final FetchBlobSidecarTask task = createTask(blobIdentifier);
     if (allTasks.putIfAbsent(blobIdentifier, task) != null) {
       // We're already tracking this task
@@ -97,14 +105,16 @@ public class FetchRecentBlobSidecarsService
 
   private void setupSubscribers() {
     forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
-    // TODO: add subscriptions in similar way to PendingBlocksPool
+    blobSidecarPool.subscribeRequiredBlobSidecar(this::requestRecentBlobSidecar);
   }
 
   private void onSyncStatusChanged(final boolean syncActive) {
     if (syncActive) {
       return;
     }
-    // TODO: implement similar to FetchRecentBlocksService
+    // Ensure we are requesting the blob sidecars not already filled in by the sync
+    // We may have ignored these requested blob sidecars while the sync was in progress
+    blobSidecarPool.getAllRequiredBlobSidecars().forEach(this::requestRecentBlobSidecar);
   }
 
   @Override

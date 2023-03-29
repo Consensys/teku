@@ -327,11 +327,11 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   public interface RequiredBlockRootSubscriber {
-    void onRequiredBlockRoot(final Bytes32 blockRoot);
+    void onRequiredBlockRoot(Bytes32 blockRoot);
   }
 
   public interface RequiredBlockRootDroppedSubscriber {
-    void onRequiredBlockRootDropped(final Bytes32 blockRoot);
+    void onRequiredBlockRootDropped(Bytes32 blockRoot);
   }
 
   private static class SlotAndRoot {
