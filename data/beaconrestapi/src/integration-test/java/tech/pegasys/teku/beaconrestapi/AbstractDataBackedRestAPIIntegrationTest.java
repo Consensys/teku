@@ -197,7 +197,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
 
     blsToExecutionChangePool =
-        new MappedOperationPool(
+        new MappedOperationPool<>(
             "BlsOperationPool",
             stubMetricsSystem,
             beaconBlockSchemaSupplier
