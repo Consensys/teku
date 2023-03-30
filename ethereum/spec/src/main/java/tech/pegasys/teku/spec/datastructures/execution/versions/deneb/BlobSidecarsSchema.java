@@ -38,6 +38,7 @@ public class BlobSidecarsSchema extends ContainerSchema1<BlobSidecars, SszList<B
     return new BlobSidecarsSchema(specConfig, blobSidecarSchema);
   }
 
+  @SuppressWarnings("unchecked")
   public SszListSchema<BlobSidecar, ?> getBlobSidecarsSchema() {
     return (SszListSchema<BlobSidecar, ?>) getChildSchema(getFieldIndex(FIELD_BLOB_SIDECARS));
   }

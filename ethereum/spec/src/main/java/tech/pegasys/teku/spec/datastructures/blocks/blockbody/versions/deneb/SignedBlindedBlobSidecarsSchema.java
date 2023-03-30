@@ -44,6 +44,7 @@ public class SignedBlindedBlobSidecarsSchema
     return new SignedBlindedBlobSidecarsSchema(specConfig, signedBlindedBlobSidecarSchema);
   }
 
+  @SuppressWarnings("unchecked")
   public SszListSchema<SignedBlindedBlobSidecar, ?> getSignedBlindedBlobSidecarsSchema() {
     return (SszListSchema<SignedBlindedBlobSidecar, ?>)
         getChildSchema(getFieldIndex(FIELD_SIGNED_BLINDED_BLOB_SIDECARS));

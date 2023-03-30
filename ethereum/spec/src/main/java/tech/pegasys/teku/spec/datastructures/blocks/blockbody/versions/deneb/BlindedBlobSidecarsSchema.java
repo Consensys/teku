@@ -40,6 +40,7 @@ public class BlindedBlobSidecarsSchema
     return new BlindedBlobSidecarsSchema(specConfig, blindedBlobSidecarSchema);
   }
 
+  @SuppressWarnings("unchecked")
   public SszListSchema<BlindedBlobSidecar, ?> getBlindedBlobSidecarsSchema() {
     return (SszListSchema<BlindedBlobSidecar, ?>)
         getChildSchema(getFieldIndex(FIELD_BLINDED_BLOB_SIDECARS));
