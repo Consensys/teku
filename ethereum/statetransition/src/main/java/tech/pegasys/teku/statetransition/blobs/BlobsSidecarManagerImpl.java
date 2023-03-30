@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -58,6 +59,9 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   private final NavigableMap<UInt64, Map<Bytes32, BlobsSidecar>> validatedPendingBlobs =
       new ConcurrentSkipListMap<>();
+
+  private final Subscribers<ImportedBlobSidecarListener> importedBlobSidecarSubscribers =
+      Subscribers.create(true);
 
   public BlobsSidecarManagerImpl(
       final Spec spec,
@@ -97,7 +101,14 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   @SuppressWarnings("unused")
   public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobsSidecar) {
     // TODO implement import
-    return SafeFuture.COMPLETE;
+    return SafeFuture.COMPLETE.thenRun(
+        () -> importedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobsSidecar)));
+  }
+
+  @Override
+  public void subscribeToImportedBlobSidecars(
+      final ImportedBlobSidecarListener importedBlobSidecarListener) {
+    importedBlobSidecarSubscribers.subscribe(importedBlobSidecarListener);
   }
 
   @Override
