@@ -41,7 +41,7 @@ public class BlindedBlobSidecar {
   private final UInt64 proposerIndex;
 
   @JsonProperty("blob_root")
-  public final Bytes32 blob_root;
+  public final Bytes32 blobRoot;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
   @JsonProperty("kzg_commitment")
@@ -57,7 +57,7 @@ public class BlindedBlobSidecar {
       @JsonProperty("slot") final UInt64 slot,
       @JsonProperty("block_parent_root") final Bytes32 blockParentRoot,
       @JsonProperty("proposer_index") final UInt64 proposerIndex,
-      @JsonProperty("blob_root") final Bytes32 blob_root,
+      @JsonProperty("blob_root") final Bytes32 blobRoot,
       @JsonProperty("kzg_commitment") final Bytes kzgCommitment,
       @JsonProperty("kzg_proof") final Bytes kzgProof) {
     this.blockRoot = blockRoot;
@@ -65,7 +65,7 @@ public class BlindedBlobSidecar {
     this.slot = slot;
     this.blockParentRoot = blockParentRoot;
     this.proposerIndex = proposerIndex;
-    this.blob_root = blob_root;
+    this.blobRoot = blobRoot;
     this.kzgCommitment = kzgCommitment;
     this.kzgProof = kzgProof;
   }
@@ -78,7 +78,7 @@ public class BlindedBlobSidecar {
     this.slot = blobSidecar.getSlot();
     this.blockParentRoot = blobSidecar.getBlockParentRoot();
     this.proposerIndex = blobSidecar.getProposerIndex();
-    this.blob_root = blobSidecar.getBlobRoot();
+    this.blobRoot = blobSidecar.getBlobRoot();
     this.kzgCommitment = blobSidecar.getKZGCommitment().getBytesCompressed();
     this.kzgProof = blobSidecar.getKZGProof().getBytesCompressed();
   }
@@ -97,7 +97,7 @@ public class BlindedBlobSidecar {
         slot,
         blockParentRoot,
         proposerIndex,
-        blob_root,
+        blobRoot,
         Bytes48.wrap(kzgProof),
         Bytes48.wrap(kzgCommitment));
   }
