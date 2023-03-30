@@ -52,7 +52,7 @@ public class SignedBlindedBlockContents {
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb
           .SignedBlindedBlockContents
-      asInternalBlockContents(
+      asInternalSignedBlindedBlockContents(
           final SignedBlindedBlockContentsSchema signedBlindedBlockContentsSchema,
           final Spec spec) {
     return signedBlindedBlockContentsSchema.create(

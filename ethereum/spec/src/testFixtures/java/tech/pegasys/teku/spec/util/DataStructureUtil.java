@@ -98,7 +98,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -2002,6 +2006,14 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarBuilder().build();
   }
 
+  public List<BlobSidecar> randomBlobSidecars(int count) {
+    List<BlobSidecar> blobSidecars = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      blobSidecars.add(new RandomBlobSidecarBuilder().build());
+    }
+    return blobSidecars;
+  }
+
   public BlobSidecar randomBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
     return new RandomBlobSidecarBuilder().index(index).blockRoot(blockRoot).build();
   }
@@ -2059,6 +2071,38 @@ public final class DataStructureUtil {
 
   public SignedBlobSidecar randomSignedBlobSidecar() {
     return new RandomBlobSidecarBuilder().buildSigned();
+  }
+
+  public BlindedBlobSidecar randomBlindedBlobSidecar() {
+    return new RandomBlobSidecarBuilder().buildBlinded();
+  }
+
+  public SignedBlindedBlobSidecar randomSignedBlindedBlobSidecar() {
+    return new RandomBlobSidecarBuilder().buildSignedBlinded();
+  }
+
+  public List<BlindedBlobSidecar> randomBlindedBlobSidecars(int count) {
+    List<BlindedBlobSidecar> blindedBlobSidecars = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      blindedBlobSidecars.add(new RandomBlobSidecarBuilder().buildBlinded());
+    }
+    return blindedBlobSidecars;
+  }
+
+  public List<SignedBlobSidecar> randomSignedBlobSidecars(int count) {
+    List<SignedBlobSidecar> signedBlobSidecars = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      signedBlobSidecars.add(new RandomBlobSidecarBuilder().buildSigned());
+    }
+    return signedBlobSidecars;
+  }
+
+  public List<SignedBlindedBlobSidecar> randomSignedBlindedBlobSidecars(int count) {
+    List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      signedBlindedBlobSidecars.add(new RandomBlobSidecarBuilder().buildSignedBlinded());
+    }
+    return signedBlindedBlobSidecars;
   }
 
   public SignedBlobSidecar randomSignedBlobSidecar(final UInt64 index) {
@@ -2142,8 +2186,29 @@ public final class DataStructureUtil {
       return blobSidecarSchema.create(blobSidecar, blsSignature.orElse(randomSignature()));
     }
 
+    public BlindedBlobSidecar buildBlinded() {
+      BlobSidecar blobSidecar = build();
+      final BlindedBlobSidecarSchema blindedBlobSidecarSchema =
+          getSchemaDefinitionsDeneb().getBlindedBlobSidecarSchema();
+
+      return blindedBlobSidecarSchema.create(blobSidecar);
+    }
+
+    public SignedBlindedBlobSidecar buildSignedBlinded(final Optional<BLSSignature> blsSignature) {
+      BlindedBlobSidecar blindedBlobSidecar = buildBlinded();
+      final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema =
+          getSchemaDefinitionsDeneb().getSignedBlindedBlobSidecarSchema();
+
+      return signedBlindedBlobSidecarSchema.create(
+          blindedBlobSidecar, blsSignature.orElse(randomSignature()));
+    }
+
     public SignedBlobSidecar buildSigned() {
       return buildSigned(Optional.empty());
+    }
+
+    public SignedBlindedBlobSidecar buildSignedBlinded() {
+      return buildSignedBlinded(Optional.empty());
     }
 
     private SchemaDefinitionsDeneb getSchemaDefinitionsDeneb() {

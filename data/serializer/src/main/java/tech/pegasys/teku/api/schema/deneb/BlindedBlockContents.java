@@ -22,7 +22,7 @@ public class BlindedBlockContents {
   @JsonProperty("blinded_beacon_block")
   private final BlindedBlockDeneb blindedBeaconBlock;
 
-  @JsonProperty("signed_blinded_blob_sidecars")
+  @JsonProperty("blinded_blob_sidecars")
   private final BlindedBlobSidecars blindedBlobSidecars;
 
   public BlindedBlockContents(
@@ -47,7 +47,7 @@ public class BlindedBlockContents {
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents
-      asInternalBlockContents(
+      asInternalBlindedBlockContents(
           final BlindedBlockContentsSchema blindedBlockContentsSchema, final Spec spec) {
     return blindedBlockContentsSchema.create(
         blindedBeaconBlock.asInternalBeaconBlock(spec),
