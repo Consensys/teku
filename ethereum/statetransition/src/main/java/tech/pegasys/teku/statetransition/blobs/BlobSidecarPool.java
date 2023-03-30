@@ -34,4 +34,8 @@ public interface BlobSidecarPool {
   List<BlobIdentifier> getAllRequiredBlobSidecars();
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
+
+  interface RequiredBlobSidecarSubscriber {
+    void onRequiredBlobSidecar(BlobIdentifier blobIdentifier);
+  }
 }

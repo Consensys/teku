@@ -89,6 +89,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -309,7 +310,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blobsSidecarManager
                 .importBlobSidecar(blobSidecar)
                 .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
-    // TODO: add subscription to received blob sidecars and cancel requests similar to blocks
+    blobsSidecarManager.subscribeToImportedBlobSidecars(
+        blobSidecar ->
+            recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
+                new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
