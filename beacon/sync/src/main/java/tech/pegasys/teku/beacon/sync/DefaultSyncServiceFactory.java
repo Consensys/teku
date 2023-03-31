@@ -68,6 +68,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final BlockImporter blockImporter;
   private final BlobsSidecarManager blobsSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
+  private final BlobSidecarPool blobSidecarPool;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -87,6 +88,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final BlockImporter blockImporter,
       final BlobsSidecarManager blobsSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
+      final BlobSidecarPool blobSidecarPool,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
@@ -104,6 +106,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.blockImporter = blockImporter;
     this.blobsSidecarManager = blobsSidecarManager;
     this.pendingBlocks = pendingBlocks;
+    this.blobSidecarPool = blobSidecarPool;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
@@ -126,7 +129,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService =
         FetchRecentBlobSidecarsService.create(
-            asyncRunner, BlobSidecarPool.NOOP, forwardSyncService, fetchTaskFactory);
+            asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 
