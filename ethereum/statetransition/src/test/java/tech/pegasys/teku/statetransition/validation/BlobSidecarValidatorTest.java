@@ -30,11 +30,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator.IndexAndBlockRoot;
 
 @TestSpecContext(milestone = {SpecMilestone.DENEB})
 public class BlobSidecarValidatorTest {
@@ -46,6 +46,7 @@ public class BlobSidecarValidatorTest {
   private BeaconState postState;
 
   private UInt64 slot;
+  private UInt64 index;
   private UInt64 proposerIndex;
   private Bytes32 blockRoot;
   private Bytes32 blockParentRoot;
@@ -62,6 +63,7 @@ public class BlobSidecarValidatorTest {
     parentSlot = UInt64.valueOf(1);
 
     slot = UInt64.valueOf(2);
+    index = UInt64.valueOf(1);
     proposerIndex = UInt64.valueOf(3);
     blockRoot = dataStructureUtil.randomBytes32();
     blockParentRoot = dataStructureUtil.randomBytes32();
@@ -70,7 +72,7 @@ public class BlobSidecarValidatorTest {
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .slot(slot)
-            .index(UInt64.valueOf(2))
+            .index(index)
             .proposerIndex(proposerIndex)
             .blockRoot(blockRoot)
             .blockParentRoot(blockParentRoot)
@@ -119,7 +121,7 @@ public class BlobSidecarValidatorTest {
   void shouldIgnoreWhenIsNotFirstValidSignature() {
     blobSidecarValidator
         .getReceivedValidBlobSidecarInfoSet()
-        .add(new SlotAndBlockRoot(slot, blockRoot));
+        .add(new IndexAndBlockRoot(index, blockRoot));
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
