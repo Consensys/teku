@@ -21,9 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.constraints.IntRange;
@@ -32,7 +30,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttestationData;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -58,25 +55,10 @@ import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.deneb.BeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
-import tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecars;
-import tech.pegasys.teku.api.schema.deneb.BlindedBlockContents;
-import tech.pegasys.teku.api.schema.deneb.BlindedBlockDeneb;
-import tech.pegasys.teku.api.schema.deneb.BlobSidecar;
-import tech.pegasys.teku.api.schema.deneb.BlobSidecars;
 import tech.pegasys.teku.api.schema.deneb.BlobsSidecar;
-import tech.pegasys.teku.api.schema.deneb.BlockContents;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.api.schema.deneb.SignedBlindedBlobSidecars;
-import tech.pegasys.teku.api.schema.deneb.SignedBlindedBlockContents;
-import tech.pegasys.teku.api.schema.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.api.schema.deneb.SignedBlobSidecars;
-import tech.pegasys.teku.api.schema.deneb.SignedBlockContents;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -87,15 +69,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecarsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -459,195 +433,6 @@ public class JsonProviderPropertyTest {
   }
 
   @Property
-  void roundTripBlobSidecar(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BlobSidecar original = new BlobSidecar(dataStructureUtil.randomBlobSidecar());
-    final String serialized = jsonProvider.objectToJSON(original);
-    final BlobSidecar deserialized = jsonProvider.jsonToObject(serialized, BlobSidecar.class);
-    assertThat(deserialized).usingRecursiveComparison().isEqualTo(original);
-  }
-
-  @Property
-  void roundTripBlobSidecars(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final List<BlobSidecar> blobSidecars =
-        dataStructureUtil.randomBlobSidecars(4).stream()
-            .map(BlobSidecar::new)
-            .collect(Collectors.toList());
-    final BlobSidecars original = new BlobSidecars(blobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final BlobSidecars deserialized = jsonProvider.jsonToObject(serialized, BlobSidecars.class);
-    assertThat(deserialized).usingRecursiveComparison().isEqualTo(original);
-  }
-
-  @Property
-  void roundTripSignedBlobSidecars(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final List<SignedBlobSidecar> signedBlobSidecars =
-        dataStructureUtil.randomSignedBlobSidecars(4).stream()
-            .map(SignedBlobSidecar::new)
-            .collect(Collectors.toList());
-    final SignedBlobSidecars original = new SignedBlobSidecars(signedBlobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final SignedBlobSidecars deserialized =
-        jsonProvider.jsonToObject(serialized, SignedBlobSidecars.class);
-    assertThat(deserialized).usingRecursiveComparison().isEqualTo(original);
-  }
-
-  @Property
-  void roundTripBlindedBlobSidecars(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final List<BlindedBlobSidecar> blindedBlobSidecars =
-        dataStructureUtil.randomBlindedBlobSidecars(4).stream()
-            .map(BlindedBlobSidecar::new)
-            .collect(Collectors.toList());
-    final BlindedBlobSidecars original = new BlindedBlobSidecars(blindedBlobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final BlindedBlobSidecars deserialized =
-        jsonProvider.jsonToObject(serialized, BlindedBlobSidecars.class);
-    final BlindedBlobSidecarsSchema blindedBlobSidecarsSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getBlindedBlobSidecarsSchema();
-    assertThat(deserialized.asInternalBlindedBlobSidecars(blindedBlobSidecarsSchema))
-        .isEqualTo(original.asInternalBlindedBlobSidecars(blindedBlobSidecarsSchema));
-  }
-
-  @Property
-  void roundTripSignedBlindedBlobSidecars(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
-        dataStructureUtil.randomSignedBlindedBlobSidecars(4).stream()
-            .map(SignedBlindedBlobSidecar::new)
-            .collect(Collectors.toList());
-    final SignedBlindedBlobSidecars original =
-        new SignedBlindedBlobSidecars(signedBlindedBlobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final SignedBlindedBlobSidecars deserialized =
-        jsonProvider.jsonToObject(serialized, SignedBlindedBlobSidecars.class);
-    assertThat(deserialized).usingRecursiveComparison().isEqualTo(original);
-  }
-
-  @Property
-  void roundTripBlockContents(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final List<BlobSidecar> blobSidecarList =
-        dataStructureUtil.randomBlobSidecars(4).stream()
-            .map(BlobSidecar::new)
-            .collect(Collectors.toList());
-    final BlobSidecars blobSidecars = new BlobSidecars(blobSidecarList);
-    final BeaconBlockDeneb beaconBlockDeneb =
-        new BeaconBlockDeneb(dataStructureUtil.randomBeaconBlock());
-    final BlockContents original = new BlockContents(beaconBlockDeneb, blobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final BlockContents deserialized = jsonProvider.jsonToObject(serialized, BlockContents.class);
-    final BlockContentsSchema blockContentsSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlockContentsSchema();
-    assertThat(deserialized.asInternalBlockContents(blockContentsSchema, spec))
-        .isEqualTo(original.asInternalBlockContents(blockContentsSchema, spec));
-  }
-
-  @Property
-  void roundTripBlindedBlockContents(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final List<BlindedBlobSidecar> blindedBlobSidecarList =
-        dataStructureUtil.randomBlindedBlobSidecars(4).stream()
-            .map(BlindedBlobSidecar::new)
-            .collect(Collectors.toList());
-    final BlindedBlobSidecars blindedBlobSidecars = new BlindedBlobSidecars(blindedBlobSidecarList);
-    final BlindedBlockDeneb blindedBlockDeneb =
-        new BlindedBlockDeneb(dataStructureUtil.randomBlindedBeaconBlock());
-    final BlindedBlockContents original =
-        new BlindedBlockContents(blindedBlockDeneb, blindedBlobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final BlindedBlockContents deserialized =
-        jsonProvider.jsonToObject(serialized, BlindedBlockContents.class);
-    final BlindedBlockContentsSchema blindedBlockContentsSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getBlindedBlockContentsSchema();
-    assertThat(deserialized.asInternalBlindedBlockContents(blindedBlockContentsSchema, spec))
-        .isEqualTo(original.asInternalBlindedBlockContents(blindedBlockContentsSchema, spec));
-  }
-
-  @Property
-  void roundTripSignedBlockContents(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = getDataStructureUtil(seed, spec);
-    final List<SignedBlobSidecar> signedBlobSidecarList =
-        dataStructureUtil.randomSignedBlobSidecars(4).stream()
-            .map(SignedBlobSidecar::new)
-            .collect(Collectors.toList());
-    final SignedBlobSidecars signedBlobSidecars = new SignedBlobSidecars(signedBlobSidecarList);
-    final SignedBeaconBlockDeneb signedBeaconBlockDeneb =
-        new SignedBeaconBlockDeneb(dataStructureUtil.randomSignedBeaconBlock());
-    final SignedBlockContents original =
-        new SignedBlockContents(signedBeaconBlockDeneb, signedBlobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final SignedBlockContents deserialized =
-        jsonProvider.jsonToObject(serialized, SignedBlockContents.class);
-    final SignedBlockContentsSchema signedBlockContentsSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getSignedBlockContentsSchema();
-    assertThat(deserialized.asInternalSignedBlockContents(signedBlockContentsSchema, spec))
-        .isEqualTo(original.asInternalSignedBlockContents(signedBlockContentsSchema, spec));
-  }
-
-  @NotNull
-  private DataStructureUtil getDataStructureUtil(int seed, Spec spec) {
-    return new DataStructureUtil(seed, spec);
-  }
-
-  @Property
-  void roundTripSignedBlindedBlockContents(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecarList =
-        dataStructureUtil.randomSignedBlindedBlobSidecars(4).stream()
-            .map(SignedBlindedBlobSidecar::new)
-            .collect(Collectors.toList());
-    final SignedBlindedBlobSidecars signedBlindedBlobSidecars =
-        new SignedBlindedBlobSidecars(signedBlindedBlobSidecarList);
-    final SignedBlindedBeaconBlockDeneb signedBlindedBeaconBlockDeneb =
-        new SignedBlindedBeaconBlockDeneb(dataStructureUtil.randomSignedBlindedBeaconBlock());
-    final SignedBlindedBlockContents original =
-        new SignedBlindedBlockContents(signedBlindedBeaconBlockDeneb, signedBlindedBlobSidecars);
-    final String serialized = jsonProvider.objectToJSON(original);
-    final SignedBlindedBlockContents deserialized =
-        jsonProvider.jsonToObject(serialized, SignedBlindedBlockContents.class);
-    final SignedBlindedBlockContentsSchema signedBlindedBlockContentsSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getSignedBlindedBlockContentsSchema();
-    assertThat(
-            deserialized.asInternalSignedBlindedBlockContents(
-                signedBlindedBlockContentsSchema, spec))
-        .isEqualTo(
-            original.asInternalSignedBlindedBlockContents(signedBlindedBlockContentsSchema, spec));
-  }
-
-  @Property
   void roundTripSignedBeaconBlockAndBlobsSidecar(@ForAll final int seed)
       throws JsonProcessingException {
     final SpecMilestone specMilestone = SpecMilestone.DENEB;
@@ -670,62 +455,5 @@ public class JsonProviderPropertyTest {
         .isEqualTo(
             original.asInternalSignedBeaconBlockAndBlobsSidecar(
                 signedBeaconBlockAndBlobsSidecarSchema, spec));
-  }
-
-  @Property
-  void roundTripSignedBlobSidecar(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SignedBlobSidecar original =
-        new SignedBlobSidecar(dataStructureUtil.randomSignedBlobSidecar());
-    final String serialized = jsonProvider.objectToJSON(original);
-    final SignedBlobSidecar deserialized =
-        jsonProvider.jsonToObject(serialized, SignedBlobSidecar.class);
-    final SignedBlobSidecarSchema signedBlobSidecarSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getSignedBlobSidecarSchema();
-    assertThat(deserialized.asInternalSignedBlobSidecar(signedBlobSidecarSchema))
-        .isEqualTo(original.asInternalSignedBlobSidecar(signedBlobSidecarSchema));
-  }
-
-  @Property
-  void roundTripBlindedBlobSidecar(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BlindedBlobSidecar original =
-        new BlindedBlobSidecar(dataStructureUtil.randomBlindedBlobSidecar());
-    final String serialized = jsonProvider.objectToJSON(original);
-    final BlindedBlobSidecar deserialized =
-        jsonProvider.jsonToObject(serialized, BlindedBlobSidecar.class);
-    final BlindedBlobSidecarSchema blindedBlobSidecarSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getBlindedBlobSidecarSchema();
-    assertThat(deserialized.asInternalBlindedBlobSidecar(blindedBlobSidecarSchema))
-        .isEqualTo(original.asInternalBlindedBlobSidecar(blindedBlobSidecarSchema));
-  }
-
-  @Property
-  void roundTripSignedBlindedBlobSidecar(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SignedBlindedBlobSidecar original =
-        new SignedBlindedBlobSidecar(dataStructureUtil.randomSignedBlindedBlobSidecar());
-    final String serialized = jsonProvider.objectToJSON(original);
-    final SignedBlindedBlobSidecar deserialized =
-        jsonProvider.jsonToObject(serialized, SignedBlindedBlobSidecar.class);
-    final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getSignedBlindedBlobSidecarSchema();
-    assertThat(deserialized.asInternalSignedBlindedBlobSidecar(signedBlindedBlobSidecarSchema))
-        .isEqualTo(original.asInternalSignedBlindedBlobSidecar(signedBlindedBlobSidecarSchema));
   }
 }

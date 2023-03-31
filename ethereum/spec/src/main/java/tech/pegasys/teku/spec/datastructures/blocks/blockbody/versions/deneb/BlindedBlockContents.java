@@ -27,8 +27,8 @@ public class BlindedBlockContents
   public BlindedBlockContents(
       final BlindedBlockContentsSchema schema,
       final BeaconBlock beaconBlock,
-      final BlindedBlobSidecars signedBlindedBlobSidecars) {
-    super(schema, beaconBlock, signedBlindedBlobSidecars);
+      final BlindedBlobSidecars blindedBlobSidecars) {
+    super(schema, beaconBlock, blindedBlobSidecars);
   }
 
   public BeaconBlock getSignedBeaconBlock() {

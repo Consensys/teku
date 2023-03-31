@@ -100,11 +100,16 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecars;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -119,9 +124,11 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecars;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -2105,12 +2112,73 @@ public final class DataStructureUtil {
     return signedBlindedBlobSidecars;
   }
 
+  public BlobSidecars randomBlobSidecars() {
+    final List<BlobSidecar> blobSidecarList = randomBlobSidecars(4);
+    return new BlobSidecars(getSchemaDefinitionDeneb().getBlobSidecarsSchema(), blobSidecarList);
+  }
+
+  public SignedBlobSidecars randomSignedBlobSidecars() {
+    final List<SignedBlobSidecar> signedBlobSidecarsList = randomSignedBlobSidecars(4);
+    return new SignedBlobSidecars(
+        getSchemaDefinitionDeneb().getSignedBlobSidecarsSchema(), signedBlobSidecarsList);
+  }
+
+  public BlindedBlobSidecars randomBlindedBlobSidecars() {
+    final List<BlindedBlobSidecar> blindedBlobSidecarList = randomBlindedBlobSidecars(4);
+    return new BlindedBlobSidecars(
+        getSchemaDefinitionDeneb().getBlindedBlobSidecarsSchema(), blindedBlobSidecarList);
+  }
+
+  public SignedBlindedBlobSidecars randomSignedBlindedBlobSidecars() {
+    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecarList =
+        randomSignedBlindedBlobSidecars(4);
+    return new SignedBlindedBlobSidecars(
+        getSchemaDefinitionDeneb().getSignedBlindedBlobSidecarsSchema(),
+        signedBlindedBlobSidecarList);
+  }
+
+  public BlockContents randomBlockContents() {
+    final List<BlobSidecar> blobSidecarList = randomBlobSidecars(4);
+    final BlobSidecars blobSidecars =
+        new BlobSidecars(getSchemaDefinitionDeneb().getBlobSidecarsSchema(), blobSidecarList);
+    final BeaconBlock beaconBlock = randomBeaconBlock();
+    return getSchemaDefinitionDeneb().getBlockContentsSchema().create(beaconBlock, blobSidecars);
+  }
+
+  public BlindedBlockContents randomBlindedBlockContents() {
+    final List<BlindedBlobSidecar> blindedBlobSidecarList = randomBlindedBlobSidecars(4);
+    final BlindedBlobSidecars blindedBlobSidecars =
+        new BlindedBlobSidecars(
+            getSchemaDefinitionDeneb().getBlindedBlobSidecarsSchema(), blindedBlobSidecarList);
+    final BeaconBlock beaconBlock = randomBeaconBlock();
+    return getSchemaDefinitionDeneb()
+        .getBlindedBlockContentsSchema()
+        .create(beaconBlock, blindedBlobSidecars);
+  }
+
+  public SignedBlindedBlockContents randomSignedBlindedBlockContents() {
+    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecarList =
+        randomSignedBlindedBlobSidecars(4);
+    final SignedBlindedBlobSidecars signedBlindedBlobSidecars =
+        new SignedBlindedBlobSidecars(
+            getSchemaDefinitionDeneb().getSignedBlindedBlobSidecarsSchema(),
+            signedBlindedBlobSidecarList);
+    final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock();
+    return getSchemaDefinitionDeneb()
+        .getSignedBlindedBlockContentsSchema()
+        .create(signedBeaconBlock, signedBlindedBlobSidecars);
+  }
+
   public SignedBlobSidecar randomSignedBlobSidecar(final UInt64 index) {
     return new RandomBlobSidecarBuilder().index(index).buildSigned();
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
     return new RandomBlobSidecarBuilder();
+  }
+
+  private SchemaDefinitionsDeneb getSchemaDefinitionDeneb() {
+    return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
   }
 
   public class RandomBlobSidecarBuilder {
