@@ -99,10 +99,10 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   @Override
   @SuppressWarnings("unused")
-  public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobsSidecar) {
+  public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
     // TODO implement import
     return SafeFuture.COMPLETE.thenRun(
-        () -> importedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobsSidecar)));
+        () -> importedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobSidecar)));
   }
 
   @Override
