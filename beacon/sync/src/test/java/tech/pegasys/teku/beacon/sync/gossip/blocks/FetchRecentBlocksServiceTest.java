@@ -74,21 +74,6 @@ public class FetchRecentBlocksServiceTest {
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
   }
 
-  private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
-    Bytes32 blockRoot = invocationOnMock.getArgument(0);
-    final FetchBlockTask task = mock(FetchBlockTask.class);
-
-    lenient().when(task.getKey()).thenReturn(blockRoot);
-    lenient().when(task.getNumberOfRetries()).thenReturn(0);
-    final SafeFuture<FetchResult<SignedBeaconBlock>> future = new SafeFuture<>();
-    lenient().when(task.run()).thenReturn(future);
-    taskFutures.add(future);
-
-    tasks.add(task);
-
-    return task;
-  }
-
   @Test
   public void fetchSingleBlockSuccessfully() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
@@ -261,7 +246,21 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(2, 2, 0);
     final Set<Bytes32> requestingRoots =
         tasks.stream().map(FetchBlockTask::getKey).collect(Collectors.toSet());
-    assertThat(requestingRoots).containsExactlyInAnyOrderElementsOf(requestingRoots);
+    assertThat(requestingRoots).containsExactlyInAnyOrderElementsOf(requiredRoots);
+  }
+
+  private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
+    final Bytes32 blockRoot = invocationOnMock.getArgument(0);
+    final FetchBlockTask task = mock(FetchBlockTask.class);
+
+    lenient().when(task.getKey()).thenReturn(blockRoot);
+    lenient().when(task.getNumberOfRetries()).thenReturn(0);
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = new SafeFuture<>();
+    lenient().when(task.run()).thenReturn(future);
+    taskFutures.add(future);
+    tasks.add(task);
+
+    return task;
   }
 
   private void assertTaskCounts(

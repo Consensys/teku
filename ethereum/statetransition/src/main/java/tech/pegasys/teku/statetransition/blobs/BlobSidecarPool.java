@@ -14,7 +14,7 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
@@ -31,8 +31,8 @@ public interface BlobSidecarPool {
         }
 
         @Override
-        public List<BlobIdentifier> getAllRequiredBlobSidecars() {
-          return Collections.emptyList();
+        public Set<BlobIdentifier> getAllRequiredBlobSidecars() {
+          return Collections.emptySet();
         }
 
         @Override
@@ -44,7 +44,7 @@ public interface BlobSidecarPool {
 
   boolean containsBlobSidecar(BlobIdentifier blobIdentifier);
 
-  List<BlobIdentifier> getAllRequiredBlobSidecars();
+  Set<BlobIdentifier> getAllRequiredBlobSidecars();
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
 
