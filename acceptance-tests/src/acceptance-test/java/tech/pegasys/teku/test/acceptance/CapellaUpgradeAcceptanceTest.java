@@ -15,109 +15,71 @@ package tech.pegasys.teku.test.acceptance;
 
 import com.google.common.io.Resources;
 import java.net.URL;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
 
-  private static final String NETWORK_NAME = "swift";
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
-  public static final Eth1Address WITHDRAWAL_ADDRESS =
-      Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-
-  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
 
   @Test
   void shouldUpgradeToCapella() throws Exception {
-    final UInt64 timeInSeconds = timeProvider.getTimeInSeconds();
-    final int genesisTime = timeInSeconds.plus(10).intValue();
-
     BesuNode primaryEL =
         createBesuNode(
-            BesuDockerVersion.STABLE,
             c -> {
               c.withMergeSupport(true);
-              c.withGenesisFile("besu/shanghaiGenesis.json");
-              //              c.withP2pEnabled(true);
+              c.withGenesisFile("besu/mergedGenesis.json");
+              c.withP2pEnabled(true);
               c.withJwtTokenAuthorization(JWT_FILE);
-            },
-            Map.of("shanghaiTime", String.valueOf(999)));
+            });
     primaryEL.start();
 
-    //    BesuNode secondaryEL =
-    //        createBesuNode(
-    //            c -> {
-    //              c.withMergeSupport(true);
-    //              c.withGenesisFile("besu/shanghaiGenesis.json");
-    //              c.withP2pEnabled(true);
-    //              c.withJwtTokenAuthorization(JWT_FILE);
-    //            });
-    //    secondaryEL.start();
-    //    secondaryEL.addPeer(primaryEL);
-
-    final ValidatorKeystores validatorKeys =
-        createTekuDepositSender(NETWORK_NAME).generateValidatorKeys(4, WITHDRAWAL_ADDRESS);
-    final InitialStateData initialStateData =
-        createGenesisGenerator()
-            .network(NETWORK_NAME)
-            .withAltairEpoch(UInt64.ZERO)
-            .withBellatrixEpoch(UInt64.ZERO)
-            .withCapellaEpoch(UInt64.ONE)
-            .withTotalTerminalDifficulty(0)
-            .genesisPayloadSource(primaryEL)
-            .validatorKeys(validatorKeys)
-            //            .genesisDelaySeconds(10)
-            .generate();
+    BesuNode secondaryEL =
+        createBesuNode(
+            c -> {
+              c.withMergeSupport(true);
+              c.withGenesisFile("besu/mergedGenesis.json");
+              c.withP2pEnabled(true);
+              c.withJwtTokenAuthorization(JWT_FILE);
+            });
+    secondaryEL.start();
+    secondaryEL.addPeer(primaryEL);
 
     TekuNode primaryNode =
         createTekuNode(
             c -> {
-              c.withRealNetwork();
-              c.withStartupTargetPeerCount(0);
-              c.withGenesisTime(genesisTime);
+              c.withRealNetwork().withStartupTargetPeerCount(0);
               c.withExecutionEngine(primaryEL);
               c.withJwtSecretFile(JWT_FILE);
-              c.withTotalTerminalDifficulty(0);
-              c.withInitialState(initialStateData);
-              c.withValidatorKeystores(validatorKeys);
-              c.withValidatorProposerDefaultFeeRecipient(
-                  "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
               c.withEngineApiMethodNegotiation();
               applyMilestoneConfig(c);
             });
+
     primaryNode.start();
     primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
 
-    //    UInt64 genesisTime = primaryNode.getGenesisTime();
+    UInt64 genesisTime = primaryNode.getGenesisTime();
 
-    //    TekuNode lateJoiningNode =
-    //        createTekuNode(
-    //            c -> {
-    //              c.withGenesisTime(genesisTime.intValue());
-    //              c.withRealNetwork();
-    //              c.withPeers(primaryNode);
-    //              c.withInteropValidators(0, 0);
-    //              c.withExecutionEngine(primaryEL);
-    //              c.withJwtSecretFile(JWT_FILE);
-    //              c.withEngineApiMethodNegotiation();
-    //              c.withTotalTerminalDifficulty(0);
-    //              c.withInitialState(initialStateData);
-    //              applyMilestoneConfig(c);
-    //            });
+    TekuNode lateJoiningNode =
+        createTekuNode(
+            c -> {
+              c.withGenesisTime(genesisTime.intValue());
+              c.withRealNetwork();
+              c.withPeers(primaryNode);
+              c.withInteropValidators(0, 0);
+              c.withExecutionEngine(primaryEL);
+              c.withJwtSecretFile(JWT_FILE);
+              c.withEngineApiMethodNegotiation();
+              applyMilestoneConfig(c);
+            });
 
-    //    lateJoiningNode.start();
-    //    lateJoiningNode.waitUntilInSyncWith(primaryNode);
+    lateJoiningNode.start();
+    lateJoiningNode.waitUntilInSyncWith(primaryNode);
 
     primaryNode.waitForNewBlock();
   }

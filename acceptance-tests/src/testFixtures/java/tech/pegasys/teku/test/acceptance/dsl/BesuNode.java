@@ -23,14 +23,11 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
@@ -42,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MergedGenesisTestBuilder;
 
 public class BesuNode extends Node {
-
   private static final Logger LOG = LogManager.getLogger();
   private static final int JSON_RPC_PORT = 8545;
   private static final int ENGINE_JSON_RPC_PORT = 8550;
@@ -53,45 +49,25 @@ public class BesuNode extends Node {
 
   private final Config config;
 
-  private BesuNode(
-      final Network network,
-      final BesuDockerVersion version,
-      final Config config,
-      final Map<String, String> genesisOverrides) {
+  public BesuNode(final Network network, final BesuDockerVersion version, final Config config) {
     super(network, BESU_DOCKER_IMAGE_NAME + ":" + version.getVersion(), LOG);
     this.config = config;
 
     container
         .withExposedPorts(JSON_RPC_PORT, ENGINE_JSON_RPC_PORT, P2P_PORT)
-        .waitingFor(new HttpWaitStrategy().forPort(JSON_RPC_PORT).forPath("/liveness"));
-
-    final List<String> startCommands = new ArrayList<>();
-    startCommands.add("--config-file");
-    startCommands.add(BESU_CONFIG_FILE_PATH);
-
-    if (!genesisOverrides.isEmpty()) {
-      final String overrides =
-          genesisOverrides.entrySet().stream()
-              .map((e) -> e.getKey() + "=" + e.getValue())
-              .collect(Collectors.joining(","));
-
-      startCommands.add("--override-genesis-config");
-      startCommands.add(overrides);
-    }
-
-    container.withCommand(startCommands.toArray(String[]::new));
+        .waitingFor(new HttpWaitStrategy().forPort(JSON_RPC_PORT).forPath("/liveness"))
+        .withCommand("--config-file", BESU_CONFIG_FILE_PATH);
   }
 
   public static BesuNode create(
       final Network network,
       final BesuDockerVersion version,
-      final Consumer<Config> configOptions,
-      final Map<String, String> genesisOverrides) {
+      final Consumer<Config> configOptions) {
 
     final Config config = new Config();
     configOptions.accept(config);
 
-    return new BesuNode(network, version, config, genesisOverrides);
+    return new BesuNode(network, version, config);
   }
 
   public void start() throws Exception {
@@ -191,7 +167,6 @@ public class BesuNode extends Node {
 
   @SuppressWarnings("unused")
   private static class Request {
-
     public final String jsonrpc = "2.0";
     public final String method;
     public final String[] params;
@@ -206,17 +181,14 @@ public class BesuNode extends Node {
   }
 
   private static class Response<T> {
-
     public T result;
   }
 
   private static class NodeInfoResponse {
-
     public String id;
   }
 
   public static class Config {
-
     private static final String[] MERGE_RPC_MODULES = new String[] {"ETH,NET,WEB3,ENGINE,ADMIN"};
     private final Map<String, Object> configMap = new HashMap<>();
     private Optional<URL> maybeJwtFile = Optional.empty();
