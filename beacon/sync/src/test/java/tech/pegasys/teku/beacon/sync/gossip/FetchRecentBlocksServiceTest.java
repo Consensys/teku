@@ -30,9 +30,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult;
-import tech.pegasys.teku.beacon.sync.fetch.FetchBlockResult.Status;
 import tech.pegasys.teku.beacon.sync.fetch.FetchBlockTask;
+import tech.pegasys.teku.beacon.sync.fetch.FetchResult;
+import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync.SyncSubscriber;
@@ -59,7 +59,7 @@ public class FetchRecentBlocksServiceTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final List<FetchBlockTask> tasks = new ArrayList<>();
-  private final List<SafeFuture<FetchBlockResult>> taskFutures = new ArrayList<>();
+  private final List<SafeFuture<FetchResult<SignedBeaconBlock>>> taskFutures = new ArrayList<>();
   private final List<SignedBeaconBlock> importedBlocks = new ArrayList<>();
 
   private FetchRecentBlocksService recentBlockFetcher;
@@ -80,7 +80,7 @@ public class FetchRecentBlocksServiceTest {
 
     lenient().when(task.getBlockRoot()).thenReturn(blockRoot);
     lenient().when(task.getNumberOfRetries()).thenReturn(0);
-    final SafeFuture<FetchBlockResult> future = new SafeFuture<>();
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = new SafeFuture<>();
     lenient().when(task.run()).thenReturn(future);
     taskFutures.add(future);
 
@@ -97,9 +97,9 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
-    final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    future.complete(FetchBlockResult.createSuccessful(block));
+    future.complete(FetchResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
     assertTaskCounts(0, 0, 0);
@@ -114,9 +114,9 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
-    final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    future.complete(FetchBlockResult.createSuccessful(block));
+    future.complete(FetchResult.createSuccessful(block));
 
     assertThat(importedBlocks).containsExactly(block);
     assertTaskCounts(0, 0, 0);
@@ -140,7 +140,7 @@ public class FetchRecentBlocksServiceTest {
 
     verify(tasks.get(0)).cancel();
     // Manually cancel future
-    taskFutures.get(0).complete(FetchBlockResult.createFailed(Status.CANCELLED));
+    taskFutures.get(0).complete(FetchResult.createFailed(Status.CANCELLED));
 
     // Task should be removed
     assertTaskCounts(0, 0, 0);
@@ -155,8 +155,8 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
-    final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
-    future.complete(FetchBlockResult.createFailed(Status.FETCH_FAILED));
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = taskFutures.get(0);
+    future.complete(FetchResult.createFailed(Status.FETCH_FAILED));
 
     // Task should be queued for a retry via the scheduled executor
     verify(tasks.get(0)).getNumberOfRetries();
@@ -177,8 +177,8 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
-    final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
-    future.complete(FetchBlockResult.createFailed(Status.FETCH_FAILED));
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = taskFutures.get(0);
+    future.complete(FetchResult.createFailed(Status.FETCH_FAILED));
 
     // Task should be queued for a retry via the scheduled executor
     verify(tasks.get(0)).getNumberOfRetries();
@@ -189,7 +189,7 @@ public class FetchRecentBlocksServiceTest {
     recentBlockFetcher.cancelRecentBlockRequest(root);
     verify(tasks.get(0)).cancel();
     when(tasks.get(0).run())
-        .thenReturn(SafeFuture.completedFuture(FetchBlockResult.createFailed(Status.CANCELLED)));
+        .thenReturn(SafeFuture.completedFuture(FetchResult.createFailed(Status.CANCELLED)));
 
     // Executor should requeue task, it should complete immediately and be removed
     asyncRunner.executeQueuedActions();
@@ -204,8 +204,8 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
 
-    final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
-    future.complete(FetchBlockResult.createFailed(Status.NO_AVAILABLE_PEERS));
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = taskFutures.get(0);
+    future.complete(FetchResult.createFailed(Status.NO_AVAILABLE_PEERS));
 
     // Task should be queued for a retry via the scheduled executor
     verify(tasks.get(0), never()).getNumberOfRetries();
@@ -229,9 +229,9 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(taskCount, taskCount - 1, 1);
 
     // Complete first task
-    final SafeFuture<FetchBlockResult> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = taskFutures.get(0);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(1);
-    future.complete(FetchBlockResult.createSuccessful(block));
+    future.complete(FetchResult.createSuccessful(block));
 
     // After first task completes, remaining pending count should become active
     assertTaskCounts(taskCount - 1, taskCount - 1, 0);

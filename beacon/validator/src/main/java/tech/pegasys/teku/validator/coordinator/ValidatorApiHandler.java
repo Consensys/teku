@@ -288,7 +288,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final boolean blinded) {
-    LOG.trace("Creating unsigned block for slot {}", slot);
+    LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();

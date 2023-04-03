@@ -22,10 +22,11 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class SinglePeerSyncService extends Service implements ForwardSyncService {
 
   private final SyncManager syncManager;
-  private final RecentChainData storageClient;
+  private final RecentChainData recentChainData;
 
-  public SinglePeerSyncService(final SyncManager syncManager, final RecentChainData storageClient) {
-    this.storageClient = storageClient;
+  public SinglePeerSyncService(
+      final SyncManager syncManager, final RecentChainData recentChainData) {
+    this.recentChainData = recentChainData;
     this.syncManager = syncManager;
   }
 
@@ -34,7 +35,7 @@ public class SinglePeerSyncService extends Service implements ForwardSyncService
     // We shouldn't start syncing until we have reached genesis.
     // There are also no valid blocks until we've reached genesis so no point in gossipping and
     // queuing them
-    storageClient.subscribeStoreInitialized(
+    recentChainData.subscribeStoreInitialized(
         () -> syncManager.start().ifExceptionGetsHereRaiseABug());
     return SafeFuture.COMPLETE;
   }

@@ -116,7 +116,14 @@ public class RestBuilderClient implements BuilderClient {
         .getAsync(
             BuilderApiMethod.GET_EXECUTION_PAYLOAD_HEADER.resolvePath(urlParams),
             responseTypeDefinition)
-        .thenApply(response -> Response.unwrap(response, this::extractSignedBuilderBid))
+        .thenApply(
+            response ->
+                Response.unwrapVersioned(
+                    response,
+                    this::extractSignedBuilderBid,
+                    milestone,
+                    BuilderApiResponse::getVersion,
+                    true))
         .thenApply(Response::convertToOptional)
         .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE);
   }
@@ -147,7 +154,14 @@ public class RestBuilderClient implements BuilderClient {
             signedBlindedBeaconBlock,
             requestTypeDefinition,
             responseTypeDefinition)
-        .thenApply(response -> Response.unwrap(response, this::extractExecutionPayload))
+        .thenApply(
+            response ->
+                Response.unwrapVersioned(
+                    response,
+                    this::extractExecutionPayload,
+                    milestone,
+                    BuilderApiResponse::getVersion,
+                    false))
         .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
   }
 

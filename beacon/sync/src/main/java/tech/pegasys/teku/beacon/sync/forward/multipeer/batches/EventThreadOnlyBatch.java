@@ -15,12 +15,15 @@ package tech.pegasys.teku.beacon.sync.forward.multipeer.batches;
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 
 public class EventThreadOnlyBatch implements Batch {
   private final EventThread eventThread;
@@ -65,6 +68,12 @@ public class EventThreadOnlyBatch implements Batch {
   public List<SignedBeaconBlock> getBlocks() {
     eventThread.checkOnEventThread();
     return delegate.getBlocks();
+  }
+
+  @Override
+  public Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot() {
+    eventThread.checkOnEventThread();
+    return delegate.getBlobSidecarsByBlockRoot();
   }
 
   @Override

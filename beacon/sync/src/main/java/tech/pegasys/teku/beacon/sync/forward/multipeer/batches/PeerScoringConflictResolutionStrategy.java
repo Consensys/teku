@@ -43,6 +43,12 @@ public class PeerScoringConflictResolutionStrategy implements ConflictResolution
   }
 
   @Override
+  public void reportInconsistentBatch(final Batch batch, final SyncSource source) {
+    LOG.debug("Penalising peer {} for providing inconsistent batch data {}", source, batch);
+    source.adjustReputation(SMALL_PENALTY);
+  }
+
+  @Override
   public void reportConfirmedBatch(final Batch batch, final SyncSource source) {
     source.adjustReputation(SMALL_REWARD);
   }

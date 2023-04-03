@@ -16,7 +16,9 @@ package tech.pegasys.teku.test.acceptance.dsl;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -102,7 +104,14 @@ public class AcceptanceTestBase {
 
   protected BesuNode createBesuNode(
       final BesuDockerVersion version, final Consumer<BesuNode.Config> configOptions) {
-    return addNode(BesuNode.create(network, version, configOptions));
+    return addNode(BesuNode.create(network, version, configOptions, Collections.emptyMap()));
+  }
+
+  protected BesuNode createBesuNode(
+      final BesuDockerVersion version,
+      final Consumer<BesuNode.Config> configOptions,
+      final Map<String, String> genesisOverrides) {
+    return addNode(BesuNode.create(network, version, configOptions, genesisOverrides));
   }
 
   protected GenesisGenerator createGenesisGenerator() {

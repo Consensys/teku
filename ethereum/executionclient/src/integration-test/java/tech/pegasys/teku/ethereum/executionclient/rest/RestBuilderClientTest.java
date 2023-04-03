@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -289,6 +292,52 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
+  void getExecutionPayloadHeader_wrongFork(final SpecContext specContext) {
+    specContext.assumeCapellaActive();
+
+    final String milestoneFolder = "builder/" + SpecMilestone.BELLATRIX.toString().toLowerCase();
+
+    executionPayloadHeaderResponse =
+        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableOfType(ExecutionException.class)
+        .withRootCauseInstanceOf(MissingRequiredFieldException.class)
+        .withMessageContaining("required fields: (withdrawals_root) were not set");
+
+    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+  }
+
+  @TestTemplate
+  void getExecutionPayloadHeader_wrongVersion(final SpecContext specContext) {
+    specContext.assumeCapellaActive();
+
+    final String milestoneFolder =
+        "builder/"
+            + specContext.getSpecMilestone().toString().toLowerCase(Locale.ROOT)
+            + "_wrong_version_responses";
+
+    executionPayloadHeaderResponse =
+        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableOfType(ExecutionException.class)
+        .withRootCauseInstanceOf(IllegalArgumentException.class)
+        .withMessageContaining(
+            "java.lang.IllegalArgumentException: Wrong response version: expected CAPELLA, received BELLATRIX");
+
+    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+  }
+
+  @TestTemplate
   void sendSignedBlindedBlock_success() {
 
     mockWebServer.enqueue(
@@ -336,6 +385,35 @@ class RestBuilderClientTest {
             response -> {
               assertThat(response.isFailure()).isTrue();
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
+            });
+
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
+  }
+
+  @TestTemplate
+  void sendSignedBlindedBlock_wrongVersion(final SpecContext specContext) {
+    specContext.assumeCapellaActive();
+
+    final String milestoneFolder =
+        "builder/"
+            + specContext.getSpecMilestone().toString().toLowerCase(Locale.ROOT)
+            + "_wrong_version_responses";
+
+    unblindedExecutionPayloadResponse =
+        readResource(milestoneFolder + "/unblindedExecutionPayloadResponse.json");
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(unblindedExecutionPayloadResponse));
+
+    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
+
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+        .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+        .satisfies(
+            response -> {
+              assertThat(response.isSuccess()).isTrue();
+              ExecutionPayload responsePayload = response.getPayload();
+              verifyExecutionPayloadResponse(responsePayload);
             });
 
     verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);

@@ -73,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
@@ -706,19 +707,45 @@ public class ChainDataProvider {
     UInt64 proposerSlashingsRewards = ZERO;
     for (ProposerSlashing slashing : proposerSlashings) {
       final int slashedIndex = slashing.getHeader1().getMessage().getProposerIndex().intValue();
-      final Validator validator = state.getValidators().get(slashedIndex);
-
-      final UInt64 whistleblowerReward =
-          validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
-      final UInt64 proposerReward =
-          whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
       proposerSlashingsRewards =
-          proposerSlashingsRewards
-              .plus(proposerReward)
-              .plus(whistleblowerReward.minus(proposerReward));
+          calculateSlashingRewards(specConfig, state, slashedIndex, proposerSlashingsRewards);
     }
 
     return proposerSlashingsRewards;
+  }
+
+  @VisibleForTesting
+  protected UInt64 calculateAttesterSlashingsRewards(
+      final BeaconBlock beaconBlock,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    final SszList<AttesterSlashing> attesterSlashings =
+        beaconBlock.getBody().getAttesterSlashings();
+
+    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
+    final SpecConfig specConfig = spec.getSpecConfig(epoch);
+
+    UInt64 attesterSlashingsRewards = ZERO;
+    for (AttesterSlashing slashing : attesterSlashings) {
+      for (final UInt64 index : slashing.getIntersectingValidatorIndices()) {
+        attesterSlashingsRewards =
+            calculateSlashingRewards(specConfig, state, index.intValue(), attesterSlashingsRewards);
+      }
+    }
+
+    return attesterSlashingsRewards;
+  }
+
+  private UInt64 calculateSlashingRewards(
+      final SpecConfig specConfig,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
+      final int slashedIndex,
+      final UInt64 currentRewards) {
+    final Validator validator = state.getValidators().get(slashedIndex);
+    final UInt64 whistleblowerReward =
+        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
+    final UInt64 proposerReward =
+        whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
+    return currentRewards.plus(proposerReward).plus(whistleblowerReward.minus(proposerReward));
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

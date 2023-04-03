@@ -70,7 +70,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final Spec spec,
       final AsyncRunner asyncRunner,
       final CombinedChainDataClient combinedChainDataClient,
-      final RecentChainData storageClient,
+      final RecentChainData recentChainData,
       final MetricsSystem metricsSystem,
       final Eth2PeerFactory eth2PeerFactory,
       final StatusMessageFactory statusMessageFactory,
@@ -80,7 +80,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
       final int eth2RpcOutstandingPingThreshold,
       final Duration eth2StatusUpdateInterval) {
     this.asyncRunner = asyncRunner;
-    this.recentChainData = storageClient;
+    this.recentChainData = recentChainData;
     this.eth2PeerFactory = eth2PeerFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
     this.rpcMethods =
@@ -89,7 +89,7 @@ public class Eth2PeerManager implements PeerLookup, PeerHandler {
             asyncRunner,
             this,
             combinedChainDataClient,
-            storageClient,
+            recentChainData,
             metricsSystem,
             statusMessageFactory,
             metadataMessagesFactory,

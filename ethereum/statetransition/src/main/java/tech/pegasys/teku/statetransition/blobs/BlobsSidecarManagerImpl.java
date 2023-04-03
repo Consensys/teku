@@ -75,15 +75,17 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
-      final SignedBlobSidecar blobsSidecar) {
+      final SignedBlobSidecar signedBlobSidecar) {
 
-    final SafeFuture<InternalValidationResult> validationResult = validator.validate(blobsSidecar);
+    final SafeFuture<InternalValidationResult> validationResult =
+        validator.validate(signedBlobSidecar);
 
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlobSidecar(blobsSidecar.getBlobSidecar())
+            final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
+            importBlobSidecar(blobSidecar)
                 .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
           }
         });
@@ -91,10 +93,16 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
     return validationResult;
   }
 
-  @SuppressWarnings("UnusedVariable")
-  private SafeFuture<Void> doImportBlobSidecar(final BlobSidecar blobsSidecar) {
+  @Override
+  @SuppressWarnings("unused")
+  public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobsSidecar) {
     // TODO implement import
     return SafeFuture.COMPLETE;
+  }
+
+  @Override
+  public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
+    return spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(recentChainData.getStore(), slot);
   }
 
   @Override

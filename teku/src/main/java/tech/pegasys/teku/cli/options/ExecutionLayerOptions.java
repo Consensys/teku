@@ -14,7 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.config.TekuConfiguration.Builder;
-import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.BUILDER_ALWAYS_KEYWORD;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_BID_COMPARE_FACTOR;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
@@ -98,18 +99,18 @@ public class ExecutionLayerOptions {
       DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
 
   @Option(
-      names = {"--Xvalidators-builder-bid-challenge-percentage"},
+      names = {"--builder-bid-compare-factor"},
       paramLabel = "<STRING>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Fallback to local payload whenever its value beats the builder bid. "
-              + "Value is whole, percent (e.g. 100, default value, means use local payload when it at least matches builder bid, "
-              + "80 means use local payload when its value is at least 80% of builder bid).\n"
-              + "NEVER: ignore local value, use builder's bid whenever it passes validation",
-      arity = "1",
-      hidden = true)
-  private String builderBidChallengePercentage =
-      Integer.toString(DEFAULT_BUILDER_BID_CHALLENGE_PERCENTAGE);
+          "Set the compare factor applied to the builder bid value when comparing it with locally produced payload."
+              + " Factor is expressed in percentage (e.g. '100' means locally produced payload will be chosen when its value is equal or greater than the entire builder bid value, "
+              + "'80' means local payload will be chosen when its value is at least 80%% of builder bid value).\n"
+              + "Set it to '"
+              + BUILDER_ALWAYS_KEYWORD
+              + "' to always use builder bid. In this configuration locally produced payload will be used only when the bid is invalid.",
+      arity = "1")
+  private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
 
   @Option(
       hidden = true,
@@ -133,7 +134,7 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerAllowedFaults(builderCircuitBreakerAllowedFaults)
                 .builderCircuitBreakerAllowedConsecutiveFaults(
                     builderCircuitBreakerAllowedConsecutiveFaults)
-                .builderBidChallengePercentage(builderBidChallengePercentage)
+                .builderBidCompareFactor(builderBidCompareFactor)
                 .exchangeCapabilitiesEnabled(exchangeCapabilitiesEnabled));
     depositOptions.configure(builder);
   }
