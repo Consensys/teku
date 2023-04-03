@@ -52,13 +52,13 @@ public class Web3JClientTest {
 
   private static final URI ENDPOINT = URI.create("");
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
+  private static final Collection<String> NON_CRITICAL_METHODS = Set.of("method_notCritical");
 
   private final EventLogger eventLog = mock(EventLogger.class);
 
   private final ExecutionClientEventsChannel executionClientEventsPublisher =
       mock(ExecutionClientEventsChannel.class);
 
-  private static final Collection<String> nonCriticalMethods = Set.of("method_notCritical");
 
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
@@ -74,7 +74,7 @@ public class Web3JClientTest {
                           eventLog,
                           timeProvider,
                           executionClientEventsPublisher,
-                          nonCriticalMethods) {};
+                          NON_CRITICAL_METHODS) {};
                   web3jClient.initWeb3jService(web3jService);
                   return web3jClient;
                 }),
@@ -89,7 +89,7 @@ public class Web3JClientTest {
                           DEFAULT_TIMEOUT,
                           Optional.empty(),
                           executionClientEventsPublisher,
-                          nonCriticalMethods) {};
+                          NON_CRITICAL_METHODS) {};
                   client.initWeb3jService(web3jService);
                   return client;
                 }),
@@ -103,7 +103,7 @@ public class Web3JClientTest {
                           timeProvider,
                           Optional.empty(),
                           executionClientEventsPublisher,
-                          nonCriticalMethods);
+                          NON_CRITICAL_METHODS);
                   client.initWeb3jService(webSocketService);
                   return client;
                 }),
@@ -117,7 +117,7 @@ public class Web3JClientTest {
                           timeProvider,
                           Optional.empty(),
                           executionClientEventsPublisher,
-                          nonCriticalMethods);
+                          NON_CRITICAL_METHODS);
                   client.initWeb3jService(web3jService);
                   return client;
                 }))
@@ -227,7 +227,7 @@ public class Web3JClientTest {
   void shouldNotUpdateAvailabilityWhenNonCriticalMethodSucceeds(final ClientFactory clientFactory)
       throws Exception {
     final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
-    final String nonCriticalMethod = nonCriticalMethods.stream().findFirst().orElseThrow();
+    final String nonCriticalMethod = NON_CRITICAL_METHODS.stream().findFirst().orElseThrow();
     final Request<Void, VoidResponse> request =
         new Request<>(
             nonCriticalMethod, new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
@@ -244,7 +244,7 @@ public class Web3JClientTest {
   void shouldNotUpdateAvailabilityWhenNonCriticalMethodFailsWithException(
       final ClientFactory clientFactory) throws Exception {
     final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
-    final String nonCriticalMethod = nonCriticalMethods.stream().findFirst().orElseThrow();
+    final String nonCriticalMethod = NON_CRITICAL_METHODS.stream().findFirst().orElseThrow();
     final Request<Void, VoidResponse> request =
         new Request<>(
             nonCriticalMethod, new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
@@ -261,7 +261,7 @@ public class Web3JClientTest {
   void shouldNotUpdateAvailabilityWhenNonCriticalMethodFailsWithErrorResponse(
       final ClientFactory clientFactory) throws Exception {
     final Web3JClient client = clientFactory.create(eventLog, executionClientEventsPublisher);
-    final String nonCriticalMethod = nonCriticalMethods.stream().findFirst().orElseThrow();
+    final String nonCriticalMethod = NON_CRITICAL_METHODS.stream().findFirst().orElseThrow();
     final Request<Void, VoidResponse> request =
         new Request<>(
             nonCriticalMethod, new ArrayList<>(), client.getWeb3jService(), VoidResponse.class);
