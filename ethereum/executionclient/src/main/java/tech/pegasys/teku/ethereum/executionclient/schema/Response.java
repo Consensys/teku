@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class Response<T> {
 
@@ -50,6 +53,31 @@ public class Response<T> {
     return payload == null
         ? Response.withNullPayload()
         : new Response<>(unwrapFunction.apply(payload));
+  }
+
+  public static <T, R> Response<R> unwrapVersioned(
+      final Response<T> response,
+      final Function<T, R> unwrapFunction,
+      final SpecMilestone expectedMilestone,
+      final Function<T, SpecMilestone> unwrapVersionFunction) {
+
+    if (response.isFailure()) {
+      return Response.withErrorMessage(response.getErrorMessage());
+    }
+    final T payload = response.getPayload();
+    if (payload == null) {
+      return Response.withNullPayload();
+    }
+
+    final SpecMilestone receivedMilestone = unwrapVersionFunction.apply(payload);
+
+    checkArgument(
+        receivedMilestone.equals(expectedMilestone),
+        "Invalid response version: expected %s, received %s",
+        expectedMilestone,
+        receivedMilestone);
+
+    return new Response<>(unwrapFunction.apply(payload));
   }
 
   public static <T> Response<Optional<T>> convertToOptional(final Response<T> response) {

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import okhttp3.OkHttpClient;
@@ -312,6 +313,31 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
+  void getExecutionPayloadHeader_wrongVersion(final SpecContext specContext) {
+    specContext.assumeCapellaActive();
+
+    final String milestoneFolder =
+        "builder/"
+            + specContext.getSpecMilestone().toString().toLowerCase(Locale.ROOT)
+            + "_wrong_version_responses";
+
+    executionPayloadHeaderResponse =
+        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableOfType(ExecutionException.class)
+        .withRootCauseInstanceOf(IllegalArgumentException.class)
+        .withMessageContaining(
+            "java.lang.IllegalArgumentException: Invalid response version: expected CAPELLA, received BELLATRIX");
+
+    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+  }
+
+  @TestTemplate
   void sendSignedBlindedBlock_success() {
 
     mockWebServer.enqueue(
@@ -360,6 +386,33 @@ class RestBuilderClientTest {
               assertThat(response.isFailure()).isTrue();
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
+
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
+  }
+
+  @TestTemplate
+  void sendSignedBlindedBlock_wrongVersion(final SpecContext specContext) {
+    specContext.assumeCapellaActive();
+
+    final String milestoneFolder =
+        "builder/"
+            + specContext.getSpecMilestone().toString().toLowerCase(Locale.ROOT)
+            + "_wrong_version_responses";
+
+    unblindedExecutionPayloadResponse =
+        readResource(milestoneFolder + "/unblindedExecutionPayloadResponse.json");
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(unblindedExecutionPayloadResponse));
+
+    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
+
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableOfType(ExecutionException.class)
+        .withRootCauseInstanceOf(IllegalArgumentException.class)
+        .withMessageContaining(
+            "java.lang.IllegalArgumentException: Invalid response version: expected CAPELLA, received BELLATRIX");
 
     verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
   }
