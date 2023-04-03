@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -38,6 +39,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.schema.BuilderApiResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldException;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -284,6 +286,27 @@ class RestBuilderClientTest {
               assertThat(response.isFailure()).isTrue();
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
+
+    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+  }
+
+  @TestTemplate
+  void getExecutionPayloadHeader_wrongFork(final SpecContext specContext) {
+    specContext.assumeCapellaActive();
+
+    final String milestoneFolder = "builder/" + SpecMilestone.BELLATRIX.toString().toLowerCase();
+
+    executionPayloadHeaderResponse =
+        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+        .failsWithin(WAIT_FOR_CALL_COMPLETION)
+        .withThrowableOfType(ExecutionException.class)
+        .withRootCauseInstanceOf(MissingRequiredFieldException.class)
+        .withMessageContaining("required fields: (withdrawals_root) were not set");
 
     verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
   }
