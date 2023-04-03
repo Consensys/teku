@@ -21,10 +21,12 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -42,9 +44,12 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -61,8 +66,11 @@ public class HistoricalBatchFetcher {
   private final int maxRequests;
 
   private final Spec spec;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
+  private final Map<Bytes32, BlobSidecar> blobSidecarsByBlockRootToImport =
+      new ConcurrentHashMap<>();
   private final AtomicInteger requestCount = new AtomicInteger(0);
   private final AsyncBLSSignatureVerifier signatureVerificationService;
   private final CombinedChainDataClient chainDataClient;
@@ -79,6 +87,7 @@ public class HistoricalBatchFetcher {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
+      final BlobsSidecarManager blobsSidecarManager,
       final Eth2Peer peer,
       final UInt64 maxSlot,
       final Bytes32 lastBlockRoot,
@@ -88,6 +97,7 @@ public class HistoricalBatchFetcher {
         signatureVerifier,
         chainDataClient,
         spec,
+        blobsSidecarManager,
         peer,
         maxSlot,
         lastBlockRoot,
@@ -101,6 +111,7 @@ public class HistoricalBatchFetcher {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
+      final BlobsSidecarManager blobsSidecarManager,
       final Eth2Peer peer,
       final UInt64 maxSlot,
       final Bytes32 lastBlockRoot,
@@ -110,6 +121,7 @@ public class HistoricalBatchFetcher {
     this.signatureVerificationService = signatureVerifier;
     this.chainDataClient = chainDataClient;
     this.spec = spec;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.peer = peer;
     this.maxSlot = maxSlot;
     this.lastBlockRoot = lastBlockRoot;
@@ -118,13 +130,13 @@ public class HistoricalBatchFetcher {
   }
 
   /**
-   * Fetch the batch of blocks up to {@link #maxSlot}, save them to the database, and return the new
-   * value for the earliest block.
+   * Fetch the batch of blocks (and blob sidecars if required) up to {@link #maxSlot}, save them to
+   * the database, and return the new value for the earliest block.
    *
    * @return A future that resolves with the earliest block pulled and saved.
    */
   public SafeFuture<BeaconBlockSummary> run() {
-    SafeFuture.asyncDoWhile(this::requestBlocksByRange)
+    SafeFuture.asyncDoWhile(this::requestBlocksAndBlobSidecarsByRange)
         .thenCompose(
             __ -> {
               if (blocksToImport.isEmpty()) {
@@ -154,7 +166,7 @@ public class HistoricalBatchFetcher {
       peer.disconnectCleanly(DisconnectReason.IRRELEVANT_NETWORK).ifExceptionGetsHereRaiseABug();
       throw new InvalidResponseException("Received invalid blocks from a different chain");
     } else {
-      // We haven't completed the batch and we've hit our request limit
+      // We haven't completed the batch, and we've hit our request limit
       throw new InvalidResponseException("Failed to deliver full batch");
     }
   }
@@ -178,53 +190,104 @@ public class HistoricalBatchFetcher {
         .orElse(false);
   }
 
-  private SafeFuture<Boolean> requestBlocksByRange() {
+  private SafeFuture<Boolean> requestBlocksAndBlobSidecarsByRange() {
     final RequestParameters requestParams = calculateRequestParams();
     if (requestParams.getCount().equals(UInt64.ZERO)) {
       // Nothing left to request
       return SafeFuture.completedFuture(false);
     }
 
+    final UInt64 endSlot = requestParams.getEndSlot();
+
+    final RequestManager requestManager =
+        new RequestManager(
+            lastBlockRoot,
+            getLatestReceivedBlock(),
+            blocksToImport::addLast,
+            blobSidecar ->
+                blobSidecarsByBlockRootToImport.put(blobSidecar.getBlockRoot(), blobSidecar));
+
     LOG.trace(
         "Request {} blocks from {} to {}",
         requestParams.getCount(),
         requestParams.getStartSlot(),
-        requestParams.getEndSlot());
+        endSlot);
 
-    final RequestManager requestManager =
-        new RequestManager(lastBlockRoot, getLatestReceivedBlock(), blocksToImport::addLast);
+    final SafeFuture<Void> blocksRequest =
+        peer.requestBlocksByRange(
+            requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock);
 
-    return peer.requestBlocksByRange(
-            requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock)
-        .thenApply(__ -> shouldRetryBlocksByRangeRequest());
+    final SafeFuture<Void> blobSidecarsRequest;
+    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+      LOG.trace(
+          "Request {} blob sidecars from {} to {}",
+          requestParams.getCount(),
+          requestParams.getStartSlot(),
+          endSlot);
+      blobSidecarsRequest =
+          peer.requestBlobSidecarsByRange(
+              requestParams.getStartSlot(),
+              requestParams.getCount(),
+              requestManager::processBlobSidecar);
+    } else {
+      blobSidecarsRequest = SafeFuture.COMPLETE;
+    }
+
+    return SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest)
+        .thenApply(__ -> shouldRetryBlocksAndBlobSidecarsByRangeRequest());
   }
 
-  private boolean shouldRetryBlocksByRangeRequest() {
+  private boolean shouldRetryBlocksAndBlobSidecarsByRangeRequest() {
     return !batchIsComplete() && requestCount.incrementAndGet() < maxRequests;
   }
 
   private SafeFuture<Void> requestBlockByHash() {
     LOG.trace("Request next historical block directly by hash {}", lastBlockRoot);
     return peer.requestBlockByRoot(lastBlockRoot)
-        .thenAccept(maybeBlock -> maybeBlock.ifPresent(blocksToImport::add));
+        .thenCompose(
+            maybeBlock -> {
+              if (maybeBlock.isPresent()) {
+                return processReceivedBlockByHash(maybeBlock.get());
+              }
+              return SafeFuture.COMPLETE;
+            });
+  }
+
+  private SafeFuture<Void> processReceivedBlockByHash(final SignedBeaconBlock block) {
+    blocksToImport.add(block);
+    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
+      LOG.trace(
+          "Request associated blob sidecars for historical block with hash {}", lastBlockRoot);
+      // TODO: implement
+      return SafeFuture.COMPLETE;
+    }
+    return SafeFuture.COMPLETE;
   }
 
   private SafeFuture<Void> importBatch() {
-    final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
-
+    // send to signature verification and blob sidecars validation and only store blocks and blob
+    // sidecars if all checks pass, or if one fails we reject the entire response
     return batchVerifyHistoricalBlockSignatures(blocksToImport)
         .thenCompose(
-            validSignatures ->
-                storageUpdateChannel
-                    // send to signature verification then store
-                    // all pass, or if one fails we reject the entire response
-                    .onFinalizedBlocks(blocksToImport, Map.of())
-                    .thenRun(
-                        () -> {
-                          LOG.trace(
-                              "Earliest block is now from slot {}", newEarliestBlock.getSlot());
-                          future.complete(newEarliestBlock);
-                        }));
+            __ -> {
+              final UInt64 latestSlotInBatch = blocksToImport.getLast().getSlot();
+              return validateBlobSidecars(latestSlotInBatch, blocksToImport);
+            })
+        .thenCompose(
+            validSignatures -> {
+              final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
+              return storageUpdateChannel
+                  // send to signature verification then store
+                  // all pass, or if one fails we reject the entire response
+                  .onFinalizedBlocks(blocksToImport, Map.of())
+                  .thenRun(
+                      () -> {
+                        LOG.trace("Earliest block is now from slot {}", newEarliestBlock.getSlot());
+                        future.complete(newEarliestBlock);
+                      });
+            })
+        // always clear the blob sidecars
+        .alwaysRun(blobSidecarsByBlockRootToImport::clear);
   }
 
   SafeFuture<Void> batchVerifyHistoricalBlockSignatures(
@@ -274,6 +337,27 @@ public class HistoricalBatchFetcher {
             });
   }
 
+  private SafeFuture<Void> validateBlobSidecars(
+      final UInt64 latestSlotInBatch, final Collection<SignedBeaconBlock> blocks) {
+    if (!blobsSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
+      LOG.trace(
+          "Latest slot in batch does not require blob sidecars to be available. No validation is needed.");
+      return SafeFuture.COMPLETE;
+    }
+    LOG.trace("Validating blob sidecars for a batch");
+    final Stream<SafeFuture<?>> validatingBlobSidecars =
+        blocks.stream()
+            .map(
+                signedBlock -> {
+                  // TODO: create new availability checker for blob sidecars to validate
+                  final BlobsSidecarAvailabilityChecker availabilityChecker =
+                      blobsSidecarManager.createAvailabilityChecker(signedBlock);
+                  return SafeFuture.COMPLETE;
+                });
+
+    return SafeFuture.allOfFailFast(validatingBlobSidecars);
+  }
+
   private RequestParameters calculateRequestParams() {
     final UInt64 startSlot = getStartSlot();
     final UInt64 count = maxSlot.plus(1).minus(startSlot);
@@ -310,6 +394,7 @@ public class HistoricalBatchFetcher {
     private final Bytes32 lastBlockRoot;
     private final Optional<SignedBeaconBlock> previousBlock;
     private final Consumer<SignedBeaconBlock> blockProcessor;
+    private final Consumer<BlobSidecar> blobSidecarProcessor;
 
     private final AtomicInteger blocksReceived = new AtomicInteger(0);
     private final AtomicBoolean foundLastBlock = new AtomicBoolean(false);
@@ -317,10 +402,12 @@ public class HistoricalBatchFetcher {
     private RequestManager(
         final Bytes32 lastBlockRoot,
         final Optional<SignedBeaconBlock> previousBlock,
-        final Consumer<SignedBeaconBlock> blockProcessor) {
+        final Consumer<SignedBeaconBlock> blockProcessor,
+        final Consumer<BlobSidecar> blobSidecarProcessor) {
       this.lastBlockRoot = lastBlockRoot;
       this.previousBlock = previousBlock;
       this.blockProcessor = blockProcessor;
+      this.blobSidecarProcessor = blobSidecarProcessor;
     }
 
     private SafeFuture<?> processBlock(final SignedBeaconBlock block) {
@@ -343,6 +430,11 @@ public class HistoricalBatchFetcher {
 
             return SafeFuture.COMPLETE;
           });
+    }
+
+    private SafeFuture<?> processBlobSidecar(final BlobSidecar blobSidecar) {
+      blobSidecarProcessor.accept(blobSidecar);
+      return SafeFuture.COMPLETE;
     }
   }
 

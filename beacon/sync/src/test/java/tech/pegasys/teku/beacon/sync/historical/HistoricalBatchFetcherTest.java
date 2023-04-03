@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -56,6 +57,7 @@ public class HistoricalBatchFetcherTest {
   private final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
   private ChainBuilder forkBuilder;
 
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
 
   @SuppressWarnings("unchecked")
@@ -74,6 +76,7 @@ public class HistoricalBatchFetcherTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
     when(storageUpdateChannel.onFinalizedBlocks(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
     // Set up main chain and fork chain
@@ -107,6 +110,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
@@ -187,6 +191,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             latestBlock.getSlot(),
             latestBlock.getRoot(),
@@ -214,6 +219,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             // Slot & batch size define an empty set of blocks
             lastBlockInBatch.getSlot().plus(batchSize * 2),
@@ -248,6 +254,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
