@@ -62,19 +62,21 @@ public class Response<T> {
 
     final SpecMilestone receivedMilestone = unwrapVersionFunction.apply(payload);
 
-    final boolean milestonesAreMatching = receivedMilestone.equals(expectedMilestone);
+    final boolean milestonesMismatch = !receivedMilestone.equals(expectedMilestone);
 
-    if (strictVersionCheck && !milestonesAreMatching) {
-      throw new IllegalArgumentException(
-          "Wrong response version: expected "
-              + expectedMilestone
-              + ", received "
-              + receivedMilestone);
-    } else {
-      LOG.warn(
-          "Wrong response version: expected {}, received {}.",
-          expectedMilestone,
-          receivedMilestone);
+    if (milestonesMismatch) {
+      if (strictVersionCheck) {
+        throw new IllegalArgumentException(
+            "Wrong response version: expected "
+                + expectedMilestone
+                + ", received "
+                + receivedMilestone);
+      } else {
+        LOG.warn(
+            "Wrong response version: expected {}, received {}.",
+            expectedMilestone,
+            receivedMilestone);
+      }
     }
 
     return new Response<>(unwrapFunction.apply(payload));
