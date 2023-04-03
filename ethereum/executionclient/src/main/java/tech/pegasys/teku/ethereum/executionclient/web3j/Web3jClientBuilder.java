@@ -20,6 +20,8 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
@@ -31,8 +33,8 @@ public class Web3jClientBuilder {
   private URI endpoint;
   private Optional<JwtConfig> jwtConfigOpt = Optional.empty();
   private Duration timeout;
-
   private ExecutionClientEventsChannel executionClientEventsPublisher;
+  private Collection<String> nonCriticalMethods = new HashSet<>();
 
   public Web3jClientBuilder endpoint(String endpoint) {
     this.endpoint = parseEndpoint(endpoint);
@@ -86,14 +88,25 @@ public class Web3jClientBuilder {
             timeProvider,
             timeout,
             jwtConfigOpt,
-            executionClientEventsPublisher);
+            executionClientEventsPublisher,
+            nonCriticalMethods);
       case "ws":
       case "wss":
         return new Web3jWebsocketClient(
-            EVENT_LOG, endpoint, timeProvider, jwtConfigOpt, executionClientEventsPublisher);
+            EVENT_LOG,
+            endpoint,
+            timeProvider,
+            jwtConfigOpt,
+            executionClientEventsPublisher,
+            nonCriticalMethods);
       case "file":
         return new Web3jIpcClient(
-            EVENT_LOG, endpoint, timeProvider, jwtConfigOpt, executionClientEventsPublisher);
+            EVENT_LOG,
+            endpoint,
+            timeProvider,
+            jwtConfigOpt,
+            executionClientEventsPublisher,
+            nonCriticalMethods);
       default:
         throw new InvalidConfigurationException(prepareInvalidSchemeMessage(endpoint));
     }
