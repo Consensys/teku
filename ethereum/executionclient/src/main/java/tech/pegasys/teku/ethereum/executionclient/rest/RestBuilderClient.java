@@ -122,7 +122,8 @@ public class RestBuilderClient implements BuilderClient {
                     response,
                     this::extractSignedBuilderBid,
                     milestone,
-                    BuilderApiResponse::getVersion))
+                    BuilderApiResponse::getVersion,
+                    true))
         .thenApply(Response::convertToOptional)
         .orTimeout(BUILDER_PROPOSAL_DELAY_TOLERANCE);
   }
@@ -159,7 +160,8 @@ public class RestBuilderClient implements BuilderClient {
                     response,
                     this::extractExecutionPayload,
                     milestone,
-                    BuilderApiResponse::getVersion))
+                    BuilderApiResponse::getVersion,
+                    false))
         .orTimeout(BUILDER_GET_PAYLOAD_TIMEOUT);
   }
 

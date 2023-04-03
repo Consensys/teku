@@ -332,7 +332,7 @@ class RestBuilderClientTest {
         .withThrowableOfType(ExecutionException.class)
         .withRootCauseInstanceOf(IllegalArgumentException.class)
         .withMessageContaining(
-            "java.lang.IllegalArgumentException: Invalid response version: expected CAPELLA, received BELLATRIX");
+            "java.lang.IllegalArgumentException: Wrong response version: expected CAPELLA, received BELLATRIX");
 
     verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
   }
@@ -408,11 +408,13 @@ class RestBuilderClientTest {
     final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
     assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
-        .failsWithin(WAIT_FOR_CALL_COMPLETION)
-        .withThrowableOfType(ExecutionException.class)
-        .withRootCauseInstanceOf(IllegalArgumentException.class)
-        .withMessageContaining(
-            "java.lang.IllegalArgumentException: Invalid response version: expected CAPELLA, received BELLATRIX");
+        .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+        .satisfies(
+            response -> {
+              assertThat(response.isSuccess()).isTrue();
+              ExecutionPayload responsePayload = response.getPayload();
+              verifyExecutionPayloadResponse(responsePayload);
+            });
 
     verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
   }
