@@ -59,7 +59,6 @@ public class Web3JClientTest {
   private final ExecutionClientEventsChannel executionClientEventsPublisher =
       mock(ExecutionClientEventsChannel.class);
 
-
   @SuppressWarnings("unused")
   static Stream<Arguments> getClientInstances() {
     final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
