@@ -15,5 +15,5 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
-
+ - Enabled peer scoring by default. Can be disabled explicitly using `--Xp2p-gossip-scoring-enabled=false`
 ### Bug Fixes
