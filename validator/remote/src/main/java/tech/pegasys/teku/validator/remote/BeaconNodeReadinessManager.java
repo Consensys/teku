@@ -107,12 +107,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
 
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
-    performReadinessCheckAgainstAllNodes()
-        .finish(
-            throwable ->
-                LOG.error(
-                    "Error while querying the syncing status of the configured Beacon Nodes",
-                    throwable));
+    performReadinessCheckAgainstAllNodes().ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<Void> performReadinessCheckAgainstAllNodes() {

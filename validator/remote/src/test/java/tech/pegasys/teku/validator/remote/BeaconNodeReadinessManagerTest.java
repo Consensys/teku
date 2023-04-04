@@ -58,6 +58,28 @@ public class BeaconNodeReadinessManagerTest {
           beaconNodeReadinessChannel);
 
   @Test
+  public void performsReadinessCheckOnStartup() {
+    // default to true if never started
+    assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
+    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isTrue();
+
+    when(beaconNodeApi.getSyncingStatus()).thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
+    when(failoverBeaconNodeApi.getSyncingStatus())
+        .thenReturn(SafeFuture.completedFuture(SYNCING_STATUS));
+
+    beaconNodeReadinessManager.start();
+
+    assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isFalse();
+    assertThat(beaconNodeReadinessManager.isReady(failoverBeaconNodeApi)).isFalse();
+
+    verify(validatorLogger).primaryBeaconNodeNotReady();
+    verify(beaconNodeReadinessChannel).onPrimaryNodeNotReady();
+    verify(beaconNodeReadinessChannel).onFailoverNodeNotReady(failoverBeaconNodeApi);
+
+    beaconNodeReadinessManager.stop();
+  }
+
+  @Test
   public void retrievesReadinessAndPublishesToAChannel() {
     // default to true if never ran
     assertThat(beaconNodeReadinessManager.isReady(beaconNodeApi)).isTrue();
