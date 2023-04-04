@@ -38,6 +38,10 @@ public interface BlobSidecarPool {
         @Override
         public void subscribeRequiredBlobSidecar(
             final RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber) {}
+
+        @Override
+        public void subscribeRequiredBlobSidecarDropped(
+            final RequiredBlobSidecarDroppedSubscriber requiredBlobSidecarDroppedSubscriber) {}
       };
 
   void onNewBlobSidecar(BlobSidecar blobSidecar);
@@ -48,7 +52,14 @@ public interface BlobSidecarPool {
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
 
+  void subscribeRequiredBlobSidecarDropped(
+      RequiredBlobSidecarDroppedSubscriber requiredBlobSidecarDroppedSubscriber);
+
   interface RequiredBlobSidecarSubscriber {
     void onRequiredBlobSidecar(BlobIdentifier blobIdentifier);
+  }
+
+  interface RequiredBlobSidecarDroppedSubscriber {
+    void onRequiredBlobSidecarDropped(BlobIdentifier blobIdentifier);
   }
 }

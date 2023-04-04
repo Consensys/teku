@@ -104,8 +104,9 @@ public class FetchRecentBlobSidecarsService
   }
 
   private void setupSubscribers() {
-    forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
     blobSidecarPool.subscribeRequiredBlobSidecar(this::requestRecentBlobSidecar);
+    blobSidecarPool.subscribeRequiredBlobSidecarDropped(this::cancelRecentBlobSidecarRequest);
+    forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
   }
 
   private void onSyncStatusChanged(final boolean syncActive) {
