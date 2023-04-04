@@ -230,7 +230,7 @@ class FetchRecentBlobSidecarsServiceTest {
   }
 
   @Test
-  void shouldNotFetchBlocksWhileForwardSyncIsInProgress() {
+  void shouldNotFetchBlobSidecarsWhileForwardSyncIsInProgress() {
     when(forwardSync.isSyncActive()).thenReturn(true);
 
     recentBlobSidecarsFetcher.requestRecentBlobSidecar(dataStructureUtil.randomBlobIdentifier());

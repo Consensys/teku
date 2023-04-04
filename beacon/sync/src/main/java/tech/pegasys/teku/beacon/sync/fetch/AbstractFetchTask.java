@@ -27,8 +27,8 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 /**
- * @param <K> - the key used to fetch
- * @param <T> - the type of object to fetch
+ * @param <K> - the type of the key used to fetch
+ * @param <T> - the type of the object to fetch
  */
 public abstract class AbstractFetchTask<K, T> {
 

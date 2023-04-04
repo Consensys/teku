@@ -28,9 +28,9 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.service.serviceutils.Service;
 
 /**
- * @param <K> - the key used to retrieve an object from a fetch task
- * @param <T> - the type of task used for fetching
- * @param <R> - the type of object that is fetched
+ * @param <K> - the type of the key used to retrieve an object from a fetch task
+ * @param <T> - the type of the task used for fetching
+ * @param <R> - the type of the object that is fetched
  */
 public abstract class AbstractFetchService<K, T extends AbstractFetchTask<K, R>, R>
     extends Service {
