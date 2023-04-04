@@ -37,6 +37,7 @@ public class GenesisGenerator {
   private ValidatorKeystores validatorKeys;
   private Optional<BesuNode> genesisPayloadSource = Optional.empty();
   private int genesisDelaySeconds = 10;
+  private int genesisTime;
   private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
   public GenesisGenerator network(final String network) {
@@ -102,12 +103,20 @@ public class GenesisGenerator {
     return this;
   }
 
+  public GenesisGenerator genesisTime(final int genesisTime) {
+    this.genesisTime = genesisTime;
+    return this;
+  }
+
   public InitialStateData generate() {
     final Spec spec = SpecFactory.create(network, specConfigModifier);
     final GenesisStateBuilder genesisBuilder = new GenesisStateBuilder();
+//    genesisBuilder
+//        .spec(spec)
+//        .genesisTime(timeProvider.getTimeInSeconds().plus(genesisDelaySeconds));
     genesisBuilder
         .spec(spec)
-        .genesisTime(timeProvider.getTimeInSeconds().plus(genesisDelaySeconds));
+        .genesisTime(genesisTime);
     validatorKeys
         .getValidatorKeys()
         .forEach(
@@ -126,6 +135,10 @@ public class GenesisGenerator {
 
     public InitialStateData(final BeaconState genesisState) {
       this.genesisState = genesisState;
+    }
+
+    public BeaconState getGenesisState() {
+      return genesisState;
     }
 
     public File writeToTempFile() throws IOException {
