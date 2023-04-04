@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.gossip.blobs;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public interface BlockSubscriber {
+public interface RecentBlobSidecarFetcher {
 
-  void onBlock(SignedBeaconBlock block);
+  void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber);
+
+  void requestRecentBlobSidecar(BlobIdentifier blobIdentifier);
+
+  void cancelRecentBlobSidecarRequest(BlobIdentifier blobIdentifier);
 }

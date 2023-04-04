@@ -2018,6 +2018,13 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarBuilder().build();
   }
 
+  public BlobSidecar randomBlobSidecar(final BlobIdentifier blobIdentifier) {
+    return new RandomBlobSidecarBuilder()
+        .index(blobIdentifier.getIndex())
+        .blockRoot(blobIdentifier.getBlockRoot())
+        .build();
+  }
+
   public List<BlobSidecar> randomBlobSidecars(int count) {
     List<BlobSidecar> blobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {

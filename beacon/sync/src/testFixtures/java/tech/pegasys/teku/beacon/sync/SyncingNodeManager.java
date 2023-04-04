@@ -29,7 +29,7 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SyncManager;
-import tech.pegasys.teku.beacon.sync.gossip.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
