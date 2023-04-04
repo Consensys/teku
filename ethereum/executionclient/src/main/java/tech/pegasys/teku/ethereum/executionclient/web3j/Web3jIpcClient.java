@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Optional;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.LogManager;
@@ -36,8 +37,9 @@ class Web3jIpcClient extends Web3JClient {
       final URI endpoint,
       final TimeProvider timeProvider,
       final Optional<JwtConfig> jwtConfig,
-      final ExecutionClientEventsChannel executionClientEventsPublisher) {
-    super(eventLog, timeProvider, executionClientEventsPublisher);
+      final ExecutionClientEventsChannel executionClientEventsPublisher,
+      final Collection<String> nonCriticalMethods) {
+    super(eventLog, timeProvider, executionClientEventsPublisher, nonCriticalMethods);
     if (jwtConfig.isPresent()) {
       LOG.warn("JWT configuration is ignored with IPC endpoint URI");
     }
