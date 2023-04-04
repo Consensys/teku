@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Optional;
@@ -34,7 +35,7 @@ public class Web3jClientBuilder {
   private Optional<JwtConfig> jwtConfigOpt = Optional.empty();
   private Duration timeout;
   private ExecutionClientEventsChannel executionClientEventsPublisher;
-  private Collection<String> nonCriticalMethods = new HashSet<>();
+  private final Collection<String> nonCriticalMethods = new HashSet<>();
 
   public Web3jClientBuilder endpoint(String endpoint) {
     this.endpoint = parseEndpoint(endpoint);
@@ -70,6 +71,11 @@ public class Web3jClientBuilder {
   public Web3jClientBuilder executionClientEventsPublisher(
       final ExecutionClientEventsChannel executionClientEventsPublisher) {
     this.executionClientEventsPublisher = executionClientEventsPublisher;
+    return this;
+  }
+
+  public Web3jClientBuilder nonCriticalMethods(String... methods) {
+    nonCriticalMethods.addAll(Arrays.asList(methods));
     return this;
   }
 

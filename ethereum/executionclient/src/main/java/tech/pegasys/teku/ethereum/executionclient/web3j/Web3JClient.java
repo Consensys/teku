@@ -42,6 +42,9 @@ public abstract class Web3JClient {
   private final ExecutionClientEventsChannel executionClientEventsPublisher;
   private Web3jService web3jService;
   private Web3j eth1Web3j;
+  /*
+   Non-critical methods won't trigger availability updates when they succeed/fail
+  */
   private final Collection<String> nonCriticalMethods = new HashSet<>();
 
   // Default to the provider having a previous failure at startup so we log when it is first
@@ -80,17 +83,18 @@ public abstract class Web3JClient {
         .orTimeout(timeout)
         .handle(
             (response, exception) -> {
+              final boolean isCriticalRequest = isCriticalRequest(web3jRequest);
               if (exception != null) {
                 final boolean couldBeAuthError = isAuthenticationException(exception);
-                handleError(isCriticalRequest(web3jRequest), exception, couldBeAuthError);
+                handleError(isCriticalRequest, exception, couldBeAuthError);
                 return Response.withErrorMessage(getMessageOrSimpleName(exception));
               } else if (response.hasError()) {
                 final String errorMessage =
                     response.getError().getCode() + ": " + response.getError().getMessage();
-                handleError(isCriticalRequest(web3jRequest), new IOException(errorMessage), false);
+                handleError(isCriticalRequest, new IOException(errorMessage), false);
                 return Response.withErrorMessage(errorMessage);
               } else {
-                handleSuccess(isCriticalRequest(web3jRequest));
+                handleSuccess(isCriticalRequest);
                 return new Response<>(response.getResult());
               }
             });
