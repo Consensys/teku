@@ -159,14 +159,16 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   public SafeFuture<Void> subscribeToEvents() {
     return beaconChainEventAdapter
         .start()
-        .thenCompose(__ -> beaconNodeReadinessManager.start().toVoid());
+        .thenCompose(__ -> beaconNodeReadinessManager.start())
+        .toVoid();
   }
 
   @Override
   public SafeFuture<Void> unsubscribeFromEvents() {
     return beaconChainEventAdapter
         .stop()
-        .thenCompose(__ -> beaconNodeReadinessManager.stop().toVoid());
+        .thenCompose(__ -> beaconNodeReadinessManager.stop())
+        .toVoid();
   }
 
   @Override
