@@ -28,6 +28,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 /**
@@ -36,7 +37,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
  * href="https://ethereum.github.io/beacon-APIs/#/ValidatorRequiredApi/getSyncingStatus">Syncing
  * Status API</a>
  */
-public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
+public class BeaconNodeReadinessManager extends Service implements ValidatorTimingChannel {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final Duration SYNCING_STATUS_CALL_TIMEOUT = Duration.ofSeconds(10);
@@ -73,6 +74,16 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
   }
 
   @Override
+  protected SafeFuture<?> doStart() {
+    return performReadinessCheckAgainstAllNodes();
+  }
+
+  @Override
+  protected SafeFuture<?> doStop() {
+    return SafeFuture.COMPLETE;
+  }
+
+  @Override
   public void onSlot(final UInt64 slot) {}
 
   @Override
@@ -96,19 +107,23 @@ public class BeaconNodeReadinessManager implements ValidatorTimingChannel {
 
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {
-    // no readiness check needed when no failovers are configured
-    if (failoverBeaconNodeApis.isEmpty()) {
-      return;
-    }
-    final SafeFuture<Void> primaryReadinessCheck = performPrimaryReadinessCheck();
-    final Stream<SafeFuture<?>> failoverReadinessChecks =
-        failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
-    SafeFuture.allOf(primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks))
+    performReadinessCheckAgainstAllNodes()
         .finish(
             throwable ->
                 LOG.error(
                     "Error while querying the syncing status of the configured Beacon Nodes",
                     throwable));
+  }
+
+  private SafeFuture<Void> performReadinessCheckAgainstAllNodes() {
+    // no readiness check needed when no failovers are configured
+    if (failoverBeaconNodeApis.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+    final SafeFuture<Void> primaryReadinessCheck = performPrimaryReadinessCheck();
+    final Stream<SafeFuture<?>> failoverReadinessChecks =
+        failoverBeaconNodeApis.stream().map(this::performFailoverReadinessCheck);
+    return SafeFuture.allOf(primaryReadinessCheck, SafeFuture.allOf(failoverReadinessChecks));
   }
 
   private SafeFuture<Void> performPrimaryReadinessCheck() {

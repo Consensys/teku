@@ -51,12 +51,15 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
+  private final BeaconNodeReadinessManager beaconNodeReadinessManager;
 
   private RemoteBeaconNodeApi(
       final BeaconChainEventAdapter beaconChainEventAdapter,
-      final ValidatorApiChannel validatorApiChannel) {
+      final ValidatorApiChannel validatorApiChannel,
+      final BeaconNodeReadinessManager beaconNodeReadinessManager) {
     this.beaconChainEventAdapter = beaconChainEventAdapter;
     this.validatorApiChannel = validatorApiChannel;
+    this.beaconNodeReadinessManager = beaconNodeReadinessManager;
   }
 
   public static BeaconNodeApi create(
@@ -148,17 +151,22 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     eventChannels.subscribe(BeaconNodeReadinessChannel.class, beaconChainEventAdapter);
 
-    return new RemoteBeaconNodeApi(beaconChainEventAdapter, validatorApi);
+    return new RemoteBeaconNodeApi(
+        beaconChainEventAdapter, validatorApi, beaconNodeReadinessManager);
   }
 
   @Override
   public SafeFuture<Void> subscribeToEvents() {
-    return beaconChainEventAdapter.start();
+    return beaconChainEventAdapter
+        .start()
+        .thenCompose(__ -> beaconNodeReadinessManager.start().toVoid());
   }
 
   @Override
   public SafeFuture<Void> unsubscribeFromEvents() {
-    return beaconChainEventAdapter.stop();
+    return beaconChainEventAdapter
+        .stop()
+        .thenCompose(__ -> beaconNodeReadinessManager.stop().toVoid());
   }
 
   @Override
