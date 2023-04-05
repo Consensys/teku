@@ -15,8 +15,8 @@ package tech.pegasys.teku.spec.logic.versions.deneb.blobs;
 
 import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker.BlobSidecarsAndValidationResult.validResult;
 
-import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -43,14 +43,14 @@ public interface BlobSidecarsAvailabilityChecker {
 
         @Override
         public SafeFuture<BlobSidecarsAndValidationResult> validate(
-            final Collection<BlobSidecar> blobSidecars) {
+            final List<BlobSidecar> blobSidecars) {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
       };
 
   BlobSidecarsAvailabilityChecker NOT_REQUIRED = NOOP;
 
-  Function<Collection<BlobSidecar>, BlobSidecarsAvailabilityChecker> ALREADY_CHECKED =
+  Function<List<BlobSidecar>, BlobSidecarsAvailabilityChecker> ALREADY_CHECKED =
       (blobSidecars) -> {
         final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsValidResult =
             SafeFuture.completedFuture(validResult(blobSidecars));
@@ -67,7 +67,7 @@ public interface BlobSidecarsAvailabilityChecker {
 
           @Override
           public SafeFuture<BlobSidecarsAndValidationResult> validate(
-              final Collection<BlobSidecar> blobSidecars) {
+              final List<BlobSidecar> blobSidecars) {
             return blobSidecarsValidResult;
           }
         };
@@ -84,7 +84,7 @@ public interface BlobSidecarsAvailabilityChecker {
   SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult();
 
   /** Only perform the {@link MiscHelpersDeneb#isDataAvailable} check */
-  SafeFuture<BlobSidecarsAndValidationResult> validate(Collection<BlobSidecar> blobSidecars);
+  SafeFuture<BlobSidecarsAndValidationResult> validate(List<BlobSidecar> blobSidecars);
 
   enum BlobSidecarsValidationResult {
     NOT_REQUIRED,
@@ -98,7 +98,7 @@ public interface BlobSidecarsAvailabilityChecker {
 
   class BlobSidecarsAndValidationResult {
     private final BlobSidecarsValidationResult validationResult;
-    private final Collection<BlobSidecar> blobSidecars;
+    private final List<BlobSidecar> blobSidecars;
     private final Optional<Throwable> cause;
 
     public static final BlobSidecarsAndValidationResult NOT_AVAILABLE =
@@ -110,26 +110,26 @@ public interface BlobSidecarsAvailabilityChecker {
             BlobSidecarsValidationResult.NOT_REQUIRED, Collections.emptyList(), Optional.empty());
 
     public static BlobSidecarsAndValidationResult validResult(
-        final Collection<BlobSidecar> blobSidecars) {
+        final List<BlobSidecar> blobSidecars) {
       return new BlobSidecarsAndValidationResult(
           BlobSidecarsValidationResult.VALID, blobSidecars, Optional.empty());
     }
 
     public static BlobSidecarsAndValidationResult invalidResult(
-        final Collection<BlobSidecar> blobSidecars) {
+        final List<BlobSidecar> blobSidecars) {
       return new BlobSidecarsAndValidationResult(
           BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.empty());
     }
 
     public static BlobSidecarsAndValidationResult invalidResult(
-        final Collection<BlobSidecar> blobSidecars, final Throwable cause) {
+        final List<BlobSidecar> blobSidecars, final Throwable cause) {
       return new BlobSidecarsAndValidationResult(
           BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.of(cause));
     }
 
     private BlobSidecarsAndValidationResult(
         final BlobSidecarsValidationResult validationResult,
-        final Collection<BlobSidecar> blobSidecars,
+        final List<BlobSidecar> blobSidecars,
         final Optional<Throwable> cause) {
       this.validationResult = validationResult;
       this.blobSidecars = blobSidecars;
@@ -140,7 +140,7 @@ public interface BlobSidecarsAvailabilityChecker {
       return validationResult;
     }
 
-    public Collection<BlobSidecar> getBlobSidecars() {
+    public List<BlobSidecar> getBlobSidecars() {
       return blobSidecars;
     }
 

@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSI
 import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -73,7 +72,7 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
-      final Collection<BlobSidecar> blobSidecars) {
+      final List<BlobSidecar> blobSidecars) {
     validateBlobs(slot, beaconBlockRoot, kzgCommitments, blobSidecars);
     return true;
   }
@@ -86,7 +85,7 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
-      final Collection<BlobSidecar> blobSidecars) {
+      final List<BlobSidecar> blobSidecars) {
     blobSidecars.forEach(
         blobSidecar -> {
           checkArgument(

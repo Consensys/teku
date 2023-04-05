@@ -13,8 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import java.util.Collection;
-import java.util.Optional;
+import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -66,7 +65,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
   @Override
   public SafeFuture<BlobSidecarsAndValidationResult> validate(
-      final Collection<BlobSidecar> blobSidecars) {
+      final List<BlobSidecar> blobSidecars) {
     return SafeFuture.of(
         () -> {
           if (blobSidecars.size() > 0) {
@@ -84,8 +83,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         });
   }
 
-  private BlobSidecarsAndValidationResult internalValidate(
-      final Collection<BlobSidecar> blobSidecars) {
+  private BlobSidecarsAndValidationResult internalValidate(final List<BlobSidecar> blobSidecars) {
     final BeaconBlockBodyDeneb blockBody =
         block
             .getBeaconBlock()

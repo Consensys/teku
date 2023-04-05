@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -267,7 +266,7 @@ public class MiscHelpers {
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
-      final Collection<BlobSidecar> blobSidecars) {
+      final List<BlobSidecar> blobSidecars) {
     return false;
   }
 
