@@ -192,7 +192,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldCompleteSuccessfullyIfRequestNotWithinRange() {
     SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
-    int blobSidecarsCount = miscHelpers.getBlobSidecarsCount(Optional.of(signedBeaconBlock));
+    int blobSidecarsCount = miscHelpers.getExpectedBlobSidecarsCount(signedBeaconBlock);
     when(combinedChainDataClient.getBlockAtSlotExact(any(), eq(headBlockRoot)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
 
@@ -297,7 +297,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private List<BlobSidecar> setUpBlobSidecarsDataForSlot(
       final UInt64 slot, final SignedBeaconBlock signedBeaconBlock) {
     return UInt64.range(
-            ZERO, UInt64.valueOf(miscHelpers.getBlobSidecarsCount(Optional.of(signedBeaconBlock))))
+            ZERO, UInt64.valueOf(miscHelpers.getExpectedBlobSidecarsCount(signedBeaconBlock)))
         .map(
             index -> {
               final BlobSidecar blobSidecar =

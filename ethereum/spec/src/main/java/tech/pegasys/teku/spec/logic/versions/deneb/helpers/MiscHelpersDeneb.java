@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSI
 import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,7 +39,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -63,38 +64,64 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     return kzg;
   }
 
-  // TODO: remove, dummy
-  private void validateBlobsSidecar(
-      final UInt64 slot,
-      final Bytes32 beaconBlockRoot,
-      final List<KZGCommitment> kzgCommitments,
-      final BlobsSidecar blobsSidecar) {
-    checkArgument(
-        slot.equals(blobsSidecar.getBeaconBlockSlot()),
-        "Block slot should match blobs sidecar slot");
-    checkArgument(
-        beaconBlockRoot.equals(blobsSidecar.getBeaconBlockRoot()),
-        "Block root should match blobs sidecar beacon block root");
-    checkArgument(
-        kzgCommitments.size() == blobsSidecar.getBlobs().size(),
-        "Number of KZG commitments should match number of blobs");
-    checkState(false, "Invalid aggregate KZG proof for the given blobs and commitments");
-  }
-
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
+   */
   @Override
   public boolean isDataAvailable(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
-      final BlobsSidecar blobsSidecar) {
-    validateBlobsSidecar(slot, beaconBlockRoot, kzgCommitments, blobsSidecar);
+      final Collection<BlobSidecar> blobSidecars) {
+    validateBlobs(slot, beaconBlockRoot, kzgCommitments, blobSidecars);
     return true;
   }
 
-  public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
-    return signedBeaconBlock
-        .flatMap(SignedBeaconBlock::getBeaconBlock)
-        .flatMap(beaconBlock -> beaconBlock.getBody().toVersionDeneb())
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#validate_blobs">validate_blobs</a>
+   */
+  private void validateBlobs(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final List<KZGCommitment> kzgCommitments,
+      final Collection<BlobSidecar> blobSidecars) {
+    blobSidecars.forEach(
+        blobSidecar -> {
+          checkArgument(
+              slot.equals(blobSidecar.getSlot()),
+              "Blob sidecar slot %s does not match block slot %s",
+              blobSidecar.getSlot(),
+              slot);
+          checkArgument(
+              beaconBlockRoot.equals(blobSidecar.getBlockRoot()),
+              "Blob sidecar block root %s does not match block root %s",
+              blobSidecar.getBlockRoot(),
+              beaconBlockRoot);
+        });
+    checkArgument(
+        kzgCommitments.size() == blobSidecars.size(),
+        "Number of KZG commitments should match number of blobs");
+    final List<Bytes> blobs =
+        blobSidecars.stream()
+            .map(BlobSidecar::getBlob)
+            .map(Blob::getBytes)
+            .collect(Collectors.toList());
+    final List<KZGProof> kzgProofs =
+        blobSidecars.stream().map(BlobSidecar::getKZGProof).collect(Collectors.toList());
+    checkState(
+        kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs),
+        "The blobs and KZG proofs do not correspond to the KZG commitments for slot %s and block root %s",
+        slot,
+        beaconBlockRoot);
+  }
+
+  public int getExpectedBlobSidecarsCount(final SignedBeaconBlock block) {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionDeneb()
         .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
         .orElse(0);
   }
@@ -154,9 +181,9 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     return kzg.blobToKzgCommitment(blob.getBytes());
   }
 
-  // TODO: remove, dummy
   @SuppressWarnings("unused")
   public KZGProof computeAggregatedKzgProof(final List<Bytes> blobs) {
+    // TODO: remove when fork choice for blobs decoupling sync is implemented
     return KZGProof.INFINITY;
   }
 

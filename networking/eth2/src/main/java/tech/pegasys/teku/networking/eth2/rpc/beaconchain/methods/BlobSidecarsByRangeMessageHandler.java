@@ -260,7 +260,8 @@ public class BlobSidecarsByRangeMessageHandler
                   maybeCurrentBlock = block;
                   final MiscHelpersDeneb miscHelpersDeneb =
                       spec.atSlot(currentSlot.get()).miscHelpers().toVersionDeneb().orElseThrow();
-                  blobSidecarsCount = miscHelpersDeneb.getBlobSidecarsCount(block);
+                  blobSidecarsCount =
+                      block.map(miscHelpersDeneb::getExpectedBlobSidecarsCount).orElse(0);
                   return retrieveBlobSidecar();
                 });
       } else {
