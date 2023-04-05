@@ -64,7 +64,8 @@ public class GetDepositSnapshot extends RestApiEndpoint {
                 "Request successful",
                 DEPOSIT_SNAPSHOT_RESPONSE_TYPE,
                 new OctetStreamResponseContentTypeDefinition<>(
-                    SszData::sszSerialize, __ -> Collections.emptyMap()))
+                    (data, out) -> ((SszData) data).sszSerialize(out),
+                    __ -> Collections.emptyMap()))
             .withNotFoundResponse()
             .build());
     this.eth1DataProvider = eth1DataProvider;

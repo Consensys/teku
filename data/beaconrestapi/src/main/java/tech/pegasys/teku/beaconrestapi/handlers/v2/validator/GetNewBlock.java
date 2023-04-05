@@ -99,7 +99,8 @@ public class GetNewBlock extends RestApiEndpoint {
                     block -> schemaDefinitionCache.milestoneAtSlot(block.getSlot()))
                 .build(),
             sszResponseType(
-                block -> spec.getForkSchedule().getSpecMilestoneAtSlot(block.getSlot())))
+                block ->
+                    spec.getForkSchedule().getSpecMilestoneAtSlot(((BeaconBlock) block).getSlot())))
         .build();
   }
 
