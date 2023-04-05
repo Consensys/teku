@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -118,9 +117,9 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
     return sszData -> {
       if (sszData instanceof BeaconBlock) {
         return spec.getForkSchedule().getSpecMilestoneAtSlot(((BeaconBlock) sszData).getSlot());
-      } else if (sszData instanceof BlockContents) {
+      } else if (sszData instanceof BlindedBlockContents) {
         return spec.getForkSchedule()
-            .getSpecMilestoneAtSlot(((BlockContents) sszData).getBeaconBlock().getSlot());
+            .getSpecMilestoneAtSlot(((BlindedBlockContents) sszData).getBeaconBlock().getSlot());
       } else {
         throw new UnsupportedOperationException(
             String.format(
@@ -179,7 +178,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
                         .map(SchemaDefinitionsDeneb::getBlindedBlockContentsSchema),
                 (blindedBlockContents, milestone) ->
                     schemaDefinitionCache
-                        .milestoneAtSlot(blindedBlockContents.getSignedBeaconBlock().getSlot())
+                        .milestoneAtSlot(blindedBlockContents.getBeaconBlock().getSlot())
                         .equals(milestone)),
             Function.identity())
         .withField(
@@ -187,7 +186,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
             MILESTONE_TYPE,
             blindedBlockContents ->
                 schemaDefinitionCache.milestoneAtSlot(
-                    blindedBlockContents.getSignedBeaconBlock().getSlot()))
+                    blindedBlockContents.getBeaconBlock().getSlot()))
         .build();
   }
 }

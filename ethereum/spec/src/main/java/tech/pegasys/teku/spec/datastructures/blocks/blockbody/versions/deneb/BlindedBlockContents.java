@@ -31,7 +31,7 @@ public class BlindedBlockContents
     super(schema, beaconBlock, blindedBlobSidecars);
   }
 
-  public BeaconBlock getSignedBeaconBlock() {
+  public BeaconBlock getBeaconBlock() {
     return getField0();
   }
 
