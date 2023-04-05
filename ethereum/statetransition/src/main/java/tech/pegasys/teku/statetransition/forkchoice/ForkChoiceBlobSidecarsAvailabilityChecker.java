@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
