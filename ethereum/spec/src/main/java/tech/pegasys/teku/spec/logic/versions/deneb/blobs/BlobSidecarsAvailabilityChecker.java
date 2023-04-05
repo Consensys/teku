@@ -144,6 +144,10 @@ public interface BlobSidecarsAvailabilityChecker {
       return blobSidecars;
     }
 
+    public Optional<Throwable> getCause() {
+      return cause;
+    }
+
     public boolean isValid() {
       return validationResult.equals(BlobSidecarsValidationResult.VALID);
     }
@@ -162,10 +166,6 @@ public interface BlobSidecarsAvailabilityChecker {
 
     public boolean isFailure() {
       return isInvalid() || isNotAvailable();
-    }
-
-    public Optional<Throwable> getCause() {
-      return cause;
     }
 
     @Override

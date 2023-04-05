@@ -69,18 +69,22 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       final List<BlobSidecar> blobSidecars) {
     return SafeFuture.of(
         () -> {
-          if (blobSidecars.size() > 0) {
+          if (!blobSidecars.isEmpty()) {
             return internalValidate(blobSidecars);
           }
 
-          // when no blobs are available, we check if it is ok to not have them based on
-          // the required availability window.
-          if (isBlockInDataAvailabilityWindow()) {
-            return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
+          // When no blobs are available, it is ok to not have them (NOT_REQUIRED) if:
+
+          // 1. The number of kzg commitments in the block is 0
+          if (getNumberOfKzgCommitmentsInBlock() == 0) {
+            return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+          }
+          // 2. The block is not in the availability window
+          if (!isBlockInDataAvailabilityWindow()) {
+            return BlobSidecarsAndValidationResult.NOT_REQUIRED;
           }
 
-          // block is older than the availability window
-          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+          return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
         });
   }
 
@@ -113,5 +117,15 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   private boolean isBlockInDataAvailabilityWindow() {
     return spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(
         recentChainData.getStore(), block.getSlot());
+  }
+
+  private int getNumberOfKzgCommitmentsInBlock() {
+    return block
+        .getMessage()
+        .getBody()
+        .toVersionDeneb()
+        .orElseThrow()
+        .getBlobKzgCommitments()
+        .size();
   }
 }
