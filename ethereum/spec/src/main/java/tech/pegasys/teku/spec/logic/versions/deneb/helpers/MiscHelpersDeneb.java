@@ -101,7 +101,9 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
         });
     checkArgument(
         kzgCommitments.size() == blobSidecars.size(),
-        "Number of KZG commitments should match number of blobs");
+        "Number of KZG commitments (%d) does not match number of blobs (%d)",
+        kzgCommitments.size(),
+        blobSidecars.size());
     final List<Bytes> blobs =
         blobSidecars.stream()
             .map(BlobSidecar::getBlob)
