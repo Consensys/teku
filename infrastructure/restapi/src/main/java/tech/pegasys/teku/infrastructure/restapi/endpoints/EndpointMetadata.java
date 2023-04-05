@@ -547,7 +547,7 @@ public class EndpointMetadata {
         final int responseCode,
         final String description,
         final SerializableTypeDefinition<T> content,
-        final ResponseContentTypeDefinition<T> octetStreamTypeDefinition) {
+        final ResponseContentTypeDefinition<? extends T> octetStreamTypeDefinition) {
       return response(
           responseCode,
           description,

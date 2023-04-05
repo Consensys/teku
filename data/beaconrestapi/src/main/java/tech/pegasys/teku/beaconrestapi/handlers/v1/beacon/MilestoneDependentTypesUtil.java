@@ -56,6 +56,28 @@ public class MilestoneDependentTypesUtil {
     return builder.build();
   }
 
+  public static <T extends SszData>
+      SerializableOneOfTypeDefinition<T> getAvailableSchemaDefinitionForAllMilestones(
+          final SchemaDefinitionCache schemaDefinitionCache,
+          final String title,
+          final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
+          final BiPredicate<T, SpecMilestone> predicate) {
+    final SerializableOneOfTypeDefinitionBuilder<T> builder =
+        new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
+    for (SpecMilestone milestone : SpecMilestone.values()) {
+      if (IGNORED_MILESTONES.contains(milestone)) {
+        continue;
+      }
+      final Optional<SszSchema<? extends T>> schemaDefinition =
+          schemaGetter.apply(schemaDefinitionCache.getSchemaDefinition(milestone));
+      schemaDefinition.ifPresent(
+          sszSchema ->
+              builder.withType(
+                  value -> predicate.test(value, milestone), sszSchema.getJsonTypeDefinition()));
+    }
+    return builder.build();
+  }
+
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
       final String json,
       final SchemaDefinitionCache schemaDefinitionCache,
