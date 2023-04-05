@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -56,7 +57,6 @@ import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 public class GetNewBlindedBlock extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/validator/blinded_blocks/{slot}";
-  public static final String RESPONSE_NAME = "GetNewBlindedBlockResponse";
   private final ValidatorDataProvider provider;
 
   public GetNewBlindedBlock(
@@ -126,7 +126,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
             String.format(
                 "Unsupported GetNewBlindedBlock response type. Must be of type %s or %s but got %s",
                 BeaconBlock.class.getCanonicalName(),
-                BlockContents.class.getCanonicalName(),
+                BlindedBlockContents.class.getCanonicalName(),
                 sszData.getClass().getCanonicalName()));
       }
     };
@@ -139,15 +139,15 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
     builder.withType(
         value -> value instanceof BeaconBlock, getBeaconBlockResponseType(schemaDefinitionCache));
     builder.withType(
-        value -> value instanceof BlockContents,
-        getBlockContentsResponseType(schemaDefinitionCache));
+        value -> value instanceof BlindedBlockContents,
+        getBlindedBlockContentsResponseType(schemaDefinitionCache));
     return builder.build();
   }
 
   private static SerializableTypeDefinition<BeaconBlock> getBeaconBlockResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<BeaconBlock>object()
-        .name(RESPONSE_NAME)
+        .name("GetNewBlindedBlockResponse")
         .withField(
             "data",
             getSchemaDefinitionForAllMilestones(
@@ -164,29 +164,30 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
         .build();
   }
 
-  private static SerializableTypeDefinition<BlockContents> getBlockContentsResponseType(
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    return SerializableTypeDefinition.<BlockContents>object()
-        .name(RESPONSE_NAME)
+  private static SerializableTypeDefinition<BlindedBlockContents>
+      getBlindedBlockContentsResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
+    return SerializableTypeDefinition.<BlindedBlockContents>object()
+        .name("GetNewBlindedBlockContentsResponse")
         .withField(
             "data",
             getAvailableSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
-                "BlockContents",
+                "BlindedBlockContents",
                 schemaDefinitions ->
                     schemaDefinitions
                         .toVersionDeneb()
-                        .map(SchemaDefinitionsDeneb::getBlockContentsSchema),
-                (blockContents, milestone) ->
+                        .map(SchemaDefinitionsDeneb::getBlindedBlockContentsSchema),
+                (blindedBlockContents, milestone) ->
                     schemaDefinitionCache
-                        .milestoneAtSlot(blockContents.getBeaconBlock().getSlot())
+                        .milestoneAtSlot(blindedBlockContents.getSignedBeaconBlock().getSlot())
                         .equals(milestone)),
             Function.identity())
         .withField(
             "version",
             MILESTONE_TYPE,
-            blockContents ->
-                schemaDefinitionCache.milestoneAtSlot(blockContents.getBeaconBlock().getSlot()))
+            blindedBlockContents ->
+                schemaDefinitionCache.milestoneAtSlot(
+                    blindedBlockContents.getSignedBeaconBlock().getSlot()))
         .build();
   }
 }

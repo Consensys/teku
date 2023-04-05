@@ -1,0 +1,13 @@
+{
+  "title" : "BlindedBlobSidecars",
+  "type" : "object",
+  "required" : [ "blinded_blob_sidecars" ],
+  "properties" : {
+    "blinded_blob_sidecars" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/BlindedBlobSidecar"
+      }
+    }
+  }
+}
