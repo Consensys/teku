@@ -118,11 +118,10 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
         beaconBlockRoot);
   }
 
-  public int getExpectedBlobSidecarsCount(final SignedBeaconBlock block) {
-    return block
-        .getMessage()
-        .getBody()
-        .toVersionDeneb()
+  public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
+    return signedBeaconBlock
+        .flatMap(SignedBeaconBlock::getBeaconBlock)
+        .flatMap(beaconBlock -> beaconBlock.getBody().toVersionDeneb())
         .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
         .orElse(0);
   }
