@@ -752,7 +752,7 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected UInt64 calculateAttestationRewards(
+  protected long calculateAttestationRewards(
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final SpecMilestone specMilestone = getMilestoneAtSlot(state.getSlot());
     final SpecVersion specVersion = spec.forMilestone(specMilestone);
@@ -762,11 +762,14 @@ public class ChainDataProvider {
     final RewardAndPenaltyDeltas rewardAndPenaltyDeltas =
         epochProcessor.getRewardAndPenaltyDeltas(state, validatorStatuses);
 
-    UInt64 rewards = ZERO;
+    long rewards = 0;
     for (int i = 0; i < state.getValidators().size(); i++) {
       final RewardAndPenaltyDeltas.RewardAndPenalty rewardAndPenalty =
           rewardAndPenaltyDeltas.getDelta(i);
-      rewards = rewards.plus(rewardAndPenalty.getReward()).minus(rewardAndPenalty.getPenalty());
+      rewards =
+          rewards
+              + rewardAndPenalty.getReward().longValue()
+              - rewardAndPenalty.getPenalty().longValue();
     }
 
     return rewards;
