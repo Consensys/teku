@@ -75,12 +75,12 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
           // When no blobs are available, it is ok to not have them (NOT_REQUIRED) if:
 
-          // 1. The number of kzg commitments in the block is 0
-          if (getNumberOfKzgCommitmentsInBlock() == 0) {
+          // 1. The block is not in the availability window
+          if (!isBlockInDataAvailabilityWindow()) {
             return BlobSidecarsAndValidationResult.NOT_REQUIRED;
           }
-          // 2. The block is not in the availability window
-          if (!isBlockInDataAvailabilityWindow()) {
+          // 2. The number of kzg commitments in the block is 0
+          if (getNumberOfKzgCommitmentsInBlock() == 0) {
             return BlobSidecarsAndValidationResult.NOT_REQUIRED;
           }
 
