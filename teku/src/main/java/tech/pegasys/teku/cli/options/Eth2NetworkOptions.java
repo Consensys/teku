@@ -174,6 +174,14 @@ public class Eth2NetworkOptions {
   private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
+  @Option(
+      names = {"--Xeth1-deposit-contract-deploy-block-override"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override deposit contract block number.",
+      arity = "1")
+  private Long eth1DepositContractDeployBlockOverride;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
   }
@@ -231,6 +239,9 @@ public class Eth2NetworkOptions {
     }
     if (trustedSetup != null) {
       builder.trustedSetup(trustedSetup);
+    }
+    if (eth1DepositContractDeployBlockOverride != null) {
+      builder.eth1DepositContractDeployBlock(eth1DepositContractDeployBlockOverride);
     }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)

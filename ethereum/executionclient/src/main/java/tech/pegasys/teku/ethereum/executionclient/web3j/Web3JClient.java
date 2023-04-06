@@ -17,6 +17,8 @@ import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessa
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import org.web3j.protocol.Web3j;
@@ -40,6 +42,10 @@ public abstract class Web3JClient {
   private final ExecutionClientEventsChannel executionClientEventsPublisher;
   private Web3jService web3jService;
   private Web3j eth1Web3j;
+  /*
+   Non-critical methods won't trigger availability updates when they succeed/fail
+  */
+  private final Collection<String> nonCriticalMethods = new HashSet<>();
 
   // Default to the provider having a previous failure at startup so we log when it is first
   // available but uses a very old value to make sure we log if the first request fails
@@ -49,10 +55,12 @@ public abstract class Web3JClient {
   protected Web3JClient(
       final EventLogger eventLog,
       final TimeProvider timeProvider,
-      final ExecutionClientEventsChannel executionClientEventsPublisher) {
+      final ExecutionClientEventsChannel executionClientEventsPublisher,
+      final Collection<String> nonCriticalMethods) {
     this.eventLog = eventLog;
     this.timeProvider = timeProvider;
     this.executionClientEventsPublisher = executionClientEventsPublisher;
+    this.nonCriticalMethods.addAll(nonCriticalMethods);
   }
 
   protected synchronized void initWeb3jService(final Web3jService web3jService) {
@@ -75,41 +83,53 @@ public abstract class Web3JClient {
         .orTimeout(timeout)
         .handle(
             (response, exception) -> {
+              final boolean isCriticalRequest = isCriticalRequest(web3jRequest);
               if (exception != null) {
                 final boolean couldBeAuthError = isAuthenticationException(exception);
-                handleError(exception, couldBeAuthError);
+                handleError(isCriticalRequest, exception, couldBeAuthError);
                 return Response.withErrorMessage(getMessageOrSimpleName(exception));
               } else if (response.hasError()) {
                 final String errorMessage =
                     response.getError().getCode() + ": " + response.getError().getMessage();
-                handleError(new IOException(errorMessage));
+                handleError(isCriticalRequest, new IOException(errorMessage), false);
                 return Response.withErrorMessage(errorMessage);
               } else {
-                handleSuccess();
+                handleSuccess(isCriticalRequest);
                 return new Response<>(response.getResult());
               }
             });
   }
 
+  private boolean isCriticalRequest(Request<?, ?> request) {
+    return !nonCriticalMethods.contains(request.getMethod());
+  }
+
   protected void handleError(final Throwable error) {
-    handleError(error, false);
+    handleError(true, error, false);
   }
 
   protected void handleError(final Throwable error, final boolean couldBeAuthError) {
-    if (shouldReportError()) {
+    handleError(true, error, couldBeAuthError);
+  }
+
+  protected void handleError(
+      final boolean isCritical, final Throwable error, final boolean couldBeAuthError) {
+    if (isCritical && shouldReportError()) {
       logExecutionClientError(error, couldBeAuthError);
       executionClientEventsPublisher.onAvailabilityUpdated(false);
     }
   }
 
-  protected void handleSuccess() {
-    final long lastErrorTime = lastError.getAndUpdate(x -> NO_ERROR_TIME);
-    if (lastErrorTime == STARTUP_LAST_ERROR_TIME) {
-      eventLog.executionClientIsOnline();
-      executionClientEventsPublisher.onAvailabilityUpdated(true);
-    } else if (lastErrorTime != NO_ERROR_TIME) {
-      eventLog.executionClientRecovered();
-      executionClientEventsPublisher.onAvailabilityUpdated(true);
+  protected void handleSuccess(final boolean isCriticalRequest) {
+    if (isCriticalRequest) {
+      final long lastErrorTime = lastError.getAndUpdate(x -> NO_ERROR_TIME);
+      if (lastErrorTime == STARTUP_LAST_ERROR_TIME) {
+        eventLog.executionClientIsOnline();
+        executionClientEventsPublisher.onAvailabilityUpdated(true);
+      } else if (lastErrorTime != NO_ERROR_TIME) {
+        eventLog.executionClientRecovered();
+        executionClientEventsPublisher.onAvailabilityUpdated(true);
+      }
     }
   }
 

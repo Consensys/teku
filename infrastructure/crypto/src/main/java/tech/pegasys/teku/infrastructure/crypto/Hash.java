@@ -18,19 +18,26 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class Hash {
+
+  private static final ThreadLocal<MessageDigest> SHA256_MESSAGE_DIGEST_THREAD_LOCAL =
+      ThreadLocal.withInitial(MessageDigestFactory::createSha256);
+
+  private static final ThreadLocal<MessageDigest> KECCAK_256_MESSAGE_DIGEST_THREAD_LOCAL =
+      ThreadLocal.withInitial(MessageDigestFactory::createKeccak256);
+
   public static Bytes32 sha256(final byte[] input) {
-    return Bytes32.wrap(MessageDigestFactory.createSha256().digest(input));
+    return Bytes32.wrap(SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get().digest(input));
   }
 
   public static Bytes32 sha256(final Bytes input) {
-    final MessageDigest digest = MessageDigestFactory.createSha256();
+    final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     input.update(digest);
     return Bytes32.wrap(digest.digest());
   }
 
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b) {
-    final MessageDigest digest = MessageDigestFactory.createSha256();
+    final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     a.update(digest);
     b.update(digest);
     return Bytes32.wrap(digest.digest());
@@ -38,7 +45,7 @@ public class Hash {
 
   // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b, final Bytes c) {
-    final MessageDigest digest = MessageDigestFactory.createSha256();
+    final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     a.update(digest);
     b.update(digest);
     c.update(digest);
@@ -46,7 +53,7 @@ public class Hash {
   }
 
   public static Bytes32 keccak256(final Bytes input) {
-    final MessageDigest digest = MessageDigestFactory.createKeccak256();
+    final MessageDigest digest = KECCAK_256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     input.update(digest);
     return Bytes32.wrap(digest.digest());
   }

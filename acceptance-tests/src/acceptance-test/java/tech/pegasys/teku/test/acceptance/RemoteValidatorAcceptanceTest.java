@@ -109,6 +109,38 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     waitForValidatorDutiesToComplete();
   }
 
+  @Test
+  void shouldPerformDutiesIfPrimaryBeaconNodeIsDownOnStartup() throws Exception {
+    // creating a primary beacon node which we would never start
+    final TekuNode primaryBeaconNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork(NETWORK_NAME)
+                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                    .withInteropValidators(0, 0)
+                    .withPeers(beaconNode));
+
+    beaconNode.start();
+
+    validatorClient =
+        createValidatorNode(
+            config ->
+                config
+                    .withNetwork(NETWORK_NAME)
+                    .withInteropValidators(0, VALIDATOR_COUNT)
+                    .withBeaconNodes(primaryBeaconNode, beaconNode));
+
+    validatorClient.start();
+
+    validatorClient.waitForLogMessageContaining(
+        "The primary beacon node is NOT ready to accept requests");
+    validatorClient.waitForLogMessageContaining(
+        "Switching to failover beacon node for event streaming");
+    waitForSuccessfulEventStreamConnection();
+    waitForValidatorDutiesToComplete();
+  }
+
   private void waitForSuccessfulEventStreamConnection() {
     validatorClient.waitForLogMessageContaining(
         "Successfully connected to beacon node event stream");

@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -36,8 +37,9 @@ class Web3jHttpClient extends Web3JClient {
       final TimeProvider timeProvider,
       final Duration timeout,
       final Optional<JwtConfig> jwtConfig,
-      final ExecutionClientEventsChannel executionClientEventsPublisher) {
-    super(eventLog, timeProvider, executionClientEventsPublisher);
+      final ExecutionClientEventsChannel executionClientEventsPublisher,
+      final Collection<String> nonCriticalMethods) {
+    super(eventLog, timeProvider, executionClientEventsPublisher, nonCriticalMethods);
     final OkHttpClient okHttpClient =
         OkHttpClientCreator.create(timeout, LOG, jwtConfig, timeProvider);
     final Web3jService httpService = new HttpService(endpoint.toString(), okHttpClient);

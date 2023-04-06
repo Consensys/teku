@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.gossip.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -72,21 +72,6 @@ public class FetchRecentBlocksServiceTest {
 
     lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
-  }
-
-  private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
-    Bytes32 blockRoot = invocationOnMock.getArgument(0);
-    final FetchBlockTask task = mock(FetchBlockTask.class);
-
-    lenient().when(task.getBlockRoot()).thenReturn(blockRoot);
-    lenient().when(task.getNumberOfRetries()).thenReturn(0);
-    final SafeFuture<FetchResult<SignedBeaconBlock>> future = new SafeFuture<>();
-    lenient().when(task.run()).thenReturn(future);
-    taskFutures.add(future);
-
-    tasks.add(task);
-
-    return task;
   }
 
   @Test
@@ -260,8 +245,22 @@ public class FetchRecentBlocksServiceTest {
     syncSubscriber.onSyncingChange(false);
     assertTaskCounts(2, 2, 0);
     final Set<Bytes32> requestingRoots =
-        tasks.stream().map(FetchBlockTask::getBlockRoot).collect(Collectors.toSet());
-    assertThat(requestingRoots).containsExactlyInAnyOrderElementsOf(requestingRoots);
+        tasks.stream().map(FetchBlockTask::getKey).collect(Collectors.toSet());
+    assertThat(requestingRoots).containsExactlyInAnyOrderElementsOf(requiredRoots);
+  }
+
+  private FetchBlockTask createMockTask(final InvocationOnMock invocationOnMock) {
+    final Bytes32 blockRoot = invocationOnMock.getArgument(0);
+    final FetchBlockTask task = mock(FetchBlockTask.class);
+
+    lenient().when(task.getKey()).thenReturn(blockRoot);
+    lenient().when(task.getNumberOfRetries()).thenReturn(0);
+    final SafeFuture<FetchResult<SignedBeaconBlock>> future = new SafeFuture<>();
+    lenient().when(task.run()).thenReturn(future);
+    taskFutures.add(future);
+    tasks.add(task);
+
+    return task;
   }
 
   private void assertTaskCounts(

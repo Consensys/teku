@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.beacon.sync.gossip.blobs;
 
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public interface RecentBlockFetcher {
+public interface RecentBlobSidecarFetcher {
 
-  void subscribeBlockFetched(BlockSubscriber subscriber);
+  void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber);
 
-  void requestRecentBlock(Bytes32 blockRoot);
+  void requestRecentBlobSidecar(BlobIdentifier blobIdentifier);
 
-  void cancelRecentBlockRequest(Bytes32 blockRoot);
+  void cancelRecentBlobSidecarRequest(BlobIdentifier blobIdentifier);
 }

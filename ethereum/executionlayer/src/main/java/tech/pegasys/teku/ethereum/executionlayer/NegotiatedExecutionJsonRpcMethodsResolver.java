@@ -45,6 +45,8 @@ public class NegotiatedExecutionJsonRpcMethodsResolver implements ExecutionJsonR
   public <T> EngineJsonRpcMethod<T> getMethod(
       final EngineApiMethods method, final Class<T> resultType) {
     if (!remoteEngineApiCapabilitiesProvider.isAvailable()) {
+      LOG.debug("Remote EngineApiCapabilitiesProvider not available. Using local fallback option.");
+
       return fallbackResolver.getMethod(method, resultType);
     }
 

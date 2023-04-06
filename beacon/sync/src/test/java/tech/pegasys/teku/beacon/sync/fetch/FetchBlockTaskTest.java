@@ -31,7 +31,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
     final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     final FetchBlockTask task = new FetchBlockTask(eth2P2PNetwork, blockRoot);
-    assertThat(task.getBlockRoot()).isEqualTo(blockRoot);
+    assertThat(task.getKey()).isEqualTo(blockRoot);
 
     final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlockByRoot(blockRoot))

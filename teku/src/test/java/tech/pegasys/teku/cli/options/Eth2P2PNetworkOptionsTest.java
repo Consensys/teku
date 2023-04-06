@@ -25,6 +25,7 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -105,6 +106,30 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
                     b -> {
                       b.applyNetworkDefaults(Eth2Network.MAINNET);
                       b.eth1DepositContractAddress("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
+                    })
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void overrideDepositContractDeployBlock() {
+    beaconNodeCommand.parse(
+        new String[] {
+          "--network", "mainnet", "--Xeth1-deposit-contract-deploy-block-override", "345"
+        });
+
+    final TekuConfiguration tekuConfiguration = getResultingTekuConfiguration();
+    final Eth2NetworkConfiguration configuration = tekuConfiguration.eth2NetworkConfiguration();
+    final Optional<UInt64> configuredDepositContractDeployBlock =
+        configuration.getEth1DepositContractDeployBlock();
+    assertThat(configuredDepositContractDeployBlock).isEqualTo(Optional.of(UInt64.valueOf(345L)));
+    assertThat(
+            createConfigBuilder()
+                .eth2NetworkConfig(
+                    b -> {
+                      b.applyNetworkDefaults(Eth2Network.MAINNET);
+                      b.eth1DepositContractDeployBlock(345L);
                     })
                 .build())
         .usingRecursiveComparison()
