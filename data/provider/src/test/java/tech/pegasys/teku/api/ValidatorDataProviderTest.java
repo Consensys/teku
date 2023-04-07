@@ -56,10 +56,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -86,6 +88,7 @@ public class ValidatorDataProviderTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider;
   private BeaconBlock blockInternal;
+  private BlindedBlockContents blindedBlockContents;
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
 
   @BeforeEach
@@ -135,12 +138,35 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
+    if (denebMilestoneReached()) {
+      blindedBlockContents = dataStructureUtil.randomBlindedBlockContents();
+      when(validatorApiChannel.createUnsignedBlockContents(
+              ONE, signatureInternal, Optional.empty(), false))
+          .thenReturn(completedFuture(Optional.of(blindedBlockContents)));
+    }
+
     SafeFuture<? extends Optional<? extends SszData>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
-    verify(validatorApiChannel)
-        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
+
+    if (denebMilestoneReached()) {
+      verify(validatorApiChannel)
+          .createUnsignedBlockContents(ONE, signatureInternal, Optional.empty(), false);
+    } else {
+      verify(validatorApiChannel)
+          .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
+    }
+
     assertThat(data).isCompleted();
-    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(blockInternal);
+
+    if (denebMilestoneReached()) {
+      assertThat(data.getNow(null).orElseThrow())
+          .usingRecursiveComparison()
+          .isEqualTo(blindedBlockContents);
+    } else {
+      assertThat(data.getNow(null).orElseThrow())
+          .usingRecursiveComparison()
+          .isEqualTo(blockInternal);
+    }
   }
 
   @TestTemplate
@@ -374,5 +400,11 @@ public class ValidatorDataProviderTest {
     final Optional<AttesterDuties> maybeList = future.join();
     final AttesterDuties list = maybeList.orElseThrow();
     assertThat(list.getDuties()).containsExactlyInAnyOrder(v1, v2);
+  }
+
+  private boolean denebMilestoneReached() {
+    return spec.getForkSchedule()
+        .getSpecMilestoneAtSlot(ONE)
+        .isGreaterThanOrEqualTo(SpecMilestone.DENEB);
   }
 }
