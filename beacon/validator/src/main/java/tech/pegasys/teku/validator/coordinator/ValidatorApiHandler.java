@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -298,6 +300,12 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
         .thenCompose(
             blockSlotState -> createBlock(slot, randaoReveal, graffiti, blinded, blockSlotState));
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContents>> createUnsignedBlockContents(
+      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded) {
+    throw new NotImplementedException("Not Yet Implemented");
   }
 
   private SafeFuture<Optional<BeaconBlock>> createBlock(

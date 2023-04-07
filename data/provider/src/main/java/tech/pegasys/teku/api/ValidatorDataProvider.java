@@ -40,12 +40,12 @@ import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -97,7 +97,7 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
+  public SafeFuture<? extends Optional<? extends SszData>> getUnsignedBeaconBlockAtSlot(
       final UInt64 slot,
       final BLSSignature randao,
       final Optional<Bytes32> graffiti,
@@ -117,10 +117,15 @@ public class ValidatorDataProvider {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
-    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
+
+    if (denebMileStoneReached(slot)) {
+      return validatorApiChannel.createUnsignedBlockContents(slot, randao, graffiti, isBlinded);
+    } else {
+      return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
+    }
   }
 
-  public SafeFuture<Optional<BeaconBlock>> getUnsignedBeaconBlockAtSlot(
+  public SafeFuture<? extends Optional<? extends SszData>> getUnsignedBeaconBlockAtSlot(
       UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
@@ -323,5 +328,11 @@ public class ValidatorDataProvider {
     }
 
     return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
+  }
+
+  private boolean denebMileStoneReached(UInt64 slot) {
+    return spec.getForkSchedule()
+        .getSpecMilestoneAtSlot(slot)
+        .isGreaterThanOrEqualTo(SpecMilestone.DENEB);
   }
 }

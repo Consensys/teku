@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
@@ -48,9 +49,9 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
   @Test
   void shouldReturnBlockWithoutGraffiti() throws Exception {
     final BeaconBlock randomBeaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
-            ONE, signature, Optional.empty(), isBlindedBlocks()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)));
+    doReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)))
+        .when(validatorDataProvider)
+        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
 
     handler.handleRequest(request);
 
@@ -64,9 +65,10 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
 
   @Test
   void shouldThrowExceptionWithEmptyBlock() throws Exception {
-    when(validatorDataProvider.getUnsignedBeaconBlockAtSlot(
-            ONE, signature, Optional.empty(), isBlindedBlocks()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    doReturn(SafeFuture.completedFuture(Optional.empty()))
+        .when(validatorDataProvider)
+        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
 
     handler.handleRequest(request);
     assertThat(request.getResponseError()).containsInstanceOf(ChainDataUnavailableException.class);

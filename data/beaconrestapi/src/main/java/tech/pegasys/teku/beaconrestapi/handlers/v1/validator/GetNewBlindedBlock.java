@@ -79,7 +79,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
-    final SafeFuture<Optional<BeaconBlock>> result =
+    SafeFuture<? extends Optional<? extends SszData>> result =
         provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, true);
     request.respondAsync(
         result.thenApplyChecked(

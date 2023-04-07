@@ -52,6 +52,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -134,7 +135,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
-    SafeFuture<Optional<BeaconBlock>> data =
+    SafeFuture<? extends Optional<? extends SszData>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
     verify(validatorApiChannel)
         .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);

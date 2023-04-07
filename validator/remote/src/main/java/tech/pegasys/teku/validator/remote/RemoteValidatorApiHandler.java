@@ -33,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -55,6 +56,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -275,6 +277,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final boolean blinded) {
     return sendRequest(
         () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContents>> createUnsignedBlockContents(
+      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded) {
+    throw new NotImplementedException("Not Yet Implemented");
   }
 
   @Override
