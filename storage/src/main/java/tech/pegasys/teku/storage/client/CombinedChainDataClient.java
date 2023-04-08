@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -49,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -77,7 +77,6 @@ public class CombinedChainDataClient {
     this.historicalChainData = historicalChainData;
     this.spec = spec;
     this.earliestAvailableBlockSlot = earliestAvailableBlockSlot;
-    ;
   }
 
   /**
@@ -478,25 +477,40 @@ public class CombinedChainDataClient {
             });
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarEpoch() {
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarEpoch() {
     return historicalChainData
-        .getEarliestAvailableBlobsSidecarSlot()
+        .getEarliestAvailableBlobSidecarSlot()
         .thenApply(slot -> slot.map(spec::computeEpochAtSlot));
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarEpoch() {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
-  }
-
-  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecarBySlotAndBlockRoot(
-      final UInt64 slot, final Bytes32 blockRoot) {
-    return historicalChainData.getBlobsSidecar(new SlotAndBlockRoot(slot, blockRoot));
-  }
-
-  @SuppressWarnings("unused")
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
       final Bytes32 blockRoot, final UInt64 index) {
-    return SafeFuture.failedFuture(new UnsupportedOperationException("Not yet implemented"));
+    return recentChainData
+        .getSlotForBlockRoot(blockRoot)
+        .map(slot -> getBlobSidecarByKey(new SlotAndBlockRootAndBlobIndex(slot, blockRoot, index)))
+        .orElseGet(
+            () ->
+                historicalChainData
+                    .getBlockByBlockRoot(blockRoot)
+                    .thenCompose(
+                        blockOptional ->
+                            blockOptional
+                                .map(
+                                    block ->
+                                        getBlobSidecarByKey(
+                                            new SlotAndBlockRootAndBlobIndex(
+                                                blockOptional.get().getSlot(), blockRoot, index)))
+                                .orElse(SafeFuture.completedFuture(Optional.empty()))));
+  }
+
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByKey(
+      final SlotAndBlockRootAndBlobIndex key) {
+    return historicalChainData.getBlobSidecar(key);
+  }
+
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
   }
 
   private boolean isRecentData(final UInt64 slot) {

@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnapshotState {
 
@@ -37,6 +38,11 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
   @Override
   public KvStoreColumn<UInt64, BeaconState> getColumnFinalizedStatesBySlot() {
     return snapshotDelegate.getColumnFinalizedStatesBySlot();
+  }
+
+  public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      getColumnBlobSidecarBySlotRootBlobIndex() {
+    return delegate.getColumnBlobSidecarBySlotRootBlobIndex();
   }
 
   public KvStoreColumn<SlotAndBlockRoot, Bytes> getColumnBlobsSidecarBySlotAndBlockRoot() {

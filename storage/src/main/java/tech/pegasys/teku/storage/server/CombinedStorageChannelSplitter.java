@@ -27,10 +27,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -209,8 +211,19 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot() {
-    return asyncRunner.runAsync(queryDelegate::getEarliestAvailableBlobsSidecarSlot);
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
+    return asyncRunner.runAsync(queryDelegate::getEarliestAvailableBlobSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecar(key));
+  }
+
+  @Override
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      UInt64 startSlot, UInt64 endSlot, UInt64 limit) {
+    return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecarKeys(startSlot, endSlot, limit));
   }
 
   @Override
