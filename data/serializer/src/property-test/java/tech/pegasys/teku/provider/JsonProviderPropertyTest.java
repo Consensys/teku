@@ -56,11 +56,9 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
-import tech.pegasys.teku.api.schema.deneb.BlobSidecar;
 import tech.pegasys.teku.api.schema.deneb.BlobsSidecar;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
-import tech.pegasys.teku.api.schema.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -72,7 +70,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -436,17 +433,6 @@ public class JsonProviderPropertyTest {
   }
 
   @Property
-  void roundTripBlobSidecar(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final BlobSidecar original = new BlobSidecar(dataStructureUtil.randomBlobSidecar());
-    final String serialized = jsonProvider.objectToJSON(original);
-    final BlobSidecar deserialized = jsonProvider.jsonToObject(serialized, BlobSidecar.class);
-    assertThat(deserialized).usingRecursiveComparison().isEqualTo(original);
-  }
-
-  @Property
   void roundTripSignedBeaconBlockAndBlobsSidecar(@ForAll final int seed)
       throws JsonProcessingException {
     final SpecMilestone specMilestone = SpecMilestone.DENEB;
@@ -469,24 +455,5 @@ public class JsonProviderPropertyTest {
         .isEqualTo(
             original.asInternalSignedBeaconBlockAndBlobsSidecar(
                 signedBeaconBlockAndBlobsSidecarSchema, spec));
-  }
-
-  @Property
-  void roundTripSignedBlobSidecar(@ForAll final int seed) throws JsonProcessingException {
-    final SpecMilestone specMilestone = SpecMilestone.DENEB;
-    final Spec spec = TestSpecFactory.create(specMilestone, Eth2Network.MINIMAL);
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
-    final SignedBlobSidecar original =
-        new SignedBlobSidecar(dataStructureUtil.randomSignedBlobSidecar());
-    final String serialized = jsonProvider.objectToJSON(original);
-    final SignedBlobSidecar deserialized =
-        jsonProvider.jsonToObject(serialized, SignedBlobSidecar.class);
-    final SignedBlobSidecarSchema signedBlobSidecarSchema =
-        spec.getGenesisSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getSignedBlobSidecarSchema();
-    assertThat(deserialized.asInternalSignedBlobSidecar(signedBlobSidecarSchema))
-        .isEqualTo(original.asInternalSignedBlobSidecar(signedBlobSidecarSchema));
   }
 }

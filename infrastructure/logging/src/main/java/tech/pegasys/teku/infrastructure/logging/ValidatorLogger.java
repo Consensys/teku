@@ -85,7 +85,7 @@ public class ValidatorLogger {
     log.warn(
         ColorConsolePrinter.print(
             String.format(
-                "%sThe primary beacon node is NOT ready to accept requests (offline or not in sync). Future requests will use one of the configured failover beacon nodes until the primary one is ready again.",
+                "%sThe primary beacon node is NOT ready to accept requests. Future requests will use one of the configured failover beacon nodes until the primary one is ready again.",
                 PREFIX),
             Color.YELLOW));
   }

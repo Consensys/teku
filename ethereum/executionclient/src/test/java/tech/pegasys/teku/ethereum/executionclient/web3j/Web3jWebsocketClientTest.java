@@ -29,6 +29,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -55,7 +56,12 @@ public class Web3jWebsocketClientTest {
   public void setup() {
     this.web3jWebsocketClient =
         new Web3jWebsocketClient(
-            EVENT_LOG, endpoint, timeProvider, Optional.empty(), executionClientEventsPublisher);
+            EVENT_LOG,
+            endpoint,
+            timeProvider,
+            Optional.empty(),
+            executionClientEventsPublisher,
+            Set.of());
     web3jWebsocketClient.initWeb3jService(webSocketService);
   }
 

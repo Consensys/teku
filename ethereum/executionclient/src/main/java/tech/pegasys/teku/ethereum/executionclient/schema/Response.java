@@ -17,8 +17,12 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class Response<T> {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final T payload;
   private final String errorMessage;
@@ -41,15 +45,41 @@ public class Response<T> {
     return new Response<>(null, errorMessage);
   }
 
-  public static <T, R> Response<R> unwrap(
-      final Response<T> response, final Function<T, R> unwrapFunction) {
+  public static <T, R> Response<R> unwrapVersioned(
+      final Response<T> response,
+      final Function<T, R> unwrapFunction,
+      final SpecMilestone expectedMilestone,
+      final Function<T, SpecMilestone> unwrapVersionFunction,
+      final boolean strictVersionCheck) {
+
     if (response.isFailure()) {
       return Response.withErrorMessage(response.getErrorMessage());
     }
     final T payload = response.getPayload();
-    return payload == null
-        ? Response.withNullPayload()
-        : new Response<>(unwrapFunction.apply(payload));
+    if (payload == null) {
+      return Response.withNullPayload();
+    }
+
+    final SpecMilestone receivedMilestone = unwrapVersionFunction.apply(payload);
+
+    final boolean milestonesMismatch = !receivedMilestone.equals(expectedMilestone);
+
+    if (milestonesMismatch) {
+      if (strictVersionCheck) {
+        throw new IllegalArgumentException(
+            "Wrong response version: expected "
+                + expectedMilestone
+                + ", received "
+                + receivedMilestone);
+      } else {
+        LOG.warn(
+            "Wrong response version: expected {}, received {}.",
+            expectedMilestone,
+            receivedMilestone);
+      }
+    }
+
+    return new Response<>(unwrapFunction.apply(payload));
   }
 
   public static <T> Response<Optional<T>> convertToOptional(final Response<T> response) {

@@ -15,21 +15,22 @@ package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class BuilderApiResponse<T> {
 
-  private final String version;
+  private final SpecMilestone version;
   private final T data;
 
-  public BuilderApiResponse(final String version, final T data) {
+  public BuilderApiResponse(final SpecMilestone version, final T data) {
     this.version = version;
     this.data = data;
   }
 
-  public String getVersion() {
+  public SpecMilestone getVersion() {
     return version;
   }
 
@@ -60,7 +61,7 @@ public class BuilderApiResponse<T> {
   }
 
   public static class Builder<T> {
-    private String version;
+    private SpecMilestone version;
     private T data;
 
     private Builder() {}
@@ -69,7 +70,7 @@ public class BuilderApiResponse<T> {
       return new Builder<>();
     }
 
-    public Builder<T> version(final String version) {
+    public Builder<T> version(final SpecMilestone version) {
       this.version = version;
       return this;
     }
@@ -92,7 +93,7 @@ public class BuilderApiResponse<T> {
         .initializer(BuilderApiResponse.Builder::builder)
         .withField(
             "version",
-            CoreTypes.STRING_TYPE,
+            EthereumTypes.MILESTONE_TYPE,
             BuilderApiResponse::getVersion,
             BuilderApiResponse.Builder::version)
         .withField(
