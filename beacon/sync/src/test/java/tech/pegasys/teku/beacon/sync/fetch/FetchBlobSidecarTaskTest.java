@@ -32,7 +32,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
-    assertThat(task.getBlobIdentifier()).isEqualTo(blobIdentifier);
+    assertThat(task.getKey()).isEqualTo(blobIdentifier);
 
     final Eth2Peer peer = registerNewPeer(1);
     when(peer.requestBlobSidecarByRoot(blobIdentifier))

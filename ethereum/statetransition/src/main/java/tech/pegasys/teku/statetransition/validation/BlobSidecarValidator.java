@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Objects;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -30,7 +31,6 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -44,7 +44,7 @@ public class BlobSidecarValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final Set<SlotAndBlockRoot> receivedValidBlobSidecarInfoSet;
+  private final Set<IndexAndBlockRoot> receivedValidBlobSidecarInfoSet;
   private final GossipValidationHelper gossipValidationHelper;
   final Map<Bytes32, BlockImportResult> invalidBlockRoots;
 
@@ -62,7 +62,7 @@ public class BlobSidecarValidator {
   }
 
   @VisibleForTesting
-  Set<SlotAndBlockRoot> getReceivedValidBlobSidecarInfoSet() {
+  Set<IndexAndBlockRoot> getReceivedValidBlobSidecarInfoSet() {
     return receivedValidBlobSidecarInfoSet;
   }
 
@@ -70,7 +70,7 @@ public class BlobSidecarValidator {
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
-      final Set<SlotAndBlockRoot> receivedValidBlobSidecarInfoSet) {
+      final Set<IndexAndBlockRoot> receivedValidBlobSidecarInfoSet) {
     this.spec = spec;
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
@@ -102,7 +102,7 @@ public class BlobSidecarValidator {
     [IGNORE] The sidecar is the only sidecar with valid signature received for the tuple (sidecar.block_root, sidecar.index)
      */
     if (gossipValidationHelper.isSlotFinalized(blobSidecar.getSlot())
-        || !blobSidecarIsFirstWithValidSignatureForSlot(blobSidecar)) {
+        || !isFirstWithValidSignatureForIndexAndBlockRoot(blobSidecar)) {
       LOG.trace(
           "BlobSidecarValidator: BlobSidecar is either too old or is not the first block with valid signature for "
               + "its slot. It will be dropped");
@@ -201,13 +201,48 @@ public class BlobSidecarValidator {
 
     return signatureValid
         && receivedValidBlobSidecarInfoSet.add(
-            new SlotAndBlockRoot(
-                signedBlobSidecar.getBlobSidecar().getSlot(),
+            new IndexAndBlockRoot(
+                signedBlobSidecar.getBlobSidecar().getIndex(),
                 signedBlobSidecar.getBlobSidecar().getBlockRoot()));
   }
 
-  private boolean blobSidecarIsFirstWithValidSignatureForSlot(BlobSidecar blobSidecar) {
+  private boolean isFirstWithValidSignatureForIndexAndBlockRoot(BlobSidecar blobSidecar) {
     return !receivedValidBlobSidecarInfoSet.contains(
-        new SlotAndBlockRoot(blobSidecar.getSlot(), blobSidecar.getBlockRoot()));
+        new IndexAndBlockRoot(blobSidecar.getIndex(), blobSidecar.getBlockRoot()));
+  }
+
+  static class IndexAndBlockRoot {
+    private final UInt64 index;
+    private final Bytes32 root;
+
+    IndexAndBlockRoot(final UInt64 index, final Bytes32 root) {
+      this.index = index;
+      this.root = root;
+    }
+
+    public UInt64 getIndex() {
+      return index;
+    }
+
+    public Bytes32 getRoot() {
+      return root;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof IndexAndBlockRoot)) {
+        return false;
+      }
+      IndexAndBlockRoot that = (IndexAndBlockRoot) o;
+      return Objects.equal(index, that.index) && Objects.equal(root, that.root);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hashCode(index, root);
+    }
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 import java.net.ConnectException;
 import java.net.URI;
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.web3j.protocol.core.Request;
@@ -39,8 +40,9 @@ class Web3jWebsocketClient extends Web3JClient {
       final URI endpoint,
       final TimeProvider timeProvider,
       final Optional<JwtConfig> jwtConfig,
-      final ExecutionClientEventsChannel executionClientEventsPublisher) {
-    super(eventLog, timeProvider, executionClientEventsPublisher);
+      final ExecutionClientEventsChannel executionClientEventsPublisher,
+      final Collection<String> nonCriticalMethods) {
+    super(eventLog, timeProvider, executionClientEventsPublisher, nonCriticalMethods);
     this.webSocketClient = new WebSocketClient(endpoint);
     final WebSocketService webSocketService = new WebSocketService(webSocketClient, false);
     initWeb3jService(webSocketService);

@@ -45,6 +45,8 @@ import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -87,6 +89,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -104,6 +107,7 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -231,6 +235,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
+  protected volatile BlobSidecarPool blobSidecarPool;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
   protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   protected volatile ActiveValidatorTracker activeValidatorTracker;
@@ -293,16 +298,25 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void startServices() {
-    syncService
-        .getRecentBlockFetcher()
-        .subscribeBlockFetched(
-            (block) ->
-                blockManager
-                    .importBlock(block)
-                    .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
+    final RecentBlockFetcher recentBlockFetcher = syncService.getRecentBlockFetcher();
+    recentBlockFetcher.subscribeBlockFetched(
+        (block) ->
+            blockManager
+                .importBlock(block)
+                .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
-        (block, executionOptimistic) ->
-            syncService.getRecentBlockFetcher().cancelRecentBlockRequest(block.getRoot()));
+        (block, __) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
+    final RecentBlobSidecarFetcher recentBlobSidecarFetcher =
+        syncService.getRecentBlobSidecarFetcher();
+    recentBlobSidecarFetcher.subscribeBlobSidecarFetched(
+        (blobSidecar) ->
+            blobsSidecarManager
+                .importBlobSidecar(blobSidecar)
+                .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
+    blobsSidecarManager.subscribeToImportedBlobSidecars(
+        blobSidecar ->
+            recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
+                new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
     SafeFuture.allOfFailFast(
             attestationManager.start(),
             p2pNetwork.start(),
@@ -399,6 +413,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initExecutionLayer();
     initGossipValidationHelper();
     initBlockPoolsAndCaches();
+    initBlobSidecarPool();
     initBlobSidecarManager();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
@@ -483,6 +498,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     pendingBlocks = pendingPoolFactory.createForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     invalidBlockRoots = LimitedMap.createSynchronized(500);
+  }
+
+  protected void initBlobSidecarPool() {
+    LOG.debug("BeaconChainController.initBlobSidecarPool()");
+    // TODO: properly initialize the pool
+    blobSidecarPool = BlobSidecarPool.NOOP;
   }
 
   protected void initGossipValidationHelper() {
@@ -1028,6 +1049,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blockImporter,
         blobsSidecarManager,
         pendingBlocks,
+        blobSidecarPool,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
