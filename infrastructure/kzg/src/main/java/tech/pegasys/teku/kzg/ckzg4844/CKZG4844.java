@@ -154,7 +154,7 @@ public final class CKZG4844 implements KZG {
   @Override
   public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
     try {
-      final byte[] commitmentBytes = CKZG4844JNI.blobToKzgCommitment(blob.toArray());
+      final byte[] commitmentBytes = CKZG4844JNI.blobToKzgCommitment(blob.toArrayUnsafe());
       return KZGCommitment.fromArray(commitmentBytes);
     } catch (final Exception ex) {
       throw new KZGException("Failed to produce KZG commitment from blob", ex);
@@ -165,7 +165,8 @@ public final class CKZG4844 implements KZG {
   public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
       throws KZGException {
     try {
-      final byte[] proof = CKZG4844JNI.computeBlobKzgProof(blob.toArray(), kzgCommitment.toArray());
+      final byte[] proof =
+          CKZG4844JNI.computeBlobKzgProof(blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe());
       return KZGProof.fromArray(proof);
     } catch (final Exception ex) {
       throw new KZGException(

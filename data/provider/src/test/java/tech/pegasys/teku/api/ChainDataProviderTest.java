@@ -593,6 +593,20 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void calculateAttesterSlashingsRewards_shouldCalculateRewards() {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+    final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
+
+    final UInt64 result =
+        provider.calculateAttesterSlashingsRewards(
+            blockAndState.getBlock(), blockAndState.getState());
+    final UInt64 expectedReward = UInt64.valueOf(62500000);
+    assertThat(result).isEqualTo(expectedReward);
+  }
+
+  @Test
   public void getLightClientBootstrap_shouldGetBootstrap() {
     final ChainDataProvider provider = setupAltairState();
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
