@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class BlockRewardData {
   private final UInt64 proposerIndex;
   private final UInt64 total;
-  private final UInt64 attestations;
+  private final Long attestations;
   private final UInt64 syncAggregate;
   private final UInt64 proposerSlashings;
   private final UInt64 attesterSlashings;
@@ -27,7 +27,7 @@ public class BlockRewardData {
   public BlockRewardData(
       final UInt64 proposerIndex,
       final UInt64 total,
-      final UInt64 attestations,
+      final Long attestations,
       final UInt64 syncAggregate,
       final UInt64 proposerSlashings,
       final UInt64 attesterSlashings) {
@@ -47,7 +47,7 @@ public class BlockRewardData {
     return total;
   }
 
-  public UInt64 getAttestations() {
+  public Long getAttestations() {
     return attestations;
   }
 

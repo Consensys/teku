@@ -38,7 +38,7 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
       new BlockRewardData(
           UInt64.valueOf(123),
           UInt64.valueOf(123),
-          UInt64.valueOf(123),
+          123L,
           UInt64.valueOf(123),
           UInt64.valueOf(123),
           UInt64.valueOf(123));
