@@ -21,7 +21,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
@@ -61,6 +63,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -82,6 +85,10 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderAltair;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -604,6 +611,35 @@ public class ChainDataProviderTest {
             blockAndState.getBlock(), blockAndState.getState());
     final UInt64 expectedReward = UInt64.valueOf(62500000);
     assertThat(result).isEqualTo(expectedReward);
+  }
+
+  @Test
+  public void calculateAttestationRewards_shouldCalculateRewards() {
+    final Spec spec = spy(TestSpecFactory.createMinimalAltair());
+    final SpecVersion specVersion = mock(SpecVersion.class);
+    final SpecMilestone specMilestone = mock(SpecMilestone.class);
+    final ValidatorStatusFactory validatorStatusFactory = mock(ValidatorStatusFactory.class);
+    final ValidatorStatuses validatorStatuses = mock(ValidatorStatuses.class);
+    final EpochProcessor epochProcessor = mock(EpochProcessor.class);
+
+    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+        data.randomBeaconState(100);
+    final RewardAndPenaltyDeltas deltas = data.randomRewardAndPenaltyDeltas(100);
+
+    when(spec.forMilestone(any())).thenReturn(specVersion);
+    doReturn(specVersion).when(spec).atSlot(any());
+    when(specVersion.getMilestone()).thenReturn(specMilestone);
+    when(specVersion.getEpochProcessor()).thenReturn(epochProcessor);
+    when(specVersion.getValidatorStatusFactory()).thenReturn(validatorStatusFactory);
+    when(validatorStatusFactory.createValidatorStatuses(any())).thenReturn(validatorStatuses);
+    when(epochProcessor.getRewardAndPenaltyDeltas(any(), any())).thenReturn(deltas);
+
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+
+    final long result = provider.calculateAttestationRewards(state);
+    assertThat(result).isEqualTo(1179L);
   }
 
   @Test

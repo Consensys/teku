@@ -14,9 +14,10 @@
 package tech.pegasys.teku.statetransition;
 
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.spec.datastructures.operations.MessageWithValidatorId;
 
-public class OperationPoolEntry<T extends SszData> implements Comparable<OperationPoolEntry<T>> {
+public class OperationPoolEntry<T extends MessageWithValidatorId>
+    implements Comparable<OperationPoolEntry<T>> {
 
   private final T message;
   private final boolean isLocal;

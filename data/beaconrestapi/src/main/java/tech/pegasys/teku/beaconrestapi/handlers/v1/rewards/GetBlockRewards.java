@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -38,7 +39,7 @@ public class GetBlockRewards extends RestApiEndpoint {
       SerializableTypeDefinition.object(BlockRewardData.class)
           .withField("proposer_index", UINT64_TYPE, BlockRewardData::getProposerIndex)
           .withField("total", UINT64_TYPE, BlockRewardData::getTotal)
-          .withField("attestations", UINT64_TYPE, BlockRewardData::getAttestations)
+          .withField("attestations", LONG_TYPE, BlockRewardData::getAttestations)
           .withField("sync_aggregate", UINT64_TYPE, BlockRewardData::getSyncAggregate)
           .withField("proposer_slashings", UINT64_TYPE, BlockRewardData::getProposerSlashings)
           .withField("attester_slashings", UINT64_TYPE, BlockRewardData::getAttesterSlashings)
