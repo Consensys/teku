@@ -65,7 +65,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.statetransition.BlsToExecutionOperationPool;
+import tech.pegasys.teku.statetransition.MappedOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -197,7 +197,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
 
     blsToExecutionChangePool =
-        new BlsToExecutionOperationPool(
+        new MappedOperationPool<>(
             "BlsOperationPool",
             stubMetricsSystem,
             beaconBlockSchemaSupplier

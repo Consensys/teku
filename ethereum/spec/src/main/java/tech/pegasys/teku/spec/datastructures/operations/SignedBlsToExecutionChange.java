@@ -20,7 +20,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class SignedBlsToExecutionChange
-    extends Container2<SignedBlsToExecutionChange, BlsToExecutionChange, SszSignature> {
+    extends Container2<SignedBlsToExecutionChange, BlsToExecutionChange, SszSignature>
+    implements MessageWithValidatorId {
 
   SignedBlsToExecutionChange(
       final SignedBlsToExecutionChangeSchema schema,
@@ -46,5 +47,10 @@ public class SignedBlsToExecutionChange
   @Override
   public SignedBlsToExecutionChangeSchema getSchema() {
     return (SignedBlsToExecutionChangeSchema) super.getSchema();
+  }
+
+  @Override
+  public int getValidatorId() {
+    return getMessage().getValidatorIndex().intValue();
   }
 }

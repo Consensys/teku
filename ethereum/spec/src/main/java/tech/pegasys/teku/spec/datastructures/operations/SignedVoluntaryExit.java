@@ -22,7 +22,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class SignedVoluntaryExit
-    extends Container2<SignedVoluntaryExit, VoluntaryExit, SszSignature> {
+    extends Container2<SignedVoluntaryExit, VoluntaryExit, SszSignature>
+    implements MessageWithValidatorId {
 
   public static class SignedVoluntaryExitSchema
       extends ContainerSchema2<SignedVoluntaryExit, VoluntaryExit, SszSignature> {
@@ -69,5 +70,10 @@ public class SignedVoluntaryExit
   @Override
   public SignedVoluntaryExitSchema getSchema() {
     return (SignedVoluntaryExitSchema) super.getSchema();
+  }
+
+  @Override
+  public int getValidatorId() {
+    return getMessage().getValidatorIndex().intValue();
   }
 }
