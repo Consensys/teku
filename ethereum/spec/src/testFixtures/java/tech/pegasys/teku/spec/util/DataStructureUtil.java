@@ -183,6 +183,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -2344,6 +2345,19 @@ public final class DataStructureUtil {
         .orElseThrow()
         .getBlobKzgCommitmentsSchema()
         .createFromElements(List.of());
+  }
+
+  public RewardAndPenaltyDeltas randomRewardAndPenaltyDeltas(final int validatorCount) {
+    final RewardAndPenaltyDeltas rewardAndPenaltyDeltas =
+        new RewardAndPenaltyDeltas(validatorCount);
+    for (int i = 0; i < validatorCount; i++) {
+      final RewardAndPenaltyDeltas.RewardAndPenalty rewardAndPenalty =
+          rewardAndPenaltyDeltas.getDelta(i);
+      rewardAndPenalty.reward(randomUInt64(1000));
+      rewardAndPenalty.penalize(randomUInt64(1000));
+    }
+
+    return rewardAndPenaltyDeltas;
   }
 
   private int randomInt(final int bound) {
