@@ -38,6 +38,8 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_BID_COMPARE_FACTOR = 100;
   public static final String BUILDER_ALWAYS_KEYWORD = "BUILDER_ALWAYS";
 
+  public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_ENABLED = true;
+
   private final Spec spec;
   private final Optional<String> engineEndpoint;
   private final Version engineVersion;
@@ -143,7 +145,7 @@ public class ExecutionLayerConfiguration {
     private int builderCircuitBreakerAllowedConsecutiveFaults =
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
     private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
-    private boolean exchangeCapabilitiesEnabled = false;
+    private boolean exchangeCapabilitiesEnabled = DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
 
     private Builder() {}
 

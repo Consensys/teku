@@ -158,21 +158,21 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldRespectExchangeCapabilitiesToggleOn() {
-    final String[] args = {"--Xexchange-capabilities-enabled", "true"};
+    final String[] args = {"--exchange-capabilities-enabled", "true"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isTrue();
   }
 
   @Test
   public void shouldRespectExchangeCapabilitiesToggleOff() {
-    final String[] args = {"--Xexchange-capabilities-enabled", "false"};
+    final String[] args = {"--exchange-capabilities-enabled", "false"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isFalse();
   }
 
   @Test
   public void shouldRespectExchangeCapabilitiesFallbackOption() {
-    final String[] args = {"--Xexchange-capabilities-enabled"};
+    final String[] args = {"--exchange-capabilities-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
 
     assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isTrue();
@@ -183,6 +183,6 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
 
-    assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isFalse();
+    assertThat(config.executionLayer().isExchangeCapabilitiesEnabled()).isTrue();
   }
 }
