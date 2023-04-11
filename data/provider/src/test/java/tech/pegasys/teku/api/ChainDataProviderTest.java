@@ -566,10 +566,9 @@ public class ChainDataProviderTest {
     final int[] participantIndices = new int[] {0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30};
     final SyncAggregate syncAggregate = data.randomSyncAggregate(participantIndices);
 
-    final int syncAggregateBlockRewards =
+    final UInt64 syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards)
-        .isEqualTo(reward.times(participantIndices.length).intValue());
+    assertThat(syncAggregateBlockRewards).isEqualTo(reward.times(participantIndices.length));
   }
 
   @Test
@@ -580,9 +579,9 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider = setupAltairState();
     final SyncAggregate syncAggregate = data.emptySyncAggregate();
 
-    final int syncAggregateBlockRewards =
+    final UInt64 syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(0);
+    assertThat(syncAggregateBlockRewards).isEqualTo(ZERO);
   }
 
   @Test

@@ -19,6 +19,8 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getVali
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -42,6 +44,7 @@ import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
+import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
@@ -684,14 +687,80 @@ public class ChainDataProvider {
     return data;
   }
 
+  public SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> getBlockRewardsFromBlockId(
+      final String blockId) {
+    return getBlockAndMetaData(blockId)
+        .thenCompose(
+            result -> {
+              if (result.isEmpty() || result.get().getData().getBeaconBlock().isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+              final BlockAndMetaData blockAndMetaData = result.get();
+              final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
+
+              return combinedChainDataClient
+                  .getStateByBlockRoot(block.getRoot())
+                  .thenApply(
+                      maybeState ->
+                          maybeState.map(
+                              state -> getBlockRewardData(blockAndMetaData, block, state)));
+            });
+  }
+
+  private ObjectAndMetaData<BlockRewardData> getBlockRewardData(
+      final BlockAndMetaData blockAndMetaData,
+      final BeaconBlock block,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      throw new BadRequestException(
+          "Slot "
+              + block.getSlot()
+              + " is pre altair, and no sync committee information is available");
+    }
+
+    final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
+    final UInt64 proposerReward =
+        participantReward
+            .times(PROPOSER_WEIGHT)
+            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
+    return blockAndMetaData.map(value -> calculateBlockRewards(proposerReward, block, state));
+  }
+
+  private BlockRewardData calculateBlockRewards(
+      final UInt64 proposerReward,
+      final BeaconBlock block,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
+
+    final int proposerIndex = spec.getBeaconProposerIndex(state, block.getSlot());
+    final long attestationsBlockRewards = calculateAttestationRewards(state);
+    final UInt64 syncAggregateBlockRewards =
+        calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
+    final UInt64 proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
+    final UInt64 attesterSlashingsBlockRewards = calculateAttesterSlashingsRewards(block, state);
+    final long total =
+        attestationsBlockRewards
+            + syncAggregateBlockRewards.longValue()
+            + proposerSlashingsBlockRewards.longValue()
+            + attesterSlashingsBlockRewards.longValue();
+
+    return new BlockRewardData(
+        proposerIndex,
+        total,
+        attestationsBlockRewards,
+        syncAggregateBlockRewards,
+        proposerSlashingsBlockRewards,
+        attesterSlashingsBlockRewards);
+  }
+
   @VisibleForTesting
-  protected int calculateProposerSyncAggregateBlockRewards(
+  protected UInt64 calculateProposerSyncAggregateBlockRewards(
       UInt64 proposerReward, SyncAggregate aggregate) {
     final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
-    int total = 0;
+    UInt64 total = ZERO;
     for (int i = 0; i < syncCommitteeBits.size(); i++) {
       if (syncCommitteeBits.getBit(i)) {
-        total += proposerReward.intValue();
+        total = total.plus(proposerReward);
       }
     }
     return total;

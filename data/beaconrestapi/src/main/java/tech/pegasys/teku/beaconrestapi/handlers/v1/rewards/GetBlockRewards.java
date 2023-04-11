@@ -20,13 +20,16 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.commons.lang3.NotImplementedException;
+import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -34,11 +37,12 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetBlockRewards extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/rewards/blocks/{block_id}";
+  private final ChainDataProvider chainDataProvider;
 
   private static final SerializableTypeDefinition<BlockRewardData> DATA_TYPE =
       SerializableTypeDefinition.object(BlockRewardData.class)
-          .withField("proposer_index", UINT64_TYPE, BlockRewardData::getProposerIndex)
-          .withField("total", UINT64_TYPE, BlockRewardData::getTotal)
+          .withField("proposer_index", INTEGER_TYPE, BlockRewardData::getProposerIndex)
+          .withField("total", LONG_TYPE, BlockRewardData::getTotal)
           .withField("attestations", LONG_TYPE, BlockRewardData::getAttestations)
           .withField("sync_aggregate", UINT64_TYPE, BlockRewardData::getSyncAggregate)
           .withField("proposer_slashings", UINT64_TYPE, BlockRewardData::getProposerSlashings)
@@ -55,7 +59,11 @@ public class GetBlockRewards extends RestApiEndpoint {
               .withField("data", DATA_TYPE, ObjectAndMetaData::getData)
               .build();
 
-  public GetBlockRewards() {
+  public GetBlockRewards(final DataProvider dataProvider) {
+    this(dataProvider.getChainDataProvider());
+  }
+
+  public GetBlockRewards(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getBlockRewards")
@@ -68,10 +76,18 @@ public class GetBlockRewards extends RestApiEndpoint {
             .withInternalErrorResponse()
             .withNotImplementedResponse()
             .build());
+    this.chainDataProvider = chainDataProvider;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    throw new NotImplementedException();
+    request.respondAsync(
+        chainDataProvider
+            .getBlockRewardsFromBlockId(request.getPathParameter(PARAMETER_BLOCK_ID))
+            .thenApply(
+                result ->
+                    result
+                        .map(AsyncApiResponse::respondOk)
+                        .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

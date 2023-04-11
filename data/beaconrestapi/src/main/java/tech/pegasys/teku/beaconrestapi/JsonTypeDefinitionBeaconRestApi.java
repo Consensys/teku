@@ -264,7 +264,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetVersion())
             // Rewards Handlers
             .endpoint(new GetSyncCommitteeRewards(dataProvider))
-            .endpoint(new GetBlockRewards())
+            .endpoint(new GetBlockRewards(dataProvider))
             // Validator Handlers
             .endpoint(new PostAttesterDuties(dataProvider))
             .endpoint(new GetProposerDuties(dataProvider))
