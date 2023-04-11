@@ -61,7 +61,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -88,7 +88,7 @@ public class ValidatorDataProviderTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider;
   private BeaconBlock blockInternal;
-  private BlindedBlockContents blindedBlockContents;
+  private BlockContents blockContents;
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
 
   @BeforeEach
@@ -139,10 +139,10 @@ public class ValidatorDataProviderTest {
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
     if (denebMilestoneReached()) {
-      blindedBlockContents = dataStructureUtil.randomBlindedBlockContents();
-      when(validatorApiChannel.createUnsignedBlindedBlockContents(
+      blockContents = dataStructureUtil.randomBlockContents();
+      when(validatorApiChannel.createUnsignedBlockContents(
               ONE, signatureInternal, Optional.empty()))
-          .thenReturn(completedFuture(Optional.of(blindedBlockContents)));
+          .thenReturn(completedFuture(Optional.of(blockContents)));
     }
 
     SafeFuture<? extends Optional<? extends SszData>> data =
@@ -150,7 +150,7 @@ public class ValidatorDataProviderTest {
 
     if (denebMilestoneReached()) {
       verify(validatorApiChannel)
-          .createUnsignedBlindedBlockContents(ONE, signatureInternal, Optional.empty());
+          .createUnsignedBlockContents(ONE, signatureInternal, Optional.empty());
     } else {
       verify(validatorApiChannel)
           .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
@@ -161,7 +161,7 @@ public class ValidatorDataProviderTest {
     if (denebMilestoneReached()) {
       assertThat(data.getNow(null).orElseThrow())
           .usingRecursiveComparison()
-          .isEqualTo(blindedBlockContents);
+          .isEqualTo(blockContents);
     } else {
       assertThat(data.getNow(null).orElseThrow())
           .usingRecursiveComparison()
