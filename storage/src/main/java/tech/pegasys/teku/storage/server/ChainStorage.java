@@ -289,7 +289,11 @@ public class ChainStorage
           final List<SlotAndBlockRootAndBlobIndex> result;
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
-            result = blobSidecars.limit(limit.longValue()).collect(Collectors.toList());
+            result =
+                blobSidecars
+                    .filter(key -> !key.hasNoBlobs())
+                    .limit(limit.longValue())
+                    .collect(Collectors.toList());
           }
           return result;
         });

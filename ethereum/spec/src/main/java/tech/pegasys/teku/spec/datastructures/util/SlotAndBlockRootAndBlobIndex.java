@@ -45,6 +45,10 @@ public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRoot
     return blobIndex;
   }
 
+  public boolean hasNoBlobs() {
+    return blobIndex.equals(UInt64.MAX_VALUE);
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

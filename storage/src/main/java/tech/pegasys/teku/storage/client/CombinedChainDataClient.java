@@ -485,22 +485,27 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
       final Bytes32 blockRoot, final UInt64 index) {
-    return recentChainData
-        .getSlotForBlockRoot(blockRoot)
-        .map(slot -> getBlobSidecarByKey(new SlotAndBlockRootAndBlobIndex(slot, blockRoot, index)))
-        .orElseGet(
-            () ->
-                historicalChainData
-                    .getBlockByBlockRoot(blockRoot)
-                    .thenCompose(
-                        blockOptional ->
-                            blockOptional
-                                .map(
-                                    block ->
-                                        getBlobSidecarByKey(
-                                            new SlotAndBlockRootAndBlobIndex(
-                                                blockOptional.get().getSlot(), blockRoot, index)))
-                                .orElse(SafeFuture.completedFuture(Optional.empty()))));
+    if (index.equals(UInt64.MAX_VALUE)) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
+    if (hotSlotForBlockRoot.isPresent()) {
+      return getBlobSidecarByKey(
+          new SlotAndBlockRootAndBlobIndex(hotSlotForBlockRoot.get(), blockRoot, index));
+    } else {
+      return historicalChainData
+          .getBlockByBlockRoot(blockRoot)
+          .thenCompose(
+              blockOptional -> {
+                if (blockOptional.isPresent()) {
+                  return getBlobSidecarByKey(
+                      new SlotAndBlockRootAndBlobIndex(
+                          blockOptional.get().getSlot(), blockRoot, index));
+                } else {
+                  return SafeFuture.completedFuture(Optional.empty());
+                }
+              });
+    }
   }
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByKey(

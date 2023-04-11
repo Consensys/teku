@@ -187,7 +187,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldCompleteSuccessfullyIfRequestNotWithinRange() {
+  public void shouldCompleteSuccessfullyIfNoBlobSidecarsInRange() {
     when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =

@@ -38,4 +38,14 @@ public class SlotAndBlockRootAndBlobIndexKeySerializerTest {
     final SlotAndBlockRootAndBlobIndex deserialized = serializer.deserialize(data);
     assertThat(deserialized).isEqualTo(expected);
   }
+
+  @Test
+  public void hasNoBlobsRoundTrip() {
+    final SlotAndBlockRootAndBlobIndex expected =
+        new SlotAndBlockRootAndBlobIndex(EXPECTED_SLOT, EXPECTED_ROOT, UInt64.MAX_VALUE);
+    assertThat(expected.hasNoBlobs()).isTrue();
+    final byte[] data = serializer.serialize(expected);
+    final SlotAndBlockRootAndBlobIndex deserialized = serializer.deserialize(data);
+    assertThat(deserialized).isEqualTo(expected);
+  }
 }

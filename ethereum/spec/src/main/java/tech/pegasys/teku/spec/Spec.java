@@ -327,8 +327,7 @@ public class Spec {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()
-        .orElseThrow(
-            () -> new RuntimeException("Deneb milestone is required to load execution payload"))
+        .orElseThrow(() -> new RuntimeException("Deneb milestone is required to load blob sidecar"))
         .getBlobSidecarSchema()
         .sszDeserialize(serializedBlobSidecar);
   }
