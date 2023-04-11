@@ -119,7 +119,9 @@ public class ValidatorDataProvider {
     }
 
     if (denebMilestoneReached(slot)) {
-      return validatorApiChannel.createUnsignedBlockContents(slot, randao, graffiti, isBlinded);
+      return isBlinded
+          ? validatorApiChannel.createUnsignedBlindedBlockContents(slot, randao, graffiti)
+          : validatorApiChannel.createUnsignedBlockContents(slot, randao, graffiti);
     } else {
       return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
     }

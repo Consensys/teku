@@ -140,8 +140,8 @@ public class ValidatorDataProviderTest {
 
     if (denebMilestoneReached()) {
       blindedBlockContents = dataStructureUtil.randomBlindedBlockContents();
-      when(validatorApiChannel.createUnsignedBlockContents(
-              ONE, signatureInternal, Optional.empty(), false))
+      when(validatorApiChannel.createUnsignedBlindedBlockContents(
+              ONE, signatureInternal, Optional.empty()))
           .thenReturn(completedFuture(Optional.of(blindedBlockContents)));
     }
 
@@ -150,7 +150,7 @@ public class ValidatorDataProviderTest {
 
     if (denebMilestoneReached()) {
       verify(validatorApiChannel)
-          .createUnsignedBlockContents(ONE, signatureInternal, Optional.empty(), false);
+          .createUnsignedBlindedBlockContents(ONE, signatureInternal, Optional.empty());
     } else {
       verify(validatorApiChannel)
           .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
