@@ -20,12 +20,10 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
@@ -83,7 +81,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
             return BlobSidecarsAndValidationResult.NOT_REQUIRED;
           }
           // 2. The number of kzg commitments in the block is 0
-          if (getNumberOfKzgCommitmentsInBlock() == 0) {
+          if (getKzgCommitmentsInBlock().isEmpty()) {
             return BlobSidecarsAndValidationResult.NOT_REQUIRED;
           }
 
@@ -92,19 +90,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private BlobSidecarsAndValidationResult internalValidate(final List<BlobSidecar> blobSidecars) {
-    final BeaconBlockBodyDeneb blockBody =
-        block
-            .getBeaconBlock()
-            .map(BeaconBlock::getBody)
-            .flatMap(BeaconBlockBody::toVersionDeneb)
-            .orElseThrow();
     try {
       if (!specVersion
           .miscHelpers()
           .isDataAvailable(
               block.getSlot(),
               block.getRoot(),
-              blockBody.getBlobKzgCommitments().stream()
+              getKzgCommitmentsInBlock().stream()
                   .map(SszKZGCommitment::getKZGCommitment)
                   .collect(Collectors.toUnmodifiableList()),
               blobSidecars)) {
@@ -122,13 +114,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         recentChainData.getStore(), block.getSlot());
   }
 
-  private int getNumberOfKzgCommitmentsInBlock() {
-    return block
-        .getMessage()
-        .getBody()
-        .toVersionDeneb()
-        .orElseThrow()
-        .getBlobKzgCommitments()
-        .size();
+  private SszList<SszKZGCommitment> getKzgCommitmentsInBlock() {
+    return block.getMessage().getBody().toVersionDeneb().orElseThrow().getBlobKzgCommitments();
   }
 }
