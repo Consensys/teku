@@ -101,7 +101,8 @@ public class BlobsSidecarManagerTest {
     assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
         .isCompletedWithValue(validResult(blockAndBlobsSidecar.getBlobsSidecar()));
 
-    verify(mockedMiscHelpers, never()).isDataAvailable(any(), any(), any(), any());
+    verify(mockedMiscHelpers, never())
+        .isDataAvailable(any(), any(), any(), any(BlobsSidecar.class));
   }
 
   @Test
@@ -116,7 +117,8 @@ public class BlobsSidecarManagerTest {
     assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
         .isCompletedWithValue(NOT_REQUIRED);
 
-    verify(mockedMiscHelpers, never()).isDataAvailable(any(), any(), any(), any());
+    verify(mockedMiscHelpers, never())
+        .isDataAvailable(any(), any(), any(), any(BlobsSidecar.class));
   }
 
   @Test
@@ -134,14 +136,15 @@ public class BlobsSidecarManagerTest {
             SafeFuture.completedFuture(Optional.of(blockAndBlobsSidecar.getBlobsSidecar())));
 
     // is available
-    when(mockedMiscHelpers.isDataAvailable(any(), any(), any(), any())).thenReturn(true);
+    when(mockedMiscHelpers.isDataAvailable(any(), any(), any(), any(BlobsSidecar.class)))
+        .thenReturn(true);
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
 
     assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
         .isCompletedWithValue(validResult(blockAndBlobsSidecar.getBlobsSidecar()));
 
-    verify(mockedMiscHelpers).isDataAvailable(any(), any(), any(), any());
+    verify(mockedMiscHelpers).isDataAvailable(any(), any(), any(), any(BlobsSidecar.class));
   }
 
   @Test
