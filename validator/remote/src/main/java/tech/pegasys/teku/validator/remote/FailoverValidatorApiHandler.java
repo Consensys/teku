@@ -168,7 +168,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<BlindedBlockContents>> createUnsignedBlockContents(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded) {
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      boolean blinded) {
     throw new NotImplementedException("Not Yet Implemented");
   }
 

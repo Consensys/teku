@@ -118,7 +118,7 @@ public class ValidatorDataProvider {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
 
-    if (denebMileStoneReached(slot)) {
+    if (denebMilestoneReached(slot)) {
       return validatorApiChannel.createUnsignedBlockContents(slot, randao, graffiti, isBlinded);
     } else {
       return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
@@ -330,7 +330,7 @@ public class ValidatorDataProvider {
     return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
   }
 
-  private boolean denebMileStoneReached(UInt64 slot) {
+  private boolean denebMilestoneReached(UInt64 slot) {
     return spec.getForkSchedule()
         .getSpecMilestoneAtSlot(slot)
         .isGreaterThanOrEqualTo(SpecMilestone.DENEB);
