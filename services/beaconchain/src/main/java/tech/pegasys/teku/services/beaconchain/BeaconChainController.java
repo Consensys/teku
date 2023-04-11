@@ -92,15 +92,16 @@ import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.BlsToExecutionOperationPool;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
+import tech.pegasys.teku.statetransition.MappedOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
@@ -228,7 +229,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile OperationPool<AttesterSlashing> attesterSlashingPool;
   protected volatile OperationPool<ProposerSlashing> proposerSlashingPool;
   protected volatile OperationPool<SignedVoluntaryExit> voluntaryExitPool;
-  protected volatile BlsToExecutionOperationPool blsToExecutionChangePool;
+  protected volatile MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   protected volatile SyncCommitteeContributionPool syncCommitteeContributionPool;
   protected volatile SyncCommitteeMessagePool syncCommitteeMessagePool;
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
@@ -562,7 +563,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
     VoluntaryExitValidator validator = new VoluntaryExitValidator(spec, recentChainData);
     voluntaryExitPool =
-        new SimpleOperationPool<>(
+        new MappedOperationPool<>(
             "VoluntaryExitPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
@@ -577,14 +578,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec, timeProvider, recentChainData, signatureVerificationService);
 
     blsToExecutionChangePool =
-        new BlsToExecutionOperationPool(
+        new MappedOperationPool<>(
             "SignedBlsToExecutionChangePool",
             metricsSystem,
             beaconBlockSchemaSupplier
                 .andThen(BeaconBlockBodySchema::toVersionCapella)
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
-            validator);
+            validator,
+            50_000);
     blockImporter.subscribeToVerifiedBlockBlsToExecutionChanges(
         blsToExecutionChangePool::removeAll);
   }

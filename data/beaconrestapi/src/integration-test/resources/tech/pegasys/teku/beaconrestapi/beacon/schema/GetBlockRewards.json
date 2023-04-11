@@ -27,9 +27,9 @@
         },
         "attestations" : {
           "type" : "string",
-          "description" : "unsigned 64 bit integer",
+          "description" : "long string",
           "example" : "1",
-          "format" : "uint64"
+          "format" : "long"
         },
         "sync_aggregate" : {
           "type" : "string",

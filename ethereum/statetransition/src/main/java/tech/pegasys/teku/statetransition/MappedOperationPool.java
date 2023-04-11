@@ -37,34 +37,47 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.MessageWithValidatorId;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
-import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 
-public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExecutionChange> {
+public class MappedOperationPool<T extends MessageWithValidatorId> implements OperationPool<T> {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int DEFAULT_OPERATION_POOL_SIZE = 50_000;
-  private final Map<Integer, OperationPoolEntry<SignedBlsToExecutionChange>> operations;
-  private final Function<UInt64, SszListSchema<SignedBlsToExecutionChange, ?>>
-      slotToSszListSchemaSupplier;
-  private final OperationValidator<SignedBlsToExecutionChange> operationValidator;
-  private final Subscribers<OperationAddedSubscriber<SignedBlsToExecutionChange>> subscribers =
-      Subscribers.create(true);
+  private static final int DEFAULT_OPERATION_POOL_SIZE = 10_000;
+  private final Map<Integer, OperationPoolEntry<T>> operations;
+  private final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier;
+  private final OperationValidator<T> operationValidator;
+  private final Subscribers<OperationAddedSubscriber<T>> subscribers = Subscribers.create(true);
   private final LabelledMetric<Counter> validationReasonCounter;
 
-  public BlsToExecutionOperationPool(
+  private final String metricType;
+
+  public MappedOperationPool(
       final String metricType,
       final MetricsSystem metricsSystem,
-      final Function<UInt64, SszListSchema<SignedBlsToExecutionChange, ?>>
-          slotToSszListSchemaSupplier,
-      final SignedBlsToExecutionChangeValidator operationValidator) {
+      final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      final OperationValidator<T> operationValidator) {
+    this(
+        metricType,
+        metricsSystem,
+        slotToSszListSchemaSupplier,
+        operationValidator,
+        DEFAULT_OPERATION_POOL_SIZE);
+  }
+
+  public MappedOperationPool(
+      final String metricType,
+      final MetricsSystem metricsSystem,
+      final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
+      final OperationValidator<T> operationValidator,
+      final int operationPoolSize) {
 
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
-    this.operations = LimitedMap.createSynchronized(DEFAULT_OPERATION_POOL_SIZE);
+    this.operations = LimitedMap.createSynchronized(operationPoolSize);
     this.operationValidator = operationValidator;
+    this.metricType = metricType;
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.BEACON,
         OPERATION_POOL_SIZE_METRIC + metricType,
@@ -78,46 +91,47 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
             "result");
   }
 
-  private static InternalValidationResult rejectForDuplicatedMessage(final int validatorIndex) {
+  private static InternalValidationResult rejectForDuplicatedMessage(
+      String metricType, final int validatorIndex) {
     final String logMessage =
         String.format(
-            "BlsToExecutionChange is not the first one for validator %s.", validatorIndex);
+            "Cannot add to %s as validator %s is already in this pool.",
+            metricType, validatorIndex);
     LOG.trace(logMessage);
     return InternalValidationResult.create(IGNORE, logMessage);
   }
 
   @Override
-  public void subscribeOperationAdded(
-      final OperationAddedSubscriber<SignedBlsToExecutionChange> subscriber) {
+  public void subscribeOperationAdded(final OperationAddedSubscriber<T> subscriber) {
     this.subscribers.subscribe(subscriber);
   }
 
   @Override
-  public SszList<SignedBlsToExecutionChange> getItemsForBlock(final BeaconState stateAtBlockSlot) {
+  public SszList<T> getItemsForBlock(final BeaconState stateAtBlockSlot) {
     return getItemsForBlock(stateAtBlockSlot, operation -> true, operation -> {});
   }
 
   @Override
-  public SszList<SignedBlsToExecutionChange> getItemsForBlock(
+  public SszList<T> getItemsForBlock(
       final BeaconState stateAtBlockSlot,
-      final Predicate<SignedBlsToExecutionChange> filter,
-      final Consumer<SignedBlsToExecutionChange> includedItemConsumer) {
-    final SszListSchema<SignedBlsToExecutionChange, ?> schema =
+      final Predicate<T> filter,
+      final Consumer<T> includedItemConsumer) {
+    final SszListSchema<T, ?> schema =
         slotToSszListSchemaSupplier.apply(stateAtBlockSlot.getSlot());
 
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
-    final Collection<SignedBlsToExecutionChange> sortedViableOperations =
+    final Collection<T> sortedViableOperations =
         operations.values().stream()
             .sorted()
             .map(OperationPoolEntry::getMessage)
             .collect(Collectors.toList());
-    final List<SignedBlsToExecutionChange> selected = new ArrayList<>();
-    for (final SignedBlsToExecutionChange item : sortedViableOperations) {
+    final List<T> selected = new ArrayList<>();
+    for (final T item : sortedViableOperations) {
       if (!filter.test(item)) {
         continue;
       }
-      final int validatorIndex = getValidatorIndex(item);
+      final int validatorIndex = item.getValidatorId();
       if (operationValidator.validateForBlockInclusion(stateAtBlockSlot, item).isEmpty()) {
         selected.add(item);
         includedItemConsumer.accept(item);
@@ -133,52 +147,52 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> addLocal(final SignedBlsToExecutionChange item) {
-    final int validatorIndex = getValidatorIndex(item);
+  public SafeFuture<InternalValidationResult> addLocal(final T item) {
+    final int validatorIndex = item.getValidatorId();
     if (operations.containsKey(validatorIndex)) {
-      return SafeFuture.completedFuture(rejectForDuplicatedMessage(validatorIndex))
+      return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))
           .thenPeek(result -> validationReasonCounter.labels(result.code().toString()).inc());
     }
     return add(item, false);
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> addRemote(final SignedBlsToExecutionChange item) {
-    final int validatorIndex = getValidatorIndex(item);
+  public SafeFuture<InternalValidationResult> addRemote(final T item) {
+    final int validatorIndex = item.getValidatorId();
     if (operations.containsKey(validatorIndex)) {
-      return SafeFuture.completedFuture(rejectForDuplicatedMessage(validatorIndex))
+      return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))
           .thenPeek(result -> validationReasonCounter.labels(result.code().toString()).inc());
     }
     return add(item, true);
   }
 
   @Override
-  public void addAll(final SszCollection<SignedBlsToExecutionChange> items) {
+  public void addAll(final SszCollection<T> items) {
     items.forEach(
         item -> {
-          final int validatorIndex = getValidatorIndex(item);
+          final int validatorIndex = item.getValidatorId();
           operations.putIfAbsent(validatorIndex, new OperationPoolEntry<>(item, false));
         });
   }
 
   @Override
-  public void removeAll(final SszCollection<SignedBlsToExecutionChange> items) {
+  public void removeAll(final SszCollection<T> items) {
     items.forEach(
         item -> {
-          final int validatorIndex = getValidatorIndex(item);
+          final int validatorIndex = item.getValidatorId();
           operations.remove(validatorIndex);
         });
   }
 
   @Override
-  public Set<SignedBlsToExecutionChange> getAll() {
+  public Set<T> getAll() {
     return operations.values().stream()
         .map(OperationPoolEntry::getMessage)
         .collect(Collectors.toSet());
   }
 
   @Override
-  public Set<SignedBlsToExecutionChange> getLocallySubmitted() {
+  public Set<T> getLocallySubmitted() {
     return operations.values().stream()
         .filter(OperationPoolEntry::isLocal)
         .map(OperationPoolEntry::getMessage)
@@ -190,9 +204,8 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
     return operations.size();
   }
 
-  private SafeFuture<InternalValidationResult> add(
-      SignedBlsToExecutionChange item, boolean fromNetwork) {
-    final int validatorIndex = getValidatorIndex(item);
+  private SafeFuture<InternalValidationResult> add(T item, boolean fromNetwork) {
+    final int validatorIndex = item.getValidatorId();
     return operationValidator
         .validateForGossip(item)
         .thenApply(
@@ -204,9 +217,5 @@ public class BlsToExecutionOperationPool implements OperationPool<SignedBlsToExe
               }
               return result;
             });
-  }
-
-  private int getValidatorIndex(final SignedBlsToExecutionChange blsToExecutionChange) {
-    return blsToExecutionChange.getMessage().getValidatorIndex().intValue();
   }
 }
