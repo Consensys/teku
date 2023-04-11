@@ -22,6 +22,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Key for storing blobs in DB */
 public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRootAndBlobIndex> {
+  public static final UInt64 NO_BLOBS_INDEX = UInt64.MAX_VALUE;
+
   private final UInt64 slot;
   private final Bytes32 blockRoot;
   private final UInt64 blobIndex;
@@ -33,9 +35,9 @@ public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRoot
     this.blobIndex = blobIndex;
   }
 
-  public static SlotAndBlockRootAndBlobIndex createWithNoBlobs(
+  public static SlotAndBlockRootAndBlobIndex createNoBlobsKey(
       final UInt64 slot, final Bytes32 blockRoot) {
-    return new SlotAndBlockRootAndBlobIndex(slot, blockRoot, UInt64.MAX_VALUE);
+    return new SlotAndBlockRootAndBlobIndex(slot, blockRoot, NO_BLOBS_INDEX);
   }
 
   public UInt64 getSlot() {
@@ -50,8 +52,8 @@ public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRoot
     return blobIndex;
   }
 
-  public boolean hasNoBlobs() {
-    return blobIndex.equals(UInt64.MAX_VALUE);
+  public boolean isNoBlobsKey() {
+    return blobIndex.equals(NO_BLOBS_INDEX);
   }
 
   @Override

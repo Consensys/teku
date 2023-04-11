@@ -42,8 +42,8 @@ public class SlotAndBlockRootAndBlobIndexKeySerializerTest {
   @Test
   public void hasNoBlobsRoundTrip() {
     final SlotAndBlockRootAndBlobIndex expected =
-        new SlotAndBlockRootAndBlobIndex(EXPECTED_SLOT, EXPECTED_ROOT, UInt64.MAX_VALUE);
-    assertThat(expected.hasNoBlobs()).isTrue();
+        SlotAndBlockRootAndBlobIndex.createNoBlobsKey(EXPECTED_SLOT, EXPECTED_ROOT);
+    assertThat(expected.isNoBlobsKey()).isTrue();
     final byte[] data = serializer.serialize(expected);
     final SlotAndBlockRootAndBlobIndex deserialized = serializer.deserialize(data);
     assertThat(deserialized).isEqualTo(expected);

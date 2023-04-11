@@ -291,7 +291,7 @@ public class ChainStorage
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
             result =
                 blobSidecars
-                    .filter(key -> !key.hasNoBlobs())
+                    .filter(key -> !key.isNoBlobsKey())
                     .limit(limit.longValue())
                     .collect(Collectors.toList());
           }

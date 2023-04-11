@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex.NO_BLOBS_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -485,27 +486,26 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
       final Bytes32 blockRoot, final UInt64 index) {
-    if (index.equals(UInt64.MAX_VALUE)) {
+    if (index.equals(NO_BLOBS_INDEX)) {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
     if (hotSlotForBlockRoot.isPresent()) {
       return getBlobSidecarByKey(
           new SlotAndBlockRootAndBlobIndex(hotSlotForBlockRoot.get(), blockRoot, index));
-    } else {
-      return historicalChainData
-          .getBlockByBlockRoot(blockRoot)
-          .thenCompose(
-              blockOptional -> {
-                if (blockOptional.isPresent()) {
-                  return getBlobSidecarByKey(
-                      new SlotAndBlockRootAndBlobIndex(
-                          blockOptional.get().getSlot(), blockRoot, index));
-                } else {
-                  return SafeFuture.completedFuture(Optional.empty());
-                }
-              });
     }
+    return historicalChainData
+        .getBlockByBlockRoot(blockRoot)
+        .thenCompose(
+            blockOptional -> {
+              if (blockOptional.isPresent()) {
+                return getBlobSidecarByKey(
+                    new SlotAndBlockRootAndBlobIndex(
+                        blockOptional.get().getSlot(), blockRoot, index));
+              } else {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+            });
   }
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByKey(
