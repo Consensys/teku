@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -258,14 +259,23 @@ public class MiscHelpers {
   }
 
   /**
-   * Performs data availability by validating blobs and proof from Sidecar against blobs kzg
-   * commitments from the block. It will also make check slot and blockRoot consistency.
+   * Performs data availability by validating the blobs against the kzg commitments from the block.
+   * It will also check the slot and blockRoot consistency.
    */
   public boolean isDataAvailable(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
+      final List<BlobSidecar> blobSidecars) {
+    return false;
+  }
+
+  public boolean isDataAvailable(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final List<KZGCommitment> kzgCommitments,
       final BlobsSidecar blobsSidecar) {
+    // TODO: remove when fork choice for blobs decoupling sync is implemented
     return false;
   }
 
