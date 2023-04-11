@@ -34,7 +34,7 @@ public class BlobSidecarsAndValidationResult {
       new BlobSidecarsAndValidationResult(
           BlobSidecarsValidationResult.NOT_REQUIRED, Collections.emptyList(), Optional.empty());
 
-  public static SafeFuture<BlobSidecarsAndValidationResult> NOT_REQUIRED_RESULT_FUTURE =
+  public static final SafeFuture<BlobSidecarsAndValidationResult> NOT_REQUIRED_RESULT_FUTURE =
       SafeFuture.completedFuture(NOT_REQUIRED);
 
   public static BlobSidecarsAndValidationResult validResult(final List<BlobSidecar> blobSidecars) {
