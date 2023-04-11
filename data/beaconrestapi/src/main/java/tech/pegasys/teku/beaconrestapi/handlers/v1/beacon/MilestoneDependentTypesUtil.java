@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -33,29 +32,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class MilestoneDependentTypesUtil {
 
-  private static final Set<SpecMilestone> IGNORED_MILESTONES = Set.of();
-
-  public static <T extends SszData>
-      SerializableOneOfTypeDefinition<T> getSchemaDefinitionForAllMilestones(
-          final SchemaDefinitionCache schemaDefinitionCache,
-          final String title,
-          final Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter,
-          final BiPredicate<T, SpecMilestone> predicate) {
-    final SerializableOneOfTypeDefinitionBuilder<T> builder =
-        new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
-    for (SpecMilestone milestone : SpecMilestone.values()) {
-      if (IGNORED_MILESTONES.contains(milestone)) {
-        continue;
-      }
-      final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
-          schemaGetter
-              .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
-              .getJsonTypeDefinition();
-      builder.withType(value -> predicate.test(value, milestone), jsonTypeDefinition);
-    }
-    return builder.build();
-  }
-
   public static <T extends SszData>
       SerializableOneOfTypeDefinition<T> getAvailableSchemaDefinitionForAllMilestones(
           final SchemaDefinitionCache schemaDefinitionCache,
@@ -65,9 +41,6 @@ public class MilestoneDependentTypesUtil {
     final SerializableOneOfTypeDefinitionBuilder<T> builder =
         new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
     for (SpecMilestone milestone : SpecMilestone.values()) {
-      if (IGNORED_MILESTONES.contains(milestone)) {
-        continue;
-      }
       final Optional<SszSchema<? extends T>> schemaDefinition =
           schemaGetter.apply(schemaDefinitionCache.getSchemaDefinition(milestone));
       schemaDefinition.ifPresent(

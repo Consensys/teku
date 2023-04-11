@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -38,7 +38,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetBlindedBlock extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blinded_blocks/{block_id}";
@@ -93,10 +92,10 @@ public class GetBlindedBlock extends RestApiEndpoint {
   private static SerializableTypeDefinition<ObjectAndMetaData<SignedBeaconBlock>> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<SignedBeaconBlock> signedBeaconBlockType =
-        getSchemaDefinitionForAllMilestones(
+        getAvailableSchemaDefinitionForAllMilestones(
             schemaDefinitionCache,
             "SignedBlindedBeaconBlock",
-            SchemaDefinitions::getSignedBlindedBeaconBlockSchema,
+            schemaDefinitions -> Optional.of(schemaDefinitions.getSignedBlindedBeaconBlockSchema()),
             (signedBeaconBlock, milestone) ->
                 schemaDefinitionCache
                     .milestoneAtSlot(signedBeaconBlock.getSlot())

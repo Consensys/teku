@@ -17,7 +17,6 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAME
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -48,7 +47,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
@@ -149,10 +147,10 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
         .name("GetNewBlindedBlockResponse")
         .withField(
             "data",
-            getSchemaDefinitionForAllMilestones(
+            getAvailableSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
                 "BlindedBlock",
-                SchemaDefinitions::getBlindedBeaconBlockSchema,
+                schemaDefinitions -> Optional.of(schemaDefinitions.getBlindedBeaconBlockSchema()),
                 (beaconBlock, milestone) ->
                     schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone)),
             Function.identity())
