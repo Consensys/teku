@@ -33,6 +33,10 @@ public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRoot
     this.blobIndex = blobIndex;
   }
 
+  public static SlotAndBlockRootAndBlobIndex createWithNoBlobs(final UInt64 slot, final Bytes32 blockRoot) {
+    return new SlotAndBlockRootAndBlobIndex(slot, blockRoot, UInt64.MAX_VALUE);
+  }
+
   public UInt64 getSlot() {
     return slot;
   }
