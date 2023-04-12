@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -27,7 +27,6 @@ import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefini
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Header;
 import java.util.List;
-import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.AllBlocksAtSlotData;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class GetAllBlocksAtSlot extends RestApiEndpoint {
   public static final String ROUTE = "/teku/v1/beacon/blocks/{slot}";
@@ -91,10 +91,10 @@ public class GetAllBlocksAtSlot extends RestApiEndpoint {
   public static SerializableTypeDefinition<AllBlocksAtSlotData> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableOneOfTypeDefinition<BeaconBlock> messageType =
-        getAvailableSchemaDefinitionForAllMilestones(
+        getSchemaDefinitionForAllMilestones(
             schemaDefinitionCache,
             "BeaconBlock",
-            schemaDefinitions -> Optional.of(schemaDefinitions.getBeaconBlockSchema()),
+            SchemaDefinitions::getBeaconBlockSchema,
             (beaconBlock, milestone) ->
                 schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone));
 
