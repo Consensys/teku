@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
@@ -122,8 +123,21 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnNonCanonicalBlocksByRoot(), root);
   }
 
+  public Optional<Bytes> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
+  }
+
   public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return db.get(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
+  }
+
+  @MustBeClosed
+  public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.streamKeys(
+        schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+        new SlotAndBlockRootAndBlobIndex(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
+        new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
   @MustBeClosed
@@ -152,6 +166,12 @@ public class V4FinalizedKvStoreDao {
         schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
         new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
         new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT));
+  }
+
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
+    return db.getFirstEntry(schema.getColumnBlobSidecarBySlotRootBlobIndex())
+        .map(ColumnEntry::getKey)
+        .map(SlotAndBlockRootAndBlobIndex::getSlot);
   }
 
   public Optional<UInt64> getEarliestBlobsSidecarSlot() {

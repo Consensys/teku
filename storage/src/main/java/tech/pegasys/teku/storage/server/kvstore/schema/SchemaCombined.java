@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface SchemaCombined extends Schema {
   // Columns
@@ -55,6 +56,8 @@ public interface SchemaCombined extends Schema {
   KvStoreColumn<Bytes32, SignedBeaconBlock> getColumnNonCanonicalBlocksByRoot();
 
   KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot();
+
+  KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> getColumnBlobSidecarBySlotRootBlobIndex();
 
   KvStoreColumn<SlotAndBlockRoot, Bytes> getColumnBlobsSidecarBySlotAndBlockRoot();
 

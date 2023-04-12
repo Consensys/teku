@@ -56,12 +56,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
@@ -764,6 +766,12 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
+    return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
+  }
+
+  @Override
   public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     final Optional<Bytes> maybePayload = dao.getBlobsSidecar(slotAndBlockRoot);
     return maybePayload.map(
@@ -822,6 +830,13 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   @Override
+  public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamBlobSidecarKeys(startSlot, endSlot);
+  }
+
+  @MustBeClosed
+  @Override
   public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobsSidecar(startSlot, endSlot)
         .map(
@@ -850,6 +865,11 @@ public class KvStoreDatabase implements Database {
   public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
+    return dao.getEarliestBlobSidecarSlot();
   }
 
   @Override

@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -30,11 +32,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.ChainStorageFacade;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -268,8 +272,31 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot() {
-    return SafeFuture.of(database::getEarliestBlobsSidecarSlot);
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
+    return SafeFuture.of(database::getEarliestBlobSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return SafeFuture.of(() -> database.getBlobSidecar(key));
+  }
+
+  @Override
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
+    return SafeFuture.of(
+        () -> {
+          final List<SlotAndBlockRootAndBlobIndex> result;
+          try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
+              database.streamBlobSidecarKeys(startSlot, endSlot)) {
+            result =
+                blobSidecars
+                    .filter(key -> !key.isNoBlobsKey())
+                    .limit(limit.longValue())
+                    .collect(Collectors.toList());
+          }
+          return result;
+        });
   }
 
   @Override
