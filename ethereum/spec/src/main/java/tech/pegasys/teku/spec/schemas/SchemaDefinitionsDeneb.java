@@ -26,14 +26,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bli
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDenebImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecarsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecarsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarsSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -42,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSchema
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecarsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
