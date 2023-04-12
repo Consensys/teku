@@ -74,7 +74,6 @@ public class GetBlockRewards extends RestApiEndpoint {
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
             .withInternalErrorResponse()
-            .withNotImplementedResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
   }
