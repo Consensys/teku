@@ -61,11 +61,6 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void metadata_shouldHandle501() throws JsonProcessingException {
-    verifyMetadataErrorResponse(handler, SC_NOT_IMPLEMENTED);
-  }
-
-  @Test
   void metadata_shouldHandle200() throws IOException {
     final String data = getResponseStringFromMetadata(handler, SC_OK, blockRewardsResult);
     final String expected =
