@@ -258,7 +258,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
   protected TimerService timerService;
-  protected PoolFactory pendingPoolFactory;
+  protected PoolFactory poolFactory;
   protected SettableLabelledGauge futureItemsMetric;
   protected IntSupplier rejectedExecutionCountSupplier;
 
@@ -277,7 +277,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
-    this.pendingPoolFactory = new PoolFactory(this.metricsSystem);
+    this.poolFactory = new PoolFactory(this.metricsSystem);
     this.rejectedExecutionCountSupplier = serviceConfig.getRejectedExecutionsSupplier();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
@@ -498,7 +498,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlockPoolsAndCaches() {
     LOG.debug("BeaconChainController.initBlockPoolsAndCaches()");
-    pendingBlocks = pendingPoolFactory.createPendingPoolForBlocks(spec);
+    pendingBlocks = poolFactory.createPendingPoolForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
     invalidBlockRoots = LimitedMap.createSynchronized(500);
   }
@@ -507,7 +507,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initBlobSidecarPool()");
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       blobSidecarPool =
-          pendingPoolFactory.createPoolForBlobSidecar(
+          poolFactory.createPoolForBlobSidecar(
               spec, timeProvider, beaconAsyncRunner, recentChainData);
     } else {
       blobSidecarPool = BlobSidecarPool.NOOP;
@@ -826,7 +826,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initAttestationManager() {
     final PendingPool<ValidateableAttestation> pendingAttestations =
-        pendingPoolFactory.createPendingPoolForAttestations(spec);
+        poolFactory.createPendingPoolForAttestations(spec);
     final FutureItems<ValidateableAttestation> futureAttestations =
         FutureItems.create(
             ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
