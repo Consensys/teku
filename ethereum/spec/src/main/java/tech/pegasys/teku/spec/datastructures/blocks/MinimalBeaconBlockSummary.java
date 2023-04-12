@@ -31,4 +31,8 @@ public interface MinimalBeaconBlockSummary {
   default String toLogString() {
     return LogFormatter.formatBlock(getSlot(), getRoot());
   }
+
+  default SlotAndBlockRoot getSlotAndBlockRoot() {
+    return new SlotAndBlockRoot(getSlot(), getRoot());
+  }
 }

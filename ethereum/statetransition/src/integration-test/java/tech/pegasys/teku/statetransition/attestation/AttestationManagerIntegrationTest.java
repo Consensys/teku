@@ -47,7 +47,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -87,7 +87,7 @@ class AttestationManagerIntegrationTest {
           transitionBlockValidator);
 
   private final PendingPool<ValidateableAttestation> pendingAttestations =
-      new PendingPoolFactory(storageSystem.getMetricsSystem()).createForAttestations(spec);
+      new PoolFactory(storageSystem.getMetricsSystem()).createPendingPoolForAttestations(spec);
   private final FutureItems<ValidateableAttestation> futureAttestations =
       FutureItems.create(
           ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,

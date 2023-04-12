@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkFactory;
@@ -64,7 +65,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -102,6 +103,7 @@ public class SyncingNodeManager {
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
+    final TimeProvider timeProvider = new SystemTimeProvider();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
@@ -132,7 +134,7 @@ public class SyncingNodeManager {
         new BlockValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
     final PendingPool<SignedBeaconBlock> pendingBlocks =
-        new PendingPoolFactory(new NoOpMetricsSystem()).createForBlocks(spec);
+        new PoolFactory(new NoOpMetricsSystem()).createPendingPoolForBlocks(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronized(500);
@@ -144,7 +146,7 @@ public class SyncingNodeManager {
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
-            new SystemTimeProvider(),
+            timeProvider,
             EVENT_LOG,
             Optional.empty());
 
