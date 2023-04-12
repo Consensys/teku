@@ -101,7 +101,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecars;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlobSidecarSchema;
@@ -110,6 +109,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Sig
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -128,7 +129,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSideca
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;

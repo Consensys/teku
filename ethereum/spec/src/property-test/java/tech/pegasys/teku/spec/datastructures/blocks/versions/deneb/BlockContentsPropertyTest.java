@@ -19,7 +19,6 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BlockContentsSupplier;
 
 public class BlockContentsPropertyTest {
