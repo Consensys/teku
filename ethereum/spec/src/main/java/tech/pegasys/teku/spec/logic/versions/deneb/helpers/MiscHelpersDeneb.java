@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -63,32 +63,64 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     return kzg;
   }
 
-  // TODO: remove, dummy
-  private void validateBlobsSidecar(
-      final UInt64 slot,
-      final Bytes32 beaconBlockRoot,
-      final List<KZGCommitment> kzgCommitments,
-      final BlobsSidecar blobsSidecar) {
-    checkArgument(
-        slot.equals(blobsSidecar.getBeaconBlockSlot()),
-        "Block slot should match blobs sidecar slot");
-    checkArgument(
-        beaconBlockRoot.equals(blobsSidecar.getBeaconBlockRoot()),
-        "Block root should match blobs sidecar beacon block root");
-    checkArgument(
-        kzgCommitments.size() == blobsSidecar.getBlobs().size(),
-        "Number of KZG commitments should match number of blobs");
-    checkState(false, "Invalid aggregate KZG proof for the given blobs and commitments");
-  }
-
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
+   */
   @Override
   public boolean isDataAvailable(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
-      final BlobsSidecar blobsSidecar) {
-    validateBlobsSidecar(slot, beaconBlockRoot, kzgCommitments, blobsSidecar);
+      final List<BlobSidecar> blobSidecars) {
+    validateBlobs(slot, beaconBlockRoot, kzgCommitments, blobSidecars);
     return true;
+  }
+
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#validate_blobs">validate_blobs</a>
+   */
+  private void validateBlobs(
+      final UInt64 slot,
+      final Bytes32 beaconBlockRoot,
+      final List<KZGCommitment> kzgCommitments,
+      final List<BlobSidecar> blobSidecars) {
+    blobSidecars.forEach(
+        blobSidecar -> {
+          checkArgument(
+              slot.equals(blobSidecar.getSlot()),
+              "Blob sidecar slot %s does not match block slot %s",
+              blobSidecar.getSlot(),
+              slot);
+          checkArgument(
+              beaconBlockRoot.equals(blobSidecar.getBlockRoot()),
+              "Blob sidecar block root %s does not match block root %s",
+              blobSidecar.getBlockRoot(),
+              beaconBlockRoot);
+        });
+    final List<Bytes> blobs =
+        blobSidecars.stream()
+            .map(BlobSidecar::getBlob)
+            .map(Blob::getBytes)
+            .collect(Collectors.toList());
+    final List<KZGProof> proofs =
+        blobSidecars.stream().map(BlobSidecar::getKZGProof).collect(Collectors.toList());
+    checkArgument(
+        kzgCommitments.size() == blobs.size(),
+        "Number of KZG commitments (%s) does not match number of blobs (%s)",
+        kzgCommitments.size(),
+        blobSidecars.size());
+    checkArgument(
+        blobs.size() == proofs.size(),
+        "Number of blobs (%s) does not match number of proofs (%s)",
+        blobs.size(),
+        proofs.size());
+    checkState(
+        kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs),
+        "The blobs and KZG proofs do not correspond to the KZG commitments for slot %s and block root %s",
+        slot,
+        beaconBlockRoot);
   }
 
   public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
@@ -154,9 +186,9 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     return kzg.blobToKzgCommitment(blob.getBytes());
   }
 
-  // TODO: remove, dummy
   @SuppressWarnings("unused")
   public KZGProof computeAggregatedKzgProof(final List<Bytes> blobs) {
+    // TODO: remove when fork choice for blobs decoupling sync is implemented
     return KZGProof.INFINITY;
   }
 

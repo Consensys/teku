@@ -26,7 +26,11 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
-public abstract class AbstractFetchTask<T> {
+/**
+ * @param <K> - the type of the key used to fetch
+ * @param <T> - the type of the object to fetch
+ */
+public abstract class AbstractFetchTask<K, T> {
 
   private static final Comparator<Eth2Peer> SHUFFLING_COMPARATOR =
       Comparator.comparing(p -> Math.random());
@@ -88,6 +92,8 @@ public abstract class AbstractFetchTask<T> {
 
     return fetch(peer);
   }
+
+  public abstract K getKey();
 
   abstract SafeFuture<FetchResult<T>> fetch(final Eth2Peer peer);
 }

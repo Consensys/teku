@@ -323,6 +323,15 @@ public class Spec {
         .sszDeserialize(serializedPayload);
   }
 
+  public BlobSidecar deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionDeneb()
+        .orElseThrow(() -> new RuntimeException("Deneb milestone is required to load blob sidecar"))
+        .getBlobSidecarSchema()
+        .sszDeserialize(serializedBlobSidecar);
+  }
+
   public BlobsSidecar deserializeBlobsSidecar(
       final Bytes serializedBlobsSidecar, final UInt64 slot) {
     return atSlot(slot)

@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -59,8 +60,8 @@ public class OperationsReOrgManagerTest {
       mock(SimpleOperationPool.class);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
-  private final BlsToExecutionOperationPool blsToExecutionOperationPool =
-      mock(BlsToExecutionOperationPool.class);
+  private final MappedOperationPool<SignedBlsToExecutionChange> blsToExecutionOperationPool =
+      mock(MappedOperationPool.class);
 
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 

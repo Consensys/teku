@@ -20,16 +20,19 @@ import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.spec.datastructures.operations.MessageWithValidatorId;
 
 public class OperationPoolEntryTest {
-  private final SszBytes4 b0 = SszBytes4.of(Bytes4.fromHexString("0xFFFFFF00"));
-  private final SszBytes4 b1 = SszBytes4.of(Bytes4.fromHexString("0xFFFFFF11"));
-  private final SszBytes4 b2 = SszBytes4.of(Bytes4.fromHexString("0xFFFFFF22"));
+  private final TestClass b0 = TestClass.of(Bytes4.fromHexString("0xFFFFFF00"));
+  private final TestClass b1 = TestClass.of(Bytes4.fromHexString("0xFFFFFF11"));
+  private final TestClass b2 = TestClass.of(Bytes4.fromHexString("0xFFFFFF22"));
 
   @Test
   void shouldSortLocalFirst() {
-    final List<OperationPoolEntry<SszBytes4>> list = new ArrayList<>();
+    final List<OperationPoolEntry<TestClass>> list = new ArrayList<>();
 
     list.add(new OperationPoolEntry<>(b2, true));
     list.add(new OperationPoolEntry<>(b0, false));
@@ -38,5 +41,22 @@ public class OperationPoolEntryTest {
     assertThat(
             list.stream().sorted().map(OperationPoolEntry::getMessage).collect(Collectors.toList()))
         .containsExactly(b2, b1, b0);
+  }
+
+  private static class TestClass extends AbstractSszPrimitive<Bytes4, SszBytes4>
+      implements MessageWithValidatorId {
+
+    TestClass(final Bytes4 b) {
+      super(b, SszPrimitiveSchemas.BYTES4_SCHEMA);
+    }
+
+    static TestClass of(final Bytes4 b) {
+      return new TestClass(b);
+    }
+
+    @Override
+    public int getValidatorId() {
+      return this.get().getWrappedBytes().toInt();
+    }
   }
 }

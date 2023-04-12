@@ -20,6 +20,7 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
@@ -114,13 +115,13 @@ public class ExecutionLayerOptions {
 
   @Option(
       hidden = true,
-      names = {"--Xexchange-capabilities-enabled"},
+      names = {"--exchange-capabilities-enabled", "--Xexchange-capabilities-enabled"},
       paramLabel = "<BOOLEAN>",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
       description = "Enables Engine API capabilities negotiation with Execution Client",
       arity = "0..1")
-  private boolean exchangeCapabilitiesEnabled = false;
+  private boolean exchangeCapabilitiesEnabled = DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
 
   public void configure(final Builder builder) {
     builder.executionLayer(

@@ -972,7 +972,7 @@ public class TekuNode extends Node {
     }
 
     public Config withEngineApiMethodNegotiation() {
-      configMap.put("Xexchange-capabilities-enabled", "true");
+      configMap.put("exchange-capabilities-enabled", "true");
       return this;
     }
 

@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip;
+package tech.pegasys.teku.spec.logic.versions.deneb.blobs;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-
-public interface BlockSubscriber {
-
-  void onBlock(SignedBeaconBlock block);
+public enum BlobSidecarsValidationResult {
+  NOT_REQUIRED,
+  NOT_AVAILABLE,
+  INVALID,
+  VALID
 }

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.storage.server.kvstore.schema.KvStoreColumn.asCo
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BLOCK_ROOTS_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES32_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
+import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOID_SERIALIZER;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
 public class V6SchemaCombinedSnapshot extends V6SchemaCombined
@@ -45,6 +47,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<UInt64, Set<Bytes32>> nonCanonicalBlockRootsBySlot;
   private final KvStoreColumn<UInt64, BeaconState> finalizedStatesBySlot;
 
+  private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> blobSidecarBySlotRootBlobIndex;
   private final KvStoreColumn<SlotAndBlockRoot, Bytes> blobsSidecarBySlotAndBlockRoot;
   private final KvStoreColumn<SlotAndBlockRoot, Void> unconfirmedBlobsSidecarBySlotAndBlockRoot;
   private final List<Bytes> deletedColumnIds;
@@ -77,6 +80,11 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
     unconfirmedBlobsSidecarBySlotAndBlockRoot =
         KvStoreColumn.create(
             finalizedOffset + 11, SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER, VOID_SERIALIZER);
+    blobSidecarBySlotRootBlobIndex =
+        KvStoreColumn.create(
+            finalizedOffset + 12,
+            SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
+            BYTES_SERIALIZER);
 
     deletedColumnIds =
         List.of(
@@ -121,6 +129,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   @Override
   public KvStoreColumn<UInt64, Set<Bytes32>> getColumnNonCanonicalRootsBySlot() {
     return nonCanonicalBlockRootsBySlot;
+  }
+
+  @Override
+  public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      getColumnBlobSidecarBySlotRootBlobIndex() {
+    return blobSidecarBySlotRootBlobIndex;
   }
 
   @Override
