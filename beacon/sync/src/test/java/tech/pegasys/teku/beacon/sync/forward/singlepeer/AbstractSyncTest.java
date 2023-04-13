@@ -38,7 +38,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -49,7 +49,7 @@ public abstract class AbstractSyncTest {
   protected final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
-  protected final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  protected final BlobSidecarManager blobsSidecarManager = mock(BlobSidecarManager.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

@@ -107,9 +107,9 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
@@ -244,7 +244,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
-  protected volatile BlobsSidecarManager blobsSidecarManager;
+  protected volatile BlobSidecarManager blobsSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
@@ -459,8 +459,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlobSidecarValidator blobSidecarValidator =
           BlobSidecarValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
-      final BlobsSidecarManagerImpl blobsSidecarManagerImpl =
-          new BlobsSidecarManagerImpl(
+      final BlobSidecarManagerImpl blobsSidecarManagerImpl =
+          new BlobSidecarManagerImpl(
               spec,
               recentChainData,
               blobSidecarValidator,
@@ -470,7 +470,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
       blobsSidecarManager = blobsSidecarManagerImpl;
     } else {
-      blobsSidecarManager = BlobsSidecarManager.NOOP;
+      blobsSidecarManager = BlobSidecarManager.NOOP;
     }
   }
 

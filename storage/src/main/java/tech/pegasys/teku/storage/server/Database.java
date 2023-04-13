@@ -52,6 +52,9 @@ public interface Database extends AutoCloseable {
   UpdateResult update(StorageUpdate event);
 
   void storeFinalizedBlocks(
+      Collection<SignedBeaconBlock> blocks, Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot);
+
+  void storeFinalizedBlocksOld(
       Collection<SignedBeaconBlock> blocks, Map<UInt64, BlobsSidecar> blobsSidecarBySlot);
 
   void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
@@ -60,6 +63,10 @@ public interface Database extends AutoCloseable {
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
+  void storeBlobSidecar(BlobSidecar blobSidecar);
+
+  void storeNoBlobsSlot(UInt64 slot, Bytes32 blockRoot);
+
   void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
 
   void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
@@ -67,6 +74,8 @@ public interface Database extends AutoCloseable {
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
   Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  void removeBlobSidecars(UInt64 slot);
 
   void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 

@@ -29,20 +29,20 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 public class ChainUpdater {
 
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
-  public final BlobsSidecarManager blobsSidecarManager;
+  public final BlobSidecarManager blobsSidecarManager;
   public final Spec spec;
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
-    this.blobsSidecarManager = BlobsSidecarManager.NOOP;
+    this.blobsSidecarManager = BlobSidecarManager.NOOP;
     this.spec = TestSpecFactory.createMinimalPhase0();
   }
 
@@ -51,13 +51,13 @@ public class ChainUpdater {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.spec = spec;
-    this.blobsSidecarManager = BlobsSidecarManager.NOOP;
+    this.blobsSidecarManager = BlobSidecarManager.NOOP;
   }
 
   public ChainUpdater(
       final RecentChainData recentChainData,
       final ChainBuilder chainBuilder,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobsSidecarManager,
       final Spec spec) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;

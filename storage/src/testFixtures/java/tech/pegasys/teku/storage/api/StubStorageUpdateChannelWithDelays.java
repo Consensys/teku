@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.api;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -40,6 +42,13 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
 
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
+      final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedBlocksOld(
       final Collection<SignedBeaconBlock> finalizedBlocks,
       final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
     return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
@@ -70,7 +79,17 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   }
 
   @Override
+  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
   public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
     return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
   }
 

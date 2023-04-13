@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -96,7 +96,7 @@ public abstract class TransitionBenchmark {
             spec,
             new InlineEventThread(),
             recentChainData,
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             transitionBlockValidator);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);

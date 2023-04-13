@@ -42,14 +42,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 class BatchImporterTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
-  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  private final BlobSidecarManager blobsSidecarManager = mock(BlobSidecarManager.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Batch batch = mock(Batch.class);
   final SyncSource syncSource = mock(SyncSource.class);

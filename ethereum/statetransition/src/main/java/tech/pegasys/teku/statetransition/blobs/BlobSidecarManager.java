@@ -22,9 +22,9 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidec
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public interface BlobsSidecarManager {
-  BlobsSidecarManager NOOP =
-      new BlobsSidecarManager() {
+public interface BlobSidecarManager {
+  BlobSidecarManager NOOP =
+      new BlobSidecarManager() {
 
         @Override
         public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
@@ -50,10 +50,13 @@ public interface BlobsSidecarManager {
         public void storeUnconfirmedValidatedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
         @Override
+        public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
+
+        @Override
         public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
         @Override
-        public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {}
+        public void discardBlobSidecarsByBlock(final SignedBeaconBlock block) {}
 
         @Override
         public BlobsSidecarAvailabilityChecker createAvailabilityChecker(
@@ -73,9 +76,11 @@ public interface BlobsSidecarManager {
 
   void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
 
+  void storeBlobSidecar(BlobSidecar blobSidecar);
+
   void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
 
-  void discardBlobsSidecarByBlock(SignedBeaconBlock block);
+  void discardBlobSidecarsByBlock(SignedBeaconBlock block);
 
   BlobsSidecarAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 

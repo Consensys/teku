@@ -85,7 +85,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -101,7 +101,7 @@ class ForkChoiceTest {
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  private final BlobSidecarManager blobsSidecarManager = mock(BlobSidecarManager.class);
   private final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
       mock(BlobsSidecarAvailabilityChecker.class);
   private final AttestationSchema attestationSchema =
@@ -273,7 +273,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

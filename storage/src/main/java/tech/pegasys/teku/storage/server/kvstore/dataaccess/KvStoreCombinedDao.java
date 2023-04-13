@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -236,9 +237,15 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
 
+    void addBlobSidecar(BlobSidecar blobsSidecar);
+
+    void addNoBlobsSlot(UInt64 slot, Bytes32 blockRoot);
+
     void addBlobsSidecar(BlobsSidecar blobsSidecar);
 
     void addUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
+
+    void removeBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
     void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 

@@ -193,6 +193,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put(
             "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
             getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot())
+        .put(
+            "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnBlobSidecarBySlotRootBlobIndex())
         .build();
   }
 

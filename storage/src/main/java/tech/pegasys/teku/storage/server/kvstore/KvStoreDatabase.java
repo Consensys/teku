@@ -23,6 +23,7 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -304,6 +305,25 @@ public class KvStoreDatabase implements Database {
 
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
+      final Map<UInt64, List<BlobSidecar>> finalizedBlobSidecarsBySlot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      blocks.forEach(
+          block -> {
+            updater.addFinalizedBlock(block);
+            final List<BlobSidecar> blobSidecars =
+                finalizedBlobSidecarsBySlot.getOrDefault(block.getSlot(), Collections.emptyList());
+            if (blobSidecars.isEmpty()) {
+              updater.addNoBlobsSlot(block.getSlot(), block.getRoot());
+            } else {
+              blobSidecars.forEach(updater::addBlobSidecar);
+            }
+          });
+      updater.commit();
+    }
+  }
+
+  protected void storeFinalizedBlocksToDaoOld(
+      final Collection<SignedBeaconBlock> blocks,
       final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
@@ -507,6 +527,37 @@ public class KvStoreDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
+      Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    if (blocks.isEmpty()) {
+      return;
+    }
+
+    // Sort blocks and verify that they are contiguous with the oldestBlock
+    final List<SignedBeaconBlock> sorted =
+        blocks.stream()
+            .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
+            .collect(Collectors.toList());
+
+    // The new block should be just prior to our earliest block if available, and otherwise should
+    // match our latest finalized block
+    Bytes32 expectedRoot =
+        getEarliestAvailableBlock()
+            .map(SignedBeaconBlock::getParentRoot)
+            .orElseGet(() -> this.getLatestFinalizedBlockSummary().getRoot());
+    for (SignedBeaconBlock block : sorted) {
+      if (!block.getRoot().equals(expectedRoot)) {
+        throw new IllegalArgumentException(
+            "Blocks must be contiguous with the earliest known block.");
+      }
+      expectedRoot = block.getParentRoot();
+    }
+
+    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot);
+  }
+
+  @Override
+  public void storeFinalizedBlocksOld(
+      final Collection<SignedBeaconBlock> blocks,
       final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
     if (blocks.isEmpty()) {
       return;
@@ -532,7 +583,7 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobsSidecarBySlot);
+    storeFinalizedBlocksToDaoOld(blocks, blobsSidecarBySlot);
   }
 
   @Override
@@ -749,6 +800,22 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public void storeBlobSidecar(final BlobSidecar blobSidecar) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addBlobSidecar(blobSidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void storeNoBlobsSlot(final UInt64 slot, final Bytes32 blockRoot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addNoBlobsSlot(slot, blockRoot);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addBlobsSidecar(blobsSidecar);
@@ -776,6 +843,15 @@ public class KvStoreDatabase implements Database {
     final Optional<Bytes> maybePayload = dao.getBlobsSidecar(slotAndBlockRoot);
     return maybePayload.map(
         payload -> spec.deserializeBlobsSidecar(payload, slotAndBlockRoot.getSlot()));
+  }
+
+  @Override
+  public void removeBlobSidecars(UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater();
+        final Stream<SlotAndBlockRootAndBlobIndex> keyStream = streamBlobSidecarKeys(slot, slot)) {
+      keyStream.forEach(updater::removeBlobSidecar);
+      updater.commit();
+    }
   }
 
   @Override

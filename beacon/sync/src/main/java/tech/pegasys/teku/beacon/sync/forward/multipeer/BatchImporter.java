@@ -30,19 +30,19 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 public class BatchImporter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobsSidecarManager;
   private final AsyncRunner asyncRunner;
 
   public BatchImporter(
       final BlockImporter blockImporter,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobsSidecarManager,
       final AsyncRunner asyncRunner) {
     this.blockImporter = blockImporter;
     this.blobsSidecarManager = blobsSidecarManager;

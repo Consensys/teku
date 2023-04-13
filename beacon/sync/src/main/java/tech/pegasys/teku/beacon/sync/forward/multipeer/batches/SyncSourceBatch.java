@@ -44,13 +44,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 
 public class SyncSourceBatch implements Batch {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobsSidecarManager;
   private final SyncSourceSelector syncSourceProvider;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
   private final TargetChain targetChain;
@@ -69,7 +69,7 @@ public class SyncSourceBatch implements Batch {
 
   SyncSourceBatch(
       final EventThread eventThread,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobsSidecarManager,
       final SyncSourceSelector syncSourceProvider,
       final ConflictResolutionStrategy conflictResolutionStrategy,
       final TargetChain targetChain,

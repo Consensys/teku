@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -69,7 +69,7 @@ public class PeerSync {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobsSidecarManager;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
@@ -85,7 +85,7 @@ public class PeerSync {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobsSidecarManager,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
     this.asyncRunner = asyncRunner;

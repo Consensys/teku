@@ -72,8 +72,15 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    return updateDelegate.onFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot);
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedBlocksOld(
+      final Collection<SignedBeaconBlock> finalizedBlocks,
       final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
-    return updateDelegate.onFinalizedBlocks(finalizedBlocks, blobsSidecarBySlot);
+    return updateDelegate.onFinalizedBlocksOld(finalizedBlocks, blobsSidecarBySlot);
   }
 
   @Override
@@ -106,8 +113,18 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
+  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
+    return updateDelegate.onBlobSidecar(blobSidecar);
+  }
+
+  @Override
   public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return updateDelegate.onBlobsSidecar(blobsSidecar);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobSidecarsRemoval(UInt64 slot) {
+    return updateDelegate.onBlobSidecarsRemoval(slot);
   }
 
   @Override

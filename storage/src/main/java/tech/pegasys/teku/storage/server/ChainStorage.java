@@ -109,9 +109,17 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    return SafeFuture.fromRunnable(
+        () -> database.storeFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot));
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedBlocksOld(
+      final Collection<SignedBeaconBlock> finalizedBlocks,
       final Map<UInt64, BlobsSidecar> finalizedBlobsSidecar) {
     return SafeFuture.fromRunnable(
-        () -> database.storeFinalizedBlocks(finalizedBlocks, finalizedBlobsSidecar));
+        () -> database.storeFinalizedBlocksOld(finalizedBlocks, finalizedBlobsSidecar));
   }
 
   @Override
@@ -159,8 +167,18 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
+    return SafeFuture.fromRunnable(() -> database.storeBlobSidecar(blobSidecar));
+  }
+
+  @Override
   public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return SafeFuture.fromRunnable(() -> database.storeUnconfirmedBlobsSidecar(blobsSidecar));
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobSidecarsRemoval(UInt64 slot) {
+    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slot));
   }
 
   @Override

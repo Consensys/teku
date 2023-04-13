@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -87,8 +89,15 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot));
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedBlocksOld(
+      final Collection<SignedBeaconBlock> finalizedBlocks,
       final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
-    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, blobsSidecarBySlot));
+    return retry(() -> delegate.onFinalizedBlocksOld(finalizedBlocks, blobsSidecarBySlot));
   }
 
   @Override
@@ -126,8 +135,18 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
+    return retry(() -> delegate.onBlobSidecar(blobSidecar));
+  }
+
+  @Override
   public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return retry(() -> delegate.onBlobsSidecar(blobsSidecar));
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
+    return retry(() -> delegate.onBlobSidecarsRemoval(slot));
   }
 
   @Override

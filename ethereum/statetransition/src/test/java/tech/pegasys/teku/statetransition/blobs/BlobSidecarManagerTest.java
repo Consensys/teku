@@ -43,7 +43,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobsSidecarManagerTest {
+public class BlobSidecarManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Spec mockedSpec = mock(Spec.class);
@@ -54,8 +54,8 @@ public class BlobsSidecarManagerTest {
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final BlobSidecarValidator blobSidecarValidator = mock(BlobSidecarValidator.class);
-  private final BlobsSidecarManagerImpl blobsSidecarManager =
-      new BlobsSidecarManagerImpl(
+  private final BlobSidecarManagerImpl blobsSidecarManager =
+      new BlobSidecarManagerImpl(
           mockedSpec,
           recentChainData,
           blobSidecarValidator,

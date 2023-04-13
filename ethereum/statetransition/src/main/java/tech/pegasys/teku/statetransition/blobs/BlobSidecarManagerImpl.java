@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsChannel {
+public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsChannel {
   private static final int MAX_CACHED_VALIDATED_BLOBS_SIDECARS_PER_SLOT = 10;
   private static final Logger LOG = LogManager.getLogger();
 
@@ -63,7 +64,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   private final Subscribers<ImportedBlobSidecarListener> importedBlobSidecarSubscribers =
       Subscribers.create(true);
 
-  public BlobsSidecarManagerImpl(
+  public BlobSidecarManagerImpl(
       final Spec spec,
       final RecentChainData recentChainData,
       final BlobSidecarValidator validator,
@@ -126,19 +127,39 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
     internalStoreUnconfirmedBlobsSidecar(blobsSidecar);
   }
 
+  // TODO: empty blobSidecar store
+  @Override
+  public void storeBlobSidecar(final BlobSidecar blobSidecar) {
+    storageUpdateChannel
+        .onBlobSidecar(blobSidecar)
+        .thenRun(
+            () ->
+                LOG.debug(
+                    "BlobSidecar stored for {}",
+                    () ->
+                        new SlotAndBlockRootAndBlobIndex(
+                            blobSidecar.getSlot(),
+                            blobSidecar.getBlockRoot(),
+                            blobSidecar.getIndex())))
+        .ifExceptionGetsHereRaiseABug();
+  }
+
   @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     internalStoreUnconfirmedBlobsSidecar(blobsSidecar);
   }
 
   @Override
-  public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {
-    final SlotAndBlockRoot blobsAtSlotAndBlockRoot =
-        new SlotAndBlockRoot(block.getSlot(), block.getRoot());
-
+  public void discardBlobSidecarsByBlock(final SignedBeaconBlock block) {
     storageUpdateChannel
-        .onBlobsSidecarRemoval(blobsAtSlotAndBlockRoot)
-        .thenRun(() -> LOG.debug("BlobsSidecar discarded for {}", blobsAtSlotAndBlockRoot))
+        .onBlobSidecarsRemoval(block.getSlot())
+        .thenRun(
+            () ->
+                LOG.debug(
+                    () ->
+                        String.format(
+                            "BlobsSidecar discarded for %s",
+                            new SlotAndBlockRoot(block.getSlot(), block.getRoot()))))
         .ifExceptionGetsHereRaiseABug();
   }
 

@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -695,6 +696,23 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addBlobSidecar(final BlobSidecar blobSidecar) {
+      transaction.put(
+          schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+          new SlotAndBlockRootAndBlobIndex(
+              blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex()),
+          blobSidecar.sszSerialize());
+    }
+
+    @Override
+    public void addNoBlobsSlot(UInt64 slot, Bytes32 blockRoot) {
+      transaction.put(
+          schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slot, blockRoot),
+          Bytes.EMPTY);
+    }
+
+    @Override
     public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
       transaction.put(
           schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
@@ -710,6 +728,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
           new SlotAndBlockRoot(
               blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
           null);
+    }
+
+    @Override
+    public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
     }
 
     @Override

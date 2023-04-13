@@ -29,23 +29,23 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.StubSyncSource;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 
 public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   private final List<Batch> batches = new ArrayList<>();
   private final Map<Batch, BatchSupport> batchSupports = new HashMap<>();
 
   private final EventThread eventThread;
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobsSidecarManager;
   private final boolean enforceEventThread;
 
   public StubBatchFactory(final EventThread eventThread, final boolean enforceEventThread) {
-    this(eventThread, BlobsSidecarManager.NOOP, enforceEventThread);
+    this(eventThread, BlobSidecarManager.NOOP, enforceEventThread);
   }
 
   public StubBatchFactory(
       final EventThread eventThread,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobsSidecarManager,
       final boolean enforceEventThread) {
     super(eventThread, blobsSidecarManager, null);
     this.blobsSidecarManager = blobsSidecarManager;
@@ -129,7 +129,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
 
     public BatchSupport(
         final EventThread eventThread,
-        final BlobsSidecarManager blobsSidecarManager,
+        final BlobSidecarManager blobsSidecarManager,
         final TargetChain chain,
         final UInt64 start,
         final UInt64 count) {
