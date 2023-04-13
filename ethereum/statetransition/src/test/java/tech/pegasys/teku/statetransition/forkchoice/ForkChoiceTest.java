@@ -82,6 +82,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -162,7 +163,7 @@ class ForkChoiceTest {
       when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
           .thenReturn(SafeFuture.completedFuture(validResult(blobsSidecar)));
       when(blobsSidecarManager.createAvailabilityChecker(any()))
-          .thenReturn(blobsSidecarAvailabilityChecker);
+          .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
     }
   }
 

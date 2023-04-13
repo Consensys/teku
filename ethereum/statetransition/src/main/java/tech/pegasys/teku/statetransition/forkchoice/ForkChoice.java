@@ -293,7 +293,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         KzgCommitmentsProcessor.create(specVersion.miscHelpers());
 
     final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobsSidecarManager.createAvailabilityChecker(block);
+        BlobsSidecarAvailabilityChecker.NOOP;
 
     final BeaconState postState;
     try {

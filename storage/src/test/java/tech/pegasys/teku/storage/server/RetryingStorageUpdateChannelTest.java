@@ -67,16 +67,16 @@ class RetryingStorageUpdateChannelTest {
   @Test
   void onFinalizedBlocks_shouldRetryUntilSuccess() {
     final List<SignedBeaconBlock> blocks = Collections.emptyList();
-    final Map<UInt64, BlobsSidecar> blobsSidecarBySlot = Map.of();
-    when(delegate.onFinalizedBlocks(blocks, blobsSidecarBySlot))
+    final Map<Bytes32, List<BlobSidecar>> blobSidecars = Map.of();
+    when(delegate.onFinalizedBlocks(blocks, blobSidecars))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 1")))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 2")))
         .thenReturn(SafeFuture.completedFuture(null));
 
-    final SafeFuture<Void> result = retryingChannel.onFinalizedBlocks(blocks, blobsSidecarBySlot);
+    final SafeFuture<Void> result = retryingChannel.onFinalizedBlocks(blocks, blobSidecars);
 
     assertThat(result).isCompleted();
-    verify(delegate, times(3)).onFinalizedBlocks(blocks, blobsSidecarBySlot);
+    verify(delegate, times(3)).onFinalizedBlocks(blocks, blobSidecars);
   }
 
   @Test

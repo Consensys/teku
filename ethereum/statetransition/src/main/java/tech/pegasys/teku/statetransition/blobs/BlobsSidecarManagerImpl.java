@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import static java.util.Collections.emptyMap;
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.ALREADY_CHECKED;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
@@ -31,14 +30,14 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
@@ -143,27 +142,8 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   }
 
   @Override
-  public BlobsSidecarAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
-    // Block is pre-Deneb, BlobsSidecar is not supported yet
-    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
-      return BlobsSidecarAvailabilityChecker.NOT_REQUIRED;
-    }
-
-    final Optional<BlobsSidecar> maybeValidatedBlobs =
-        Optional.ofNullable(
-            validatedPendingBlobs.getOrDefault(block.getSlot(), emptyMap()).get(block.getRoot()));
-
-    return maybeValidatedBlobs
-        .filter(
-            checkedBlobsSidecar -> checkedBlobsSidecar.getBeaconBlockRoot().equals(block.getRoot()))
-        .map(ALREADY_CHECKED)
-        .or(() -> handleEmptyBlockCommitmentsChecker(block))
-        .orElse(
-            new ForkChoiceBlobsSidecarAvailabilityChecker(
-                spec.atSlot(block.getSlot()),
-                recentChainData,
-                block,
-                storageQueryChannel::getBlobsSidecar));
+  public BlobSidecarsAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

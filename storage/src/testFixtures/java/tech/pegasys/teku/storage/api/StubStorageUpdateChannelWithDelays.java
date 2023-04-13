@@ -14,6 +14,7 @@
 package tech.pegasys.teku.storage.api;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -41,7 +42,7 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
+      final Map<Bytes32, List<BlobSidecar>> finalizedBlobSidecars) {
     return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
   }
 

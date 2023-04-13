@@ -16,13 +16,9 @@ package tech.pegasys.teku.statetransition.blobs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.NOT_REQUIRED;
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.validResult;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,11 +28,8 @@ import tech.pegasys.teku.spec.ForkSchedule;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
@@ -84,67 +77,6 @@ public class BlobsSidecarManagerTest {
     blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar);
 
     verify(storageUpdateChannel).onBlobsSidecar(blobsSidecar);
-  }
-
-  @Test
-  void shouldCreatePreValidatedAvailabilityChecker() {
-    final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
-        dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar();
-
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(
-        blockAndBlobsSidecar.getBlobsSidecar());
-
-    final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobsSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
-
-    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-    assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-        .isCompletedWithValue(validResult(blockAndBlobsSidecar.getBlobsSidecar()));
-
-    verify(mockedMiscHelpers, never())
-        .isDataAvailable(any(), any(), any(), any(BlobsSidecar.class));
-  }
-
-  @Test
-  void shouldCreateNotRequiredCheckerIfBlockCommitmentsIsEmpty() {
-    final SignedBeaconBlock blockWithEmptyCommitments =
-        dataStructureUtil.randomSignedBeaconBlockWithEmptyCommitments();
-
-    final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobsSidecarManager.createAvailabilityChecker(blockWithEmptyCommitments);
-
-    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-    assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-        .isCompletedWithValue(NOT_REQUIRED);
-
-    verify(mockedMiscHelpers, never())
-        .isDataAvailable(any(), any(), any(), any(BlobsSidecar.class));
-  }
-
-  @Test
-  void shouldCreateValidatingAvailabilityChecker() {
-    final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
-        dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar();
-
-    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blockAndBlobsSidecar.getBlobsSidecar());
-
-    final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobsSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
-
-    when(storageQueryChannel.getBlobsSidecar(any()))
-        .thenReturn(
-            SafeFuture.completedFuture(Optional.of(blockAndBlobsSidecar.getBlobsSidecar())));
-
-    // is available
-    when(mockedMiscHelpers.isDataAvailable(any(), any(), any(), any(BlobsSidecar.class)))
-        .thenReturn(true);
-
-    assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-
-    assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-        .isCompletedWithValue(validResult(blockAndBlobsSidecar.getBlobsSidecar()));
-
-    verify(mockedMiscHelpers).isDataAvailable(any(), any(), any(), any(BlobsSidecar.class));
   }
 
   @Test
