@@ -81,7 +81,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final EventThread forkChoiceExecutor;
   private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
+
+  @SuppressWarnings("unused")
   private final BlobsSidecarManager blobsSidecarManager;
+
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;

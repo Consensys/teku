@@ -32,12 +32,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
@@ -53,7 +51,9 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   private final RecentChainData recentChainData;
   private final BlobSidecarValidator validator;
 
+  @SuppressWarnings("unused")
   private final StorageQueryChannel storageQueryChannel;
+
   private final StorageUpdateChannel storageUpdateChannel;
 
   private final NavigableMap<UInt64, Map<Bytes32, BlobsSidecar>> validatedPendingBlobs =
@@ -166,16 +166,6 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
 
   private Map<Bytes32, BlobsSidecar> createNewMap() {
     return LimitedMap.createSynchronized(MAX_CACHED_VALIDATED_BLOBS_SIDECARS_PER_SLOT);
-  }
-
-  private Optional<BlobsSidecarAvailabilityChecker> handleEmptyBlockCommitmentsChecker(
-      final SignedBeaconBlock block) {
-    if (BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
-        .getBlobKzgCommitments()
-        .isEmpty()) {
-      return Optional.of(BlobsSidecarAvailabilityChecker.NOT_REQUIRED);
-    }
-    return Optional.empty();
   }
 
   @VisibleForTesting
