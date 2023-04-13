@@ -58,10 +58,7 @@ public class MilestoneDependentTypesUtil {
           final Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter,
           final BiPredicate<T, SpecMilestone> predicate) {
     return getAvailableSchemaDefinitionForAllMilestones(
-        schemaDefinitionCache,
-        title,
-        schemaGetter.andThen(schema -> Optional.of(schema)),
-        predicate);
+        schemaDefinitionCache, title, schemaGetter.andThen(Optional::of), predicate);
   }
 
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
