@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult.validResult;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import java.util.List;
@@ -83,7 +82,6 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
@@ -103,8 +101,6 @@ class ForkChoiceTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
-  private final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-      mock(BlobsSidecarAvailabilityChecker.class);
   private final AttestationSchema attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final StorageSystem storageSystem =
@@ -158,10 +154,6 @@ class ForkChoiceTest {
 
     // blobs always available
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-      when(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).thenReturn(true);
-      when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-          .thenReturn(SafeFuture.completedFuture(validResult(blobsSidecar)));
       when(blobsSidecarManager.createAvailabilityChecker(any()))
           .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
     }
