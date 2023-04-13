@@ -2208,12 +2208,11 @@ public class DatabaseTest {
       final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
     availableBlocksSidecars.forEach(
         block ->
-          assertThat(
-                  database
-                      .streamBlobSidecarKeys(block.getSlot(), block.getSlot())
-                      .collect(toList()))
-              .isNotEmpty()
-        );
+            assertThat(
+                    database
+                        .streamBlobSidecarKeys(block.getSlot(), block.getSlot())
+                        .collect(toList()))
+                .isNotEmpty());
     prunedBlocksSidecars.forEach(
         block ->
             assertThat(
@@ -2235,10 +2234,7 @@ public class DatabaseTest {
   }
 
   private void addBlobSidecars(final List<BlobSidecar> blobSidecars) {
-    blobSidecars.forEach(
-        blobsSidecar ->
-          database.storeBlobSidecar(blobsSidecar)
-        );
+    blobSidecars.forEach(blobsSidecar -> database.storeBlobSidecar(blobsSidecar));
   }
 
   private void add(final Collection<SignedBlockAndState> blocks) {
