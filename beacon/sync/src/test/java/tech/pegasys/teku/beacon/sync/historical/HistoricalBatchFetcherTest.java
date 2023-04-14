@@ -306,7 +306,8 @@ public class HistoricalBatchFetcherTest {
 
     // Request(s) by range will return nothing
     for (int i = 0; i < maxRequests; i++) {
-      assertThat(peer.getOutstandingRequests()).isEqualTo(blobSidecarsRequired ? 2 : 1);
+      final int outstandingRequests = blobSidecarsRequired ? 2 : 1;
+      assertThat(peer.getOutstandingRequests()).isEqualTo(outstandingRequests);
       peer.completePendingRequests();
     }
     // Request by root should return the final block
@@ -315,8 +316,11 @@ public class HistoricalBatchFetcherTest {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     assertThat(future).isCompletedWithValue(lastBlockInBatch);
 
-    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), any());
+    verify(storageUpdateChannel)
+        .onFinalizedBlocks(blockCaptor.capture(), blobSidecarCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
+    // TODO: add real assertions when the ChainBuilder with decoupled blobs is implemented
+    assertThat(blobSidecarCaptor.getValue()).isEmpty();
   }
 
   @Test
