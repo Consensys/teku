@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -81,6 +82,7 @@ public class ValidatorDataProviderTest {
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private Spec spec;
+  private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
   private SchemaObjectProvider schemaProvider;
   private final CombinedChainDataClient combinedChainDataClient =
@@ -98,6 +100,7 @@ public class ValidatorDataProviderTest {
     schemaProvider = new SchemaObjectProvider(spec);
     provider = new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
     blockInternal = dataStructureUtil.randomBeaconBlock(123);
+    specMilestone = specContext.getSpecMilestone();
   }
 
   @TestTemplate
@@ -133,40 +136,40 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
-  void getUnsignedBeaconBlockAtSlot_shouldCreateAnUnsignedBlock() {
+  void getUnsignedBeaconBlockAtSlot_PreDeneb_shouldCreateAnUnsignedBlock() {
+    assumeThat(specMilestone).isLessThan(SpecMilestone.DENEB);
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
-    if (denebMilestoneReached()) {
-      blockContents = dataStructureUtil.randomBlockContents();
-      when(validatorApiChannel.createUnsignedBlockContents(
-              ONE, signatureInternal, Optional.empty()))
-          .thenReturn(completedFuture(Optional.of(blockContents)));
-    }
+    SafeFuture<? extends Optional<? extends SszData>> data =
+        provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
+
+    verify(validatorApiChannel)
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
+
+    assertThat(data).isCompleted();
+
+    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(blockInternal);
+  }
+
+  @TestTemplate
+  void getUnsignedBeaconBlockAtSlot_PostDeneb_shouldCreateAnUnsignedBlockContents() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.DENEB);
+    when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
+    blockContents = dataStructureUtil.randomBlockContents();
+    when(validatorApiChannel.createUnsignedBlockContents(ONE, signatureInternal, Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContents)));
 
     SafeFuture<? extends Optional<? extends SszData>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
 
-    if (denebMilestoneReached()) {
-      verify(validatorApiChannel)
-          .createUnsignedBlockContents(ONE, signatureInternal, Optional.empty());
-    } else {
-      verify(validatorApiChannel)
-          .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
-    }
+    verify(validatorApiChannel)
+        .createUnsignedBlockContents(ONE, signatureInternal, Optional.empty());
 
     assertThat(data).isCompleted();
 
-    if (denebMilestoneReached()) {
-      assertThat(data.getNow(null).orElseThrow())
-          .usingRecursiveComparison()
-          .isEqualTo(blockContents);
-    } else {
-      assertThat(data.getNow(null).orElseThrow())
-          .usingRecursiveComparison()
-          .isEqualTo(blockInternal);
-    }
+    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(blockContents);
   }
 
   @TestTemplate
@@ -400,11 +403,5 @@ public class ValidatorDataProviderTest {
     final Optional<AttesterDuties> maybeList = future.join();
     final AttesterDuties list = maybeList.orElseThrow();
     assertThat(list.getDuties()).containsExactlyInAnyOrder(v1, v2);
-  }
-
-  private boolean denebMilestoneReached() {
-    return spec.getForkSchedule()
-        .getSpecMilestoneAtSlot(ONE)
-        .isGreaterThanOrEqualTo(SpecMilestone.DENEB);
   }
 }
