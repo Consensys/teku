@@ -72,6 +72,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
@@ -2207,12 +2208,12 @@ public class DatabaseTest {
       final Collection<SignedBeaconBlock> availableBlocksSidecars,
       final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
     availableBlocksSidecars.forEach(
-        block ->
-            assertThat(
-                    database
-                        .streamBlobSidecarKeys(block.getSlot(), block.getSlot())
-                        .collect(toList()))
-                .isNotEmpty());
+        block -> {
+          try (final Stream<SlotAndBlockRootAndBlobIndex> keys =
+              database.streamBlobSidecarKeys(block.getSlot(), block.getSlot())) {
+            assertThat(keys.collect(toList())).isNotEmpty();
+          }
+        });
     prunedBlocksSidecars.forEach(
         block ->
             assertThat(
