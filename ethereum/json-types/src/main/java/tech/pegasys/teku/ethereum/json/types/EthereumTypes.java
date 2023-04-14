@@ -73,7 +73,7 @@ public class EthereumTypes {
           SpecMilestone.class, milestone -> milestone.name().toLowerCase(Locale.ROOT), Set.of());
 
   public static <X extends SszData, T extends ObjectAndMetaData<X>>
-      ResponseContentTypeDefinition<T> sszResponseType() {
+      ResponseContentTypeDefinition<? extends T> sszResponseType() {
     return new OctetStreamResponseContentTypeDefinition<>(
         (data, out) -> data.getData().sszSerialize(out),
         value -> getSszHeaders(__ -> value.getMilestone(), value.getData()));

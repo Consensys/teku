@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -41,7 +42,9 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -162,6 +165,18 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
                       }
                     });
     return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlindedBlockContents>> createUnsignedBlindedBlockContents(
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    throw new NotImplementedException("Not Yet Implemented");
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContents>> createUnsignedBlockContents(
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    throw new NotImplementedException("Not Yet Implemented");
   }
 
   @Override
