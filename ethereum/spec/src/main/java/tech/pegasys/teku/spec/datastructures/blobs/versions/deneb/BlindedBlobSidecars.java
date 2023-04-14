@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;

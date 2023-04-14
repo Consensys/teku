@@ -11,24 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container1;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class BlobSidecars extends Container1<BlobSidecars, SszList<BlobSidecar>> {
+public class SignedBlobSidecars extends Container1<SignedBlobSidecars, SszList<SignedBlobSidecar>> {
 
-  BlobSidecars(final BlobSidecarsSchema type, final TreeNode backingNode) {
+  SignedBlobSidecars(final SignedBlobSidecarsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public BlobSidecars(final BlobSidecarsSchema schema, final List<BlobSidecar> blobSidecars) {
-    super(schema, schema.getBlobSidecarsSchema().createFromElements(blobSidecars));
+  public SignedBlobSidecars(
+      final SignedBlobSidecarsSchema schema, final List<SignedBlobSidecar> signedBlobSidecars) {
+    super(schema, schema.getSignedBlobSidecarsSchema().createFromElements(signedBlobSidecars));
   }
 
-  public List<BlobSidecar> getBlobSidecars() {
+  public List<SignedBlobSidecar> getBlobSidecars() {
     return getField0().asList();
   }
 }

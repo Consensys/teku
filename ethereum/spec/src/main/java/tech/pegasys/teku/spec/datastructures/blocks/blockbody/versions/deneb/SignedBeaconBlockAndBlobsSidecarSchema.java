@@ -15,10 +15,10 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
 
 public class SignedBeaconBlockAndBlobsSidecarSchema
     extends ContainerSchema2<SignedBeaconBlockAndBlobsSidecar, SignedBeaconBlock, BlobsSidecar> {

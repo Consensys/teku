@@ -11,32 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
-import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
-public class SignedBlobSidecar extends Container2<SignedBlobSidecar, BlobSidecar, SszSignature> {
+public class BlockContents extends Container2<BlockContents, BeaconBlock, BlobSidecars> {
 
-  SignedBlobSidecar(final SignedBlobSidecarSchema type, final TreeNode backingNode) {
+  BlockContents(final BlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SignedBlobSidecar(
-      final SignedBlobSidecarSchema schema,
-      final BlobSidecar blobSidecar,
-      final BLSSignature signature) {
-    super(schema, blobSidecar, new SszSignature(signature));
+  public BlockContents(
+      final BlockContentsSchema schema,
+      final BeaconBlock beaconBlock,
+      final BlobSidecars blobSidecars) {
+    super(schema, beaconBlock, blobSidecars);
   }
 
-  public BlobSidecar getBlobSidecar() {
+  public BeaconBlock getBeaconBlock() {
     return getField0();
   }
 
-  public BLSSignature getSignature() {
-    return getField1().getSignature();
+  public BlobSidecars getBlobSidecars() {
+    return getField1();
   }
 }

@@ -15,9 +15,9 @@ package tech.pegasys.teku.dataproviders.lookup;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 
 @FunctionalInterface
 public interface BlobsSidecarProvider {

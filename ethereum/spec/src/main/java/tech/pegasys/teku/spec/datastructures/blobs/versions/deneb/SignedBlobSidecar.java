@@ -11,28 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class SignedBlindedBlobSidecar
-    extends Container2<SignedBlindedBlobSidecar, BlindedBlobSidecar, SszSignature> {
+public class SignedBlobSidecar extends Container2<SignedBlobSidecar, BlobSidecar, SszSignature> {
 
-  SignedBlindedBlobSidecar(final SignedBlindedBlobSidecarSchema type, final TreeNode backingNode) {
+  SignedBlobSidecar(final SignedBlobSidecarSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SignedBlindedBlobSidecar(
-      final SignedBlindedBlobSidecarSchema schema,
-      final BlindedBlobSidecar blindedBlobSidecar,
+  public SignedBlobSidecar(
+      final SignedBlobSidecarSchema schema,
+      final BlobSidecar blobSidecar,
       final BLSSignature signature) {
-    super(schema, blindedBlobSidecar, new SszSignature(signature));
+    super(schema, blobSidecar, new SszSignature(signature));
   }
 
-  public BlindedBlobSidecar getBlindedBlobSidecar() {
+  public BlobSidecar getBlobSidecar() {
     return getField0();
   }
 

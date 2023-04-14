@@ -19,7 +19,7 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlobSidecarsSupplier;
 
 public class SignedBlobSidecarsPropertyTest {

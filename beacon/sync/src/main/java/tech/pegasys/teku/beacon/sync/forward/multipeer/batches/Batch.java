@@ -20,8 +20,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 
 /** A section of a particular target chain that can be downloaded in parallel. */
 public interface Batch {

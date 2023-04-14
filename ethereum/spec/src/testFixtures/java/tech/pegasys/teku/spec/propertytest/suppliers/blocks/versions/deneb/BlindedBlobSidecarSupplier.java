@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 

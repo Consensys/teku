@@ -11,25 +11,29 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container1;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SignedBlobSidecars extends Container1<SignedBlobSidecars, SszList<SignedBlobSidecar>> {
+public class SignedBlindedBlobSidecars
+    extends Container1<SignedBlindedBlobSidecars, SszList<SignedBlindedBlobSidecar>> {
 
-  SignedBlobSidecars(final SignedBlobSidecarsSchema type, final TreeNode backingNode) {
+  SignedBlindedBlobSidecars(
+      final SignedBlindedBlobSidecarsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SignedBlobSidecars(
-      final SignedBlobSidecarsSchema schema, final List<SignedBlobSidecar> signedBlobSidecars) {
-    super(schema, schema.getSignedBlobSidecarsSchema().createFromElements(signedBlobSidecars));
+  public SignedBlindedBlobSidecars(
+      final SignedBlindedBlobSidecarsSchema schema,
+      final List<SignedBlindedBlobSidecar> signedBlobSidecars) {
+    super(
+        schema, schema.getSignedBlindedBlobSidecarsSchema().createFromElements(signedBlobSidecars));
   }
 
-  public List<SignedBlobSidecar> getBlobSidecars() {
+  public List<SignedBlindedBlobSidecar> getSignedBlindedBlobSidecars() {
     return getField0().asList();
   }
 }
