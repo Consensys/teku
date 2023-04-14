@@ -51,6 +51,7 @@ public class FetchRecentBlocksServiceTest {
 
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+
   private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
 
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
@@ -70,7 +71,12 @@ public class FetchRecentBlocksServiceTest {
   public void setup() {
     recentBlockFetcher =
         new FetchRecentBlocksService(
-            asyncRunner, pendingBlocksPool, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
+            asyncRunner,
+            pendingBlocksPool,
+            blobSidecarPool,
+            forwardSync,
+            fetchTaskFactory,
+            maxConcurrentRequests);
 
     lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);

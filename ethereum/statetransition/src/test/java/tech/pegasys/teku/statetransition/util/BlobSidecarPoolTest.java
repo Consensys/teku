@@ -83,7 +83,7 @@ public class BlobSidecarPoolTest {
   }
 
   @Test
-  public void onNewBlock_addTrackerWithBlockSetWhenSlotIsCurrentSlot() {
+  public void onNewBlock_addTrackerWithBlock() {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     blobSidecarPool.onNewBlock(block);
@@ -97,7 +97,7 @@ public class BlobSidecarPoolTest {
   }
 
   @Test
-  public void onNewBlobSidecar_addTrackerWithBlockSetWhenSlotIsCurrentSlot() {
+  public void onNewBlobSidecar_addTrackerWithBlobSidecar() {
     final BlobSidecar blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
 
@@ -110,6 +110,93 @@ public class BlobSidecarPoolTest {
 
     assertBlobSidecarsGauge(1);
     assertBlobSidecarsTrackersGauge(1);
+  }
+
+  @Test
+  public void onNewBlobSidecarOnNewBlock_addTrackerWithBothBlockAndBlobSidecar() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final BlobSidecar blobSidecar =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .slot(currentSlot)
+            .blockRoot(block.getRoot())
+            .build();
+
+    blobSidecarPool.onNewBlobSidecar(blobSidecar, false);
+    blobSidecarPool.onNewBlock(block);
+
+    assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar)))
+        .isTrue();
+    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+    assertThat(requiredRootEvents).isEmpty();
+    assertThat(requiredRootDroppedEvents).isEmpty();
+
+    assertBlobSidecarsGauge(1);
+    assertBlobSidecarsTrackersGauge(1);
+  }
+
+  @Test
+  public void twoOnNewBlobSidecar_addTrackerWithBothBlobSidecars() {
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+
+    final BlobSidecar blobSidecar0 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .slot(currentSlot)
+            .blockRoot(blockRoot)
+            .index(UInt64.ZERO)
+            .build();
+
+    final BlobSidecar blobSidecar1 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .slot(currentSlot)
+            .blockRoot(blockRoot)
+            .index(UInt64.ONE)
+            .build();
+
+    final BlobSidecar blobSidecar1bis =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .slot(currentSlot)
+            .blockRoot(blockRoot)
+            .index(UInt64.ONE)
+            .build();
+
+    blobSidecarPool.onNewBlobSidecar(blobSidecar0, false);
+    blobSidecarPool.onNewBlobSidecar(blobSidecar1, false);
+    blobSidecarPool.onNewBlobSidecar(blobSidecar1bis, false);
+
+    assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar0)))
+        .isTrue();
+    assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar1)))
+        .isTrue();
+    assertThat(requiredRootEvents).isEmpty();
+    assertThat(requiredRootDroppedEvents).isEmpty();
+
+    assertBlobSidecarsGauge(2);
+    assertBlobSidecarsTrackersGauge(1);
+  }
+
+  @Test
+  public void twoOnNewBlock_addTrackerWithBothBlobSidecars() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+
+    final SignedBeaconBlock blockAtPreviousSlot =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1);
+
+    blobSidecarPool.onNewBlock(blockAtPreviousSlot);
+    blobSidecarPool.onNewBlock(block);
+
+    assertThat(blobSidecarPool.containsBlock(blockAtPreviousSlot)).isTrue();
+    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+    assertThat(requiredRootEvents).isEmpty();
+    assertThat(requiredRootDroppedEvents).isEmpty();
+
+    assertBlobSidecarsGauge(0);
+    assertBlobSidecarsTrackersGauge(2);
   }
 
   @Test

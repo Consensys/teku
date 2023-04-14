@@ -105,20 +105,20 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
     final SlotAndBlockRoot slotAndBlockRoot = blobSidecar.getSlotAndBlockRoot();
 
-    final BlockBlobSidecarsTracker blobSidecars =
+    final BlockBlobSidecarsTracker blobSidecarsTracker =
         getOrCreateBlobSidecarsTracker(
             slotAndBlockRoot,
             newTracker -> {
-              newTracker.add(blobSidecar);
-
-              sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
-
               if (!syncing) {
                 onFirstSeen(slotAndBlockRoot);
               }
             });
 
-    if (orderedBlobSidecarsTrackers.add(blobSidecars.getSlotAndBlockRoot())) {
+    if (blobSidecarsTracker.add(blobSidecar)) {
+      sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
+    }
+
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
       sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
     }
   }
@@ -133,15 +133,16 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
-    final BlockBlobSidecarsTracker blobSidecars =
+    final BlockBlobSidecarsTracker blobSidecarsTracker =
         getOrCreateBlobSidecarsTracker(
             slotAndBlockRoot,
             newTracker -> {
-              newTracker.setBlock(block);
               onFirstSeen(slotAndBlockRoot);
             });
 
-    if (orderedBlobSidecarsTrackers.add(blobSidecars.getSlotAndBlockRoot())) {
+    blobSidecarsTracker.setBlock(block);
+
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
       sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
     }
   }
