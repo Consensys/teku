@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container8;
@@ -24,30 +24,30 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public class BlindedBlobSidecar
+public class BlobSidecar
     extends Container8<
-        BlindedBlobSidecar,
+        BlobSidecar,
         SszBytes32,
         SszUInt64,
         SszUInt64,
         SszBytes32,
         SszUInt64,
-        SszBytes32,
+        Blob,
         SszKZGCommitment,
         SszKZGProof> {
 
-  BlindedBlobSidecar(final BlindedBlobSidecarSchema type, final TreeNode backingTreeNode) {
-    super(type, backingTreeNode);
+  BlobSidecar(final BlobSidecarSchema blobSidecarSchema, final TreeNode backingTreeNode) {
+    super(blobSidecarSchema, backingTreeNode);
   }
 
-  public BlindedBlobSidecar(
-      BlindedBlobSidecarSchema schema,
+  public BlobSidecar(
+      BlobSidecarSchema schema,
       Bytes32 blockRoot,
       UInt64 index,
       UInt64 slot,
       Bytes32 blockParentRoot,
       UInt64 proposerIndex,
-      Bytes32 blobRoot,
+      Blob blob,
       KZGCommitment kzgCommitment,
       KZGProof kzgProof) {
     super(
@@ -57,7 +57,7 @@ public class BlindedBlobSidecar
         SszUInt64.of(slot),
         SszBytes32.of(blockParentRoot),
         SszUInt64.of(proposerIndex),
-        SszBytes32.of(blobRoot),
+        schema.getBlobSchema().create(blob.getBytes()),
         new SszKZGCommitment(kzgCommitment),
         new SszKZGProof(kzgProof));
   }
@@ -82,8 +82,8 @@ public class BlindedBlobSidecar
     return getField4().get();
   }
 
-  public Bytes32 getBlobRoot() {
-    return getField5().get();
+  public Blob getBlob() {
+    return getField5();
   }
 
   public KZGCommitment getKZGCommitment() {

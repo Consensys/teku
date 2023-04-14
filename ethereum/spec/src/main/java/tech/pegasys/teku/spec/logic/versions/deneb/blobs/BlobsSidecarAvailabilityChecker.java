@@ -19,9 +19,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public interface BlobsSidecarAvailabilityChecker {

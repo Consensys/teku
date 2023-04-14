@@ -15,8 +15,8 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class BlobsBundleValidatorImpl implements BlobsBundleValidator {

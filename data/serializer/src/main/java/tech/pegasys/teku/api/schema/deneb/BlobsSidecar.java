@@ -24,8 +24,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecarSchema;
 
 public class BlobsSidecar {
 
@@ -54,8 +54,7 @@ public class BlobsSidecar {
   }
 
   public BlobsSidecar(
-      final tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar
-          blobSidecar) {
+      final tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar blobSidecar) {
     this.beaconBlockRoot = blobSidecar.getBeaconBlockRoot();
     this.beaconBlockSlot = blobSidecar.getBeaconBlockSlot();
     this.blobs = blobSidecar.getBlobs().stream().map(Blob::getBytes).collect(Collectors.toList());
@@ -63,12 +62,11 @@ public class BlobsSidecar {
   }
 
   public static BlobsSidecar create(
-      final tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar
-          blobSidecar) {
+      final tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar blobSidecar) {
     return new BlobsSidecar(blobSidecar);
   }
 
-  public tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar
+  public tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar
       asInternalBlobSidecar(final BlobsSidecarSchema schema) {
     return schema.create(beaconBlockRoot, beaconBlockSlot, blobs, Bytes48.wrap(kzgAggregatedProof));
   }

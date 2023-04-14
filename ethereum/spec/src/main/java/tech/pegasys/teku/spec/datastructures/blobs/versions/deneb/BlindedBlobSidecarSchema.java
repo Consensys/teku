@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
