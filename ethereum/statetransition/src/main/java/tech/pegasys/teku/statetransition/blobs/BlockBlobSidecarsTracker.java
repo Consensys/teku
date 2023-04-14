@@ -41,15 +41,8 @@ public class BlockBlobSidecarsTracker {
   private final Map<UInt64, BlobSidecar> blobSidecars = new ConcurrentHashMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
-  public BlockBlobSidecarsTracker(final BlobSidecar blobSidecar) {
-    this.slotAndBlockRoot = blobSidecar.getSlotAndBlockRoot();
-    blobSidecars.put(blobSidecar.getIndex(), blobSidecar);
-  }
-
-  public BlockBlobSidecarsTracker(
-      final SlotAndBlockRoot slotAndBlockRoot, final BeaconBlockBodyDeneb blockBodyDeneb) {
+  public BlockBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot) {
     this.slotAndBlockRoot = slotAndBlockRoot;
-    blockBody.set(Optional.of(blockBodyDeneb));
   }
 
   public Map<UInt64, BlobSidecar> getBlobSidecars() {

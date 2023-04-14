@@ -507,7 +507,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initBlobSidecarPool()");
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       blobSidecarPool =
-          poolFactory.createPoolForBlobSidecar(
+          poolFactory.createPoolForBlobSidecars(
               spec, timeProvider, beaconAsyncRunner, recentChainData);
     } else {
       blobSidecarPool = BlobSidecarPool.NOOP;

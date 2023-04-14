@@ -63,6 +63,7 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -133,8 +134,12 @@ public class SyncingNodeManager {
     final BlockValidator blockValidator =
         new BlockValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
+
+    final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
     final PendingPool<SignedBeaconBlock> pendingBlocks =
-        new PoolFactory(new NoOpMetricsSystem()).createPendingPoolForBlocks(spec);
+        poolFactory.createPendingPoolForBlocks(spec);
+    final BlobSidecarPoolImpl blobSidecarPool =
+        poolFactory.createPoolForBlobSidecars(spec, timeProvider, asyncRunner, recentChainData);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronized(500);
@@ -154,7 +159,10 @@ public class SyncingNodeManager {
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
         .subscribe(BlockImportNotifications.class, blockManager)
-        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
+        .subscribe(FinalizedCheckpointChannel.class, pendingBlocks)
+        .subscribe(SlotEventsChannel.class, pendingBlocks)
+        .subscribe(FinalizedCheckpointChannel.class, blobSidecarPool)
+        .subscribe(SlotEventsChannel.class, blobSidecarPool);
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
@@ -187,7 +195,7 @@ public class SyncingNodeManager {
 
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(
-            asyncRunner, pendingBlocks, syncService, fetchBlockTaskFactory);
+            asyncRunner, pendingBlocks, blobSidecarPool, syncService, fetchBlockTaskFactory);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->

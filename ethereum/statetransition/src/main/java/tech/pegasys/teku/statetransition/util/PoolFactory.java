@@ -29,7 +29,7 @@ public class PoolFactory {
 
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
   private static final int DEFAULT_MAX_ITEMS = 5000;
-  private static final int DEFAULT_MAX_BLOCKS = 500;
+  private static final int DEFAULT_MAX_BLOCKS = 5000;
   private final SettableLabelledGauge sizeGauge;
 
   public PoolFactory(final MetricsSystem metricsSystem) {
@@ -80,22 +80,22 @@ public class PoolFactory {
         ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
-  public BlobSidecarPoolImpl createPoolForBlobSidecar(
+  public BlobSidecarPoolImpl createPoolForBlobSidecars(
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData) {
-    return createPoolForBlobSidecar(
+    return createPoolForBlobSidecars(
         spec,
         timeProvider,
         asyncRunner,
         recentChainData,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DEFAULT_MAX_BLOCKS * spec.getMaxBlobsPerBlock().orElseThrow());
+        DEFAULT_MAX_BLOCKS);
   }
 
-  public BlobSidecarPoolImpl createPoolForBlobSidecar(
+  public BlobSidecarPoolImpl createPoolForBlobSidecars(
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,

@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksService
@@ -36,28 +37,37 @@ public class FetchRecentBlocksService
 
   private final ForwardSync forwardSync;
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool;
+  private final BlobSidecarPool blobSidecarPool;
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
 
   FetchRecentBlocksService(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
     super(asyncRunner, maxConcurrentRequests);
     this.forwardSync = forwardSync;
     this.pendingBlocksPool = pendingBlocksPool;
+    this.blobSidecarPool = blobSidecarPool;
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
   public static FetchRecentBlocksService create(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
     return new FetchRecentBlocksService(
-        asyncRunner, pendingBlocksPool, forwardSync, fetchTaskFactory, MAX_CONCURRENT_REQUESTS);
+        asyncRunner,
+        pendingBlocksPool,
+        blobSidecarPool,
+        forwardSync,
+        fetchTaskFactory,
+        MAX_CONCURRENT_REQUESTS);
   }
 
   @Override
@@ -117,6 +127,8 @@ public class FetchRecentBlocksService
   private void setupSubscribers() {
     pendingBlocksPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
     pendingBlocksPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
+    blobSidecarPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
+    blobSidecarPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
     forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
   }
 

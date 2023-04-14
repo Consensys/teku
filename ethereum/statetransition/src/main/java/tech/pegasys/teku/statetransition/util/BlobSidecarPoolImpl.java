@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.util;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
@@ -26,9 +25,9 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -37,17 +36,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
-import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobSidecarPoolImpl
-    implements SlotEventsChannel, FinalizedCheckpointChannel, BlobSidecarPool {
+public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
+    implements BlobSidecarPool {
 
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
@@ -63,8 +59,6 @@ public class BlobSidecarPoolImpl
   private final TimeProvider timeProvider;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
-  private final UInt64 futureSlotTolerance;
-  private final UInt64 historicalSlotTolerance;
   private final int maxTrackers;
 
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
@@ -79,9 +73,6 @@ public class BlobSidecarPoolImpl
 
   private int totalBlobSidecars;
 
-  private volatile UInt64 currentSlot = UInt64.ZERO;
-  private volatile UInt64 latestFinalizedSlot = GENESIS_SLOT;
-
   BlobSidecarPoolImpl(
       final SettableLabelledGauge sizeGauge,
       final Spec spec,
@@ -91,12 +82,11 @@ public class BlobSidecarPoolImpl
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers) {
+    super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.spec = spec;
     this.timeProvider = timeProvider;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
-    this.historicalSlotTolerance = historicalSlotTolerance;
-    this.futureSlotTolerance = futureSlotTolerance;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
 
@@ -113,12 +103,20 @@ public class BlobSidecarPoolImpl
 
     makeRoomForNewTracker();
 
-    final BlockBlobSidecarsTracker blobSidecars =
-        getOrCreateBlobSidecarsTracker(blobSidecar, syncing);
+    final SlotAndBlockRoot slotAndBlockRoot = blobSidecar.getSlotAndBlockRoot();
 
-    if (blobSidecars.add(blobSidecar)) {
-      sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
-    }
+    final BlockBlobSidecarsTracker blobSidecars =
+        getOrCreateBlobSidecarsTracker(
+            slotAndBlockRoot,
+            newTracker -> {
+              newTracker.add(blobSidecar);
+
+              sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
+
+              if (!syncing) {
+                onFirstSeen(slotAndBlockRoot);
+              }
+            });
 
     if (orderedBlobSidecarsTrackers.add(blobSidecars.getSlotAndBlockRoot())) {
       sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
@@ -133,7 +131,15 @@ public class BlobSidecarPoolImpl
 
     makeRoomForNewTracker();
 
-    final BlockBlobSidecarsTracker blobSidecars = getOrCreateBlobSidecarsTracker(block);
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+
+    final BlockBlobSidecarsTracker blobSidecars =
+        getOrCreateBlobSidecarsTracker(
+            slotAndBlockRoot,
+            newTracker -> {
+              newTracker.setBlock(block);
+              onFirstSeen(slotAndBlockRoot);
+            });
 
     if (orderedBlobSidecarsTrackers.add(blobSidecars.getSlotAndBlockRoot())) {
       sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
@@ -142,10 +148,14 @@ public class BlobSidecarPoolImpl
 
   public synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
     orderedBlobSidecarsTrackers.remove(slotAndBlockRoot);
-    final BlockBlobSidecarsTracker removed =
+    final BlockBlobSidecarsTracker removedTracker =
         blockBlobSidecarsTrackers.remove(slotAndBlockRoot.getBlockRoot());
-    if (removed != null) {
-      totalBlobSidecars -= removed.blobSidecarsCount();
+
+    if (removedTracker != null) {
+
+      dropMissingContent(removedTracker);
+
+      totalBlobSidecars -= removedTracker.blobSidecarsCount();
       sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
       sizeGauge.set(blockBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
     }
@@ -164,27 +174,12 @@ public class BlobSidecarPoolImpl
   @Override
   public synchronized BlockBlobSidecarsTracker getBlockBlobsSidecarsTracker(
       final SignedBeaconBlock block) {
-    return getOrCreateBlobSidecarsTracker(block);
-  }
-
-  @Override
-  public void onSlot(UInt64 slot) {
-    currentSlot = slot;
-    if (currentSlot.mod(historicalSlotTolerance).equals(UInt64.ZERO)) {
-      // Purge old items
-      prune();
-    }
-  }
-
-  @Override
-  public void onNewFinalizedCheckpoint(Checkpoint checkpoint, boolean fromOptimisticBlock) {
-    this.latestFinalizedSlot = checkpoint.getEpochStartSlot(spec);
+    return getOrCreateBlobSidecarsTracker(block.getSlotAndBlockRoot(), __ -> {});
   }
 
   @VisibleForTesting
-  synchronized void prune() {
-    final UInt64 slotLimit = latestFinalizedSlot.max(calculateItemAgeLimit());
-
+  @Override
+  synchronized void prune(final UInt64 slotLimit) {
     final List<SlotAndBlockRoot> toRemove = new ArrayList<>();
     for (SlotAndBlockRoot slotAndBlockRoot : orderedBlobSidecarsTrackers) {
       if (slotAndBlockRoot.getSlot().isGreaterThan(slotLimit)) {
@@ -249,61 +244,33 @@ public class BlobSidecarPoolImpl
   }
 
   private BlockBlobSidecarsTracker getOrCreateBlobSidecarsTracker(
-      final BlobSidecar blobSidecar, final boolean syncing) {
-    return blockBlobSidecarsTrackers.computeIfAbsent(
-        blobSidecar.getBlockRoot(),
-        __ -> {
-          final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-              new BlockBlobSidecarsTracker(blobSidecar);
-
-          if (!syncing) {
-            onFirstSeen(blockBlobSidecarsTracker.getSlotAndBlockRoot());
-          }
-          return blockBlobSidecarsTracker;
-        });
-  }
-
-  private BlockBlobSidecarsTracker getOrCreateBlobSidecarsTracker(final SignedBeaconBlock block) {
-    blockBlobSidecarsTrackers.get(block.getRoot());
-    return blockBlobSidecarsTrackers.computeIfAbsent(
-        block.getRoot(),
-        __ -> {
-          final BeaconBlockBodyDeneb blockBodyDeneb =
-              BeaconBlockBodyDeneb.required(block.getMessage().getBody());
-          final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
-
-          final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-              new BlockBlobSidecarsTracker(slotAndBlockRoot, blockBodyDeneb);
-
-          onFirstSeen(slotAndBlockRoot);
-
-          return blockBlobSidecarsTracker;
-        });
+      final SlotAndBlockRoot slotAndBlockRoot, Consumer<BlockBlobSidecarsTracker> onNew) {
+    BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
+    if (blockBlobSidecarsTracker == null) {
+      blockBlobSidecarsTracker = new BlockBlobSidecarsTracker(slotAndBlockRoot);
+      blockBlobSidecarsTrackers.put(slotAndBlockRoot.getBlockRoot(), blockBlobSidecarsTracker);
+      onNew.accept(blockBlobSidecarsTracker);
+    }
+    return blockBlobSidecarsTracker;
   }
 
   private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
     final Optional<Duration> fetchDelay = calculateFetchDelay(slotAndBlockRoot);
+
     if (fetchDelay.isEmpty()) {
       return;
     }
 
     asyncRunner
-        .runAfterDelay(
-            () -> {
-              final Optional<BlockBlobSidecarsTracker> blockBlobSidecarsTracker =
-                  Optional.ofNullable(
-                      blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot()));
-              blockBlobSidecarsTracker.ifPresent(this::fetchMissingContent);
-            },
-            fetchDelay.get())
+        .runAfterDelay(() -> this.fetchMissingContent(slotAndBlockRoot), fetchDelay.get())
         .ifExceptionGetsHereRaiseABug();
-    ;
   }
 
   private Optional<Duration> calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
     final UInt64 slot = slotAndBlockRoot.getSlot();
 
-    if (slot.isLessThan(currentSlot)) {
+    if (slot.isLessThan(getCurrentSlot())) {
       // old slot
       return Optional.empty();
     }
@@ -312,6 +279,10 @@ public class BlobSidecarPoolImpl
     final UInt64 slotStartTimeMillis = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
     final UInt64 millisPerSlot = secondsToMillis(spec.getSecondsPerSlot(slot));
     final UInt64 attestationDueMillis = slotStartTimeMillis.plus(millisPerSlot.dividedBy(3));
+
+    if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
+      return Optional.of(Duration.ofMillis(TARGET_WAIT_MILLIS.intValue()));
+    }
 
     final UInt64 upperLimitRelativeToAttDue =
         attestationDueMillis.minus(MAX_WAIT_RELATIVE_TO_ATT_DUE);
@@ -324,7 +295,14 @@ public class BlobSidecarPoolImpl
     return Optional.of(Duration.ofMillis(finalTime.minus(nowMillis).intValue()));
   }
 
-  private void fetchMissingContent(final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
+  private synchronized void fetchMissingContent(final SlotAndBlockRoot slotAndBlockRoot) {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
+
+    if (blockBlobSidecarsTracker == null) {
+      return;
+    }
+
     if (blockBlobSidecarsTracker.checkCompletion()) {
       return;
     }
@@ -344,35 +322,21 @@ public class BlobSidecarPoolImpl
                     RequiredBlobSidecarSubscriber::onRequiredBlobSidecar, blobIdentifier));
   }
 
-  private boolean shouldIgnoreItemAtSlot(final UInt64 slot) {
-    return isSlotTooOld(slot) || isSlotFromFarFuture(slot);
-  }
+  private void dropMissingContent(final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
 
-  private boolean isSlotTooOld(final UInt64 slot) {
-    return isSlotFromAFinalizedSlot(slot) || isSlotOutsideOfHistoricalLimit(slot);
-  }
+    if (blockBlobSidecarsTracker.getBlockBody().isEmpty()) {
+      requiredBlockRootDroppedSubscribers.deliver(
+          RequiredBlockRootDroppedSubscriber::onRequiredBlockRootDropped,
+          blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
+      return;
+    }
 
-  private boolean isSlotFromFarFuture(final UInt64 slot) {
-    final UInt64 slotLimit = calculateFutureItemLimit();
-    return slot.isGreaterThan(slotLimit);
-  }
-
-  private boolean isSlotOutsideOfHistoricalLimit(final UInt64 slot) {
-    final UInt64 slotLimit = calculateItemAgeLimit();
-    return slot.compareTo(slotLimit) <= 0;
-  }
-
-  private boolean isSlotFromAFinalizedSlot(final UInt64 slot) {
-    return slot.compareTo(latestFinalizedSlot) <= 0;
-  }
-
-  private UInt64 calculateItemAgeLimit() {
-    return currentSlot.compareTo(historicalSlotTolerance.plus(UInt64.ONE)) > 0
-        ? currentSlot.minus(UInt64.ONE).minus(historicalSlotTolerance)
-        : GENESIS_SLOT;
-  }
-
-  private UInt64 calculateFutureItemLimit() {
-    return currentSlot.plus(futureSlotTolerance);
+    blockBlobSidecarsTracker
+        .getMissingBlobSidecars()
+        .forEach(
+            blobIdentifier ->
+                requiredBlobSidecarDroppedSubscribers.deliver(
+                    RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
+                    blobIdentifier));
   }
 }

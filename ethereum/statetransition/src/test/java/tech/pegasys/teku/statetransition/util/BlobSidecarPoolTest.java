@@ -34,7 +34,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -50,7 +51,7 @@ public class BlobSidecarPoolTest {
   private final int maxItems = 15;
   private final BlobSidecarPoolImpl blobSidecarPool =
       new PoolFactory(metricsSystem)
-          .createPoolForBlobSidecar(
+          .createPoolForBlobSidecars(
               spec,
               timeProvider,
               asyncRunner,
@@ -62,17 +63,17 @@ public class BlobSidecarPoolTest {
   private UInt64 currentSlot = historicalTolerance.times(2);
   private final List<Bytes32> requiredRootEvents = new ArrayList<>();
   private final List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();
+  private final List<BlobIdentifier> requiredBlobSidecarEvents = new ArrayList<>();
+  private final List<BlobIdentifier> requiredBlobSidecarDroppedEvents = new ArrayList<>();
 
   @BeforeEach
   public void setup() {
     // Set up slot
     blobSidecarPool.subscribeRequiredBlockRoot(requiredRootEvents::add);
     blobSidecarPool.subscribeRequiredBlockRootDropped(requiredRootDroppedEvents::add);
+    blobSidecarPool.subscribeRequiredBlobSidecar(requiredBlobSidecarEvents::add);
+    blobSidecarPool.subscribeRequiredBlobSidecarDropped(requiredBlobSidecarDroppedEvents::add);
     setSlot(currentSlot);
-  }
-
-  private void setSlot(final long slot) {
-    setSlot(UInt64.valueOf(slot));
   }
 
   private void setSlot(final UInt64 slot) {
@@ -82,7 +83,7 @@ public class BlobSidecarPoolTest {
   }
 
   @Test
-  public void add_blockForCurrentSlot() {
+  public void onNewBlock_addTrackerWithBlockSetWhenSlotIsCurrentSlot() {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     blobSidecarPool.onNewBlock(block);
@@ -96,51 +97,23 @@ public class BlobSidecarPoolTest {
   }
 
   @Test
-  public void add_historicalBlockWithinWindow() {
-    final UInt64 slot = currentSlot.minus(historicalTolerance);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
-    blobSidecarPool.onNewBlock(block);
+  public void onNewBlobSidecar_addTrackerWithBlockSetWhenSlotIsCurrentSlot() {
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
 
-    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+    blobSidecarPool.onNewBlobSidecar(blobSidecar, false);
+
+    assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar)))
+        .isTrue();
     assertThat(requiredRootEvents).isEmpty();
     assertThat(requiredRootDroppedEvents).isEmpty();
 
-    assertBlobSidecarsGauge(0);
+    assertBlobSidecarsGauge(1);
     assertBlobSidecarsTrackersGauge(1);
   }
 
   @Test
-  public void add_historicalBlockOutsideWindow() {
-    final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
-
-    blobSidecarPool.onNewBlock(block);
-
-    assertThat(blobSidecarPool.containsBlock(block)).isFalse();
-    assertThat(requiredRootEvents).isEmpty();
-    assertThat(requiredRootDroppedEvents).isEmpty();
-
-    assertBlobSidecarsGauge(0);
-    assertBlobSidecarsTrackersGauge(0);
-  }
-
-  @Test
-  public void add_futureBlockWithinWindow() {
-    final UInt64 slot = currentSlot.plus(futureTolerance);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
-
-    blobSidecarPool.onNewBlock(block);
-
-    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
-    assertThat(requiredRootEvents).isEmpty();
-    assertThat(requiredRootDroppedEvents).isEmpty();
-
-    assertBlobSidecarsGauge(0);
-    assertBlobSidecarsTrackersGauge(1);
-  }
-
-  @Test
-  public void add_futureBlockOutsideWindow() {
+  public void shouldApplyIgnoreForBlock() {
     final UInt64 slot = currentSlot.plus(futureTolerance).plus(UInt64.ONE);
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
 
@@ -155,39 +128,15 @@ public class BlobSidecarPoolTest {
   }
 
   @Test
-  public void add_nonFinalizedBlock() {
-    final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    blobSidecarPool.onNewFinalizedCheckpoint(checkpoint, false);
+  public void shouldApplyIgnoreForBlobSidecar() {
+    final UInt64 slot = currentSlot.plus(futureTolerance).plus(UInt64.ONE);
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
 
-    final UInt64 slot = checkpoint.getEpochStartSlot(spec).plus(UInt64.ONE);
-    setSlot(slot);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
+    blobSidecarPool.onNewBlobSidecar(blobSidecar, false);
 
-    blobSidecarPool.onNewBlock(block);
-
-    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
-    assertThat(requiredRootEvents).isEmpty();
-    assertThat(requiredRootDroppedEvents).isEmpty();
-
-    assertBlobSidecarsGauge(0);
-    assertBlobSidecarsTrackersGauge(1);
-  }
-
-  @Test
-  public void add_finalizedBlock() {
-    final SignedBeaconBlock finalizedBlock = dataStructureUtil.randomSignedBeaconBlock(10);
-    final Checkpoint checkpoint = finalizedCheckpoint(finalizedBlock);
-    blobSidecarPool.onNewFinalizedCheckpoint(checkpoint, false);
-    final long slot = checkpoint.getEpochStartSlot(spec).longValue() + 10;
-    setSlot(slot);
-
-    final long blockSlot = checkpoint.getEpochStartSlot(spec).longValue();
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(blockSlot);
-
-    blobSidecarPool.onNewBlock(block);
-
-    assertThat(blobSidecarPool.containsBlock(block)).isFalse();
+    assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar)))
+        .isFalse();
     assertThat(requiredRootEvents).isEmpty();
     assertThat(requiredRootDroppedEvents).isEmpty();
 
@@ -215,6 +164,10 @@ public class BlobSidecarPoolTest {
     assertBlobSidecarsGauge(0);
   }
 
+  private static BlobIdentifier blobIdentifierFromBlobSidecar(final BlobSidecar blobSidecar) {
+    return new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
+  }
+
   private void assertBlobSidecarsGauge(final int count) {
     assertThat(
             metricsSystem
@@ -229,12 +182,5 @@ public class BlobSidecarPoolTest {
                 .getLabelledGauge(TekuMetricCategory.BEACON, "pending_pool_size")
                 .getValue(GAUGE_BLOB_SIDECARS_TRACKERS_LABEL))
         .isEqualTo(OptionalDouble.of(count));
-  }
-
-  private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
-    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot()).plus(UInt64.ONE);
-    final Bytes32 root = block.getMessage().hashTreeRoot();
-
-    return new Checkpoint(epoch, root);
   }
 }

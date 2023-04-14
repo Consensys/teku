@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksServiceTest {
@@ -50,6 +51,7 @@ public class FetchRecentBlocksServiceTest {
 
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
 
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
@@ -68,7 +70,7 @@ public class FetchRecentBlocksServiceTest {
   public void setup() {
     recentBlockFetcher =
         new FetchRecentBlocksService(
-            asyncRunner, pendingBlocksPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
+            asyncRunner, pendingBlocksPool, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
 
     lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
