@@ -22,6 +22,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -31,6 +32,8 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -140,6 +143,13 @@ public class HistoricalBatchFetcherTest {
 
     when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
+    when(blobsSidecarManager.createAvailabilityChecker(any()))
+        .thenReturn(blobSidecarsAvailabilityChecker);
+    when(blobSidecarsAvailabilityChecker.validate(anyList()))
+        .thenAnswer(
+            i ->
+                SafeFuture.completedFuture(
+                    BlobSidecarsAndValidationResult.validResult(i.getArgument(0))));
   }
 
   @Test
@@ -170,13 +180,6 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_returnAllBlocksAndBlobSidecarsOnFirstRequest() {
     when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-    when(blobsSidecarManager.createAvailabilityChecker(any()))
-        .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(anyList()))
-        .thenAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.validResult(i.getArgument(0))));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
@@ -190,6 +193,27 @@ public class HistoricalBatchFetcherTest {
         .onFinalizedBlocks(blockCaptor.capture(), blobSidecarCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     assertThat(blobSidecarCaptor.getValue()).isEqualTo(blobSidecarsBatch);
+  }
+
+  @Test
+  public void run_failsOnBlobSidecarsValidationFailure() {
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarsAvailabilityChecker.validate(anyList()))
+        .thenAnswer(
+            i ->
+                SafeFuture.completedFuture(
+                    BlobSidecarsAndValidationResult.invalidResult(
+                        i.getArgument(0), new IllegalStateException("oopsy"))));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    peer.completePendingRequests();
+
+    assertThat(future)
+        .failsWithin(Duration.ZERO)
+        .withThrowableThat()
+        .withMessageMatching(
+            "java.lang.IllegalArgumentException: Blob sidecars validation for block .* failed: INVALID \\(oopsy\\)");
   }
 
   @Test
@@ -256,8 +280,12 @@ public class HistoricalBatchFetcherTest {
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(targetBatch);
   }
 
-  @Test
-  public void run_requestBatchForRangeOfEmptyBlocks() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void run_requestBatchForRangeOfEmptyBlocks(final boolean blobSidecarsRequired) {
+    if (blobSidecarsRequired) {
+      when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    }
     final int batchSize = 10;
     fetcher =
         new HistoricalBatchFetcher(
@@ -276,12 +304,12 @@ public class HistoricalBatchFetcherTest {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
 
-    // Request by range will return nothing
+    // Request(s) by range will return nothing
     for (int i = 0; i < maxRequests; i++) {
-      assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      assertThat(peer.getOutstandingRequests()).isEqualTo(blobSidecarsRequired ? 2 : 1);
       peer.completePendingRequests();
     }
-    // Request by hash should return the final block
+    // Request by root should return the final block
     assertThat(peer.getOutstandingRequests()).isEqualTo(1);
     peer.completePendingRequests();
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);

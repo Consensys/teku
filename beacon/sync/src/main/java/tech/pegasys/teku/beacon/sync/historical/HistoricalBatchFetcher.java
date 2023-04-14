@@ -145,7 +145,7 @@ public class HistoricalBatchFetcher {
               if (blocksToImport.isEmpty()) {
                 // If we've received no blocks, this range of blocks may be empty
                 // Try to look up the next block by root
-                return requestBlockByHash();
+                return requestBlockByRoot();
               } else {
                 return SafeFuture.COMPLETE;
               }
@@ -249,19 +249,19 @@ public class HistoricalBatchFetcher {
     return !batchIsComplete() && requestCount.incrementAndGet() < maxRequests;
   }
 
-  private SafeFuture<Void> requestBlockByHash() {
-    LOG.trace("Request next historical block directly by hash {}", lastBlockRoot);
+  private SafeFuture<Void> requestBlockByRoot() {
+    LOG.trace("Request next historical block directly by root {}", lastBlockRoot);
     return peer.requestBlockByRoot(lastBlockRoot)
         .thenCompose(
             maybeBlock -> {
               if (maybeBlock.isPresent()) {
-                return processReceivedBlockByHash(maybeBlock.get());
+                return processReceivedBlockByRoot(maybeBlock.get());
               }
               return SafeFuture.COMPLETE;
             });
   }
 
-  private SafeFuture<Void> processReceivedBlockByHash(final SignedBeaconBlock block) {
+  private SafeFuture<Void> processReceivedBlockByRoot(final SignedBeaconBlock block) {
     blocksToImport.add(block);
     if (blobsSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
       final int numberOfKzgCommitments =
@@ -272,22 +272,33 @@ public class HistoricalBatchFetcher {
               .orElseThrow()
               .getBlobKzgCommitments()
               .size();
-      LOG.trace(
-          "Request {} associated blob sidecars for historical block with hash {}",
-          numberOfKzgCommitments,
-          block.getRoot());
-      final List<BlobIdentifier> blobIdentifiers =
-          IntStream.range(0, numberOfKzgCommitments)
-              .mapToObj(index -> new BlobIdentifier(block.getRoot(), UInt64.valueOf(index)))
-              .collect(Collectors.toList());
-      return peer.requestBlobSidecarsByRoot(
-          blobIdentifiers,
-          blobSidecar -> {
-            processBlobSidecar(blobSidecar);
-            return SafeFuture.COMPLETE;
-          });
+      if (numberOfKzgCommitments == 0) {
+        LOG.trace(
+            "Requesting blob sidecars for block with root {} is not necessary because there are no kzg commitments in the block",
+            block.getRoot());
+        return SafeFuture.COMPLETE;
+      }
+      return requestBlobSidecarsByRoot(block.getRoot(), numberOfKzgCommitments);
     }
     return SafeFuture.COMPLETE;
+  }
+
+  private SafeFuture<Void> requestBlobSidecarsByRoot(
+      final Bytes32 blockRoot, final int requiredBlobSidecars) {
+    LOG.trace(
+        "Request {} associated blob sidecars for historical block with root {}",
+        requiredBlobSidecars,
+        blockRoot);
+    final List<BlobIdentifier> blobIdentifiers =
+        IntStream.range(0, requiredBlobSidecars)
+            .mapToObj(index -> new BlobIdentifier(blockRoot, UInt64.valueOf(index)))
+            .collect(Collectors.toList());
+    return peer.requestBlobSidecarsByRoot(
+        blobIdentifiers,
+        blobSidecar -> {
+          processBlobSidecar(blobSidecar);
+          return SafeFuture.COMPLETE;
+        });
   }
 
   private SafeFuture<Void> importBatch() {
@@ -310,7 +321,7 @@ public class HistoricalBatchFetcher {
                         future.complete(newEarliestBlock);
                       });
             })
-        // always clear the blob sidecars
+        // always clear the blob sidecars cache
         .alwaysRun(blobSidecarsByBlockRootToImport::clear);
   }
 
