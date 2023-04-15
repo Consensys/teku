@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -795,6 +797,23 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     safelyProcess(
         () -> {
+          long start = System.currentTimeMillis();
+
+          AtomicReference<UInt64> maxEpoch = new AtomicReference<>(UInt64.ZERO);
+
+          List<Validator> exitedValidators =
+              state.getValidators().stream()
+                  .filter(validator -> !validator.getExitEpoch().equals(FAR_FUTURE_EPOCH))
+                  .peek(validator -> maxEpoch.set(maxEpoch.get().max(validator.getExitEpoch())))
+                  .collect(toList());
+
+          UInt64 exitQueueEpoch =
+              maxEpoch
+                  .get()
+                  .max(
+                      miscHelpers.computeActivationExitEpoch(
+                          beaconStateAccessors.getCurrentEpoch(state)));
+
           // For each exit in block.body.voluntaryExits:
           for (SignedVoluntaryExit signedExit : exits) {
             Optional<OperationInvalidReason> invalidReason =
@@ -805,9 +824,20 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
             // - Run initiate_validator_exit(state, exit.validator_index)
-            beaconStateMutators.initiateValidatorExit(
-                state, signedExit.getMessage().getValidatorIndex().intValue());
+
+            Optional<UInt64> validatorExitEpoch =
+                beaconStateMutators.initiateValidatorExit(
+                    state,
+                    signedExit.getMessage().getValidatorIndex().intValue(),
+                    exitQueueEpoch,
+                    exitedValidators);
+
+            if (validatorExitEpoch.isPresent()) {
+              exitQueueEpoch = exitQueueEpoch.max(validatorExitEpoch.get());
+            }
           }
+          long end = System.currentTimeMillis();
+          System.out.println(" ** exits: " + exits.size() + " ms: " + (end - start));
         });
   }
 

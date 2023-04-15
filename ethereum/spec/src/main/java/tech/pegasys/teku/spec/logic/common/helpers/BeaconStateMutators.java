@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -101,6 +102,43 @@ public class BeaconStateMutators {
                 .withExitEpoch(exitQueueEpoch)
                 .withWithdrawableEpoch(
                     exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay())));
+  }
+
+  public Optional<UInt64> initiateValidatorExit(
+      MutableBeaconState state,
+      int index,
+      final UInt64 exitQueueEpoch,
+      List<Validator> exitedValidators) {
+    Validator validator = state.getValidators().get(index);
+    // Return if validator already initiated exit
+    if (!validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
+      return Optional.empty();
+    }
+
+    UInt64 exitQueueChurn =
+        UInt64.valueOf(
+            exitedValidators.stream().filter(v -> v.getExitEpoch().equals(exitQueueEpoch)).count());
+
+    final UInt64 finalExitQueueEpoch;
+    if (exitQueueChurn.compareTo(beaconStateAccessors.getValidatorChurnLimit(state)) >= 0) {
+      finalExitQueueEpoch = exitQueueEpoch.plus(UInt64.ONE);
+    } else {
+      finalExitQueueEpoch = exitQueueEpoch;
+    }
+
+    // Set validator exit epoch and withdrawable epoch
+    state
+        .getValidators()
+        .set(
+            index,
+            validator
+                .withExitEpoch(finalExitQueueEpoch)
+                .withWithdrawableEpoch(
+                    finalExitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay())));
+
+    exitedValidators.add(state.getValidators().get(index));
+
+    return Optional.of(finalExitQueueEpoch);
   }
 
   public void slashValidator(MutableBeaconState state, int slashedIndex) {
