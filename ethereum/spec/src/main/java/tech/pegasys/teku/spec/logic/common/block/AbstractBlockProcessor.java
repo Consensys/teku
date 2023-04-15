@@ -795,9 +795,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   protected void processVoluntaryExitsNoValidation(
       MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
       throws BlockProcessingException {
+    // long start = System.currentTimeMillis();
+
     safelyProcess(
         () -> {
-          long start = System.currentTimeMillis();
+          if (exits.isEmpty()) {
+            return;
+          }
 
           AtomicReference<UInt64> maxEpoch = new AtomicReference<>(UInt64.ZERO);
 
@@ -836,9 +840,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               exitQueueEpoch = exitQueueEpoch.max(validatorExitEpoch.get());
             }
           }
-          long end = System.currentTimeMillis();
-          System.out.println(" ** exits: " + exits.size() + " ms: " + (end - start));
         });
+    // long end = System.currentTimeMillis();
+    // System.out.println(" ** exits: " + exits.size() + " ms: " + (end - start));
   }
 
   protected BlockValidationResult verifyVoluntaryExits(
