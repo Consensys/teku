@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
-import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -311,9 +310,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final UInt64 finalizedEpoch = state.getFinalizedCheckpoint().getEpoch();
       final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
       final UInt64 ejectionBalance = specConfig.getEjectionBalance();
-
       final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-          Suppliers.memoize(() -> beaconStateMutators.createValidatorExitContext(state));
+          beaconStateMutators.createValidatorExitContextSupplier(state);
+
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
@@ -332,7 +331,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
         if (status.isActiveInCurrentEpoch()
             && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(ejectionBalance)) {
-          beaconStateMutators.initiateValidatorExit(state, index, validatorExitContextSupplier);
+          beaconStateMutators.initiateValidatorExit(index, validatorExitContextSupplier);
         }
       }
       // Queue validators eligible for activation and not yet dequeued for activation

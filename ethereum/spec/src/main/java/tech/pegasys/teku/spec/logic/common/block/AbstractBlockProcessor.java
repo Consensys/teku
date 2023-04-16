@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.logic.common.block;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
-import com.google.common.base.Suppliers;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
@@ -804,7 +803,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           }
 
           final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-              Suppliers.memoize(() -> beaconStateMutators.createValidatorExitContext(state));
+              beaconStateMutators.createValidatorExitContextSupplier(state);
 
           // For each exit in block.body.voluntaryExits:
           for (SignedVoluntaryExit signedExit : exits) {
@@ -818,7 +817,6 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             // - Run initiate_validator_exit(state, exit.validator_index)
 
             beaconStateMutators.initiateValidatorExit(
-                state,
                 signedExit.getMessage().getValidatorIndex().intValue(),
                 validatorExitContextSupplier);
           }
