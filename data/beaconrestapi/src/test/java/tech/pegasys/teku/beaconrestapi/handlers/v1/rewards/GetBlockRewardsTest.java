@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.rewards;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
@@ -22,17 +23,21 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import org.assertj.core.api.Assertions;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
+public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   private final BlockRewardData data =
       new BlockRewardData(
           123, 123L, 123L, UInt64.valueOf(123), UInt64.valueOf(123), UInt64.valueOf(123));
@@ -41,7 +46,24 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
+    spec = TestSpecFactory.createMinimalAltair();
+    dataStructureUtil = new DataStructureUtil(spec);
+    initialise(SpecMilestone.ALTAIR);
+    genesis();
+
     setHandler(new GetBlockRewards(chainDataProvider));
+    request.setPathParameter("block_id", "head");
+  }
+
+  @Test
+  void shouldReturnBlockAndRewardDataInformation()
+      throws JsonProcessingException, ExecutionException, InterruptedException {
+    handler.handleRequest(request);
+
+    final ObjectAndMetaData<BlockRewardData> output =
+        chainDataProvider.getBlockRewardsFromBlockId("head").get().orElseThrow();
+    Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(output);
   }
 
   @Test
