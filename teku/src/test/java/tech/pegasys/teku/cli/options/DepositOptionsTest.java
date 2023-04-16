@@ -117,7 +117,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   @ParameterizedTest(name = "{0}")
   @ValueSource(strings = {"mainnet", "goerli", "prater", "gnosis", "sepolia"})
   public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
-    final String[] args = {"--network=" + network, "--Xdeposit-snapshot-enabled"};
+    final String[] args = {"--network=" + network, "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
     assertThat(config.powchain().getDepositSnapshotPath())
@@ -131,7 +131,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldIgnoreBundleSnapshotPathForNotSupportedNetwork() {
-    final String[] args = {"--network=swift", "--Xdeposit-snapshot-enabled"};
+    final String[] args = {"--network=swift", "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
     assertThat(config.powchain().getDepositSnapshotPath()).isEmpty();
