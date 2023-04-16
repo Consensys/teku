@@ -11,30 +11,33 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecars;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
-public class BlockContents extends Container2<BlockContents, BeaconBlock, BlobSidecars> {
+public class BlindedBlockContents
+    extends Container2<BlindedBlockContents, BeaconBlock, BlindedBlobSidecars> {
 
-  BlockContents(final BlockContentsSchema type, final TreeNode backingNode) {
+  BlindedBlockContents(final BlindedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public BlockContents(
-      final BlockContentsSchema schema,
+  public BlindedBlockContents(
+      final BlindedBlockContentsSchema schema,
       final BeaconBlock beaconBlock,
-      final BlobSidecars blobSidecars) {
-    super(schema, beaconBlock, blobSidecars);
+      final BlindedBlobSidecars blindedBlobSidecars) {
+    super(schema, beaconBlock, blindedBlobSidecars);
   }
 
-  public BeaconBlock getBeaconBlock() {
+  // We only need a Blinded BeaconBlock
+  public BeaconBlock getBlindedBeaconBlock() {
     return getField0();
   }
 
-  public BlobSidecars getBlobSidecars() {
+  public BlindedBlobSidecars getBlindedBlobSidecars() {
     return getField1();
   }
 }

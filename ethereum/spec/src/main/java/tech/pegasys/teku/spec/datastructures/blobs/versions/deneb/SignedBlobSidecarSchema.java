@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
@@ -20,32 +20,30 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockFields;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedBlindedBlobSidecarSchema
-    extends ContainerSchema2<SignedBlindedBlobSidecar, BlindedBlobSidecar, SszSignature> {
+public class SignedBlobSidecarSchema
+    extends ContainerSchema2<SignedBlobSidecar, BlobSidecar, SszSignature> {
 
-  SignedBlindedBlobSidecarSchema(final BlindedBlobSidecarSchema blindedBlobSidecarSchema) {
+  SignedBlobSidecarSchema(final BlobSidecarSchema blobSidecarSchema) {
     super(
-        "SignedBlindedBlobSidecar",
-        namedSchema("message", blindedBlobSidecarSchema),
+        "SignedBlobSidecar",
+        namedSchema("message", blobSidecarSchema),
         namedSchema(SignedBeaconBlockFields.SIGNATURE, SszSignatureSchema.INSTANCE));
   }
 
-  public static SignedBlindedBlobSidecarSchema create(
-      final BlindedBlobSidecarSchema blindedBlobSidecarSchema) {
-    return new SignedBlindedBlobSidecarSchema(blindedBlobSidecarSchema);
+  public static SignedBlobSidecarSchema create(final BlobSidecarSchema blobSidecarSchema) {
+    return new SignedBlobSidecarSchema(blobSidecarSchema);
   }
 
-  public SignedBlindedBlobSidecar create(
-      final BlindedBlobSidecar blindedBlobSidecar, final BLSSignature signature) {
-    return new SignedBlindedBlobSidecar(this, blindedBlobSidecar, signature);
+  public SignedBlobSidecar create(final BlobSidecar blobSidecar, final BLSSignature signature) {
+    return new SignedBlobSidecar(this, blobSidecar, signature);
   }
 
   @Override
-  public SignedBlindedBlobSidecar createFromBackingNode(final TreeNode node) {
-    return new SignedBlindedBlobSidecar(this, node);
+  public SignedBlobSidecar createFromBackingNode(final TreeNode node) {
+    return new SignedBlobSidecar(this, node);
   }
 
-  public BlindedBlobSidecarSchema getBlindedBlobSidecarSchema() {
-    return (BlindedBlobSidecarSchema) getFieldSchema0();
+  public BlobSidecarSchema getBlobSidecarSchema() {
+    return (BlobSidecarSchema) getFieldSchema0();
   }
 }

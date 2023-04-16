@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class EngineGetBlobsBundleV1 extends AbstractEngineJsonRpcMethod<BlobsBundle> {
