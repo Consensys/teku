@@ -167,6 +167,11 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.fromRunnable(() -> database.storeNoBlobsSlot(slotAndBlockRoot));
+  }
+
+  @Override
   public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
     return SafeFuture.fromRunnable(() -> database.storeBlobSidecar(blobSidecar));
   }

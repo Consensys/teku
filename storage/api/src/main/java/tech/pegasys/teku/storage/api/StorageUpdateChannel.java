@@ -47,6 +47,8 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot);
 
+  SafeFuture<Void> onNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
+
   SafeFuture<Void> onBlobSidecar(BlobSidecar blobSidecar);
 
   SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar);

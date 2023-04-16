@@ -278,7 +278,7 @@ public class NoOpDatabase implements Database {
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
 
   @Override
-  public void storeNoBlobsSlot(final UInt64 slot, final Bytes32 blockRoot) {}
+  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}

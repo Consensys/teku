@@ -127,7 +127,11 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     internalStoreUnconfirmedBlobsSidecar(blobsSidecar);
   }
 
-  // TODO: empty blobSidecar store
+  @Override
+  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+    storageUpdateChannel.onNoBlobsSlot(slotAndBlockRoot);
+  }
+
   @Override
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {
     storageUpdateChannel

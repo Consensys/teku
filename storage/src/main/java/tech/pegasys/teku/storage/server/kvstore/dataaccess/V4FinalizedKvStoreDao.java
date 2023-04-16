@@ -339,10 +339,10 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addNoBlobsSlot(final UInt64 slot, final Bytes32 blockRoot) {
+    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.put(
           schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slot, blockRoot),
+          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
           Bytes.EMPTY);
     }
 

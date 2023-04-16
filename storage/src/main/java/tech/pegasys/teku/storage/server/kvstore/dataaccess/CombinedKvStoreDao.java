@@ -705,10 +705,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addNoBlobsSlot(UInt64 slot, Bytes32 blockRoot) {
+    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.put(
           schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slot, blockRoot),
+          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
           Bytes.EMPTY);
     }
 

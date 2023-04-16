@@ -313,7 +313,7 @@ public class KvStoreDatabase implements Database {
             final List<BlobSidecar> blobSidecars =
                 finalizedBlobSidecarsBySlot.getOrDefault(block.getSlot(), Collections.emptyList());
             if (blobSidecars.isEmpty()) {
-              updater.addNoBlobsSlot(block.getSlot(), block.getRoot());
+              updater.addNoBlobsSlot(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
             } else {
               blobSidecars.forEach(updater::addBlobSidecar);
             }
@@ -808,9 +808,9 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeNoBlobsSlot(final UInt64 slot, final Bytes32 blockRoot) {
+  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.addNoBlobsSlot(slot, blockRoot);
+      updater.addNoBlobsSlot(slotAndBlockRoot);
       updater.commit();
     }
   }

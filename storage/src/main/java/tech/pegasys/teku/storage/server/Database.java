@@ -65,7 +65,7 @@ public interface Database extends AutoCloseable {
 
   void storeBlobSidecar(BlobSidecar blobSidecar);
 
-  void storeNoBlobsSlot(UInt64 slot, Bytes32 blockRoot);
+  void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
 
   void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
 

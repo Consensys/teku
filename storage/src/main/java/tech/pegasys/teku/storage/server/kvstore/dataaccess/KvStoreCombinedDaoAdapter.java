@@ -442,8 +442,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addNoBlobsSlot(final UInt64 slot, final Bytes32 blockRoot) {
-      finalizedUpdater.addNoBlobsSlot(slot, blockRoot);
+    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+      finalizedUpdater.addNoBlobsSlot(slotAndBlockRoot);
     }
 
     @Override

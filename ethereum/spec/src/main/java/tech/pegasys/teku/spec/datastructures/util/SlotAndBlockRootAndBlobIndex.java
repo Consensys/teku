@@ -19,6 +19,7 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 /** Key for storing blobs in DB */
 public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRootAndBlobIndex> {
@@ -33,6 +34,11 @@ public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRoot
     this.slot = slot;
     this.blockRoot = blockRoot;
     this.blobIndex = blobIndex;
+  }
+
+  public static SlotAndBlockRootAndBlobIndex createNoBlobsKey(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return createNoBlobsKey(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
   }
 
   public static SlotAndBlockRootAndBlobIndex createNoBlobsKey(
