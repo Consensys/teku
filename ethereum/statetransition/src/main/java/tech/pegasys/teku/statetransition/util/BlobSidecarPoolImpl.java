@@ -282,6 +282,8 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     final UInt64 attestationDueMillis = slotStartTimeMillis.plus(millisPerSlot.dividedBy(3));
 
     if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
+      // late block, we already produced attestations on previous head,
+      // so let's wait our target delay before trying to fetch
       return Optional.of(Duration.ofMillis(TARGET_WAIT_MILLIS.intValue()));
     }
 
