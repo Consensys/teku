@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
+package tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BlobSidecarSupplier extends DataStructureUtilSupplier<BlobSidecar> {
+public class SignedBlobSidecarsSupplier extends DataStructureUtilSupplier<SignedBlobSidecars> {
 
-  public BlobSidecarSupplier() {
-    super(DataStructureUtil::randomBlobSidecar, SpecMilestone.DENEB);
+  public SignedBlobSidecarsSupplier() {
+    super(DataStructureUtil::randomSignedBlobSidecars, SpecMilestone.DENEB);
   }
 }
