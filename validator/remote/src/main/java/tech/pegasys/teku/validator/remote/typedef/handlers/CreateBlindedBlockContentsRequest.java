@@ -47,7 +47,7 @@ public class CreateBlindedBlockContentsRequest extends AbstractTypeDefRequest {
   private final boolean preferSszBlockContentsEncoding;
   private final BlindedBlockContentsSchema blindedBlockContentsSchema;
   private final DeserializableTypeDefinition<GetBlindedBlockContentsResponse>
-      getBlockContentsResponseDefinition;
+      getBlindedBlockContentsResponseDefinition;
   private final ResponseHandler<GetBlindedBlockContentsResponse> responseHandler;
 
   public CreateBlindedBlockContentsRequest(
@@ -65,7 +65,7 @@ public class CreateBlindedBlockContentsRequest extends AbstractTypeDefRequest {
             .toVersionDeneb()
             .orElseThrow()
             .getBlindedBlockContentsSchema();
-    getBlockContentsResponseDefinition =
+    getBlindedBlockContentsResponseDefinition =
         DeserializableTypeDefinition.object(GetBlindedBlockContentsResponse.class)
             .initializer(GetBlindedBlockContentsResponse::new)
             .withField(
@@ -80,7 +80,7 @@ public class CreateBlindedBlockContentsRequest extends AbstractTypeDefRequest {
                 GetBlindedBlockContentsResponse::setSpecMilestone)
             .build();
     final ResponseHandler<GetBlindedBlockContentsResponse> responseHandler =
-        new ResponseHandler<>(getBlockContentsResponseDefinition)
+        new ResponseHandler<>(getBlindedBlockContentsResponseDefinition)
             .withHandler(SC_OK, this::handleBlockContentsResult);
     this.responseHandler = responseHandler;
   }
@@ -116,7 +116,7 @@ public class CreateBlindedBlockContentsRequest extends AbstractTypeDefRequest {
                 blindedBlockContentsSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
       }
       return Optional.of(
-          JsonUtil.parse(response.body().string(), getBlockContentsResponseDefinition));
+          JsonUtil.parse(response.body().string(), getBlindedBlockContentsResponseDefinition));
     } catch (IOException e) {
       LOG.trace("Failed to parse response object creating block contents", e);
     }
