@@ -6,7 +6,7 @@
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
 - The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
 - The command argument `--Xengine-exchange-capabilities` will be removed, update to use `--engine-exchange-capabilities` if you are using this option.
-- The command argument `--Xdeposit-snapshot-enabled` will be removed, update to use `--deposit-snapshot-enabled` if you are using this option.
+- The command argument `--Xdeposit-snapshot-enabled` will be removed, just remove it from commandline/configuration if you use it, updated argument `--deposit-snapshot-enabled` defaults to true now.
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
