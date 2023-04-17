@@ -47,7 +47,7 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainD
       new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, false, true, true);
 
   @BeforeEach
-  void setUp() { // TODO fix set up for meaningful data
+  void setUp() {
     setHandler(new GetBlockRewards(chainDataProvider));
     request.setPathParameter("block_id", "head");
   }
