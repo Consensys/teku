@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,19 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.deneb.BlobSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlindedBlobSidecarsSupplier;
 
-public class BlobPropertyTest {
+public class SignedBlindedBlobSidecarsPropertyTest {
+
   @Property
-  void roundTrip(@ForAll(supplier = BlobSupplier.class) final Blob blob)
+  void roundTrip(
+      @ForAll(supplier = SignedBlindedBlobSidecarsSupplier.class)
+          final SignedBlindedBlobSidecars signedBlindedBlobSidecars)
       throws JsonProcessingException {
-    assertRoundTrip(blob);
+    assertRoundTrip(signedBlindedBlobSidecars);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlobSupplier.class) final Blob blob, @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(blob, seed);
+      @ForAll(supplier = SignedBlindedBlobSidecarsSupplier.class)
+          final SignedBlindedBlobSidecars signedBlindedBlobSidecars,
+      @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(signedBlindedBlobSidecars, seed);
   }
 }

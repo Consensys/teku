@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,21 +19,21 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.deneb.BlobsSidecarSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlobSidecarSupplier;
 
-public class BlobsSidecarPropertyTest {
+public class SignedBlobSidecarPropertyTest {
 
   @Property
-  void roundTrip(@ForAll(supplier = BlobsSidecarSupplier.class) final BlobsSidecar blobsSidecar)
+  void roundTrip(
+      @ForAll(supplier = SignedBlobSidecarSupplier.class) final SignedBlobSidecar signedBlobSidecar)
       throws JsonProcessingException {
-    assertRoundTrip(blobsSidecar);
+    assertRoundTrip(signedBlobSidecar);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlobsSidecarSupplier.class) final BlobsSidecar blobsSidecar,
+      @ForAll(supplier = SignedBlobSidecarSupplier.class) final SignedBlobSidecar signedBlobSidecar,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(blobsSidecar, seed);
+    assertDeserializeMutatedThrowsExpected(signedBlobSidecar, seed);
   }
 }
