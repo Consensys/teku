@@ -38,15 +38,21 @@
       "200" : {
         "description" : "Request successful",
         "content" : {
+          "application/json" : {
+            "schema" : {
+              "description" : "Request successful",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/ProduceBlockV2Response"
+              }, {
+                "$ref" : "#/components/schemas/ProduceBlockBlockContentsResponse"
+              } ]
+            }
+          },
           "application/octet-stream" : {
             "schema" : {
               "type" : "string",
               "format" : "binary"
-            }
-          },
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/ProduceBlockV2Response"
             }
           }
         }

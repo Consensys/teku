@@ -1,0 +1,18 @@
+{
+  "title" : "ProduceBlockBlockContentsResponse",
+  "type" : "object",
+  "required" : [ "data", "version" ],
+  "properties" : {
+    "data" : {
+      "title" : "BlockContents",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BlockContents"
+      } ]
+    },
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+    }
+  }
+}
