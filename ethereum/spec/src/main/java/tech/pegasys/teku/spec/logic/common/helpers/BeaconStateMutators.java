@@ -129,7 +129,7 @@ public class BeaconStateMutators {
 
   /**
    * This function implements an optimized version of exitQueueEpoch and exitQueueChurn calculation,
-   * compared to the `initiateValidatorExit` reference implementation.
+   * compared to the `initiate_validator_exit` reference implementation.
    *
    * @param state
    * @return
@@ -144,16 +144,12 @@ public class BeaconStateMutators {
 
     for (Validator validator : state.getValidators()) {
       final UInt64 validatorExitEpoch = validator.getExitEpoch();
-      if (validatorExitEpoch.equals(FAR_FUTURE_EPOCH)) {
-        continue;
-      }
-      if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
-        exitedValidatorsInExitQueueEpoch.clear();
-        validatorExitContext.exitQueueEpoch = validatorExitEpoch;
-        exitedValidatorsInExitQueueEpoch.add(validator);
-        continue;
-      }
-      if (validatorExitEpoch.equals(validatorExitContext.exitQueueEpoch)) {
+      if (!validatorExitEpoch.equals(FAR_FUTURE_EPOCH)
+          && validatorExitEpoch.isGreaterThanOrEqualTo(validatorExitContext.exitQueueEpoch)) {
+        if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
+          exitedValidatorsInExitQueueEpoch.clear();
+          validatorExitContext.exitQueueEpoch = validatorExitEpoch;
+        }
         exitedValidatorsInExitQueueEpoch.add(validator);
       }
     }
