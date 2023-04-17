@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.kzg;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
@@ -23,7 +25,12 @@ public class TrustedSetup {
   private final List<Bytes48> g1Points;
   private final List<Bytes> g2Points;
 
+  private void validateG2Point(Bytes g2Point) {
+    checkArgument(g2Point.size() == 96, "Expected G2 point to be 96 bytes");
+  }
+
   public TrustedSetup(final List<Bytes48> g1Points, final List<Bytes> g2Points) {
+    g2Points.forEach(this::validateG2Point);
     this.g1Points = g1Points;
     this.g2Points = g2Points;
   }
