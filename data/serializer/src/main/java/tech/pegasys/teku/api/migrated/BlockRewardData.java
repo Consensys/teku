@@ -85,4 +85,22 @@ public class BlockRewardData {
     return Objects.hash(
         proposerIndex, total, attestations, syncAggregate, proposerSlashings, attesterSlashings);
   }
+
+  @Override
+  public String toString() {
+    return "BlockRewardData{"
+        + "proposerIndex="
+        + proposerIndex
+        + ", total="
+        + total
+        + ", attestations="
+        + attestations
+        + ", syncAggregate="
+        + syncAggregate
+        + ", proposerSlashings="
+        + proposerSlashings
+        + ", attesterSlashings="
+        + attesterSlashings
+        + '}';
+  }
 }
