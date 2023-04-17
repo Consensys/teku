@@ -117,51 +117,57 @@ public class BeaconStateMutators {
   }
 
   /**
-   * This function implements an optimized version of exitQueueEpoch and exitQueueChurn calculation,
-   * compared to the `initiateValidatorExit` reference implementation.
+   * We want the context to be lazily initialized, so we use a memoizing supplier.
    *
    * @param state
    * @return
    */
   public Supplier<ValidatorExitContext> createValidatorExitContextSupplier(
       final BeaconState state) {
-    return Suppliers.memoize(
-        () -> {
-          final ValidatorExitContext validatorExitContext =
-              new ValidatorExitContext(beaconStateAccessors.getValidatorChurnLimit(state));
+    return Suppliers.memoize(() -> createValidatorExitContext(state));
+  }
 
-          validatorExitContext.exitQueueEpoch = UInt64.ZERO;
+  /**
+   * This function implements an optimized version of exitQueueEpoch and exitQueueChurn calculation,
+   * compared to the `initiateValidatorExit` reference implementation.
+   *
+   * @param state
+   * @return
+   */
+  private ValidatorExitContext createValidatorExitContext(final BeaconState state) {
+    final ValidatorExitContext validatorExitContext =
+        new ValidatorExitContext(beaconStateAccessors.getValidatorChurnLimit(state));
 
-          final List<Validator> exitedValidatorsInExitQueueEpoch = new ArrayList<>();
+    validatorExitContext.exitQueueEpoch = UInt64.ZERO;
 
-          for (Validator validator : state.getValidators()) {
-            final UInt64 validatorExitEpoch = validator.getExitEpoch();
-            if (validatorExitEpoch.equals(FAR_FUTURE_EPOCH)) {
-              continue;
-            }
-            if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
-              exitedValidatorsInExitQueueEpoch.clear();
-              validatorExitContext.exitQueueEpoch = validatorExitEpoch;
-              exitedValidatorsInExitQueueEpoch.add(validator);
-              continue;
-            }
-            if (validatorExitEpoch.equals(validatorExitContext.exitQueueEpoch)) {
-              exitedValidatorsInExitQueueEpoch.add(validator);
-            }
-          }
-          final UInt64 activationExitEpoch =
-              miscHelpers.computeActivationExitEpoch(beaconStateAccessors.getCurrentEpoch(state));
+    final List<Validator> exitedValidatorsInExitQueueEpoch = new ArrayList<>();
 
-          if (activationExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
-            validatorExitContext.exitQueueEpoch = activationExitEpoch;
-            validatorExitContext.exitQueueChurn = UInt64.ZERO;
-          } else {
-            validatorExitContext.exitQueueChurn =
-                UInt64.valueOf(exitedValidatorsInExitQueueEpoch.size());
-          }
+    for (Validator validator : state.getValidators()) {
+      final UInt64 validatorExitEpoch = validator.getExitEpoch();
+      if (validatorExitEpoch.equals(FAR_FUTURE_EPOCH)) {
+        continue;
+      }
+      if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
+        exitedValidatorsInExitQueueEpoch.clear();
+        validatorExitContext.exitQueueEpoch = validatorExitEpoch;
+        exitedValidatorsInExitQueueEpoch.add(validator);
+        continue;
+      }
+      if (validatorExitEpoch.equals(validatorExitContext.exitQueueEpoch)) {
+        exitedValidatorsInExitQueueEpoch.add(validator);
+      }
+    }
+    final UInt64 activationExitEpoch =
+        miscHelpers.computeActivationExitEpoch(beaconStateAccessors.getCurrentEpoch(state));
 
-          return validatorExitContext;
-        });
+    if (activationExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
+      validatorExitContext.exitQueueEpoch = activationExitEpoch;
+      validatorExitContext.exitQueueChurn = UInt64.ZERO;
+    } else {
+      validatorExitContext.exitQueueChurn = UInt64.valueOf(exitedValidatorsInExitQueueEpoch.size());
+    }
+
+    return validatorExitContext;
   }
 
   public static class ValidatorExitContext {
