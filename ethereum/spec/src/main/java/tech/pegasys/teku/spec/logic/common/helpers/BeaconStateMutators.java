@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class BeaconStateMutators {
@@ -66,6 +67,23 @@ public class BeaconStateMutators {
         .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
   }
 
+  /**
+   * Initiate the exit of the validator with index ``index``.
+   *
+   * <p>This function differs from the reference implementation because it was too slow. The current
+   * implementation relies on a lazily initialized context which compute the initial values for
+   * `exitQueueEpoch` and `exitQueueChurn`. Consecutive initiateValidatorExit calls will
+   * progressively update the context values without the need of recomputing them from the state.
+   *
+   * <p>The assumption is that validators' `exitEpoch` and the context are only updated via this
+   * function so that they can be maintained aligned.
+   *
+   * @param state
+   * @param index
+   * @param validatorExitContextSupplier
+   * @see
+   *     <a>https://github.com/ethereum/consensus-specs/blob/v1.2.0/specs/phase0/beacon-chain.md#initiate_validator_exit</a>
+   */
   public void initiateValidatorExit(
       final MutableBeaconState state,
       final int index,
@@ -98,8 +116,15 @@ public class BeaconStateMutators {
                         specConfig.getMinValidatorWithdrawabilityDelay())));
   }
 
+  /**
+   * This function implements an optimized version of exitQueueEpoch and exitQueueChurn calculation,
+   * compared to the `initiateValidatorExit` reference implementation.
+   *
+   * @param state
+   * @return
+   */
   public Supplier<ValidatorExitContext> createValidatorExitContextSupplier(
-      final MutableBeaconState state) {
+      final BeaconState state) {
     return Suppliers.memoize(
         () -> {
           final ValidatorExitContext validatorExitContext =
