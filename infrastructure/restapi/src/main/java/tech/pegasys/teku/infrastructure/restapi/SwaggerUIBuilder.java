@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
 public class SwaggerUIBuilder {
   // Version here MUST match `swagger-ui` library version
-  private static final String SWAGGER_UI_VERSION = "4.18.1";
+  private static final String SWAGGER_UI_VERSION = "4.18.2";
 
   private static final String SWAGGER_UI_PATH = "/swagger-ui";
   private static final String SWAGGER_HOSTED_PATH = "/webjars/swagger-ui/" + SWAGGER_UI_VERSION;
