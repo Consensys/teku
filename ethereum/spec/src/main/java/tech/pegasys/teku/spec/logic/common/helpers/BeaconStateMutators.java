@@ -76,7 +76,7 @@ public class BeaconStateMutators {
    * progressively update the context values without the need of recomputing them from the state.
    *
    * <p>The assumption is that validators' `exitEpoch` and the context are only updated via this
-   * function so that they can be maintained aligned.
+   * function so that they can be maintained consistent and aligned with the state
    *
    * @param state
    * @param index
