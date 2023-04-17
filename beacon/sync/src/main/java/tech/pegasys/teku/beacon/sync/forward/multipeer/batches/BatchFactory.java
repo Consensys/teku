@@ -21,15 +21,15 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 public class BatchFactory {
 
   private final EventThread eventThread;
-  private final BlobSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
 
   public BatchFactory(
       final EventThread eventThread,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final ConflictResolutionStrategy conflictResolutionStrategy) {
     this.eventThread = eventThread;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     this.conflictResolutionStrategy = conflictResolutionStrategy;
   }
 
@@ -40,7 +40,7 @@ public class BatchFactory {
         eventThread,
         new SyncSourceBatch(
             eventThread,
-            blobsSidecarManager,
+            blobSidecarManager,
             syncSourceProvider,
             conflictResolutionStrategy,
             chain,

@@ -30,7 +30,7 @@ public class SinglePeerSyncServiceFactory {
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final Spec spec) {
     final SyncManager syncManager =
         SyncManager.create(
@@ -38,7 +38,7 @@ public class SinglePeerSyncServiceFactory {
             p2pNetwork,
             recentChainData,
             blockImporter,
-            blobsSidecarManager,
+            blobSidecarManager,
             metricsSystem,
             spec);
     return new SinglePeerSyncService(syncManager, recentChainData);

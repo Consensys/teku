@@ -527,7 +527,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
     if (blocks.isEmpty()) {
       return;
     }
@@ -846,7 +846,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void removeBlobSidecars(UInt64 slot) {
+  public void removeBlobSidecars(final UInt64 slot) {
     try (final FinalizedUpdater updater = finalizedUpdater();
         final Stream<SlotAndBlockRootAndBlobIndex> keyStream = streamBlobSidecarKeys(slot, slot)) {
       keyStream.forEach(updater::removeBlobSidecar);

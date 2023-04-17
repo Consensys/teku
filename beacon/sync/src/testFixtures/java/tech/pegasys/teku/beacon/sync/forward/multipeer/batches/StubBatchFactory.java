@@ -36,7 +36,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   private final Map<Batch, BatchSupport> batchSupports = new HashMap<>();
 
   private final EventThread eventThread;
-  private final BlobSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
   private final boolean enforceEventThread;
 
   public StubBatchFactory(final EventThread eventThread, final boolean enforceEventThread) {
@@ -45,10 +45,10 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
 
   public StubBatchFactory(
       final EventThread eventThread,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final boolean enforceEventThread) {
-    super(eventThread, blobsSidecarManager, null);
-    this.blobsSidecarManager = blobsSidecarManager;
+    super(eventThread, blobSidecarManager, null);
+    this.blobSidecarManager = blobSidecarManager;
     this.eventThread = eventThread;
     this.enforceEventThread = enforceEventThread;
   }
@@ -100,7 +100,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   @Override
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
     final BatchSupport support =
-        new BatchSupport(eventThread, blobsSidecarManager, chain, start, count);
+        new BatchSupport(eventThread, blobSidecarManager, chain, start, count);
     batches.add(support.batch);
     // Can look up batch support by either the wrapped or unwrapped batch
     batchSupports.put(support.batch, support);

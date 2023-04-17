@@ -562,7 +562,7 @@ public class ChainBuilder {
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else if (denebMilestoneReached(slot)) {
         nextBlockAndState =
-            generateBlockWithBlobsSidecar(
+            generateBlockWithBlobSidecar(
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else {
         nextBlockAndState =
@@ -605,7 +605,7 @@ public class ChainBuilder {
             options.getSkipStateTransition()));
   }
 
-  private SignedBlockAndState generateBlockWithBlobsSidecar(
+  private SignedBlockAndState generateBlockWithBlobSidecar(
       final UInt64 slot,
       final BlockOptions options,
       final BeaconState preState,
@@ -639,27 +639,29 @@ public class ChainBuilder {
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecar> blobSidecars =
-          options.blobSidecars.orElseGet(
-              () -> {
-                if (options.getBlobs().isPresent()) {
-                  return IntStream.range(0, options.getBlobs().get().size())
-                      .mapToObj(
-                          index ->
-                              new BlobSidecar(
-                                  blobSidecarSchema,
-                                  nextBlockAndState.getRoot(),
-                                  UInt64.valueOf(index),
-                                  slot,
-                                  parentRoot,
-                                  UInt64.ZERO,
-                                  options.getBlobs().get().get(index),
-                                  KZGCommitment.infinity(),
-                                  KZGProof.INFINITY))
-                      .collect(Collectors.toList());
-                } else {
-                  return Collections.emptyList();
-                }
-              });
+          options
+              .getBlobSidecars()
+              .orElseGet(
+                  () -> {
+                    if (options.getBlobs().isPresent()) {
+                      return IntStream.range(0, options.getBlobs().get().size())
+                          .mapToObj(
+                              index ->
+                                  new BlobSidecar(
+                                      blobSidecarSchema,
+                                      nextBlockAndState.getRoot(),
+                                      UInt64.valueOf(index),
+                                      slot,
+                                      parentRoot,
+                                      UInt64.ZERO,
+                                      options.getBlobs().get().get(index),
+                                      KZGCommitment.infinity(),
+                                      KZGProof.INFINITY))
+                          .collect(Collectors.toList());
+                    } else {
+                      return Collections.emptyList();
+                    }
+                  });
       trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecars);
     }
 

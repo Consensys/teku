@@ -49,7 +49,7 @@ public abstract class AbstractSyncTest {
   protected final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
-  protected final BlobSidecarManager blobsSidecarManager = mock(BlobSidecarManager.class);
+  protected final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -100,7 +100,7 @@ public abstract class AbstractSyncTest {
     final List<BlobSidecar> blobSidecars =
         respondWithBlobSidecarsAtSlots(request, responseListener, startSlot, count);
     for (final BlobSidecar blobSidecar : blobSidecars) {
-      verify(blobsSidecarManager).importBlobSidecar(blobSidecar);
+      verify(blobSidecarManager).importBlobSidecar(blobSidecar);
     }
     request.complete(null);
     asyncRunner.executeQueuedActions();

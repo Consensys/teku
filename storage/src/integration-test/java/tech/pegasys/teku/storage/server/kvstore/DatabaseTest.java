@@ -48,6 +48,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -378,6 +379,7 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  @Disabled("TODO: pruning for BlobSidecar and uncomment")
   public void shouldPruneHotBlocksAddedOverMultipleSessions(final DatabaseContext context)
       throws IOException {
     initialize(context);
@@ -464,9 +466,8 @@ public class DatabaseTest {
             .map(SignedBlockAndState::getBlock)
             .collect(toList());
 
-    // TODO: when pruning is done for BlobSidecars
-    //    assertBlobsSidecarAvailabilityExceptPruned(
-    //        canonicalBlocksWithAvailableSidecars, List.of(blockA.getBlock(), blockB.getBlock()));
+    assertBlobsSidecarAvailabilityExceptPruned(
+        canonicalBlocksWithAvailableSidecars, List.of(blockA.getBlock(), blockB.getBlock()));
   }
 
   @TestTemplate

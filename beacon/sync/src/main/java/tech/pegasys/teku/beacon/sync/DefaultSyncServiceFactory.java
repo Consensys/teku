@@ -66,7 +66,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final StorageUpdateChannel storageUpdateChannel;
   private final Eth2P2PNetwork p2pNetwork;
   private final BlockImporter blockImporter;
-  private final BlobSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlobSidecarPool blobSidecarPool;
   private final int getStartupTargetPeerCount;
@@ -86,7 +86,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final StorageUpdateChannel storageUpdateChannel,
       final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final BlobSidecarPool blobSidecarPool,
       final int getStartupTargetPeerCount,
@@ -104,7 +104,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.storageUpdateChannel = storageUpdateChannel;
     this.p2pNetwork = p2pNetwork;
     this.blockImporter = blockImporter;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     this.pendingBlocks = pendingBlocks;
     this.blobSidecarPool = blobSidecarPool;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
@@ -184,7 +184,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               pendingBlocks,
               p2pNetwork,
               blockImporter,
-              blobsSidecarManager,
+              blobSidecarManager,
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -195,7 +195,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               p2pNetwork,
               recentChainData,
               blockImporter,
-              blobsSidecarManager,
+              blobSidecarManager,
               spec);
     }
     return forwardSync;

@@ -49,19 +49,19 @@ class BatchImporterTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
-  private final BlobSidecarManager blobsSidecarManager = mock(BlobSidecarManager.class);
+  private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Batch batch = mock(Batch.class);
   final SyncSource syncSource = mock(SyncSource.class);
 
   private final BatchImporter importer =
-      new BatchImporter(blockImporter, blobsSidecarManager, asyncRunner);
+      new BatchImporter(blockImporter, blobSidecarManager, asyncRunner);
 
   @BeforeEach
   public void setup() {
     when(batch.getSource()).thenReturn(Optional.of(syncSource));
     when(batch.getBlobSidecarsByBlockRoot()).thenReturn(Map.of());
-    when(blobsSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
+    when(blobSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -82,7 +82,7 @@ class BatchImporterTest {
 
     // Should not be started on the calling thread
     verifyNoInteractions(blockImporter);
-    verifyNoInteractions(blobsSidecarManager);
+    verifyNoInteractions(blobSidecarManager);
 
     // We should have copied the blocks and blob sidecars to avoid accessing the Batch data from
     // other threads
@@ -128,7 +128,7 @@ class BatchImporterTest {
 
     // Should not be started on the calling thread
     verifyNoInteractions(blockImporter);
-    verifyNoInteractions(blobsSidecarManager);
+    verifyNoInteractions(blobSidecarManager);
 
     // We should have copied the blocks and blob sidecars  to avoid accessing the Batch data from
     // other threads
@@ -251,8 +251,8 @@ class BatchImporterTest {
 
   private void blobSidecarsImportedSuccessfully(final List<BlobSidecar> blobSidecars) {
     blobSidecars.forEach(
-        blobSidecar -> ignoreFuture(verify(blobsSidecarManager).importBlobSidecar(blobSidecar)));
-    verifyNoMoreInteractions(blobsSidecarManager);
+        blobSidecar -> ignoreFuture(verify(blobSidecarManager).importBlobSidecar(blobSidecar)));
+    verifyNoMoreInteractions(blobSidecarManager);
   }
 
   private void blockImportedSuccessfully(

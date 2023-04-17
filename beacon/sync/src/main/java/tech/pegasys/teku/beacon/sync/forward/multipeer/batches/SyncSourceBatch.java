@@ -50,7 +50,7 @@ public class SyncSourceBatch implements Batch {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final BlobSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
   private final SyncSourceSelector syncSourceProvider;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
   private final TargetChain targetChain;
@@ -69,7 +69,7 @@ public class SyncSourceBatch implements Batch {
 
   SyncSourceBatch(
       final EventThread eventThread,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final SyncSourceSelector syncSourceProvider,
       final ConflictResolutionStrategy conflictResolutionStrategy,
       final TargetChain targetChain,
@@ -78,7 +78,7 @@ public class SyncSourceBatch implements Batch {
     checkArgument(
         count.isGreaterThanOrEqualTo(UInt64.ONE), "Must include at least one slot in a batch");
     this.eventThread = eventThread;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     this.syncSourceProvider = syncSourceProvider;
     this.conflictResolutionStrategy = conflictResolutionStrategy;
     this.targetChain = targetChain;
@@ -230,7 +230,7 @@ public class SyncSourceBatch implements Batch {
     final SafeFuture<Void> blobSidecarsRequest;
     final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler;
 
-    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
       LOG.debug(
           "Requesting blob sidecars for {} slots starting at {} from peer {}",
           remainingSlots,

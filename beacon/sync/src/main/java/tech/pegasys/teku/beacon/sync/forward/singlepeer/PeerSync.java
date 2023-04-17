@@ -69,7 +69,7 @@ public class PeerSync {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
-  private final BlobSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
@@ -85,13 +85,13 @@ public class PeerSync {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -170,7 +170,7 @@ public class PeerSync {
 
               final SafeFuture<Void> blobSidecarsRequest;
 
-              if (blobsSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
+              if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
                     "Request {} blob sidecars starting at {} from peer {}",
                     requestContext.count,
@@ -366,7 +366,7 @@ public class PeerSync {
               sidecarSlot, startSlot, endSlot);
       return SafeFuture.failedFuture(new FailedBlobSidecarImportException(exceptionMessage));
     }
-    return blobsSidecarManager
+    return blobSidecarManager
         .importBlobSidecar(blobSidecar)
         .exceptionallyCompose(
             error -> {

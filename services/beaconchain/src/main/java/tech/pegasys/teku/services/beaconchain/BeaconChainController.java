@@ -244,7 +244,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
-  protected volatile BlobSidecarManager blobsSidecarManager;
+  protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
@@ -310,10 +310,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
         syncService.getRecentBlobSidecarFetcher();
     recentBlobSidecarFetcher.subscribeBlobSidecarFetched(
         (blobSidecar) ->
-            blobsSidecarManager
+            blobSidecarManager
                 .importBlobSidecar(blobSidecar)
                 .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
-    blobsSidecarManager.subscribeToImportedBlobSidecars(
+    blobSidecarManager.subscribeToImportedBlobSidecars(
         blobSidecar ->
             recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
@@ -468,9 +468,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               storageUpdateChannel);
       eventChannels.subscribe(SlotEventsChannel.class, blobsSidecarManagerImpl);
 
-      blobsSidecarManager = blobsSidecarManagerImpl;
+      blobSidecarManager = blobsSidecarManagerImpl;
     } else {
-      blobsSidecarManager = BlobSidecarManager.NOOP;
+      blobSidecarManager = BlobSidecarManager.NOOP;
     }
   }
 
@@ -653,7 +653,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             forkChoiceExecutor,
             recentChainData,
-            blobsSidecarManager,
+            blobSidecarManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -898,7 +898,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-            .gossipedBlobSidecarProcessor(blobsSidecarManager::validateAndImportBlobSidecar)
+            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndImportBlobSidecar)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
@@ -1047,7 +1047,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         storageUpdateChannel,
         p2pNetwork,
         blockImporter,
-        blobsSidecarManager,
+        blobSidecarManager,
         pendingBlocks,
         blobSidecarPool,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),

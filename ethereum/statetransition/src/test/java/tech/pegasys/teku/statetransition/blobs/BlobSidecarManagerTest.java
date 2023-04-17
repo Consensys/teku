@@ -54,7 +54,7 @@ public class BlobSidecarManagerTest {
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final BlobSidecarValidator blobSidecarValidator = mock(BlobSidecarValidator.class);
-  private final BlobSidecarManagerImpl blobsSidecarManager =
+  private final BlobSidecarManagerImpl blobSidecarManager =
       new BlobSidecarManagerImpl(
           mockedSpec,
           recentChainData,
@@ -73,7 +73,7 @@ public class BlobSidecarManagerTest {
   @Test
   void shouldStoreUnconfirmedValidatedBlobsSidecar() {
     final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobsSidecar);
+    blobSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobsSidecar);
 
     verify(storageUpdateChannel).onBlobsSidecar(blobsSidecar);
   }
@@ -81,7 +81,7 @@ public class BlobSidecarManagerTest {
   @Test
   void shouldStoreUnconfirmedBlobsSidecar() {
     final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar);
+    blobSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar);
 
     verify(storageUpdateChannel).onBlobsSidecar(blobsSidecar);
   }
@@ -91,11 +91,11 @@ public class BlobSidecarManagerTest {
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar();
 
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(
+    blobSidecarManager.storeUnconfirmedValidatedBlobsSidecar(
         blockAndBlobsSidecar.getBlobsSidecar());
 
     final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobsSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
+        blobSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
@@ -111,7 +111,7 @@ public class BlobSidecarManagerTest {
         dataStructureUtil.randomSignedBeaconBlockWithEmptyCommitments();
 
     final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobsSidecarManager.createAvailabilityChecker(blockWithEmptyCommitments);
+        blobSidecarManager.createAvailabilityChecker(blockWithEmptyCommitments);
 
     assertThat(blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
     assertThat(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
@@ -126,10 +126,10 @@ public class BlobSidecarManagerTest {
     final SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar =
         dataStructureUtil.randomConsistentSignedBeaconBlockAndBlobsSidecar();
 
-    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blockAndBlobsSidecar.getBlobsSidecar());
+    blobSidecarManager.storeUnconfirmedBlobsSidecar(blockAndBlobsSidecar.getBlobsSidecar());
 
     final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobsSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
+        blobSidecarManager.createAvailabilityChecker(blockAndBlobsSidecar.getSignedBeaconBlock());
 
     when(storageQueryChannel.getBlobsSidecar(any()))
         .thenReturn(
@@ -154,24 +154,24 @@ public class BlobSidecarManagerTest {
     final BlobsSidecar blobs1 = dataStructureUtil.randomBlobsSidecar(blockRoot, UInt64.ONE);
     final BlobsSidecar blobs2 = dataStructureUtil.randomBlobsSidecar(blockRoot, UInt64.valueOf(2));
 
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs1);
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs2);
+    blobSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs1);
+    blobSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs2);
 
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
         .containsEntry(blockRoot, blobs1);
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
         .containsEntry(blockRoot, blobs2);
 
-    blobsSidecarManager.onSlot(UInt64.valueOf(2));
+    blobSidecarManager.onSlot(UInt64.valueOf(2));
 
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
         .containsEntry(blockRoot, blobs1);
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
         .containsEntry(blockRoot, blobs2);
 
-    blobsSidecarManager.onSlot(UInt64.valueOf(4));
+    blobSidecarManager.onSlot(UInt64.valueOf(4));
 
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE)).isEmpty();
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2))).isEmpty();
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE)).isEmpty();
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2))).isEmpty();
   }
 }

@@ -36,13 +36,13 @@ public class ChainUpdater {
 
   public final RecentChainData recentChainData;
   public final ChainBuilder chainBuilder;
-  public final BlobSidecarManager blobsSidecarManager;
+  public final BlobSidecarManager blobSidecarManager;
   public final Spec spec;
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
-    this.blobsSidecarManager = BlobSidecarManager.NOOP;
+    this.blobSidecarManager = BlobSidecarManager.NOOP;
     this.spec = TestSpecFactory.createMinimalPhase0();
   }
 
@@ -51,18 +51,18 @@ public class ChainUpdater {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.spec = spec;
-    this.blobsSidecarManager = BlobSidecarManager.NOOP;
+    this.blobSidecarManager = BlobSidecarManager.NOOP;
   }
 
   public ChainUpdater(
       final RecentChainData recentChainData,
       final ChainBuilder chainBuilder,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final Spec spec) {
     this.recentChainData = recentChainData;
     this.chainBuilder = chainBuilder;
     this.spec = spec;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
   }
 
   public UInt64 getHeadSlot() {
@@ -235,7 +235,7 @@ public class ChainUpdater {
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
     Optional<BlobsSidecar> maybeBlobsSideCar = chainBuilder.getBlobsSidecar(block.getRoot());
-    maybeBlobsSideCar.ifPresent(blobsSidecarManager::storeUnconfirmedBlobsSidecar);
+    maybeBlobsSideCar.ifPresent(blobSidecarManager::storeUnconfirmedBlobsSidecar);
     saveBlock(block);
     return block;
   }

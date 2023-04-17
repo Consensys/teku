@@ -36,8 +36,8 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
 
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
-      Collection<SignedBeaconBlock> finalizedBlocks,
-      Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
     return SafeFuture.COMPLETE;
   }
 

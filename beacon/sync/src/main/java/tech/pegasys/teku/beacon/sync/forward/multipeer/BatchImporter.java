@@ -37,15 +37,15 @@ public class BatchImporter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
-  private final BlobSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
   private final AsyncRunner asyncRunner;
 
   public BatchImporter(
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final AsyncRunner asyncRunner) {
     this.blockImporter = blockImporter;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     this.asyncRunner = asyncRunner;
   }
 
@@ -136,7 +136,7 @@ public class BatchImporter {
 
   private SafeFuture<Void> importBlobSidecars(final List<BlobSidecar> blobSidecars) {
     return SafeFuture.allOfFailFast(
-        blobSidecars.stream().map(blobsSidecarManager::importBlobSidecar));
+        blobSidecars.stream().map(blobSidecarManager::importBlobSidecar));
   }
 
   public enum BatchImportResult {

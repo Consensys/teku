@@ -88,12 +88,12 @@ public class SyncManager extends Service {
       final P2PNetwork<Eth2Peer> network,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final MetricsSystem metricsSystem,
       final Spec spec) {
     final PeerSync peerSync =
         new PeerSync(
-            asyncRunner, recentChainData, blockImporter, blobsSidecarManager, metricsSystem);
+            asyncRunner, recentChainData, blockImporter, blobSidecarManager, metricsSystem);
     return new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);
   }
 
