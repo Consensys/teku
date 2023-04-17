@@ -124,13 +124,16 @@ public class BeaconStateMutators {
               exitedValidatorsInExitQueueEpoch.add(validator);
             }
           }
-          validatorExitContext.exitQueueEpoch =
-              validatorExitContext.exitQueueEpoch.max(
-                  miscHelpers.computeActivationExitEpoch(
-                      beaconStateAccessors.getCurrentEpoch(state)));
+          final UInt64 activationExitEpoch =
+              miscHelpers.computeActivationExitEpoch(beaconStateAccessors.getCurrentEpoch(state));
 
-          validatorExitContext.exitQueueChurn =
-              UInt64.valueOf(exitedValidatorsInExitQueueEpoch.size());
+          if (activationExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
+            validatorExitContext.exitQueueEpoch = activationExitEpoch;
+            validatorExitContext.exitQueueChurn = UInt64.ZERO;
+          } else {
+            validatorExitContext.exitQueueChurn =
+                UInt64.valueOf(exitedValidatorsInExitQueueEpoch.size());
+          }
 
           return validatorExitContext;
         });
