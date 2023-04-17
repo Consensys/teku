@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,24 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlindedBlobSidecarSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.SignedBlindedBlobSidecarsSupplier;
 
-public class SignedBlindedBlobSidecarPropertyTest {
+public class SignedBlindedBlobSidecarsPropertyTest {
 
   @Property
   void roundTrip(
-      @ForAll(supplier = SignedBlindedBlobSidecarSupplier.class)
-          final SignedBlindedBlobSidecar signedBlindedBlobSidecar)
+      @ForAll(supplier = SignedBlindedBlobSidecarsSupplier.class)
+          final SignedBlindedBlobSidecars signedBlindedBlobSidecars)
       throws JsonProcessingException {
-    assertRoundTrip(signedBlindedBlobSidecar);
+    assertRoundTrip(signedBlindedBlobSidecars);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SignedBlindedBlobSidecarSupplier.class)
-          final SignedBlindedBlobSidecar signedBlindedBlobSidecar,
+      @ForAll(supplier = SignedBlindedBlobSidecarsSupplier.class)
+          final SignedBlindedBlobSidecars signedBlindedBlobSidecars,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(signedBlindedBlobSidecar, seed);
+    assertDeserializeMutatedThrowsExpected(signedBlindedBlobSidecars, seed);
   }
 }

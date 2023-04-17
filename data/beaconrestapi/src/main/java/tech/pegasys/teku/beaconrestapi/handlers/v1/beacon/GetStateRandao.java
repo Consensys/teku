@@ -69,7 +69,7 @@ public class GetStateRandao extends RestApiEndpoint {
             .build();
     return EndpointMetadata.get(ROUTE)
         .operationId("getStateRandao")
-        .summary("Get chain genesis details")
+        .summary("Get state RANDAO")
         .description(
             "Fetch the RANDAO mix for the requested epoch from the state identified by `state_id`.\n\n"
                 + "If an epoch is not specified then the RANDAO mix for the state's current epoch will be returned.\n\n"
