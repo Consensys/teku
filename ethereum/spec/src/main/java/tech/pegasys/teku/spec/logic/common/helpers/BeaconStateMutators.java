@@ -145,15 +145,22 @@ public class BeaconStateMutators {
 
           validatorExitContext.exitQueueEpoch = UInt64.ZERO;
 
-          final List<Validator> exitedValidators = new ArrayList<>();
+          final List<Validator> exitedValidatorsInExitQueueEpoch = new ArrayList<>();
 
           for (Validator validator : state.getValidators()) {
-            if (validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
+            final UInt64 validatorExitEpoch = validator.getExitEpoch();
+            if (validatorExitEpoch.equals(FAR_FUTURE_EPOCH)) {
               continue;
             }
-            validatorExitContext.exitQueueEpoch =
-                validatorExitContext.exitQueueEpoch.max(validator.getExitEpoch());
-            exitedValidators.add(validator);
+            if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
+              exitedValidatorsInExitQueueEpoch.clear();
+              validatorExitContext.exitQueueEpoch = validatorExitEpoch;
+              exitedValidatorsInExitQueueEpoch.add(validator);
+              continue;
+            }
+            if (validatorExitEpoch.equals(validatorExitContext.exitQueueEpoch)) {
+              exitedValidatorsInExitQueueEpoch.add(validator);
+            }
           }
           validatorExitContext.exitQueueEpoch =
               validatorExitContext.exitQueueEpoch.max(
@@ -161,10 +168,7 @@ public class BeaconStateMutators {
                       beaconStateAccessors.getCurrentEpoch(state)));
 
           validatorExitContext.exitQueueChurn =
-              UInt64.valueOf(
-                  exitedValidators.stream()
-                      .filter(v -> v.getExitEpoch().equals(validatorExitContext.exitQueueEpoch))
-                      .count());
+              UInt64.valueOf(exitedValidatorsInExitQueueEpoch.size());
 
           return validatorExitContext;
         });
