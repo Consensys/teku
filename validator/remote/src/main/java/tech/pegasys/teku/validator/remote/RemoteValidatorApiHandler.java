@@ -33,7 +33,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -290,7 +289,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BlockContents>> createUnsignedBlockContents(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    throw new NotImplementedException("Not Yet Implemented");
+    return sendRequest(
+        () -> typeDefClient.createUnsignedBlockContents(slot, randaoReveal, graffiti));
   }
 
   @Override
