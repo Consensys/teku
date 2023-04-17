@@ -449,15 +449,22 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                       .getDepositCount()
                       .minus(state.getEth1DepositIndex())
                       .intValue());
+
+          final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+              beaconStateMutators.createValidatorExitContextSupplier(state);
+
           checkArgument(
               body.getDeposits().size() == expectedDepositCount,
               "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
-          processProposerSlashingsNoValidation(state, body.getProposerSlashings());
-          processAttesterSlashings(state, body.getAttesterSlashings());
+          processProposerSlashingsNoValidation(
+              state, body.getProposerSlashings(), validatorExitContextSupplier);
+          processAttesterSlashings(
+              state, body.getAttesterSlashings(), validatorExitContextSupplier);
           processAttestationsNoVerification(state, body.getAttestations(), indexedAttestationCache);
           processDeposits(state, body.getDeposits());
-          processVoluntaryExitsNoValidation(state, body.getVoluntaryExits());
+          processVoluntaryExitsNoValidation(
+              state, body.getVoluntaryExits(), validatorExitContextSupplier);
           // @process_shard_receipt_proofs
         });
   }
@@ -468,7 +475,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SszList<ProposerSlashing> proposerSlashings,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
-    processProposerSlashingsNoValidation(state, proposerSlashings);
+    final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+        beaconStateMutators.createValidatorExitContextSupplier(state);
+    processProposerSlashingsNoValidation(state, proposerSlashings, validatorExitContextSupplier);
     final BlockValidationResult validationResult =
         verifyProposerSlashings(state, proposerSlashings, signatureVerifier);
     if (!validationResult.isValid()) {
@@ -477,7 +486,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected void processProposerSlashingsNoValidation(
-      MutableBeaconState state, SszList<ProposerSlashing> proposerSlashings)
+      final MutableBeaconState state,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -492,15 +503,17 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
             beaconStateMutators.slashValidator(
-                state, proposerSlashing.getHeader1().getMessage().getProposerIndex().intValue());
+                state,
+                proposerSlashing.getHeader1().getMessage().getProposerIndex().intValue(),
+                validatorExitContextSupplier);
           }
         });
   }
 
   protected BlockValidationResult verifyProposerSlashings(
-      BeaconState state,
-      SszList<ProposerSlashing> proposerSlashings,
-      BLSSignatureVerifier signatureVerifier) {
+      final BeaconState state,
+      final SszList<ProposerSlashing> proposerSlashings,
+      final BLSSignatureVerifier signatureVerifier) {
     // For each proposer_slashing in block.body.proposer_slashings:
     for (ProposerSlashing proposerSlashing : proposerSlashings) {
 
@@ -517,7 +530,21 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public void processAttesterSlashings(
-      MutableBeaconState state, SszList<AttesterSlashing> attesterSlashings)
+      final MutableBeaconState state, final SszList<AttesterSlashing> attesterSlashings)
+      throws BlockProcessingException {
+    safelyProcess(
+        () -> {
+          final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+              beaconStateMutators.createValidatorExitContextSupplier(state);
+          processAttesterSlashings(state, attesterSlashings, validatorExitContextSupplier);
+        });
+  }
+
+  @Override
+  public void processAttesterSlashings(
+      final MutableBeaconState state,
+      final SszList<AttesterSlashing> attesterSlashings,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
     safelyProcess(
         () -> {
@@ -534,7 +561,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
             indicesToSlash.forEach(
-                indexToSlash -> beaconStateMutators.slashValidator(state, indexToSlash.intValue()));
+                indexToSlash ->
+                    beaconStateMutators.slashValidator(
+                        state, indexToSlash.intValue(), validatorExitContextSupplier));
           }
         });
   }
@@ -783,8 +812,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SszList<SignedVoluntaryExit> exits,
       final BLSSignatureVerifier signatureVerifier)
       throws BlockProcessingException {
-
-    processVoluntaryExitsNoValidation(state, exits);
+    final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+        beaconStateMutators.createValidatorExitContextSupplier(state);
+    processVoluntaryExitsNoValidation(state, exits, validatorExitContextSupplier);
     BlockValidationResult signaturesValid =
         verifyVoluntaryExits(state, exits, BLSSignatureVerifier.SIMPLE);
     if (!signaturesValid.isValid()) {
@@ -793,18 +823,13 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected void processVoluntaryExitsNoValidation(
-      MutableBeaconState state, SszList<SignedVoluntaryExit> exits)
+      final MutableBeaconState state,
+      final SszList<SignedVoluntaryExit> exits,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier)
       throws BlockProcessingException {
 
     safelyProcess(
         () -> {
-          if (exits.isEmpty()) {
-            return;
-          }
-
-          final Supplier<ValidatorExitContext> validatorExitContextSupplier =
-              beaconStateMutators.createValidatorExitContextSupplier(state);
-
           // For each exit in block.body.voluntaryExits:
           for (SignedVoluntaryExit signedExit : exits) {
             Optional<OperationInvalidReason> invalidReason =
@@ -817,6 +842,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             // - Run initiate_validator_exit(state, exit.validator_index)
 
             beaconStateMutators.initiateValidatorExit(
+                state,
                 signedExit.getMessage().getValidatorIndex().intValue(),
                 validatorExitContextSupplier);
           }

@@ -24,6 +24,8 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
+import java.util.function.Supplier;
+
 public class BeaconStateMutatorsAltair extends BeaconStateMutators {
   private final SpecConfigAltair specConfigAltair;
 
@@ -46,8 +48,9 @@ public class BeaconStateMutatorsAltair extends BeaconStateMutators {
   }
 
   @Override
-  public void slashValidator(final MutableBeaconState state, final int slashedIndex) {
-    super.slashValidator(state, slashedIndex);
+  public void slashValidator(final MutableBeaconState state, final int slashedIndex,
+                             final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    super.slashValidator(state, slashedIndex,validatorExitContextSupplier);
     BeaconStateCache.getTransitionCaches(state)
         .getProgressiveTotalBalances()
         .onSlashing(state, slashedIndex);

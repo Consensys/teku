@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
-import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -33,9 +32,9 @@ public class BeaconStateMutators {
   private final BeaconStateAccessors beaconStateAccessors;
 
   public BeaconStateMutators(
-      final SpecConfig specConfig,
-      final MiscHelpers miscHelpers,
-      final BeaconStateAccessors beaconStateAccessors) {
+          final SpecConfig specConfig,
+          final MiscHelpers miscHelpers,
+          final BeaconStateAccessors beaconStateAccessors) {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
@@ -65,54 +64,18 @@ public class BeaconStateMutators {
    */
   public void decreaseBalance(MutableBeaconState state, int index, UInt64 delta) {
     state
-        .getBalances()
-        .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
-  }
-
-  public void initiateValidatorExit(MutableBeaconState state, int index) {
-    Validator validator = state.getValidators().get(index);
-    // Return if validator already initiated exit
-    if (!validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
-      return;
-    }
-
-    // Compute exit queue epoch
-    List<UInt64> exitEpochs =
-        state.getValidators().stream()
-            .map(Validator::getExitEpoch)
-            .filter(exitEpoch -> !exitEpoch.equals(FAR_FUTURE_EPOCH))
-            .collect(toList());
-    exitEpochs.add(
-        miscHelpers.computeActivationExitEpoch(beaconStateAccessors.getCurrentEpoch(state)));
-    UInt64 exitQueueEpoch = Collections.max(exitEpochs);
-    final UInt64 finalExitQueueEpoch = exitQueueEpoch;
-    UInt64 exitQueueChurn =
-        UInt64.valueOf(
-            state.getValidators().stream()
-                .filter(v -> v.getExitEpoch().equals(finalExitQueueEpoch))
-                .count());
-
-    if (exitQueueChurn.compareTo(beaconStateAccessors.getValidatorChurnLimit(state)) >= 0) {
-      exitQueueEpoch = exitQueueEpoch.plus(UInt64.ONE);
-    }
-
-    // Set validator exit epoch and withdrawable epoch
-    state
-        .getValidators()
-        .set(
-            index,
-            validator
-                .withExitEpoch(exitQueueEpoch)
-                .withWithdrawableEpoch(
-                    exitQueueEpoch.plus(specConfig.getMinValidatorWithdrawabilityDelay())));
+            .getBalances()
+            .setElement(index, state.getBalances().getElement(index).minusMinZero(delta));
   }
 
   public void initiateValidatorExit(
-      final int index, final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+          final MutableBeaconState state,
+          final int index,
+          final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
 
     final ValidatorExitContext validatorExitContext = validatorExitContextSupplier.get();
 
-    final Validator validator = validatorExitContext.validators.get(index);
+    final Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
     if (!validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
       return;
@@ -126,98 +89,103 @@ public class BeaconStateMutators {
     }
 
     // Set validator exit epoch and withdrawable epoch
-    validatorExitContext.validators.set(
-        index,
-        validator
-            .withExitEpoch(validatorExitContext.exitQueueEpoch)
-            .withWithdrawableEpoch(
-                validatorExitContext.exitQueueEpoch.plus(
-                    specConfig.getMinValidatorWithdrawabilityDelay())));
+    state
+            .getValidators()
+            .set(
+                    index,
+                    validator
+                            .withExitEpoch(validatorExitContext.exitQueueEpoch)
+                            .withWithdrawableEpoch(
+                                    validatorExitContext.exitQueueEpoch.plus(
+                                            specConfig.getMinValidatorWithdrawabilityDelay())));
   }
 
   public Supplier<ValidatorExitContext> createValidatorExitContextSupplier(
-      final MutableBeaconState state) {
+          final MutableBeaconState state) {
     return Suppliers.memoize(
-        () -> {
-          final ValidatorExitContext validatorExitContext =
-              new ValidatorExitContext(
-                  state.getValidators(), beaconStateAccessors.getValidatorChurnLimit(state));
+            () -> {
+              final ValidatorExitContext validatorExitContext =
+                      new ValidatorExitContext(beaconStateAccessors.getValidatorChurnLimit(state));
 
-          validatorExitContext.exitQueueEpoch = UInt64.ZERO;
+              validatorExitContext.exitQueueEpoch = UInt64.ZERO;
 
-          final List<Validator> exitedValidatorsInExitQueueEpoch = new ArrayList<>();
+              final List<Validator> exitedValidatorsInExitQueueEpoch = new ArrayList<>();
 
-          for (Validator validator : state.getValidators()) {
-            final UInt64 validatorExitEpoch = validator.getExitEpoch();
-            if (validatorExitEpoch.equals(FAR_FUTURE_EPOCH)) {
-              continue;
-            }
-            if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
-              exitedValidatorsInExitQueueEpoch.clear();
-              validatorExitContext.exitQueueEpoch = validatorExitEpoch;
-              exitedValidatorsInExitQueueEpoch.add(validator);
-              continue;
-            }
-            if (validatorExitEpoch.equals(validatorExitContext.exitQueueEpoch)) {
-              exitedValidatorsInExitQueueEpoch.add(validator);
-            }
-          }
-          validatorExitContext.exitQueueEpoch =
-              validatorExitContext.exitQueueEpoch.max(
-                  miscHelpers.computeActivationExitEpoch(
-                      beaconStateAccessors.getCurrentEpoch(state)));
+              for (Validator validator : state.getValidators()) {
+                final UInt64 validatorExitEpoch = validator.getExitEpoch();
+                if (validatorExitEpoch.equals(FAR_FUTURE_EPOCH)) {
+                  continue;
+                }
+                if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
+                  exitedValidatorsInExitQueueEpoch.clear();
+                  validatorExitContext.exitQueueEpoch = validatorExitEpoch;
+                  exitedValidatorsInExitQueueEpoch.add(validator);
+                  continue;
+                }
+                if (validatorExitEpoch.equals(validatorExitContext.exitQueueEpoch)) {
+                  exitedValidatorsInExitQueueEpoch.add(validator);
+                }
+              }
+              validatorExitContext.exitQueueEpoch =
+                      validatorExitContext.exitQueueEpoch.max(
+                              miscHelpers.computeActivationExitEpoch(
+                                      beaconStateAccessors.getCurrentEpoch(state)));
 
-          validatorExitContext.exitQueueChurn =
-              UInt64.valueOf(exitedValidatorsInExitQueueEpoch.size());
+              validatorExitContext.exitQueueChurn =
+                      UInt64.valueOf(exitedValidatorsInExitQueueEpoch.size());
 
-          return validatorExitContext;
-        });
+              return validatorExitContext;
+            });
   }
 
   public static class ValidatorExitContext {
     private UInt64 exitQueueEpoch;
     private UInt64 exitQueueChurn;
 
-    private final SszMutableList<Validator> validators;
     private final UInt64 churnLimit;
 
-    private ValidatorExitContext(
-        final SszMutableList<Validator> validators, final UInt64 churnLimit) {
-      this.validators = validators;
+    private ValidatorExitContext(final UInt64 churnLimit) {
       this.churnLimit = churnLimit;
     }
   }
 
-  public void slashValidator(MutableBeaconState state, int slashedIndex) {
-    slashValidator(state, slashedIndex, -1);
+  public void slashValidator(
+          final MutableBeaconState state,
+          final int slashedIndex,
+          final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    slashValidator(state, slashedIndex, -1, validatorExitContextSupplier);
   }
 
-  private void slashValidator(MutableBeaconState state, int slashedIndex, int whistleblowerIndex) {
+  private void slashValidator(
+          final MutableBeaconState state,
+          final int slashedIndex,
+          int whistleblowerIndex,
+          final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     UInt64 epoch = beaconStateAccessors.getCurrentEpoch(state);
-    initiateValidatorExit(state, slashedIndex);
+    initiateValidatorExit(state, slashedIndex, validatorExitContextSupplier);
 
     Validator validator = state.getValidators().get(slashedIndex);
 
     state
-        .getValidators()
-        .set(
-            slashedIndex,
-            validator
-                .withSlashed(true)
-                .withWithdrawableEpoch(
+            .getValidators()
+            .set(
+                    slashedIndex,
                     validator
-                        .getWithdrawableEpoch()
-                        .max(epoch.plus(specConfig.getEpochsPerSlashingsVector()))));
+                            .withSlashed(true)
+                            .withWithdrawableEpoch(
+                                    validator
+                                            .getWithdrawableEpoch()
+                                            .max(epoch.plus(specConfig.getEpochsPerSlashingsVector()))));
 
     int index = epoch.mod(specConfig.getEpochsPerSlashingsVector()).intValue();
     state
-        .getSlashings()
-        .setElement(
-            index, state.getSlashings().getElement(index).plus(validator.getEffectiveBalance()));
+            .getSlashings()
+            .setElement(
+                    index, state.getSlashings().getElement(index).plus(validator.getEffectiveBalance()));
     decreaseBalance(
-        state,
-        slashedIndex,
-        validator.getEffectiveBalance().dividedBy(getMinSlashingPenaltyQuotient()));
+            state,
+            slashedIndex,
+            validator.getEffectiveBalance().dividedBy(getMinSlashingPenaltyQuotient()));
 
     // Apply proposer and whistleblower rewards
     int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
@@ -226,7 +194,7 @@ public class BeaconStateMutators {
     }
 
     UInt64 whistleblowerReward =
-        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
+            validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
     UInt64 proposerReward = calculateProposerReward(whistleblowerReward);
     increaseBalance(state, proposerIndex, proposerReward);
     increaseBalance(state, whistleblowerIndex, whistleblowerReward.minus(proposerReward));

@@ -300,7 +300,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   /** Processes validator registry updates */
   @Override
-  public void processRegistryUpdates(MutableBeaconState state, List<ValidatorStatus> statuses)
+  public void processRegistryUpdates(
+      final MutableBeaconState state, final List<ValidatorStatus> statuses)
       throws EpochProcessingException {
     try {
 
@@ -331,7 +332,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
         if (status.isActiveInCurrentEpoch()
             && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(ejectionBalance)) {
-          beaconStateMutators.initiateValidatorExit(index, validatorExitContextSupplier);
+          beaconStateMutators.initiateValidatorExit(state, index, validatorExitContextSupplier);
         }
       }
       // Queue validators eligible for activation and not yet dequeued for activation
