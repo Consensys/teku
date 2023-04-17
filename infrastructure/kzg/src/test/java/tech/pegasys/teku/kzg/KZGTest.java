@@ -14,6 +14,7 @@
 package tech.pegasys.teku.kzg;
 
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -251,6 +252,13 @@ public final class KZGTest {
     final Throwable cause =
         assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup)).getCause();
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
+  }
+
+  @Test
+  public void testInvalidLengthG2PointInNewTrustedSetup() {
+    assertThatThrownBy(() -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString(""))))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Expected G2 point to be 96 bytes");
   }
 
   @Test
