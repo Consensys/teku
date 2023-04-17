@@ -129,7 +129,10 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    storageUpdateChannel.onNoBlobsSlot(slotAndBlockRoot);
+    storageUpdateChannel
+        .onNoBlobsSlot(slotAndBlockRoot)
+        .thenRun(() -> LOG.debug("Slot {} with no BlobSidecars stored", slotAndBlockRoot))
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @Override
