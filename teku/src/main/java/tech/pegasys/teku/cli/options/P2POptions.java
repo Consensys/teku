@@ -246,7 +246,6 @@ public class P2POptions {
       description =
           "Whether discovery accepts messages and peer records with site local (RFC1918) addresses",
       arity = "0..1",
-      hidden = true,
       fallbackValue = "true")
   private boolean siteLocalAddressesEnabled = DiscoveryConfig.DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED;
 
