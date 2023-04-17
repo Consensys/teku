@@ -48,6 +48,13 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainD
 
   @BeforeEach
   void setUp() { // TODO fix set up for meaningful data
+    setHandler(new GetBlockRewards(chainDataProvider));
+    request.setPathParameter("block_id", "head");
+  }
+
+  @Test
+  void shouldReturnBlockAndRewardDataInformation() // TODO want to advance chain to have rewards
+      throws JsonProcessingException, ExecutionException, InterruptedException {
     spec = TestSpecFactory.createMinimalAltair();
     dataStructureUtil = new DataStructureUtil(spec);
     initialise(SpecMilestone.ALTAIR);
@@ -66,13 +73,6 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainD
     chainUpdater.updateBestBlock(latestBlockAndState);
     //    chainUpdater.finalizeCurrentChain();
 
-    setHandler(new GetBlockRewards(chainDataProvider));
-    request.setPathParameter("block_id", "head");
-  }
-
-  @Test
-  void shouldReturnBlockAndRewardDataInformation() // TODO want to advance chain to have rewards
-      throws JsonProcessingException, ExecutionException, InterruptedException {
     handler.handleRequest(request);
 
     final ObjectAndMetaData<BlockRewardData> output =
