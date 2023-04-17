@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
+import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
@@ -558,6 +560,18 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getBlockRewardsFromBlockId_shouldGetData() { // TODO fix test and make meaningful
+    final ChainDataProvider provider = setupAltairState();
+    final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
+        provider.getBlockRewardsFromBlockId("head");
+
+    final BlockRewardData data = new BlockRewardData(1, 1L, 1L, ONE, ONE, ONE);
+    final ObjectAndMetaData<BlockRewardData> expectedOutput =
+        new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, true, true, true);
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
+  }
+
+  @Test
   public void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
     final UInt64 reward = UInt64.valueOf(1234);
     final Spec spec = TestSpecFactory.createMinimalAltair();
@@ -835,7 +849,7 @@ public class ChainDataProviderTest {
     assertThatThrownBy(
             () ->
                 chainDataProvider.getExpectedWithdrawalsFromState(
-                    dataStructureUtil.randomBeaconState(UInt64.ONE), Optional.of(UInt64.ONE)))
+                    dataStructureUtil.randomBeaconState(ONE), Optional.of(ONE)))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("historic");
   }
@@ -847,7 +861,7 @@ public class ChainDataProviderTest {
     assertThatThrownBy(
             () ->
                 chainDataProvider.getExpectedWithdrawalsFromState(
-                    data.randomBeaconState(UInt64.ONE), Optional.empty()))
+                    data.randomBeaconState(ONE), Optional.empty()))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("pre-capella");
   }

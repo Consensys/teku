@@ -34,7 +34,9 @@ import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -45,23 +47,38 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainD
       new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, false, true, true);
 
   @BeforeEach
-  void setUp() {
+  void setUp() { // TODO fix set up for meaningful data
     spec = TestSpecFactory.createMinimalAltair();
     dataStructureUtil = new DataStructureUtil(spec);
     initialise(SpecMilestone.ALTAIR);
     genesis();
+
+    chainUpdater.updateBestBlock(chainUpdater.advanceChain(20));
+
+    final ChainBuilder.BlockOptions blockOptions =
+        ChainBuilder.BlockOptions.create()
+            .addAttestation(dataStructureUtil.randomAttestation(UInt64.valueOf(21)))
+            .addAttesterSlashing(
+                dataStructureUtil.randomAttesterSlashingAtSlot(UInt64.valueOf(21)));
+    SignedBlockAndState latestBlockAndState = chainBuilder.generateBlockAtSlot(21, blockOptions);
+
+    chainUpdater.saveBlock(latestBlockAndState);
+    chainUpdater.updateBestBlock(latestBlockAndState);
+    //    chainUpdater.finalizeCurrentChain();
 
     setHandler(new GetBlockRewards(chainDataProvider));
     request.setPathParameter("block_id", "head");
   }
 
   @Test
-  void shouldReturnBlockAndRewardDataInformation()
+  void shouldReturnBlockAndRewardDataInformation() // TODO want to advance chain to have rewards
       throws JsonProcessingException, ExecutionException, InterruptedException {
     handler.handleRequest(request);
 
     final ObjectAndMetaData<BlockRewardData> output =
         chainDataProvider.getBlockRewardsFromBlockId("head").get().orElseThrow();
+
+    System.out.println(output.getData()); // TODO remove (debugging)
     Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(output);
   }
