@@ -71,13 +71,13 @@ public class BeaconStateMutators {
       final int index,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
 
-    final ValidatorExitContext validatorExitContext = validatorExitContextSupplier.get();
-
     final Validator validator = state.getValidators().get(index);
     // Return if validator already initiated exit
     if (!validator.getExitEpoch().equals(FAR_FUTURE_EPOCH)) {
       return;
     }
+
+    final ValidatorExitContext validatorExitContext = validatorExitContextSupplier.get();
 
     if (validatorExitContext.exitQueueChurn.compareTo(validatorExitContext.churnLimit) >= 0) {
       validatorExitContext.exitQueueEpoch = validatorExitContext.exitQueueEpoch.increment();
