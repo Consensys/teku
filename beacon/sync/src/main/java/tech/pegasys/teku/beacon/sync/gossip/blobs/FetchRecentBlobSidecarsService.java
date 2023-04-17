@@ -22,7 +22,7 @@ import tech.pegasys.teku.beacon.sync.gossip.AbstractFetchService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 
