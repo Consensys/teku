@@ -76,7 +76,8 @@ public class DepositOptions {
       description = "Use bundled snapshot for most networks and persist deposit tree snapshot",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1",
-      hidden = true)
+      hidden = true,
+      fallbackValue = "true")
   private Boolean depositSnapshotEnabledDeprecated;
 
   public void configure(final TekuConfiguration.Builder builder) {
