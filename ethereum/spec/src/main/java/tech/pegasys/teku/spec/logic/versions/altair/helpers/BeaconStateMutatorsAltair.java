@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
@@ -23,8 +24,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-
-import java.util.function.Supplier;
 
 public class BeaconStateMutatorsAltair extends BeaconStateMutators {
   private final SpecConfigAltair specConfigAltair;
@@ -48,9 +47,11 @@ public class BeaconStateMutatorsAltair extends BeaconStateMutators {
   }
 
   @Override
-  public void slashValidator(final MutableBeaconState state, final int slashedIndex,
-                             final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
-    super.slashValidator(state, slashedIndex,validatorExitContextSupplier);
+  public void slashValidator(
+      final MutableBeaconState state,
+      final int slashedIndex,
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
+    super.slashValidator(state, slashedIndex, validatorExitContextSupplier);
     BeaconStateCache.getTransitionCaches(state)
         .getProgressiveTotalBalances()
         .onSlashing(state, slashedIndex);
