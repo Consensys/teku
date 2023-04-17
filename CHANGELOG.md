@@ -6,6 +6,7 @@
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
 - The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
 - The command argument `--Xengine-exchange-capabilities` will be removed, update to use `--engine-exchange-capabilities` if you are using this option.
+- Removing  `--Xdeposit-snapshot-enabled` to enable deposit tree snapshot bundle usage. Use `--deposit-snapshot-enabled` instead 
 
 ## Current Releases
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -20,6 +21,6 @@ For information on changes in released versions of Teku, see the [releases page]
    This can be disabled by setting `--exchange-capabilities-enabled=false` if Shanghai is not supported on your EL client.
  - Enabled peer scoring by default. Can be disabled explicitly using `--Xp2p-gossip-scoring-enabled=false`
  - When failovers are configured, the validator client will perform a readiness check on startup to avoid retrieving validator statuses from a node which is not ready.
- - Use `--deposit-snapshot-enabled` to load bundled deposit contract tree snapshot and persist it after finalization to decrease EL pressure and speed up node startup
+ - Enabled deposit tree snapshot bundles for major networks and persists it after finalization to decrease EL pressure and speed up node startup. Use `--deposit-snapshot-enabled=false` to disable.
 
 ### Bug Fixes
