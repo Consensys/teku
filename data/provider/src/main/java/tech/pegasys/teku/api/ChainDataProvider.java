@@ -757,13 +757,7 @@ public class ChainDataProvider {
   protected UInt64 calculateProposerSyncAggregateBlockRewards(
       UInt64 proposerReward, SyncAggregate aggregate) {
     final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
-    UInt64 total = ZERO;
-    for (int i = 0; i < syncCommitteeBits.size(); i++) {
-      if (syncCommitteeBits.getBit(i)) {
-        total = total.plus(proposerReward);
-      }
-    }
-    return total;
+    return proposerReward.times(syncCommitteeBits.stream().count());
   }
 
   @VisibleForTesting
