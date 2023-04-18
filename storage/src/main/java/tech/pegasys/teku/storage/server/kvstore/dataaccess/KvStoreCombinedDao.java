@@ -27,14 +27,15 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface KvStoreCombinedDao extends AutoCloseable {
 
@@ -127,7 +128,12 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getOptimisticTransitionBlockSlot();
 
+  Optional<Bytes> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
   Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
   Stream<Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
@@ -137,6 +143,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   @MustBeClosed
   Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
+
+  Optional<UInt64> getEarliestBlobSidecarSlot();
 
   Optional<UInt64> getEarliestBlobsSidecarSlot();
 

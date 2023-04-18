@@ -18,7 +18,7 @@ import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ArbitrarySupplier;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.versions.deneb.BlobBytesSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobBytesSupplier;
 
 /**
  * An implementation of {@link ArbitrarySupplier<Bytes>} which chooses randomly between {@link

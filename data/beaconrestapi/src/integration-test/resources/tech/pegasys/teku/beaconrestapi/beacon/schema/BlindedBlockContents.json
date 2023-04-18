@@ -1,0 +1,13 @@
+{
+  "title" : "BlindedBlockContents",
+  "type" : "object",
+  "required" : [ "blinded_block", "blinded_blob_sidecars" ],
+  "properties" : {
+    "blinded_block" : {
+      "$ref" : "#/components/schemas/BeaconBlockDeneb"
+    },
+    "blinded_blob_sidecars" : {
+      "$ref" : "#/components/schemas/BlindedBlobSidecars"
+    }
+  }
+}

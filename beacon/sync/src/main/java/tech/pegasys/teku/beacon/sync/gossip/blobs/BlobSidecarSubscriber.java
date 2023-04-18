@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.blobs;
 
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public interface BlobSidecarSubscriber {
 

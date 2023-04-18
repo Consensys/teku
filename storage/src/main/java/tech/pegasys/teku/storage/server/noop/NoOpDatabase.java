@@ -30,14 +30,16 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
@@ -274,12 +276,23 @@ public class NoOpDatabase implements Database {
   public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
+  public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.empty();
   }
 
   @Override
   public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
+
+  @Override
+  public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
 
   @Override
   public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 startSlot, final UInt64 endSlot) {
@@ -295,6 +308,11 @@ public class NoOpDatabase implements Database {
   @Override
   public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot) {
     return Stream.empty();
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
+    return Optional.empty();
   }
 
   @Override

@@ -26,14 +26,16 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
@@ -62,6 +64,8 @@ public interface Database extends AutoCloseable {
 
   void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 
+  Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
   Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 
   void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
@@ -89,6 +93,9 @@ public interface Database extends AutoCloseable {
   boolean pruneOldestUnconfirmedBlobsSidecars(UInt64 lastSlotToPrune, int pruneLimit);
 
   @MustBeClosed
+  Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
   Stream<BlobsSidecar> streamBlobsSidecars(UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
@@ -100,6 +107,8 @@ public interface Database extends AutoCloseable {
 
   @MustBeClosed
   Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(UInt64 startSlot, UInt64 endSlot);
+
+  Optional<UInt64> getEarliestBlobSidecarSlot();
 
   Optional<UInt64> getEarliestBlobsSidecarSlot();
 

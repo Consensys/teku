@@ -22,13 +22,15 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public interface StorageQueryChannel extends ChannelInterface {
 
@@ -78,8 +80,13 @@ public interface StorageQueryChannel extends ChannelInterface {
 
   SafeFuture<Optional<DepositTreeSnapshot>> getFinalizedDepositSnapshot();
 
-  /** @return The earliest available finalized blobs sidecar's slot */
-  SafeFuture<Optional<UInt64>> getEarliestAvailableBlobsSidecarSlot();
+  /** @return The earliest available finalized blob sidecar's slot */
+  SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot();
 
-  SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot);
+  SafeFuture<Optional<BlobSidecar>> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
+  SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      UInt64 startSlot, UInt64 endSlot, UInt64 limit);
+
+  SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 }

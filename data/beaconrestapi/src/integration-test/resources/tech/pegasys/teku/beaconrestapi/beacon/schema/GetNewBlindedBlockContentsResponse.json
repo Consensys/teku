@@ -1,0 +1,18 @@
+{
+  "title" : "GetNewBlindedBlockContentsResponse",
+  "type" : "object",
+  "required" : [ "data", "version" ],
+  "properties" : {
+    "data" : {
+      "title" : "BlindedBlockContents",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BlindedBlockContents"
+      } ]
+    },
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+    }
+  }
+}

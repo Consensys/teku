@@ -30,13 +30,13 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -59,7 +59,7 @@ class CombinedChainDataClientTest {
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
-  final BlobsSidecar sidecar = dataStructureUtil.randomBlobsSidecar();
+  final BlobSidecar sidecar = dataStructureUtil.randomBlobSidecar();
 
   @BeforeEach
   void setUp() {
@@ -135,25 +135,94 @@ class CombinedChainDataClientTest {
   }
 
   @Test
-  void getsEarliestAvailableBlobsSidecarEpoch() {
-    when(historicalChainData.getEarliestAvailableBlobsSidecarSlot())
+  void getsEarliestAvailableBlobSidecarEpoch() {
+    when(historicalChainData.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ONE)));
 
     final Optional<UInt64> result =
-        SafeFutureAssert.safeJoin(client.getEarliestAvailableBlobsSidecarEpoch());
+        SafeFutureAssert.safeJoin(client.getEarliestAvailableBlobSidecarEpoch());
 
     assertThat(result).hasValue(UInt64.ZERO);
   }
 
   @Test
-  void getsBlobsSidecarBySlotAndBlockRoot() {
+  void getsBlobSidecarBySlotAndBlockRootAndBlobIndex() {
+    final SlotAndBlockRootAndBlobIndex correctKey =
+        new SlotAndBlockRootAndBlobIndex(
+            sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex());
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    when(historicalChainData.getBlobsSidecar(new SlotAndBlockRoot(UInt64.ONE, blockRoot)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(sidecar)));
+    final SlotAndBlockRootAndBlobIndex incorrectKey =
+        new SlotAndBlockRootAndBlobIndex(sidecar.getSlot(), blockRoot, sidecar.getIndex());
+    setupGetBlobSidecar(correctKey, sidecar);
 
-    final Optional<BlobsSidecar> result =
-        SafeFutureAssert.safeJoin(client.getBlobsSidecarBySlotAndBlockRoot(UInt64.ONE, blockRoot));
+    final Optional<BlobSidecar> correctResult =
+        SafeFutureAssert.safeJoin(client.getBlobSidecarByKey(correctKey));
+    assertThat(correctResult).hasValue(sidecar);
 
+    final Optional<BlobSidecar> incorrectResult =
+        SafeFutureAssert.safeJoin(client.getBlobSidecarByKey(incorrectKey));
+    assertThat(incorrectResult).isEmpty();
+  }
+
+  @Test
+  void getsBlobSidecarBySlotAndBlobIndex() {
+    final SlotAndBlockRootAndBlobIndex key =
+        new SlotAndBlockRootAndBlobIndex(
+            sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex());
+    setupGetBlobSidecar(key, sidecar);
+    setupGetSlotForBlockRoot(sidecar.getBlockRoot(), sidecar.getSlot());
+
+    final Optional<BlobSidecar> result =
+        SafeFutureAssert.safeJoin(
+            client.getBlobSidecarByBlockRootAndIndex(sidecar.getBlockRoot(), sidecar.getIndex()));
     assertThat(result).hasValue(sidecar);
+
+    final Bytes32 blockRoot = setupGetBlockByBlockRoot(sidecar.getSlot().plus(1));
+    final Optional<BlobSidecar> incorrectResult =
+        SafeFutureAssert.safeJoin(
+            client.getBlobSidecarByBlockRootAndIndex(blockRoot, sidecar.getIndex()));
+    assertThat(incorrectResult).isEmpty();
+  }
+
+  private void setupGetBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key, final BlobSidecar result) {
+    when(historicalChainData.getBlobSidecar(any()))
+        .thenAnswer(
+            args -> {
+              final SlotAndBlockRootAndBlobIndex argKey = args.getArgument(0);
+              if (argKey.equals(key)) {
+                return SafeFuture.completedFuture(Optional.of(result));
+              } else {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+            });
+  }
+
+  private void setupGetSlotForBlockRoot(final Bytes32 blockRoot, final UInt64 slot) {
+    when(recentChainData.getSlotForBlockRoot(any()))
+        .thenAnswer(
+            args -> {
+              final Bytes32 argRoot = args.getArgument(0);
+              if (argRoot.equals(blockRoot)) {
+                return Optional.of(slot);
+              } else {
+                return Optional.empty();
+              }
+            });
+  }
+
+  private Bytes32 setupGetBlockByBlockRoot(final UInt64 slot) {
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock(slot);
+    when(historicalChainData.getBlockByBlockRoot(any()))
+        .thenAnswer(
+            args -> {
+              final Bytes32 argRoot = args.getArgument(0);
+              if (argRoot.equals(signedBeaconBlock.getRoot())) {
+                return SafeFuture.completedFuture(Optional.of(signedBeaconBlock));
+              } else {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+            });
+    return signedBeaconBlock.getRoot();
   }
 }

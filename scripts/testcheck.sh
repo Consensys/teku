@@ -21,6 +21,11 @@ TEST_SUFFIX=(
 )
 
 #
+# Will be overwritten if there's an error.
+#
+EXIT_VALUE=0
+
+#
 # For each test file, check that the corresponding main file exists.
 #
 for (( i=0; i<${#TEST_TYPE[@]}; i++ )); do
@@ -64,9 +69,13 @@ for (( i=0; i<${#TEST_TYPE[@]}; i++ )); do
             printf "Maybe test should be here:\n"
             printf "  Test: %s\n" $(realpath --canonicalize-missing \
               --relative-to=$TEKU_DIR $newtestfile)
+
+            EXIT_VALUE=1
           fi
         done
       fi
     done
   done
 done
+
+exit $EXIT_VALUE

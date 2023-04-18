@@ -28,14 +28,15 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4FinalizedKvStoreDao.V4FinalizedUpdater;
 import tech.pegasys.teku.storage.server.kvstore.dataaccess.V4HotKvStoreDao.V4HotUpdater;
@@ -233,8 +234,20 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<Bytes> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return finalizedDao.getBlobSidecar(key);
+  }
+
+  @Override
   public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return finalizedDao.getBlobsSidecar(slotAndBlockRoot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamBlobSidecarKeys(startSlot, endSlot);
   }
 
   @Override
@@ -256,6 +269,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
+  }
+
+  @Override
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
+    return finalizedDao.getEarliestBlobSidecarSlot();
   }
 
   @Override
