@@ -723,7 +723,7 @@ public class ChainDataProvider {
         participantReward
             .times(PROPOSER_WEIGHT)
             .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
-    return blockAndMetaData.map(value -> calculateBlockRewards(proposerReward, block, state));
+    return blockAndMetaData.map(__ -> calculateBlockRewards(proposerReward, block, state));
   }
 
   private BlockRewardData calculateBlockRewards(
@@ -757,7 +757,7 @@ public class ChainDataProvider {
   protected UInt64 calculateProposerSyncAggregateBlockRewards(
       UInt64 proposerReward, SyncAggregate aggregate) {
     final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
-    return proposerReward.times(syncCommitteeBits.stream().count());
+    return proposerReward.times(syncCommitteeBits.getBitCount());
   }
 
   @VisibleForTesting
