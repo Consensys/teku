@@ -17,7 +17,6 @@ import java.util.Objects;
 
 public class BlockRewardData {
   private final int proposerIndex;
-  private final long total;
   private final long attestations;
   private final long syncAggregate;
   private final long proposerSlashings;
@@ -25,13 +24,11 @@ public class BlockRewardData {
 
   public BlockRewardData(
       final int proposerIndex,
-      final long total,
       final long attestations,
       final long syncAggregate,
       final long proposerSlashings,
       final long attesterSlashings) {
     this.proposerIndex = proposerIndex;
-    this.total = total;
     this.attestations = attestations;
     this.syncAggregate = syncAggregate;
     this.proposerSlashings = proposerSlashings;
@@ -43,7 +40,7 @@ public class BlockRewardData {
   }
 
   public long getTotal() {
-    return total;
+    return attestations + syncAggregate + proposerSlashings + attesterSlashings;
   }
 
   public long getAttestations() {
@@ -72,7 +69,6 @@ public class BlockRewardData {
     }
     BlockRewardData that = (BlockRewardData) o;
     return proposerIndex == that.proposerIndex
-        && total == that.total
         && attestations == that.attestations
         && syncAggregate == that.syncAggregate
         && proposerSlashings == that.proposerSlashings
@@ -82,7 +78,7 @@ public class BlockRewardData {
   @Override
   public int hashCode() {
     return Objects.hash(
-        proposerIndex, total, attestations, syncAggregate, proposerSlashings, attesterSlashings);
+        proposerIndex, attestations, syncAggregate, proposerSlashings, attesterSlashings);
   }
 
   @Override
@@ -90,8 +86,6 @@ public class BlockRewardData {
     return "BlockRewardData{"
         + "proposerIndex="
         + proposerIndex
-        + ", total="
-        + total
         + ", attestations="
         + attestations
         + ", syncAggregate="

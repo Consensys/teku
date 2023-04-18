@@ -702,15 +702,15 @@ public class ChainDataProvider {
                   .getStateByBlockRoot(block.getRoot())
                   .thenApply(
                       maybeState ->
-                          maybeState.map(
-                              state -> getBlockRewardData(blockAndMetaData, block, state)));
+                          maybeState.map(state -> getBlockRewardData(blockAndMetaData, state)));
             });
   }
 
-  private ObjectAndMetaData<BlockRewardData> getBlockRewardData(
+  @VisibleForTesting
+  protected ObjectAndMetaData<BlockRewardData> getBlockRewardData(
       final BlockAndMetaData blockAndMetaData,
-      final BeaconBlock block,
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    final BeaconBlock block = blockAndMetaData.getData().getMessage();
     if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       throw new BadRequestException(
           "Slot "
@@ -739,15 +739,9 @@ public class ChainDataProvider {
         calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
     final long proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
     final long attesterSlashingsBlockRewards = calculateAttesterSlashingsRewards(block, state);
-    final long total =
-        attestationsBlockRewards
-            + syncAggregateBlockRewards
-            + proposerSlashingsBlockRewards
-            + attesterSlashingsBlockRewards;
 
     return new BlockRewardData(
         proposerIndex,
-        total,
         attestationsBlockRewards,
         syncAggregateBlockRewards,
         proposerSlashingsBlockRewards,
