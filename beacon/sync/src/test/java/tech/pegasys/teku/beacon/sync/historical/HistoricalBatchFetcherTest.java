@@ -22,12 +22,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -36,11 +42,15 @@ import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -56,16 +66,24 @@ public class HistoricalBatchFetcherTest {
   private final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
   private ChainBuilder forkBuilder;
 
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  private final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+      mock(BlobSidecarsAvailabilityChecker.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
 
   @SuppressWarnings("unchecked")
   private final ArgumentCaptor<Collection<SignedBeaconBlock>> blockCaptor =
       ArgumentCaptor.forClass(Collection.class);
 
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<Map<Bytes32, List<BlobSidecar>>> blobSidecarCaptor =
+      ArgumentCaptor.forClass(Map.class);
+
   private CombinedChainDataClient chainDataClient;
 
   private final int maxRequests = 5;
   private List<SignedBeaconBlock> blockBatch;
+  private Map<Bytes32, List<BlobSidecar>> blobSidecarsBatch;
   private SignedBeaconBlock firstBlockInBatch;
   private SignedBeaconBlock lastBlockInBatch;
   private HistoricalBatchFetcher fetcher;
@@ -74,6 +92,7 @@ public class HistoricalBatchFetcherTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
     when(storageUpdateChannel.onFinalizedBlocks(any(), any())).thenReturn(SafeFuture.COMPLETE);
 
     // Set up main chain and fork chain
@@ -91,6 +110,14 @@ public class HistoricalBatchFetcherTest {
             .collect(Collectors.toList());
     lastBlockInBatch = chainBuilder.getLatestBlockAndState().getBlock();
     firstBlockInBatch = blockBatch.get(0);
+    blobSidecarsBatch =
+        chainBuilder
+            .streamBlobSidecars(10, 20)
+            .collect(
+                Collectors.groupingBy(
+                    BlobSidecar::getBlockRoot,
+                    Collectors.mapping(Function.identity(), Collectors.toList())));
+
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
     final RecentChainData recentChainData = storageSystem.recentChainData();
     chainDataClient =
@@ -107,6 +134,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
@@ -115,6 +143,13 @@ public class HistoricalBatchFetcherTest {
 
     when(signatureVerifier.verify(any(), any(), anyList()))
         .thenReturn(SafeFuture.completedFuture(true));
+    when(blobsSidecarManager.createAvailabilityChecker(any()))
+        .thenReturn(blobSidecarsAvailabilityChecker);
+    when(blobSidecarsAvailabilityChecker.validate(anyList()))
+        .thenAnswer(
+            i ->
+                SafeFuture.completedFuture(
+                    BlobSidecarsAndValidationResult.validResult(i.getArgument(0))));
   }
 
   @Test
@@ -140,6 +175,45 @@ public class HistoricalBatchFetcherTest {
 
     verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), any());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
+  }
+
+  @Test
+  public void run_returnAllBlocksAndBlobSidecarsOnFirstRequest() {
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(2);
+    peer.completePendingRequests();
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    assertThat(future).isCompletedWithValue(firstBlockInBatch);
+
+    verify(storageUpdateChannel)
+        .onFinalizedBlocks(blockCaptor.capture(), blobSidecarCaptor.capture());
+    assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
+    assertThat(blobSidecarCaptor.getValue()).isEqualTo(blobSidecarsBatch);
+  }
+
+  @Test
+  public void run_failsOnBlobSidecarsValidationFailure() {
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarsAvailabilityChecker.validate(anyList()))
+        .thenAnswer(
+            i ->
+                SafeFuture.completedFuture(
+                    BlobSidecarsAndValidationResult.invalidResult(
+                        i.getArgument(0), new IllegalStateException("oopsy"))));
+
+    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    final SafeFuture<BeaconBlockSummary> future = fetcher.run();
+    peer.completePendingRequests();
+
+    assertThat(future)
+        .failsWithin(Duration.ZERO)
+        .withThrowableThat()
+        .withMessageMatching(
+            "java.lang.IllegalArgumentException: Blob sidecars validation for block .* failed: INVALID \\(oopsy\\)");
   }
 
   @Test
@@ -187,6 +261,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             latestBlock.getSlot(),
             latestBlock.getRoot(),
@@ -205,8 +280,12 @@ public class HistoricalBatchFetcherTest {
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(targetBatch);
   }
 
-  @Test
-  public void run_requestBatchForRangeOfEmptyBlocks() {
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void run_requestBatchForRangeOfEmptyBlocks(final boolean blobSidecarsRequired) {
+    if (blobSidecarsRequired) {
+      when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    }
     final int batchSize = 10;
     fetcher =
         new HistoricalBatchFetcher(
@@ -214,6 +293,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             // Slot & batch size define an empty set of blocks
             lastBlockInBatch.getSlot().plus(batchSize * 2),
@@ -224,19 +304,23 @@ public class HistoricalBatchFetcherTest {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
 
-    // Request by range will return nothing
+    // Request(s) by range will return nothing
     for (int i = 0; i < maxRequests; i++) {
-      assertThat(peer.getOutstandingRequests()).isEqualTo(1);
+      final int outstandingRequests = blobSidecarsRequired ? 2 : 1;
+      assertThat(peer.getOutstandingRequests()).isEqualTo(outstandingRequests);
       peer.completePendingRequests();
     }
-    // Request by hash should return the final block
+    // Request by root should return the final block
     assertThat(peer.getOutstandingRequests()).isEqualTo(1);
     peer.completePendingRequests();
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     assertThat(future).isCompletedWithValue(lastBlockInBatch);
 
-    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), any());
+    verify(storageUpdateChannel)
+        .onFinalizedBlocks(blockCaptor.capture(), blobSidecarCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
+    // TODO: add real assertions when the ChainBuilder with decoupled blobs is implemented
+    assertThat(blobSidecarCaptor.getValue()).isEmpty();
   }
 
   @Test
@@ -248,6 +332,7 @@ public class HistoricalBatchFetcherTest {
             signatureVerifier,
             chainDataClient,
             spec,
+            blobsSidecarManager,
             peer,
             lastBlockInBatch.getSlot(),
             lastBlockInBatch.getRoot(),
