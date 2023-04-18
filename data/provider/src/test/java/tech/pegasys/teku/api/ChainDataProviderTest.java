@@ -565,7 +565,7 @@ public class ChainDataProviderTest {
     final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
         provider.getBlockRewardsFromBlockId("head");
 
-    final BlockRewardData data = new BlockRewardData(1, 1L, 1L, ONE, ONE, ONE);
+    final BlockRewardData data = new BlockRewardData(1, 1L, 1L, 1L, 1L, 1L);
     final ObjectAndMetaData<BlockRewardData> expectedOutput =
         new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, true, true, true);
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
@@ -573,29 +573,29 @@ public class ChainDataProviderTest {
 
   @Test
   public void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
-    final UInt64 reward = UInt64.valueOf(1234);
+    final long reward = 1234L;
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
     final int[] participantIndices = new int[] {0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30};
     final SyncAggregate syncAggregate = data.randomSyncAggregate(participantIndices);
 
-    final UInt64 syncAggregateBlockRewards =
+    final long syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(reward.times(participantIndices.length));
+    assertThat(syncAggregateBlockRewards).isEqualTo(reward * participantIndices.length);
   }
 
   @Test
   public void calculateProposerSyncAggregateBlockRewards_emptySyncAggregate() {
-    final UInt64 reward = UInt64.valueOf(1234);
+    final long reward = 1234L;
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
     final SyncAggregate syncAggregate = data.emptySyncAggregate();
 
-    final UInt64 syncAggregateBlockRewards =
+    final long syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(ZERO);
+    assertThat(syncAggregateBlockRewards).isEqualTo(0L);
   }
 
   @Test
@@ -605,11 +605,10 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider = setupAltairState();
     final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
 
-    final UInt64 result =
+    final long result =
         provider.calculateProposerSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    final UInt64 expectedReward = UInt64.valueOf(62500000);
-    assertThat(result).isEqualTo(expectedReward);
+    assertThat(result).isEqualTo(62500000L);
   }
 
   @Test
@@ -619,11 +618,10 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider = setupAltairState();
     final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
 
-    final UInt64 result =
+    final long result =
         provider.calculateAttesterSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    final UInt64 expectedReward = UInt64.valueOf(62500000);
-    assertThat(result).isEqualTo(expectedReward);
+    assertThat(result).isEqualTo(62500000L);
   }
 
   @Test

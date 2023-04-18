@@ -719,30 +719,31 @@ public class ChainDataProvider {
     }
 
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
-    final UInt64 proposerReward =
+    final long proposerReward =
         participantReward
             .times(PROPOSER_WEIGHT)
-            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT));
+            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT))
+            .longValue();
     return blockAndMetaData.map(__ -> calculateBlockRewards(proposerReward, block, state));
   }
 
   private BlockRewardData calculateBlockRewards(
-      final UInt64 proposerReward,
+      final long proposerReward,
       final BeaconBlock block,
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
 
     final int proposerIndex = spec.getBeaconProposerIndex(state, block.getSlot());
     final long attestationsBlockRewards = calculateAttestationRewards(state);
-    final UInt64 syncAggregateBlockRewards =
+    final long syncAggregateBlockRewards =
         calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
-    final UInt64 proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
-    final UInt64 attesterSlashingsBlockRewards = calculateAttesterSlashingsRewards(block, state);
+    final long proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
+    final long attesterSlashingsBlockRewards = calculateAttesterSlashingsRewards(block, state);
     final long total =
         attestationsBlockRewards
-            + syncAggregateBlockRewards.longValue()
-            + proposerSlashingsBlockRewards.longValue()
-            + attesterSlashingsBlockRewards.longValue();
+            + syncAggregateBlockRewards
+            + proposerSlashingsBlockRewards
+            + attesterSlashingsBlockRewards;
 
     return new BlockRewardData(
         proposerIndex,
@@ -754,14 +755,14 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected UInt64 calculateProposerSyncAggregateBlockRewards(
-      UInt64 proposerReward, SyncAggregate aggregate) {
+  protected long calculateProposerSyncAggregateBlockRewards(
+      long proposerReward, SyncAggregate aggregate) {
     final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
-    return proposerReward.times(syncCommitteeBits.getBitCount());
+    return proposerReward * syncCommitteeBits.getBitCount();
   }
 
   @VisibleForTesting
-  protected UInt64 calculateProposerSlashingsRewards(
+  protected long calculateProposerSlashingsRewards(
       final BeaconBlock beaconBlock,
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final SszList<ProposerSlashing> proposerSlashings =
@@ -770,7 +771,7 @@ public class ChainDataProvider {
     final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
     final SpecConfig specConfig = spec.getSpecConfig(epoch);
 
-    UInt64 proposerSlashingsRewards = ZERO;
+    long proposerSlashingsRewards = 0;
     for (ProposerSlashing slashing : proposerSlashings) {
       final int slashedIndex = slashing.getHeader1().getMessage().getProposerIndex().intValue();
       proposerSlashingsRewards =
@@ -781,7 +782,7 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected UInt64 calculateAttesterSlashingsRewards(
+  protected long calculateAttesterSlashingsRewards(
       final BeaconBlock beaconBlock,
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final SszList<AttesterSlashing> attesterSlashings =
@@ -790,7 +791,7 @@ public class ChainDataProvider {
     final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
     final SpecConfig specConfig = spec.getSpecConfig(epoch);
 
-    UInt64 attesterSlashingsRewards = ZERO;
+    long attesterSlashingsRewards = 0;
     for (AttesterSlashing slashing : attesterSlashings) {
       for (final UInt64 index : slashing.getIntersectingValidatorIndices()) {
         attesterSlashingsRewards =
@@ -801,17 +802,18 @@ public class ChainDataProvider {
     return attesterSlashingsRewards;
   }
 
-  private UInt64 calculateSlashingRewards(
+  private long calculateSlashingRewards(
       final SpecConfig specConfig,
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
       final int slashedIndex,
-      final UInt64 currentRewards) {
+      final long currentRewards) {
     final Validator validator = state.getValidators().get(slashedIndex);
     final UInt64 whistleblowerReward =
         validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
     final UInt64 proposerReward =
         whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
-    return currentRewards.plus(proposerReward).plus(whistleblowerReward.minus(proposerReward));
+    final UInt64 rewardsAdditions = proposerReward.plus(whistleblowerReward.minus(proposerReward));
+    return currentRewards + rewardsAdditions.longValue();
   }
 
   @VisibleForTesting
@@ -829,10 +831,8 @@ public class ChainDataProvider {
     for (int i = 0; i < state.getValidators().size(); i++) {
       final RewardAndPenaltyDeltas.RewardAndPenalty rewardAndPenalty =
           rewardAndPenaltyDeltas.getDelta(i);
-      rewards =
-          rewards
-              + rewardAndPenalty.getReward().longValue()
-              - rewardAndPenalty.getPenalty().longValue();
+      rewards +=
+          rewardAndPenalty.getReward().longValue() - rewardAndPenalty.getPenalty().longValue();
     }
 
     return rewards;

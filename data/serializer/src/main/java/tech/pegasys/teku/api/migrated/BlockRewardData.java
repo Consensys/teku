@@ -14,23 +14,22 @@
 package tech.pegasys.teku.api.migrated;
 
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockRewardData {
   private final int proposerIndex;
   private final long total;
   private final long attestations;
-  private final UInt64 syncAggregate;
-  private final UInt64 proposerSlashings;
-  private final UInt64 attesterSlashings;
+  private final long syncAggregate;
+  private final long proposerSlashings;
+  private final long attesterSlashings;
 
   public BlockRewardData(
       final int proposerIndex,
       final long total,
       final long attestations,
-      final UInt64 syncAggregate,
-      final UInt64 proposerSlashings,
-      final UInt64 attesterSlashings) {
+      final long syncAggregate,
+      final long proposerSlashings,
+      final long attesterSlashings) {
     this.proposerIndex = proposerIndex;
     this.total = total;
     this.attestations = attestations;
@@ -51,15 +50,15 @@ public class BlockRewardData {
     return attestations;
   }
 
-  public UInt64 getSyncAggregate() {
+  public long getSyncAggregate() {
     return syncAggregate;
   }
 
-  public UInt64 getProposerSlashings() {
+  public long getProposerSlashings() {
     return proposerSlashings;
   }
 
-  public UInt64 getAttesterSlashings() {
+  public long getAttesterSlashings() {
     return attesterSlashings;
   }
 

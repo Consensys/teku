@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
   private final BlockRewardData data =
       new BlockRewardData(
-          123, 123L, 123L, UInt64.valueOf(123), UInt64.valueOf(123), UInt64.valueOf(123));
+          123, 123L, 123L, 123L, 123L, 123L);
   private final ObjectAndMetaData<BlockRewardData> blockRewardsResult =
       new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, false, true, true);
 
