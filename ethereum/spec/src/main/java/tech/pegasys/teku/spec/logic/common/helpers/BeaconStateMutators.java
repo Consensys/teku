@@ -144,12 +144,17 @@ public class BeaconStateMutators {
 
     for (Validator validator : state.getValidators()) {
       final UInt64 validatorExitEpoch = validator.getExitEpoch();
-      if (!validatorExitEpoch.equals(FAR_FUTURE_EPOCH)
-          && validatorExitEpoch.isGreaterThanOrEqualTo(validatorExitContext.exitQueueEpoch)) {
-        if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
-          exitedValidatorsInExitQueueEpoch.clear();
-          validatorExitContext.exitQueueEpoch = validatorExitEpoch;
-        }
+      if (validatorExitEpoch.equals(FAR_FUTURE_EPOCH)) {
+        continue;
+      }
+
+      if (validatorExitEpoch.equals(validatorExitContext.exitQueueEpoch)) {
+        exitedValidatorsInExitQueueEpoch.add(validator);
+        continue;
+      }
+      if (validatorExitEpoch.isGreaterThan(validatorExitContext.exitQueueEpoch)) {
+        validatorExitContext.exitQueueEpoch = validatorExitEpoch;
+        exitedValidatorsInExitQueueEpoch.clear();
         exitedValidatorsInExitQueueEpoch.add(validator);
       }
     }
