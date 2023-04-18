@@ -15,6 +15,8 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.rewards;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
@@ -23,23 +25,21 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
   private final BlockRewardData data =
       new BlockRewardData(
           123, 123L, 123L, UInt64.valueOf(123), UInt64.valueOf(123), UInt64.valueOf(123));
@@ -55,30 +55,13 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerWithChainD
   @Test
   void shouldReturnBlockAndRewardDataInformation() // TODO want to advance chain to have rewards
       throws JsonProcessingException, ExecutionException, InterruptedException {
-    spec = TestSpecFactory.createMinimalAltair();
-    dataStructureUtil = new DataStructureUtil(spec);
-    initialise(SpecMilestone.ALTAIR);
-    genesis();
-
-    chainUpdater.updateBestBlock(chainUpdater.advanceChain(20));
-
-    final ChainBuilder.BlockOptions blockOptions =
-        ChainBuilder.BlockOptions.create()
-            .addAttestation(dataStructureUtil.randomAttestation(UInt64.valueOf(21)))
-            .addAttesterSlashing(
-                dataStructureUtil.randomAttesterSlashingAtSlot(UInt64.valueOf(21)));
-    SignedBlockAndState latestBlockAndState = chainBuilder.generateBlockAtSlot(21, blockOptions);
-
-    chainUpdater.saveBlock(latestBlockAndState);
-    chainUpdater.updateBestBlock(latestBlockAndState);
-    //    chainUpdater.finalizeCurrentChain();
-
+    when(chainDataProvider.getBlockRewardsFromBlockId(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockRewardsResult)));
     handler.handleRequest(request);
 
     final ObjectAndMetaData<BlockRewardData> output =
         chainDataProvider.getBlockRewardsFromBlockId("head").get().orElseThrow();
 
-    System.out.println(output.getData()); // TODO remove (debugging)
     Assertions.assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(output);
   }
