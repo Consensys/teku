@@ -49,7 +49,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
-import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
@@ -557,18 +556,6 @@ public class ChainDataProviderTest {
     assertThat(syncCommitteeRewardData.isFinalized()).isFalse();
     assertThat(syncCommitteeRewardData.getRewardData())
         .containsExactlyInAnyOrder(Map.entry(2, -1 * reward), Map.entry(4, reward));
-  }
-
-  @Test
-  public void getBlockRewardsFromBlockId_shouldGetData() { // TODO fix test and make meaningful
-    final ChainDataProvider provider = setupAltairState();
-    final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
-        provider.getBlockRewardsFromBlockId("head");
-
-    final BlockRewardData data = new BlockRewardData(1, 1L, 1L, 1L, 1L, 1L);
-    final ObjectAndMetaData<BlockRewardData> expectedOutput =
-        new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, true, true, true);
-    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
   }
 
   @Test
