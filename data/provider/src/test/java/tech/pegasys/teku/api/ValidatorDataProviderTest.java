@@ -154,7 +154,7 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
-  void getUnsignedBeaconBlockAtSlot_PostDeneb_shouldCreateAnUnsignedBlockContents() {
+  void getUnsignedBlockContentsAtSlot_PostDeneb_shouldCreateAnUnsignedBlockContents() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.DENEB);
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     blockContents = dataStructureUtil.randomBlockContents();
