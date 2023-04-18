@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -61,6 +62,8 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   private final RecentChainData recentChainData;
   private final int maxTrackers;
 
+  private final Function<SlotAndBlockRoot, BlockBlobSidecarsTracker> trackerFactory;
+
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
@@ -89,6 +92,32 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     this.recentChainData = recentChainData;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
+    this.trackerFactory = BlockBlobSidecarsTracker::new;
+
+    // Init the label so it appears in metrics immediately
+    sizeGauge.set(0, GAUGE_BLOB_SIDECARS_LABEL);
+    sizeGauge.set(0, GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+  }
+
+  @VisibleForTesting
+  BlobSidecarPoolImpl(
+      final SettableLabelledGauge sizeGauge,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final AsyncRunner asyncRunner,
+      final RecentChainData recentChainData,
+      final UInt64 historicalSlotTolerance,
+      final UInt64 futureSlotTolerance,
+      final int maxTrackers,
+      final Function<SlotAndBlockRoot, BlockBlobSidecarsTracker> trackerFactory) {
+    super(spec, futureSlotTolerance, historicalSlotTolerance);
+    this.spec = spec;
+    this.timeProvider = timeProvider;
+    this.asyncRunner = asyncRunner;
+    this.recentChainData = recentChainData;
+    this.maxTrackers = maxTrackers;
+    this.sizeGauge = sizeGauge;
+    this.trackerFactory = trackerFactory;
 
     // Init the label so it appears in metrics immediately
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_LABEL);
@@ -100,8 +129,6 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (shouldIgnoreItemAtSlot(blobSidecar.getSlot())) {
       return;
     }
-
-    makeRoomForNewTracker();
 
     final SlotAndBlockRoot slotAndBlockRoot = blobSidecar.getSlotAndBlockRoot();
 
@@ -129,16 +156,11 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       return;
     }
 
-    makeRoomForNewTracker();
-
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
     final BlockBlobSidecarsTracker blobSidecarsTracker =
         getOrCreateBlobSidecarsTracker(
-            slotAndBlockRoot,
-            newTracker -> {
-              onFirstSeen(slotAndBlockRoot);
-            });
+            slotAndBlockRoot, newTracker -> onFirstSeen(slotAndBlockRoot));
 
     blobSidecarsTracker.setBlock(block);
 
@@ -159,16 +181,6 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       totalBlobSidecars -= removedTracker.blobSidecarsCount();
       sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
       sizeGauge.set(blockBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
-    }
-  }
-
-  private void makeRoomForNewTracker() {
-    while (blockBlobSidecarsTrackers.size() > (maxTrackers - 1)) {
-      final SlotAndBlockRoot toRemove = orderedBlobSidecarsTrackers.pollFirst();
-      if (toRemove == null) {
-        break;
-      }
-      removeAllForBlock(toRemove);
     }
   }
 
@@ -249,11 +261,22 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
     if (blockBlobSidecarsTracker == null) {
-      blockBlobSidecarsTracker = new BlockBlobSidecarsTracker(slotAndBlockRoot);
+      makeRoomForNewTracker();
+      blockBlobSidecarsTracker = trackerFactory.apply(slotAndBlockRoot);
       blockBlobSidecarsTrackers.put(slotAndBlockRoot.getBlockRoot(), blockBlobSidecarsTracker);
       onNew.accept(blockBlobSidecarsTracker);
     }
     return blockBlobSidecarsTracker;
+  }
+
+  private void makeRoomForNewTracker() {
+    while (blockBlobSidecarsTrackers.size() > (maxTrackers - 1)) {
+      final SlotAndBlockRoot toRemove = orderedBlobSidecarsTrackers.pollFirst();
+      if (toRemove == null) {
+        break;
+      }
+      removeAllForBlock(toRemove);
+    }
   }
 
   private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
