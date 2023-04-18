@@ -26,7 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -72,7 +71,6 @@ import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
@@ -669,16 +667,14 @@ public class ChainBuilder {
     final BlobsSidecarSchema blobsSidecarSchema =
         spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobsSidecarSchema();
 
-    final MiscHelpersDeneb miscHelpers =
-        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
-    KZGProof kzgProof =
-        miscHelpers.computeAggregatedKzgProof(
-            randomBlobs.stream().map(Blob::getBytes).collect(Collectors.toList()));
-
     if (options.isStoreBlobsSidecarEnabled()) {
       final BlobsSidecar blobsSidecar =
           new BlobsSidecar(
-              blobsSidecarSchema, nextBlockAndState.getRoot(), slot, randomBlobs, kzgProof);
+              blobsSidecarSchema,
+              nextBlockAndState.getRoot(),
+              slot,
+              randomBlobs,
+              KZGProof.INFINITY);
 
       trackBlobsSidecar(blobsSidecar);
     }

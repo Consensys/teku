@@ -21,7 +21,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -92,7 +92,7 @@ public class BlobsSidecarPrunerTest {
   void shouldNotPruneWhenLatestPrunableIncludeGenesis() {
     // set current slot inside the availability window
     final UInt64 currentSlot =
-        UInt64.valueOf(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS).times(slotsPerEpoch);
+        UInt64.valueOf(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS).times(slotsPerEpoch);
     final UInt64 currentTime = currentSlot.times(secondsPerSlot);
 
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
@@ -103,9 +103,9 @@ public class BlobsSidecarPrunerTest {
 
   @Test
   void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() {
-    // set current slot to MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS + 1 epoch + half epoch
+    // set current slot to MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1 epoch + half epoch
     final UInt64 currentSlot =
-        UInt64.valueOf(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS + 1)
+        UInt64.valueOf(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1)
             .times(slotsPerEpoch)
             .plus(slotsPerEpoch / 2);
     final UInt64 currentTime = currentSlot.times(secondsPerSlot);
