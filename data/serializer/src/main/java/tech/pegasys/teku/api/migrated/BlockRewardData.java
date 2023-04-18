@@ -71,12 +71,12 @@ public class BlockRewardData {
       return false;
     }
     BlockRewardData that = (BlockRewardData) o;
-    return Objects.equals(proposerIndex, that.proposerIndex)
-        && Objects.equals(total, that.total)
-        && Objects.equals(attestations, that.attestations)
-        && Objects.equals(syncAggregate, that.syncAggregate)
-        && Objects.equals(proposerSlashings, that.proposerSlashings)
-        && Objects.equals(attesterSlashings, that.attesterSlashings);
+    return proposerIndex == that.proposerIndex
+        && total == that.total
+        && attestations == that.attestations
+        && syncAggregate == that.syncAggregate
+        && proposerSlashings == that.proposerSlashings
+        && attesterSlashings == that.attesterSlashings;
   }
 
   @Override
