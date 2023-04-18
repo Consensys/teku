@@ -24,6 +24,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
@@ -49,6 +50,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
+import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
@@ -556,6 +558,23 @@ public class ChainDataProviderTest {
     assertThat(syncCommitteeRewardData.isFinalized()).isFalse();
     assertThat(syncCommitteeRewardData.getRewardData())
         .containsExactlyInAnyOrder(Map.entry(2, -1 * reward), Map.entry(4, reward));
+  }
+
+  @Test
+  public void getBlockRewardsFromBlockId_shouldCheckStateAndBlockAreHandled()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider = setupAltairState();
+    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
+        provider.getBlockRewardsFromBlockId("head");
+
+    final Optional<BlockAndMetaData> blockAndMetadata = provider.getBlockAndMetaData("head").get();
+    assertThat(blockAndMetadata).isNotEmpty();
+    verify(mockCombinedChainDataClient, times(1))
+        .getStateByBlockRoot(blockAndMetadata.get().getData().getRoot());
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 
   @Test
