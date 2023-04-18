@@ -66,9 +66,9 @@ public class PostAttesterDuties extends RestApiEndpoint {
   private static final SerializableTypeDefinition<AttesterDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(AttesterDuties.class)
           .name("GetAttesterDutiesResponse")
+          .withField("dependent_root", BYTES32_TYPE, AttesterDuties::getDependentRoot)
           .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, AttesterDuties::isExecutionOptimistic)
           .withField(FINALIZED, BOOLEAN_TYPE, AttesterDuties::isFinalized)
-          .withField("dependent_root", BYTES32_TYPE, AttesterDuties::getDependentRoot)
           .withField(
               "data",
               SerializableTypeDefinition.listOf(ATTESTER_DUTY_TYPE),
