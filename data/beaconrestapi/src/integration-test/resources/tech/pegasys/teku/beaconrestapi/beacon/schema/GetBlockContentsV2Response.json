@@ -1,0 +1,24 @@
+{
+  "title" : "GetBlockContentsV2Response",
+  "type" : "object",
+  "required" : [ "version", "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "title" : "SignedBlockContents",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/SignedBlockContents"
+      } ]
+    }
+  }
+}

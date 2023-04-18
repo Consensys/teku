@@ -40,7 +40,7 @@ class GetBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    setHandler(new GetBlock(chainDataProvider, schemaDefinitionCache));
+    setHandler(new GetBlock(chainDataProvider, spec, schemaDefinitionCache));
     request.setPathParameter("block_id", "head");
   }
 

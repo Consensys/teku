@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
@@ -26,31 +27,45 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
+import java.util.function.Function;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class GetBlock extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v2/beacon/blocks/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
   public GetBlock(
-      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
-    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
+      final DataProvider dataProvider,
+      final Spec spec,
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getChainDataProvider(), spec, schemaDefinitionCache);
   }
 
   public GetBlock(
       final ChainDataProvider chainDataProvider,
+      final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
@@ -62,8 +77,8 @@ public class GetBlock extends RestApiEndpoint {
             .response(
                 SC_OK,
                 "Request successful",
-                getResponseType(schemaDefinitionCache),
-                sszResponseType())
+                getResponseTypes(schemaDefinitionCache),
+                sszResponseType(getMilestoneSelector(spec)))
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -88,8 +103,25 @@ public class GetBlock extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<ObjectAndMetaData<SignedBeaconBlock>> getResponseType(
-      SchemaDefinitionCache schemaDefinitionCache) {
+  private static SerializableOneOfTypeDefinition<Object> getResponseTypes(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableOneOfTypeDefinitionBuilder<Object> builder =
+        new SerializableOneOfTypeDefinitionBuilder<>().description("Request successful");
+    builder.withType(
+        value ->
+            value instanceof ObjectAndMetaData
+                && ((ObjectAndMetaData<?>) value).getData() instanceof SignedBeaconBlock,
+        getSignedBeaconBlockResponseType(schemaDefinitionCache));
+    builder.withType(
+        value ->
+            value instanceof ObjectAndMetaData
+                && ((ObjectAndMetaData<?>) value).getData() instanceof SignedBlockContents,
+        getSignedBlockContentsResponseType(schemaDefinitionCache));
+    return builder.build();
+  }
+
+  private static SerializableTypeDefinition<ObjectAndMetaData<SignedBeaconBlock>>
+      getSignedBeaconBlockResponseType(SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<SignedBeaconBlock> signedBeaconBlockType =
         getSchemaDefinitionForAllMilestones(
             schemaDefinitionCache,
@@ -107,5 +139,50 @@ public class GetBlock extends RestApiEndpoint {
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
         .withField("data", signedBeaconBlockType, ObjectAndMetaData::getData)
         .build();
+  }
+
+  private static SerializableTypeDefinition<ObjectAndMetaData<SignedBlockContents>>
+      getSignedBlockContentsResponseType(SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableTypeDefinition<SignedBlockContents> signedBlockContentsType =
+        getAvailableSchemaDefinitionForAllMilestones(
+            schemaDefinitionCache,
+            "SignedBlockContents",
+            schemaDefinitions ->
+                schemaDefinitions
+                    .toVersionDeneb()
+                    .map(SchemaDefinitionsDeneb::getSignedBlockContentsSchema),
+            (signedBlockContents, milestone) ->
+                schemaDefinitionCache
+                    .milestoneAtSlot(signedBlockContents.getSignedBeaconBlock().getSlot())
+                    .equals(milestone));
+
+    return SerializableTypeDefinition.<ObjectAndMetaData<SignedBlockContents>>object()
+        .name("GetBlockContentsV2Response")
+        .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
+        .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+        .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
+        .withField("data", signedBlockContentsType, ObjectAndMetaData::getData)
+        .build();
+  }
+
+  @NotNull
+  private static Function<SszData, SpecMilestone> getMilestoneSelector(final Spec spec) {
+    return sszData -> {
+      if (sszData instanceof SignedBeaconBlock) {
+        return spec.getForkSchedule()
+            .getSpecMilestoneAtSlot(((SignedBeaconBlock) sszData).getSlot());
+      } else if (sszData instanceof SignedBlockContents) {
+        return spec.getForkSchedule()
+            .getSpecMilestoneAtSlot(
+                ((SignedBlockContents) sszData).getSignedBeaconBlock().getSlot());
+      } else {
+        throw new UnsupportedOperationException(
+            String.format(
+                "Unsupported GetBlock response type. Must be of type %s or %s but got %s",
+                BeaconBlock.class.getCanonicalName(),
+                BlindedBlockContents.class.getCanonicalName(),
+                sszData.getClass().getCanonicalName()));
+      }
+    };
   }
 }

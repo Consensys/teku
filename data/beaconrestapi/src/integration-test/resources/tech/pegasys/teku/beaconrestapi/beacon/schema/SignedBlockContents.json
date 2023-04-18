@@ -1,0 +1,13 @@
+{
+  "title" : "SignedBlockContents",
+  "type" : "object",
+  "required" : [ "signed_block_contents", "signed_blob_sidecars" ],
+  "properties" : {
+    "signed_block_contents" : {
+      "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
+    },
+    "signed_blob_sidecars" : {
+      "$ref" : "#/components/schemas/SignedBlobSidecarsSchema"
+    }
+  }
+}

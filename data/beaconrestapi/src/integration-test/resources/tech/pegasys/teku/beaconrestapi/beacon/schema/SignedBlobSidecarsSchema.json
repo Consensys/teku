@@ -1,0 +1,13 @@
+{
+  "title" : "SignedBlobSidecarsSchema",
+  "type" : "object",
+  "required" : [ "signed_blob_sidecars" ],
+  "properties" : {
+    "signed_blob_sidecars" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/SignedBlobSidecar"
+      }
+    }
+  }
+}

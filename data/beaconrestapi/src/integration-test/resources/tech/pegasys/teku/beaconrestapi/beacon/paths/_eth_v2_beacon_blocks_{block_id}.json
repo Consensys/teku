@@ -18,15 +18,21 @@
       "200" : {
         "description" : "Request successful",
         "content" : {
+          "application/json" : {
+            "schema" : {
+              "description" : "Request successful",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/GetBlockV2Response"
+              }, {
+                "$ref" : "#/components/schemas/GetBlockContentsV2Response"
+              } ]
+            }
+          },
           "application/octet-stream" : {
             "schema" : {
               "type" : "string",
               "format" : "binary"
-            }
-          },
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/GetBlockV2Response"
             }
           }
         }
