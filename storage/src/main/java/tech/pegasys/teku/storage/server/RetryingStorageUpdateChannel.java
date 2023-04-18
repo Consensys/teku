@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.annotations.VisibleForTesting;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -87,8 +89,8 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
-    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, blobsSidecarBySlot));
+      final Map<Bytes32, List<BlobSidecar>> finalizedBlobSidecars) {
+    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, finalizedBlobSidecars));
   }
 
   @Override

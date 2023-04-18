@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
@@ -151,26 +150,6 @@ public class ChainBuilder {
 
   public Optional<List<BlobSidecar>> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot));
-  }
-
-  public Optional<SignedBeaconBlockAndBlobsSidecar> getBlockAndBlobsSidecar(
-      final Bytes32 blockRoot) {
-    return getBlock(blockRoot)
-        .map(
-            block -> {
-              final UInt64 slot = block.getSlot();
-              final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-                  SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions());
-              final BlobsSidecar blobsSidecar =
-                  getBlobsSidecar(blockRoot)
-                      .orElse(
-                          schemaDefinitionsDeneb
-                              .getBlobsSidecarSchema()
-                              .createEmpty(blockRoot, slot));
-              return schemaDefinitionsDeneb
-                  .getSignedBeaconBlockAndBlobsSidecarSchema()
-                  .create(block, blobsSidecar);
-            });
   }
 
   /**
