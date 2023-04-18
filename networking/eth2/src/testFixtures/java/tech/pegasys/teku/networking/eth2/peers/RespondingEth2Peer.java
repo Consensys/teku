@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeIdGenerator;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
@@ -243,8 +242,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener)
-      throws RpcException {
+      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener) {
     throw new UnsupportedOperationException("Not yet implemented");
   }
 
