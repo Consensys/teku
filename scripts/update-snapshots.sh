@@ -55,7 +55,7 @@ OUT=$(echo "$OUT" | sed 's:/*$::')
 downloader() {
   echo "Downloading $1 snapshot" >&2
   ssh -f -o ExitOnForwardFailure=yes -o ConnectTimeout=10 -L "${LOCAL_REST_API_BINDING_PORT}":localhost:5051 "${2}" sleep 1
-  curl -s --show-error --fail -H 'Accept: application/octet-stream' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/teku/v1/beacon/deposit_snapshot -o "${OUT}/${1}.ssz" >&2
+  curl -s --show-error --fail -H 'Accept: application/octet-stream' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/eth/v1/beacon/deposit_snapshot -o "${OUT}/${1}.ssz" >&2
 }
 
 downloader "goerli" "${SERVER_GOERLI_URL}"
