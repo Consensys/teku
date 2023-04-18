@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class PowchainConfiguration {
   public static final int DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE = 10_000;
   public static final boolean DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING = false;
-  public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_ENABLED = false;
+  public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_ENABLED = true;
 
   private final Spec spec;
   private final List<String> eth1Endpoints;
