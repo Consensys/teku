@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -27,8 +26,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -49,7 +46,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -240,16 +236,15 @@ public class BlockOperationSelectorFactory {
 
     bodyBuilder.executionPayload(
         executionPayloadContextFuture.thenCompose(
-            executionPayloadContext -> {
-              if (executionPayloadContext.isEmpty()) {
-                return preMergePayload.get();
-              } else {
-                return executionLayerBlockProductionManager
-                    .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, false)
-                    .getExecutionPayloadFuture()
-                    .orElseThrow();
-              }
-            }));
+            executionPayloadContext ->
+                executionPayloadContext
+                    .map(
+                        payloadContext ->
+                            executionLayerBlockProductionManager
+                                .initiateBlockProduction(payloadContext, blockSlotState, false)
+                                .getExecutionPayloadFuture()
+                                .orElseThrow())
+                    .orElseGet(preMergePayload)));
   }
 
   private void builderSetPayloadHeader(
@@ -349,27 +344,11 @@ public class BlockOperationSelectorFactory {
                   new SignedBeaconBlockAndBlobsSidecar(
                       schemaDefinitionsDeneb.getSignedBeaconBlockAndBlobsSidecarSchema(),
                       signedBeaconBlock,
-                      createBlobsSidecar(
-                          schemaDefinitionsDeneb,
-                          signedBeaconBlock.getSlot(),
-                          signedBeaconBlock.getRoot(),
-                          blobs)));
+                      createBlobsSidecar()));
     };
   }
 
-  private BlobsSidecar createBlobsSidecar(
-      final SchemaDefinitionsDeneb schemaDefinitionsDeneb,
-      final UInt64 slot,
-      final Bytes32 beaconBlockRoot,
-      final List<Blob> blobs) {
-    final MiscHelpersDeneb miscHelpers =
-        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
-    return new BlobsSidecar(
-        schemaDefinitionsDeneb.getBlobsSidecarSchema(),
-        beaconBlockRoot,
-        slot,
-        blobs,
-        miscHelpers.computeAggregatedKzgProof(
-            blobs.stream().map(Blob::getBytes).collect(Collectors.toList())));
+  private BlobsSidecar createBlobsSidecar() {
+    throw new UnsupportedOperationException("Deprecated");
   }
 }

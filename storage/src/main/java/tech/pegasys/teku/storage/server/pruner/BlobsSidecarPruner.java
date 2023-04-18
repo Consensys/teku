@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.storage.server.pruner;
 
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import java.time.Duration;
 import java.util.Map;
@@ -195,7 +195,7 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
     // we have to guarantee that current epoch data is fully available,
     // moreover we want to gradually delete blobs at each iteration
 
-    // MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS = 1
+    // MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 1
     //    (5)
     //  latest                        (70)
     //  prunable   DA boundary          current_slot
@@ -213,7 +213,7 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
     //   latest_prunable_slot = 31
 
     return currentSlot.minusMinZero(
-        ((long) (MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS + 1)
+        ((long) (MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1)
                 * spec.atSlot(currentSlot).getSlotsPerEpoch())
             + 1);
   }

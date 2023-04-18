@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -486,7 +486,7 @@ public class DebugDbCommand implements Runnable {
             .computeEpochAtSlot(UInt64.valueOf(currentSlot));
 
     final UInt64 lowerEpochBoundDataAvailability =
-        currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOBS_SIDECARS_REQUESTS).max(denebActivationEpoch);
+        currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS).max(denebActivationEpoch);
 
     final UInt64 lowerSlotBoundDataAvailability =
         eth2NetworkOptions

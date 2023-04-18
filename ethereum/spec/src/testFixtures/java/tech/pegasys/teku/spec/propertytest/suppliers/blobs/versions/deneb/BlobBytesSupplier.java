@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
+package tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb;
 
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class BlindedBlobSidecarSupplier extends DataStructureUtilSupplier<BlindedBlobSidecar> {
+public class BlobBytesSupplier extends DataStructureUtilSupplier<Bytes> {
 
-  public BlindedBlobSidecarSupplier() {
-    super(DataStructureUtil::randomBlindedBlobSidecar, SpecMilestone.DENEB);
+  public BlobBytesSupplier() {
+    super(DataStructureUtil::randomBlobBytes, SpecMilestone.DENEB);
   }
 }

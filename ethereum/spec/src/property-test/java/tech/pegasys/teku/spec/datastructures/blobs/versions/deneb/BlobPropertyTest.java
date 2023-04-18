@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2023
+ * Copyright ConsenSys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,24 +19,18 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlindedBlobSidecarSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSupplier;
 
-public class SignedBlindedBlobSidecarPropertyTest {
-
+public class BlobPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll(supplier = SignedBlindedBlobSidecarSupplier.class)
-          final SignedBlindedBlobSidecar signedBlindedBlobSidecar)
+  void roundTrip(@ForAll(supplier = BlobSupplier.class) final Blob blob)
       throws JsonProcessingException {
-    assertRoundTrip(signedBlindedBlobSidecar);
+    assertRoundTrip(blob);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SignedBlindedBlobSidecarSupplier.class)
-          final SignedBlindedBlobSidecar signedBlindedBlobSidecar,
-      @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(signedBlindedBlobSidecar, seed);
+      @ForAll(supplier = BlobSupplier.class) final Blob blob, @ForAll final int seed) {
+    assertDeserializeMutatedThrowsExpected(blob, seed);
   }
 }

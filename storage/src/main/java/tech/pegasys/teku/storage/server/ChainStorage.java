@@ -109,9 +109,9 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, BlobsSidecar> finalizedBlobsSidecar) {
-    return SafeFuture.fromRunnable(
-        () -> database.storeFinalizedBlocks(finalizedBlocks, finalizedBlobsSidecar));
+      final Map<Bytes32, List<BlobSidecar>> finalizedBlobSidecars) {
+    // TODO: implement storage of finalizedBlobSidecars
+    return SafeFuture.fromRunnable(() -> database.storeFinalizedBlocks(finalizedBlocks, Map.of()));
   }
 
   @Override

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,21 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BlobSidecarSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlindedBlobSidecarSupplier;
 
-public class BlobSidecarPropertyTest {
+public class BlindedBlobSidecarPropertyTest {
 
   @Property
-  void roundTrip(@ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecar blobSidecar)
+  void roundTrip(
+      @ForAll(supplier = BlindedBlobSidecarSupplier.class)
+          final BlindedBlobSidecar blindedBlobSidecar)
       throws JsonProcessingException {
-    assertRoundTrip(blobSidecar);
+    assertRoundTrip(blindedBlobSidecar);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecar blobSidecar,
+      @ForAll(supplier = BlindedBlobSidecarSupplier.class)
+          final BlindedBlobSidecar blindedBlobSidecar,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(blobSidecar, seed);
+    assertDeserializeMutatedThrowsExpected(blindedBlobSidecar, seed);
   }
 }
