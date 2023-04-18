@@ -35,14 +35,11 @@ import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
-  private final BlockRewardData data =
-      new BlockRewardData(
-          123, 123L, 123L, 123L, 123L, 123L);
+  private final BlockRewardData data = new BlockRewardData(123, 123L, 123L, 123L, 123L, 123L);
   private final ObjectAndMetaData<BlockRewardData> blockRewardsResult =
       new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, false, true, true);
 
@@ -53,7 +50,7 @@ public class GetBlockRewardsTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  void shouldReturnBlockAndRewardDataInformation() // TODO want to advance chain to have rewards
+  void shouldReturnBlockAndRewardDataInformation()
       throws JsonProcessingException, ExecutionException, InterruptedException {
     when(chainDataProvider.getBlockRewardsFromBlockId(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockRewardsResult)));
