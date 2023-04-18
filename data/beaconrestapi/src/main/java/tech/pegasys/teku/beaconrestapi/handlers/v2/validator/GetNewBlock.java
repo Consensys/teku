@@ -145,7 +145,7 @@ public class GetNewBlock extends RestApiEndpoint {
   private static SerializableTypeDefinition<BlockContents> getBlockContentsResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
     return SerializableTypeDefinition.<BlockContents>object()
-        .name("ProduceBlockBlockContentsResponse")
+        .name("ProduceBlockContentsResponse")
         .withField(
             "data",
             getAvailableSchemaDefinitionForAllMilestones(
