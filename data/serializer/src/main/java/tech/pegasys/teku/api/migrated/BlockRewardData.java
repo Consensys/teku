@@ -17,17 +17,17 @@ import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockRewardData {
-  private final Integer proposerIndex;
-  private final Long total;
-  private final Long attestations;
+  private final int proposerIndex;
+  private final long total;
+  private final long attestations;
   private final UInt64 syncAggregate;
   private final UInt64 proposerSlashings;
   private final UInt64 attesterSlashings;
 
   public BlockRewardData(
-      final Integer proposerIndex,
-      final Long total,
-      final Long attestations,
+      final int proposerIndex,
+      final long total,
+      final long attestations,
       final UInt64 syncAggregate,
       final UInt64 proposerSlashings,
       final UInt64 attesterSlashings) {
@@ -39,15 +39,15 @@ public class BlockRewardData {
     this.attesterSlashings = attesterSlashings;
   }
 
-  public Integer getProposerIndex() {
+  public int getProposerIndex() {
     return proposerIndex;
   }
 
-  public Long getTotal() {
+  public long getTotal() {
     return total;
   }
 
-  public Long getAttestations() {
+  public long getAttestations() {
     return attestations;
   }
 
