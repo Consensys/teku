@@ -22,5 +22,6 @@ For information on changes in released versions of Teku, see the [releases page]
  - Enabled peer scoring by default. Can be disabled explicitly using `--Xp2p-gossip-scoring-enabled=false`
  - When failovers are configured, the validator client will perform a readiness check on startup to avoid retrieving validator statuses from a node which is not ready.
  - Enabled deposit tree snapshot bundles for major networks and persists it after finalization to decrease EL pressure and speed up node startup. Use `--deposit-snapshot-enabled=false` to disable.
+ - Optimized validator exit processing during state transition, to speed up block import containing multiple validator exits.
 
 ### Bug Fixes
