@@ -18,7 +18,6 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYP
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
@@ -66,9 +65,8 @@ public class PostAttesterDuties extends RestApiEndpoint {
   private static final SerializableTypeDefinition<AttesterDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(AttesterDuties.class)
           .name("GetAttesterDutiesResponse")
-          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, AttesterDuties::isExecutionOptimistic)
-          .withField(FINALIZED, BOOLEAN_TYPE, AttesterDuties::isFinalized)
           .withField("dependent_root", BYTES32_TYPE, AttesterDuties::getDependentRoot)
+          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, AttesterDuties::isExecutionOptimistic)
           .withField(
               "data",
               SerializableTypeDefinition.listOf(ATTESTER_DUTY_TYPE),

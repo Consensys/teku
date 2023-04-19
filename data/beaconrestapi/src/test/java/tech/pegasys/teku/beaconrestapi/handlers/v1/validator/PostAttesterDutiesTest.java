@@ -45,7 +45,7 @@ public class PostAttesterDutiesTest extends AbstractMigratedBeaconHandlerTest {
   final AttesterDuty duty =
       new AttesterDuty(dataStructureUtil.randomPublicKey(), 1, 2, 0, 2, 1, UInt64.ONE);
   final AttesterDuties attesterDuties =
-      new AttesterDuties(false, false, dataStructureUtil.randomBytes32(), List.of(duty));
+      new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty));
 
   @BeforeEach
   public void setup() {

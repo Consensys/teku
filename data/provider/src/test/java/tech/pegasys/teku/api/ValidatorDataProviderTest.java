@@ -377,7 +377,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.getAttestationDuties(eq(ONE), any()))
         .thenReturn(
             completedFuture(
-                Optional.of(new AttesterDuties(false, false, previousTargetRoot, emptyList()))));
+                Optional.of(new AttesterDuties(false, previousTargetRoot, emptyList()))));
     final SafeFuture<Optional<AttesterDuties>> future =
         provider.getAttesterDuties(UInt64.ONE, IntList.of());
     assertThat(future).isCompleted();
@@ -395,7 +395,7 @@ public class ValidatorDataProviderTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        false, false, dataStructureUtil.randomBytes32(), List.of(v1, v2)))));
+                        false, dataStructureUtil.randomBytes32(), List.of(v1, v2)))));
 
     final SafeFuture<Optional<AttesterDuties>> future =
         provider.getAttesterDuties(ONE, IntList.of(1, 11));

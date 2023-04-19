@@ -105,8 +105,7 @@ class AttestationDutyLoaderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
-                    new AttesterDuties(
-                        false, false, dataStructureUtil.randomBytes32(), List.of(duty)))));
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty)))));
 
     when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
     when(signer.signAggregationSlot(slot, forkInfo))
@@ -143,8 +142,7 @@ class AttestationDutyLoaderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
-                    new AttesterDuties(
-                        false, false, dataStructureUtil.randomBytes32(), List.of(duty)))));
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), List.of(duty)))));
 
     when(scheduledDuties.scheduleProduction(any(), any(), any())).thenReturn(new SafeFuture<>());
     when(signer.signAggregationSlot(slot, forkInfo))
@@ -167,8 +165,7 @@ class AttestationDutyLoaderTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
-                    new AttesterDuties(
-                        false, false, dataStructureUtil.randomBytes32(), emptyList()))));
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList()))));
     final SafeFuture<Optional<SlotBasedScheduledDuties<?, ?>>> result =
         dutyLoader.loadDutiesForEpoch(UInt64.ONE);
 

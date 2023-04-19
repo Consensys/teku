@@ -1,1 +1,1 @@
-{"dependent_root":"0x0000000000000000000000000000000000000000000000000000000000001234","data":[{"pubkey":"0x8c43edcff6f1d56f2a42072637c0cfd9467ddfccb918ce1a8c2d1babb9cdd6584b601dde9b2bafe027be489bbdcf82ef","validator_index":"2","slot":"800"}]}
+{"dependent_root":"0x0000000000000000000000000000000000000000000000000000000000001234","execution_optimistic":false,"data":[{"pubkey":"0x8c43edcff6f1d56f2a42072637c0cfd9467ddfccb918ce1a8c2d1babb9cdd6584b601dde9b2bafe027be489bbdcf82ef","validator_index":"2","slot":"800"}]}
