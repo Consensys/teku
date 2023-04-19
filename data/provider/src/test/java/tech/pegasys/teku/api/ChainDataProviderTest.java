@@ -578,6 +578,28 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getBlockRewardData_shouldGetData() {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
+            data.randomBeaconState(100);
+
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(state);
+    final BlockAndMetaData blockAndMetaData =
+            new BlockAndMetaData(blockAndState.getBlock(), SpecMilestone.ALTAIR, true, false, true);
+
+    final ObjectAndMetaData<BlockRewardData> result =
+            provider.getBlockRewardData(blockAndMetaData, blockAndState.getState());
+
+    final BlockRewardData blockRewardData = new BlockRewardData(1, 1L, 1L, 1L, 1L);
+    final ObjectAndMetaData<BlockRewardData> expectedOutput =
+            new ObjectAndMetaData<>(blockRewardData, SpecMilestone.ALTAIR, true, true, true);
+    assertThat(result).isEqualTo(expectedOutput);
+  }
+
+  @Test
   public void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
     final long reward = 1234L;
     final Spec spec = TestSpecFactory.createMinimalAltair();
