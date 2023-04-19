@@ -56,12 +56,8 @@ public class GetProposerDuties extends RestApiEndpoint {
   private static final SerializableTypeDefinition<ProposerDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(ProposerDuties.class)
           .name("GetProposerDutiesResponse")
-          .withOptionalField(
-              EXECUTION_OPTIMISTIC,
-              BOOLEAN_TYPE,
-              (proposerDuties) ->
-                  proposerDuties.isExecutionOptimistic() ? Optional.of(true) : Optional.empty())
           .withField("dependent_root", BYTES32_TYPE, ProposerDuties::getDependentRoot)
+          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ProposerDuties::isExecutionOptimistic)
           .withField("data", listOf(PROPOSER_DUTY_TYPE), ProposerDuties::getDuties)
           .build();
 

@@ -72,8 +72,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(
             completedFuture(
                 Optional.of(
-                    new AttesterDuties(
-                        false, false, dataStructureUtil.randomBytes32(), emptyList()))));
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList()))));
     when(scheduledDuties.performProductionDuty(any()))
         .thenReturn(SafeFuture.completedFuture(DutyResult.NO_OP));
     when(scheduledDuties.performAggregationDuty(any()))
@@ -87,8 +86,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(
             completedFuture(
                 Optional.of(
-                    new AttesterDuties(
-                        false, false, dataStructureUtil.randomBytes32(), emptyList()))));
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList()))));
 
     dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE));
 
@@ -178,13 +176,11 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, false, previousDutyDependentRoot, emptyList()))));
+                Optional.of(new AttesterDuties(false, previousDutyDependentRoot, emptyList()))));
     when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, false, currentDutyDependentRoot, emptyList()))));
+                Optional.of(new AttesterDuties(false, currentDutyDependentRoot, emptyList()))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
@@ -212,13 +208,11 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, false, previousDutyDependentRoot, emptyList()))));
+                Optional.of(new AttesterDuties(false, previousDutyDependentRoot, emptyList()))));
     when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, false, currentDutyDependentRoot, emptyList()))));
+                Optional.of(new AttesterDuties(false, currentDutyDependentRoot, emptyList()))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
@@ -245,13 +239,11 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, false, previousDutyDependentRoot, emptyList()))));
+                Optional.of(new AttesterDuties(false, previousDutyDependentRoot, emptyList()))));
     when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(
-                    new AttesterDuties(false, false, currentDutyDependentRoot, emptyList()))));
+                Optional.of(new AttesterDuties(false, currentDutyDependentRoot, emptyList()))));
     dutyScheduler.onSlot(currentSlot);
 
     verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
@@ -361,8 +353,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
-                    new AttesterDuties(
-                        false, false, dataStructureUtil.randomBytes32(), emptyList()))));
+                    new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList()))));
     dutyScheduler.onSlot(ZERO);
 
     dutyScheduler.onBlockProductionDue(ZERO);
@@ -373,8 +364,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
     verify(scheduledDuties, never()).performAggregationDuty(ZERO);
 
     epoch0Duties.complete(
-        Optional.of(
-            new AttesterDuties(false, false, dataStructureUtil.randomBytes32(), emptyList())));
+        Optional.of(new AttesterDuties(false, dataStructureUtil.randomBytes32(), emptyList())));
     verify(scheduledDuties).performProductionDuty(ZERO);
     verify(scheduledDuties).performAggregationDuty(ZERO);
   }
@@ -391,10 +381,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        false,
-                        false,
-                        dataStructureUtil.randomBytes32(),
-                        List.of(validator1Duties)))));
+                        false, dataStructureUtil.randomBytes32(), List.of(validator1Duties)))));
 
     final AttestationProductionDuty attestationDuty = mock(AttestationProductionDuty.class);
     when(attestationDuty.performDuty()).thenReturn(new SafeFuture<>());
@@ -451,7 +438,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        false,
                         false,
                         dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
@@ -522,7 +508,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
                 Optional.of(
                     new AttesterDuties(
                         false,
-                        false,
                         dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
 
@@ -591,7 +576,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        false,
                         false,
                         dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
@@ -665,7 +649,6 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             completedFuture(
                 Optional.of(
                     new AttesterDuties(
-                        false,
                         false,
                         dataStructureUtil.randomBytes32(),
                         List.of(validator1Duties, validator2Duties)))));
