@@ -49,6 +49,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -204,7 +205,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 .andThen(BeaconBlockBodySchema::toVersionCapella)
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
-            validator);
+            validator,
+            SyncAsyncRunner.SYNC_RUNNER,
+            new SystemTimeProvider());
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {

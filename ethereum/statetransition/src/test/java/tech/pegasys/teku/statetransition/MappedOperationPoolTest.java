@@ -16,6 +16,9 @@ package tech.pegasys.teku.statetransition;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -30,9 +33,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -55,6 +60,8 @@ public class MappedOperationPoolTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final SignedBlsToExecutionChangeValidator validator =
       mock(SignedBlsToExecutionChangeValidator.class);
+  private final StubTimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(1_000_000);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner(stubTimeProvider);
   private final Function<UInt64, SszListSchema<SignedBlsToExecutionChange, ?>>
       blsToExecutionSchemaSupplier =
           beaconBlockSchemaSupplier
@@ -63,7 +70,12 @@ public class MappedOperationPoolTest {
               .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema);
   private final OperationPool<SignedBlsToExecutionChange> pool =
       new MappedOperationPool<>(
-          "BlsToExecutionOperationPool", metricsSystem, blsToExecutionSchemaSupplier, validator);
+          "BlsToExecutionOperationPool",
+          metricsSystem,
+          blsToExecutionSchemaSupplier,
+          validator,
+          asyncRunner,
+          stubTimeProvider);
 
   @BeforeEach
   void init() {
@@ -185,17 +197,63 @@ public class MappedOperationPoolTest {
     assertThat(pool.size()).isEqualTo(0);
   }
 
+  @Test
+  void shouldNotUpdateLocalOperationsIfLessThanMinimumTime() {
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForBlockInclusion(any(), any()))
+        .thenReturn(Optional.of(mock(OperationInvalidReason.class)));
+
+    initPoolWithSingleItem();
+    assertThat(pool.size()).isEqualTo(1);
+    // the object only gets verified once, because the async running task doesn't pick it up to
+    // reprocess
+    verify(validator, times(1)).validateForGossip(any());
+    final Subscription subscription = initialiseSubscriptions();
+    stubTimeProvider.advanceTimeBySeconds(7199);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    asyncRunner.executeDueActions();
+
+    verifyNoMoreInteractions(validator);
+    assertThat(subscription.getBlsToExecutionChange()).isEmpty();
+  }
+
+  @Test
+  void shouldUpdateLocalOperationsIfStale() {
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+    when(validator.validateForBlockInclusion(any(), any()))
+        .thenReturn(Optional.of(mock(OperationInvalidReason.class)));
+
+    initPoolWithSingleItem();
+    assertThat(pool.size()).isEqualTo(1);
+
+    final Subscription subscription = initialiseSubscriptions();
+    stubTimeProvider.advanceTimeBySeconds(7201);
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(1);
+    asyncRunner.executeDueActions();
+    // the stale object should get verified if it's being reprocessed
+    verify(validator, times(2)).validateForGossip(any());
+    assertThat(subscription.getBlsToExecutionChange()).isNotEmpty();
+  }
+
+  @Test
+  void shouldNotReprocessRemoteOperations() {
+    when(validator.validateForGossip(any())).thenReturn(completedFuture(ACCEPT));
+    final SignedBlsToExecutionChange remoteEntry =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+
+    assertThat(pool.addRemote(remoteEntry)).isCompleted();
+    verify(validator, times(1)).validateForGossip(any());
+    stubTimeProvider.advanceTimeBySeconds(1_000_000);
+    asyncRunner.executeDueActions();
+    // the object only gets verified once, because the async running task doesn't pick it up to
+    // reprocess
+    verifyNoMoreInteractions(validator);
+  }
+
   @ParameterizedTest(name = "fromNetwork={0}")
   @ValueSource(booleans = {true, false})
   void subscribeOperationAddedSuccessfully(final boolean isFromNetwork) {
-    final Subscription subscription = new Subscription();
-    final OperationAddedSubscriber<SignedBlsToExecutionChange> subscriber =
-        (key, value, fromNetwork) -> {
-          subscription.setFromNetwork(fromNetwork);
-          subscription.setBlsToExecutionChange(key);
-          subscription.setInternalValidationResult(value);
-        };
-    pool.subscribeOperationAdded(subscriber);
+    final Subscription subscription = initialiseSubscriptions();
     final SignedBlsToExecutionChange item = dataStructureUtil.randomSignedBlsToExecutionChange();
     when(validator.validateForGossip(item)).thenReturn(completedFuture(ACCEPT));
 
@@ -212,14 +270,7 @@ public class MappedOperationPoolTest {
   @ParameterizedTest(name = "fromNetwork={0}")
   @ValueSource(booleans = {true, false})
   void subscribeOperationIgnored(final boolean isFromNetwork) {
-    final Subscription subscription = new Subscription();
-    final OperationAddedSubscriber<SignedBlsToExecutionChange> subscriber =
-        (key, value, fromNetwork) -> {
-          subscription.setFromNetwork(fromNetwork);
-          subscription.setBlsToExecutionChange(key);
-          subscription.setInternalValidationResult(value);
-        };
-    pool.subscribeOperationAdded(subscriber);
+    final Subscription subscription = initialiseSubscriptions();
     final SignedBlsToExecutionChange item = dataStructureUtil.randomSignedBlsToExecutionChange();
     when(validator.validateForGossip(item)).thenReturn(completedFuture(IGNORE));
 
@@ -242,14 +293,7 @@ public class MappedOperationPoolTest {
     // pre-populate cache
     assertThat(pool.addRemote(item)).isCompleted();
 
-    final Subscription subscription = new Subscription();
-    final OperationAddedSubscriber<SignedBlsToExecutionChange> subscriber =
-        (key, value, fromNetwork) -> {
-          subscription.setFromNetwork(fromNetwork);
-          subscription.setBlsToExecutionChange(key);
-          subscription.setInternalValidationResult(value);
-        };
-    pool.subscribeOperationAdded(subscriber);
+    final Subscription subscription = initialiseSubscriptions();
 
     final SafeFuture<InternalValidationResult> future;
     if (isFromNetwork) {
@@ -263,6 +307,18 @@ public class MappedOperationPoolTest {
     assertThat(subscription.getBlsToExecutionChange()).isEmpty();
     assertThat(subscription.getInternalValidationResult()).isEmpty();
     assertThat(subscription.getFromNetwork()).isEmpty();
+  }
+
+  private Subscription initialiseSubscriptions() {
+    final Subscription subscription = new Subscription();
+    final OperationAddedSubscriber<SignedBlsToExecutionChange> subscriber =
+        (key, value, fromNetwork) -> {
+          subscription.setFromNetwork(fromNetwork);
+          subscription.setBlsToExecutionChange(key);
+          subscription.setInternalValidationResult(value);
+        };
+    pool.subscribeOperationAdded(subscriber);
+    return subscription;
   }
 
   private static class Subscription {
