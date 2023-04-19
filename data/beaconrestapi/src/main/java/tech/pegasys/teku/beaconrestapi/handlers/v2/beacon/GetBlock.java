@@ -80,7 +80,7 @@ public class GetBlock extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<?>>> future =
         chainDataProvider.getBlock(request.getPathParameter(PARAMETER_BLOCK_ID));
 
     request.respondAsync(

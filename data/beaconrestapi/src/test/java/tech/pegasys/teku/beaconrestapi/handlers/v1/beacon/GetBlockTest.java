@@ -48,7 +48,7 @@ class GetBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
   @Test
   public void shouldReturnBlockInformation()
       throws JsonProcessingException, ExecutionException, InterruptedException {
-    final Optional<ObjectAndMetaData<SignedBeaconBlock>> stateAndMetaData =
+    final Optional<ObjectAndMetaData<?>> stateAndMetaData =
         chainDataProvider.getSignedBeaconBlock("head").get();
 
     handler.handleRequest(request);

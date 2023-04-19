@@ -61,9 +61,10 @@ public class GetBlock extends RestApiEndpoint {
     this.chainDataProvider = chainDataProvider;
   }
 
+  @SuppressWarnings("unchecked")
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> future =
+    SafeFuture<? extends Optional<ObjectAndMetaData<?>>> future =
         chainDataProvider.getSignedBeaconBlock(request.getPathParameter(PARAMETER_BLOCK_ID));
 
     request.respondAsync(
@@ -73,7 +74,8 @@ public class GetBlock extends RestApiEndpoint {
                 return AsyncApiResponse.respondNotFound();
               }
 
-              ObjectAndMetaData<SignedBeaconBlock> response = maybeObjectAndMetaData.get();
+              ObjectAndMetaData<SignedBeaconBlock> response =
+                  (ObjectAndMetaData<SignedBeaconBlock>) maybeObjectAndMetaData.get();
 
               if (!chainDataProvider
                   .getMilestoneAtSlot(response.getData().getMessage().getSlot())

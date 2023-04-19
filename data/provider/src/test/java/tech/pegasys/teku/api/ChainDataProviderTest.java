@@ -725,11 +725,12 @@ public class ChainDataProviderTest {
   public void getBlockRoot_shouldReturnRootOfBlock() throws Exception {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-    final Optional<ObjectAndMetaData<Bytes32>> response = provider.getBlockRoot("head").get();
+    final Optional<ObjectAndMetaData<?>> response = provider.getBlockRoot("head").get();
     assertThat(response).isPresent();
     assertThat(response.get().getData()).isEqualTo(bestBlock.getRoot());
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   public void getBlockAttestations_shouldReturnAttestationsOfBlock() throws Exception {
     final ChainDataProvider provider =
@@ -753,10 +754,10 @@ public class ChainDataProviderTest {
     storageSystem.chainUpdater().saveBlock(newHead);
     storageSystem.chainUpdater().updateBestBlock(newHead);
 
-    final Optional<ObjectAndMetaData<List<Attestation>>> response =
-        provider.getBlockAttestations("head").get();
+    final Optional<ObjectAndMetaData<?>> response = provider.getBlockAttestations("head").get();
     assertThat(response).isPresent();
-    assertThat(response.get().getData()).containsExactly(attestation1, attestation2);
+    assertThat((List<Attestation>) response.get().getData())
+        .containsExactly(attestation1, attestation2);
   }
 
   @Test

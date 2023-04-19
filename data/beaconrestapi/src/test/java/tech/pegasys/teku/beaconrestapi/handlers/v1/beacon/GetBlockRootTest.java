@@ -47,8 +47,7 @@ class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProvide
   @Test
   public void shouldReturnBlockHeaderInformation()
       throws JsonProcessingException, ExecutionException, InterruptedException {
-    final Optional<ObjectAndMetaData<Bytes32>> rootData =
-        chainDataProvider.getBlockRoot("head").get();
+    final Optional<ObjectAndMetaData<?>> rootData = chainDataProvider.getBlockRoot("head").get();
 
     handler.handleRequest(request);
 

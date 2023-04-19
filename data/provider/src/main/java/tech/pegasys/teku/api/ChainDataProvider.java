@@ -73,7 +73,6 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -159,24 +158,26 @@ public class ChainDataProvider {
                     blockAndData ->
                         blockAndData.map(
                             block ->
-                                block.blind(spec.atSlot(block.getSlot()).getSchemaDefinitions()))));
+                                ((SignedBeaconBlock) block)
+                                    .blind(
+                                        spec.atSlot(((SignedBeaconBlock) block).getSlot())
+                                            .getSchemaDefinitions()))));
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlock(
-      final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<?>>> getBlock(final String slotParameter) {
     return fromBlock(slotParameter, signedBeaconBlock -> signedBeaconBlock);
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getSignedBeaconBlock(
+  public SafeFuture<? extends Optional<ObjectAndMetaData<?>>> getSignedBeaconBlock(
       final String slotParameter) {
     return fromBlock(slotParameter, block -> block);
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String slotParameter) {
+  public SafeFuture<Optional<ObjectAndMetaData<?>>> getBlockRoot(final String slotParameter) {
     return fromBlock(slotParameter, SignedBeaconBlock::getRoot);
   }
 
-  public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
+  public SafeFuture<Optional<ObjectAndMetaData<?>>> getBlockAttestations(
       final String slotParameter) {
     return fromBlock(
         slotParameter,
@@ -852,8 +853,8 @@ public class ChainDataProvider {
     return spec.atSlot(recentChainData.getHeadSlot()).getMilestone();
   }
 
-  private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
-      final String slotParameter, final Function<SignedBeaconBlock, T> mapper) {
+  private SafeFuture<Optional<ObjectAndMetaData<?>>> fromBlock(
+      final String slotParameter, final Function<SignedBeaconBlock, ?> mapper) {
     return defaultBlockSelectorFactory
         .defaultBlockSelector(slotParameter)
         .getBlock()

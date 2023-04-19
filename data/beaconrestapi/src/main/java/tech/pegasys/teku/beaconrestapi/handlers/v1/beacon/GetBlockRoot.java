@@ -66,7 +66,7 @@ public class GetBlockRoot extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> future =
+    final SafeFuture<Optional<ObjectAndMetaData<?>>> future =
         chainDataProvider.getBlockRoot(request.getPathParameter(PARAMETER_BLOCK_ID));
 
     request.respondAsync(

@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -50,8 +50,9 @@ class GetBlockAttestationsTest extends AbstractMigratedBeaconHandlerTest {
   @Test
   public void shouldReturnBlockAttestationsInformation() throws JsonProcessingException {
     final Optional<ObjectAndMetaData<List<Attestation>>> optionalData = Optional.of(responseData);
-    when(chainDataProvider.getBlockAttestations("head"))
-        .thenReturn(SafeFuture.completedFuture(optionalData));
+    doReturn(SafeFuture.completedFuture(optionalData))
+        .when(chainDataProvider)
+        .getBlockAttestations("head");
 
     handler.handleRequest(request);
 
