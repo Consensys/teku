@@ -49,9 +49,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
 
-  private static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE = UInt64.valueOf(1500);
-  private static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
-  private static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
+  static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE = UInt64.valueOf(1500);
+  static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
+  static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
   private final SettableLabelledGauge sizeGauge;
   private final Map<Bytes32, BlockBlobSidecarsTracker> blockBlobSidecarsTrackers = new HashMap<>();
@@ -291,7 +291,8 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
         .ifExceptionGetsHereRaiseABug();
   }
 
-  private Optional<Duration> calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
+  @VisibleForTesting
+  Optional<Duration> calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
     final UInt64 slot = slotAndBlockRoot.getSlot();
 
     if (slot.isLessThan(getCurrentSlot())) {

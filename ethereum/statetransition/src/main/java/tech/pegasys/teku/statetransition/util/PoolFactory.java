@@ -34,15 +34,24 @@ public class PoolFactory {
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
   private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final int DEFAULT_MAX_BLOCKS = 5000;
-  private final SettableLabelledGauge sizeGauge;
+  private final SettableLabelledGauge pendingPoolsSizeGauge;
+  private final SettableLabelledGauge blobSidecarPoolSizeGauge;
 
   public PoolFactory(final MetricsSystem metricsSystem) {
-    this.sizeGauge =
+    this.pendingPoolsSizeGauge =
         SettableLabelledGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
             "pending_pool_size",
             "Number of items in pending pool",
+            "type");
+
+    this.blobSidecarPoolSizeGauge =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.BEACON,
+            "blobs_pool_size",
+            "Number of items in blobs pool",
             "type");
   }
 
@@ -60,7 +69,7 @@ public class PoolFactory {
       final UInt64 futureBlockTolerance,
       final int maxItems) {
     return new PendingPool<>(
-        sizeGauge,
+        pendingPoolsSizeGauge,
         "blocks",
         spec,
         historicalBlockTolerance,
@@ -73,7 +82,7 @@ public class PoolFactory {
 
   public PendingPool<ValidateableAttestation> createPendingPoolForAttestations(final Spec spec) {
     return new PendingPool<>(
-        sizeGauge,
+        pendingPoolsSizeGauge,
         "attestations",
         spec,
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
@@ -108,7 +117,7 @@ public class PoolFactory {
       final UInt64 futureBlockTolerance,
       final int maxItems) {
     return new BlobSidecarPoolImpl(
-        sizeGauge,
+        blobSidecarPoolSizeGauge,
         spec,
         timeProvider,
         asyncRunner,
@@ -129,7 +138,7 @@ public class PoolFactory {
       final int maxItems,
       final Function<SlotAndBlockRoot, BlockBlobSidecarsTracker> trackerFactory) {
     return new BlobSidecarPoolImpl(
-        sizeGauge,
+        pendingPoolsSizeGauge,
         spec,
         timeProvider,
         asyncRunner,
