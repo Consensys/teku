@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
@@ -68,7 +69,7 @@ public class GetBlockRewards extends RestApiEndpoint {
             .operationId("getBlockRewards")
             .summary("Get Block Rewards")
             .description("Retrieve block reward info for a single block.")
-            .tags(TAG_BEACON, TAG_REWARDS)
+            .tags(TAG_BEACON, TAG_REWARDS, TAG_EXPERIMENTAL)
             .pathParam(PARAMETER_BLOCK_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
