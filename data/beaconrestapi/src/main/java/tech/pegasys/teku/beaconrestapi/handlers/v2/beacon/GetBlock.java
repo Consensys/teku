@@ -38,7 +38,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -51,15 +50,12 @@ public class GetBlock extends RestApiEndpoint {
   private final ChainDataProvider chainDataProvider;
 
   public GetBlock(
-      final DataProvider dataProvider,
-      final Spec spec,
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    this(dataProvider.getChainDataProvider(), spec, schemaDefinitionCache);
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
   public GetBlock(
       final ChainDataProvider chainDataProvider,
-      final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(
         EndpointMetadata.get(ROUTE)
