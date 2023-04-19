@@ -1,0 +1,13 @@
+{
+  "title" : "BlobSidecars",
+  "type" : "object",
+  "required" : [ "blob_sidecars" ],
+  "properties" : {
+    "blob_sidecars" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/BlobSidecar"
+      }
+    }
+  }
+}

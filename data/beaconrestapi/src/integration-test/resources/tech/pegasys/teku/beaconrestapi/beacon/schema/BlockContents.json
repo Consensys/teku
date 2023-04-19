@@ -1,0 +1,13 @@
+{
+  "title" : "BlockContents",
+  "type" : "object",
+  "required" : [ "beacon_block", "blob_sidecars" ],
+  "properties" : {
+    "beacon_block" : {
+      "$ref" : "#/components/schemas/BeaconBlockDeneb"
+    },
+    "blob_sidecars" : {
+      "$ref" : "#/components/schemas/BlobSidecars"
+    }
+  }
+}
