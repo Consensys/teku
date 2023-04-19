@@ -23,5 +23,6 @@ For information on changes in released versions of Teku, see the [releases page]
  - When failovers are configured, the validator client will perform a readiness check on startup to avoid retrieving validator statuses from a node which is not ready.
  - Enabled deposit tree snapshot bundles for major networks and persists it after finalization to decrease EL pressure and speed up node startup. Use `--deposit-snapshot-enabled=false` to disable.
  - Optimized validator exit processing during state transition, to speed up block import containing multiple validator exits.
+ - Locally submitted exits and bls changes will now periodically broadcast if they are not actioned, to address operations being lost in remote pools.
 
 ### Bug Fixes
