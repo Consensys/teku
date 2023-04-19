@@ -14,16 +14,17 @@
 package tech.pegasys.teku.api.migrated;
 
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockRewardData {
-  private final int proposerIndex;
+  private UInt64 proposerIndex;
   private final long attestations;
   private final long syncAggregate;
   private final long proposerSlashings;
   private final long attesterSlashings;
 
   public BlockRewardData(
-      final int proposerIndex,
+      final UInt64 proposerIndex,
       final long attestations,
       final long syncAggregate,
       final long proposerSlashings,
@@ -35,7 +36,7 @@ public class BlockRewardData {
     this.attesterSlashings = attesterSlashings;
   }
 
-  public int getProposerIndex() {
+  public UInt64 getProposerIndex() {
     return proposerIndex;
   }
 
@@ -68,11 +69,11 @@ public class BlockRewardData {
       return false;
     }
     BlockRewardData that = (BlockRewardData) o;
-    return proposerIndex == that.proposerIndex
-        && attestations == that.attestations
+    return attestations == that.attestations
         && syncAggregate == that.syncAggregate
         && proposerSlashings == that.proposerSlashings
-        && attesterSlashings == that.attesterSlashings;
+        && attesterSlashings == that.attesterSlashings
+        && Objects.equals(proposerIndex, that.proposerIndex);
   }
 
   @Override

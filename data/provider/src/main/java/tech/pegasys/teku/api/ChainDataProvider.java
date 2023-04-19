@@ -733,7 +733,7 @@ public class ChainDataProvider {
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
 
-    final int proposerIndex = spec.getBeaconProposerIndex(state, block.getSlot());
+    final UInt64 proposerIndex = block.getProposerIndex();
     final long attestationsBlockRewards = calculateAttestationRewards(state);
     final long syncAggregateBlockRewards =
         calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);

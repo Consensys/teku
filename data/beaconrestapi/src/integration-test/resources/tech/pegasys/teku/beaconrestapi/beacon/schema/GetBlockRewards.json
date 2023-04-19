@@ -15,9 +15,9 @@
       "properties" : {
         "proposer_index" : {
           "type" : "string",
-          "description" : "integer string",
+          "description" : "unsigned 64 bit integer",
           "example" : "1",
-          "format" : "integer"
+          "format" : "uint64"
         },
         "total" : {
           "type" : "string",

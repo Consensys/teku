@@ -583,19 +583,20 @@ public class ChainDataProviderTest {
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
 
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-            data.randomBeaconState(100);
-
-    final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(state);
+    final SignedBlockAndState signedBlockAndState =
+        data.randomSignedBlockAndStateWithValidatorLogic(100);
     final BlockAndMetaData blockAndMetaData =
-            new BlockAndMetaData(blockAndState.getBlock(), SpecMilestone.ALTAIR, true, false, true);
+        new BlockAndMetaData(
+            signedBlockAndState.getBlock(), SpecMilestone.ALTAIR, true, false, true);
 
     final ObjectAndMetaData<BlockRewardData> result =
-            provider.getBlockRewardData(blockAndMetaData, blockAndState.getState());
+        provider.getBlockRewardData(blockAndMetaData, signedBlockAndState.getState());
 
-    final BlockRewardData blockRewardData = new BlockRewardData(1, 1L, 1L, 1L, 1L);
+    final BlockRewardData blockRewardData =
+        new BlockRewardData(
+            signedBlockAndState.getBlock().getProposerIndex(), 0L, 35L, 62500000L, 62500000L);
     final ObjectAndMetaData<BlockRewardData> expectedOutput =
-            new ObjectAndMetaData<>(blockRewardData, SpecMilestone.ALTAIR, true, true, true);
+        new ObjectAndMetaData<>(blockRewardData, SpecMilestone.ALTAIR, true, false, true);
     assertThat(result).isEqualTo(expectedOutput);
   }
 
@@ -631,7 +632,7 @@ public class ChainDataProviderTest {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
-    final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
+    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(100);
 
     final long result =
         provider.calculateProposerSlashingsRewards(
@@ -644,7 +645,7 @@ public class ChainDataProviderTest {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
-    final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
+    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(100);
 
     final long result =
         provider.calculateAttesterSlashingsRewards(
