@@ -19,7 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.GAUGE_BLOB_SIDECARS_LABEL;
 import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.GAUGE_BLOB_SIDECARS_TRACKERS_LABEL;
-import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.MAX_WAIT_RELATIVE_TO_ATT_DUE;
+import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
 import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.MIN_WAIT_MILLIS;
 import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.TARGET_WAIT_MILLIS;
 
@@ -530,7 +530,7 @@ public class BlobSidecarPoolImplTest {
     final UInt64 blockArrivalTimeMillis =
         startSlotInMillis
             .plus(4_000)
-            .minus(MAX_WAIT_RELATIVE_TO_ATT_DUE.minus(millisecondsIntoAttDueLimit))
+            .minus(MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS.minus(millisecondsIntoAttDueLimit))
             .minus(TARGET_WAIT_MILLIS);
 
     timeProvider.advanceTimeByMillis(blockArrivalTimeMillis.longValue());

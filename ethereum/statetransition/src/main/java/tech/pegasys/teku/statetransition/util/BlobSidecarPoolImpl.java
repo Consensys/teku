@@ -49,7 +49,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
 
-  static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE = UInt64.valueOf(1500);
+  static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = UInt64.valueOf(1500);
   static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
   static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
@@ -312,7 +312,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
 
     final UInt64 upperLimitRelativeToAttDue =
-        attestationDueMillis.minus(MAX_WAIT_RELATIVE_TO_ATT_DUE);
+        attestationDueMillis.minus(MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS);
 
     final UInt64 targetMillis = nowMillis.plus(TARGET_WAIT_MILLIS);
 
