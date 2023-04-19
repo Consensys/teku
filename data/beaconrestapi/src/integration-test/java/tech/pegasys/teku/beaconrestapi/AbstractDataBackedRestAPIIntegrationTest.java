@@ -44,7 +44,7 @@ import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -112,6 +112,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .build();
 
   protected ActiveValidatorChannel activeValidatorChannel;
+
+  protected StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   // Mocks
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
@@ -206,7 +208,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
             validator,
-            SyncAsyncRunner.SYNC_RUNNER,
+            asyncRunner,
             new SystemTimeProvider());
   }
 
@@ -238,7 +240,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eth1DataProvider,
             config,
             eventChannels,
-            SyncAsyncRunner.SYNC_RUNNER,
+            asyncRunner,
             StubTimeProvider.withTimeInMillis(1000),
             executionClientDataProvider,
             spec);

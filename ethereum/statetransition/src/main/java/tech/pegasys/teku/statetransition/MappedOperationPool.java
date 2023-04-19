@@ -108,7 +108,9 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
         this::updateLocalSubmissionsErrorHandler);
   }
 
-  private void updateLocalSubmissionsErrorHandler(Throwable throwable) {}
+  private void updateLocalSubmissionsErrorHandler(Throwable throwable) {
+    LOG.debug("Failed to update " + metricType, throwable);
+  }
 
   private void updateLocalSubmissions() {
     final UInt64 staleTime =
