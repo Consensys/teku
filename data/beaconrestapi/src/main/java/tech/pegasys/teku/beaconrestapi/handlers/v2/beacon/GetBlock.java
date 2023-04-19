@@ -27,8 +27,6 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
-import java.util.function.Function;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.Version;
@@ -40,12 +38,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -78,7 +72,7 @@ public class GetBlock extends RestApiEndpoint {
                 SC_OK,
                 "Request successful",
                 getResponseTypes(schemaDefinitionCache),
-                sszResponseType(getMilestoneSelector(spec)))
+                sszResponseType())
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -163,26 +157,5 @@ public class GetBlock extends RestApiEndpoint {
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
         .withField("data", signedBlockContentsType, ObjectAndMetaData::getData)
         .build();
-  }
-
-  @NotNull
-  private static Function<SszData, SpecMilestone> getMilestoneSelector(final Spec spec) {
-    return sszData -> {
-      if (sszData instanceof SignedBeaconBlock) {
-        return spec.getForkSchedule()
-            .getSpecMilestoneAtSlot(((SignedBeaconBlock) sszData).getSlot());
-      } else if (sszData instanceof SignedBlockContents) {
-        return spec.getForkSchedule()
-            .getSpecMilestoneAtSlot(
-                ((SignedBlockContents) sszData).getSignedBeaconBlock().getSlot());
-      } else {
-        throw new UnsupportedOperationException(
-            String.format(
-                "Unsupported GetBlock response type. Must be of type %s or %s but got %s",
-                BeaconBlock.class.getCanonicalName(),
-                BlindedBlockContents.class.getCanonicalName(),
-                sszData.getClass().getCanonicalName()));
-      }
-    };
   }
 }
