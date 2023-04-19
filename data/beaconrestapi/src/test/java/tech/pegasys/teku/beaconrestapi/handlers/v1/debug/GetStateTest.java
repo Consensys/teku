@@ -15,6 +15,8 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.debug;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -25,31 +27,32 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-class GetStateTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+class GetStateTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.PHASE0);
-    genesis();
-
     setHandler(new GetState(chainDataProvider, spec, schemaDefinitionCache));
-    request.setPathParameter("state_id", "head");
   }
 
   @Test
-  void shouldReturnStateInformation()
-      throws JsonProcessingException, ExecutionException, InterruptedException {
+  void shouldReturnStateInformation() throws JsonProcessingException {
+    final String stateId = "head";
+    final BeaconState state = dataStructureUtil.randomBeaconState();
     final StateAndMetaData stateAndMetaData =
-        chainDataProvider.getBeaconStateAndMetadata("head").get().orElseThrow();
+        new StateAndMetaData(state, SpecMilestone.CAPELLA, false, true, false);
+    when(chainDataProvider.getBeaconStateAndMetadata(eq(stateId)))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(stateAndMetaData)));
 
+    request.setPathParameter("state_id", stateId);
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
