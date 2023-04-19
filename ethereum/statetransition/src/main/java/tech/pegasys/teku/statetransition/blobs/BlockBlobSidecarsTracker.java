@@ -106,7 +106,7 @@ public class BlockBlobSidecarsTracker {
   }
 
   public void setBlock(final SignedBeaconBlock block) {
-    checkArgument(block.getRoot().equals(slotAndBlockRoot.getBlockRoot()), "Wrong block");
+    checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
     final Optional<BeaconBlockBodyDeneb> oldBlock =
         blockBody.getAndSet(
             Optional.of(BeaconBlockBodyDeneb.required(block.getMessage().getBody())));
