@@ -20,5 +20,6 @@ For information on changes in released versions of Teku, see the [releases page]
    This can be disabled by setting `--exchange-capabilities-enabled=false` if Shanghai is not supported on your EL client.
  - Enabled peer scoring by default. Can be disabled explicitly using `--Xp2p-gossip-scoring-enabled=false`
  - When failovers are configured, the validator client will perform a readiness check on startup to avoid retrieving validator statuses from a node which is not ready.
+ - Added `/eth/v1/beacon/rewards/blocks/{block_id}` rest api endpoint.
 
 ### Bug Fixes
