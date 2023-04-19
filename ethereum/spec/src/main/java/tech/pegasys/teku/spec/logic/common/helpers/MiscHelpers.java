@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -267,15 +266,6 @@ public class MiscHelpers {
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
       final List<BlobSidecar> blobSidecars) {
-    return false;
-  }
-
-  public boolean isDataAvailable(
-      final UInt64 slot,
-      final Bytes32 beaconBlockRoot,
-      final List<KZGCommitment> kzgCommitments,
-      final BlobsSidecar blobsSidecar) {
-    // TODO: remove when fork choice for blobs decoupling sync is implemented
     return false;
   }
 

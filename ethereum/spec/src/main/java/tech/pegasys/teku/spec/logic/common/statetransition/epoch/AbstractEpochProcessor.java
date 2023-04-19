@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ProgressiveTotalBalancesUpdates;
@@ -298,7 +300,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
   /** Processes validator registry updates */
   @Override
-  public void processRegistryUpdates(MutableBeaconState state, List<ValidatorStatus> statuses)
+  public void processRegistryUpdates(
+      final MutableBeaconState state, final List<ValidatorStatus> statuses)
       throws EpochProcessingException {
     try {
 
@@ -308,6 +311,9 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final UInt64 finalizedEpoch = state.getFinalizedCheckpoint().getEpoch();
       final UInt64 maxEffectiveBalance = specConfig.getMaxEffectiveBalance();
       final UInt64 ejectionBalance = specConfig.getEjectionBalance();
+      final Supplier<ValidatorExitContext> validatorExitContextSupplier =
+          beaconStateMutators.createValidatorExitContextSupplier(state);
+
       for (int index = 0; index < validators.size(); index++) {
         final ValidatorStatus status = statuses.get(index);
 
@@ -326,7 +332,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
         if (status.isActiveInCurrentEpoch()
             && status.getCurrentEpochEffectiveBalance().isLessThanOrEqualTo(ejectionBalance)) {
-          beaconStateMutators.initiateValidatorExit(state, index);
+          beaconStateMutators.initiateValidatorExit(state, index, validatorExitContextSupplier);
         }
       }
       // Queue validators eligible for activation and not yet dequeued for activation
