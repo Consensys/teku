@@ -85,15 +85,15 @@ public class PeerSyncTest extends AbstractSyncTest {
     final SafeFuture<BlockImportResult> result =
         SafeFuture.completedFuture(BlockImportResult.successful(block));
     when(blockImporter.importBlock(any())).thenReturn(result);
-    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
-    when(blobSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
+    when(blobsSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
 
     peerSync =
         new PeerSync(
             asyncRunner,
             recentChainData,
             blockImporter,
-            blobSidecarManager,
+            blobsSidecarManager,
             new NoOpMetricsSystem());
   }
 
@@ -506,7 +506,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_blocksAndBlobSidecarsForDeneb() {
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
-    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
 
@@ -541,14 +541,14 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_testFailedBlobSidecarImport() {
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
-    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
 
     withDenebPeerHeadSlot();
 
     // first sidecar import fails
-    when(blobSidecarManager.importBlobSidecar(
+    when(blobsSidecarManager.importBlobSidecar(
             argThat(blobSidecar -> blobSidecar.getSlot().equals(denebFirstSlot.plus(1)))))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 

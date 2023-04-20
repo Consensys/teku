@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
@@ -51,7 +51,7 @@ public class StorageSystem implements AutoCloseable {
   private final Database database;
   private final RestartedStorageSupplier restartedSupplier;
 
-  private final BlobSidecarManager blobsSidecarManager;
+  private final BlobsSidecarManager blobsSidecarManager;
 
   private StorageSystem(
       final StubMetricsSystem metricsSystem,
@@ -63,7 +63,7 @@ public class StorageSystem implements AutoCloseable {
       final CombinedChainDataClient combinedChainDataClient,
       final RestartedStorageSupplier restartedSupplier,
       final ChainBuilder chainBuilder,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobsSidecarManager blobsSidecarManager,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.chainStorage = chainStorage;
@@ -116,7 +116,7 @@ public class StorageSystem implements AutoCloseable {
             spec,
             new EarliestAvailableBlockSlot(chainStorageServer, new SystemTimeProvider(), 0));
 
-    final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
+    final BlobsSidecarManager blobSidecarManager = BlobsSidecarManager.NOOP;
 
     // Return storage system
     return new StorageSystem(
@@ -153,7 +153,7 @@ public class StorageSystem implements AutoCloseable {
     return chainUpdater;
   }
 
-  public BlobSidecarManager blobsSidecarManager() {
+  public BlobsSidecarManager blobsSidecarManager() {
     return blobsSidecarManager;
   }
 

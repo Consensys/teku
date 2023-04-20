@@ -44,13 +44,13 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class SyncSourceBatch implements Batch {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
-  private final BlobSidecarManager blobSidecarManager;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final SyncSourceSelector syncSourceProvider;
   private final ConflictResolutionStrategy conflictResolutionStrategy;
   private final TargetChain targetChain;
@@ -69,7 +69,7 @@ public class SyncSourceBatch implements Batch {
 
   SyncSourceBatch(
       final EventThread eventThread,
-      final BlobSidecarManager blobSidecarManager,
+      final BlobsSidecarManager blobsSidecarManager,
       final SyncSourceSelector syncSourceProvider,
       final ConflictResolutionStrategy conflictResolutionStrategy,
       final TargetChain targetChain,
@@ -78,7 +78,7 @@ public class SyncSourceBatch implements Batch {
     checkArgument(
         count.isGreaterThanOrEqualTo(UInt64.ONE), "Must include at least one slot in a batch");
     this.eventThread = eventThread;
-    this.blobSidecarManager = blobSidecarManager;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.syncSourceProvider = syncSourceProvider;
     this.conflictResolutionStrategy = conflictResolutionStrategy;
     this.targetChain = targetChain;
@@ -230,7 +230,7 @@ public class SyncSourceBatch implements Batch {
     final SafeFuture<Void> blobSidecarsRequest;
     final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler;
 
-    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
       LOG.debug(
           "Requesting blob sidecars for {} slots starting at {} from peer {}",
           remainingSlots,

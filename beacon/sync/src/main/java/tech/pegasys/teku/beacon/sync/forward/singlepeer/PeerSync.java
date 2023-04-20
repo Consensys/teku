@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -69,7 +69,7 @@ public class PeerSync {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
-  private final BlobSidecarManager blobSidecarManager;
+  private final BlobsSidecarManager blobsSidecarManager;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
@@ -85,13 +85,13 @@ public class PeerSync {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobSidecarManager,
+      final BlobsSidecarManager blobsSidecarManager,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
-    this.blobSidecarManager = blobSidecarManager;
+    this.blobsSidecarManager = blobsSidecarManager;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -170,7 +170,7 @@ public class PeerSync {
 
               final SafeFuture<Void> blobSidecarsRequest;
 
-              if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
+              if (blobsSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
                     "Request {} blob sidecars starting at {} from peer {}",
                     requestContext.count,
@@ -366,7 +366,7 @@ public class PeerSync {
               sidecarSlot, startSlot, endSlot);
       return SafeFuture.failedFuture(new FailedBlobSidecarImportException(exceptionMessage));
     }
-    return blobSidecarManager
+    return blobsSidecarManager
         .importBlobSidecar(blobSidecar)
         .exceptionallyCompose(
             error -> {

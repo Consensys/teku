@@ -62,7 +62,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilit
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -81,7 +81,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final EventThread forkChoiceExecutor;
   private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
-  private final BlobSidecarManager blobSidecarManager;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
@@ -97,7 +97,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
-      final BlobSidecarManager blobSidecarManager,
+      final BlobsSidecarManager blobsSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
@@ -105,7 +105,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
-    this.blobSidecarManager = blobSidecarManager;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
@@ -126,7 +126,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
-      final BlobSidecarManager blobsSidecarManager,
+      final BlobsSidecarManager blobsSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator) {
     this(
@@ -293,7 +293,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         KzgCommitmentsProcessor.create(specVersion.miscHelpers());
 
     final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        blobSidecarManager.createAvailabilityChecker(block);
+        blobsSidecarManager.createAvailabilityChecker(block);
 
     final BeaconState postState;
     try {

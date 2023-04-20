@@ -38,8 +38,8 @@ import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -66,7 +66,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final StorageUpdateChannel storageUpdateChannel;
   private final Eth2P2PNetwork p2pNetwork;
   private final BlockImporter blockImporter;
-  private final BlobSidecarManager blobSidecarManager;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlobSidecarPool blobSidecarPool;
   private final int getStartupTargetPeerCount;
@@ -86,7 +86,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final StorageUpdateChannel storageUpdateChannel,
       final Eth2P2PNetwork p2pNetwork,
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobSidecarManager,
+      final BlobsSidecarManager blobsSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final BlobSidecarPool blobSidecarPool,
       final int getStartupTargetPeerCount,
@@ -104,7 +104,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.storageUpdateChannel = storageUpdateChannel;
     this.p2pNetwork = p2pNetwork;
     this.blockImporter = blockImporter;
-    this.blobSidecarManager = blobSidecarManager;
+    this.blobsSidecarManager = blobsSidecarManager;
     this.pendingBlocks = pendingBlocks;
     this.blobSidecarPool = blobSidecarPool;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
@@ -184,7 +184,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               pendingBlocks,
               p2pNetwork,
               blockImporter,
-              blobSidecarManager,
+              blobsSidecarManager,
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -195,7 +195,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               p2pNetwork,
               recentChainData,
               blockImporter,
-              blobSidecarManager,
+              blobsSidecarManager,
               spec);
     }
     return forwardSync;

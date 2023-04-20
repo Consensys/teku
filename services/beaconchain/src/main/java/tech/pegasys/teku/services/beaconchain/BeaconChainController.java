@@ -107,9 +107,9 @@ import tech.pegasys.teku.statetransition.OperationsReOrgManager;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
@@ -244,7 +244,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
-  protected volatile BlobSidecarManager blobSidecarManager;
+  protected volatile BlobsSidecarManager blobsSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
@@ -310,10 +310,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
         syncService.getRecentBlobSidecarFetcher();
     recentBlobSidecarFetcher.subscribeBlobSidecarFetched(
         (blobSidecar) ->
-            blobSidecarManager
+            blobsSidecarManager
                 .importBlobSidecar(blobSidecar)
                 .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
-    blobSidecarManager.subscribeToImportedBlobSidecars(
+    blobsSidecarManager.subscribeToImportedBlobSidecars(
         blobSidecar ->
             recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
@@ -459,8 +459,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final BlobSidecarValidator blobSidecarValidator =
           BlobSidecarValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
-      final BlobSidecarManagerImpl blobsSidecarManagerImpl =
-          new BlobSidecarManagerImpl(
+      final BlobsSidecarManagerImpl blobsSidecarManagerImpl =
+          new BlobsSidecarManagerImpl(
               spec,
               recentChainData,
               blobSidecarValidator,
@@ -468,9 +468,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
               storageUpdateChannel);
       eventChannels.subscribe(SlotEventsChannel.class, blobsSidecarManagerImpl);
 
-      blobSidecarManager = blobsSidecarManagerImpl;
+      blobsSidecarManager = blobsSidecarManagerImpl;
     } else {
-      blobSidecarManager = BlobSidecarManager.NOOP;
+      blobsSidecarManager = BlobsSidecarManager.NOOP;
     }
   }
 
@@ -653,7 +653,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             spec,
             forkChoiceExecutor,
             recentChainData,
-            blobSidecarManager,
+            blobsSidecarManager,
             forkChoiceNotifier,
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
@@ -898,7 +898,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndImportBlobSidecar)
+            .gossipedBlobSidecarProcessor(blobsSidecarManager::validateAndImportBlobSidecar)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
@@ -1047,7 +1047,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         storageUpdateChannel,
         p2pNetwork,
         blockImporter,
-        blobSidecarManager,
+        blobsSidecarManager,
         pendingBlocks,
         blobSidecarPool,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),

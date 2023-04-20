@@ -29,26 +29,26 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.StubSyncSource;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 
 public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   private final List<Batch> batches = new ArrayList<>();
   private final Map<Batch, BatchSupport> batchSupports = new HashMap<>();
 
   private final EventThread eventThread;
-  private final BlobSidecarManager blobSidecarManager;
+  private final BlobsSidecarManager blobsSidecarManager;
   private final boolean enforceEventThread;
 
   public StubBatchFactory(final EventThread eventThread, final boolean enforceEventThread) {
-    this(eventThread, BlobSidecarManager.NOOP, enforceEventThread);
+    this(eventThread, BlobsSidecarManager.NOOP, enforceEventThread);
   }
 
   public StubBatchFactory(
       final EventThread eventThread,
-      final BlobSidecarManager blobSidecarManager,
+      final BlobsSidecarManager blobsSidecarManager,
       final boolean enforceEventThread) {
-    super(eventThread, blobSidecarManager, null);
-    this.blobSidecarManager = blobSidecarManager;
+    super(eventThread, blobsSidecarManager, null);
+    this.blobsSidecarManager = blobsSidecarManager;
     this.eventThread = eventThread;
     this.enforceEventThread = enforceEventThread;
   }
@@ -100,7 +100,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
   @Override
   public Batch createBatch(final TargetChain chain, final UInt64 start, final UInt64 count) {
     final BatchSupport support =
-        new BatchSupport(eventThread, blobSidecarManager, chain, start, count);
+        new BatchSupport(eventThread, blobsSidecarManager, chain, start, count);
     batches.add(support.batch);
     // Can look up batch support by either the wrapped or unwrapped batch
     batchSupports.put(support.batch, support);
@@ -129,7 +129,7 @@ public class StubBatchFactory extends BatchFactory implements Iterable<Batch> {
 
     public BatchSupport(
         final EventThread eventThread,
-        final BlobSidecarManager blobsSidecarManager,
+        final BlobsSidecarManager blobsSidecarManager,
         final TargetChain chain,
         final UInt64 start,
         final UInt64 count) {
