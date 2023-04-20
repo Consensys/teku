@@ -36,9 +36,6 @@ public interface StorageUpdateChannel extends ChannelInterface {
       Collection<SignedBeaconBlock> finalizedBlocks,
       Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot);
 
-  SafeFuture<Void> onFinalizedBlocksOld(
-      Collection<SignedBeaconBlock> finalizedBlocks, Map<UInt64, BlobsSidecar> blobsSidecarBySlo);
-
   SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);
 
   SafeFuture<Void> onReconstructedFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);

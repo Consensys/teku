@@ -115,14 +115,6 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onFinalizedBlocksOld(
-      final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, BlobsSidecar> finalizedBlobsSidecar) {
-    return SafeFuture.fromRunnable(
-        () -> database.storeFinalizedBlocksOld(finalizedBlocks, finalizedBlobsSidecar));
-  }
-
-  @Override
   public SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot) {
     return SafeFuture.fromRunnable(() -> database.storeFinalizedState(finalizedState, blockRoot));
   }

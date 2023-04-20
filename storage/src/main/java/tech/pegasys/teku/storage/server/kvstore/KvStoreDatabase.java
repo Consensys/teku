@@ -322,20 +322,6 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  protected void storeFinalizedBlocksToDaoOld(
-      final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      blocks.forEach(
-          block -> {
-            updater.addFinalizedBlock(block);
-            Optional.ofNullable(blobsSidecarBySlot.get(block.getSlot()))
-                .ifPresent(updater::addBlobsSidecar);
-          });
-      updater.commit();
-    }
-  }
-
   protected Optional<SignedBeaconBlock> getFinalizedBlock(final Bytes32 root) {
     return dao.getHotBlock(root);
   }
@@ -553,37 +539,6 @@ public class KvStoreDatabase implements Database {
     }
 
     storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot);
-  }
-
-  @Override
-  public void storeFinalizedBlocksOld(
-      final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
-    if (blocks.isEmpty()) {
-      return;
-    }
-
-    // Sort blocks and verify that they are contiguous with the oldestBlock
-    final List<SignedBeaconBlock> sorted =
-        blocks.stream()
-            .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
-            .collect(Collectors.toList());
-
-    // The new block should be just prior to our earliest block if available, and otherwise should
-    // match our latest finalized block
-    Bytes32 expectedRoot =
-        getEarliestAvailableBlock()
-            .map(SignedBeaconBlock::getParentRoot)
-            .orElseGet(() -> this.getLatestFinalizedBlockSummary().getRoot());
-    for (SignedBeaconBlock block : sorted) {
-      if (!block.getRoot().equals(expectedRoot)) {
-        throw new IllegalArgumentException(
-            "Blocks must be contiguous with the earliest known block.");
-      }
-      expectedRoot = block.getParentRoot();
-    }
-
-    storeFinalizedBlocksToDaoOld(blocks, blobsSidecarBySlot);
   }
 
   @Override

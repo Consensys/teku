@@ -77,13 +77,6 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Void> onFinalizedBlocksOld(
-      final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
-    return updateDelegate.onFinalizedBlocksOld(finalizedBlocks, blobsSidecarBySlot);
-  }
-
-  @Override
   public SafeFuture<Void> onFinalizedState(
       final BeaconState finalizedState, final Bytes32 blockRoot) {
     return updateDelegate.onFinalizedState(finalizedState, blockRoot);
