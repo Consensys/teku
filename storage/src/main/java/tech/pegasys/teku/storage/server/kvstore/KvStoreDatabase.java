@@ -23,7 +23,6 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -310,8 +309,10 @@ public class KvStoreDatabase implements Database {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
-            final List<BlobSidecar> blobSidecars =
-                finalizedBlobSidecarsBySlot.getOrDefault(block.getSlot(), Collections.emptyList());
+            if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlot())) {
+              return;
+            }
+            final List<BlobSidecar> blobSidecars = finalizedBlobSidecarsBySlot.get(block.getSlot());
             if (blobSidecars.isEmpty()) {
               updater.addNoBlobsSlot(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
             } else {

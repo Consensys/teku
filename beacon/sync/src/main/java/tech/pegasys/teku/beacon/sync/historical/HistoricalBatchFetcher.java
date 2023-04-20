@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Map;
@@ -382,8 +381,9 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobSidecars(final SignedBeaconBlock block) {
+    // We are post-Deneb and we should explicitly mark slot as one with no BlobSidecars if needed
     final List<BlobSidecar> blobSidecars =
-        blobSidecarsBySlotToImport.getOrDefault(block.getSlot(), Collections.emptyList());
+        blobSidecarsBySlotToImport.computeIfAbsent(block.getSlot(), __ -> new ArrayList<>());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     return blobsSidecarManager
         .createAvailabilityChecker(block)
