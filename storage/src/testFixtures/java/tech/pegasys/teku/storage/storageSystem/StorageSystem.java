@@ -116,7 +116,7 @@ public class StorageSystem implements AutoCloseable {
             spec,
             new EarliestAvailableBlockSlot(chainStorageServer, new SystemTimeProvider(), 0));
 
-    final BlobsSidecarManager blobSidecarManager = BlobsSidecarManager.NOOP;
+    final BlobsSidecarManager blobsSidecarManager = BlobsSidecarManager.NOOP;
 
     // Return storage system
     return new StorageSystem(
@@ -129,7 +129,7 @@ public class StorageSystem implements AutoCloseable {
         combinedChainDataClient,
         restartedSupplier,
         chainBuilder,
-        blobSidecarManager,
+        blobsSidecarManager,
         spec);
   }
 
