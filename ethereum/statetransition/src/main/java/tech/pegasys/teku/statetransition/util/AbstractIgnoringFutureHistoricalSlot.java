@@ -22,6 +22,14 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
+/**
+ * This class implements common functionalities for a pool. In particular, it is responsible for:
+ *
+ * <p>- filtering elements based on slot, which needs to fall under a given range (historic and
+ * future limits)
+ *
+ * <p>- handling pruning calculation logic based on slot finalization
+ */
 abstract class AbstractIgnoringFutureHistoricalSlot
     implements SlotEventsChannel, FinalizedCheckpointChannel {
   private final Spec spec;
