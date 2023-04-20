@@ -30,6 +30,8 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -554,6 +556,54 @@ public class BlobSidecarPoolImplTest {
 
     // we can only wait 200ms less than target
     assertThat(fetchDelay).isEqualTo(Optional.empty());
+  }
+
+  @Test
+  void getAllRequiredBlobSidecars_shouldReturnAllRequiredBlobsSidecars() {
+    final SignedBeaconBlock block1 =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+
+    final Set<BlobIdentifier> missingBlobs1 =
+        Set.of(
+            new BlobIdentifier(block1.getRoot(), UInt64.ONE),
+            new BlobIdentifier(block1.getRoot(), UInt64.ZERO));
+
+    mockedTrackersFactory =
+        Optional.of(
+            (slotAndRoot) -> {
+              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
+              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs1.stream());
+              when(tracker.getBlockBody())
+                  .thenReturn(Optional.of((BeaconBlockBodyDeneb) block1.getMessage().getBody()));
+              return tracker;
+            });
+
+    blobSidecarPool.onNewBlock(block1);
+
+    final SignedBeaconBlock block2 =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+
+    final Set<BlobIdentifier> missingBlobs2 =
+        Set.of(
+            new BlobIdentifier(block2.getRoot(), UInt64.ONE),
+            new BlobIdentifier(block2.getRoot(), UInt64.valueOf(2)));
+
+    mockedTrackersFactory =
+        Optional.of(
+            (slotAndRoot) -> {
+              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
+              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs2.stream());
+              when(tracker.getBlockBody())
+                  .thenReturn(Optional.of((BeaconBlockBodyDeneb) block2.getMessage().getBody()));
+              return tracker;
+            });
+
+    blobSidecarPool.onNewBlock(block2);
+
+    final Set<BlobIdentifier> allMissing =
+        Stream.concat(missingBlobs1.stream(), missingBlobs2.stream()).collect(Collectors.toSet());
+
+    assertThat(blobSidecarPool.getAllRequiredBlobSidecars()).containsExactlyElementsOf(allMissing);
   }
 
   private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {

@@ -15,9 +15,9 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -38,14 +38,14 @@ public class BlockBlobSidecarsTracker {
   private final AtomicReference<Optional<BeaconBlockBodyDeneb>> blockBody =
       new AtomicReference<>(Optional.empty());
 
-  private final Map<UInt64, BlobSidecar> blobSidecars = new ConcurrentHashMap<>();
+  private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
   public BlockBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot) {
     this.slotAndBlockRoot = slotAndBlockRoot;
   }
 
-  public Map<UInt64, BlobSidecar> getBlobSidecars() {
+  public NavigableMap<UInt64, BlobSidecar> getBlobSidecars() {
     return blobSidecars;
   }
 
@@ -64,15 +64,20 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
-    if (blockBody.get().isEmpty()) {
-      // TODO: block is still unknown.
-      //  Should we return all potential maxBlobsPerBlock BlobIdentifiers?
+    if (blockBody.get().isPresent()) {
+      return UInt64.range(
+              UInt64.ZERO, UInt64.valueOf(blockBody.get().get().getBlobKzgCommitments().size()))
+          .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
+          .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
+    }
+
+    if (blobSidecars.isEmpty()) {
       return Stream.of();
     }
 
-    return UInt64.range(
-            UInt64.ZERO, UInt64.valueOf(blockBody.get().get().getBlobKzgCommitments().size()))
-        .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
+    // We may return maxBlobsPerBlock if we want to. For now let's return the blobs we know are
+    // missing.
+    return UInt64.range(UInt64.ZERO, blobSidecars.firstKey())
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
 

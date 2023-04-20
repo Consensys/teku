@@ -206,4 +206,18 @@ public class BlockBlobSidecarsTrackerTest {
     assertThat(blockBlobSidecarsTracker.getBlockBody())
         .isEqualTo(Optional.of(block.getMessage().getBody()));
   }
+
+  @Test
+  void getMissingBlobSidecars_shouldReturnPartialBlobsIdentifierWhenBlockIsUnknown() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+    final BlobSidecar toAdd = blobSidecarsForBlock.get(2);
+
+    blockBlobSidecarsTracker.add(toAdd);
+
+    final List<BlobIdentifier> knownMissing = blobIdentifiersForBlock.subList(0, 2);
+
+    assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
+        .containsExactlyInAnyOrderElementsOf(knownMissing);
+  }
 }
