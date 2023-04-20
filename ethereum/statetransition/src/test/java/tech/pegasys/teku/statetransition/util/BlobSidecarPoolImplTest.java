@@ -82,6 +82,7 @@ public class BlobSidecarPoolImplTest {
 
   private Optional<Function<SlotAndBlockRoot, BlockBlobSidecarsTracker>> mockedTrackersFactory =
       Optional.empty();
+  private int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
 
   @BeforeEach
   public void setup() {
@@ -342,21 +343,28 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  void shouldFetchMissingBlock() {
+  void shouldFetchMissingBlockAndBlobSidecars() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
     final BlobSidecar blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
+            .index(UInt64.valueOf(2))
             .slot(currentSlot)
             .build();
+
+    final Set<BlobIdentifier> missingBlobs =
+        Set.of(
+            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.ONE),
+            new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), UInt64.ZERO));
 
     mockedTrackersFactory =
         Optional.of(
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
               when(tracker.getBlockBody()).thenReturn(Optional.empty());
+              when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
               when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
               return tracker;
             });
@@ -368,6 +376,7 @@ public class BlobSidecarPoolImplTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(requiredBlockRootEvents).containsExactly(slotAndBlockRoot.getBlockRoot());
+    assertThat(requiredBlobSidecarEvents).containsExactlyElementsOf(missingBlobs);
   }
 
   @Test
@@ -635,10 +644,11 @@ public class BlobSidecarPoolImplTest {
         .isEqualTo(OptionalDouble.of(count));
   }
 
-  private BlockBlobSidecarsTracker trackerFactory(final SlotAndBlockRoot slotAndBlockRoot) {
+  private BlockBlobSidecarsTracker trackerFactory(
+      final SlotAndBlockRoot slotAndBlockRoot, final int __) {
     if (mockedTrackersFactory.isPresent()) {
       return mockedTrackersFactory.get().apply(slotAndBlockRoot);
     }
-    return new BlockBlobSidecarsTracker(slotAndBlockRoot);
+    return new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
   }
 }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
-import java.util.function.Function;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -25,8 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class PoolFactory {
@@ -136,7 +134,7 @@ public class PoolFactory {
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxItems,
-      final Function<SlotAndBlockRoot, BlockBlobSidecarsTracker> trackerFactory) {
+      final BlockBlobSidecarsTrackerFactory trackerFactory) {
     return new BlobSidecarPoolImpl(
         pendingPoolsSizeGauge,
         spec,

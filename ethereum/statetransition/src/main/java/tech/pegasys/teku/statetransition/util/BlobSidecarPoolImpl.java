@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
@@ -61,8 +61,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final int maxTrackers;
+  private final int maxBlobsPerBlock;
 
-  private final Function<SlotAndBlockRoot, BlockBlobSidecarsTracker> trackerFactory;
+  private final BlockBlobSidecarsTrackerFactory trackerFactory;
 
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
@@ -92,6 +93,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     this.recentChainData = recentChainData;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
+    this.maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
     this.trackerFactory = BlockBlobSidecarsTracker::new;
 
     // Init the label so it appears in metrics immediately
@@ -109,7 +111,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       final UInt64 historicalSlotTolerance,
       final UInt64 futureSlotTolerance,
       final int maxTrackers,
-      final Function<SlotAndBlockRoot, BlockBlobSidecarsTracker> trackerFactory) {
+      final BlockBlobSidecarsTrackerFactory trackerFactory) {
     super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.spec = spec;
     this.timeProvider = timeProvider;
@@ -117,6 +119,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     this.recentChainData = recentChainData;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
+    this.maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
     this.trackerFactory = trackerFactory;
 
     // Init the label so it appears in metrics immediately
@@ -262,7 +265,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
         blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
     if (blockBlobSidecarsTracker == null) {
       makeRoomForNewTracker();
-      blockBlobSidecarsTracker = trackerFactory.apply(slotAndBlockRoot);
+      blockBlobSidecarsTracker = trackerFactory.create(slotAndBlockRoot, maxBlobsPerBlock);
       blockBlobSidecarsTrackers.put(slotAndBlockRoot.getBlockRoot(), blockBlobSidecarsTracker);
       onNew.accept(blockBlobSidecarsTracker);
     }
@@ -338,7 +341,6 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       requiredBlockRootSubscribers.deliver(
           RequiredBlockRootSubscriber::onRequiredBlockRoot,
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
-      return;
     }
 
     blockBlobSidecarsTracker

@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockBlobSidecarsTrackerTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
+  private final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SignedBeaconBlock block =
@@ -51,7 +52,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void isNotCompletedJustAfterCreation() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
 
     SafeFutureAssert.assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture())
         .isNotCompleted();
@@ -67,7 +68,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void setBlock_shouldAcceptCorrectBlock() {
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     blockBlobSidecarsTracker.setBlock(block);
 
     SafeFutureAssert.assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture())
@@ -82,7 +83,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void setBlock_shouldThrowWithWrongBlock() {
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(dataStructureUtil.randomSlotAndBlockRoot());
+        new BlockBlobSidecarsTracker(dataStructureUtil.randomSlotAndBlockRoot(), maxBlobsPerBlock);
     assertThatThrownBy(() -> blockBlobSidecarsTracker.setBlock(block))
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -90,7 +91,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void setBlock_shouldAcceptBlockTwice() {
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     blockBlobSidecarsTracker.setBlock(block);
     blockBlobSidecarsTracker.setBlock(block);
     assertThat(blockBlobSidecarsTracker.getBlockBody())
@@ -103,7 +104,7 @@ public class BlockBlobSidecarsTrackerTest {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     final SafeFuture<Void> completionFuture = blockBlobSidecarsTracker.getCompletionFuture();
 
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
@@ -119,7 +120,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void add_shouldWorkTillCompletionWhenAddingBlobsBeforeBlockIsSet() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     final BlobSidecar toAdd = blobSidecarsForBlock.get(0);
     final Map<UInt64, BlobSidecar> added = new HashMap<>();
     final SafeFuture<Void> completionFuture = blockBlobSidecarsTracker.getCompletionFuture();
@@ -166,7 +167,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void add_shouldWorkWhenBlockIsSetFirst() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     final SafeFuture<Void> completionFuture = blockBlobSidecarsTracker.getCompletionFuture();
 
     blockBlobSidecarsTracker.setBlock(block);
@@ -192,7 +193,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void add_shouldThrowWhenAddingInconsistentBlobSidecar() {
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(dataStructureUtil.randomSlotAndBlockRoot());
+        new BlockBlobSidecarsTracker(dataStructureUtil.randomSlotAndBlockRoot(), maxBlobsPerBlock);
     assertThatThrownBy(() -> blockBlobSidecarsTracker.add(dataStructureUtil.randomBlobSidecar()))
         .isInstanceOf(IllegalArgumentException.class);
   }
@@ -200,7 +201,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void add_shouldAcceptAcceptSameBlobSidecarTwice() {
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     blockBlobSidecarsTracker.setBlock(block);
     blockBlobSidecarsTracker.setBlock(block);
     assertThat(blockBlobSidecarsTracker.getBlockBody())
@@ -210,12 +211,32 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void getMissingBlobSidecars_shouldReturnPartialBlobsIdentifierWhenBlockIsUnknown() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     final BlobSidecar toAdd = blobSidecarsForBlock.get(2);
 
     blockBlobSidecarsTracker.add(toAdd);
 
     final List<BlobIdentifier> knownMissing = blobIdentifiersForBlock.subList(0, 2);
+
+    assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
+        .containsExactlyInAnyOrderElementsOf(knownMissing);
+  }
+
+  @Test
+  void getMissingBlobSidecars_shouldRespectMaxBlobsPerBlock() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
+    final BlobSidecar toAdd =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .blockRoot(slotAndBlockRoot.getBlockRoot())
+            .slot(slotAndBlockRoot.getSlot())
+            .index(UInt64.valueOf(100))
+            .build();
+
+    blockBlobSidecarsTracker.add(toAdd);
+
+    final List<BlobIdentifier> knownMissing = blobIdentifiersForBlock.subList(0, maxBlobsPerBlock);
 
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
         .containsExactlyInAnyOrderElementsOf(knownMissing);

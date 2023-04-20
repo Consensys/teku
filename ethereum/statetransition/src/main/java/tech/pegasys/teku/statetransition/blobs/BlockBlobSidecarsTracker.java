@@ -34,6 +34,7 @@ public class BlockBlobSidecarsTracker {
   private static final Logger LOG = LogManager.getLogger();
 
   private final SlotAndBlockRoot slotAndBlockRoot;
+  private final int maxBlobsPerBlock;
 
   private final AtomicReference<Optional<BeaconBlockBodyDeneb>> blockBody =
       new AtomicReference<>(Optional.empty());
@@ -41,8 +42,10 @@ public class BlockBlobSidecarsTracker {
   private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
-  public BlockBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot) {
+  public BlockBlobSidecarsTracker(
+      final SlotAndBlockRoot slotAndBlockRoot, final int maxBlobsPerBlock) {
     this.slotAndBlockRoot = slotAndBlockRoot;
+    this.maxBlobsPerBlock = maxBlobsPerBlock;
   }
 
   public NavigableMap<UInt64, BlobSidecar> getBlobSidecars() {
@@ -77,7 +80,8 @@ public class BlockBlobSidecarsTracker {
 
     // We may return maxBlobsPerBlock if we want to. For now let's return the blobs we know are
     // missing.
-    return UInt64.range(UInt64.ZERO, blobSidecars.firstKey())
+    final UInt64 indexUpperLimit = blobSidecars.firstKey().min(maxBlobsPerBlock);
+    return UInt64.range(UInt64.ZERO, indexUpperLimit)
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
 
