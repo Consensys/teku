@@ -76,7 +76,7 @@ public class HistoricalBatchFetcherTest {
       ArgumentCaptor.forClass(Collection.class);
 
   @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<Map<Bytes32, List<BlobSidecar>>> blobSidecarCaptor =
+  private final ArgumentCaptor<Map<UInt64, List<BlobSidecar>>> blobSidecarCaptor =
       ArgumentCaptor.forClass(Map.class);
 
   private CombinedChainDataClient chainDataClient;
