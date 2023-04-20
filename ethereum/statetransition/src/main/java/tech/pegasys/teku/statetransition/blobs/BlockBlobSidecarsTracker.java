@@ -64,7 +64,6 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
-    blockBody.get();
     if (blockBody.get().isEmpty()) {
       // TODO: block is still unknown.
       //  Should we return all potential maxBlobsPerBlock BlobIdentifiers?
@@ -90,13 +89,13 @@ public class BlockBlobSidecarsTracker {
     boolean addedNew = blobSidecars.put(blobSidecar.getIndex(), blobSidecar) == null;
 
     if (addedNew) {
+      checkCompletion();
+    } else {
       LOG.warn(
           "Multiple BlobSidecars with index {} for {} detected.",
           slotAndBlockRoot.toLogString(),
           blobSidecar.getIndex());
     }
-
-    checkCompletion();
 
     return addedNew;
   }

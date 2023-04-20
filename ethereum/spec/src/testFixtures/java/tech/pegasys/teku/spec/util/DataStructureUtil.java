@@ -875,7 +875,7 @@ public final class DataStructureUtil {
     return signedBlock(beaconBlock);
   }
 
-  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(int count) {
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(final int count) {
     final UInt64 proposerIndex = randomUInt64();
     final UInt64 slot = randomUInt64();
     final Bytes32 stateRoot = randomBytes32();
@@ -2387,7 +2387,7 @@ public final class DataStructureUtil {
     return randomSszKzgCommitmentList(count);
   }
 
-  public SszList<SszKZGCommitment> randomSszKzgCommitmentList(final int conut) {
+  public SszList<SszKZGCommitment> randomSszKzgCommitmentList(final int count) {
     final SszListSchema<SszKZGCommitment, ?> kzgCommitmentsSchema =
         BeaconBlockBodySchemaDeneb.required(
                 spec.forMilestone(SpecMilestone.DENEB)
@@ -2395,7 +2395,7 @@ public final class DataStructureUtil {
                     .getBeaconBlockBodySchema())
             .getBlobKzgCommitmentsSchema();
 
-    return randomSszList(kzgCommitmentsSchema, conut, this::randomSszKZGCommitment);
+    return randomSszList(kzgCommitmentsSchema, count, this::randomSszKZGCommitment);
   }
 
   public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {

@@ -50,7 +50,7 @@ public class FetchRecentBlocksServiceTest {
       new DataStructureUtil(TestSpecFactory.createDefault());
 
   @SuppressWarnings("unchecked")
-  private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+  private final PendingPool<SignedBeaconBlock> pendingBlockPool = mock(PendingPool.class);
 
   private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
 
@@ -72,7 +72,7 @@ public class FetchRecentBlocksServiceTest {
     recentBlockFetcher =
         new FetchRecentBlocksService(
             asyncRunner,
-            pendingBlocksPool,
+            pendingBlockPool,
             blobSidecarPool,
             forwardSync,
             fetchTaskFactory,
@@ -118,7 +118,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void ignoreKnownBlock() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    when(pendingBlocksPool.contains(root)).thenReturn(true);
+    when(pendingBlockPool.contains(root)).thenReturn(true);
     recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(0, 0, 0);
@@ -242,7 +242,7 @@ public class FetchRecentBlocksServiceTest {
   void shouldRequestRemainingRequiredBlocksWhenForwardSyncCompletes() {
     final Set<Bytes32> requiredRoots =
         Set.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32());
-    when(pendingBlocksPool.getAllRequiredBlockRoots()).thenReturn(requiredRoots);
+    when(pendingBlockPool.getAllRequiredBlockRoots()).thenReturn(requiredRoots);
 
     final ArgumentCaptor<SyncSubscriber> syncListenerCaptor =
         ArgumentCaptor.forClass(SyncSubscriber.class);

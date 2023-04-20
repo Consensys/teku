@@ -86,15 +86,15 @@ abstract class AbstractIgnoringFutureHistoricalSlot
 
   private boolean isSlotOutsideOfHistoricalLimit(final UInt64 slot) {
     final UInt64 slotLimit = calculateItemAgeLimit();
-    return slot.compareTo(slotLimit) <= 0;
+    return slot.isLessThanOrEqualTo(slotLimit);
   }
 
   private boolean isSlotFromAFinalizedSlot(final UInt64 slot) {
-    return slot.compareTo(latestFinalizedSlot) <= 0;
+    return slot.isLessThanOrEqualTo(latestFinalizedSlot);
   }
 
   private UInt64 calculateItemAgeLimit() {
-    return currentSlot.compareTo(historicalSlotTolerance.plus(UInt64.ONE)) > 0
+    return currentSlot.isGreaterThan(historicalSlotTolerance.plus(UInt64.ONE))
         ? currentSlot.minus(UInt64.ONE).minus(historicalSlotTolerance)
         : GENESIS_SLOT;
   }

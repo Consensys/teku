@@ -104,7 +104,6 @@ public class SyncingNodeManager {
       Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
-    final TimeProvider timeProvider = new SystemTimeProvider();
     final EventChannels eventChannels =
         EventChannels.createSyncChannels(TEST_EXCEPTION_HANDLER, new NoOpMetricsSystem());
     final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
@@ -135,6 +134,7 @@ public class SyncingNodeManager {
         new BlockValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
 
+    final TimeProvider timeProvider = new SystemTimeProvider();
     final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         poolFactory.createPendingPoolForBlocks(spec);
