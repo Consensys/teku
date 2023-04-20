@@ -82,7 +82,6 @@ public class BlobSidecarPoolImplTest {
 
   private Optional<Function<SlotAndBlockRoot, BlockBlobSidecarsTracker>> mockedTrackersFactory =
       Optional.empty();
-  private int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
 
   @BeforeEach
   public void setup() {
@@ -645,7 +644,7 @@ public class BlobSidecarPoolImplTest {
   }
 
   private BlockBlobSidecarsTracker trackerFactory(
-      final SlotAndBlockRoot slotAndBlockRoot, final int __) {
+      final SlotAndBlockRoot slotAndBlockRoot, final int maxBlobsPerBlock) {
     if (mockedTrackersFactory.isPresent()) {
       return mockedTrackersFactory.get().apply(slotAndBlockRoot);
     }
