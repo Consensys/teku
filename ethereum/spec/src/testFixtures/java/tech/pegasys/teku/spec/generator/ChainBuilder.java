@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
@@ -79,7 +78,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
@@ -155,26 +153,6 @@ public class ChainBuilder {
 
   public Optional<List<BlobSidecar>> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot));
-  }
-
-  public Optional<SignedBeaconBlockAndBlobsSidecar> getBlockAndBlobsSidecar(
-      final Bytes32 blockRoot) {
-    return getBlock(blockRoot)
-        .map(
-            block -> {
-              final UInt64 slot = block.getSlot();
-              final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-                  SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions());
-              final BlobsSidecar blobsSidecar =
-                  getBlobsSidecar(blockRoot)
-                      .orElse(
-                          schemaDefinitionsDeneb
-                              .getBlobsSidecarSchema()
-                              .createEmpty(blockRoot, slot));
-              return schemaDefinitionsDeneb
-                  .getSignedBeaconBlockAndBlobsSidecarSchema()
-                  .create(block, blobsSidecar);
-            });
   }
 
   /**
@@ -708,18 +686,20 @@ public class ChainBuilder {
       List<BlobSidecar> blobSidecarList =
           IntStream.range(0, randomBlobs.size())
               .mapToObj(
-                  index ->
-                      new BlobSidecar(
-                          blobSidecarSchema,
-                          nextBlockAndState.getRoot(),
-                          UInt64.valueOf(index),
-                          slot,
-                          parentRoot,
-                          UInt64.ZERO,
-                          randomBlobs.get(index),
-                          miscHelpers.blobToKzgCommitment(randomBlobs.get(index)),
-                          miscHelpers.computeAggregatedKzgProof(
-                              List.of(randomBlobs.get(index).getBytes()))))
+                  index -> {
+                    final Blob blob = randomBlobs.get(index);
+                    final KZGCommitment kzgCommitment = miscHelpers.blobToKzgCommitment(blob);
+                    return new BlobSidecar(
+                        blobSidecarSchema,
+                        nextBlockAndState.getRoot(),
+                        UInt64.valueOf(index),
+                        slot,
+                        parentRoot,
+                        UInt64.ZERO,
+                        blob,
+                        kzgCommitment,
+                        miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
+                  })
               .collect(Collectors.toList());
       trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecarList);
     }

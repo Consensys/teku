@@ -88,8 +88,7 @@ public interface Eth2Peer extends Peer, SyncSource {
       throws RpcException;
 
   SafeFuture<Void> requestBlobSidecarsByRoot(
-      List<BlobIdentifier> blobIdentifiers, RpcResponseListener<BlobSidecar> listener)
-      throws RpcException;
+      List<BlobIdentifier> blobIdentifiers, RpcResponseListener<BlobSidecar> listener);
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(UInt64 slot);
 

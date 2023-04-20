@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -63,6 +64,7 @@ public class HistoricalBlockSyncServiceTest {
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
 
+  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
   private final MetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -85,6 +87,7 @@ public class HistoricalBlockSyncServiceTest {
   private final HistoricalBlockSyncService service =
       new HistoricalBlockSyncService(
           spec,
+          blobsSidecarManager,
           metricsSystem,
           storageUpdateChannel,
           asyncRunner,

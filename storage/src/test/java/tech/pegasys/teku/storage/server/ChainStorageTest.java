@@ -48,7 +48,8 @@ public class ChainStorageTest {
   private StorageSystem storageSystem;
   private ChainBuilder chainBuilder;
   private ChainStorage chainStorage;
-  private Spec spec = TestSpecFactory.createMinimalDeneb();
+
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private void setup(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
@@ -96,7 +97,7 @@ public class ChainStorageTest {
 
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void onFinalizedBlocksAndBlobsSidecars_shouldAcceptValidBlocks_startFromAnchorWithBlock(
+  public void onFinalizedBlocksAndBlobSidecars_shouldAcceptValidBlocks_startFromAnchorWithBlock(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, false, false);
@@ -104,7 +105,7 @@ public class ChainStorageTest {
 
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void onFinalizedBlocksAndBlobsSidecars_shouldAcceptValidBlocks_startFromAnchorWithoutBlock(
+  public void onFinalizedBlocksAndBlobSidecars_shouldAcceptValidBlocks_startFromAnchorWithoutBlock(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, true, false);
@@ -112,7 +113,7 @@ public class ChainStorageTest {
 
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
-  public void onFinalizedBlocksAndBlobsSidecars_shouldAcceptValidBlocks_inBatches(
+  public void onFinalizedBlocksAndBlobSidecars_shouldAcceptValidBlocks_inBatches(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
     testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, true, true);
@@ -162,7 +163,7 @@ public class ChainStorageTest {
       firstMissingBlockSlot = anchorBlockAndState.getSlot().minus(1).longValue();
     }
 
-    // Now try to store missing historical blocks and blobs sidecars
+    // Now try to store missing historical blocks and blob sidecars
     final List<SignedBeaconBlock> missingHistoricalBlocks =
         chainBuilder
             .streamBlocksAndStates(0, firstMissingBlockSlot)
@@ -174,7 +175,7 @@ public class ChainStorageTest {
             .streamBlobSidecars(0, firstMissingBlockSlot)
             .collect(Collectors.groupingBy(BlobSidecar::getSlot));
 
-    // Sanity check - blocks and blobs sidecars should be unavailable initially
+    // Sanity check - blocks and blob sidecars should be unavailable initially
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
       final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
           chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
@@ -203,7 +204,7 @@ public class ChainStorageTest {
           .ifExceptionGetsHereRaiseABug();
     }
 
-    // Verify blocks are now available
+    // Verify blocks and blob sidecars are now available
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
       final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
           chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());

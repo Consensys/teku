@@ -210,6 +210,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityInitializer wsInitializer = new WeakSubjectivityInitializer();
   protected volatile AsyncRunnerEventThread forkChoiceExecutor;
 
+  private volatile AsyncRunner operationPoolAsyncRunner;
+
   protected volatile ForkChoice forkChoice;
   protected volatile ForkChoiceTrigger forkChoiceTrigger;
   protected volatile BlockImporter blockImporter;
@@ -271,6 +273,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
+    this.operationPoolAsyncRunner = serviceConfig.createAsyncRunner("operationPoolUpdater", 1);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
     this.metricsSystem = serviceConfig.getMetricsSystem();
@@ -567,7 +570,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
             "VoluntaryExitPool",
             metricsSystem,
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getVoluntaryExitsSchema),
-            validator);
+            validator,
+            operationPoolAsyncRunner,
+            timeProvider);
     blockImporter.subscribeToVerifiedBlockVoluntaryExits(voluntaryExitPool::removeAll);
   }
 
@@ -586,7 +591,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
             validator,
-            50_000);
+            operationPoolAsyncRunner,
+            timeProvider);
     blockImporter.subscribeToVerifiedBlockBlsToExecutionChanges(
         blsToExecutionChangePool::removeAll);
   }

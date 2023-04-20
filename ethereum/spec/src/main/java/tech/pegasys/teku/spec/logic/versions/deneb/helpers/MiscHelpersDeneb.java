@@ -79,6 +79,31 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
 
   /**
    * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#verify_kzg_commitments_against_transactions">verify_kzg_commitments_against_transactions</a>
+   */
+  @Override
+  public boolean verifyKZGCommitmentsAgainstTransactions(
+      final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
+    final List<VersionedHash> transactionsVersionedHashes =
+        transactions.stream()
+            .filter(this::isBlobTransaction)
+            .map(this::txPeekBlobVersionedHashes)
+            .flatMap(List::stream)
+            .collect(Collectors.toList());
+    final List<VersionedHash> commitmentsVersionedHashes =
+        kzgCommitments.stream()
+            .map(this::kzgCommitmentToVersionedHash)
+            .collect(Collectors.toList());
+    return transactionsVersionedHashes.equals(commitmentsVersionedHashes);
+  }
+
+  @Override
+  public Optional<MiscHelpersDeneb> toVersionDeneb() {
+    return Optional.of(this);
+  }
+
+  /**
+   * <a
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#validate_blobs">validate_blobs</a>
    */
   private void validateBlobs(
@@ -123,6 +148,14 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
         beaconBlockRoot);
   }
 
+  public KZGCommitment blobToKzgCommitment(final Blob blob) {
+    return kzg.blobToKzgCommitment(blob.getBytes());
+  }
+
+  public KZGProof computeBlobKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
+    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
+  }
+
   public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
     return signedBeaconBlock
         .flatMap(SignedBeaconBlock::getBeaconBlock)
@@ -131,14 +164,12 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
         .orElse(0);
   }
 
-  @VisibleForTesting
-  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    return VersionedHash.create(
-        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
+  private boolean isBlobTransaction(final Transaction transaction) {
+    return transaction.getBytes().get(0) == BLOB_TX_TYPE.get(0);
   }
 
   @VisibleForTesting
-  public List<VersionedHash> txPeekBlobVersionedHashes(final Transaction transaction) {
+  List<VersionedHash> txPeekBlobVersionedHashes(final Transaction transaction) {
     checkArgument(isBlobTransaction(transaction), "Transaction should be of BLOB type");
     final Bytes txData = transaction.getBytes();
     // 1st byte is transaction type, next goes ssz encoded SignedBlobTransaction
@@ -158,42 +189,12 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
       versionedHashes.add(
           new VersionedHash(Bytes32.wrap(txData.slice(hashStartOffset, VersionedHash.SIZE))));
     }
-
     return versionedHashes;
   }
 
-  private boolean isBlobTransaction(final Transaction transaction) {
-    return transaction.getBytes().get(0) == BLOB_TX_TYPE.get(0);
-  }
-
-  @Override
-  public boolean verifyKZGCommitmentsAgainstTransactions(
-      final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
-    final List<VersionedHash> transactionsVersionedHashes =
-        transactions.stream()
-            .filter(this::isBlobTransaction)
-            .map(this::txPeekBlobVersionedHashes)
-            .flatMap(List::stream)
-            .collect(Collectors.toList());
-    final List<VersionedHash> commitmentsVersionedHashes =
-        kzgCommitments.stream()
-            .map(this::kzgCommitmentToVersionedHash)
-            .collect(Collectors.toList());
-    return transactionsVersionedHashes.equals(commitmentsVersionedHashes);
-  }
-
-  public KZGCommitment blobToKzgCommitment(final Blob blob) {
-    return kzg.blobToKzgCommitment(blob.getBytes());
-  }
-
-  @SuppressWarnings("unused")
-  public KZGProof computeAggregatedKzgProof(final List<Bytes> blobs) {
-    // TODO: remove when fork choice for blobs decoupling sync is implemented
-    return KZGProof.INFINITY;
-  }
-
-  @Override
-  public Optional<MiscHelpersDeneb> toVersionDeneb() {
-    return Optional.of(this);
+  @VisibleForTesting
+  VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+    return VersionedHash.create(
+        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
   }
 }

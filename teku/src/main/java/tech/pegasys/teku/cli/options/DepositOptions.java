@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.util.ArrayList;
 import java.util.List;
 import picocli.CommandLine;
@@ -60,14 +62,23 @@ public class DepositOptions {
   private String depositSnapshotPath;
 
   @Option(
-      names = {"--Xdeposit-snapshot-enabled"},
+      names = {"--deposit-snapshot-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Use bundled snapshot for most networks and persist deposit tree snapshot",
-      hidden = true,
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
   private boolean depositSnapshotEnabled = PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
+
+  @Option(
+      names = {"--Xdeposit-snapshot-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Use bundled snapshot for most networks and persist deposit tree snapshot",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private Boolean depositSnapshotEnabledDeprecated;
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
@@ -76,6 +87,15 @@ public class DepositOptions {
                 .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
                 .useMissingDepositEventLogging(useMissingDepositEventLogging)
                 .depositSnapshotPath(depositSnapshotPath)
-                .depositSnapshotEnabled(depositSnapshotEnabled));
+                .depositSnapshotEnabled(parseDepositSnapshotEnabled()));
+  }
+
+  private boolean parseDepositSnapshotEnabled() {
+    if (depositSnapshotEnabledDeprecated != null) {
+      STATUS_LOG.warnFlagDeprecation("--Xdeposit-snapshot-enabled", "--deposit-snapshot-enabled");
+      return depositSnapshotEnabledDeprecated;
+    }
+
+    return depositSnapshotEnabled;
   }
 }
