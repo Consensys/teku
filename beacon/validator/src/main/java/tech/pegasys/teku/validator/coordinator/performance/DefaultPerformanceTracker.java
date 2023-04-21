@@ -36,6 +36,8 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -53,6 +55,7 @@ import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 
 public class DefaultPerformanceTracker implements PerformanceTracker {
+  private static final Logger LOG = LogManager.getLogger();
 
   @VisibleForTesting
   final NavigableMap<UInt64, Set<SlotAndBlockRoot>> producedBlocksByEpoch =
@@ -136,7 +139,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       reportingTasks.add(reportSyncCommitteePerformance(currentEpoch));
     }
 
-    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).join();
+    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).handleException(LOG::error).join();
   }
 
   private SafeFuture<?> reportBlockPerformance(final UInt64 currentEpoch) {
