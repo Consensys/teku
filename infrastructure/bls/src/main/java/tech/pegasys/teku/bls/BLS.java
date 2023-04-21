@@ -152,13 +152,14 @@ public class BLS {
       if (publicKeys.isEmpty()) {
         return false;
       }
-      List<PublicKeyMessagePair> publicKeyMessagePairs =
-          Streams.zip(
-                  publicKeys.stream(),
-                  messages.stream(),
-                  (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
-              .collect(Collectors.toList());
       try {
+        List<PublicKeyMessagePair> publicKeyMessagePairs =
+                Streams.zip(
+                                publicKeys.stream(),
+                                messages.stream(),
+                                (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
+                        .collect(Collectors.toList());
+
         return signature.getSignature().verify(publicKeyMessagePairs);
       } catch (BlsException e) {
         return false;
@@ -192,9 +193,10 @@ public class BLS {
       if (publicKeys.isEmpty()) {
         return false;
       }
-      List<PublicKey> publicKeyObjects =
-          publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
       try {
+        List<PublicKey> publicKeyObjects =
+                publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
+
         return signature.getSignature().verify(publicKeyObjects, message);
       } catch (BlsException e) {
         return false;
