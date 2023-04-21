@@ -19,12 +19,14 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker.ATTESTATION_INCLUSION_RANGE;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -360,6 +362,41 @@ public class DefaultPerformanceTrackerTest {
     performanceTracker.onSlot(spec.computeStartSlotAtEpoch(epoch));
     verify(log).performance(performance.toString());
     verify(validatorPerformanceMetrics).updateSyncCommitteePerformance(performance);
+  }
+
+  @Test
+  void shouldHandleErrorsWhenReportTasksFail() {
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
+    final Attestation attestation = createAttestationForParentBlockOnSlot(1);
+    final UInt64 slot = spec.computeStartSlotAtEpoch(ATTESTATION_INCLUSION_RANGE);
+
+    performanceTracker.saveProducedAttestation(attestation);
+    when(validatorTracker.getNumberOfValidatorsForEpoch(any())).thenThrow(new RuntimeException());
+
+    try (LogCaptor logCaptor = LogCaptor.forClass(DefaultPerformanceTracker.class)) {
+      performanceTracker.onSlot(slot);
+
+      // No attestation performance report on status logger because task failed
+      verifyNoInteractions(log);
+      assertThat(logCaptor.getErrorLogs()).hasSize(1);
+    }
+  }
+
+  /**
+   * Creates an attestation voting for block on the slot provided. The attestation will be included
+   * in block slot + 1.
+   *
+   * @param slot the slot of the block being attested
+   * @return the created attestation
+   */
+  private Attestation createAttestationForParentBlockOnSlot(int slot) {
+    Attestation attestationForBlock1 = createAttestation(slot + 1, slot);
+    ChainBuilder.BlockOptions block2Options = ChainBuilder.BlockOptions.create();
+    block2Options.addAttestation(attestationForBlock1);
+    SignedBlockAndState latestBlockAndState = chainBuilder.generateBlockAtSlot(2, block2Options);
+    chainUpdater.saveBlock(latestBlockAndState);
+    chainUpdater.updateBestBlock(latestBlockAndState);
+    return attestationForBlock1;
   }
 
   private Attestation createAttestation(
