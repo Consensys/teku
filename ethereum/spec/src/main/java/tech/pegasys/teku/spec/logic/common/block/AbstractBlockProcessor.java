@@ -772,7 +772,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
     try {
       return depositSignatureVerifier.verify(
-              pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
+          pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
     } catch (final BlsException e) {
       return false;
     }
