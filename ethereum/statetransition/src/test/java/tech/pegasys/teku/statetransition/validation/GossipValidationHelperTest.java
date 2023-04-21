@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -49,12 +50,13 @@ public class GossipValidationHelperTest {
 
   @BeforeAll
   public static void initSession() {
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
   }
 
   @AfterAll
   public static void resetSession() {
-    AbstractBlockProcessor.blsVerifyDeposit = true;
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
   }
 
   @BeforeEach
