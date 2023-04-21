@@ -173,6 +173,7 @@ public class ChainStorageTest {
     final Map<UInt64, List<BlobSidecar>> missingHistoricalBlobSidecars =
         chainBuilder
             .streamBlobSidecars(0, firstMissingBlockSlot)
+            .flatMap(entry -> entry.getValue().stream())
             .collect(Collectors.groupingBy(BlobSidecar::getSlot));
 
     // Sanity check - blocks and blob sidecars should be unavailable initially
