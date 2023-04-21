@@ -241,7 +241,7 @@ public class HistoricalBatchFetcher {
         .thenApply(__ -> shouldRetryBlocksAndBlobSidecarsByRangeRequest());
   }
 
-  // We explicitly mark post-Deneb slots as some could contain no BlobSidecars
+  // We explicitly mark post-Deneb slots in availability range as some could contain no BlobSidecars
   private void fillBlobSidecarBySlotToImport(final UInt64 startSlot, final UInt64 endSlot) {
     // Whole range is in availability period
     if (blobsSidecarManager.isAvailabilityRequiredAtSlot(startSlot)) {

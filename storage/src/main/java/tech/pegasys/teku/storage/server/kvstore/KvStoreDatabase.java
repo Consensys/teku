@@ -309,7 +309,8 @@ public class KvStoreDatabase implements Database {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
-            // If there is no slot in BlobSidecar's map it means we are pre-Deneb
+            // If there is no slot in BlobSidecar's map it means we are pre-Deneb or not in
+            // availability period
             if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlot())) {
               return;
             }
