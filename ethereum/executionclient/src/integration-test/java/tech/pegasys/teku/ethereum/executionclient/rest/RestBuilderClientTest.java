@@ -26,6 +26,8 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -78,12 +80,20 @@ class RestBuilderClientTest {
           Bytes48.fromHexString(
               "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a"));
 
+  private static final Pattern TEKU_USER_AGENT_REGEX = Pattern.compile("teku/v.*");
+
+  private static final Consumer<RecordedRequest> USER_AGENT_HEADER_ASSERTIONS =
+      recordedRequest ->
+          assertThat(recordedRequest.getHeader("User-Agent")).matches(TEKU_USER_AGENT_REGEX);
+
   private final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
   private final MockWebServer mockWebServer = new MockWebServer();
 
-  private RestBuilderClient restBuilderClient;
-
+  private Spec spec;
+  private OkHttpRestClient okHttpRestClient;
   private SchemaDefinitionsBellatrix schemaDefinitions;
+
+  private RestBuilderClient restBuilderClient;
 
   private String signedValidatorRegistrationsRequest;
   private String signedBlindedBeaconBlockRequest;
@@ -94,10 +104,11 @@ class RestBuilderClientTest {
   void setUp(final SpecContext specContext) throws IOException {
     mockWebServer.start();
 
-    final Spec spec = specContext.getSpec();
-    final SpecMilestone milestone = specContext.getSpecMilestone();
+    spec = specContext.getSpec();
     final String endpoint = "http://localhost:" + mockWebServer.getPort();
-    final OkHttpRestClient okHttpRestClient = new OkHttpRestClient(okHttpClient, endpoint);
+    okHttpRestClient = new OkHttpRestClient(okHttpClient, endpoint);
+
+    final SpecMilestone milestone = specContext.getSpecMilestone();
 
     if (milestone.equals(SpecMilestone.BELLATRIX)) {
       this.schemaDefinitions =
@@ -116,7 +127,7 @@ class RestBuilderClientTest {
     unblindedExecutionPayloadResponse =
         readResource(milestoneFolder + "/unblindedExecutionPayloadResponse.json");
 
-    restBuilderClient = new RestBuilderClient(okHttpRestClient, spec);
+    restBuilderClient = new RestBuilderClient(okHttpRestClient, spec, true);
   }
 
   @AfterEach
@@ -226,6 +237,31 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
+  void getExecutionPayloadHeader_success_doesNotSetUserAgentHeader() {
+
+    restBuilderClient = new RestBuilderClient(okHttpRestClient, spec, false);
+
+    mockWebServer.enqueue(
+        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+
+    assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
+        .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
+        .satisfies(
+            response -> {
+              assertThat(response.isSuccess()).isTrue();
+              assertThat(response.getPayload())
+                  .isPresent()
+                  .hasValueSatisfying(this::verifySignedBuilderBidResponse);
+            });
+
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY,
+        recordedRequest -> {
+          assertThat(recordedRequest.getHeader("User-Agent")).doesNotMatch(TEKU_USER_AGENT_REGEX);
+        });
+  }
+
+  @TestTemplate
   void getExecutionPayloadHeader_success() {
 
     mockWebServer.enqueue(
@@ -241,7 +277,8 @@ class RestBuilderClientTest {
                   .hasValueSatisfying(this::verifySignedBuilderBidResponse);
             });
 
-    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
   }
 
   @TestTemplate
@@ -275,7 +312,8 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(missingParentHashError);
             });
 
-    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
@@ -288,7 +326,8 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
-    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
   }
 
   @TestTemplate
@@ -309,7 +348,8 @@ class RestBuilderClientTest {
         .withRootCauseInstanceOf(MissingRequiredFieldException.class)
         .withMessageContaining("required fields: (withdrawals_root) were not set");
 
-    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
   }
 
   @TestTemplate
@@ -334,7 +374,8 @@ class RestBuilderClientTest {
         .withMessageContaining(
             "java.lang.IllegalArgumentException: Wrong response version: expected CAPELLA, received BELLATRIX");
 
-    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
   }
 
   @TestTemplate
@@ -423,12 +464,25 @@ class RestBuilderClientTest {
     verifyRequest("GET", apiPath, Optional.empty());
   }
 
+  private void verifyGetRequest(
+      final String apiPath, final Consumer<RecordedRequest> additionalRequestAssertions) {
+    verifyRequest("GET", apiPath, Optional.empty(), Optional.of(additionalRequestAssertions));
+  }
+
   private void verifyPostRequest(final String apiPath, final String requestBody) {
     verifyRequest("POST", apiPath, Optional.of(requestBody));
   }
 
   private void verifyRequest(
       final String method, final String apiPath, final Optional<String> expectedRequestBody) {
+    verifyRequest(method, apiPath, expectedRequestBody, Optional.empty());
+  }
+
+  private void verifyRequest(
+      final String method,
+      final String apiPath,
+      final Optional<String> expectedRequestBody,
+      final Optional<Consumer<RecordedRequest>> additionalRequestAssertions) {
     try {
       final RecordedRequest request = mockWebServer.takeRequest();
       assertThat(request.getMethod()).isEqualTo(method);
@@ -441,7 +495,8 @@ class RestBuilderClientTest {
         assertThat(OBJECT_MAPPER.readTree(expectedRequestBody.get()))
             .isEqualTo(OBJECT_MAPPER.readTree(actualRequestBody.readUtf8()));
       }
-    } catch (InterruptedException | JsonProcessingException ex) {
+      additionalRequestAssertions.ifPresent(assertions -> assertions.accept(request));
+    } catch (final InterruptedException | JsonProcessingException ex) {
       Assertions.fail(ex);
     }
   }

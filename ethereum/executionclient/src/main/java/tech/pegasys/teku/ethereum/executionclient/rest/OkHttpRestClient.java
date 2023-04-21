@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.requireNonNull;
 
 import java.io.IOException;
@@ -25,6 +24,7 @@ import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Request.Builder;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import okio.BufferedSink;
@@ -42,8 +42,6 @@ public class OkHttpRestClient implements RestClient {
 
   private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json");
 
-  private static final Map<String, String> EMPTY_QUERY_PARAMS = emptyMap();
-
   private final OkHttpClient httpClient;
   private final HttpUrl baseEndpoint;
 
@@ -54,13 +52,15 @@ public class OkHttpRestClient implements RestClient {
 
   @Override
   public SafeFuture<Response<Void>> getAsync(final String apiPath) {
-    return getAsync(apiPath, EMPTY_QUERY_PARAMS, Optional.empty());
+    return getAsyncInternal(apiPath, NO_HEADERS, Optional.empty());
   }
 
   @Override
   public <T> SafeFuture<Response<T>> getAsync(
-      final String apiPath, final DeserializableTypeDefinition<T> responseTypeDefinition) {
-    return getAsync(apiPath, EMPTY_QUERY_PARAMS, Optional.of(responseTypeDefinition));
+      final String apiPath,
+      final Map<String, String> headers,
+      final DeserializableTypeDefinition<T> responseTypeDefinition) {
+    return getAsyncInternal(apiPath, headers, Optional.of(responseTypeDefinition));
   }
 
   @Override
@@ -68,8 +68,7 @@ public class OkHttpRestClient implements RestClient {
       final String apiPath,
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition) {
-    return postAsync(
-        apiPath, EMPTY_QUERY_PARAMS, requestBodyObject, requestTypeDefinition, Optional.empty());
+    return postAsyncInternal(apiPath, requestBodyObject, requestTypeDefinition, Optional.empty());
   }
 
   @Override
@@ -78,36 +77,33 @@ public class OkHttpRestClient implements RestClient {
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition,
       final DeserializableTypeDefinition<T> responseTypeDefinition) {
-    return postAsync(
-        apiPath,
-        EMPTY_QUERY_PARAMS,
-        requestBodyObject,
-        requestTypeDefinition,
-        Optional.of(responseTypeDefinition));
+    return postAsyncInternal(
+        apiPath, requestBodyObject, requestTypeDefinition, Optional.of(responseTypeDefinition));
   }
 
-  private <T> SafeFuture<Response<T>> getAsync(
+  private <T> SafeFuture<Response<T>> getAsyncInternal(
       final String apiPath,
-      final Map<String, String> queryParams,
+      final Map<String, String> headers,
       final Optional<DeserializableTypeDefinition<T>> responseTypeDefinitionMaybe) {
-    final Request request = createGetRequest(apiPath, queryParams);
+    final Request request = createGetRequest(apiPath, headers);
     return makeAsyncRequest(request, responseTypeDefinitionMaybe);
   }
 
-  private <T, S> SafeFuture<Response<T>> postAsync(
+  private <T, S> SafeFuture<Response<T>> postAsyncInternal(
       final String apiPath,
-      final Map<String, String> queryParams,
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition,
       final Optional<DeserializableTypeDefinition<T>> responseTypeDefinitionMaybe) {
     final RequestBody requestBody = createRequestBody(requestBodyObject, requestTypeDefinition);
-    final Request request = createPostRequest(apiPath, queryParams, requestBody);
+    final Request request = createPostRequest(apiPath, requestBody);
     return makeAsyncRequest(request, responseTypeDefinitionMaybe);
   }
 
-  private Request createGetRequest(final String apiPath, final Map<String, String> queryParams) {
-    final HttpUrl httpUrl = createHttpUrl(apiPath, queryParams);
-    return new Request.Builder().url(httpUrl).build();
+  private Request createGetRequest(final String apiPath, final Map<String, String> headers) {
+    final HttpUrl httpUrl = createHttpUrl(apiPath);
+    final Builder requestBuilder = new Builder().url(httpUrl);
+    headers.forEach(requestBuilder::header);
+    return requestBuilder.build();
   }
 
   private <S> RequestBody createRequestBody(
@@ -127,16 +123,14 @@ public class OkHttpRestClient implements RestClient {
     };
   }
 
-  private Request createPostRequest(
-      final String apiPath, final Map<String, String> queryParams, RequestBody requestBody) {
-    final HttpUrl httpUrl = createHttpUrl(apiPath, queryParams);
-    return new Request.Builder().url(httpUrl).post(requestBody).build();
+  private Request createPostRequest(final String apiPath, final RequestBody requestBody) {
+    final HttpUrl httpUrl = createHttpUrl(apiPath);
+    return new Builder().url(httpUrl).post(requestBody).build();
   }
 
-  private HttpUrl createHttpUrl(final String apiPath, final Map<String, String> queryParams) {
+  private HttpUrl createHttpUrl(final String apiPath) {
     final HttpUrl.Builder urlBuilder = baseEndpoint.newBuilder(apiPath);
-    queryParams.forEach(requireNonNull(urlBuilder)::addQueryParameter);
-    return urlBuilder.build();
+    return requireNonNull(urlBuilder).build();
   }
 
   private <T> SafeFuture<Response<T>> makeAsyncRequest(
