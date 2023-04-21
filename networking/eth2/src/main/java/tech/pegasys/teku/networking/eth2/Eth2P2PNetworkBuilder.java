@@ -564,4 +564,10 @@ public class Eth2P2PNetworkBuilder {
     this.spec = spec;
     return this;
   }
+
+  public Eth2P2PNetworkBuilder statusMessageFactory(final StatusMessageFactory statusMessageFactory) {
+    checkNotNull(statusMessageFactory);
+    this.statusMessageFactory = statusMessageFactory;
+    return this;
+  }
 }
