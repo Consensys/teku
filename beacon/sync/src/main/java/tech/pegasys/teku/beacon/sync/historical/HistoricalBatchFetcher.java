@@ -17,7 +17,9 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -225,6 +227,7 @@ public class HistoricalBatchFetcher {
           requestParams.getCount(),
           requestParams.getStartSlot(),
           endSlot);
+      fillBlobSidecarBySlotToImport(requestParams.getStartSlot(), endSlot);
       blobSidecarsRequest =
           peer.requestBlobSidecarsByRange(
               requestParams.getStartSlot(),
@@ -238,10 +241,28 @@ public class HistoricalBatchFetcher {
         .thenApply(__ -> shouldRetryBlocksAndBlobSidecarsByRangeRequest());
   }
 
+  // We explicitly mark post-Deneb slots as some could contain no BlobSidecars
+  private void fillBlobSidecarBySlotToImport(final UInt64 startSlot, final UInt64 endSlot) {
+    // Whole range is in availability period
+    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(startSlot)) {
+      for (UInt64 currentSlot = startSlot;
+          currentSlot.isLessThanOrEqualTo(endSlot);
+          currentSlot = currentSlot.plus(1)) {
+        blobSidecarsBySlotToImport.put(currentSlot, new ArrayList<>());
+      }
+    } else {
+      for (UInt64 currentSlot = startSlot;
+          currentSlot.isLessThanOrEqualTo(endSlot);
+          currentSlot = currentSlot.plus(1)) {
+        if (blobsSidecarManager.isAvailabilityRequiredAtSlot(currentSlot)) {
+          blobSidecarsBySlotToImport.put(currentSlot, new ArrayList<>());
+        }
+      }
+    }
+  }
+
   private void processBlobSidecar(final BlobSidecar blobSidecar) {
-    blobSidecarsBySlotToImport
-        .computeIfAbsent(blobSidecar.getSlot(), __ -> new ArrayList<>())
-        .add(blobSidecar);
+    blobSidecarsBySlotToImport.get(blobSidecar.getSlot()).add(blobSidecar);
   }
 
   private boolean shouldRetryBlocksAndBlobSidecarsByRangeRequest() {
@@ -313,7 +334,7 @@ public class HistoricalBatchFetcher {
             validSignatures -> {
               final SignedBeaconBlock newEarliestBlock = blocksToImport.getFirst();
               return storageUpdateChannel
-                  .onFinalizedBlocks(blocksToImport, blobSidecarsBySlotToImport)
+                  .onFinalizedBlocks(blocksToImport, new HashMap<>(blobSidecarsBySlotToImport))
                   .thenRun(
                       () -> {
                         LOG.trace("Earliest block is now from slot {}", newEarliestBlock.getSlot());
@@ -381,9 +402,8 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobSidecars(final SignedBeaconBlock block) {
-    // We are post-Deneb and we should explicitly mark slot as one with no BlobSidecars if needed
     final List<BlobSidecar> blobSidecars =
-        blobSidecarsBySlotToImport.computeIfAbsent(block.getSlot(), __ -> new ArrayList<>());
+        blobSidecarsBySlotToImport.getOrDefault(block.getSlot(), Collections.emptyList());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     return blobsSidecarManager
         .createAvailabilityChecker(block)

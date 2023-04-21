@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.generator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Preconditions.checkState;
 
 import java.util.ArrayList;
@@ -211,16 +212,17 @@ public class ChainBuilder {
     return blocks.values().stream().filter(b -> b.getBlock().getSlot().compareTo(toSlot) <= 0);
   }
 
-  public Stream<BlobSidecar> streamBlobSidecars(final long fromSlot, final long toSlot) {
+  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+      final long fromSlot, final long toSlot) {
     return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
-  public Stream<BlobSidecar> streamBlobSidecars(final UInt64 fromSlot, final UInt64 toSlot) {
-    return blobSidecars.values().stream()
-        .filter(blobs -> !blobs.isEmpty())
-        .filter(blobs -> blobs.get(0).getSlot().isGreaterThanOrEqualTo(fromSlot))
-        .filter(blobs -> blobs.get(0).getSlot().isLessThanOrEqualTo(toSlot))
-        .flatMap(List::stream);
+  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+      final UInt64 fromSlot, final UInt64 toSlot) {
+    return blobSidecars.entrySet().stream()
+        .filter(slot -> slot.getKey().isGreaterThanOrEqualTo(fromSlot))
+        .filter(slot -> slot.getKey().isLessThanOrEqualTo(toSlot))
+        .sorted(Map.Entry.comparingByKey());
   }
 
   public Stream<BlobSidecar> streamBlobSidecars() {
