@@ -118,7 +118,7 @@ public class ExecutionLayerOptions {
       names = {"--builder-set-user-agent-header"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Set User-Agent header when making a builder bid request to the builder to help builders identify clients and versions",
+          "Set User-Agent header to teku/v<version> (e.g. teku/v23.4.0) when making a builder bid request to help builders identify clients and versions",
       arity = "1",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
