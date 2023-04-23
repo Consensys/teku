@@ -24,7 +24,6 @@ import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.Request.Builder;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import okio.BufferedSink;
@@ -101,7 +100,7 @@ public class OkHttpRestClient implements RestClient {
 
   private Request createGetRequest(final String apiPath, final Map<String, String> headers) {
     final HttpUrl httpUrl = createHttpUrl(apiPath);
-    final Request.Builder requestBuilder = new Builder().url(httpUrl);
+    final Request.Builder requestBuilder = new Request.Builder().url(httpUrl);
     headers.forEach(requestBuilder::header);
     return requestBuilder.build();
   }
@@ -125,7 +124,7 @@ public class OkHttpRestClient implements RestClient {
 
   private Request createPostRequest(final String apiPath, final RequestBody requestBody) {
     final HttpUrl httpUrl = createHttpUrl(apiPath);
-    return new Builder().url(httpUrl).post(requestBody).build();
+    return new Request.Builder().url(httpUrl).post(requestBody).build();
   }
 
   private HttpUrl createHttpUrl(final String apiPath) {
