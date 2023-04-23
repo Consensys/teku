@@ -101,7 +101,7 @@ public class OkHttpRestClient implements RestClient {
 
   private Request createGetRequest(final String apiPath, final Map<String, String> headers) {
     final HttpUrl httpUrl = createHttpUrl(apiPath);
-    final Builder requestBuilder = new Builder().url(httpUrl);
+    final Request.Builder requestBuilder = new Builder().url(httpUrl);
     headers.forEach(requestBuilder::header);
     return requestBuilder.build();
   }
