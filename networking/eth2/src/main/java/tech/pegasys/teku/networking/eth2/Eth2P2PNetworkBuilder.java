@@ -48,6 +48,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
@@ -119,6 +120,7 @@ public class Eth2P2PNetworkBuilder {
       gossipedSignedContributionAndProofProcessor;
   protected OperationProcessor<ValidateableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
+  protected StatusMessageFactory statusMessageFactory;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -137,6 +139,9 @@ public class Eth2P2PNetworkBuilder {
             spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
                 ? MAX_CHUNK_SIZE_BELLATRIX
                 : MAX_CHUNK_SIZE);
+    if (statusMessageFactory == null) {
+      statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
+    }
     final Eth2PeerManager eth2PeerManager =
         Eth2PeerManager.create(
             asyncRunner,
@@ -145,6 +150,7 @@ public class Eth2P2PNetworkBuilder {
             attestationSubnetService,
             syncCommitteeSubnetService,
             rpcEncoding,
+            statusMessageFactory,
             requiredCheckpoint,
             eth2RpcPingInterval,
             eth2RpcOutstandingPingThreshold,
@@ -556,6 +562,13 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder specProvider(final Spec spec) {
     checkNotNull(spec);
     this.spec = spec;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder statusMessageFactory(
+      final StatusMessageFactory statusMessageFactory) {
+    checkNotNull(statusMessageFactory);
+    this.statusMessageFactory = statusMessageFactory;
     return this;
   }
 }
