@@ -44,10 +44,6 @@ public class OneOfJsonRequestContentTypeDefinition<T> extends DelegatingOpenApiT
       throw new MissingRequestBodyException();
     }
 
-    if (!openApiTypeDefinition.isEquivalentToDeserializableType(type)) {
-      throw new IllegalStateException(
-          "Schema determined for parsing request body is not listed in requestBodyTypes");
-    }
     return JsonUtil.parse(json, type);
   }
 

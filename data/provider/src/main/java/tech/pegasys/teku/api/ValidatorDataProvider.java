@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -229,6 +230,11 @@ public class ValidatorDataProvider {
   public SafeFuture<SendSignedBlockResult> submitSignedBlock(
       final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock) {
     return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
+  }
+
+  public SafeFuture<SendSignedBlockResult> submitSignedBlockContents(
+      final SignedBlockContents signedBlockContents) {
+    return validatorApiChannel.sendSignedBlockContents(signedBlockContents);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(

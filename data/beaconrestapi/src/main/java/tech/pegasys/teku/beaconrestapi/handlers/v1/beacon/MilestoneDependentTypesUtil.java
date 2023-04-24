@@ -64,16 +64,26 @@ public class MilestoneDependentTypesUtil {
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
       final String json,
       final SchemaDefinitionCache schemaDefinitionCache,
-      final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+      final Function<SchemaDefinitions, Function<UInt64, SszSchema<? extends T>>> getSchema) {
     try {
-      final Optional<UInt64> slot =
-          JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "message", "slot");
+      Optional<UInt64> slot =
+          JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "message", "slot")
+              .or(
+                  () -> {
+                    try {
+                      return JsonUtil.getAttribute(
+                          json, CoreTypes.UINT64_TYPE, "signed_beacon_block", "message", "slot");
+                    } catch (JsonProcessingException e) {
+                      throw new BadRequestException(e.getMessage());
+                    }
+                  });
       final SpecMilestone milestone =
           schemaDefinitionCache.milestoneAtSlot(
               slot.orElseThrow(
                   () -> new BadRequestException("Could not locate slot in JSON data")));
       return getSchema
           .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+          .apply(slot.get())
           .getJsonTypeDefinition();
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());

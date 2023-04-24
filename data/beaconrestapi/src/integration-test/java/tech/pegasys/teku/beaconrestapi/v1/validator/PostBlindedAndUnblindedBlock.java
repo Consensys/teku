@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -34,6 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
@@ -49,15 +52,15 @@ public class PostBlindedAndUnblindedBlock extends AbstractDataBackedRestAPIInteg
   }
 
   @BeforeEach
-  void setup() {
-    startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
-    dataStructureUtil = new DataStructureUtil(spec);
-  }
+  void setup() {}
 
   @ParameterizedTest(name = "blinded:{1}_ssz:{2}")
   @MethodSource("postBlockCases")
-  void shouldReturnOk(final String route, final boolean isBlindedBlock, final boolean useSsz)
-      throws IOException {
+  void shouldReturnBeaconBlock_Ok_PreDeneb(
+      final String route, final boolean isBlindedBlock, final boolean useSsz) throws IOException {
+
+    startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
+    dataStructureUtil = new DataStructureUtil(spec);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final SignedBeaconBlockSchema signedBeaconBlockSchema;
@@ -86,6 +89,47 @@ public class PostBlindedAndUnblindedBlock extends AbstractDataBackedRestAPIInteg
           post(
               route,
               JsonUtil.serialize(request, signedBeaconBlockSchema.getJsonTypeDefinition()))) {
+        assertThat(response.code()).isEqualTo(SC_OK);
+      }
+    }
+  }
+
+  @ParameterizedTest(name = "blinded:{1}_ssz:{2}")
+  @MethodSource("postBlockCases")
+  void shouldReturnBlockContents_Ok_PostDeneb(
+      final String route, final boolean isBlindedBlock, final boolean useSsz) throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.DENEB);
+    dataStructureUtil = new DataStructureUtil(spec);
+
+    // TODO
+    // Remove when PostBlindedBlock is implemented
+    assumeThat(isBlindedBlock).isFalse();
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+
+    final SignedBlockContents request = dataStructureUtil.randomSignedBlockContents(UInt64.ONE);
+    final SignedBlockContentsSchema signedBlockContentsSchema =
+        spec.atSlot(UInt64.ONE)
+            .getSchemaDefinitions()
+            .toVersionDeneb()
+            .orElseThrow()
+            .getSignedBlockContentsSchema();
+
+    when(validatorApiChannel.sendSignedBlockContents(request))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                SendSignedBlockResult.success(request.getSignedBeaconBlock().getRoot())));
+
+    if (useSsz) {
+      try (Response response =
+          postSsz(route, signedBlockContentsSchema.sszSerialize(request).toArrayUnsafe())) {
+        assertThat(response.code()).isEqualTo(SC_OK);
+      }
+    } else {
+      try (Response response =
+          post(
+              route,
+              JsonUtil.serialize(request, signedBlockContentsSchema.getJsonTypeDefinition()))) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     }

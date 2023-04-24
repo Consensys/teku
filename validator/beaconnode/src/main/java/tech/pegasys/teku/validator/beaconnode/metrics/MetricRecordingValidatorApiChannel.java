@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -210,6 +211,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
     return countDataRequest(
         delegate.sendSignedBlock(block), BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD);
+  }
+
+  @Override
+  public SafeFuture<SendSignedBlockResult> sendSignedBlockContents(
+      final SignedBlockContents signedBlockContents) {
+    throw new NotImplementedException("Not Yet Implemented");
   }
 
   @Override

@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -90,6 +91,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
       List<SignedAggregateAndProof> aggregateAndProofs);
 
   SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
+
+  SafeFuture<SendSignedBlockResult> sendSignedBlockContents(
+      SignedBlockContents signedBlockContents);
 
   SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);

@@ -92,6 +92,8 @@ public class TransitionTestExecutor implements TestExecutor {
 
     BeaconState result = preState;
     for (int i = 0; i < metadata.blocksCount; i++) {
+      // TODO
+      // Handle post Deneb BlockContents
       final SignedBeaconBlock block =
           TestDataUtils.loadSsz(
               testDefinition, "blocks_" + i + ".ssz_snappy", spec::deserializeSignedBeaconBlock);

@@ -119,6 +119,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Sig
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -2160,6 +2161,21 @@ public final class DataStructureUtil {
         new BlobSidecars(getSchemaDefinitionDeneb().getBlobSidecarsSchema(), blobSidecarList);
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     return getSchemaDefinitionDeneb().getBlockContentsSchema().create(beaconBlock, blobSidecars);
+  }
+
+  public SignedBlockContents randomSignedBlockContents() {
+    return randomSignedBlockContents(randomUInt64());
+  }
+
+  public SignedBlockContents randomSignedBlockContents(UInt64 slot) {
+    final List<SignedBlobSidecar> blindedBlobSidecarList = randomSignedBlobSidecars(4);
+    final SignedBlobSidecars signedBlobSidecars =
+        new SignedBlobSidecars(
+            getSchemaDefinitionDeneb().getSignedBlobSidecarsSchema(), blindedBlobSidecarList);
+    final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
+    return getSchemaDefinitionDeneb()
+        .getSignedBlockContentsSchema()
+        .create(signedBeaconBlock, signedBlobSidecars);
   }
 
   public BlindedBlockContents randomBlindedBlockContents() {
