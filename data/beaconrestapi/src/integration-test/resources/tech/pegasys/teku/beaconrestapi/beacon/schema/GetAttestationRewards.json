@@ -1,0 +1,109 @@
+{
+  "title": "GetAttestationRewards",
+  "type": "object",
+  "required": [
+    "execution_optimistic",
+    "finalized",
+    "data"
+  ],
+  "properties": {
+    "execution_optimistic": {
+      "type": "boolean"
+    },
+    "finalized": {
+      "type": "boolean"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "ideal_rewards",
+        "total_rewards"
+      ],
+      "properties": {
+        "ideal_rewards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "effective_balance",
+              "head",
+              "target",
+              "source"
+            ],
+            "properties": {
+              "effective_balance": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              },
+              "head": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              },
+              "target": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              },
+              "source": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              }
+            }
+          }
+        },
+        "total_rewards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "validator_index",
+              "head",
+              "target",
+              "source",
+              "inclusion_delay"
+            ],
+            "properties": {
+              "validator_index": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              },
+              "head": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              },
+              "target": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              },
+              "source": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              },
+              "inclusion_delay": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

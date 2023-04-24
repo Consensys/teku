@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.*;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Optional;
 import org.apache.commons.lang3.NotImplementedException;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
@@ -86,8 +85,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .pathParam(EPOCH_PARAMETER)
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
-            .withBadRequestResponse(
-                Optional.of("Invalid request to retrieve attestations rewards info"))
+            .withNotImplementedResponse()
             .withNotFoundResponse()
             .withInternalErrorResponse()
             .build());
