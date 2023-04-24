@@ -129,7 +129,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService =
         FetchRecentBlobSidecarsService.create(
-            asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory);
+            asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory, spec);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 
