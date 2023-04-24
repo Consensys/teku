@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -436,6 +437,16 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addBlobSidecar(final BlobSidecar blobSidecar) {
+      finalizedUpdater.addBlobSidecar(blobSidecar);
+    }
+
+    @Override
+    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+      finalizedUpdater.addNoBlobsSlot(slotAndBlockRoot);
+    }
+
+    @Override
     public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
       finalizedUpdater.addBlobsSidecar(blobsSidecar);
     }
@@ -443,6 +454,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
       finalizedUpdater.addUnconfirmedBlobsSidecar(blobsSidecar);
+    }
+
+    @Override
+    public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      finalizedUpdater.removeBlobSidecar(key);
     }
 
     @Override

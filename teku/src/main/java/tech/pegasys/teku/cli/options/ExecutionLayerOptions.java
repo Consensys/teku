@@ -20,6 +20,7 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
 
 import picocli.CommandLine.Help.Visibility;
@@ -114,6 +115,17 @@ public class ExecutionLayerOptions {
   private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
 
   @Option(
+      names = {"--builder-set-user-agent-header"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Set User-Agent header to teku/v<version> (e.g. teku/v23.4.0) when making a builder bid request to help builders identify clients and versions",
+      arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
+      hidden = true)
+  private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
+
+  @Option(
       hidden = true,
       names = {"--exchange-capabilities-enabled", "--Xexchange-capabilities-enabled"},
       paramLabel = "<BOOLEAN>",
@@ -136,6 +148,7 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerAllowedConsecutiveFaults(
                     builderCircuitBreakerAllowedConsecutiveFaults)
                 .builderBidCompareFactor(builderBidCompareFactor)
+                .builderSetUserAgentHeader(builderSetUserAgentHeader)
                 .exchangeCapabilitiesEnabled(exchangeCapabilitiesEnabled));
     depositOptions.configure(builder);
   }

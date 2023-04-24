@@ -44,11 +44,12 @@ import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -69,7 +70,7 @@ import tech.pegasys.teku.statetransition.MappedOperationPool;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -111,6 +112,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
           .build();
 
   protected ActiveValidatorChannel activeValidatorChannel;
+
+  protected StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   // Mocks
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
@@ -189,7 +192,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 spec,
                 new InlineEventThread(),
                 recentChainData,
-                BlobsSidecarManager.NOOP,
+                BlobSidecarManager.NOOP,
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP));
@@ -204,7 +207,9 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 .andThen(BeaconBlockBodySchema::toVersionCapella)
                 .andThen(Optional::orElseThrow)
                 .andThen(BeaconBlockBodySchemaCapella::getBlsToExecutionChangesSchema),
-            validator);
+            validator,
+            asyncRunner,
+            new SystemTimeProvider());
   }
 
   private void setupAndStartRestAPI(BeaconRestApiConfig config) {
@@ -235,7 +240,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eth1DataProvider,
             config,
             eventChannels,
-            SyncAsyncRunner.SYNC_RUNNER,
+            asyncRunner,
             StubTimeProvider.withTimeInMillis(1000),
             executionClientDataProvider,
             spec);

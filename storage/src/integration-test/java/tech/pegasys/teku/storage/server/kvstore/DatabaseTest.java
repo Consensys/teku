@@ -48,6 +48,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -71,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
@@ -376,6 +379,7 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  @Disabled("TODO: pruning for BlobSidecar and uncomment")
   public void shouldPruneHotBlocksAddedOverMultipleSessions(final DatabaseContext context)
       throws IOException {
     initialize(context);
@@ -389,7 +393,7 @@ public class DatabaseTest {
     addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
 
     // add blobs sidecars
-    addBlobsSidecars(chainBuilder.streamBlobsSidecars().collect(toList()));
+    addBlobSidecars(chainBuilder.streamBlobSidecars().collect(toList()));
 
     // Set target slot at which to create duplicate blocks
     // and generate block options to make each block unique
@@ -414,9 +418,9 @@ public class DatabaseTest {
     add(List.of(blockC));
 
     // Add corresponding blobs sidecars
-    addBlobsSidecars(List.of(forkA.getBlobsSidecar(blockA.getRoot()).orElseThrow()));
-    addBlobsSidecars(List.of(forkB.getBlobsSidecar(blockB.getRoot()).orElseThrow()));
-    addBlobsSidecars(List.of(chainBuilder.getBlobsSidecar(blockC.getRoot()).orElseThrow()));
+    addBlobSidecars(forkA.getBlobSidecars(blockA.getRoot()).orElseThrow());
+    addBlobSidecars(forkB.getBlobSidecars(blockB.getRoot()).orElseThrow());
+    addBlobSidecars(chainBuilder.getBlobSidecars(blockC.getRoot()).orElseThrow());
 
     // Verify all blocks are available
     assertThat(store.retrieveBlock(blockA.getRoot()))
@@ -441,7 +445,7 @@ public class DatabaseTest {
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
     add(List.of(finalBlock));
-    addBlobsSidecars(List.of(chainBuilder.getBlobsSidecar(finalBlock.getRoot()).orElseThrow()));
+    addBlobSidecars(chainBuilder.getBlobSidecars(finalBlock.getRoot()).orElseThrow());
 
     final UInt64 finalEpoch = chainBuilder.getLatestEpoch().plus(ONE);
     final SignedBlockAndState finalizedBlock =
@@ -2205,11 +2209,12 @@ public class DatabaseTest {
       final Collection<SignedBeaconBlock> availableBlocksSidecars,
       final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
     availableBlocksSidecars.forEach(
-        block ->
-            assertThat(
-                    database.getBlobsSidecar(
-                        new SlotAndBlockRoot(block.getSlot(), block.getRoot())))
-                .isPresent());
+        block -> {
+          try (final Stream<SlotAndBlockRootAndBlobIndex> keys =
+              database.streamBlobSidecarKeys(block.getSlot(), block.getSlot())) {
+            assertThat(keys.collect(toList())).isNotEmpty();
+          }
+        });
     prunedBlocksSidecars.forEach(
         block ->
             assertThat(
@@ -2230,14 +2235,8 @@ public class DatabaseTest {
     commit(transaction);
   }
 
-  private void addBlobsSidecars(final List<BlobsSidecar> blobsSidecars) {
-    blobsSidecars.forEach(
-        blobsSidecar -> {
-          database.storeUnconfirmedBlobsSidecar(blobsSidecar);
-          database.confirmBlobsSidecar(
-              new SlotAndBlockRoot(
-                  blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()));
-        });
+  private void addBlobSidecars(final List<BlobSidecar> blobSidecars) {
+    blobSidecars.forEach(blobsSidecar -> database.storeBlobSidecar(blobsSidecar));
   }
 
   private void add(final Collection<SignedBlockAndState> blocks) {

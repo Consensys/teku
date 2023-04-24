@@ -28,6 +28,7 @@ import tech.pegasys.teku.benchmarks.gen.BlockIO.Reader;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -43,7 +44,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -63,7 +64,7 @@ public class ProfilingRun {
   @Test
   public void importBlocks() throws Exception {
 
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
     int validatorsCount = 32 * 1024;
     int iterationBlockLimit = 1024;
@@ -101,7 +102,7 @@ public class ProfilingRun {
               spec,
               new InlineEventThread(),
               recentChainData,
-              BlobsSidecarManager.NOOP,
+              BlobSidecarManager.NOOP,
               new StubForkChoiceNotifier(),
               transitionBlockValidator);
       BeaconChainUtil localChain =
@@ -157,7 +158,7 @@ public class ProfilingRun {
   @Test
   public void importBlocksMemProfiling() throws Exception {
 
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
     int validatorsCount = 32 * 1024;
 
@@ -196,7 +197,7 @@ public class ProfilingRun {
               spec,
               new InlineEventThread(),
               recentChainData,
-              BlobsSidecarManager.NOOP,
+              BlobSidecarManager.NOOP,
               new StubForkChoiceNotifier(),
               transitionBlockValidator);
       BlockImporter blockImporter =

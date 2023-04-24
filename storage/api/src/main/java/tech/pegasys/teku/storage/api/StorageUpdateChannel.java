@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -33,7 +34,7 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onFinalizedBlocks(
       Collection<SignedBeaconBlock> finalizedBlocks,
-      Map<Bytes32, List<BlobSidecar>> finalizedBlobSidecars);
+      Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot);
 
   SafeFuture<Void> onFinalizedState(BeaconState finalizedState, Bytes32 blockRoot);
 
@@ -43,7 +44,13 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot);
 
+  SafeFuture<Void> onNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
+
+  SafeFuture<Void> onBlobSidecar(BlobSidecar blobSidecar);
+
   SafeFuture<Void> onBlobsSidecar(BlobsSidecar blobsSidecar);
+
+  SafeFuture<Void> onBlobSidecarsRemoval(UInt64 slot);
 
   SafeFuture<Void> onBlobsSidecarRemoval(SlotAndBlockRoot blobsSidecarKey);
 

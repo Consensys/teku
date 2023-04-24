@@ -63,7 +63,7 @@ public class ProcessSyncAggregateBenchmark {
   @Setup(Level.Trial)
   public void init() throws Exception {
     spec = TestSpecFactory.createMainnetAltair();
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
     String blocksFile =
         "/blocks/blocks_epoch_"

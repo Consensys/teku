@@ -62,7 +62,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilit
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -83,7 +83,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final RecentChainData recentChainData;
 
   @SuppressWarnings("unused")
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
 
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
@@ -100,7 +100,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
@@ -108,7 +108,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     this.forkChoiceStateProvider = forkChoiceStateProvider;
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
@@ -129,14 +129,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Spec spec,
       final EventThread forkChoiceExecutor,
       final RecentChainData recentChainData,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
       final MergeTransitionBlockValidator transitionBlockValidator) {
     this(
         spec,
         forkChoiceExecutor,
         recentChainData,
-        blobsSidecarManager,
+        blobSidecarManager,
         forkChoiceNotifier,
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),

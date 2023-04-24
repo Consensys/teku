@@ -60,7 +60,7 @@ public class NoOpDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {}
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {}
 
   @Override
   public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {}
@@ -270,6 +270,12 @@ public class NoOpDatabase implements Database {
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {}
 
   @Override
+  public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
+
+  @Override
+  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {}
+
+  @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
   @Override
@@ -284,6 +290,9 @@ public class NoOpDatabase implements Database {
   public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.empty();
   }
+
+  @Override
+  public void removeBlobSidecars(final UInt64 slot) {}
 
   @Override
   public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}

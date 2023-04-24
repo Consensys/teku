@@ -32,6 +32,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -41,7 +42,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
@@ -72,7 +73,7 @@ public abstract class TransitionBenchmark {
   @Setup(Level.Trial)
   public void init() throws Exception {
     spec = TestSpecFactory.createMainnetAltair();
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
     String blocksFile =
         "/blocks/blocks_epoch_"
@@ -96,7 +97,7 @@ public abstract class TransitionBenchmark {
             spec,
             new InlineEventThread(),
             recentChainData,
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             transitionBlockValidator);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);

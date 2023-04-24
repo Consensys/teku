@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -66,16 +67,16 @@ class RetryingStorageUpdateChannelTest {
   @Test
   void onFinalizedBlocks_shouldRetryUntilSuccess() {
     final List<SignedBeaconBlock> blocks = Collections.emptyList();
-    final Map<Bytes32, List<BlobSidecar>> blobSidecars = Map.of();
-    when(delegate.onFinalizedBlocks(blocks, blobSidecars))
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = Map.of();
+    when(delegate.onFinalizedBlocks(blocks, blobSidecarsBySlot))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 1")))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 2")))
         .thenReturn(SafeFuture.completedFuture(null));
 
-    final SafeFuture<Void> result = retryingChannel.onFinalizedBlocks(blocks, blobSidecars);
+    final SafeFuture<Void> result = retryingChannel.onFinalizedBlocks(blocks, blobSidecarsBySlot);
 
     assertThat(result).isCompleted();
-    verify(delegate, times(3)).onFinalizedBlocks(blocks, blobSidecars);
+    verify(delegate, times(3)).onFinalizedBlocks(blocks, blobSidecarsBySlot);
   }
 
   @Test

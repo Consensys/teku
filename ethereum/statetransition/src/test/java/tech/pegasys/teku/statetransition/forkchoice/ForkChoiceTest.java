@@ -83,7 +83,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
@@ -99,7 +99,7 @@ class ForkChoiceTest {
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private final AttestationSchema attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final StorageSystem storageSystem =
@@ -127,7 +127,7 @@ class ForkChoiceTest {
           spec,
           eventThread,
           recentChainData,
-          blobsSidecarManager,
+          blobSidecarManager,
           forkChoiceNotifier,
           new ForkChoiceStateProvider(eventThread, recentChainData),
           new TickProcessor(spec, recentChainData),
@@ -153,7 +153,7 @@ class ForkChoiceTest {
 
     // blobs always available
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      when(blobsSidecarManager.createAvailabilityChecker(any()))
+      when(blobSidecarManager.createAvailabilityChecker(any()))
           .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
     }
   }
@@ -181,9 +181,9 @@ class ForkChoiceTest {
 
     importBlock(blockAndState);
 
-    //    verify(blobsSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobsSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobsSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
+    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
   }
 
   @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
@@ -198,9 +198,9 @@ class ForkChoiceTest {
 
     importBlockWithError(blockAndState, FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK);
 
-    //    verify(blobsSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobsSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobsSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
+    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
   }
 
   @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
@@ -214,9 +214,9 @@ class ForkChoiceTest {
 
     importBlock(blockAndState);
 
-    //    verify(blobsSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobsSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobsSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
+    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
   }
 
   @Test
@@ -269,7 +269,7 @@ class ForkChoiceTest {
             spec,
             eventThread,
             recentChainData,
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),

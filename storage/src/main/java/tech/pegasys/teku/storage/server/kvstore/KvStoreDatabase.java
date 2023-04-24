@@ -304,13 +304,22 @@ public class KvStoreDatabase implements Database {
 
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
+      final Map<UInt64, List<BlobSidecar>> finalizedBlobSidecarsBySlot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
-            Optional.ofNullable(blobsSidecarBySlot.get(block.getSlot()))
-                .ifPresent(updater::addBlobsSidecar);
+            // If there is no slot in BlobSidecar's map it means we are pre-Deneb or not in
+            // availability period
+            if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlot())) {
+              return;
+            }
+            final List<BlobSidecar> blobSidecars = finalizedBlobSidecarsBySlot.get(block.getSlot());
+            if (blobSidecars.isEmpty()) {
+              updater.addNoBlobsSlot(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
+            } else {
+              blobSidecars.forEach(updater::addBlobSidecar);
+            }
           });
       updater.commit();
     }
@@ -507,7 +516,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, BlobsSidecar> blobsSidecarBySlot) {
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
     if (blocks.isEmpty()) {
       return;
     }
@@ -532,7 +541,7 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobsSidecarBySlot);
+    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot);
   }
 
   @Override
@@ -749,6 +758,22 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public void storeBlobSidecar(final BlobSidecar blobSidecar) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addBlobSidecar(blobSidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addNoBlobsSlot(slotAndBlockRoot);
+      updater.commit();
+    }
+  }
+
+  @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addBlobsSidecar(blobsSidecar);
@@ -776,6 +801,15 @@ public class KvStoreDatabase implements Database {
     final Optional<Bytes> maybePayload = dao.getBlobsSidecar(slotAndBlockRoot);
     return maybePayload.map(
         payload -> spec.deserializeBlobsSidecar(payload, slotAndBlockRoot.getSlot()));
+  }
+
+  @Override
+  public void removeBlobSidecars(final UInt64 slot) {
+    try (final FinalizedUpdater updater = finalizedUpdater();
+        final Stream<SlotAndBlockRootAndBlobIndex> keyStream = streamBlobSidecarKeys(slot, slot)) {
+      keyStream.forEach(updater::removeBlobSidecar);
+      updater.commit();
+    }
   }
 
   @Override
