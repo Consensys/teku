@@ -121,7 +121,7 @@ public class BlockBlobSidecarsTrackerTest {
   @Test
   void add_shouldWorkTillCompletionWhenAddingBlobsBeforeBlockIsSet() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock.plus(1));
     final BlobSidecar toAdd = blobSidecarsForBlock.get(0);
     final Map<UInt64, BlobSidecar> added = new HashMap<>();
     final SafeFuture<Void> completionFuture = blockBlobSidecarsTracker.getCompletionFuture();
@@ -129,8 +129,15 @@ public class BlockBlobSidecarsTrackerTest {
     added.put(toAdd.getIndex(), toAdd);
     blockBlobSidecarsTracker.add(toAdd);
 
+    // we don't know the block, missing blobs are max blobs minus the blob we already have
+    final Set<BlobIdentifier> potentialMissingBlocks =
+        UInt64.range(UInt64.valueOf(1), UInt64.valueOf(5))
+            .map(index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), index))
+            .collect(Collectors.toSet());
+
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
-    assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars()).isEmpty();
+    assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
+        .containsExactlyInAnyOrderElementsOf(potentialMissingBlocks);
     assertThat(blockBlobSidecarsTracker.getBlobSidecars())
         .containsExactlyInAnyOrderEntriesOf(added);
 
