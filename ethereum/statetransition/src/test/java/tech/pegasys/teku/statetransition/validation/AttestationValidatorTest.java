@@ -108,12 +108,13 @@ class AttestationValidatorTest {
 
   @BeforeAll
   public static void init() {
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
   }
 
   @AfterAll
   public static void reset() {
-    AbstractBlockProcessor.blsVerifyDeposit = true;
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
   }
 
   @BeforeEach

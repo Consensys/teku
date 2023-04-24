@@ -126,6 +126,47 @@ public abstract class BLSTest {
   }
 
   @Test
+  void anyVerify_invalidPublicKeyShouldNotThrowAndReturnFalse() {
+    BLSKeyPair keyPair = BLSTestUtil.randomKeyPair(1);
+    Bytes message =
+        Bytes.fromHexString("0x999bb85f3690c2ccb1607dd3e11a7e114038eb4044bdbdd340bc81aa3e5e0c9e");
+    BLSPublicKey invalidkey =
+        BLSPublicKey.fromBytesCompressed(
+            Bytes48.fromHexString(
+                "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
+    BLSPublicKey validkey =
+        BLSPublicKey.fromBytesCompressed(keyPair.getPublicKey().toBytesCompressed());
+    BLSSignature signature = BLS.sign(keyPair.getSecretKey(), message);
+
+    assertFalse(BLS.verify(invalidkey, message, signature));
+    assertFalse(BLS.aggregateVerify(List.of(invalidkey), List.of(message), signature));
+    assertFalse(
+        BLS.aggregateVerify(List.of(validkey, invalidkey), List.of(message, message), signature));
+    assertFalse(BLS.fastAggregateVerify(List.of(invalidkey), message, signature));
+    assertFalse(
+        BLS.fastAggregateVerify(List.of(validkey, validkey, invalidkey), message, signature));
+
+    assertFalse(
+        BLS.batchVerify(
+            List.of(List.of(validkey), List.of(invalidkey)),
+            List.of(message, message),
+            List.of(signature, signature)));
+
+    int validationCount = 64;
+    List<List<BLSPublicKey>> manyKeys =
+        Stream.concat(
+                Stream.generate(() -> validkey).limit(validationCount - 1), Stream.of(invalidkey))
+            .map(List::of)
+            .collect(Collectors.toList());
+    List<Bytes> manyMessages =
+        Stream.generate(() -> message).limit(validationCount).collect(Collectors.toList());
+    List<BLSSignature> manySignatures =
+        Stream.generate(() -> signature).limit(validationCount).collect(Collectors.toList());
+
+    assertFalse(BLS.batchVerify(manyKeys, manyMessages, manySignatures));
+  }
+
+  @Test
   void succeedsWhenAggregateVerifyWithDistinctMessagesReturnsTrue() {
     Bytes message1 = Bytes.wrap("Hello, world 1!".getBytes(UTF_8));
     Bytes message2 = Bytes.wrap("Hello, world 2!".getBytes(UTF_8));
