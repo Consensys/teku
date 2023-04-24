@@ -57,7 +57,7 @@ public class IdealAttestationReward {
     }
 
     IdealAttestationReward that = (IdealAttestationReward) o;
-    return effectiveBalance == that.effectiveBalance
+    return effectiveBalance.equals(that.effectiveBalance)
         && head == that.head
         && target == that.target
         && source == that.source;

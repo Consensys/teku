@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
@@ -88,7 +89,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .summary("Get Attestations Rewards")
             .description(
                 "Retrieve attestation reward info for validators specified by array of public keys or validator index. If no array is provided, return reward info for every validator.")
-            .tags(TAG_BEACON, TAG_REWARDS)
+            .tags(TAG_BEACON, TAG_REWARDS, TAG_EXPERIMENTAL)
             .pathParam(EPOCH_PARAMETER)
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)

@@ -2,7 +2,8 @@
   "post": {
     "tags": [
       "Beacon",
-      "Rewards"
+      "Rewards",
+      "Experimental"
     ],
     "operationId": "getAttestationsRewards",
     "summary": "Get Attestations Rewards",

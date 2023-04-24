@@ -69,7 +69,7 @@ public class TotalAttestationReward {
         && head == that.head
         && target == that.target
         && source == that.source
-        && inclusionDelay == that.inclusionDelay;
+        && inclusionDelay.equals(that.inclusionDelay);
   }
 
   @Override
