@@ -82,7 +82,7 @@ class RestBuilderClientTest {
 
   private static final Pattern TEKU_USER_AGENT_REGEX = Pattern.compile("teku/v.*");
 
-  private static final Consumer<RecordedRequest> USER_AGENT_HEADER_ASSERTIONS =
+  private static final Consumer<RecordedRequest> USER_AGENT_HEADER_ASSERTION =
       recordedRequest ->
           assertThat(recordedRequest.getHeader("User-Agent")).matches(TEKU_USER_AGENT_REGEX);
 
@@ -278,7 +278,7 @@ class RestBuilderClientTest {
             });
 
     verifyGetRequest(
-        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
   }
 
   @TestTemplate
@@ -294,7 +294,8 @@ class RestBuilderClientTest {
               assertThat(response.getPayload()).isEmpty();
             });
 
-    verifyGetRequest("/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY);
+    verifyGetRequest(
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
   }
 
   @TestTemplate
@@ -313,7 +314,7 @@ class RestBuilderClientTest {
             });
 
     verifyGetRequest(
-        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
@@ -327,7 +328,7 @@ class RestBuilderClientTest {
             });
 
     verifyGetRequest(
-        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
   }
 
   @TestTemplate
@@ -349,7 +350,7 @@ class RestBuilderClientTest {
         .withMessageContaining("required fields: (withdrawals_root) were not set");
 
     verifyGetRequest(
-        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
   }
 
   @TestTemplate
@@ -375,7 +376,7 @@ class RestBuilderClientTest {
             "java.lang.IllegalArgumentException: Wrong response version: expected CAPELLA, received BELLATRIX");
 
     verifyGetRequest(
-        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTIONS);
+        "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
   }
 
   @TestTemplate
