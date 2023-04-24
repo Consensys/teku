@@ -38,8 +38,14 @@ public class AttestationRewardsData {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
     AttestationRewardsData that = (AttestationRewardsData) o;
     return Objects.equals(idealAttestationRewards, that.idealAttestationRewards)
         && Objects.equals(totalAttestationRewards, that.totalAttestationRewards);

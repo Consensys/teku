@@ -44,8 +44,14 @@ public class GetAttestationRewardsResponse {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+
     GetAttestationRewardsResponse that = (GetAttestationRewardsResponse) o;
     return executionOptimistic == that.executionOptimistic
         && finalized == that.finalized
