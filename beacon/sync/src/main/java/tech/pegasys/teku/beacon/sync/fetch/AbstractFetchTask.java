@@ -40,18 +40,12 @@ public abstract class AbstractFetchTask<K, T> {
   private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
   private final P2PNetwork<Eth2Peer> eth2Network;
+  private final Optional<Eth2Peer> preferredPeer;
 
-  protected AbstractFetchTask(final P2PNetwork<Eth2Peer> eth2Network) {
+  protected AbstractFetchTask(
+      final P2PNetwork<Eth2Peer> eth2Network, final Optional<Eth2Peer> preferredPeer) {
     this.eth2Network = eth2Network;
-  }
-
-  protected Optional<Eth2Peer> findRandomPeer() {
-    return eth2Network
-        .streamPeers()
-        .filter(p -> !queriedPeers.contains(p.getId()))
-        .min(
-            Comparator.comparing(Eth2Peer::getOutstandingRequests)
-                .thenComparing(SHUFFLING_COMPARATOR));
+    this.preferredPeer = preferredPeer;
   }
 
   public int getNumberOfRetries() {
@@ -71,16 +65,16 @@ public abstract class AbstractFetchTask<K, T> {
   }
 
   /**
-   * Selects random {@link Eth2Peer} from the network and gets a result using the {@link
-   * #fetch(Eth2Peer)} implementation. It also tracks the number of runs and the already queried
-   * peers.
+   * Uses a preferred {@link Eth2Peer} or selects a random one from the network and gets a result
+   * using the {@link #fetch(Eth2Peer)} implementation. It also tracks the number of runs and the
+   * already queried peers.
    */
   public SafeFuture<FetchResult<T>> run() {
     if (isCancelled()) {
       return SafeFuture.completedFuture(FetchResult.createFailed(Status.CANCELLED));
     }
 
-    final Optional<Eth2Peer> maybePeer = findRandomPeer();
+    final Optional<Eth2Peer> maybePeer = findPeer();
 
     if (maybePeer.isEmpty()) {
       return SafeFuture.completedFuture(FetchResult.createFailed(Status.NO_AVAILABLE_PEERS));
@@ -96,4 +90,21 @@ public abstract class AbstractFetchTask<K, T> {
   public abstract K getKey();
 
   abstract SafeFuture<FetchResult<T>> fetch(final Eth2Peer peer);
+
+  private Optional<Eth2Peer> findPeer() {
+    return preferredPeer.filter(this::peerIsNotQueried).or(this::findRandomPeer);
+  }
+
+  private Optional<Eth2Peer> findRandomPeer() {
+    return eth2Network
+        .streamPeers()
+        .filter(this::peerIsNotQueried)
+        .min(
+            Comparator.comparing(Eth2Peer::getOutstandingRequests)
+                .thenComparing(SHUFFLING_COMPARATOR));
+  }
+
+  private boolean peerIsNotQueried(final Eth2Peer peer) {
+    return !queriedPeers.contains(peer.getId());
+  }
 }

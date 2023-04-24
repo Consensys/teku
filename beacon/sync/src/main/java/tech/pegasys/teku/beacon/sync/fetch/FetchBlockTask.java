@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.fetch;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,7 +30,15 @@ public class FetchBlockTask extends AbstractFetchTask<Bytes32, SignedBeaconBlock
   protected final Bytes32 blockRoot;
 
   public FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
-    super(eth2Network);
+    super(eth2Network, Optional.empty());
+    this.blockRoot = blockRoot;
+  }
+
+  public FetchBlockTask(
+      final P2PNetwork<Eth2Peer> eth2Network,
+      final Optional<Eth2Peer> preferredPeer,
+      final Bytes32 blockRoot) {
+    super(eth2Network, preferredPeer);
     this.blockRoot = blockRoot;
   }
 
@@ -44,12 +53,12 @@ public class FetchBlockTask extends AbstractFetchTask<Bytes32, SignedBeaconBlock
         .thenApply(
             maybeBlock ->
                 maybeBlock
-                    .map(FetchResult::createSuccessful)
-                    .orElseGet(() -> FetchResult.createFailed(Status.FETCH_FAILED)))
+                    .map(block -> FetchResult.createSuccessful(peer, block))
+                    .orElseGet(() -> FetchResult.createFailed(peer, Status.FETCH_FAILED)))
         .exceptionally(
             err -> {
               LOG.debug("Failed to fetch block by root " + blockRoot, err);
-              return FetchResult.createFailed(Status.FETCH_FAILED);
+              return FetchResult.createFailed(peer, Status.FETCH_FAILED);
             });
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beacon.sync.fetch;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
@@ -30,7 +31,15 @@ public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, Blob
 
   public FetchBlobSidecarTask(
       final P2PNetwork<Eth2Peer> eth2Network, final BlobIdentifier blobIdentifier) {
-    super(eth2Network);
+    super(eth2Network, Optional.empty());
+    this.blobIdentifier = blobIdentifier;
+  }
+
+  public FetchBlobSidecarTask(
+      final P2PNetwork<Eth2Peer> eth2Network,
+      final Optional<Eth2Peer> preferredPeer,
+      final BlobIdentifier blobIdentifier) {
+    super(eth2Network, preferredPeer);
     this.blobIdentifier = blobIdentifier;
   }
 
@@ -45,12 +54,12 @@ public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, Blob
         .thenApply(
             maybeBlobSidecar ->
                 maybeBlobSidecar
-                    .map(FetchResult::createSuccessful)
-                    .orElseGet(() -> FetchResult.createFailed(Status.FETCH_FAILED)))
+                    .map(blobSidecar -> FetchResult.createSuccessful(peer, blobSidecar))
+                    .orElseGet(() -> FetchResult.createFailed(peer, Status.FETCH_FAILED)))
         .exceptionally(
             err -> {
               LOG.debug("Failed to fetch blob sidecar by identifier " + blobIdentifier, err);
-              return FetchResult.createFailed(Status.FETCH_FAILED);
+              return FetchResult.createFailed(peer, Status.FETCH_FAILED);
             });
   }
 }
