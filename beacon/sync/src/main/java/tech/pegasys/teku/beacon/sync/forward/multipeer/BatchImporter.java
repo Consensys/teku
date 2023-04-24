@@ -30,22 +30,22 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 public class BatchImporter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
-  private final BlobSidecarManager blobSidecarManager;
+  private final BlobSidecarPool blobSidecarPool;
   private final AsyncRunner asyncRunner;
 
   public BatchImporter(
       final BlockImporter blockImporter,
-      final BlobSidecarManager blobSidecarManager,
+      final BlobSidecarPool blobSidecarPool,
       final AsyncRunner asyncRunner) {
     this.blockImporter = blockImporter;
-    this.blobSidecarManager = blobSidecarManager;
+    this.blobSidecarPool = blobSidecarPool;
     this.asyncRunner = asyncRunner;
   }
 
@@ -110,8 +110,14 @@ public class BatchImporter {
       return importBlock(block, source);
     }
     final List<BlobSidecar> blobSidecars = blobSidecarsByBlockRoot.get(blockRoot);
-    LOG.debug("Importing {} blob sidecars for block with root {}", blobSidecars.size(), blockRoot);
-    return importBlobSidecars(blobSidecars).thenCompose(__ -> importBlock(block, source));
+    LOG.debug(
+        "Sending {} blob sidecars to the pool for block with root {}",
+        blobSidecars.size(),
+        blockRoot);
+    // Add blob sidecars to the pool in order for them to be available when the block is being
+    // imported
+    blobSidecarPool.onBlobSidecarsFromSync(blockRoot, blobSidecars);
+    return importBlock(block, source);
   }
 
   private SafeFuture<BlockImportResult> importBlock(
@@ -132,11 +138,6 @@ public class BatchImporter {
               }
               return result;
             });
-  }
-
-  private SafeFuture<Void> importBlobSidecars(final List<BlobSidecar> blobSidecars) {
-    return SafeFuture.allOfFailFast(
-        blobSidecars.stream().map(blobSidecarManager::importBlobSidecar));
   }
 
   public enum BatchImportResult {

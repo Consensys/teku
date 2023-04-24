@@ -186,6 +186,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               p2pNetwork,
               blockImporter,
               blobSidecarManager,
+              blobSidecarPool,
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -197,6 +198,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               recentChainData,
               blockImporter,
               blobSidecarManager,
+              blobSidecarPool,
               spec);
     }
     return forwardSync;

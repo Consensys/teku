@@ -38,6 +38,7 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -73,6 +74,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
+      final BlobSidecarPool blobSidecarPool,
       final Spec spec) {
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
     final SettableLabelledGauge targetChainCountGauge =
@@ -90,7 +92,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             eventThread,
             asyncRunner,
             recentChainData,
-            new BatchImporter(blockImporter, blobSidecarManager, asyncRunner),
+            new BatchImporter(blockImporter, blobSidecarPool, asyncRunner),
             new BatchFactory(
                 eventThread, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
             FORWARD_SYNC_BATCH_SIZE,
