@@ -42,7 +42,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -59,7 +59,7 @@ public class HistoricalBlockSyncService extends Service {
   private static final Duration RETRY_TIMEOUT = Duration.ofMinutes(1);
 
   private final Spec spec;
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
   private final SettableGauge historicSyncGauge;
   private final StorageUpdateChannel storageUpdateChannel;
   private final AsyncRunner asyncRunner;
@@ -81,7 +81,7 @@ public class HistoricalBlockSyncService extends Service {
   @VisibleForTesting
   protected HistoricalBlockSyncService(
       final Spec spec,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
       final AsyncRunner asyncRunner,
@@ -93,7 +93,7 @@ public class HistoricalBlockSyncService extends Service {
       final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService,
       final boolean fetchAllHistoricBlocks) {
     this.spec = spec;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     this.storageUpdateChannel = storageUpdateChannel;
     this.asyncRunner = asyncRunner;
     this.network = network;
@@ -123,7 +123,7 @@ public class HistoricalBlockSyncService extends Service {
 
   public static HistoricalBlockSyncService create(
       final Spec spec,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem,
       final StorageUpdateChannel storageUpdateChannel,
@@ -149,7 +149,7 @@ public class HistoricalBlockSyncService extends Service {
 
     return new HistoricalBlockSyncService(
         spec,
-        blobsSidecarManager,
+        blobSidecarManager,
         metricsSystem,
         storageUpdateChannel,
         asyncRunner,
@@ -290,7 +290,7 @@ public class HistoricalBlockSyncService extends Service {
         signatureVerifier,
         chainData,
         spec,
-        blobsSidecarManager,
+        blobSidecarManager,
         peer,
         params.getMaxSlot(),
         params.getBlockRoot(),

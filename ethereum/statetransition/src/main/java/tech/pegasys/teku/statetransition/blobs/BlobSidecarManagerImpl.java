@@ -44,7 +44,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsChannel {
+public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsChannel {
   private static final int MAX_CACHED_VALIDATED_BLOBS_SIDECARS_PER_SLOT = 10;
   private static final Logger LOG = LogManager.getLogger();
 
@@ -63,7 +63,7 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   private final Subscribers<ImportedBlobSidecarListener> importedBlobSidecarSubscribers =
       Subscribers.create(true);
 
-  public BlobsSidecarManagerImpl(
+  public BlobSidecarManagerImpl(
       final Spec spec,
       final RecentChainData recentChainData,
       final BlobSidecarValidator validator,

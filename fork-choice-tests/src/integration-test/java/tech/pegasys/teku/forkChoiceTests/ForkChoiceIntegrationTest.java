@@ -51,7 +51,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
@@ -184,7 +184,7 @@ public class ForkChoiceIntegrationTest {
             SPEC,
             forkChoiceExecutor,
             storageClient,
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
             transitionBlockValidator);
 
