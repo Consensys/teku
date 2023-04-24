@@ -23,9 +23,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public interface BlobsSidecarManager {
-  BlobsSidecarManager NOOP =
-      new BlobsSidecarManager() {
+public interface BlobSidecarManager {
+  BlobSidecarManager NOOP =
+      new BlobSidecarManager() {
 
         @Override
         public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(

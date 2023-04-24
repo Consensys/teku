@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -70,7 +70,7 @@ public class HistoricalBatchFetcher {
   private final int maxRequests;
 
   private final Spec spec;
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
   private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
   private final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlotToImport =
@@ -91,7 +91,7 @@ public class HistoricalBatchFetcher {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final Eth2Peer peer,
       final UInt64 maxSlot,
       final Bytes32 lastBlockRoot,
@@ -101,7 +101,7 @@ public class HistoricalBatchFetcher {
         signatureVerifier,
         chainDataClient,
         spec,
-        blobsSidecarManager,
+        blobSidecarManager,
         peer,
         maxSlot,
         lastBlockRoot,
@@ -115,7 +115,7 @@ public class HistoricalBatchFetcher {
       final AsyncBLSSignatureVerifier signatureVerifier,
       final CombinedChainDataClient chainDataClient,
       final Spec spec,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final Eth2Peer peer,
       final UInt64 maxSlot,
       final Bytes32 lastBlockRoot,
@@ -125,7 +125,7 @@ public class HistoricalBatchFetcher {
     this.signatureVerificationService = signatureVerifier;
     this.chainDataClient = chainDataClient;
     this.spec = spec;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
     this.peer = peer;
     this.maxSlot = maxSlot;
     this.lastBlockRoot = lastBlockRoot;
@@ -221,7 +221,7 @@ public class HistoricalBatchFetcher {
             requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock);
 
     final SafeFuture<Void> blobSidecarsRequest;
-    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
       LOG.trace(
           "Request {} blob sidecars from {} to {}",
           requestParams.getCount(),
@@ -244,7 +244,7 @@ public class HistoricalBatchFetcher {
   // We explicitly mark post-Deneb slots in availability range as some could contain no BlobSidecars
   private void fillBlobSidecarsBySlotToImport(final UInt64 startSlot, final UInt64 endSlot) {
     // Whole range is in availability period
-    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(startSlot)) {
+    if (blobSidecarManager.isAvailabilityRequiredAtSlot(startSlot)) {
       for (UInt64 currentSlot = startSlot;
           currentSlot.isLessThanOrEqualTo(endSlot);
           currentSlot = currentSlot.plus(1)) {
@@ -254,7 +254,7 @@ public class HistoricalBatchFetcher {
       for (UInt64 currentSlot = startSlot;
           currentSlot.isLessThanOrEqualTo(endSlot);
           currentSlot = currentSlot.plus(1)) {
-        if (blobsSidecarManager.isAvailabilityRequiredAtSlot(currentSlot)) {
+        if (blobSidecarManager.isAvailabilityRequiredAtSlot(currentSlot)) {
           blobSidecarsBySlotToImport.put(currentSlot, new ArrayList<>());
         }
       }
@@ -283,7 +283,7 @@ public class HistoricalBatchFetcher {
 
   private SafeFuture<Void> processReceivedBlockByRoot(final SignedBeaconBlock block) {
     blocksToImport.add(block);
-    if (blobsSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
+    if (blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
       final int numberOfKzgCommitments =
           block
               .getMessage()
@@ -394,7 +394,7 @@ public class HistoricalBatchFetcher {
 
   private SafeFuture<Void> validateBlobSidecars(
       final UInt64 latestSlotInBatch, final Collection<SignedBeaconBlock> blocks) {
-    if (!blobsSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
+    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
       return SafeFuture.COMPLETE;
     }
     LOG.trace("Validating blob sidecars for a batch");
@@ -405,7 +405,7 @@ public class HistoricalBatchFetcher {
     final List<BlobSidecar> blobSidecars =
         blobSidecarsBySlotToImport.getOrDefault(block.getSlot(), Collections.emptyList());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
-    return blobsSidecarManager
+    return blobSidecarManager
         .createAvailabilityChecker(block)
         .validate(blobSidecars)
         .thenAccept(

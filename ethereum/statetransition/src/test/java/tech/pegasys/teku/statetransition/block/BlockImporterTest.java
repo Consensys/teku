@@ -63,7 +63,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -96,7 +96,7 @@ public class BlockImporterTest {
           spec,
           new InlineEventThread(),
           recentChainData,
-          BlobsSidecarManager.NOOP,
+          BlobSidecarManager.NOOP,
           forkChoiceNotifier,
           transitionBlockValidator);
   private final BeaconChainUtil localChain =
@@ -442,7 +442,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator);
     final BlockImporter blockImporter =
@@ -486,7 +486,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator);
     final BlockImporter blockImporter =
@@ -538,7 +538,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator);
     final BlockImporter blockImporter =
@@ -582,7 +582,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator);
     final BlockImporter blockImporter =
@@ -614,7 +614,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator);
     final BlockImporter blockImporter =
@@ -667,7 +667,7 @@ public class BlockImporterTest {
             spec,
             new InlineEventThread(),
             storageSystem.recentChainData(),
-            BlobsSidecarManager.NOOP,
+            BlobSidecarManager.NOOP,
             forkChoiceNotifier,
             transitionBlockValidator);
 
