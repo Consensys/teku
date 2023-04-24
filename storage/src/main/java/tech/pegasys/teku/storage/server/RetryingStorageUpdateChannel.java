@@ -89,8 +89,8 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, List<BlobSidecar>> finalizedBlobSidecars) {
-    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, finalizedBlobSidecars));
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot));
   }
 
   @Override
@@ -128,8 +128,23 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
+  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+    return retry(() -> delegate.onNoBlobsSlot(slotAndBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
+    return retry(() -> delegate.onBlobSidecar(blobSidecar));
+  }
+
+  @Override
   public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
     return retry(() -> delegate.onBlobsSidecar(blobsSidecar));
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
+    return retry(() -> delegate.onBlobSidecarsRemoval(slot));
   }
 
   @Override

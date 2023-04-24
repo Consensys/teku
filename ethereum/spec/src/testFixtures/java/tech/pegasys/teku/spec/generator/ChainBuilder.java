@@ -14,9 +14,11 @@
 package tech.pegasys.teku.spec.generator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Preconditions.checkState;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -38,11 +42,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -71,8 +77,8 @@ import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
@@ -206,34 +212,21 @@ public class ChainBuilder {
     return blocks.values().stream().filter(b -> b.getBlock().getSlot().compareTo(toSlot) <= 0);
   }
 
-  public Stream<BlobsSidecar> streamBlobsSidecars(final long fromSlot, final long toSlot) {
-    return streamBlobsSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
-  }
-
-  public Stream<BlobSidecar> streamBlobSidecars(final long fromSlot, final long toSlot) {
+  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+      final long fromSlot, final long toSlot) {
     return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
-  public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 fromSlot, final UInt64 toSlot) {
-    return blobsSidecars.values().stream()
-        .filter(s -> s.getBeaconBlockSlot().isGreaterThanOrEqualTo(fromSlot))
-        .filter(s -> s.getBeaconBlockSlot().isLessThanOrEqualTo(toSlot));
+  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+      final UInt64 fromSlot, final UInt64 toSlot) {
+    return blobSidecars.entrySet().stream()
+        .filter(slot -> slot.getKey().isGreaterThanOrEqualTo(fromSlot))
+        .filter(slot -> slot.getKey().isLessThanOrEqualTo(toSlot))
+        .sorted(Map.Entry.comparingByKey());
   }
 
-  public Stream<BlobSidecar> streamBlobSidecars(final UInt64 fromSlot, final UInt64 toSlot) {
-    return blobSidecars.values().stream()
-        .filter(blobs -> !blobs.isEmpty())
-        .filter(blobs -> blobs.get(0).getSlot().isGreaterThanOrEqualTo(fromSlot))
-        .filter(blobs -> blobs.get(0).getSlot().isLessThanOrEqualTo(toSlot))
-        .flatMap(List::stream);
-  }
-
-  public Stream<BlobsSidecar> streamBlobsSidecars() {
-    return blobsSidecars.values().stream();
-  }
-
-  public void discardBlobsSidecar(final UInt64 slot) {
-    blobsSidecars.remove(slot);
+  public Stream<BlobSidecar> streamBlobSidecars() {
+    return blobSidecars.values().stream().flatMap(Collection::stream);
   }
 
   public SignedBlockAndState getGenesis() {
@@ -346,6 +339,8 @@ public class ChainBuilder {
               final BlobsSidecar blobsSidecar =
                   blobsSidecarSchema.createEmpty(blockAndState.getRoot(), blockAndState.getSlot());
               trackBlobsSidecar(blobsSidecar);
+              trackBlobSidecars(
+                  blockAndState.getSlot(), blockAndState.getRoot(), Collections.emptyList());
             });
 
     return blockAndState;
@@ -510,6 +505,12 @@ public class ChainBuilder {
     blocksByHash.put(block.getRoot(), block);
   }
 
+  private void trackBlobSidecars(
+      final UInt64 slot, final Bytes32 blockRoot, final List<BlobSidecar> blobSidecarList) {
+    blobSidecars.put(slot, blobSidecarList);
+    blobSidecarsByHash.put(blockRoot, blobSidecarList);
+  }
+
   private void trackBlobsSidecar(final BlobsSidecar blobsSidecar) {
     blobsSidecars.put(blobsSidecar.getBeaconBlockSlot(), blobsSidecar);
     blobsSidecarsByHash.put(blobsSidecar.getBeaconBlockRoot(), blobsSidecar);
@@ -541,7 +542,7 @@ public class ChainBuilder {
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else if (denebMilestoneReached(slot)) {
         nextBlockAndState =
-            generateBlockWithBlobsSidecar(
+            generateBlockWithBlobSidecar(
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else {
         nextBlockAndState =
@@ -584,7 +585,7 @@ public class ChainBuilder {
             options.getSkipStateTransition()));
   }
 
-  private SignedBlockAndState generateBlockWithBlobsSidecar(
+  private SignedBlockAndState generateBlockWithBlobSidecar(
       final UInt64 slot,
       final BlockOptions options,
       final BeaconState preState,
@@ -613,21 +614,35 @@ public class ChainBuilder {
                 options.getKzgCommitments(),
                 options.getSkipStateTransition()));
 
-    final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobsSidecarSchema();
+    final BlobSidecarSchema blobSidecarSchema =
+        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
 
-    if (options.isStoreBlobsSidecarEnabled()) {
-      final BlobsSidecar blobsSidecar =
-          options.blobsSidecar.orElseGet(
-              () ->
-                  new BlobsSidecar(
-                      blobsSidecarSchema,
-                      nextBlockAndState.getRoot(),
-                      slot,
-                      options.getBlobs().orElse(List.of()),
-                      options.getKzgProof().orElse(KZGProof.INFINITY)));
-      trackBlobsSidecar(blobsSidecar);
+    if (options.isStoreBlobSidecarsEnabled()) {
+      final List<BlobSidecar> blobSidecars =
+          options
+              .getBlobSidecars()
+              .orElseGet(
+                  () -> {
+                    if (options.getBlobs().isPresent()) {
+                      return IntStream.range(0, options.getBlobs().get().size())
+                          .mapToObj(
+                              index ->
+                                  new BlobSidecar(
+                                      blobSidecarSchema,
+                                      nextBlockAndState.getRoot(),
+                                      UInt64.valueOf(index),
+                                      slot,
+                                      parentRoot,
+                                      UInt64.ZERO,
+                                      options.getBlobs().get().get(index),
+                                      KZGCommitment.infinity(),
+                                      KZGProof.INFINITY))
+                          .collect(Collectors.toList());
+                    } else {
+                      return Collections.emptyList();
+                    }
+                  });
+      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecars);
     }
 
     return nextBlockAndState;
@@ -664,19 +679,31 @@ public class ChainBuilder {
                 randomBlobs,
                 options.getSkipStateTransition()));
 
-    final BlobsSidecarSchema blobsSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobsSidecarSchema();
+    final BlobSidecarSchema blobSidecarSchema =
+        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
 
-    if (options.isStoreBlobsSidecarEnabled()) {
-      final BlobsSidecar blobsSidecar =
-          new BlobsSidecar(
-              blobsSidecarSchema,
-              nextBlockAndState.getRoot(),
-              slot,
-              randomBlobs,
-              KZGProof.INFINITY);
-
-      trackBlobsSidecar(blobsSidecar);
+    if (options.isStoreBlobSidecarsEnabled()) {
+      List<BlobSidecar> blobSidecarList =
+          IntStream.range(0, randomBlobs.size())
+              .mapToObj(
+                  index -> {
+                    final Blob blob = randomBlobs.get(index);
+                    final KZGCommitment kzgCommitment = miscHelpers.blobToKzgCommitment(blob);
+                    return new BlobSidecar(
+                        blobSidecarSchema,
+                        nextBlockAndState.getRoot(),
+                        UInt64.valueOf(index),
+                        slot,
+                        parentRoot,
+                        UInt64.ZERO,
+                        blob,
+                        kzgCommitment,
+                        miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
+                  })
+              .collect(Collectors.toList());
+      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecarList);
     }
     return nextBlockAndState;
   }
@@ -802,7 +829,7 @@ public class ChainBuilder {
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
     private Optional<KZGProof> kzgProof = Optional.empty();
-    private Optional<BlobsSidecar> blobsSidecar = Optional.empty();
+    private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
     private boolean generateRandomBlobs = false;
     private boolean storeBlobsSidecar = true;
     private boolean skipStateTransition = false;
@@ -855,8 +882,8 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setBlobsSidecar(final BlobsSidecar blobsSidecar) {
-      this.blobsSidecar = Optional.of(blobsSidecar);
+    public BlockOptions setBlobSidecars(final List<BlobSidecar> blobSidecars) {
+      this.blobSidecars = Optional.of(blobSidecars);
       return this;
     }
 
@@ -931,11 +958,11 @@ public class ChainBuilder {
       return blobs;
     }
 
-    public Optional<BlobsSidecar> getBlobsSidecar() {
-      return blobsSidecar;
+    public Optional<List<BlobSidecar>> getBlobSidecars() {
+      return blobSidecars;
     }
 
-    public boolean isStoreBlobsSidecarEnabled() {
+    public boolean isStoreBlobSidecarsEnabled() {
       return storeBlobsSidecar;
     }
 

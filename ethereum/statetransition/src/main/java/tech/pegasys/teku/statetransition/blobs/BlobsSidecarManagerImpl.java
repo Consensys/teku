@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -126,18 +127,45 @@ public class BlobsSidecarManagerImpl implements BlobsSidecarManager, SlotEventsC
   }
 
   @Override
+  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+    storageUpdateChannel
+        .onNoBlobsSlot(slotAndBlockRoot)
+        .thenRun(() -> LOG.debug("Slot {} with no BlobSidecars stored", slotAndBlockRoot))
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  @Override
+  public void storeBlobSidecar(final BlobSidecar blobSidecar) {
+    storageUpdateChannel
+        .onBlobSidecar(blobSidecar)
+        .thenRun(
+            () ->
+                LOG.debug(
+                    "BlobSidecar stored for {}",
+                    () ->
+                        new SlotAndBlockRootAndBlobIndex(
+                            blobSidecar.getSlot(),
+                            blobSidecar.getBlockRoot(),
+                            blobSidecar.getIndex())))
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  @Override
   public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
     internalStoreUnconfirmedBlobsSidecar(blobsSidecar);
   }
 
   @Override
-  public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {
-    final SlotAndBlockRoot blobsAtSlotAndBlockRoot =
-        new SlotAndBlockRoot(block.getSlot(), block.getRoot());
-
+  public void discardBlobSidecarsByBlock(final SignedBeaconBlock block) {
     storageUpdateChannel
-        .onBlobsSidecarRemoval(blobsAtSlotAndBlockRoot)
-        .thenRun(() -> LOG.debug("BlobsSidecar discarded for {}", blobsAtSlotAndBlockRoot))
+        .onBlobSidecarsRemoval(block.getSlot())
+        .thenRun(
+            () ->
+                LOG.debug(
+                    () ->
+                        String.format(
+                            "BlobsSidecar discarded for %s",
+                            new SlotAndBlockRoot(block.getSlot(), block.getRoot()))))
         .ifExceptionGetsHereRaiseABug();
   }
 

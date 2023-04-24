@@ -168,6 +168,9 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put(
             "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
             getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot())
+        .put(
+            "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnBlobSidecarBySlotRootBlobIndex())
         .build();
   }
 
