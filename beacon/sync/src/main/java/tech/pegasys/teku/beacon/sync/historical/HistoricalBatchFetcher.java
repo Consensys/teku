@@ -227,7 +227,7 @@ public class HistoricalBatchFetcher {
           requestParams.getCount(),
           requestParams.getStartSlot(),
           endSlot);
-      fillBlobSidecarBySlotToImport(requestParams.getStartSlot(), endSlot);
+      fillBlobSidecarsBySlotToImport(requestParams.getStartSlot(), endSlot);
       blobSidecarsRequest =
           peer.requestBlobSidecarsByRange(
               requestParams.getStartSlot(),
@@ -242,7 +242,7 @@ public class HistoricalBatchFetcher {
   }
 
   // We explicitly mark post-Deneb slots in availability range as some could contain no BlobSidecars
-  private void fillBlobSidecarBySlotToImport(final UInt64 startSlot, final UInt64 endSlot) {
+  private void fillBlobSidecarsBySlotToImport(final UInt64 startSlot, final UInt64 endSlot) {
     // Whole range is in availability period
     if (blobsSidecarManager.isAvailabilityRequiredAtSlot(startSlot)) {
       for (UInt64 currentSlot = startSlot;
