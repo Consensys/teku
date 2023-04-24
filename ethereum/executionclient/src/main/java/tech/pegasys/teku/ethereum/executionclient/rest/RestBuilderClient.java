@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
+import static tech.pegasys.teku.ethereum.executionclient.rest.RestClient.NO_HEADERS;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -46,6 +48,11 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class RestBuilderClient implements BuilderClient {
 
+  private static final Map<String, String> USER_AGENT_HEADER =
+      Map.of(
+          "User-Agent",
+          VersionProvider.CLIENT_IDENTITY + "/" + VersionProvider.IMPLEMENTATION_VERSION);
+
   private final Map<
           SpecMilestone,
           DeserializableTypeDefinition<? extends BuilderApiResponse<? extends ExecutionPayload>>>
@@ -57,10 +64,13 @@ public class RestBuilderClient implements BuilderClient {
 
   private final RestClient restClient;
   private final SchemaDefinitionCache schemaDefinitionCache;
+  private final boolean setUserAgentHeader;
 
-  public RestBuilderClient(final RestClient restClient, final Spec spec) {
+  public RestBuilderClient(
+      final RestClient restClient, final Spec spec, final boolean setUserAgentHeader) {
     this.restClient = restClient;
     this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
+    this.setUserAgentHeader = setUserAgentHeader;
   }
 
   @Override
@@ -115,6 +125,7 @@ public class RestBuilderClient implements BuilderClient {
     return restClient
         .getAsync(
             BuilderApiMethod.GET_EXECUTION_PAYLOAD_HEADER.resolvePath(urlParams),
+            setUserAgentHeader ? USER_AGENT_HEADER : NO_HEADERS,
             responseTypeDefinition)
         .thenApply(
             response ->

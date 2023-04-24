@@ -220,7 +220,8 @@ public class ExecutionLayerService extends Service {
                     restClientProvider.getRestClient(),
                     config.getSpec(),
                     timeProvider,
-                    metricsSystem));
+                    metricsSystem,
+                    config.getBuilderSetUserAgentHeader()));
 
     final BlobsBundleValidator blobsBundleValidator =
         config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)
