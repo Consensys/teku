@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
@@ -26,18 +27,26 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_R
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class PostBlock extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blocks";
@@ -54,7 +63,7 @@ public class PostBlock extends RestApiEndpoint {
     this.syncDataProvider = dataProvider.getSyncDataProvider();
   }
 
-  PostBlock(
+  public PostBlock(
       final ValidatorDataProvider validatorDataProvider,
       final SyncDataProvider syncDataProvider,
       final Spec spec,
@@ -74,16 +83,25 @@ public class PostBlock extends RestApiEndpoint {
                 + " The beacon node performs the required validation.")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
-            getSchemaDefinitionForAllMilestones(
-                schemaDefinitionCache,
-                "SignedBeaconBlock",
-                SchemaDefinitions::getSignedBeaconBlockSchema,
-                (block, milestone) ->
-                    schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone)),
+            getRequestBodyTypes(schemaDefinitionCache),
             json ->
                 slotBasedSelector(
-                    json, schemaDefinitionCache, SchemaDefinitions::getSignedBeaconBlockSchema),
-            spec::deserializeSignedBeaconBlock)
+                    json,
+                    schemaDefinitionCache,
+                    schemaDefinitions ->
+                        slot -> {
+                          if (schemaDefinitionCache
+                              .milestoneAtSlot(slot)
+                              .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+                            return schemaDefinitions
+                                .toVersionDeneb()
+                                .orElseThrow()
+                                .getSignedBlockContentsSchema();
+                          } else {
+                            return schemaDefinitions.getSignedBeaconBlockSchema();
+                          }
+                        }),
+            spec::deserializeSignedBlock)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,
@@ -101,24 +119,69 @@ public class PostBlock extends RestApiEndpoint {
       return;
     }
 
-    final SignedBeaconBlock signedBeaconBlock = request.getRequestBody();
+    Object requestBody = request.getRequestBody();
 
-    request.respondAsync(
-        validatorDataProvider
-            .submitSignedBlock(signedBeaconBlock)
-            .thenApply(
-                result -> {
-                  if (result.getRejectionReason().isEmpty()) {
-                    return AsyncApiResponse.respondWithCode(SC_OK);
-                  } else if (result
-                      .getRejectionReason()
-                      .get()
-                      .equals(FailureReason.INTERNAL_ERROR.name())) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR, result.getRejectionReason().get());
-                  } else {
-                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
-                  }
-                }));
+    if (requestBody instanceof SignedBlockContents) {
+      request.respondAsync(
+          validatorDataProvider
+              .submitSignedBlockContents((SignedBlockContents) requestBody)
+              .thenApply(this::respond));
+
+    } else {
+      request.respondAsync(
+          validatorDataProvider
+              .submitSignedBlock((SignedBeaconBlock) requestBody)
+              .thenApply(this::respond));
+    }
+  }
+
+  @NotNull
+  private AsyncApiResponse respond(SendSignedBlockResult result) {
+    if (result.getRejectionReason().isEmpty()) {
+      return AsyncApiResponse.respondWithCode(SC_OK);
+    } else if (result.getRejectionReason().get().equals(FailureReason.INTERNAL_ERROR.name())) {
+      return AsyncApiResponse.respondWithError(
+          SC_INTERNAL_SERVER_ERROR, result.getRejectionReason().get());
+    } else {
+      return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+    }
+  }
+
+  private static SerializableOneOfTypeDefinition<Object> getRequestBodyTypes(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableOneOfTypeDefinitionBuilder<Object> builder =
+        new SerializableOneOfTypeDefinitionBuilder<>().description("Request successful");
+    builder.withType(
+        value -> value instanceof SignedBeaconBlock,
+        signedBeaconBlockRequestBodyType(schemaDefinitionCache));
+    builder.withType(
+        value -> value instanceof SignedBlockContents,
+        signedBlockContentsRequestBodyType(schemaDefinitionCache));
+    return builder.build();
+  }
+
+  private static SerializableTypeDefinition<SignedBeaconBlock> signedBeaconBlockRequestBodyType(
+      SchemaDefinitionCache schemaDefinitionCache) {
+    return getSchemaDefinitionForAllMilestones(
+        schemaDefinitionCache,
+        "SignedBeaconBlock",
+        SchemaDefinitions::getSignedBeaconBlockSchema,
+        (block, milestone) ->
+            schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone));
+  }
+
+  private static SerializableTypeDefinition<SignedBlockContents> signedBlockContentsRequestBodyType(
+      SchemaDefinitionCache schemaDefinitionCache) {
+    return getAvailableSchemaDefinitionForAllMilestones(
+        schemaDefinitionCache,
+        "SignedBlockContents",
+        schemaDefinitions ->
+            schemaDefinitions
+                .toVersionDeneb()
+                .map(SchemaDefinitionsDeneb::getSignedBlockContentsSchema),
+        (block, milestone) ->
+            schemaDefinitionCache
+                .milestoneAtSlot(block.getSignedBeaconBlock().getSlot())
+                .equals(milestone));
   }
 }

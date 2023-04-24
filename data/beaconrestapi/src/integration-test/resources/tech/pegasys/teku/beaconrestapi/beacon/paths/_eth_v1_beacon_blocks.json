@@ -14,32 +14,34 @@
         },
         "application/json" : {
           "schema" : {
-            "title" : "SignedBeaconBlock",
+            "description" : "Request successful",
             "type" : "object",
             "oneOf" : [ {
-              "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
+              "title" : "SignedBeaconBlock",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
+              }, {
+                "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
+              }, {
+                "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
+              }, {
+                "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
+              }, {
+                "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
+              } ]
             }, {
-              "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
-            }, {
-              "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
-            }, {
-              "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
-            }, {
-              "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
+              "title" : "SignedBlockContents",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/SignedBlockContents"
+              } ]
             } ]
           }
         }
       }
     },
     "responses" : {
-      "200" : {
-        "description" : "Block has been successfully broadcast, validated and imported.",
-        "content" : { }
-      },
-      "202" : {
-        "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
-        "content" : { }
-      },
       "415" : {
         "description" : "Unsupported media-type supplied",
         "content" : {
@@ -49,6 +51,14 @@
             }
           }
         }
+      },
+      "200" : {
+        "description" : "Block has been successfully broadcast, validated and imported.",
+        "content" : { }
+      },
+      "202" : {
+        "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
+        "content" : { }
       },
       "400" : {
         "description" : "Unable to parse request body.",

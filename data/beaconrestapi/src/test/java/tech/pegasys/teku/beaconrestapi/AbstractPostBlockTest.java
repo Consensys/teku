@@ -16,6 +16,7 @@ package tech.pegasys.teku.beaconrestapi;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
@@ -29,10 +30,15 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandlerTest {
@@ -98,9 +104,45 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
   }
 
   @Test
+  void shouldReturnOkIfBlockContentsImportSuccessful() throws Exception {
+
+    // TODO
+    // Remove when PostBlindedBlockContents is implemented
+    assumeThat(isBlinded()).isFalse();
+    spec = TestSpecFactory.createMinimalDeneb();
+    DataStructureUtil denebData = new DataStructureUtil(spec);
+    final SendSignedBlockResult successResult =
+        SendSignedBlockResult.success(denebData.randomBytes32());
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    request.setRequestBody(denebData.randomSignedBlockContents(UInt64.valueOf(3)));
+    setupValidatorDataProviderSubmit(SafeFuture.completedFuture(successResult));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
   void shouldAcceptBlockAsSsz() throws Exception {
     final SignedBeaconBlock data = dataStructureUtil.randomSignedBeaconBlock(3);
     final SignedBeaconBlock result =
+        handler
+            .getMetadata()
+            .getRequestBody(
+                new ByteArrayInputStream(data.sszSerialize().toArrayUnsafe()),
+                Optional.of(ContentTypes.OCTET_STREAM));
+    assertThat(result).isEqualTo(data);
+  }
+
+  @Test
+  void shouldAcceptBlockContentsAsSsz() throws Exception {
+    spec = TestSpecFactory.createMinimalDeneb();
+    DataStructureUtil denebData = new DataStructureUtil(spec);
+    setHandler(new PostBlock(validatorDataProvider, syncDataProvider, spec, schemaDefinitionCache));
+    final SignedBlockContents data = denebData.randomSignedBlockContents(UInt64.valueOf(3));
+    final SignedBlockContents result =
         handler
             .getMetadata()
             .getRequestBody(
@@ -114,6 +156,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
       when(validatorDataProvider.submitSignedBlindedBlock(any())).thenReturn(future);
     } else {
       when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any())).thenReturn(future);
+      when(validatorDataProvider.submitSignedBlockContents(any())).thenReturn(future);
     }
   }
 

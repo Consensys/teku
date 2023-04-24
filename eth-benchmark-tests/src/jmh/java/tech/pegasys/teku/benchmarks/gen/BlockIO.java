@@ -58,6 +58,8 @@ public class BlockIO {
         int size = inputStream.readInt();
         byte[] bytes = new byte[size];
         inputStream.readFully(bytes);
+        // TODO
+        // Handle post Deneb BlockContents
         return spec.deserializeSignedBeaconBlock(Bytes.wrap(bytes));
       } catch (Exception e) {
         return null;

@@ -39,6 +39,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -286,6 +288,35 @@ public class Spec {
         .getSchemaDefinitions()
         .getBeaconStateSchema()
         .sszDeserialize(serializedState);
+  }
+
+  public SszData deserializeSignedBlock(final Bytes serializedSignedBlock) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedSignedBlock);
+    final SpecVersion specVersion = atSlot(slot);
+
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(DENEB)) {
+      return specVersion
+          .getSchemaDefinitions()
+          .toVersionDeneb()
+          .orElseThrow()
+          .getSignedBlockContentsSchema()
+          .sszDeserialize(serializedSignedBlock);
+    } else {
+      return atSlot(slot)
+          .getSchemaDefinitions()
+          .getSignedBeaconBlockSchema()
+          .sszDeserialize(serializedSignedBlock);
+    }
+  }
+
+  public SignedBlockContents deserializeSignedBlockContents(final Bytes serializedSignedBlock) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedSignedBlock);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionDeneb()
+        .orElseThrow()
+        .getSignedBlockContentsSchema()
+        .sszDeserialize(serializedSignedBlock);
   }
 
   public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedSignedBlock) {

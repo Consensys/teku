@@ -112,7 +112,8 @@ public class PostBlindedBlock extends RestApiEndpoint {
                 MilestoneDependentTypesUtil.slotBasedSelector(
                     json,
                     schemaDefinitionCache,
-                    SchemaDefinitions::getSignedBlindedBeaconBlockSchema),
+                    schemaDefinitions ->
+                        slot -> schemaDefinitions.getSignedBlindedBeaconBlockSchema()),
             spec::deserializeSignedBlindedBeaconBlock)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
