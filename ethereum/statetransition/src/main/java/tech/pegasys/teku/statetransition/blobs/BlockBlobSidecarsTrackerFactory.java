@@ -18,5 +18,5 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 @FunctionalInterface
 public interface BlockBlobSidecarsTrackerFactory {
 
-  BlockBlobSidecarsTracker create(SlotAndBlockRoot slotAndBlockRoot, int maxBlobsPerBlock);
+  BlockBlobSidecarsTracker create(SlotAndBlockRoot slotAndBlockRoot);
 }

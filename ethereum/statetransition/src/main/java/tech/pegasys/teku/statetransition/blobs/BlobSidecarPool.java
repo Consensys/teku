@@ -26,7 +26,7 @@ public interface BlobSidecarPool {
   BlobSidecarPool NOOP =
       new BlobSidecarPool() {
         @Override
-        public void onNewBlobSidecar(final BlobSidecar blobSidecar, final boolean syncing) {}
+        public void onNewBlobSidecar(final BlobSidecar blobSidecar) {}
 
         @Override
         public void onNewBlock(final SignedBeaconBlock block) {}
@@ -67,7 +67,7 @@ public interface BlobSidecarPool {
             final RequiredBlockRootDroppedSubscriber requiredBlockRootDroppedSubscriber) {}
       };
 
-  void onNewBlobSidecar(BlobSidecar blobSidecar, boolean syncing);
+  void onNewBlobSidecar(BlobSidecar blobSidecar);
 
   void onNewBlock(SignedBeaconBlock block);
 

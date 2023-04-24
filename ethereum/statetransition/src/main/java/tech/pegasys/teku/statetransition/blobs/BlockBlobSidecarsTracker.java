@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -34,7 +35,7 @@ public class BlockBlobSidecarsTracker {
   private static final Logger LOG = LogManager.getLogger();
 
   private final SlotAndBlockRoot slotAndBlockRoot;
-  private final int maxBlobsPerBlock;
+  private final UInt64 maxBlobsPerBlock;
 
   private final AtomicReference<Optional<BeaconBlockBodyDeneb>> blockBody =
       new AtomicReference<>(Optional.empty());
@@ -42,8 +43,10 @@ public class BlockBlobSidecarsTracker {
   private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
+  private boolean fetchTriggered = false;
+
   public BlockBlobSidecarsTracker(
-      final SlotAndBlockRoot slotAndBlockRoot, final int maxBlobsPerBlock) {
+      final SlotAndBlockRoot slotAndBlockRoot, final UInt64 maxBlobsPerBlock) {
     this.slotAndBlockRoot = slotAndBlockRoot;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
   }
@@ -67,9 +70,9 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
-    if (blockBody.get().isPresent()) {
-      return UInt64.range(
-              UInt64.ZERO, UInt64.valueOf(blockBody.get().get().getBlobKzgCommitments().size()))
+    final Optional<BeaconBlockBodyDeneb> body = blockBody.get();
+    if (body.isPresent()) {
+      return UInt64.range(UInt64.ZERO, UInt64.valueOf(body.get().getBlobKzgCommitments().size()))
           .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
           .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
     }
@@ -78,10 +81,18 @@ public class BlockBlobSidecarsTracker {
       return Stream.of();
     }
 
-    // We may return maxBlobsPerBlock if we want to. For now let's return the blobs we know are
-    // missing.
-    final UInt64 indexUpperLimit = blobSidecars.firstKey().min(maxBlobsPerBlock);
-    return UInt64.range(UInt64.ZERO, indexUpperLimit)
+    // We may return maxBlobsPerBlock because we don't know the block
+    return UInt64.range(UInt64.ZERO, maxBlobsPerBlock)
+        .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
+        .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
+  }
+
+  public Stream<BlobIdentifier> getUnusedBlobSidecarsForBlock() {
+    final Optional<BeaconBlockBodyDeneb> body = blockBody.get();
+    checkState(body.isPresent(), "Block must me known to call this method");
+
+    final UInt64 firstUnusedIndex = maxBlobsPerBlock.min(body.get().getBlobKzgCommitments().size());
+    return UInt64.range(firstUnusedIndex, maxBlobsPerBlock)
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
 
@@ -113,17 +124,19 @@ public class BlockBlobSidecarsTracker {
     return blobSidecars.size();
   }
 
-  public void setBlock(final SignedBeaconBlock block) {
+  public boolean setBlock(final SignedBeaconBlock block) {
     checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
     final Optional<BeaconBlockBodyDeneb> oldBlock =
         blockBody.getAndSet(
             Optional.of(BeaconBlockBodyDeneb.required(block.getMessage().getBody())));
     if (oldBlock.isPresent()) {
       LOG.debug("block was already set!");
-      return;
+      return false;
     }
 
     checkCompletion();
+
+    return true;
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
@@ -140,6 +153,14 @@ public class BlockBlobSidecarsTracker {
     }
 
     return complete;
+  }
+
+  public boolean isFetchTriggered() {
+    return fetchTriggered;
+  }
+
+  public void setFetchTriggered() {
+    this.fetchTriggered = true;
   }
 
   private boolean areBlobsComplete() {

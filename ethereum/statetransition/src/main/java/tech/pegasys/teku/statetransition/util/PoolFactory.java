@@ -113,7 +113,7 @@ public class PoolFactory {
       final RecentChainData recentChainData,
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
-      final int maxItems) {
+      final int maxTrackers) {
     return new BlobSidecarPoolImpl(
         blobSidecarPoolSizeGauge,
         spec,
@@ -122,7 +122,7 @@ public class PoolFactory {
         recentChainData,
         historicalBlockTolerance,
         futureBlockTolerance,
-        maxItems);
+        maxTrackers);
   }
 
   @VisibleForTesting
