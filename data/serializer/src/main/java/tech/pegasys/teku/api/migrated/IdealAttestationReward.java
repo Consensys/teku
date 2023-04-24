@@ -14,22 +14,23 @@
 package tech.pegasys.teku.api.migrated;
 
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class IdealAttestationReward {
 
-  private final long effectiveBalance;
+  private final UInt64 effectiveBalance;
   private final long head;
   private final long target;
   private final long source;
 
-  public IdealAttestationReward(long effectiveBalance, long head, long target, long source) {
+  public IdealAttestationReward(UInt64 effectiveBalance, long head, long target, long source) {
     this.effectiveBalance = effectiveBalance;
     this.head = head;
     this.target = target;
     this.source = source;
   }
 
-  public long getEffectiveBalance() {
+  public UInt64 getEffectiveBalance() {
     return effectiveBalance;
   }
 

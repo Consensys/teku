@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.NotImplementedException;
@@ -41,7 +42,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
 
   private static final SerializableTypeDefinition<IdealAttestationReward> IDEAL_REWARDS_TYPE =
       SerializableTypeDefinition.object(IdealAttestationReward.class)
-          .withField("effective_balance", LONG_TYPE, IdealAttestationReward::getEffectiveBalance)
+          .withField("effective_balance", UINT64_TYPE, IdealAttestationReward::getEffectiveBalance)
           .withField("head", LONG_TYPE, IdealAttestationReward::getHead)
           .withField("target", LONG_TYPE, IdealAttestationReward::getTarget)
           .withField("source", LONG_TYPE, IdealAttestationReward::getSource)
@@ -53,7 +54,8 @@ public class GetAttestationRewards extends RestApiEndpoint {
           .withField("head", LONG_TYPE, TotalAttestationReward::getHead)
           .withField("target", LONG_TYPE, TotalAttestationReward::getTarget)
           .withField("source", LONG_TYPE, TotalAttestationReward::getSource)
-          .withField("inclusion_delay", LONG_TYPE, TotalAttestationReward::getInclusionDelay)
+          .withOptionalField(
+              "inclusion_delay", UINT64_TYPE, TotalAttestationReward::getInclusionDelay)
           .build();
 
   private static final SerializableTypeDefinition<AttestationRewardsData> DATA_TYPE =

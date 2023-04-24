@@ -27,6 +27,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.IdealAttestationReward;
 import tech.pegasys.teku.api.migrated.TotalAttestationReward;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class GetAttestationRewardsTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -42,9 +44,9 @@ class GetAttestationRewardsTest extends AbstractMigratedBeaconHandlerTest {
 
   {
     IdealAttestationReward idealAttestationReward =
-        new IdealAttestationReward(1000000000L, 2500L, 5000L, 5000L);
+        new IdealAttestationReward(UInt64.valueOf(1000000000L), 2500L, 5000L, 5000L);
     TotalAttestationReward totalAttestationReward =
-        new TotalAttestationReward(0L, 2000L, 2000L, 4000L, 2000L);
+        new TotalAttestationReward(0L, 2000L, 2000L, 4000L, Optional.of(UInt64.valueOf(2000L)));
     AttestationRewardsData attestationRewardsData =
         new AttestationRewardsData(
             List.of(idealAttestationReward), List.of(totalAttestationReward));

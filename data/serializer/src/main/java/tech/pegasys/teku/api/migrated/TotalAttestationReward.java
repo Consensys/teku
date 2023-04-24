@@ -14,6 +14,8 @@
 package tech.pegasys.teku.api.migrated;
 
 import java.util.Objects;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class TotalAttestationReward {
 
@@ -21,10 +23,10 @@ public class TotalAttestationReward {
   private final long head;
   private final long target;
   private final long source;
-  private final long inclusionDelay;
+  private final Optional<UInt64> inclusionDelay;
 
   public TotalAttestationReward(
-      long validatorIndex, long head, long target, long source, long inclusionDelay) {
+      long validatorIndex, long head, long target, long source, Optional<UInt64> inclusionDelay) {
     this.validatorIndex = validatorIndex;
     this.head = head;
     this.target = target;
@@ -48,7 +50,7 @@ public class TotalAttestationReward {
     return source;
   }
 
-  public long getInclusionDelay() {
+  public Optional<UInt64> getInclusionDelay() {
     return inclusionDelay;
   }
 
