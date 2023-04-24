@@ -16,9 +16,9 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 
 import com.google.common.base.Throwables;
-import com.google.common.collect.Maps;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -168,7 +168,7 @@ public class PeerSync {
 
               final SafeFuture<Void> blobSidecarsRequest;
 
-              final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = Maps.newHashMap();
+              final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = new HashMap<>();
 
               if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
