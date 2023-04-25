@@ -190,6 +190,7 @@ public class PeerSync {
                       requestContext.startSlot,
                       requestContext.count,
                       block -> {
+                        // at this point, blob sidecars (if any) have been received
                         final Optional<List<BlobSidecar>> blobSidecars =
                             blobSidecarListener.getReceivedBlobSidecars(block.getSlot());
                         return importBlock(block, blobSidecars);
