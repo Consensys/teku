@@ -1,5 +1,5 @@
 {
-  "title": "PubKey",
+  "title": "Pubkey",
   "type": "string",
   "pattern": "^0x[a-fA-F0-9]{96}$",
   "description": "The validator's BLS public key, uniquely identifying them. _48-bytes, hex encoded with 0x prefix, case insensitive._",

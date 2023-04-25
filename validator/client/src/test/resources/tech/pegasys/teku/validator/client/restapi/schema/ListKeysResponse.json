@@ -10,7 +10,7 @@
         "required" : [ "validating_pubkey", "readonly" ],
         "properties" : {
           "validating_pubkey" : {
-            "$ref" : "#/components/schemas/PubKey"
+            "$ref" : "#/components/schemas/Pubkey"
           },
           "derivation_path" : {
             "type" : "string",

@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
+import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -41,9 +41,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
           .name("GetFeeRecipientData")
           .withField("ethaddress", ETH1ADDRESS_TYPE, GetFeeRecipientResponse::getEthAddress)
           .withOptionalField(
-              PUBKEY,
-              EthereumTypes.VALIDATED_PUBLIC_KEY_TYPE,
-              GetFeeRecipientResponse::getPublicKey)
+              PUBKEY, SharedApiTypes.PUBLIC_KEY_API_TYPE, GetFeeRecipientResponse::getPublicKey)
           .build();
 
   private static final SerializableTypeDefinition<GetFeeRecipientResponse> RESPONSE_TYPE =

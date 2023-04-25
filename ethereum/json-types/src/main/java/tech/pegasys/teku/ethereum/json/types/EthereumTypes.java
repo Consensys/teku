@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -60,20 +59,6 @@ public class EthereumTypes {
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .formatter(BLSPublicKey::toString)
           .parser(BLSPublicKey::fromHexString)
-          .example(
-              "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1a"
-                  + "f526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
-          .description(
-              "`BLSPublicKey Hex` The validator's BLS public key, uniquely identifying them. "
-                  + "48-bytes, hex encoded with 0x prefix, case insensitive.")
-          .format("string")
-          .build();
-
-  public static final StringValueTypeDefinition<BLSPublicKey> VALIDATED_PUBLIC_KEY_TYPE =
-      DeserializableTypeDefinition.string(BLSPublicKey.class)
-          .formatter(BLSPublicKey::toString)
-          .parser(value -> BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)))
-          .pattern("^0x[a-fA-F0-9]{96}$")
           .example(
               "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1a"
                   + "f526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")

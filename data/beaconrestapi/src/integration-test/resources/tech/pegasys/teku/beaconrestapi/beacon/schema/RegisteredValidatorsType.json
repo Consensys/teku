@@ -10,7 +10,7 @@
       "format" : "uint64"
     },
     "pubkey" : {
-      "$ref" : "#/components/schemas/PubKey"
+      "$ref" : "#/components/schemas/Pubkey"
     },
     "fee_recipient" : {
       "type" : "string",

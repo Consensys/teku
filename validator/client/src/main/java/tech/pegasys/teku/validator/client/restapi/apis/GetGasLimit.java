@@ -24,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.json.types.EthereumTypes;
+import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -45,7 +45,7 @@ public class GetGasLimit extends RestApiEndpoint {
               "gas_limit", CoreTypes.UINT64_TYPE, GetGasLimit.GetGasLimitResponse::getGasLimit)
           .withField(
               PUBKEY,
-              EthereumTypes.VALIDATED_PUBLIC_KEY_TYPE,
+              SharedApiTypes.PUBLIC_KEY_API_TYPE,
               GetGasLimit.GetGasLimitResponse::getPublicKey)
           .build();
 
