@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.schema;
 
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PUBKEY_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.ETH1ADDRESS_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.VALIDATED_PUBLIC_KEY_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
@@ -62,7 +62,7 @@ public class ProposersData {
             .withField("proposer_index", UINT64_TYPE, Map.Entry::getKey)
             .withField(
                 "pubkey",
-                PUBKEY_TYPE,
+                VALIDATED_PUBLIC_KEY_TYPE,
                 entry ->
                     entry.getValue().getSignedValidatorRegistration().getMessage().getPublicKey())
             .withField(
