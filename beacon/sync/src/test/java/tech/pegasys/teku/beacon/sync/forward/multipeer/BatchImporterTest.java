@@ -81,7 +81,7 @@ class BatchImporterTest {
 
     // Should not be started on the calling thread
     verifyNoInteractions(blockImporter);
-    verifyNoInteractions(blobsSidecarManager);
+    verifyNoInteractions(blobSidecarPool);
 
     // We should have copied the blocks and blob sidecars to avoid accessing the Batch data from
     // other threads

@@ -19,8 +19,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -31,7 +31,7 @@ public class SinglePeerSyncServiceFactory {
       final P2PNetwork<Eth2Peer> p2pNetwork,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final BlobSidecarPool blobSidecarPool,
       final Spec spec) {
     final SyncManager syncManager =
@@ -40,7 +40,7 @@ public class SinglePeerSyncServiceFactory {
             p2pNetwork,
             recentChainData,
             blockImporter,
-            blobsSidecarManager,
+            blobSidecarManager,
             blobSidecarPool,
             metricsSystem,
             spec);
