@@ -55,7 +55,7 @@ public class SharedApiTypes {
                   GetGenesisApiDataBuilder::genesisForkVersion)
               .build());
 
-  public static final StringValueTypeDefinition<BLSPublicKey> PUBLIC_KEY_API_TYPE =
+  public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_API_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .name("Pubkey")
           .formatter(BLSPublicKey::toString)

@@ -41,7 +41,7 @@ public class GetFeeRecipient extends RestApiEndpoint {
           .name("GetFeeRecipientData")
           .withField("ethaddress", ETH1ADDRESS_TYPE, GetFeeRecipientResponse::getEthAddress)
           .withOptionalField(
-              PUBKEY, SharedApiTypes.PUBLIC_KEY_API_TYPE, GetFeeRecipientResponse::getPublicKey)
+              PUBKEY, SharedApiTypes.PUBKEY_API_TYPE, GetFeeRecipientResponse::getPublicKey)
           .build();
 
   private static final SerializableTypeDefinition<GetFeeRecipientResponse> RESPONSE_TYPE =

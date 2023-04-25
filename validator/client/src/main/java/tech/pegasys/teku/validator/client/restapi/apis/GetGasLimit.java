@@ -44,9 +44,7 @@ public class GetGasLimit extends RestApiEndpoint {
           .withField(
               "gas_limit", CoreTypes.UINT64_TYPE, GetGasLimit.GetGasLimitResponse::getGasLimit)
           .withField(
-              PUBKEY,
-              SharedApiTypes.PUBLIC_KEY_API_TYPE,
-              GetGasLimit.GetGasLimitResponse::getPublicKey)
+              PUBKEY, SharedApiTypes.PUBKEY_API_TYPE, GetGasLimit.GetGasLimitResponse::getPublicKey)
           .build();
 
   private static final SerializableTypeDefinition<GetGasLimit.GetGasLimitResponse> RESPONSE_TYPE =
