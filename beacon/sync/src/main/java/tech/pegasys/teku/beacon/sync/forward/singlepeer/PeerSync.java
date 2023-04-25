@@ -17,10 +17,7 @@ import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 
 import com.google.common.base.Throwables;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -39,7 +36,6 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -169,8 +165,8 @@ public class PeerSync {
 
               final SafeFuture<Void> blobSidecarsRequest;
 
-              final BlobSidecarRequestHandler blobSidecarRequestHandler =
-                  new BlobSidecarRequestHandler(requestContext);
+              final PeerSyncBlobSidecarListener blobSidecarListener =
+                  new PeerSyncBlobSidecarListener(requestContext.startSlot, requestContext.endSlot);
 
               if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
@@ -180,7 +176,7 @@ public class PeerSync {
                     peer.getId());
                 blobSidecarsRequest =
                     peer.requestBlobSidecarsByRange(
-                        requestContext.startSlot, requestContext.count, blobSidecarRequestHandler);
+                        requestContext.startSlot, requestContext.count, blobSidecarListener);
               } else {
                 blobSidecarsRequest = SafeFuture.COMPLETE;
               }
@@ -195,7 +191,7 @@ public class PeerSync {
                       requestContext.count,
                       block -> {
                         final Optional<List<BlobSidecar>> blobSidecars =
-                            blobSidecarRequestHandler.getReceivedBlobSidecars(block.getSlot());
+                            blobSidecarListener.getReceivedBlobSidecars(block.getSlot());
                         return importBlock(block, blobSidecars);
                       });
 
@@ -212,7 +208,7 @@ public class PeerSync {
                               requestContext.startSlot, requestContext.count, blockListener))
                   // the received blob sidecars can be cleaned from the cache since the blocks have
                   // been imported. They are also cleaned in case of failures
-                  .alwaysRun(blobSidecarRequestHandler::clearReceivedBlobSidecars)
+                  .alwaysRun(blobSidecarListener::clearReceivedBlobSidecars)
                   .thenApply(__ -> blockListener);
             })
         .thenCompose(
@@ -357,42 +353,6 @@ public class PeerSync {
                 blockImportSuccessResult.inc();
               }
             });
-  }
-
-  private static class BlobSidecarRequestHandler implements RpcResponseListener<BlobSidecar> {
-
-    private final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = new HashMap<>();
-
-    private final RequestContext requestContext;
-
-    private BlobSidecarRequestHandler(final RequestContext requestContext) {
-      this.requestContext = requestContext;
-    }
-
-    @Override
-    public SafeFuture<?> onResponse(final BlobSidecar blobSidecar) {
-      final UInt64 sidecarSlot = blobSidecar.getSlot();
-      if (sidecarSlot.isLessThan(requestContext.startSlot)
-          || sidecarSlot.isGreaterThan(requestContext.endSlot)) {
-        final String exceptionMessage =
-            String.format(
-                "Blob sidecar with slot %s is not in the requested slot range (%s - %s)",
-                sidecarSlot, requestContext.startSlot, requestContext.endSlot);
-        return SafeFuture.failedFuture(new FailedBlobSidecarImportException(exceptionMessage));
-      }
-      final List<BlobSidecar> blobSidecars =
-          blobSidecarsBySlot.computeIfAbsent(sidecarSlot, __ -> new ArrayList<>());
-      blobSidecars.add(blobSidecar);
-      return SafeFuture.COMPLETE;
-    }
-
-    public Optional<List<BlobSidecar>> getReceivedBlobSidecars(final UInt64 slot) {
-      return Optional.ofNullable(blobSidecarsBySlot.get(slot));
-    }
-
-    public void clearReceivedBlobSidecars() {
-      blobSidecarsBySlot.clear();
-    }
   }
 
   private void disconnectFromPeer(final Eth2Peer peer) {
