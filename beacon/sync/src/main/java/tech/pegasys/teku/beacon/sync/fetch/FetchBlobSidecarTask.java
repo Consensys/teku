@@ -29,7 +29,7 @@ public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, Blob
 
   private final BlobIdentifier blobIdentifier;
 
-  public FetchBlobSidecarTask(
+  FetchBlobSidecarTask(
       final P2PNetwork<Eth2Peer> eth2Network, final BlobIdentifier blobIdentifier) {
     super(eth2Network, Optional.empty());
     this.blobIdentifier = blobIdentifier;

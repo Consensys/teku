@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -173,6 +174,8 @@ public class SyncingNodeManager {
             blockImporter,
             // TODO: change to the real value when renamed and initialized
             BlobSidecarManager.NOOP,
+            // TODO: change to the real value when implemented
+            BlobSidecarPool.NOOP,
             new NoOpMetricsSystem(),
             spec);
 

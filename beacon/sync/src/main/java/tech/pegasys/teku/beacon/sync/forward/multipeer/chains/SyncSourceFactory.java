@@ -38,7 +38,7 @@ public class SyncSourceFactory {
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
     // Limit request rate to just a little under what we'd accept
     final int maxBlocksPerMinute = MAX_BLOCKS_PER_MINUTE - FORWARD_SYNC_BATCH_SIZE.intValue() - 1;
-    final int maxBlobSidecarsPerMinute = maxBlocksPerMinute * spec.getMaxBlobsPerBlock().orElse(0);
+    final int maxBlobSidecarsPerMinute = maxBlocksPerMinute * spec.getMaxBlobsPerBlock().orElse(1);
 
     return syncSourcesByPeer.computeIfAbsent(
         peer,
