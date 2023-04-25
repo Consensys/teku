@@ -210,6 +210,7 @@ public class PeerSync {
                       __ ->
                           peer.requestBlocksByRange(
                               requestContext.startSlot, requestContext.count, blockListener))
+                  .alwaysRun(blobSidecarRequestHandler::clearReceivedBlobSidecars)
                   .thenApply(__ -> blockListener);
             })
         .thenCompose(
@@ -384,7 +385,11 @@ public class PeerSync {
     }
 
     public Optional<List<BlobSidecar>> getReceivedBlobSidecars(final UInt64 slot) {
-      return Optional.ofNullable(blobSidecarsBySlot.remove(slot));
+      return Optional.ofNullable(blobSidecarsBySlot.get(slot));
+    }
+
+    public void clearReceivedBlobSidecars() {
+      blobSidecarsBySlot.clear();
     }
   }
 
