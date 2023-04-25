@@ -207,8 +207,8 @@ public class PeerSync {
                       __ ->
                           peer.requestBlocksByRange(
                               requestContext.startSlot, requestContext.count, blockListener))
-                  // the received blob sidecars can be cleaned from the cache since the blocks have
-                  // been imported. They are also cleaned in case of failures
+                  // the received blob sidecars (if any) can be cleaned from the cache because the
+                  // blocks have been imported. They are also cleaned in case of failures.
                   .alwaysRun(blobSidecarListener::clearReceivedBlobSidecars)
                   .thenApply(__ -> blockListener);
             })
