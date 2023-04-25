@@ -58,7 +58,11 @@ public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, Blob
                     .orElseGet(() -> FetchResult.createFailed(peer, Status.FETCH_FAILED)))
         .exceptionally(
             err -> {
-              LOG.debug("Failed to fetch blob sidecar by identifier " + blobIdentifier, err);
+              LOG.debug(
+                  String.format(
+                      "Failed to fetch blob sidecar by identifier %s from peer %s",
+                      blobIdentifier, peer.getId()),
+                  err);
               return FetchResult.createFailed(peer, Status.FETCH_FAILED);
             });
   }

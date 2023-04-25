@@ -57,7 +57,10 @@ public class FetchBlockTask extends AbstractFetchTask<Bytes32, SignedBeaconBlock
                     .orElseGet(() -> FetchResult.createFailed(peer, Status.FETCH_FAILED)))
         .exceptionally(
             err -> {
-              LOG.debug("Failed to fetch block by root " + blockRoot, err);
+              LOG.debug(
+                  String.format(
+                      "Failed to fetch block by root %s from peer %s", blockRoot, peer.getId()),
+                  err);
               return FetchResult.createFailed(peer, Status.FETCH_FAILED);
             });
   }
