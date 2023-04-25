@@ -32,7 +32,7 @@ public class FetchRecentBlocksService
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int MAX_CONCURRENT_REQUESTS = 3;
+  public static final int MAX_CONCURRENT_REQUESTS = 3;
 
   private final ForwardSync forwardSync;
   private final PendingPool<SignedBeaconBlock> pendingBlocksPool;
