@@ -27,9 +27,9 @@ public class FetchBlockTask extends AbstractFetchTask<Bytes32, SignedBeaconBlock
 
   private static final Logger LOG = LogManager.getLogger();
 
-  protected final Bytes32 blockRoot;
+  private final Bytes32 blockRoot;
 
-  public FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
+  FetchBlockTask(final P2PNetwork<Eth2Peer> eth2Network, final Bytes32 blockRoot) {
     super(eth2Network, Optional.empty());
     this.blockRoot = blockRoot;
   }
