@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -168,7 +169,8 @@ public class PeerSync {
 
               final SafeFuture<Void> blobSidecarsRequest;
 
-              final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = new HashMap<>();
+              final BlobSidecarRequestHandler blobSidecarRequestHandler =
+                  new BlobSidecarRequestHandler(requestContext);
 
               if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
@@ -176,8 +178,6 @@ public class PeerSync {
                     requestContext.count,
                     requestContext.startSlot,
                     peer.getId());
-                final BlobSidecarRequestHandler blobSidecarRequestHandler =
-                    new BlobSidecarRequestHandler(requestContext, blobSidecarsBySlot);
                 blobSidecarsRequest =
                     peer.requestBlobSidecarsByRange(
                         requestContext.startSlot, requestContext.count, blobSidecarRequestHandler);
@@ -193,7 +193,11 @@ public class PeerSync {
                       readyForNextRequest,
                       requestContext.startSlot,
                       requestContext.count,
-                      block -> importBlock(block, blobSidecarsBySlot));
+                      block -> {
+                        final Optional<List<BlobSidecar>> blobSidecars =
+                            blobSidecarRequestHandler.getReceivedBlobSidecars(block.getSlot());
+                        return importBlock(block, blobSidecars);
+                      });
 
               LOG.debug(
                   "Request {} blocks starting at {} from peer {}",
@@ -329,16 +333,15 @@ public class PeerSync {
   }
 
   private SafeFuture<Void> importBlock(
-      final SignedBeaconBlock block, final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final SignedBeaconBlock block, final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
-    final UInt64 slot = block.getSlot();
-    if (blobSidecarsBySlot.containsKey(slot)) {
-      // Add blob sidecars to the pool in order for them to be available when the block is being
-      // imported
-      blobSidecarPool.onBlobSidecarsFromSync(block.getRoot(), blobSidecarsBySlot.get(slot));
-    }
+    // Add blob sidecars to the pool in order for them to be available when the block is being
+    // imported
+    maybeBlobSidecars.ifPresent(
+        blobSidecars -> blobSidecarPool.onBlobSidecarsFromSync(block.getRoot(), blobSidecars));
+
     return blockImporter
         .importBlock(block)
         .thenAccept(
@@ -355,14 +358,12 @@ public class PeerSync {
 
   private static class BlobSidecarRequestHandler implements RpcResponseListener<BlobSidecar> {
 
-    private final RequestContext requestContext;
-    private final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot;
+    private final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = new HashMap<>();
 
-    private BlobSidecarRequestHandler(
-        final RequestContext requestContext,
-        final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    private final RequestContext requestContext;
+
+    private BlobSidecarRequestHandler(final RequestContext requestContext) {
       this.requestContext = requestContext;
-      this.blobSidecarsBySlot = blobSidecarsBySlot;
     }
 
     @Override
@@ -380,6 +381,10 @@ public class PeerSync {
           blobSidecarsBySlot.computeIfAbsent(sidecarSlot, __ -> new ArrayList<>());
       blobSidecars.add(blobSidecar);
       return SafeFuture.COMPLETE;
+    }
+
+    public Optional<List<BlobSidecar>> getReceivedBlobSidecars(final UInt64 slot) {
+      return Optional.ofNullable(blobSidecarsBySlot.remove(slot));
     }
   }
 
