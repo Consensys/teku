@@ -40,6 +40,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).hasValue(peer);
     assertThat(fetchResult.isSuccessful()).isTrue();
     assertThat(fetchResult.getResult()).hasValue(block);
   }
@@ -53,6 +54,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).isEmpty();
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.NO_AVAILABLE_PEERS);
   }
@@ -70,6 +72,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).hasValue(peer);
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.FETCH_FAILED);
     assertThat(task.getNumberOfRetries()).isEqualTo(0);
@@ -78,6 +81,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result2 = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult2 = result2.getNow(null);
+    assertThat(fetchResult2.getPeer()).isEmpty();
     assertThat(fetchResult2.isSuccessful()).isFalse();
     assertThat(fetchResult2.getStatus()).isEqualTo(Status.NO_AVAILABLE_PEERS);
     assertThat(task.getNumberOfRetries()).isEqualTo(0);
@@ -96,6 +100,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).hasValue(peer);
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.FETCH_FAILED);
     assertThat(task.getNumberOfRetries()).isEqualTo(0);
@@ -109,6 +114,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result2 = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult2 = result2.getNow(null);
+    assertThat(fetchResult2.getPeer()).hasValue(peer2);
     assertThat(fetchResult2.isSuccessful()).isTrue();
     assertThat(fetchResult2.getResult()).hasValue(block);
     assertThat(task.getNumberOfRetries()).isEqualTo(1);
@@ -134,8 +140,65 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).hasValue(peer2);
     assertThat(fetchResult.isSuccessful()).isTrue();
     assertThat(fetchResult.getResult()).hasValue(block);
+  }
+
+  @Test
+  public void run_withPreferredPeer() {
+    final Eth2Peer preferredPeer = createNewPeer(1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
+    when(preferredPeer.requestBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+
+    final FetchBlockTask task =
+        new FetchBlockTask(eth2P2PNetwork, Optional.of(preferredPeer), blockRoot);
+
+    // Add a peer
+    registerNewPeer(2);
+
+    final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
+    assertThat(result).isDone();
+    final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).hasValue(preferredPeer);
+    assertThat(fetchResult.isSuccessful()).isTrue();
+    assertThat(fetchResult.getResult()).hasValue(block);
+  }
+
+  @Test
+  public void run_withRandomPeerWhenFetchingWithPreferredPeerFails() {
+    final Eth2Peer preferredPeer = createNewPeer(1);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(10);
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
+    when(preferredPeer.requestBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
+
+    final FetchBlockTask task =
+        new FetchBlockTask(eth2P2PNetwork, Optional.of(preferredPeer), blockRoot);
+
+    final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
+    assertThat(result).isDone();
+    final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).hasValue(preferredPeer);
+    assertThat(fetchResult.isSuccessful()).isFalse();
+    assertThat(fetchResult.getStatus()).isEqualTo(Status.FETCH_FAILED);
+    assertThat(task.getNumberOfRetries()).isEqualTo(0);
+
+    // Add a peer
+    final Eth2Peer peer = registerNewPeer(2);
+    when(peer.requestBlockByRoot(blockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+
+    // Retry
+    final SafeFuture<FetchResult<SignedBeaconBlock>> result2 = task.run();
+    assertThat(result).isDone();
+    final FetchResult<SignedBeaconBlock> fetchResult2 = result2.getNow(null);
+    assertThat(fetchResult2.getPeer()).hasValue(peer);
+    assertThat(fetchResult2.isSuccessful()).isTrue();
+    assertThat(fetchResult2.getResult()).hasValue(block);
+    assertThat(task.getNumberOfRetries()).isEqualTo(1);
   }
 
   @Test
@@ -152,6 +215,7 @@ public class FetchBlockTaskTest extends AbstractFetchTaskTest {
     final SafeFuture<FetchResult<SignedBeaconBlock>> result = task.run();
     assertThat(result).isDone();
     final FetchResult<SignedBeaconBlock> fetchResult = result.getNow(null);
+    assertThat(fetchResult.getPeer()).isEmpty();
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.CANCELLED);
   }

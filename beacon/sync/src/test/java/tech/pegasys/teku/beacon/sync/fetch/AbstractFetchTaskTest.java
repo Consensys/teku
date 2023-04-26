@@ -38,11 +38,15 @@ public class AbstractFetchTaskTest {
   }
 
   protected Eth2Peer registerNewPeer(final int id) {
+    final Eth2Peer peer = createNewPeer(id);
+    peers.add(peer);
+    return peer;
+  }
+
+  protected Eth2Peer createNewPeer(final int id) {
     final Eth2Peer peer = mock(Eth2Peer.class);
     when(peer.getOutstandingRequests()).thenReturn(0);
     when(peer.getId()).thenReturn(new MockNodeId(id));
-
-    peers.add(peer);
     return peer;
   }
 }

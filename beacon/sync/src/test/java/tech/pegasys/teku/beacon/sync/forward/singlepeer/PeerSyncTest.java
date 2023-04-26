@@ -16,7 +16,6 @@ package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -28,10 +27,12 @@ import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.api.Assertions;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -85,15 +87,15 @@ public class PeerSyncTest extends AbstractSyncTest {
     final SafeFuture<BlockImportResult> result =
         SafeFuture.completedFuture(BlockImportResult.successful(block));
     when(blockImporter.importBlock(any())).thenReturn(result);
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
-    when(blobsSidecarManager.importBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
 
     peerSync =
         new PeerSync(
             asyncRunner,
             recentChainData,
             blockImporter,
-            blobsSidecarManager,
+            blobSidecarManager,
+            blobSidecarPool,
             new NoOpMetricsSystem());
   }
 
@@ -506,7 +508,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_blocksAndBlobSidecarsForDeneb() {
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
 
@@ -526,51 +528,33 @@ public class PeerSyncTest extends AbstractSyncTest {
     // update the chain with the peer finalized epoch to ensure next time the sync completes
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebPeerFinalizedEpoch);
 
-    verify(peer).requestBlocksByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
     verify(peer).requestBlobSidecarsByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
 
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot =
+        completeRequestWithBlobSidecarsAtSlots(
+            blobSidecarsRequestFuture, denebSecondSlot, denebPeerSlotsAhead);
+
+    verify(peer).requestBlocksByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
+
     completeRequestWithBlocksAtSlots(blocksRequestFuture, denebSecondSlot, denebPeerSlotsAhead);
-    completeRequestWithBlobSidecarsAtSlots(
-        blobSidecarsRequestFuture, denebSecondSlot, denebPeerSlotsAhead);
+
+    verifyBlobSidecarsAddedToPool(denebSecondSlot, denebPeerSlotsAhead, blobSidecarsBySlot);
 
     // Check that the sync is done and the peer was not disconnected.
     assertThat(syncFuture).isCompleted();
     verify(peer, never()).disconnectCleanly(any());
   }
 
-  @Test
-  void sync_testFailedBlobSidecarImport() {
-    when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-
-    final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
-
-    withDenebPeerHeadSlot();
-
-    // first sidecar import fails
-    when(blobsSidecarManager.importBlobSidecar(
-            argThat(blobSidecar -> blobSidecar.getSlot().equals(denebFirstSlot.plus(1)))))
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
-
-    final SafeFuture<Void> blobSidecarsRequestFuture = new SafeFuture<>();
-
-    // ignore block import
-    when(peer.requestBlocksByRange(any(), any(), any())).thenReturn(SafeFuture.COMPLETE);
-    when(peer.requestBlobSidecarsByRange(any(), any(), any()))
-        .thenReturn(blobSidecarsRequestFuture);
-
-    final SafeFuture<PeerSyncResult> syncFuture = peerSync.sync(peer);
-
-    assertThat(syncFuture).isNotDone();
-
-    verify(peer).requestBlocksByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
-    verify(peer).requestBlobSidecarsByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
-
-    completeRequestWithBlobSidecarsAtSlots(
-        blobSidecarsRequestFuture, denebSecondSlot, denebPeerSlotsAhead);
-
-    assertThat(syncFuture).isCompletedWithValue(PeerSyncResult.BLOB_SIDECAR_IMPORT_FAILED);
-    verify(peer, never()).disconnectCleanly(any());
+  private void verifyBlobSidecarsAddedToPool(
+      final UInt64 startSlot,
+      final UInt64 count,
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    for (UInt64 slot : getSlotsRange(startSlot, count)) {
+      if (!blobSidecarsBySlot.containsKey(slot)) {
+        Assertions.fail("Blob sidecars for slot %s is missing", slot);
+      }
+      verify(blobSidecarPool).onBlobSidecarsFromSync(any(), eq(blobSidecarsBySlot.get(slot)));
+    }
   }
 
   private void withPeerHeadSlot(final UInt64 peerHeadSlot) {

@@ -221,6 +221,7 @@ public class RespondingEth2Peer implements Eth2Peer {
             () ->
                 chain
                     .streamBlobSidecars(startSlot.longValue(), lastSlotExclusive + 1)
+                    .flatMap(entry -> entry.getValue().stream())
                     .collect(Collectors.toList()));
     return createPendingBlobSidecarRequest(handler);
   }

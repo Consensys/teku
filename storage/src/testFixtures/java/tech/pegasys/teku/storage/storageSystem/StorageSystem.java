@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.StubFinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel;
@@ -51,7 +51,7 @@ public class StorageSystem implements AutoCloseable {
   private final Database database;
   private final RestartedStorageSupplier restartedSupplier;
 
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
 
   private StorageSystem(
       final StubMetricsSystem metricsSystem,
@@ -63,7 +63,7 @@ public class StorageSystem implements AutoCloseable {
       final CombinedChainDataClient combinedChainDataClient,
       final RestartedStorageSupplier restartedSupplier,
       final ChainBuilder chainBuilder,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
       final Spec spec) {
     this.metricsSystem = metricsSystem;
     this.chainStorage = chainStorage;
@@ -73,11 +73,11 @@ public class StorageSystem implements AutoCloseable {
     this.database = database;
     this.combinedChainDataClient = combinedChainDataClient;
     this.restartedSupplier = restartedSupplier;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
 
     this.chainBuilder = chainBuilder;
     this.chainUpdater =
-        new ChainUpdater(this.recentChainData, this.chainBuilder, this.blobsSidecarManager, spec);
+        new ChainUpdater(this.recentChainData, this.chainBuilder, this.blobSidecarManager, spec);
   }
 
   static StorageSystem create(
@@ -116,7 +116,7 @@ public class StorageSystem implements AutoCloseable {
             spec,
             new EarliestAvailableBlockSlot(chainStorageServer, new SystemTimeProvider(), 0));
 
-    final BlobsSidecarManager blobsSidecarManager = BlobsSidecarManager.NOOP;
+    final BlobSidecarManager blobSidecarManager = BlobSidecarManager.NOOP;
 
     // Return storage system
     return new StorageSystem(
@@ -129,7 +129,7 @@ public class StorageSystem implements AutoCloseable {
         combinedChainDataClient,
         restartedSupplier,
         chainBuilder,
-        blobsSidecarManager,
+        blobSidecarManager,
         spec);
   }
 
@@ -153,8 +153,8 @@ public class StorageSystem implements AutoCloseable {
     return chainUpdater;
   }
 
-  public BlobsSidecarManager blobsSidecarManager() {
-    return blobsSidecarManager;
+  public BlobSidecarManager blobSidecarManager() {
+    return blobSidecarManager;
   }
 
   public DepositStorage createDepositStorage(final boolean depositSnapshotStorageEnabled) {

@@ -20,7 +20,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +40,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -49,7 +52,8 @@ public abstract class AbstractSyncTest {
   protected final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
-  protected final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  protected final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
+  protected final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -89,7 +93,7 @@ public abstract class AbstractSyncTest {
     asyncRunner.executeQueuedActions();
   }
 
-  protected void completeRequestWithBlobSidecarsAtSlots(
+  protected Map<UInt64, List<BlobSidecar>> completeRequestWithBlobSidecarsAtSlots(
       final SafeFuture<Void> request, final UInt64 startSlot, final UInt64 count) {
     // Capture latest response listener
     verify(peer, atLeastOnce())
@@ -97,13 +101,11 @@ public abstract class AbstractSyncTest {
             any(), any(), blobSidecarResponseListenerArgumentCaptor.capture());
     final RpcResponseListener<BlobSidecar> responseListener =
         blobSidecarResponseListenerArgumentCaptor.getValue();
-    final List<BlobSidecar> blobSidecars =
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot =
         respondWithBlobSidecarsAtSlots(request, responseListener, startSlot, count);
-    for (final BlobSidecar blobSidecar : blobSidecars) {
-      verify(blobsSidecarManager).importBlobSidecar(blobSidecar);
-    }
     request.complete(null);
     asyncRunner.executeQueuedActions();
+    return blobSidecarsBySlot;
   }
 
   protected List<SignedBeaconBlock> respondWithBlocksAtSlots(
@@ -127,7 +129,7 @@ public abstract class AbstractSyncTest {
     return blocks;
   }
 
-  protected List<BlobSidecar> respondWithBlobSidecarsAtSlots(
+  protected Map<UInt64, List<BlobSidecar>> respondWithBlobSidecarsAtSlots(
       final SafeFuture<Void> request,
       final RpcResponseListener<BlobSidecar> responseListener,
       final UInt64 startSlot,
@@ -136,18 +138,18 @@ public abstract class AbstractSyncTest {
         request, responseListener, getSlotsRange(startSlot, count));
   }
 
-  protected List<BlobSidecar> respondWithBlobSidecarsAtSlots(
+  protected Map<UInt64, List<BlobSidecar>> respondWithBlobSidecarsAtSlots(
       final SafeFuture<Void> request,
       final RpcResponseListener<BlobSidecar> responseListener,
       final UInt64... slots) {
-    final List<BlobSidecar> blobSidecars = new ArrayList<>();
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = new HashMap<>();
     for (final UInt64 slot : slots) {
       final BlobSidecar blobSidecar =
           dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
-      blobSidecars.add(blobSidecar);
+      blobSidecarsBySlot.computeIfAbsent(slot, __ -> new ArrayList<>()).add(blobSidecar);
       responseListener.onResponse(blobSidecar).propagateExceptionTo(request);
     }
-    return blobSidecars;
+    return blobSidecarsBySlot;
   }
 
   protected PeerStatus withPeerHeadSlot(
@@ -165,7 +167,7 @@ public abstract class AbstractSyncTest {
     return peerStatus;
   }
 
-  private UInt64[] getSlotsRange(final UInt64 startSlot, final UInt64 count) {
+  protected UInt64[] getSlotsRange(final UInt64 startSlot, final UInt64 count) {
     return UInt64.range(startSlot, startSlot.plus(count)).toArray(UInt64[]::new);
   }
 }
