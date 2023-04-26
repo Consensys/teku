@@ -255,6 +255,9 @@ public class BlobSidecarPoolImplTest {
     assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
     assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
     assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isCompleted();
+
+    assertBlobSidecarsCount(blobSidecars.size());
+    assertBlobSidecarsTrackersCount(1);
   }
 
   @Test
@@ -281,6 +284,9 @@ public class BlobSidecarPoolImplTest {
     assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
     assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
     assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();
+
+    assertBlobSidecarsCount(0);
+    assertBlobSidecarsTrackersCount(1);
   }
 
   @Test
