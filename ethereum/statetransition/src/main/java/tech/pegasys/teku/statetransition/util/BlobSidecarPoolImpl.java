@@ -207,7 +207,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
     long addedBlobs =
         blobSidecars.stream().map(blobSidecarsTracker::add).filter(Boolean::booleanValue).count();
-    totalBlobSidecars += addedBlobs;
+    totalBlobSidecars += (int) addedBlobs;
     sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
 
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
