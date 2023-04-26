@@ -565,6 +565,7 @@ public class BlobSidecarPoolImplTest {
               when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
               when(tracker.getBlockBody())
                   .thenReturn(Optional.of((BeaconBlockBodyDeneb) block.getMessage().getBody()));
+              when(tracker.isFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -599,6 +600,7 @@ public class BlobSidecarPoolImplTest {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
               when(tracker.getBlockBody()).thenReturn(Optional.empty());
               when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
+              when(tracker.isFetchTriggered()).thenReturn(true);
               return tracker;
             });
 
@@ -614,6 +616,37 @@ public class BlobSidecarPoolImplTest {
     asyncRunner.executeQueuedActions();
 
     assertThat(requiredBlockRootEvents).isEmpty();
+  }
+
+  @Test
+  void shouldNotDropPossiblyFetchedBlockIfFetchHasNotOccurred() {
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
+    final BlobSidecar blobSidecar =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .blockRoot(slotAndBlockRoot.getBlockRoot())
+            .slot(currentSlot)
+            .build();
+
+    mockedTrackersFactory =
+        Optional.of(
+            (slotAndRoot) -> {
+              BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
+              when(tracker.getBlockBody()).thenReturn(Optional.empty());
+              when(tracker.getSlotAndBlockRoot()).thenReturn(slotAndBlockRoot);
+              when(tracker.isFetchTriggered()).thenReturn(false);
+              return tracker;
+            });
+
+    blobSidecarPool.onNewBlobSidecar(blobSidecar);
+
+    assertThat(asyncRunner.hasDelayedActions()).isTrue();
+
+    blobSidecarPool.removeAllForBlock(slotAndBlockRoot);
+
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
   }
 
   @Test

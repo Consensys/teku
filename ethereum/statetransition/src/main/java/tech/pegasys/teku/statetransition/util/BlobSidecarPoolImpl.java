@@ -402,11 +402,14 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   private void dropMissingContent(final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
 
+    if (!blockBlobSidecarsTracker.isFetchTriggered()) {
+      return;
+    }
+
     if (blockBlobSidecarsTracker.getBlockBody().isEmpty()) {
       requiredBlockRootDroppedSubscribers.deliver(
           RequiredBlockRootDroppedSubscriber::onRequiredBlockRootDropped,
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
-      return;
     }
 
     blockBlobSidecarsTracker
