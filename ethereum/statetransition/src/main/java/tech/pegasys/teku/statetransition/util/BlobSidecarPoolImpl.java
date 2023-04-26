@@ -195,6 +195,26 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
   }
 
+  @Override
+  public synchronized void onBlobSidecarsFromSync(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+
+    final BlockBlobSidecarsTracker blobSidecarsTracker =
+        getOrCreateBlobSidecarsTracker(slotAndBlockRoot, __ -> {}, __ -> {});
+
+    blobSidecarsTracker.setBlock(block);
+
+    long addedBlobs =
+        blobSidecars.stream().map(blobSidecarsTracker::add).filter(Boolean::booleanValue).count();
+    totalBlobSidecars += addedBlobs;
+    sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
+
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
+      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    }
+  }
+
   public synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
     orderedBlobSidecarsTrackers.remove(slotAndBlockRoot);
     final BlockBlobSidecarsTracker removedTracker =

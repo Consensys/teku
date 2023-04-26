@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.GAUGE_BLOB_SIDECARS_LABEL;
 import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.GAUGE_BLOB_SIDECARS_TRACKERS_LABEL;
 import static tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl.MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS;
@@ -140,8 +141,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   public void onNewBlobSidecarOnNewBlock_addTrackerWithBothBlockAndBlobSidecar() {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
@@ -231,7 +231,57 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  public void removeAllForBlock_shouldRemoveSidecarsAndTracker() {}
+  public void onBlobSidecarsFromSync_shouldCreateTrackerIgnoringHistoricalTolerance() {
+    final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+
+    blobSidecarPool.onBlobSidecarsFromSync(block, blobSidecars);
+
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+
+    final BlockBlobSidecarsTracker blobsSidecarsTracker =
+        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
+
+    assertThat(blobsSidecarsTracker.getBlobSidecars().values())
+        .containsExactlyInAnyOrderElementsOf(blobSidecars);
+    assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
+    assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
+    assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isCompleted();
+  }
+
+  @Test
+  public void onBlobSidecarsFromSync_shouldNotTriggerFetch() {
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+
+    final List<BlobSidecar> blobSidecars = List.of();
+
+    blobSidecarPool.onBlobSidecarsFromSync(block, blobSidecars);
+
+    assertThat(asyncRunner.hasDelayedActions()).isFalse();
+
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+
+    final BlockBlobSidecarsTracker blobsSidecarsTracker =
+        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
+
+    assertThat(blobsSidecarsTracker.getBlobSidecars().values())
+        .containsExactlyInAnyOrderElementsOf(blobSidecars);
+    assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
+    assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
+    assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();
+  }
 
   @Test
   public void shouldApplyIgnoreForBlock() {
@@ -328,8 +378,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   void shouldFetchMissingBlobSidecars() {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs =
         Set.of(
@@ -399,8 +448,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   void shouldDropBlobSidecarsThatHasBeenFetchedButNotPresentInBlock() {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
     final BlobSidecar blobSidecar =
@@ -438,8 +486,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   void shouldNotDropUnusedBlobSidecarsIfFetchingHasNotOccurred() {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
     final BlobSidecar blobSidecar =
@@ -478,7 +525,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void shouldNotFetchContentWhenBlockIsNotForCurrentSlot() {
     final UInt64 slot = currentSlot.minus(UInt64.ONE);
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot.longValue());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
 
     blobSidecarPool.onNewBlock(block);
 
@@ -498,8 +545,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   void shouldDropPossiblyFetchedBlobSidecars() {
-    final SignedBeaconBlock block =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs =
         Set.of(
@@ -665,8 +711,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   void getAllRequiredBlobSidecars_shouldReturnAllRequiredBlobsSidecars() {
-    final SignedBeaconBlock block1 =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs1 =
         Set.of(
@@ -685,8 +730,7 @@ public class BlobSidecarPoolImplTest {
 
     blobSidecarPool.onNewBlock(block1);
 
-    final SignedBeaconBlock block2 =
-        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs2 =
         Set.of(

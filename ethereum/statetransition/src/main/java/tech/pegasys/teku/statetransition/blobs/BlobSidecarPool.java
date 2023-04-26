@@ -33,7 +33,7 @@ public interface BlobSidecarPool {
 
         @Override
         public void onBlobSidecarsFromSync(
-            final Bytes32 blockRoot, final List<BlobSidecar> blobSidecars) {}
+            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
 
         @Override
         public boolean containsBlobSidecar(final BlobIdentifier blobIdentifier) {
@@ -71,7 +71,7 @@ public interface BlobSidecarPool {
 
   void onNewBlock(SignedBeaconBlock block);
 
-  void onBlobSidecarsFromSync(Bytes32 blockRoot, List<BlobSidecar> blobSidecars);
+  void onBlobSidecarsFromSync(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
   boolean containsBlobSidecar(BlobIdentifier blobIdentifier);
 
