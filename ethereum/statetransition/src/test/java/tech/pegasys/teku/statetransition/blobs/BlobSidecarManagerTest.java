@@ -18,10 +18,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.ForkSchedule;
 import tech.pegasys.teku.spec.Spec;
@@ -29,9 +32,13 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
+import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,11 +54,21 @@ public class BlobSidecarManagerTest {
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final BlobSidecarValidator blobSidecarValidator = mock(BlobSidecarValidator.class);
+  private final BlobSidecarPoolImpl blobSidecarPool = mock(BlobSidecarPoolImpl.class);
+  private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
+  private final FutureItems<SignedBlobSidecar> futureBlobSidecars =
+      FutureItems.create(
+          sidecar -> sidecar.getBlobSidecar().getSlot(),
+          mock(SettableLabelledGauge.class),
+          "blob_sidecars");
   private final BlobSidecarManagerImpl blobSidecarManager =
       new BlobSidecarManagerImpl(
           mockedSpec,
           recentChainData,
+          blobSidecarPool,
           blobSidecarValidator,
+          futureBlobSidecars,
+          invalidBlobSidecarRoots,
           storageQueryChannel,
           storageUpdateChannel);
 

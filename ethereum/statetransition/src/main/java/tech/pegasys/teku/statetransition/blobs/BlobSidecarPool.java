@@ -17,14 +17,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public interface BlobSidecarPool {
+public interface BlobSidecarPool extends SlotEventsChannel {
 
   BlobSidecarPool NOOP =
       new BlobSidecarPool() {
+        @Override
+        public void onSlot(UInt64 slot) {}
+
         @Override
         public void onNewBlobSidecar(final BlobSidecar blobSidecar) {}
 

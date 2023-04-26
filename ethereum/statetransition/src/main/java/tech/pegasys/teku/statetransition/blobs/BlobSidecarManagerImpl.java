@@ -36,9 +36,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -49,6 +50,9 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlobSidecarValidator validator;
+  private final FutureItems<SignedBlobSidecar> futureBlobSidecars;
+  private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
+  private final BlobSidecarPool blobSidecarPool;
 
   @SuppressWarnings("unused")
   private final StorageQueryChannel storageQueryChannel;
@@ -64,12 +68,18 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   public BlobSidecarManagerImpl(
       final Spec spec,
       final RecentChainData recentChainData,
+      final BlobSidecarPool blobSidecarPool,
       final BlobSidecarValidator validator,
+      final FutureItems<SignedBlobSidecar> futureBlobSidecars,
+      final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel) {
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.validator = validator;
+    this.blobSidecarPool = blobSidecarPool;
+    this.futureBlobSidecars = futureBlobSidecars;
+    this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
     this.storageUpdateChannel = storageUpdateChannel;
     this.storageQueryChannel = storageQueryChannel;
   }
@@ -79,16 +89,32 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
       final SignedBlobSidecar signedBlobSidecar) {
 
+    final Optional<InternalValidationResult> maybeInvalid =
+        Optional.ofNullable(
+            invalidBlobSidecarRoots.get(signedBlobSidecar.getBlobSidecar().hashTreeRoot()));
+    if (maybeInvalid.isPresent()) {
+      return SafeFuture.completedFuture(maybeInvalid.get());
+    }
+
     final SafeFuture<InternalValidationResult> validationResult =
         validator.validate(signedBlobSidecar);
 
     validationResult.thenAccept(
         result -> {
-          if (result.code().equals(ValidationResultCode.ACCEPT)
-              || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
-            importBlobSidecar(blobSidecar)
-                .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
+          switch (result.code()) {
+            case SAVE_FOR_FUTURE:
+              futureBlobSidecars.add(signedBlobSidecar);
+              break;
+            case ACCEPT:
+              final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
+              importBlobSidecar(blobSidecar)
+                  .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
+              break;
+            case REJECT:
+              invalidBlobSidecarRoots.put(
+                  signedBlobSidecar.getBlobSidecar().hashTreeRoot(), result);
+              break;
+            default:
           }
         });
 
@@ -98,9 +124,9 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   @Override
   @SuppressWarnings("unused")
   public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
-    // TODO implement import
-    return SafeFuture.COMPLETE.thenRun(
-        () -> importedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobSidecar)));
+    blobSidecarPool.onNewBlobSidecar(blobSidecar);
+    importedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobSidecar));
+    return SafeFuture.COMPLETE;
   }
 
   @Override
@@ -154,12 +180,32 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public BlobSidecarsAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    // Block is pre-Deneb, BlobsSidecar is not supported yet
+    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
+      return BlobSidecarsAvailabilityChecker.NOT_REQUIRED;
+    }
+
+    final BlockBlobSidecarsTracker blockBlobsSidecarsTracker =
+        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
+
+    blockBlobsSidecarsTracker.setBlock(block);
+
+    return new ForkChoiceBlobSidecarsAvailabilityChecker(
+        spec, recentChainData, blockBlobsSidecarsTracker);
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
     validatedPendingBlobs.headMap(slot.minusMinZero(1)).clear();
+
+    blobSidecarPool.onSlot(slot);
+
+    futureBlobSidecars.onSlot(slot);
+    futureBlobSidecars
+        .prune(slot)
+        .forEach(
+            blobSidecar ->
+                validateAndImportBlobSidecar(blobSidecar).ifExceptionGetsHereRaiseABug());
   }
 
   @VisibleForTesting

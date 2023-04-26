@@ -13,50 +13,51 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult.NOT_REQUIRED_RESULT_FUTURE;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAvailabilityChecker {
 
   private final Spec spec;
-  private final SpecVersion specVersion;
   private final RecentChainData recentChainData;
-  private final SignedBeaconBlock block;
-  private final BlobSidecarsProvider blobSidecarsProvider;
+  private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
+
+  private final Map<UInt64, BlobSidecar> validatedBlobSidecars = new HashMap<>();
 
   private Optional<SafeFuture<BlobSidecarsAndValidationResult>> validationResult = Optional.empty();
 
   public ForkChoiceBlobSidecarsAvailabilityChecker(
       final Spec spec,
-      final SpecVersion specVersion,
       final RecentChainData recentChainData,
-      final SignedBeaconBlock block,
-      final BlobSidecarsProvider blobSidecarsProvider) {
+      final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
     this.spec = spec;
-    this.specVersion = specVersion;
     this.recentChainData = recentChainData;
-    this.block = block;
-    this.blobSidecarsProvider = blobSidecarsProvider;
+    this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
   }
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    validationResult =
-        Optional.of(blobSidecarsProvider.getBlobSidecars(block).thenCompose(this::validate));
+    // validationResult =
+    //    Optional.of(blobSidecarsProvider.getBlobSidecars(block).thenCompose(this::validate));
     return true;
   }
 
@@ -90,12 +91,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private BlobSidecarsAndValidationResult internalValidate(final List<BlobSidecar> blobSidecars) {
+    final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
     try {
-      if (!specVersion
+      if (!spec.atSlot(slotAndBlockRoot.getSlot())
           .miscHelpers()
           .isDataAvailable(
-              block.getSlot(),
-              block.getRoot(),
+              slotAndBlockRoot.getSlot(),
+              slotAndBlockRoot.getBlockRoot(),
               getKzgCommitmentsInBlock().stream()
                   .map(SszKZGCommitment::getKZGCommitment)
                   .collect(Collectors.toUnmodifiableList()),
@@ -109,12 +111,48 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     return BlobSidecarsAndValidationResult.validResult(blobSidecars);
   }
 
+  private void validatePartially(final Map<UInt64, BlobSidecar> blobSidecars) {
+    // TODO call misc helper to validate batch
+    // if batch validation fails we can immediately set validationResult
+
+    // assuming all blobs are valid
+    validatedBlobSidecars.putAll(blobSidecars);
+  }
+
+  private BlobsSidecarAndValidationResult completeValidation(
+      final Map<UInt64, BlobSidecar> blobSidecars) {
+
+    int expectedBlobsCount =
+        blockBlobSidecarsTracker.getBlockBody().orElseThrow().getBlobKzgCommitments().size();
+
+    final Map<UInt64, BlobSidecar> toBeValidated =
+        blobSidecars.entrySet().stream()
+            .filter(
+                indexAndBlobSidecar ->
+                    !indexAndBlobSidecar
+                        .getValue()
+                        .equals(validatedBlobSidecars.get(indexAndBlobSidecar.getKey())))
+            .collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
+
+    if (toBeValidated.size() + validatedBlobSidecars.size() != expectedBlobsCount) {
+      validatedBlobSidecars.putAll(toBeValidated);
+      // return BlobsSidecarAndValidationResult.invalidResult(validatedBlobSidecars);
+    }
+
+    return null;
+  }
+
   private boolean isBlockInDataAvailabilityWindow() {
     return spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(
-        recentChainData.getStore(), block.getSlot());
+        recentChainData.getStore(), blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot());
   }
 
   private SszList<SszKZGCommitment> getKzgCommitmentsInBlock() {
-    return block.getMessage().getBody().toVersionDeneb().orElseThrow().getBlobKzgCommitments();
+    return blockBlobSidecarsTracker
+        .getBlockBody()
+        .orElseThrow()
+        .toVersionDeneb()
+        .orElseThrow()
+        .getBlobKzgCommitments();
   }
 }

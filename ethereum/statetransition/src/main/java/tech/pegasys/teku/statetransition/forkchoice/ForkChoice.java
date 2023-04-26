@@ -58,8 +58,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -295,8 +295,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final KzgCommitmentsProcessor kzgCommitmentsProcessor =
         KzgCommitmentsProcessor.create(specVersion.miscHelpers());
 
-    final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        BlobsSidecarAvailabilityChecker.NOOP;
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+        blobSidecarManager.createAvailabilityChecker(block);
+
+    blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
     final BeaconState postState;
     try {
@@ -307,8 +309,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   blockSlotState.get(),
                   indexedAttestationCache,
                   Optional.of(payloadExecutor),
-                  kzgCommitmentsProcessor,
-                  blobsSidecarAvailabilityChecker);
+                  kzgCommitmentsProcessor);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
@@ -321,8 +322,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenCombineAsync(
-            blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
-            (payloadResult, blobsSidecarAndValidationResult) ->
+            blobSidecarsAvailabilityChecker.getAvailabilityCheckResult(),
+            (payloadResult, blobSidecarsAndValidationResult) ->
                 importBlockAndState(
                     block,
                     blockSlotState.get(),
@@ -331,7 +332,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     indexedAttestationCache,
                     postState,
                     payloadResult,
-                    blobsSidecarAndValidationResult),
+                    blobSidecarsAndValidationResult),
             forkChoiceExecutor);
   }
 
@@ -343,7 +344,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
       final PayloadValidationResult payloadValidationResult,
-      final BlobsSidecarAndValidationResult blobsSidecarAndValidationResult) {
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
     blockImportPerformance.ifPresent(BlockImportPerformance::beginImporting);
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {

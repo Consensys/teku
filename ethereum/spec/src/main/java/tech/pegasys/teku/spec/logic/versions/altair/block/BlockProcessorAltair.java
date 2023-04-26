@@ -67,7 +67,6 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public class BlockProcessorAltair extends AbstractBlockProcessor {
@@ -113,8 +112,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
     final BeaconBlockBodyAltair blockBody = BeaconBlockBodyAltair.required(block.getBody());
@@ -125,8 +123,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         indexedAttestationCache,
         signatureVerifier,
         payloadExecutor,
-        kzgCommitmentsProcessor,
-        blobsSidecarAvailabilityChecker);
+        kzgCommitmentsProcessor);
     processSyncAggregate(state, blockBody.getSyncAggregate(), signatureVerifier);
   }
 
