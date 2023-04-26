@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksService
@@ -35,29 +36,38 @@ public class FetchRecentBlocksService
   public static final int MAX_CONCURRENT_REQUESTS = 3;
 
   private final ForwardSync forwardSync;
-  private final PendingPool<SignedBeaconBlock> pendingBlocksPool;
+  private final PendingPool<SignedBeaconBlock> pendingBlockPool;
+  private final BlobSidecarPool blobSidecarPool;
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
 
   FetchRecentBlocksService(
       final AsyncRunner asyncRunner,
-      final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final PendingPool<SignedBeaconBlock> pendingBlockPool,
+      final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
     super(asyncRunner, maxConcurrentRequests);
     this.forwardSync = forwardSync;
-    this.pendingBlocksPool = pendingBlocksPool;
+    this.pendingBlockPool = pendingBlockPool;
+    this.blobSidecarPool = blobSidecarPool;
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
   public static FetchRecentBlocksService create(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
+      final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
     return new FetchRecentBlocksService(
-        asyncRunner, pendingBlocksPool, forwardSync, fetchTaskFactory, MAX_CONCURRENT_REQUESTS);
+        asyncRunner,
+        pendingBlocksPool,
+        blobSidecarPool,
+        forwardSync,
+        fetchTaskFactory,
+        MAX_CONCURRENT_REQUESTS);
   }
 
   @Override
@@ -82,7 +92,7 @@ public class FetchRecentBlocksService
       // Forward sync already in progress, assume it will fetch any missing blocks
       return;
     }
-    if (pendingBlocksPool.contains(blockRoot)) {
+    if (pendingBlockPool.contains(blockRoot)) {
       // We've already got this block
       return;
     }
@@ -115,8 +125,10 @@ public class FetchRecentBlocksService
   }
 
   private void setupSubscribers() {
-    pendingBlocksPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
-    pendingBlocksPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
+    pendingBlockPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
+    pendingBlockPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
+    blobSidecarPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
+    blobSidecarPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);
     forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
   }
 
@@ -126,6 +138,6 @@ public class FetchRecentBlocksService
     }
     // Ensure we are requesting the parents of any pending blocks not already filled in by the sync
     // We may have ignored these requested blocks while the sync was in progress
-    pendingBlocksPool.getAllRequiredBlockRoots().forEach(this::requestRecentBlock);
+    pendingBlockPool.getAllRequiredBlockRoots().forEach(this::requestRecentBlock);
   }
 }
