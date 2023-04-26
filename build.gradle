@@ -570,7 +570,7 @@ task uploadDocker {
         exec {
           workingDir dockerBuildDir
           executable "sh"
-          args "-c", "docker trust sign ${t} && docker push ${t} "
+          args "-c", "docker push ${t} "
         }
       }
     }

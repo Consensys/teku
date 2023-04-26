@@ -1,0 +1,89 @@
+{
+  "post": {
+    "tags": [
+      "Beacon",
+      "Rewards",
+      "Experimental"
+    ],
+    "operationId": "getAttestationsRewards",
+    "summary": "Get Attestations Rewards",
+    "description": "Retrieve attestation reward info for validators specified by array of public keys or validator index. If no array is provided, return reward info for every validator.",
+    "parameters": [
+      {
+        "name": "epoch",
+        "required": true,
+        "in": "path",
+        "schema": {
+          "type": "string",
+          "description": "`uint64` Epoch number to query.",
+          "example": "1",
+          "format": "uint64"
+        }
+      }
+    ],
+    "requestBody": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Request successful",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/GetAttestationRewards"
+            }
+          }
+        }
+      },
+      "400": {
+        "description": "The request could not be processed, check the response for more information.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "404": {
+        "description": "Not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "501": {
+        "description": "Not implemented",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

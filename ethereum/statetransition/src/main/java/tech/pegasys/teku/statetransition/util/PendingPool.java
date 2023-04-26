@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.util;
 
-import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,22 +32,18 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 
-public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointChannel {
+public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Comparator<SlotAndRoot> SLOT_AND_ROOT_COMPARATOR =
       Comparator.comparing(SlotAndRoot::getSlot).thenComparing(SlotAndRoot::getRoot);
 
   private final String itemType;
-  private final Spec spec;
   private final Subscribers<RequiredBlockRootSubscriber> requiredBlockRootSubscribers =
       Subscribers.create(true);
   private final Subscribers<RequiredBlockRootDroppedSubscriber>
@@ -59,18 +53,12 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   private final NavigableSet<SlotAndRoot> orderedPendingItems =
       new TreeSet<>(SLOT_AND_ROOT_COMPARATOR);
   private final Map<Bytes32, Set<Bytes32>> pendingItemsByRequiredBlockRoot = new HashMap<>();
-  // Define the range of slots we care about
-  private final UInt64 futureSlotTolerance;
-  private final UInt64 historicalSlotTolerance;
   private final int maxItems;
 
   private final Function<T, Bytes32> hashTreeRootFunction;
   private final Function<T, Collection<Bytes32>> requiredBlockRootsFunction;
   private final Function<T, UInt64> targetSlotFunction;
   private final SettableLabelledGauge sizeGauge;
-
-  private volatile UInt64 currentSlot = UInt64.ZERO;
-  private volatile UInt64 latestFinalizedSlot = GENESIS_SLOT;
 
   PendingPool(
       final SettableLabelledGauge sizeGauge,
@@ -82,10 +70,8 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
       final Function<T, Bytes32> hashTreeRootFunction,
       final Function<T, Collection<Bytes32>> requiredBlockRootsFunction,
       final Function<T, UInt64> targetSlotFunction) {
+    super(spec, futureSlotTolerance, historicalSlotTolerance);
     this.itemType = itemType;
-    this.spec = spec;
-    this.historicalSlotTolerance = historicalSlotTolerance;
-    this.futureSlotTolerance = futureSlotTolerance;
     this.maxItems = maxItems;
     this.hashTreeRootFunction = hashTreeRootFunction;
     this.requiredBlockRootsFunction = requiredBlockRootsFunction;
@@ -95,7 +81,7 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
   }
 
   public synchronized void add(T item) {
-    if (shouldIgnoreItem(item)) {
+    if (shouldIgnoreItemAtSlot(targetSlotFunction.apply(item))) {
       // Ignore items outside of the range we care about
       return;
     }
@@ -258,25 +244,9 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     requiredBlockRootDroppedSubscribers.subscribe(subscriber);
   }
 
-  @Override
-  public void onSlot(final UInt64 slot) {
-    currentSlot = slot;
-    if (currentSlot.mod(historicalSlotTolerance).equals(UInt64.ZERO)) {
-      // Purge old items
-      prune();
-    }
-  }
-
-  @Override
-  public void onNewFinalizedCheckpoint(
-      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    this.latestFinalizedSlot = checkpoint.getEpochStartSlot(spec);
-  }
-
   @VisibleForTesting
-  synchronized void prune() {
-    final UInt64 slotLimit = latestFinalizedSlot.max(calculateItemAgeLimit());
-
+  @Override
+  synchronized void prune(final UInt64 slotLimit) {
     final List<T> toRemove = new ArrayList<>();
     for (SlotAndRoot slotAndRoot : orderedPendingItems) {
       if (slotAndRoot.getSlot().isGreaterThan(slotLimit)) {
@@ -286,38 +256,6 @@ public class PendingPool<T> implements SlotEventsChannel, FinalizedCheckpointCha
     }
 
     toRemove.forEach(this::remove);
-  }
-
-  private boolean shouldIgnoreItem(final T item) {
-    return isTooOld(item) || isFromFarFuture(item);
-  }
-
-  private boolean isTooOld(final T item) {
-    return isFromAFinalizedSlot(item) || isOutsideOfHistoricalLimit(item);
-  }
-
-  private boolean isFromFarFuture(final T item) {
-    final UInt64 slot = calculateFutureItemLimit();
-    return targetSlotFunction.apply(item).isGreaterThan(slot);
-  }
-
-  private boolean isOutsideOfHistoricalLimit(final T item) {
-    final UInt64 slot = calculateItemAgeLimit();
-    return targetSlotFunction.apply(item).compareTo(slot) <= 0;
-  }
-
-  private boolean isFromAFinalizedSlot(final T item) {
-    return targetSlotFunction.apply(item).compareTo(latestFinalizedSlot) <= 0;
-  }
-
-  private UInt64 calculateItemAgeLimit() {
-    return currentSlot.compareTo(historicalSlotTolerance.plus(UInt64.ONE)) > 0
-        ? currentSlot.minus(UInt64.ONE).minus(historicalSlotTolerance)
-        : GENESIS_SLOT;
-  }
-
-  private UInt64 calculateFutureItemLimit() {
-    return currentSlot.plus(futureSlotTolerance);
   }
 
   private SlotAndRoot toSlotAndRoot(final T item) {

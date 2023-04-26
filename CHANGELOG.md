@@ -14,16 +14,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- The `--p2p-discovery-site-local-addresses-enabled` option is set to `false` by default. If you use the client's discovery inside the local network, update its launch command to toggle the option.
 
 ### Additions and Improvements
- - Added the ability for the CL client to negotiate engine capabilities with the connected EL client. 
-   This can be disabled by setting `--exchange-capabilities-enabled=false` if Shanghai is not supported on your EL client.
- - Enabled peer scoring by default. Can be disabled explicitly using `--Xp2p-gossip-scoring-enabled=false`
- - When failovers are configured, the validator client will perform a readiness check on startup to avoid retrieving validator statuses from a node which is not ready.
- - Enabled deposit tree snapshot bundles for major networks and persists it after finalization to decrease EL pressure and speed up node startup. Use `--deposit-snapshot-enabled=false` to disable.
- - Optimized validator exit processing during state transition, to speed up block import containing multiple validator exits.
- - Locally submitted exits and bls changes will now periodically broadcast if they are not actioned, to address operations being lost in remote pools.
  - Set `User-Agent` header to "teku/v<version>" (e.g. teku/v23.4.0) when making builder bid requests to help builders identify clients and versions. Use `--builder-set-user-agent-header=false` to disable. 
 
 ### Bug Fixes
