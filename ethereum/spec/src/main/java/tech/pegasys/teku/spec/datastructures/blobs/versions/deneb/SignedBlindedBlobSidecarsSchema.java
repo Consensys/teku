@@ -31,7 +31,7 @@ public class SignedBlindedBlobSidecarsSchema
       final SpecConfigDeneb specConfig,
       final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema) {
     super(
-        "SignedBlobSidecarsSchema",
+        "SignedBlindedBlobSidecarSchema",
         namedSchema(
             FIELD_SIGNED_BLINDED_BLOB_SIDECARS,
             SszListSchema.create(

@@ -29,8 +29,8 @@ public class SignedBlindedBlockContentsSchema
       final SignedBlindedBlobSidecarsSchema signedBlindedBlobSidecarsSchema) {
     super(
         "SignedBlindedBlockContents",
-        namedSchema("signed_blinded_block", signedBeaconBlockSchema),
-        namedSchema("signed_blinded_blob_sidecars", signedBlindedBlobSidecarsSchema));
+        namedSchema("blinded_block", signedBeaconBlockSchema),
+        namedSchema("blinded_blob_sidecars", signedBlindedBlobSidecarsSchema));
   }
 
   public static SignedBlindedBlockContentsSchema create(

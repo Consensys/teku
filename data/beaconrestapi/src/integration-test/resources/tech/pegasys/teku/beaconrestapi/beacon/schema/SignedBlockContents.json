@@ -1,9 +1,9 @@
 {
   "title" : "SignedBlockContents",
   "type" : "object",
-  "required" : [ "signed_beacon_block", "signed_blob_sidecars" ],
+  "required" : [ "signed_block", "signed_blob_sidecars" ],
   "properties" : {
-    "signed_beacon_block" : {
+    "signed_block" : {
       "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
     },
     "signed_blob_sidecars" : {

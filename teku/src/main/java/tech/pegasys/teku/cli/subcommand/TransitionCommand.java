@@ -198,8 +198,6 @@ public class TransitionCommand implements Runnable {
       blockDataBytesArray = Files.readAllBytes(Path.of(path));
     }
     try {
-      // TODO
-      // Handle post Deneb BlockContents
       return spec.deserializeSignedBeaconBlock(Bytes.wrap(blockDataBytesArray));
     } catch (final RuntimeException e) {
       return deserializeSignedBeaconBlockFromHex(spec, path, blockDataBytesArray, e);
@@ -213,8 +211,6 @@ public class TransitionCommand implements Runnable {
       RuntimeException sszSerializationException) {
     try {
       final Bytes blockData = Bytes.wrap(Hex.decode(hexBlockData));
-      // TODO
-      // Handle post Deneb BlockContents
       return spec.deserializeSignedBeaconBlock(blockData);
     } catch (final RuntimeException e) {
       throw new RuntimeException(

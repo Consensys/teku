@@ -74,6 +74,18 @@ class JsonUtilTest {
   }
 
   @Test
+  void getAttribute_getsFirstAttribute() throws Exception {
+    final Optional<UInt64> result =
+        JsonUtil.getFirstAttribute(
+            "{\"data\": { \"slot\": \"1\"},"
+                + "\"meta\": [ {\"slot\": \"2\"}, {\"slot\": \"3\"}],"
+                + " \"slot\":\"1234\"}",
+            CoreTypes.UINT64_TYPE,
+            "slot");
+    assertThat(result).contains(UInt64.valueOf(1));
+  }
+
+  @Test
   void getAttribute_throwsJsonProcessingException() {
     assertThatThrownBy(() -> JsonUtil.getAttribute("{", CoreTypes.STRING_TYPE, "slot"))
         .isInstanceOf(JsonProcessingException.class);

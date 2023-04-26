@@ -55,6 +55,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
@@ -302,6 +303,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlockContents(
       final SignedBlockContents signedBlockContents) {
+    throw new NotImplementedException("Not Yet Implemented");
+  }
+
+  @Override
+  public SafeFuture<SendSignedBlockResult> sendSignedBlindedBlockContents(
+      final SignedBlindedBlockContents signedBlindedBlockContents) {
     throw new NotImplementedException("Not Yet Implemented");
   }
 

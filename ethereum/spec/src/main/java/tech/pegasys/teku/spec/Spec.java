@@ -290,8 +290,8 @@ public class Spec {
         .sszDeserialize(serializedState);
   }
 
-  public SszData deserializeSignedBlock(final Bytes serializedSignedBlock) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedSignedBlock);
+  public SszData deserializeSignedBlock(final Bytes serializedData) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedData);
     final SpecVersion specVersion = atSlot(slot);
 
     if (specVersion.getMilestone().isGreaterThanOrEqualTo(DENEB)) {
@@ -300,12 +300,12 @@ public class Spec {
           .toVersionDeneb()
           .orElseThrow()
           .getSignedBlockContentsSchema()
-          .sszDeserialize(serializedSignedBlock);
+          .sszDeserialize(serializedData);
     } else {
       return atSlot(slot)
           .getSchemaDefinitions()
           .getSignedBeaconBlockSchema()
-          .sszDeserialize(serializedSignedBlock);
+          .sszDeserialize(serializedData);
     }
   }
 
@@ -325,6 +325,25 @@ public class Spec {
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
         .sszDeserialize(serializedSignedBlock);
+  }
+
+  public SszData deserializeSignedBlindedBlock(final Bytes serializedData) {
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedData);
+    final SpecVersion specVersion = atSlot(slot);
+
+    if (specVersion.getMilestone().isGreaterThanOrEqualTo(DENEB)) {
+      return specVersion
+          .getSchemaDefinitions()
+          .toVersionDeneb()
+          .orElseThrow()
+          .getSignedBlindedBlockContentsSchema()
+          .sszDeserialize(serializedData);
+    } else {
+      return atSlot(slot)
+          .getSchemaDefinitions()
+          .getSignedBlindedBeaconBlockSchema()
+          .sszDeserialize(serializedData);
+    }
   }
 
   public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(final Bytes serializedState) {

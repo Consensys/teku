@@ -2194,13 +2194,17 @@ public final class DataStructureUtil {
   }
 
   public SignedBlindedBlockContents randomSignedBlindedBlockContents() {
+    return randomSignedBlindedBlockContents(randomUInt64());
+  }
+
+  public SignedBlindedBlockContents randomSignedBlindedBlockContents(UInt64 slot) {
     final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecarList =
         randomSignedBlindedBlobSidecars(4);
     final SignedBlindedBlobSidecars signedBlindedBlobSidecars =
         new SignedBlindedBlobSidecars(
             getSchemaDefinitionDeneb().getSignedBlindedBlobSidecarsSchema(),
             signedBlindedBlobSidecarList);
-    final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock();
+    final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
     return getSchemaDefinitionDeneb()
         .getSignedBlindedBlockContentsSchema()
         .create(signedBeaconBlock, signedBlindedBlobSidecars);

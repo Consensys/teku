@@ -1,6 +1,6 @@
 {
   "post" : {
-    "tags" : [ "Validator", "Validator Required Api"],
+    "tags" : [ "Validator", "Validator Required Api" ],
     "operationId" : "publishBlindedBlock",
     "summary" : "Publish a signed blinded block",
     "description" : "Submit a signed blinded beacon block to the beacon node to be imported. The beacon node performs the required validation.",
@@ -14,28 +14,34 @@
         },
         "application/json" : {
           "schema" : {
-            "title" : "SignedBlindedBlock",
+            "description" : "Request successful",
             "type" : "object",
             "oneOf" : [ {
-              "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
+              "title" : "SignedBlindedBlock",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
+              }, {
+                "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
+              }, {
+                "$ref" : "#/components/schemas/SignedBlindedBlockBellatrix"
+              }, {
+                "$ref" : "#/components/schemas/SignedBlindedBlockCapella"
+              }, {
+                "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
+              } ]
             }, {
-              "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
-            }, {
-              "$ref" : "#/components/schemas/SignedBlindedBlockBellatrix"
-            }, {
-              "$ref" : "#/components/schemas/SignedBlindedBlockCapella"
-            }, {
-              "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
+              "title" : "SignedBlindedBlockContents",
+              "type" : "object",
+              "oneOf" : [ {
+                "$ref" : "#/components/schemas/SignedBlindedBlockContents"
+              } ]
             } ]
           }
         }
       }
     },
     "responses" : {
-      "200" : {
-        "description" : "Block has been successfully broadcast, validated and imported.",
-        "content" : { }
-      },
       "415" : {
         "description" : "Unsupported media-type supplied",
         "content" : {
@@ -45,6 +51,10 @@
             }
           }
         }
+      },
+      "200" : {
+        "description" : "Block has been successfully broadcast, validated and imported.",
+        "content" : { }
       },
       "202" : {
         "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",

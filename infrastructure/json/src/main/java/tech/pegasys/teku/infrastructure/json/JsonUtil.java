@@ -118,7 +118,7 @@ public class JsonUtil {
       final String json, final DeserializableTypeDefinition<T> type, final String... path)
       throws JsonProcessingException {
     try (final JsonParser parser = FACTORY.createParser(json)) {
-      return getAttributeFromParser(parser, type, 0, path);
+      return getFirstAttributeFromParser(parser, type, 0, path);
     } catch (final JsonProcessingException e) {
       throw e;
     } catch (final IOException e) {
@@ -126,7 +126,19 @@ public class JsonUtil {
     }
   }
 
-  private static <T> Optional<T> getAttributeFromParser(
+  public static <T> Optional<T> getFirstAttribute(
+      final String json, final DeserializableTypeDefinition<T> type, final String name)
+      throws JsonProcessingException {
+    try (final JsonParser parser = FACTORY.createParser(json)) {
+      return getFirstAttributeFromParser(parser, type, name);
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  private static <T> Optional<T> getFirstAttributeFromParser(
       JsonParser parser, final DeserializableTypeDefinition<T> type, int i, final String... path)
       throws IOException {
     if (!JsonToken.START_OBJECT.equals(parser.nextToken())) {
@@ -142,12 +154,31 @@ public class JsonUtil {
             parser.nextToken();
             return Optional.of(type.deserialize(parser));
           } else {
-            return getAttributeFromParser(parser, type, i + 1, path);
+            return getFirstAttributeFromParser(parser, type, i + 1, path);
           }
         }
       } else if (JsonToken.START_ARRAY.equals(jsonToken)
           || JsonToken.START_OBJECT.equals(jsonToken)) {
         parser.skipChildren();
+      }
+    }
+    return Optional.empty();
+  }
+
+  private static <T> Optional<T> getFirstAttributeFromParser(
+      JsonParser parser, final DeserializableTypeDefinition<T> type, final String fieldName)
+      throws IOException {
+    if (!JsonToken.START_OBJECT.equals(parser.nextToken())) {
+      throw new IllegalStateException("getAttributeFromParser was not passed an object");
+    }
+    while (!parser.isClosed()) {
+      final JsonToken jsonToken = parser.nextToken();
+      if (JsonToken.FIELD_NAME.equals(jsonToken)) {
+        final String currentFieldName = parser.getCurrentName();
+        if (currentFieldName.equals(fieldName)) {
+          parser.nextToken();
+          return Optional.of(type.deserialize(parser));
+        }
       }
     }
     return Optional.empty();

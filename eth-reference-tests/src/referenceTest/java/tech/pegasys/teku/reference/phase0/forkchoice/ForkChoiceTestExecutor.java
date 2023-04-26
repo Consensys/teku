@@ -290,8 +290,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final ExecutionLayerChannelStub executionLayer) {
     final String blockName = get(step, "block");
     final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
-    // TODO
-    // Handle post Deneb BlockContents
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
