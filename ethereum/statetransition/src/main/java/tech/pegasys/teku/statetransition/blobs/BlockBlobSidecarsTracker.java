@@ -130,7 +130,6 @@ public class BlockBlobSidecarsTracker {
         blockBody.getAndSet(
             Optional.of(BeaconBlockBodyDeneb.required(block.getMessage().getBody())));
     if (oldBlock.isPresent()) {
-      LOG.debug("block was already set!");
       return false;
     }
 
