@@ -2151,10 +2151,14 @@ public final class DataStructureUtil {
   }
 
   public BlockContents randomBlockContents() {
+    return randomBlockContents(randomUInt64());
+  }
+
+  public BlockContents randomBlockContents(UInt64 slot) {
     final List<BlobSidecar> blobSidecarList = randomBlobSidecars(4);
     final BlobSidecars blobSidecars =
         new BlobSidecars(getSchemaDefinitionDeneb().getBlobSidecarsSchema(), blobSidecarList);
-    final BeaconBlock beaconBlock = randomBeaconBlock();
+    final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     return getSchemaDefinitionDeneb().getBlockContentsSchema().create(beaconBlock, blobSidecars);
   }
 

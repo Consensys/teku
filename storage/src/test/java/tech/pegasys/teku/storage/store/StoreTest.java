@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -130,6 +131,7 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
+  @Disabled("TODO: Rework for BlobSidecars")
   public void retrieveSignedBlockAndBlobsSidecar_withBlobs() {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState =

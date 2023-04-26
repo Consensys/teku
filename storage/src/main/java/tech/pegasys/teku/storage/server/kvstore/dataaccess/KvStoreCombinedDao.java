@@ -27,6 +27,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -236,9 +237,15 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
 
+    void addBlobSidecar(BlobSidecar blobsSidecar);
+
+    void addNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
+
     void addBlobsSidecar(BlobsSidecar blobsSidecar);
 
     void addUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
+
+    void removeBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
     void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 

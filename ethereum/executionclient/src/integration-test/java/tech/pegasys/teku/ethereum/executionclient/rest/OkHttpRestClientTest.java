@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.SocketException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import okhttp3.OkHttpClient;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
 class OkHttpRestClientTest {
 
+  private static final Map<String, String> TEST_HEADERS = Map.of("foo", "bar");
   private static final String TEST_PATH = "v1/test";
   private static final Bytes32 TEST_BLOCK_HASH =
       Bytes32.fromHexString("0xcf8e0d4e9587369b2301d0790347320302cc0943d5a1884560367e8208d920f2");
@@ -84,7 +86,7 @@ class OkHttpRestClientTest {
             .addHeader("Content-Type", "application/json"));
 
     final SafeFuture<Response<TestObject>> responseFuture =
-        underTest.getAsync(TEST_PATH, responseTypeDefinition);
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -99,6 +101,7 @@ class OkHttpRestClientTest {
 
     assertThat(request.getPath()).isEqualTo("/" + TEST_PATH);
     assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getHeader("foo")).isEqualTo("bar");
   }
 
   @Test
@@ -127,7 +130,7 @@ class OkHttpRestClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(errorBody));
 
     final SafeFuture<Response<TestObject>> responseFuture =
-        underTest.getAsync(TEST_PATH, responseTypeDefinition);
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -141,7 +144,7 @@ class OkHttpRestClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(500));
 
     final SafeFuture<Response<TestObject>> secondResponseFuture =
-        underTest.getAsync(TEST_PATH, responseTypeDefinition);
+        underTest.getAsync(TEST_PATH, TEST_HEADERS, responseTypeDefinition);
 
     assertThat(secondResponseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -160,6 +163,7 @@ class OkHttpRestClientTest {
         (req) -> {
           assertThat(req.getPath()).isEqualTo("/" + TEST_PATH);
           assertThat(req.getMethod()).isEqualTo("GET");
+          assertThat(request.getHeader("foo")).isEqualTo("bar");
         };
 
     assertThat(List.of(request, secondRequest)).allSatisfy(requestsAssertions);

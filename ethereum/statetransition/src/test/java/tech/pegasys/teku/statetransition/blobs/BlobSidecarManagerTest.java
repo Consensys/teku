@@ -36,7 +36,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobsSidecarManagerTest {
+public class BlobSidecarManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Spec mockedSpec = mock(Spec.class);
@@ -47,8 +47,8 @@ public class BlobsSidecarManagerTest {
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final BlobSidecarValidator blobSidecarValidator = mock(BlobSidecarValidator.class);
-  private final BlobsSidecarManagerImpl blobsSidecarManager =
-      new BlobsSidecarManagerImpl(
+  private final BlobSidecarManagerImpl blobSidecarManager =
+      new BlobSidecarManagerImpl(
           mockedSpec,
           recentChainData,
           blobSidecarValidator,
@@ -66,7 +66,7 @@ public class BlobsSidecarManagerTest {
   @Test
   void shouldStoreUnconfirmedValidatedBlobsSidecar() {
     final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobsSidecar);
+    blobSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobsSidecar);
 
     verify(storageUpdateChannel).onBlobsSidecar(blobsSidecar);
   }
@@ -74,7 +74,7 @@ public class BlobsSidecarManagerTest {
   @Test
   void shouldStoreUnconfirmedBlobsSidecar() {
     final BlobsSidecar blobsSidecar = dataStructureUtil.randomBlobsSidecar();
-    blobsSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar);
+    blobSidecarManager.storeUnconfirmedBlobsSidecar(blobsSidecar);
 
     verify(storageUpdateChannel).onBlobsSidecar(blobsSidecar);
   }
@@ -86,24 +86,24 @@ public class BlobsSidecarManagerTest {
     final BlobsSidecar blobs1 = dataStructureUtil.randomBlobsSidecar(blockRoot, UInt64.ONE);
     final BlobsSidecar blobs2 = dataStructureUtil.randomBlobsSidecar(blockRoot, UInt64.valueOf(2));
 
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs1);
-    blobsSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs2);
+    blobSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs1);
+    blobSidecarManager.storeUnconfirmedValidatedBlobsSidecar(blobs2);
 
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
         .containsEntry(blockRoot, blobs1);
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
         .containsEntry(blockRoot, blobs2);
 
-    blobsSidecarManager.onSlot(UInt64.valueOf(2));
+    blobSidecarManager.onSlot(UInt64.valueOf(2));
 
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE))
         .containsEntry(blockRoot, blobs1);
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2)))
         .containsEntry(blockRoot, blobs2);
 
-    blobsSidecarManager.onSlot(UInt64.valueOf(4));
+    blobSidecarManager.onSlot(UInt64.valueOf(4));
 
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE)).isEmpty();
-    assertThat(blobsSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2))).isEmpty();
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.ONE)).isEmpty();
+    assertThat(blobSidecarManager.getValidatedPendingBlobsForSlot(UInt64.valueOf(2))).isEmpty();
   }
 }

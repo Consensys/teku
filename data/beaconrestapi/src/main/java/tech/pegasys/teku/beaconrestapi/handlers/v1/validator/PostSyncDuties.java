@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
@@ -61,8 +62,7 @@ public class PostSyncDuties extends RestApiEndpoint {
   private static final SerializableTypeDefinition<SyncCommitteeDuties> RESPONSE_TYPE =
       SerializableTypeDefinition.object(SyncCommitteeDuties.class)
           .name("GetSyncCommitteeDutiesResponse")
-          .withField(
-              "execution_optimistic", BOOLEAN_TYPE, SyncCommitteeDuties::isExecutionOptimistic)
+          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, SyncCommitteeDuties::isExecutionOptimistic)
           .withField(
               "data",
               SerializableTypeDefinition.listOf(SYNC_COMMITTEE_DUTY_TYPE),

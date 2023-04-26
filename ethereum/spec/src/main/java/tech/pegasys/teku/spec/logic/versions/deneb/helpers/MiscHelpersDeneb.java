@@ -152,6 +152,10 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
     return kzg.blobToKzgCommitment(blob.getBytes());
   }
 
+  public KZGProof computeBlobKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
+    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
+  }
+
   public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
     return signedBeaconBlock
         .flatMap(SignedBeaconBlock::getBeaconBlock)

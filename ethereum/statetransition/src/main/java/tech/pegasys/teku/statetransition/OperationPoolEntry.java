@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition;
 
 import org.jetbrains.annotations.NotNull;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.MessageWithValidatorId;
 
 public class OperationPoolEntry<T extends MessageWithValidatorId>
@@ -22,9 +23,12 @@ public class OperationPoolEntry<T extends MessageWithValidatorId>
   private final T message;
   private final boolean isLocal;
 
-  public OperationPoolEntry(T message, boolean isLocal) {
+  private UInt64 timeSubmitted;
+
+  public OperationPoolEntry(T message, boolean isLocal, final UInt64 timeSubmitted) {
     this.message = message;
     this.isLocal = isLocal;
+    this.timeSubmitted = timeSubmitted;
   }
 
   public T getMessage() {
@@ -33,6 +37,14 @@ public class OperationPoolEntry<T extends MessageWithValidatorId>
 
   public boolean isLocal() {
     return isLocal;
+  }
+
+  public UInt64 getTimeSubmitted() {
+    return timeSubmitted;
+  }
+
+  public void setTimeSubmitted(final UInt64 timeSubmitted) {
+    this.timeSubmitted = timeSubmitted;
   }
 
   @Override
