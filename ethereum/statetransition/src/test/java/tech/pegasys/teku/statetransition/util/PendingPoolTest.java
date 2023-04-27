@@ -36,8 +36,8 @@ public class PendingPoolTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final int maxItems = 15;
   private final PendingPool<SignedBeaconBlock> pendingPool =
-      new PendingPoolFactory(metricsSystem)
-          .createForBlocks(spec, historicalTolerance, futureTolerance, maxItems);
+      new PoolFactory(metricsSystem)
+          .createPendingPoolForBlocks(spec, historicalTolerance, futureTolerance, maxItems);
   private UInt64 currentSlot = historicalTolerance.times(2);
   private final List<Bytes32> requiredRootEvents = new ArrayList<>();
   private final List<Bytes32> requiredRootDroppedEvents = new ArrayList<>();

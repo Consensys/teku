@@ -4,7 +4,7 @@
   "required" : [ "pubkey" ],
   "properties" : {
     "pubkey" : {
-      "$ref" : "#/components/schemas/PubKey"
+      "$ref" : "#/components/schemas/Pubkey"
     },
     "url" : {
       "$ref" : "#/components/schemas/Signer"

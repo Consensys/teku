@@ -137,10 +137,10 @@ class BatchImporterTest {
 
     asyncRunner.executeQueuedActions();
 
-    blobSidecarsImportedSuccessfully(block1.getRoot(), blobSidecars1);
+    blobSidecarsImportedSuccessfully(block1, blobSidecars1);
     blockImportedSuccessfully(block1, importResult1);
     assertThat(result).isNotDone();
-    blobSidecarsImportedSuccessfully(block2.getRoot(), blobSidecars2);
+    blobSidecarsImportedSuccessfully(block2, blobSidecars2);
     blockImportedSuccessfully(block2, importResult2);
     assertThat(result).isCompletedWithValue(BatchImportResult.IMPORTED_ALL_BLOCKS);
 
@@ -249,8 +249,8 @@ class BatchImporterTest {
   }
 
   private void blobSidecarsImportedSuccessfully(
-      final Bytes32 blockRoot, final List<BlobSidecar> blobSidecars) {
-    verify(blobSidecarPool).onBlobSidecarsFromSync(blockRoot, blobSidecars);
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    verify(blobSidecarPool).onBlobSidecarsFromSync(block, blobSidecars);
     verifyNoMoreInteractions(blobSidecarPool);
   }
 

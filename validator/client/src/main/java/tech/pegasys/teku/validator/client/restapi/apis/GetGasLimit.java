@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -31,7 +32,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
-import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 
 public class GetGasLimit extends RestApiEndpoint {
 
@@ -44,7 +44,7 @@ public class GetGasLimit extends RestApiEndpoint {
           .withField(
               "gas_limit", CoreTypes.UINT64_TYPE, GetGasLimit.GetGasLimitResponse::getGasLimit)
           .withField(
-              PUBKEY, ValidatorTypes.PUBKEY_TYPE, GetGasLimit.GetGasLimitResponse::getPublicKey)
+              PUBKEY, SharedApiTypes.PUBKEY_API_TYPE, GetGasLimit.GetGasLimitResponse::getPublicKey)
           .build();
 
   private static final SerializableTypeDefinition<GetGasLimit.GetGasLimitResponse> RESPONSE_TYPE =
