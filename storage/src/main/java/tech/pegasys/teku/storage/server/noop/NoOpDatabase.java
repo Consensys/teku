@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -249,8 +247,8 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Map<String, Long> getBlobsSidecarColumnCounts() {
-    return new HashMap<>();
+  public long getBlobSidecarColumnCount() {
+    return 0L;
   }
 
   @Override
@@ -276,18 +274,7 @@ public class NoOpDatabase implements Database {
   public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
-  public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
-
-  @Override
-  public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
-
-  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    return Optional.empty();
-  }
-
-  @Override
-  public Optional<BlobsSidecar> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.empty();
   }
 
@@ -295,27 +282,8 @@ public class NoOpDatabase implements Database {
   public void removeBlobSidecars(final UInt64 slot) {}
 
   @Override
-  public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {}
-
-  @Override
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
-    return Stream.empty();
-  }
-
-  @Override
-  public Stream<BlobsSidecar> streamBlobsSidecars(final UInt64 startSlot, final UInt64 endSlot) {
-    return Stream.empty();
-  }
-
-  @Override
-  public Stream<Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarsAsSsz(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return Stream.empty();
-  }
-
-  @Override
-  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot) {
     return Stream.empty();
   }
 
@@ -325,24 +293,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
-    return Optional.empty();
-  }
-
-  @Override
-  public boolean pruneOldestBlobsSidecar(final UInt64 lastSlotToPrune, final int pruneLimit) {
-    return false;
-  }
-
-  @Override
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return Stream.empty();
-  }
-
-  @Override
-  public boolean pruneOldestUnconfirmedBlobsSidecars(
-      final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public boolean pruneOldestBlobSidecars(final UInt64 lastSlotToPrune, final int pruneLimit) {
     return false;
   }
 

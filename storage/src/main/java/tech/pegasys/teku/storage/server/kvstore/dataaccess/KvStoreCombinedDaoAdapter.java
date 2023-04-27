@@ -29,7 +29,6 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -219,8 +218,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Map<String, Long> getBlobsSidecarColumnCounts() {
-    return new LinkedHashMap<>(finalizedDao.getBlobsSidecarColumnCounts());
+  public long getBlobSidecarColumnCount() {
+    return finalizedDao.getBlobSidecarColumnCount();
   }
 
   @Override
@@ -240,11 +239,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-    return finalizedDao.getBlobsSidecar(slotAndBlockRoot);
-  }
-
-  @Override
   @MustBeClosed
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
@@ -252,34 +246,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  @MustBeClosed
-  public Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return finalizedDao.streamBlobsSidecar(startSlot, endSlot);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return finalizedDao.streamBlobsSidecarKeys(startSlot, endSlot);
-  }
-
-  @Override
-  @MustBeClosed
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return finalizedDao.streamUnconfirmedBlobsSidecar(startSlot, endSlot);
-  }
-
-  @Override
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
     return finalizedDao.getEarliestBlobSidecarSlot();
-  }
-
-  @Override
-  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
-    return finalizedDao.getEarliestBlobsSidecarSlot();
   }
 
   @Override
@@ -447,28 +415,8 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
-      finalizedUpdater.addBlobsSidecar(blobsSidecar);
-    }
-
-    @Override
-    public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
-      finalizedUpdater.addUnconfirmedBlobsSidecar(blobsSidecar);
-    }
-
-    @Override
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       finalizedUpdater.removeBlobSidecar(key);
-    }
-
-    @Override
-    public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-      finalizedUpdater.removeBlobsSidecar(slotAndBlockRoot);
-    }
-
-    @Override
-    public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-      finalizedUpdater.confirmBlobsSidecar(slotAndBlockRoot);
     }
 
     @Override

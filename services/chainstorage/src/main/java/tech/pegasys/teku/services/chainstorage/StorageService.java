@@ -27,7 +27,6 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
-import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.server.BatchingVoteUpdateChannel;
 import tech.pegasys.teku.storage.server.ChainStorage;
@@ -37,7 +36,7 @@ import tech.pegasys.teku.storage.server.DepositStorage;
 import tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.server.VersionedDatabaseFactory;
-import tech.pegasys.teku.storage.server.pruner.BlobsSidecarPruner;
+import tech.pegasys.teku.storage.server.pruner.BlobSidecarPruner;
 import tech.pegasys.teku.storage.server.pruner.BlockPruner;
 
 public class StorageService extends Service implements StorageServiceFacade {
@@ -47,7 +46,7 @@ public class StorageService extends Service implements StorageServiceFacade {
   private volatile Database database;
   private volatile BatchingVoteUpdateChannel batchingVoteUpdateChannel;
   private volatile Optional<BlockPruner> blockPruner = Optional.empty();
-  private volatile Optional<BlobsSidecarPruner> blobsPruner = Optional.empty();
+  private volatile Optional<BlobSidecarPruner> blobsPruner = Optional.empty();
   private final boolean depositSnapshotStorageEnabled;
   private final boolean blobsSidecarStorageCountersEnabled;
 
@@ -93,7 +92,7 @@ public class StorageService extends Service implements StorageServiceFacade {
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
                     Optional.of(
-                        new BlobsSidecarPruner(
+                        new BlobSidecarPruner(
                             config.getSpec(),
                             database,
                             serviceConfig.getMetricsSystem(),
@@ -130,8 +129,6 @@ public class StorageService extends Service implements StorageServiceFacade {
                   .subscribe(Eth1DepositStorageChannel.class, depositStorage)
                   .subscribe(Eth1EventsChannel.class, depositStorage)
                   .subscribe(VoteUpdateChannel.class, batchingVoteUpdateChannel);
-              blobsPruner.ifPresent(
-                  pruner -> eventChannels.subscribe(FinalizedCheckpointChannel.class, pruner));
             })
         .thenCompose(
             __ ->
@@ -141,7 +138,7 @@ public class StorageService extends Service implements StorageServiceFacade {
         .thenCompose(
             __ ->
                 blobsPruner
-                    .map(BlobsSidecarPruner::start)
+                    .map(BlobSidecarPruner::start)
                     .orElseGet(() -> SafeFuture.completedFuture(null)));
   }
 

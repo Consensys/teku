@@ -24,7 +24,6 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -143,11 +142,5 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return SafeFuture.completedFuture(List.of());
-  }
-
-  @Override
-  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.completedFuture(Optional.empty());
   }
 }

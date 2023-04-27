@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.blobs;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -48,16 +47,10 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public void storeUnconfirmedValidatedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
-
-        @Override
         public void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot) {}
 
         @Override
         public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
-
-        @Override
-        public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
 
         @Override
         public void discardBlobSidecarsByBlock(final SignedBeaconBlock block) {}
@@ -78,13 +71,9 @@ public interface BlobSidecarManager {
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
-  void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
-
   void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
 
   void storeBlobSidecar(BlobSidecar blobSidecar);
-
-  void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
 
   void discardBlobSidecarsByBlock(SignedBeaconBlock block);
 
