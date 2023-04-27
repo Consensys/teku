@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
+import java.net.URI;
+
 public class ExternalSignerException extends RuntimeException {
 
   public ExternalSignerException(final String message) {
@@ -21,5 +23,23 @@ public class ExternalSignerException extends RuntimeException {
 
   public ExternalSignerException(final String message, final Throwable cause) {
     super(message, cause);
+  }
+
+  public ExternalSignerException(final URI url, final SignType type, final String message) {
+    super(formattedMessage(url, type, message));
+  }
+
+  public ExternalSignerException(
+      final URI url, final SignType type, final String message, final Throwable cause) {
+    super(formattedMessage(url, type, message), cause);
+  }
+
+  private static String formattedMessage(final URI url, final SignType type, final String message) {
+    return "Request to external signer at ("
+        + url
+        + ") failed signing type "
+        + type
+        + " - "
+        + message;
   }
 }
