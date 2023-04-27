@@ -6,7 +6,7 @@
     "pubkeys" : {
       "type" : "array",
       "items" : {
-        "$ref" : "#/components/schemas/PubKey"
+        "$ref" : "#/components/schemas/Pubkey"
       }
     }
   }

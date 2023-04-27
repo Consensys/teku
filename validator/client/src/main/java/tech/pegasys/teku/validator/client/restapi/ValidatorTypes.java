@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.restapi;
 
+import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.PUBKEY_API_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PUBKEY;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
@@ -79,21 +80,10 @@ public class ValidatorTypes {
               PostKeysRequest::getSlashingProtection,
               PostKeysRequest::setSlashingProtection)
           .build();
-  public static final DeserializableTypeDefinition<BLSPublicKey> PUBKEY_TYPE =
-      DeserializableTypeDefinition.string(BLSPublicKey.class)
-          .name("PubKey")
-          .formatter(BLSPublicKey::toString)
-          .parser(value -> BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)))
-          .pattern("^0x[a-fA-F0-9]{96}$")
-          .example(
-              "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
-          .description(
-              "The validator's BLS public key, uniquely identifying them. _48-bytes, hex encoded with 0x prefix, case insensitive._")
-          .build();
 
   public static final SerializableTypeDefinition<Validator> ACTIVE_VALIDATOR =
       SerializableTypeDefinition.object(Validator.class)
-          .withField("validating_pubkey", PUBKEY_TYPE, Validator::getPublicKey)
+          .withField("validating_pubkey", PUBKEY_API_TYPE, Validator::getPublicKey)
           .withOptionalField(
               "derivation_path",
               CoreTypes.string("The derivation path (if present in the imported keystore)."),
@@ -131,7 +121,7 @@ public class ValidatorTypes {
           .initializer(ExternalValidator::new)
           .withField(
               "pubkey",
-              PUBKEY_TYPE,
+              PUBKEY_API_TYPE,
               ExternalValidator::getPublicKey,
               ExternalValidator::setPublicKey)
           .withOptionalField("url", URL_TYPE, ExternalValidator::getUrl, ExternalValidator::setUrl)
@@ -144,7 +134,7 @@ public class ValidatorTypes {
               .initializer(ExternalValidator::new)
               .withField(
                   "pubkey",
-                  PUBKEY_TYPE,
+                  PUBKEY_API_TYPE,
                   ExternalValidator::getPublicKey,
                   ExternalValidator::setPublicKey)
               .withOptionalField(
@@ -170,7 +160,7 @@ public class ValidatorTypes {
               .initializer(ExternalValidator::new)
               .withField(
                   "pubkey",
-                  PUBKEY_TYPE,
+                  PUBKEY_API_TYPE,
                   ExternalValidator::getPublicKey,
                   ExternalValidator::setPublicKey)
               .withOptionalField(
@@ -208,7 +198,7 @@ public class ValidatorTypes {
           .initializer(DeleteKeysRequest::new)
           .withField(
               "pubkeys",
-              DeserializableTypeDefinition.listOf(PUBKEY_TYPE),
+              DeserializableTypeDefinition.listOf(PUBKEY_API_TYPE),
               DeleteKeysRequest::getPublicKeys,
               DeleteKeysRequest::setPublicKeys)
           .build();

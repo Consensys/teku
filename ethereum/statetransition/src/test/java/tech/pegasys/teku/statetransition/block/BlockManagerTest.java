@@ -73,7 +73,7 @@ import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidato
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.util.PendingPoolFactory;
+import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -94,8 +94,9 @@ public class BlockManagerTest {
   private final int maxPendingBlocks = 10;
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      new PendingPoolFactory(metricsSystem)
-          .createForBlocks(spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+      new PoolFactory(metricsSystem)
+          .createPendingPoolForBlocks(
+              spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots =

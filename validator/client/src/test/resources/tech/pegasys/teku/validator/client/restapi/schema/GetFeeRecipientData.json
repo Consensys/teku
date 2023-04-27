@@ -10,7 +10,7 @@
       "format" : "byte"
     },
     "pubkey" : {
-      "$ref" : "#/components/schemas/PubKey"
+      "$ref" : "#/components/schemas/Pubkey"
     }
   }
 }
