@@ -25,6 +25,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,6 +49,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
+  private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final BlobSidecarValidator validator;
   private final FutureItems<SignedBlobSidecar> futureBlobSidecars;
@@ -67,6 +69,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   public BlobSidecarManagerImpl(
       final Spec spec,
+      final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlobSidecarPool blobSidecarPool,
       final BlobSidecarValidator validator,
@@ -75,6 +78,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel) {
     this.spec = spec;
+    this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.validator = validator;
     this.blobSidecarPool = blobSidecarPool;
@@ -191,7 +195,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     blockBlobsSidecarsTracker.setBlock(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, recentChainData, blockBlobsSidecarsTracker);
+        spec, asyncRunner, recentChainData, blockBlobsSidecarsTracker);
   }
 
   @Override

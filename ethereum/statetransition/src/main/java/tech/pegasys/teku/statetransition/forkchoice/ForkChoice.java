@@ -378,20 +378,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
-    if (blobsSidecarAndValidationResult.isFailure()) {
+    if (blobSidecarsAndValidationResult.isFailure()) {
       LOG.error(
           "blobsSidecar validation result: {}",
-          blobsSidecarAndValidationResult.getValidationResult());
+          blobSidecarsAndValidationResult.getValidationResult());
       return BlockImportResult.failedBlobsAvailabilityCheck(
-          blobsSidecarAndValidationResult.getCause());
-    } else if (blobsSidecarAndValidationResult.isNotRequired()) {
+          blobSidecarsAndValidationResult.getCause());
+    } else if (blobSidecarsAndValidationResult.isNotRequired()) {
       LOG.debug(
           "blobsSidecar validation result: {}",
-          blobsSidecarAndValidationResult.getValidationResult());
-    } else if (blobsSidecarAndValidationResult.isValid()) {
+          blobSidecarsAndValidationResult.getValidationResult());
+    } else if (blobSidecarsAndValidationResult.isValid()) {
       LOG.debug(
           "blobsSidecar validation result: {}",
-          blobsSidecarAndValidationResult.getValidationResult());
+          blobSidecarsAndValidationResult.getValidationResult());
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
