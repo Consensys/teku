@@ -812,7 +812,7 @@ public class KvStoreDatabase implements Database {
       }
       updater.commit();
 
-      return pruned == pruneLimit;
+      return pruned >= pruneLimit;
     }
   }
 
