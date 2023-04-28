@@ -775,11 +775,10 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
-    if (maybePayload.filter(Bytes::isEmpty).isPresent()) {
-      // no BlobSidecars slot entry
+    if (key.isNoBlobsKey()) {
       return Optional.empty();
     }
+    final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
 
