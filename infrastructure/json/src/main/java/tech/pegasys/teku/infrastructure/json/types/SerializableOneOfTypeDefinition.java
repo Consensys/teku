@@ -54,12 +54,8 @@ public class SerializableOneOfTypeDefinition<TObject>
   @Override
   @SuppressWarnings("ReferenceComparison")
   public boolean isEquivalentToDeserializableType(final DeserializableTypeDefinition<?> type) {
-    for (SerializableTypeDefinition<?> current : types.values()) {
-      if (current == type) {
-        return true;
-      }
-    }
-    return false;
+    return getReferencedTypeDefinitions().stream()
+        .anyMatch(openApiTypeDefinition -> openApiTypeDefinition == type);
   }
 
   @Override

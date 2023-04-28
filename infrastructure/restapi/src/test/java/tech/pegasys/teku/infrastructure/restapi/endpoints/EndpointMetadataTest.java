@@ -30,7 +30,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import io.javalin.http.HandlerType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -331,7 +330,7 @@ class EndpointMetadataTest {
 
     assertThatThrownBy(
             () -> metadata.getRequestBody(toStream("{\"value1\":\"FOO\"}"), Optional.empty()))
-        .isInstanceOf(MismatchedInputException.class);
+        .isInstanceOf(IllegalStateException.class);
   }
 
   @Test
