@@ -49,6 +49,7 @@ public class BlobSidecarPruner extends Service {
   private Optional<UInt64> genesisTime = Optional.empty();
 
   private final AtomicLong blobColumnSize = new AtomicLong(0);
+  private final AtomicLong earliestBlobSidecarSlot = new AtomicLong(-1);
 
   public BlobSidecarPruner(
       final Spec spec,
@@ -71,11 +72,12 @@ public class BlobSidecarPruner extends Service {
       LabelledGauge labelledGauge =
           metricsSystem.createLabelledGauge(
               TekuMetricCategory.STORAGE,
-              "blob_sidecar_counts",
-              "Number of blob sidecars stored",
+              "blob_sidecars",
+              "Statistics for BlobSidecars stored",
               "type");
 
       labelledGauge.labels(blobColumnSize::get, "total");
+      labelledGauge.labels(earliestBlobSidecarSlot::get, "earliest_slot");
     }
   }
 
@@ -102,6 +104,8 @@ public class BlobSidecarPruner extends Service {
 
     if (blobSidecarStorageCountersEnabled) {
       blobColumnSize.set(database.getBlobSidecarColumnCount());
+      earliestBlobSidecarSlot.set(
+          database.getEarliestBlobSidecarSlot().map(UInt64::longValue).orElse(-1L));
     }
   }
 
