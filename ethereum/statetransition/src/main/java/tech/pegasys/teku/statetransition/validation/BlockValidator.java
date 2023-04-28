@@ -137,7 +137,8 @@ public class BlockValidator {
               }
 
               if (!receivedValidBlockInfoSet.add(new SlotAndProposer(block))) {
-                return ignore("Block has already been imported");
+                return ignore(
+                    "Block is not the first with valid signature for its slot. It will be dropped.");
               }
 
               return InternalValidationResult.ACCEPT;
