@@ -804,6 +804,7 @@ public class KvStoreDatabase implements Database {
         --remaining;
         final boolean finished = remaining < 0;
         final SlotAndBlockRootAndBlobIndex key = it.next();
+        // Before we finish we should check that there are no BlobSidecars left in the same slot
         if (finished && (key.isNoBlobsKey() || key.getBlobIndex().equals(ZERO))) {
           break;
         }
@@ -812,6 +813,7 @@ public class KvStoreDatabase implements Database {
       }
       updater.commit();
 
+      // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
       return pruned >= pruneLimit;
     }
   }
