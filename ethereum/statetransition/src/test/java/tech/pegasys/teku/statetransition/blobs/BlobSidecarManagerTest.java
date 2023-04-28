@@ -24,6 +24,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.ForkSchedule;
@@ -47,6 +48,7 @@ public class BlobSidecarManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final Spec mockedSpec = mock(Spec.class);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final SpecVersion mockedSpecVersion = mock(SpecVersion.class);
   private final ForkSchedule mockedForkSchedule = mock(ForkSchedule.class);
   private final MiscHelpers mockedMiscHelpers = mock(MiscHelpers.class);
@@ -64,6 +66,7 @@ public class BlobSidecarManagerTest {
   private final BlobSidecarManagerImpl blobSidecarManager =
       new BlobSidecarManagerImpl(
           mockedSpec,
+          asyncRunner,
           recentChainData,
           blobSidecarPool,
           blobSidecarValidator,

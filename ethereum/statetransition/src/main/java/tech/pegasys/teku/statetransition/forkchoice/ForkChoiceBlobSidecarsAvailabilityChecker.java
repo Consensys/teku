@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult.NOT_REQUIRED_RESULT_FUTURE;
+import static com.google.common.base.Preconditions.checkState;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -47,7 +48,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   private final NavigableMap<UInt64, BlobSidecar> validatedBlobSidecars =
       new ConcurrentSkipListMap<>();
 
-  private Optional<SafeFuture<BlobSidecarsAndValidationResult>> validationResult = Optional.empty();
+  private final SafeFuture<BlobSidecarsAndValidationResult> validationResult = new SafeFuture<>();
 
   public ForkChoiceBlobSidecarsAvailabilityChecker(
       final Spec spec,
@@ -62,16 +63,17 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
   @Override
   public boolean initiateDataAvailabilityCheck() {
-    validationResult =
-        Optional.of(
-            asyncRunner.runAsync(this::validatePartially).thenCompose(this::completeValidation));
+
+    SafeFuture.of(this::validatePartially)
+        .thenCompose(this::completeValidation)
+        .propagateToAsync(validationResult, asyncRunner);
 
     return true;
   }
 
   @Override
   public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
-    return validationResult.orElse(NOT_REQUIRED_RESULT_FUTURE);
+    return validationResult;
   }
 
   @Override
@@ -99,24 +101,11 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private BlobSidecarsAndValidationResult internalValidate(final List<BlobSidecar> blobSidecars) {
-    final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
-    try {
-      if (!spec.atSlot(slotAndBlockRoot.getSlot())
-          .miscHelpers()
-          .isDataAvailable(
-              slotAndBlockRoot.getSlot(),
-              slotAndBlockRoot.getBlockRoot(),
-              getKzgCommitmentsInBlock().stream()
-                  .map(SszKZGCommitment::getKZGCommitment)
-                  .collect(Collectors.toUnmodifiableList()),
-              blobSidecars)) {
-        return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
-      }
-    } catch (final Exception ex) {
-      return BlobSidecarsAndValidationResult.invalidResult(blobSidecars, ex);
-    }
-
-    return BlobSidecarsAndValidationResult.validResult(blobSidecars);
+    return internalValidate(
+        blobSidecars,
+        getKzgCommitmentsInBlock().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .collect(Collectors.toUnmodifiableList()));
   }
 
   private BlobSidecarsAndValidationResult internalValidate(
@@ -140,8 +129,6 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private Optional<BlobSidecarsAndValidationResult> validatePartially() {
-    final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
-
     final SszList<SszKZGCommitment> kzgCommitmentsInBlock = getKzgCommitmentsInBlock();
 
     final List<KZGCommitment> kzgCommitments;
@@ -151,6 +138,19 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         blockBlobSidecarsTracker.getCompletionFuture().isDone();
 
     if (performCompleteValidation) {
+      kzgCommitments =
+          kzgCommitmentsInBlock.stream()
+              .map(SszKZGCommitment::getKZGCommitment)
+              .collect(Collectors.toUnmodifiableList());
+      blobSidecars = List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values());
+
+      if (blobSidecars.isEmpty()
+          && kzgCommitments.size() > 0
+          && !isBlockInDataAvailabilityWindow()) {
+        return Optional.of(BlobSidecarsAndValidationResult.NOT_REQUIRED);
+      }
+
+    } else {
       kzgCommitments = new ArrayList<>();
       blobSidecars =
           blockBlobSidecarsTracker.getBlobSidecars().values().stream()
@@ -161,12 +161,6 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                               .get(blobSidecar.getIndex().intValue())
                               .getKZGCommitment()))
               .collect(Collectors.toUnmodifiableList());
-    } else {
-      kzgCommitments =
-          kzgCommitmentsInBlock.stream()
-              .map(SszKZGCommitment::getKZGCommitment)
-              .collect(Collectors.toUnmodifiableList());
-      blobSidecars = List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values());
     }
 
     final BlobSidecarsAndValidationResult result = internalValidate(blobSidecars, kzgCommitments);
@@ -213,7 +207,42 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                       .map(Entry::getValue)
                       .collect(Collectors.toUnmodifiableList());
 
-              return internalValidate(additionalBlobSidecarsToBeValidated, kzgCommitments);
+              final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult =
+                  internalValidate(additionalBlobSidecarsToBeValidated, kzgCommitments);
+
+              if (blobSidecarsAndValidationResult.isFailure()) {
+                return blobSidecarsAndValidationResult;
+              }
+
+              blobSidecarsAndValidationResult
+                  .getBlobSidecars()
+                  .forEach(
+                      blobSidecar ->
+                          validatedBlobSidecars.put(blobSidecar.getIndex(), blobSidecar));
+
+              // let's create the final list of validated BlobSidecars
+              final List<BlobSidecar> completeValidatedBlobSidecars = new ArrayList<>();
+              validatedBlobSidecars.forEach(
+                  (index, blobSidecar) -> {
+                    checkState(
+                        index.equals(blobSidecar.getIndex())
+                            && index.equals(UInt64.valueOf(completeValidatedBlobSidecars.size())),
+                        "Inconsistency detected during blob sidecar validation");
+                    completeValidatedBlobSidecars.add(blobSidecar);
+                  });
+
+              if (completeValidatedBlobSidecars.size() < kzgCommitmentsInBlock.size()) {
+                // we haven't verified enough blobs to match the commitments present in the block
+
+                if (isBlockInDataAvailabilityWindow()) {
+                  return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
+                } else {
+                  return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+                }
+              }
+
+              return BlobSidecarsAndValidationResult.validResult(
+                  Collections.unmodifiableList(completeValidatedBlobSidecars));
             });
   }
 

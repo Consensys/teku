@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.ImmutableSortedMap;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -28,6 +29,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatcher;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsValidationResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -50,7 +55,10 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
   private final Spec spec = mock(Spec.class);
   private final SpecVersion specVersion = mock(SpecVersion.class);
+  private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final UpdatableStore store = mock(UpdatableStore.class);
+  private final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+      mock(BlockBlobSidecarsTracker.class);
   private final MiscHelpers miscHelpers = mock(MiscHelpers.class);
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BlobSidecarsProvider blobSidecarsProvider = mock(BlobSidecarsProvider.class);
@@ -70,8 +78,15 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   void shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
     prepareBlockAndBlobSidecarsOutsideAvailabilityWindow();
 
+    final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
+
+    SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
-    assertNotRequired(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult());
+    SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult).isNotCompleted();
+    asyncRunner.executeDueActions();
+    assertNotRequired(availabilityCheckResult);
     assertNotRequired(blobSidecarsAvailabilityChecker.validate(Collections.emptyList()));
   }
 
@@ -226,11 +241,16 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, specVersion, recentChainData, block, blobSidecarsProvider);
+            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker);
   }
 
   private void prepareBlockAndBlobSidecarsOutsideAvailabilityWindow() {
     block = dataStructureUtil.randomSignedBeaconBlock();
+    blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+
+    final ImmutableSortedMap.Builder<UInt64, BlobSidecar> mapBuilder =
+        ImmutableSortedMap.naturalOrder();
+    blobSidecars.forEach(blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
     when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(false);
     when(blobSidecarsProvider.getBlobSidecars(
@@ -238,10 +258,15 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     when(blobSidecarsProvider.getBlobSidecars(block))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
+    when(blockBlobSidecarsTracker.getBlockBody())
+        .thenReturn(block.getMessage().getBody().toVersionDeneb());
+    when(blockBlobSidecarsTracker.getCompletionFuture()).thenReturn(SafeFuture.COMPLETE);
+    when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(ImmutableSortedMap.of());
+    when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, specVersion, recentChainData, block, blobSidecarsProvider);
+            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker);
   }
 
   private static class KzgCommitmentsArgumentMatcher
