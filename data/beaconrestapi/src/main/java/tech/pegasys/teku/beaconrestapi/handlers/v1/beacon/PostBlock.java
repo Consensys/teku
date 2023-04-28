@@ -31,6 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -120,19 +121,12 @@ public class PostBlock extends RestApiEndpoint {
     }
 
     Object requestBody = request.getRequestBody();
+    final SafeFuture<SendSignedBlockResult> future =
+        requestBody instanceof SignedBlockContents
+            ? validatorDataProvider.submitSignedBlockContents((SignedBlockContents) requestBody)
+            : validatorDataProvider.submitSignedBlock((SignedBeaconBlock) requestBody);
 
-    if (requestBody instanceof SignedBlockContents) {
-      request.respondAsync(
-          validatorDataProvider
-              .submitSignedBlockContents((SignedBlockContents) requestBody)
-              .thenApply(this::respond));
-
-    } else {
-      request.respondAsync(
-          validatorDataProvider
-              .submitSignedBlock((SignedBeaconBlock) requestBody)
-              .thenApply(this::respond));
-    }
+    request.respondAsync(future.thenApply(this::respond));
   }
 
   @NotNull

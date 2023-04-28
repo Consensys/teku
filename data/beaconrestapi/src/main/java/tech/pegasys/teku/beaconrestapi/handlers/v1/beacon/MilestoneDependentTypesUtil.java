@@ -66,7 +66,7 @@ public class MilestoneDependentTypesUtil {
       final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, Function<UInt64, SszSchema<? extends T>>> getSchema) {
     try {
-      final Optional<UInt64> slot = JsonUtil.getFirstAttribute(json, CoreTypes.UINT64_TYPE, "slot");
+      Optional<UInt64> slot = retrieveSlot(json);
       final SpecMilestone milestone =
           schemaDefinitionCache.milestoneAtSlot(
               slot.orElseThrow(
@@ -78,5 +78,16 @@ public class MilestoneDependentTypesUtil {
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());
     }
+  }
+
+  private static Optional<UInt64> retrieveSlot(String json) throws JsonProcessingException {
+    Optional<UInt64> slot = JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "message", "slot");
+    if (slot.isEmpty()) {
+      slot = JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "signed_block", "message", "slot");
+    }
+    if (slot.isEmpty()) {
+      slot = JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "blinded_block", "message", "slot");
+    }
+    return slot;
   }
 }

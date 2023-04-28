@@ -85,7 +85,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
                     .getRequestBody(
                         new ByteArrayInputStream(notASignedBlock.getBytes(UTF_8)),
                         Optional.empty()))
-        .isInstanceOf(JsonProcessingException.class);
+        .isInstanceOf(BadRequestException.class);
   }
 
   @Test
@@ -158,7 +158,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
       when(validatorDataProvider.submitSignedBlindedBlock(any())).thenReturn(future);
       when(validatorDataProvider.submitSignedBlindedBlockContents(any())).thenReturn(future);
     } else {
-      when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any())).thenReturn(future);
+      when(validatorDataProvider.submitSignedBlock(any())).thenReturn(future);
       when(validatorDataProvider.submitSignedBlockContents(any())).thenReturn(future);
     }
   }

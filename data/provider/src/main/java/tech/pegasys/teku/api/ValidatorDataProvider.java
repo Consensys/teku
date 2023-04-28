@@ -222,7 +222,7 @@ public class ValidatorDataProvider {
     return signedBlindedBlock;
   }
 
-  public SafeFuture<ValidatorBlockResult> submitSignedBlock(
+  public SafeFuture<ValidatorBlockResult> submitSignedBlockAndGenerateResponse(
       final SignedBeaconBlock signedBeaconBlock) {
     return submitSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
         .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
@@ -247,8 +247,9 @@ public class ValidatorDataProvider {
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlockContents(
       final SignedBlindedBlockContents signedBlindedBlockContents) {
     LOG.debug(
-        "parsed block is from slot: {}",
-        signedBlindedBlockContents.getSignedBeaconBlock().getMessage().getSlot());
+        "parsed block contents from slot: {} with block hash root: {}",
+        signedBlindedBlockContents.getSignedBeaconBlock().getMessage().getSlot(),
+        signedBlindedBlockContents.getSignedBeaconBlock().hashTreeRoot());
     return validatorApiChannel.sendSignedBlindedBlockContents(signedBlindedBlockContents);
   }
 

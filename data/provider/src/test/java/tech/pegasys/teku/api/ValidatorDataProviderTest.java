@@ -314,7 +314,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.sendSignedBlock(any())).thenReturn(successImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock);
+        provider.submitSignedBlockAndGenerateResponse(signedBeaconBlock);
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(200);
   }
@@ -339,7 +339,7 @@ public class ValidatorDataProviderTest {
               when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
 
               final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-                  provider.submitSignedBlock(signedBeaconBlock);
+                  provider.submitSignedBlockAndGenerateResponse(signedBeaconBlock);
 
               try {
                 assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(202);
@@ -366,7 +366,7 @@ public class ValidatorDataProviderTest {
     when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock);
+        provider.submitSignedBlockAndGenerateResponse(signedBeaconBlock);
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
   }
