@@ -151,7 +151,7 @@ public final class KZGTest {
   }
 
   @Test
-  public void testEmptyBatch() {
+  public void testVerifyingEmptyBatch() {
     loadTrustedSetup();
     assertThat(kzg.verifyBlobKzgProofBatch(List.of(), List.of(), List.of())).isTrue();
   }
