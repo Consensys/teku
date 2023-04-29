@@ -380,7 +380,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       return;
     }
 
-    if (blockBlobSidecarsTracker.checkCompletion()) {
+    if (blockBlobSidecarsTracker.isCompleted()) {
       return;
     }
 
