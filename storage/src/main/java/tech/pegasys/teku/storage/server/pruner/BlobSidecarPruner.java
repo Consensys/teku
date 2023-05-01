@@ -16,11 +16,9 @@ package tech.pegasys.teku.storage.server.pruner;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -33,12 +31,10 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
-public class BlobsSidecarPruner extends Service implements FinalizedCheckpointChannel {
+public class BlobSidecarPruner extends Service {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -47,17 +43,15 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
   private final Duration pruneInterval;
   private final int pruneLimit;
   private final TimeProvider timeProvider;
-  private final boolean blobsSidecarStorageCountersEnabled;
+  private final boolean blobSidecarStorageCountersEnabled;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<UInt64> genesisTime = Optional.empty();
 
-  private final AtomicReference<Optional<UInt64>> latestFinalizedSlot =
-      new AtomicReference<>(Optional.empty());
+  private final AtomicLong blobColumnSize = new AtomicLong(0);
+  private final AtomicLong earliestBlobSidecarSlot = new AtomicLong(-1);
 
-  private final Map<String, Long> blobsColumnsSize = new ConcurrentHashMap<>();
-
-  public BlobsSidecarPruner(
+  public BlobSidecarPruner(
       final Spec spec,
       final Database database,
       final MetricsSystem metricsSystem,
@@ -65,34 +59,25 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
       final TimeProvider timeProvider,
       final Duration pruneInterval,
       final int pruneLimit,
-      final boolean blobsSidecarStorageCountersEnabled) {
+      final boolean blobSidecarStorageCountersEnabled) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
-    this.blobsSidecarStorageCountersEnabled = blobsSidecarStorageCountersEnabled;
+    this.blobSidecarStorageCountersEnabled = blobSidecarStorageCountersEnabled;
 
-    if (blobsSidecarStorageCountersEnabled) {
+    if (blobSidecarStorageCountersEnabled) {
       LabelledGauge labelledGauge =
           metricsSystem.createLabelledGauge(
               TekuMetricCategory.STORAGE,
-              "blobs_sidecar_counts",
-              "Number of blobs sidecars stored",
+              "blob_sidecars",
+              "Statistics for BlobSidecars stored",
               "type");
 
-      labelledGauge.labels(
-          () ->
-              Optional.ofNullable(blobsColumnsSize.get("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
-                  .orElse(0L),
-          "total");
-      labelledGauge.labels(
-          () ->
-              Optional.ofNullable(
-                      blobsColumnsSize.get("UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT"))
-                  .orElse(0L),
-          "unconfirmed");
+      labelledGauge.labels(blobColumnSize::get, "total");
+      labelledGauge.labels(earliestBlobSidecarSlot::get, "earliest_slot");
     }
   }
 
@@ -116,35 +101,11 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
 
   private void pruneBlobs() {
     pruneBlobsPriorToAvailabilityWindow();
-    pruneUnconfirmedBlobs();
 
-    if (blobsSidecarStorageCountersEnabled) {
-      blobsColumnsSize.putAll(database.getBlobsSidecarColumnCounts());
-    }
-  }
-
-  private void pruneUnconfirmedBlobs() {
-    final Optional<UInt64> maybeLatestFinalizedSlot =
-        latestFinalizedSlot.getAndSet(Optional.empty());
-    if (maybeLatestFinalizedSlot.isEmpty()) {
-      LOG.debug("Not pruning unconfirmed blobs as no new finalized slot is available.");
-      return;
-    }
-
-    LOG.debug(
-        "Pruning unconfirmed blobs up to slot {}, limit {}",
-        maybeLatestFinalizedSlot.get(),
-        pruneLimit);
-    try {
-      final long start = System.currentTimeMillis();
-      final boolean limitReached =
-          database.pruneOldestUnconfirmedBlobsSidecars(maybeLatestFinalizedSlot.get(), pruneLimit);
-      LOG.debug(
-          "Unconfirmed blobs pruning finished in {} ms. Limit reached: {}",
-          () -> System.currentTimeMillis() - start,
-          () -> limitReached);
-    } catch (ShuttingDownException | RejectedExecutionException ex) {
-      LOG.debug("Shutting down", ex);
+    if (blobSidecarStorageCountersEnabled) {
+      blobColumnSize.set(database.getBlobSidecarColumnCount());
+      earliestBlobSidecarSlot.set(
+          database.getEarliestBlobSidecarSlot().map(UInt64::longValue).orElse(-1L));
     }
   }
 
@@ -167,7 +128,7 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
     LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
     try {
       final long start = System.currentTimeMillis();
-      final boolean limitReached = database.pruneOldestBlobsSidecar(latestPrunableSlot, pruneLimit);
+      final boolean limitReached = database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit);
       LOG.debug(
           "Blobs pruning finished in {} ms. Limit reached: {}",
           () -> System.currentTimeMillis() - start,
@@ -175,12 +136,6 @@ public class BlobsSidecarPruner extends Service implements FinalizedCheckpointCh
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
-  }
-
-  @Override
-  public void onNewFinalizedCheckpoint(
-      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    latestFinalizedSlot.set(Optional.of(checkpoint.getEpochStartSlot(spec)));
   }
 
   private Optional<UInt64> getGenesisTime() {

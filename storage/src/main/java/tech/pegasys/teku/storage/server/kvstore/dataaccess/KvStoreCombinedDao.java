@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -28,7 +27,6 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -131,27 +129,14 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<Bytes> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
-  Optional<Bytes> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
-
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
 
-  @MustBeClosed
-  Stream<Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
-
-  @MustBeClosed
-  Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot);
-
-  @MustBeClosed
-  Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(UInt64 startSlot, UInt64 endSlot);
-
   Optional<UInt64> getEarliestBlobSidecarSlot();
-
-  Optional<UInt64> getEarliestBlobsSidecarSlot();
 
   Map<String, Long> getColumnCounts();
 
-  Map<String, Long> getBlobsSidecarColumnCounts();
+  long getBlobSidecarColumnCount();
 
   @MustBeClosed
   Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot);
@@ -241,15 +226,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
 
-    void addBlobsSidecar(BlobsSidecar blobsSidecar);
-
-    void addUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
-
     void removeBlobSidecar(SlotAndBlockRootAndBlobIndex key);
-
-    void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
-
-    void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
 
     void commit();
 

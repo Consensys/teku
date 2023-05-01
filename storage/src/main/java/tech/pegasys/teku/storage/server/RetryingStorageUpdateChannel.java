@@ -29,7 +29,6 @@ import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -138,18 +137,8 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    return retry(() -> delegate.onBlobsSidecar(blobsSidecar));
-  }
-
-  @Override
   public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
     return retry(() -> delegate.onBlobSidecarsRemoval(slot));
-  }
-
-  @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
-    return retry(() -> delegate.onBlobsSidecarRemoval(blobsSidecarKey));
   }
 
   private <O> SafeFuture<O> retry(final Supplier<SafeFuture<O>> method) {

@@ -2086,6 +2086,11 @@ public final class DataStructureUtil {
     return blobSidecars;
   }
 
+  public BlobSidecar randomBlobSidecar(
+      final UInt64 slot, final Bytes32 blockRoot, final UInt64 index) {
+    return new RandomBlobSidecarBuilder().slot(slot).index(index).blockRoot(blockRoot).build();
+  }
+
   public BlobSidecar randomBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
     return new RandomBlobSidecarBuilder().index(index).blockRoot(blockRoot).build();
   }
@@ -2361,25 +2366,6 @@ public final class DataStructureUtil {
 
       return SchemaDefinitionsDeneb.required(schemaDefinitions);
     }
-  }
-
-  public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar() {
-    return randomConsistentSignedBeaconBlockAndBlobsSidecar(randomUInt64());
-  }
-
-  public SignedBeaconBlockAndBlobsSidecar randomConsistentSignedBeaconBlockAndBlobsSidecar(
-      final UInt64 slot) {
-    final SignedBeaconBlock randomBlock = randomSignedBeaconBlock(slot);
-    return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getSignedBeaconBlockAndBlobsSidecarSchema()
-        .create(
-            randomBlock,
-            randomBlobsSidecar(
-                randomBlock.getRoot(),
-                randomBlock.getSlot(),
-                BeaconBlockBodyDeneb.required(randomBlock.getBeaconBlock().orElseThrow().getBody())
-                    .getBlobKzgCommitments()
-                    .size()));
   }
 
   public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
