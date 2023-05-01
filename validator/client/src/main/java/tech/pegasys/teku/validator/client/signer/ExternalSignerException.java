@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.signer;
 
 import java.net.URI;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 
 public class ExternalSignerException extends RuntimeException {
 
@@ -36,7 +37,7 @@ public class ExternalSignerException extends RuntimeException {
 
   private static String formattedMessage(final URI url, final SignType type, final String message) {
     return "Request to external signer at ("
-        + url
+        + UrlSanitizer.sanitizePotentialUrl(url.toString())
         + ") failed signing type "
         + type
         + " - "
