@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -402,12 +401,12 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobSidecars(final SignedBeaconBlock block) {
-    final List<BlobSidecar> blobSidecars =
-        blobSidecarsBySlotToImport.getOrDefault(block.getSlot(), Collections.emptyList());
-    LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
+    final Optional<List<BlobSidecar>> blobSidecarsOptional =
+        Optional.ofNullable(blobSidecarsBySlotToImport.get(block.getSlot()));
+    LOG.trace("Validating {} blob sidecars for block {}", blobSidecarsOptional, block.getRoot());
     return blobSidecarManager
         .createAvailabilityChecker(block)
-        .validate(blobSidecars)
+        .validate(blobSidecarsOptional)
         .thenAccept(
             validationResult -> {
               if (validationResult.isFailure()) {

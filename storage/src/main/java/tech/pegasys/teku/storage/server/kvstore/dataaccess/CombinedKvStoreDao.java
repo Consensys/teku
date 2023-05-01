@@ -520,6 +520,27 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addHotBlobSidecarSlot(
+        final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
+      if (blobSidecars.isEmpty()) {
+        transaction.put(
+            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+            SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
+            Bytes.EMPTY);
+      } else {
+        blobSidecars.forEach(
+            blobSidecar ->
+                transaction.put(
+                    schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+                    new SlotAndBlockRootAndBlobIndex(
+                        slotAndBlockRoot.getSlot(),
+                        slotAndBlockRoot.getBlockRoot(),
+                        blobSidecar.getIndex()),
+                    blobSidecar.sszSerialize()));
+      }
+    }
+
+    @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
       stateRoots.forEach(
           (root) -> transaction.delete(schema.getColumnStateRootToSlotAndBlockRoot(), root));

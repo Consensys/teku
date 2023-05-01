@@ -17,10 +17,12 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSecond
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -121,6 +123,8 @@ public interface ReadOnlyStore {
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 
   SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot checkpoint);
+
+  SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState();
 

@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -57,6 +58,7 @@ class StoreTest extends AbstractStoreTest {
                     spec,
                     blockProviderFromChainBuilder(),
                     StateAndBlockSummaryProvider.NOOP,
+                    BlobSidecarsProvider.NOOP,
                     Optional.empty(),
                     genesisTime.minus(1),
                     genesisTime,

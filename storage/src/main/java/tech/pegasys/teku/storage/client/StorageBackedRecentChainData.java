@@ -22,6 +22,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -42,6 +43,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
   private final StateAndBlockSummaryProvider stateProvider;
+  private final BlobSidecarsProvider blobSidecarsProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
 
@@ -70,6 +72,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
+    this.blobSidecarsProvider = storageQueryChannel::getBlobSidecarsBySlotAndBlockRoot;
   }
 
   public static SafeFuture<RecentChainData> create(
@@ -153,6 +156,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .asyncRunner(asyncRunner)
                   .blockProvider(blockProvider)
                   .stateProvider(stateProvider)
+                  .blobSidecarsProvider(blobSidecarsProvider)
                   .storeConfig(storeConfig)
                   .build();
           setStore(store);

@@ -63,6 +63,9 @@ public interface StorageQueryChannel extends ChannelInterface {
    */
   SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(final Set<Bytes32> blockRoots);
 
+  SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot);
+
   SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(final Bytes32 stateRoot);
 
   SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UInt64 slot);

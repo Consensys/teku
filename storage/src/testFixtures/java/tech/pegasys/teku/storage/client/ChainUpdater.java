@@ -252,7 +252,10 @@ public class ChainUpdater {
   public void saveBlock(final SignedBlockAndState block) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(
-        block.getBlock(), block.getState(), spec.calculateBlockCheckpoints(block.getState()));
+        block.getBlock(),
+        block.getState(),
+        spec.calculateBlockCheckpoints(block.getState()),
+        Optional.empty());
     assertThat(tx.commit()).isCompleted();
     recentChainData
         .getUpdatableForkChoiceStrategy()
@@ -267,8 +270,27 @@ public class ChainUpdater {
         .isTrue();
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(
-        block.getBlock(), block.getState(), spec.calculateBlockCheckpoints(block.getState()));
+        block.getBlock(),
+        block.getState(),
+        spec.calculateBlockCheckpoints(block.getState()),
+        Optional.empty());
     assertThat(tx.commit()).isCompleted();
+    saveBlockTime(block);
+  }
+
+  public void saveBlock(
+      final SignedBlockAndState block, final Optional<List<BlobSidecar>> blobSidecars) {
+    final StoreTransaction tx = recentChainData.startStoreTransaction();
+    tx.putBlockAndState(
+        block.getBlock(),
+        block.getState(),
+        spec.calculateBlockCheckpoints(block.getState()),
+        blobSidecars);
+    assertThat(tx.commit()).isCompleted();
+    recentChainData
+        .getUpdatableForkChoiceStrategy()
+        .orElseThrow()
+        .onExecutionPayloadResult(block.getRoot(), PayloadStatus.VALID, true);
     saveBlockTime(block);
   }
 

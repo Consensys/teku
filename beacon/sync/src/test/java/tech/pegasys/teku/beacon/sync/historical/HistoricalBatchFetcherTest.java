@@ -146,7 +146,7 @@ public class HistoricalBatchFetcherTest {
         .thenReturn(SafeFuture.completedFuture(true));
     when(blobSidecarManager.createAvailabilityChecker(any()))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(anyList()))
+    when(blobSidecarsAvailabilityChecker.validate(any()))
         .thenAnswer(
             i ->
                 SafeFuture.completedFuture(
@@ -201,7 +201,7 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-    when(blobSidecarsAvailabilityChecker.validate(anyList()))
+    when(blobSidecarsAvailabilityChecker.validate(any()))
         .thenAnswer(
             i ->
                 SafeFuture.completedFuture(

@@ -13,19 +13,19 @@
 
 package tech.pegasys.teku.dataproviders.lookup;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public interface BlobSidecarsProvider {
-  BlobSidecarsProvider NOOP = (block) -> SafeFuture.completedFuture(Collections.emptyList());
+  BlobSidecarsProvider NOOP = (block) -> SafeFuture.completedFuture(Optional.empty());
 
-  default SafeFuture<List<BlobSidecar>> getBlobSidecars(SignedBeaconBlock block) {
+  default SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(SignedBeaconBlock block) {
     return getBlobSidecars(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
   }
 
-  SafeFuture<List<BlobSidecar>> getBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+  SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 }

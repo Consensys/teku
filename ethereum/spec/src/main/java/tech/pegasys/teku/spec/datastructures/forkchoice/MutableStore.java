@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -24,10 +27,15 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface MutableStore extends ReadOnlyStore {
 
-  void putBlockAndState(SignedBeaconBlock block, BeaconState state, BlockCheckpoints checkpoints);
+  void putBlockAndState(
+      SignedBeaconBlock block,
+      BeaconState state,
+      BlockCheckpoints checkpoints,
+      Optional<List<BlobSidecar>> blobSidecarsOptional);
 
   default void putBlockAndState(SignedBlockAndState blockAndState, BlockCheckpoints checkpoints) {
-    putBlockAndState(blockAndState.getBlock(), blockAndState.getState(), checkpoints);
+    putBlockAndState(
+        blockAndState.getBlock(), blockAndState.getState(), checkpoints, Optional.empty());
   }
 
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);

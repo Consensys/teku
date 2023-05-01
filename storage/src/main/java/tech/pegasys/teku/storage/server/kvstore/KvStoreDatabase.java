@@ -903,6 +903,7 @@ public class KvStoreDatabase implements Database {
 
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
+      updater.addHotBlobSidecars(update.getHotBlobSidecars());
 
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());

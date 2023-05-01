@@ -17,6 +17,7 @@ import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndV
 import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult.validResult;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -41,7 +42,7 @@ public interface BlobSidecarsAvailabilityChecker {
 
         @Override
         public SafeFuture<BlobSidecarsAndValidationResult> validate(
-            final List<BlobSidecar> blobSidecars) {
+            final Optional<List<BlobSidecar>> blobSidecars) {
           return NOT_REQUIRED_RESULT_FUTURE;
         }
       };
@@ -65,7 +66,7 @@ public interface BlobSidecarsAvailabilityChecker {
 
           @Override
           public SafeFuture<BlobSidecarsAndValidationResult> validate(
-              final List<BlobSidecar> blobSidecars) {
+              final Optional<List<BlobSidecar>> blobSidecars) {
             return blobSidecarsValidResult;
           }
         };
@@ -82,5 +83,5 @@ public interface BlobSidecarsAvailabilityChecker {
   SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult();
 
   /** Only perform the {@link MiscHelpersDeneb#isDataAvailable} check */
-  SafeFuture<BlobSidecarsAndValidationResult> validate(List<BlobSidecar> blobSidecars);
+  SafeFuture<BlobSidecarsAndValidationResult> validate(Optional<List<BlobSidecar>> blobSidecars);
 }
