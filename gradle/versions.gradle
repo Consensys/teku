@@ -1,9 +1,9 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.14.2'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.14.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.15.0'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.0'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.0'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.0'
 
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
@@ -21,7 +21,7 @@ dependencyManagement {
     dependency 'com.google.code.gson:gson:2.10.1'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
-    dependency 'org.jsoup:jsoup:1.15.4'
+    dependency 'org.jsoup:jsoup:1.16.1'
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.0'
 
@@ -30,7 +30,7 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
-    dependency 'info.picocli:picocli:4.7.2'
+    dependency 'info.picocli:picocli:4.7.3'
 
     dependencySet(group: 'io.javalin', version: '5.4.2') {
       entry 'javalin'
@@ -45,7 +45,7 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.8.20'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.8.21'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
@@ -113,13 +113,13 @@ dependencyManagement {
 
     dependency 'org.java-websocket:Java-WebSocket:1.5.2'
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.9.2') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.9.3') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '5.3.0') {
+    dependencySet(group: 'org.mockito', version: '5.3.1') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -171,7 +171,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.9'
+    dependency 'tech.pegasys.signers.internal:bls-keystore:2.2.10'
 
     dependency 'org.jupnp:org.jupnp.support:2.7.0'
     dependency 'org.jupnp:org.jupnp:2.7.0'
