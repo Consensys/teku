@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -105,7 +104,6 @@ public class StorageBackedRecentChainDataTest {
             .metricsSystem(new StubMetricsSystem())
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
-            .blobsSidecarProvider(BlobsSidecarProvider.NOOP)
             .stateProvider(StateAndBlockSummaryProvider.NOOP)
             .storeConfig(storeConfig)
             .build();
@@ -153,7 +151,6 @@ public class StorageBackedRecentChainDataTest {
             .metricsSystem(new StubMetricsSystem())
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
-            .blobsSidecarProvider(BlobsSidecarProvider.NOOP)
             .stateProvider(StateAndBlockSummaryProvider.NOOP)
             .storeConfig(storeConfig)
             .build();

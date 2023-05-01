@@ -14,7 +14,6 @@
 package tech.pegasys.teku.storage.store;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
@@ -39,7 +38,6 @@ import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
-import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -49,12 +47,10 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
@@ -64,7 +60,6 @@ import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -88,7 +83,6 @@ class Store implements UpdatableStore {
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
-  private final BlobsSidecarProvider blobsSidecarProvider;
   final ForkChoiceStrategy forkChoiceStrategy;
 
   private final Optional<Checkpoint> initialCheckpoint;
@@ -110,7 +104,6 @@ class Store implements UpdatableStore {
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
-      final BlobsSidecarProvider blobsSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
@@ -169,8 +162,6 @@ class Store implements UpdatableStore {
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
             blockProvider);
-
-    this.blobsSidecarProvider = blobsSidecarProvider;
   }
 
   public static UpdatableStore create(
@@ -178,7 +169,6 @@ class Store implements UpdatableStore {
       final MetricsSystem metricsSystem,
       final Spec spec,
       final BlockProvider blockProvider,
-      final BlobsSidecarProvider blobsSidecarProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -220,7 +210,6 @@ class Store implements UpdatableStore {
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
-        blobsSidecarProvider,
         stateAndBlockProvider,
         stateTaskQueue,
         initialCheckpoint,
@@ -469,67 +458,6 @@ class Store implements UpdatableStore {
               block.ifPresent(this::putBlock);
               return block;
             });
-  }
-
-  @Override
-  public SafeFuture<Optional<SignedBeaconBlockAndBlobsSidecar>> retrieveSignedBlockAndBlobsSidecar(
-      final Bytes32 blockRoot) {
-
-    return retrieveSignedBlock(blockRoot)
-        .thenCompose(
-            signedBeaconBlock -> {
-              if (signedBeaconBlock.isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-              return retrieveSignedBlockAndBlobsSidecar(signedBeaconBlock.get())
-                  .thenApply(Optional::of);
-            });
-  }
-
-  private SafeFuture<SignedBeaconBlockAndBlobsSidecar> retrieveSignedBlockAndBlobsSidecar(
-      final SignedBeaconBlock signedBeaconBlock) {
-    return blobsSidecarProvider
-        .getBlobsSidecar(signedBeaconBlock)
-        .thenApply(
-            blobsSidecar ->
-                createSignedBeaconBlockAndBlobsSidecar(signedBeaconBlock, blobsSidecar));
-  }
-
-  private SignedBeaconBlockAndBlobsSidecar createSignedBeaconBlockAndBlobsSidecar(
-      final SignedBeaconBlock signedBeaconBlock, final Optional<BlobsSidecar> maybeBlobsSidecar) {
-    if (maybeBlobsSidecar.isPresent()) {
-      checkState(
-          maybeBlobsSidecar.get().getBeaconBlockRoot().equals(signedBeaconBlock.getRoot()),
-          "BlobsSidecar belongs to a different BeaconBlock");
-    } else {
-      checkState(
-          signedBeaconBlock
-              .getBeaconBlock()
-              .orElseThrow()
-              .getBody()
-              .toVersionDeneb()
-              .orElseThrow()
-              .getBlobKzgCommitments()
-              .isEmpty(),
-          "BeaconBlock contains kzg commitments but BlobsSidecar is not present");
-    }
-
-    final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-        spec.atSlot(signedBeaconBlock.getSlot())
-            .getSchemaDefinitions()
-            .toVersionDeneb()
-            .orElseThrow();
-
-    final BlobsSidecar blobsSidecar =
-        maybeBlobsSidecar.orElseGet(
-            () ->
-                schemaDefinitionsDeneb
-                    .getBlobsSidecarSchema()
-                    .createEmpty(signedBeaconBlock.getRoot(), signedBeaconBlock.getSlot()));
-
-    return schemaDefinitionsDeneb
-        .getSignedBeaconBlockAndBlobsSidecarSchema()
-        .create(signedBeaconBlock, blobsSidecar);
   }
 
   @Override

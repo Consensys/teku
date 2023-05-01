@@ -22,8 +22,9 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -234,8 +235,16 @@ public class ChainUpdater {
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
-    Optional<BlobsSidecar> maybeBlobsSideCar = chainBuilder.getBlobsSidecar(block.getRoot());
-    maybeBlobsSideCar.ifPresent(blobSidecarManager::storeUnconfirmedBlobsSidecar);
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
+        chainBuilder.getBlobSidecars(block.getRoot());
+    maybeBlobSidecars.ifPresent(
+        blobSidecars -> {
+          if (blobSidecars.isEmpty()) {
+            blobSidecarManager.storeNoBlobsSlot(new SlotAndBlockRoot(slot, block.getRoot()));
+          } else {
+            blobSidecars.forEach(blobSidecarManager::storeBlobSidecar);
+          }
+        });
     saveBlock(block);
     return block;
   }
