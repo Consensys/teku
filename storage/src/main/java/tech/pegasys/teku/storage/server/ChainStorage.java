@@ -27,7 +27,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -169,18 +168,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    return SafeFuture.fromRunnable(() -> database.storeUnconfirmedBlobsSidecar(blobsSidecar));
-  }
-
-  @Override
   public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
     return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slot));
-  }
-
-  @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
-    return SafeFuture.fromRunnable(() -> database.removeBlobsSidecar(blobsSidecarKey));
   }
 
   @Override
@@ -312,11 +301,5 @@ public class ChainStorage
           }
           return result;
         });
-  }
-
-  @Override
-  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.of(() -> database.getBlobsSidecar(slotAndBlockRoot));
   }
 }

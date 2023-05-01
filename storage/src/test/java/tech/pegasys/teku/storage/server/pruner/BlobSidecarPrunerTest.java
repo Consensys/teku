@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
@@ -33,10 +32,9 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.server.Database;
 
-public class BlobsSidecarPrunerTest {
+public class BlobSidecarPrunerTest {
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(5);
   public static final int PRUNE_LIMIT = 10;
 
@@ -48,13 +46,12 @@ public class BlobsSidecarPrunerTest {
   private UInt64 genesisTime = UInt64.valueOf(0);
 
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
   private final StubMetricsSystem stubMetricsSystem = new StubMetricsSystem();
 
-  private final BlobsSidecarPruner blobsPruner =
-      new BlobsSidecarPruner(
+  private final BlobSidecarPruner blobsPruner =
+      new BlobSidecarPruner(
           spec,
           database,
           stubMetricsSystem,
@@ -77,7 +74,7 @@ public class BlobsSidecarPrunerTest {
     asyncRunner.executeDueActions();
 
     verify(database).getGenesisTime();
-    verify(database, never()).pruneOldestBlobsSidecar(any(), anyInt());
+    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
   }
 
   @Test
@@ -85,7 +82,7 @@ public class BlobsSidecarPrunerTest {
     asyncRunner.executeDueActions();
 
     verify(database).getGenesisTime();
-    verify(database, never()).pruneOldestBlobsSidecar(any(), anyInt());
+    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
   }
 
   @Test
@@ -98,7 +95,7 @@ public class BlobsSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(database, never()).pruneOldestBlobsSidecar(any(), anyInt());
+    verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
   }
 
   @Test
@@ -113,30 +110,6 @@ public class BlobsSidecarPrunerTest {
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
 
     asyncRunner.executeDueActions();
-    verify(database).pruneOldestBlobsSidecar(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
-  }
-
-  @Test
-  void shouldNotPruneUnconfirmedBlobsWithoutFinalizedCheckpoint() {
-    asyncRunner.executeDueActions();
-
-    verify(database, never()).pruneOldestUnconfirmedBlobsSidecars(any(), anyInt());
-  }
-
-  @Test
-  void shouldPruneUnconfirmedBlobsWithFinalizedCheckpoint() {
-    blobsPruner.onNewFinalizedCheckpoint(dataStructureUtil.randomCheckpoint(1), false);
-    asyncRunner.executeDueActions();
-
-    final UInt64 expectedLastSlotToPrune =
-        UInt64.valueOf(spec.getGenesisSpecConfig().getSlotsPerEpoch());
-
-    verify(database).pruneOldestUnconfirmedBlobsSidecars(expectedLastSlotToPrune, PRUNE_LIMIT);
-
-    timeProvider.advanceTimeBy(PRUNE_INTERVAL);
-    asyncRunner.executeDueActions();
-
-    verify(database, times(1))
-        .pruneOldestUnconfirmedBlobsSidecars(expectedLastSlotToPrune, PRUNE_LIMIT);
+    verify(database).pruneOldestBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }
 }

@@ -22,7 +22,6 @@ import java.util.concurrent.TimeoutException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.dataproviders.lookup.BlobsSidecarProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -42,7 +41,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class StorageBackedRecentChainData extends RecentChainData {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockProvider blockProvider;
-  private final BlobsSidecarProvider blobsSidecarProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final StorageQueryChannel storageQueryChannel;
   private final StoreConfig storeConfig;
@@ -62,7 +60,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
         metricsSystem,
         storeConfig,
         storageQueryChannel::getHotBlocksByRoot,
-        storageQueryChannel::getBlobsSidecar,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageUpdateChannel,
         voteUpdateChannel,
@@ -73,7 +70,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
     this.storageQueryChannel = storageQueryChannel;
     this.blockProvider = storageQueryChannel::getHotBlocksByRoot;
     this.stateProvider = storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot;
-    this.blobsSidecarProvider = storageQueryChannel::getBlobsSidecar;
   }
 
   public static SafeFuture<RecentChainData> create(
@@ -156,7 +152,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
                   .onDiskStoreData(data)
                   .asyncRunner(asyncRunner)
                   .blockProvider(blockProvider)
-                  .blobsSidecarProvider(blobsSidecarProvider)
                   .stateProvider(stateProvider)
                   .storeConfig(storeConfig)
                   .build();
