@@ -16,6 +16,11 @@ package tech.pegasys.teku.validator.client.restapi.apis;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.net.MalformedURLException;
@@ -37,23 +42,21 @@ public class PostRemoteKeysTest {
   private final RestApiRequest request = mock(RestApiRequest.class);
   private final DoppelgangerDetectionAction doppelgangerDetectionAction =
       mock(DoppelgangerDetectionAction.class);
+  final PostRemoteKeys handler =
+      new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
 
   @Test
   void emptyRequest_shouldGiveEmptySuccess() throws JsonProcessingException {
-    final PostRemoteKeys endpoint =
-        new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
     final PostRemoteKeysRequest body = new PostRemoteKeysRequest();
     when(request.getRequestBody()).thenReturn(body);
 
-    endpoint.handleRequest(request);
+    handler.handleRequest(request);
     verify(request).respondOk(List.of());
   }
 
   @Test
   void validResponse_shouldGiveValidPostKeyResults()
       throws JsonProcessingException, MalformedURLException {
-    final PostRemoteKeys endpoint =
-        new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
 
     List<ExternalValidator> externalValidators =
         List.of(
@@ -69,15 +72,13 @@ public class PostRemoteKeysTest {
             externalValidators, Optional.empty(), doppelgangerDetectionAction))
         .thenReturn(results);
 
-    endpoint.handleRequest(request);
+    handler.handleRequest(request);
     verify(request).respondOk(results);
   }
 
   @Test
   void duplicate_shouldGiveDuplicateResponse()
       throws JsonProcessingException, MalformedURLException {
-    final PostRemoteKeys endpoint =
-        new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
 
     BLSPublicKey publicKey = BLSTestUtil.randomKeyPair(1).getPublicKey();
     URL url = new URL("http://host.com");
@@ -94,7 +95,27 @@ public class PostRemoteKeysTest {
             externalValidators, Optional.empty(), doppelgangerDetectionAction))
         .thenReturn(results);
 
-    endpoint.handleRequest(request);
+    handler.handleRequest(request);
     verify(request).respondOk(results);
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle401() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_UNAUTHORIZED);
+  }
+
+  @Test
+  void metadata_shouldHandle403() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_FORBIDDEN);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 }

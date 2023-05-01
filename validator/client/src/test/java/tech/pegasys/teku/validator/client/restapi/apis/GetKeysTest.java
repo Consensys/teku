@@ -13,11 +13,20 @@
 
 package tech.pegasys.teku.validator.client.restapi.apis;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -31,15 +40,15 @@ import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
 class GetKeysTest {
-  final ActiveKeyManager keyManager = Mockito.mock(ActiveKeyManager.class);
+  private final ActiveKeyManager keyManager = Mockito.mock(ActiveKeyManager.class);
+  private final RestApiRequest request = mock(RestApiRequest.class);
+  private final GetKeys handler = new GetKeys(keyManager);
 
   @Test
   void shouldListValidatorKeys() throws Exception {
     final List<Validator> activeValidatorList = getValidatorList();
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
-    final GetKeys endpoint = new GetKeys(keyManager);
-    final RestApiRequest request = mock(RestApiRequest.class);
-    endpoint.handleRequest(request);
+    handler.handleRequest(request);
 
     verify(request).respondOk(activeValidatorList);
   }
@@ -48,11 +57,43 @@ class GetKeysTest {
   void shouldListEmptyValidatorKeys() throws Exception {
     final List<Validator> activeValidatorList = Collections.emptyList();
     when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
-    final GetKeys endpoint = new GetKeys(keyManager);
-    final RestApiRequest request = mock(RestApiRequest.class);
-    endpoint.handleRequest(request);
+    handler.handleRequest(request);
 
     verify(request).respondOk(activeValidatorList);
+  }
+
+  @Test
+  void metadata_shouldHandle200() throws JsonProcessingException {
+    final List<Validator> validators = getValidatorList();
+    final String responseData = getResponseStringFromMetadata(handler, SC_OK, validators);
+    assertThat(responseData)
+        .isEqualTo(
+            "{\"data\":[{\"validating_pubkey\":\""
+                + validators.get(0).getPublicKey()
+                + "\",\"readonly\":true},"
+                + "{\"validating_pubkey\":\""
+                + validators.get(1).getPublicKey()
+                + "\",\"readonly\":false}]}");
+  }
+
+  @Test
+  void metadata_shouldHandle400() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle401() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_UNAUTHORIZED);
+  }
+
+  @Test
+  void metadata_shouldHandle403() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_FORBIDDEN);
+  }
+
+  @Test
+  void metadata_shouldHandle500() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_INTERNAL_SERVER_ERROR);
   }
 
   private List<Validator> getValidatorList() {
