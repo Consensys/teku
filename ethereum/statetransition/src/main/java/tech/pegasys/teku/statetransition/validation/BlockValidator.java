@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import com.google.common.base.Objects;
@@ -46,7 +47,7 @@ public class BlockValidator {
 
   public BlockValidator(
       final Spec spec,
-      RecentChainData recentChainData,
+      final RecentChainData recentChainData,
       final GossipValidationHelper gossipValidationHelper) {
     this.spec = spec;
     this.recentChainData = recentChainData;
@@ -135,16 +136,21 @@ public class BlockValidator {
                 return reject("Block signature is invalid");
               }
 
+              if (!receivedValidBlockInfoSet.add(new SlotAndProposer(block))) {
+                return ignore(
+                    "Block is not the first with valid signature for its slot. It will be dropped.");
+              }
+
               return InternalValidationResult.ACCEPT;
             });
   }
 
-  private boolean blockIsFirstBlockWithValidSignatureForSlot(SignedBeaconBlock block) {
+  private boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
     return !receivedValidBlockInfoSet.contains(new SlotAndProposer(block));
   }
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(
-      SignedBeaconBlock block, BeaconState postState) {
+      final SignedBeaconBlock block, final BeaconState postState) {
     final Bytes32 domain =
         spec.getDomain(
             Domain.BEACON_PROPOSER,
@@ -153,14 +159,11 @@ public class BlockValidator {
             postState.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(block.getMessage(), domain);
 
-    boolean signatureValid =
-        gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
-            signingRoot, block.getProposerIndex(), block.getSignature(), postState);
-
-    return signatureValid && receivedValidBlockInfoSet.add(new SlotAndProposer(block));
+    return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
+        signingRoot, block.getProposerIndex(), block.getSignature(), postState);
   }
 
-  private boolean currentFinalizedCheckpointIsAncestorOfBlock(SignedBeaconBlock block) {
+  private boolean currentFinalizedCheckpointIsAncestorOfBlock(final SignedBeaconBlock block) {
     return spec.blockDescendsFromLatestFinalizedBlock(
         block.getMessage(),
         recentChainData.getStore(),
@@ -171,13 +174,13 @@ public class BlockValidator {
     private final UInt64 slot;
     private final UInt64 proposerIndex;
 
-    public SlotAndProposer(SignedBeaconBlock block) {
+    public SlotAndProposer(final SignedBeaconBlock block) {
       this.slot = block.getSlot();
       this.proposerIndex = block.getMessage().getProposerIndex();
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) {
         return true;
       }
