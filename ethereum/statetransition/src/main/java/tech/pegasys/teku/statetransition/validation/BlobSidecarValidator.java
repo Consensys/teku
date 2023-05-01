@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -176,6 +177,13 @@ public class BlobSidecarValidator {
               if (!isSignatureValidWithRespectToProposerIndex(signedBlobSidecar, postState)) {
                 return reject("BlobSidecar signature is invalid");
               }
+              if (!receivedValidBlobSidecarInfoSet.add(
+                  new IndexAndBlockRoot(
+                      signedBlobSidecar.getBlobSidecar().getIndex(),
+                      signedBlobSidecar.getBlobSidecar().getBlockRoot()))) {
+                return ignore(
+                    "Blob is not the first with valid signature for its slot. It will be dropped.");
+              }
 
               return InternalValidationResult.ACCEPT;
             });
@@ -192,18 +200,11 @@ public class BlobSidecarValidator {
             postState.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(signedBlobSidecar.getBlobSidecar(), domain);
 
-    boolean signatureValid =
-        gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
-            signingRoot,
-            signedBlobSidecar.getBlobSidecar().getProposerIndex(),
-            signedBlobSidecar.getSignature(),
-            postState);
-
-    return signatureValid
-        && receivedValidBlobSidecarInfoSet.add(
-            new IndexAndBlockRoot(
-                signedBlobSidecar.getBlobSidecar().getIndex(),
-                signedBlobSidecar.getBlobSidecar().getBlockRoot()));
+    return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
+        signingRoot,
+        signedBlobSidecar.getBlobSidecar().getProposerIndex(),
+        signedBlobSidecar.getSignature(),
+        postState);
   }
 
   private boolean isFirstWithValidSignatureForIndexAndBlockRoot(BlobSidecar blobSidecar) {
