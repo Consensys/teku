@@ -325,7 +325,9 @@ public class ExternalSigner implements Signer {
               return httpClient
                   .sendAsync(request, BodyHandlers.ofString())
                   .handleAsync(
-                      (response, error) -> this.getBlsSignature(response, error, slashableMessage));
+                      (response, error) ->
+                          this.getBlsSignatureResponder(
+                              uri, type, response, error, slashableMessage));
             })
         .whenComplete(this::recordMetrics);
   }
@@ -339,16 +341,14 @@ public class ExternalSigner implements Signer {
     }
   }
 
-  private BLSSignature getBlsSignature(
+  private BLSSignature getBlsSignatureResponder(
+      final URI url,
+      final SignType type,
       final HttpResponse<String> response,
       final Throwable throwable,
       final Supplier<String> slashableMessage) {
     if (throwable != null) {
-      final String url =
-          getSigningServiceUrl().isEmpty() ? "UNKNOWN" : getSigningServiceUrl().get().toString();
-      throw new ExternalSignerException(
-          "External signer (" + url + ") failed to sign due to " + throwable.getMessage(),
-          throwable);
+      throw new ExternalSignerException(url, type, throwable.getMessage(), throwable);
     }
 
     if (response.statusCode() == SC_PRECONDITION_FAILED) {
@@ -357,8 +357,7 @@ public class ExternalSigner implements Signer {
 
     if (response.statusCode() != SC_OK) {
       throw new ExternalSignerException(
-          "External signer failed to sign and returned invalid response status code: "
-              + response.statusCode());
+          url, type, "Invalid response status code: " + response.statusCode());
     }
 
     try {
@@ -372,7 +371,7 @@ public class ExternalSigner implements Signer {
       return BLSSignature.fromBytesCompressed(signature);
     } catch (final IllegalArgumentException | JsonProcessingException e) {
       throw new ExternalSignerException(
-          "External signer returned an invalid signature: " + e.getMessage(), e);
+          url, type, "Returned an invalid signature: " + e.getMessage(), e);
     }
   }
 
