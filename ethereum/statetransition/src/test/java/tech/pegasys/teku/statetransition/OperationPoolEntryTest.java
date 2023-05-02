@@ -23,6 +23,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.datastructures.operations.MessageWithValidatorId;
 
 public class OperationPoolEntryTest {
@@ -30,13 +32,15 @@ public class OperationPoolEntryTest {
   private final TestClass b1 = TestClass.of(Bytes4.fromHexString("0xFFFFFF11"));
   private final TestClass b2 = TestClass.of(Bytes4.fromHexString("0xFFFFFF22"));
 
+  private TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1_000_000);
+
   @Test
   void shouldSortLocalFirst() {
     final List<OperationPoolEntry<TestClass>> list = new ArrayList<>();
 
-    list.add(new OperationPoolEntry<>(b2, true));
-    list.add(new OperationPoolEntry<>(b0, false));
-    list.add(new OperationPoolEntry<>(b1, true));
+    list.add(new OperationPoolEntry<>(b2, true, timeProvider.getTimeInSeconds()));
+    list.add(new OperationPoolEntry<>(b0, false, timeProvider.getTimeInSeconds()));
+    list.add(new OperationPoolEntry<>(b1, true, timeProvider.getTimeInSeconds()));
 
     assertThat(
             list.stream().sorted().map(OperationPoolEntry::getMessage).collect(Collectors.toList()))

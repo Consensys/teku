@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -98,12 +99,13 @@ class RecentChainDataTest {
 
   @BeforeAll
   public static void disableDepositBlsVerification() {
-    AbstractBlockProcessor.blsVerifyDeposit = false;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
   }
 
   @AfterAll
   public static void enableDepositBlsVerification() {
-    AbstractBlockProcessor.blsVerifyDeposit = true;
+    AbstractBlockProcessor.depositSignatureVerifier =
+        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
   }
 
   @Test

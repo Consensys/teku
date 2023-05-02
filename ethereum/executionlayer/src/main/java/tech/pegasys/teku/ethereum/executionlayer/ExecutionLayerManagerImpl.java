@@ -133,12 +133,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   public static BuilderClient createBuilderClient(
-      final RestClient builderRestClient,
+      final RestClient restClient,
       final Spec spec,
       final TimeProvider timeProvider,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final boolean setUserAgentHeader) {
 
-    final RestBuilderClient restBuilderClient = new RestBuilderClient(builderRestClient, spec);
+    final RestBuilderClient restBuilderClient =
+        new RestBuilderClient(restClient, spec, setUserAgentHeader);
     final MetricRecordingBuilderClient metricRecordingBuilderClient =
         new MetricRecordingBuilderClient(restBuilderClient, timeProvider, metricsSystem);
     return new ThrottlingBuilderClient(

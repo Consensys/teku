@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class FetchRecentBlocksServiceTest {
@@ -49,7 +50,9 @@ public class FetchRecentBlocksServiceTest {
       new DataStructureUtil(TestSpecFactory.createDefault());
 
   @SuppressWarnings("unchecked")
-  private final PendingPool<SignedBeaconBlock> pendingBlocksPool = mock(PendingPool.class);
+  private final PendingPool<SignedBeaconBlock> pendingBlockPool = mock(PendingPool.class);
+
+  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
 
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
@@ -68,7 +71,12 @@ public class FetchRecentBlocksServiceTest {
   public void setup() {
     recentBlockFetcher =
         new FetchRecentBlocksService(
-            asyncRunner, pendingBlocksPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
+            asyncRunner,
+            pendingBlockPool,
+            blobSidecarPool,
+            forwardSync,
+            fetchTaskFactory,
+            maxConcurrentRequests);
 
     lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
@@ -110,7 +118,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void ignoreKnownBlock() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    when(pendingBlocksPool.contains(root)).thenReturn(true);
+    when(pendingBlockPool.contains(root)).thenReturn(true);
     recentBlockFetcher.requestRecentBlock(root);
 
     assertTaskCounts(0, 0, 0);
@@ -234,7 +242,7 @@ public class FetchRecentBlocksServiceTest {
   void shouldRequestRemainingRequiredBlocksWhenForwardSyncCompletes() {
     final Set<Bytes32> requiredRoots =
         Set.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32());
-    when(pendingBlocksPool.getAllRequiredBlockRoots()).thenReturn(requiredRoots);
+    when(pendingBlockPool.getAllRequiredBlockRoots()).thenReturn(requiredRoots);
 
     final ArgumentCaptor<SyncSubscriber> syncListenerCaptor =
         ArgumentCaptor.forClass(SyncSubscriber.class);

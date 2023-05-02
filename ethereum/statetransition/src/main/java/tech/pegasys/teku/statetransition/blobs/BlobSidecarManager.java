@@ -16,15 +16,15 @@ package tech.pegasys.teku.statetransition.blobs;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public interface BlobsSidecarManager {
-  BlobsSidecarManager NOOP =
-      new BlobsSidecarManager() {
+public interface BlobSidecarManager {
+  BlobSidecarManager NOOP =
+      new BlobSidecarManager() {
 
         @Override
         public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
@@ -47,13 +47,13 @@ public interface BlobsSidecarManager {
         }
 
         @Override
-        public void storeUnconfirmedValidatedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
+        public void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot) {}
 
         @Override
-        public void storeUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {}
+        public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
 
         @Override
-        public void discardBlobsSidecarByBlock(final SignedBeaconBlock block) {}
+        public void discardBlobSidecarsByBlock(final SignedBeaconBlock block) {}
 
         @Override
         public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
@@ -71,11 +71,11 @@ public interface BlobsSidecarManager {
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
-  void storeUnconfirmedValidatedBlobsSidecar(BlobsSidecar blobsSidecar);
+  void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
 
-  void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
+  void storeBlobSidecar(BlobSidecar blobSidecar);
 
-  void discardBlobsSidecarByBlock(SignedBeaconBlock block);
+  void discardBlobSidecarsByBlock(SignedBeaconBlock block);
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 

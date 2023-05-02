@@ -42,10 +42,13 @@ import tech.pegasys.teku.validator.client.restapi.apis.GetKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.GetRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
+import tech.pegasys.teku.validator.client.restapi.apis.PostVoluntaryExit;
 import tech.pegasys.teku.validator.client.restapi.apis.SetFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.SetGasLimit;
 
 public class ValidatorRestApi {
+
+  public static final String TAG_VOLUNTARY_EXIT = "Voluntary Exit";
   public static final String TAG_KEY_MANAGEMENT = "Key Management";
   public static final String TAG_FEE_RECIPIENT = "Fee Recipient";
   public static final String TAG_GAS_LIMIT = "Gas Limit";
@@ -106,6 +109,7 @@ public class ValidatorRestApi {
         .endpoint(new SetGasLimit(proposerConfigManager))
         .endpoint(new DeleteFeeRecipient(proposerConfigManager))
         .endpoint(new DeleteGasLimit(proposerConfigManager))
+        .endpoint(new PostVoluntaryExit())
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))

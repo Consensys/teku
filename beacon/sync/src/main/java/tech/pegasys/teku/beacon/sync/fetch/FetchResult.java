@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.fetch;
 
 import java.util.Optional;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 
 public final class FetchResult<T> {
 
@@ -24,31 +25,47 @@ public final class FetchResult<T> {
     FETCH_FAILED
   }
 
+  private final Optional<Eth2Peer> peer;
   private final Status status;
   private final Optional<T> result;
 
-  private FetchResult(final Status status, final Optional<T> result) {
+  private FetchResult(
+      final Optional<Eth2Peer> peer, final Status status, final Optional<T> result) {
+    this.peer = peer;
     this.status = status;
     this.result = result;
   }
 
   public static <T> FetchResult<T> createSuccessful(final T result) {
-    return new FetchResult<>(Status.SUCCESSFUL, Optional.of(result));
+    return new FetchResult<>(Optional.empty(), Status.SUCCESSFUL, Optional.of(result));
+  }
+
+  public static <T> FetchResult<T> createSuccessful(final Eth2Peer peer, T result) {
+    return new FetchResult<>(Optional.of(peer), Status.SUCCESSFUL, Optional.of(result));
   }
 
   public static <T> FetchResult<T> createFailed(final Status failureStatus) {
-    return new FetchResult<>(failureStatus, Optional.empty());
+    return new FetchResult<>(Optional.empty(), failureStatus, Optional.empty());
+  }
+
+  public static <T> FetchResult<T> createFailed(final Eth2Peer peer, final Status failureStatus) {
+    return new FetchResult<>(Optional.of(peer), failureStatus, Optional.empty());
+  }
+
+  public Optional<Eth2Peer> getPeer() {
+    return peer;
   }
 
   public boolean isSuccessful() {
     return status == Status.SUCCESSFUL;
   }
 
-  public Optional<T> getResult() {
-    return result;
-  }
-
   public Status getStatus() {
     return status;
+  }
+
+  /** Present if {@link #isSuccessful} returns true * */
+  public Optional<T> getResult() {
+    return result;
   }
 }

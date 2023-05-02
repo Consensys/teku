@@ -110,8 +110,7 @@ public class ExternalSignerIntegrationTest {
 
     assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
-        .hasMessageEndingWith(
-            "External signer failed to sign and returned invalid response status code: 404");
+        .hasMessageEndingWith("Invalid response status code: 404");
 
     validateMetrics(metricsSystem, 0, 1, 0);
   }
@@ -125,8 +124,7 @@ public class ExternalSignerIntegrationTest {
 
     assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
-        .hasMessageEndingWith(
-            "failed to sign due to java.net.http.HttpTimeoutException: request timed out");
+        .hasMessageEndingWith("request timed out");
 
     validateMetrics(metricsSystem, 0, 0, 1);
   }
@@ -139,7 +137,7 @@ public class ExternalSignerIntegrationTest {
     assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
-            "External signer returned an invalid signature: Illegal character 'I' found at index 0 in hex binary representation");
+            "Returned an invalid signature: Illegal character 'I' found at index 0 in hex binary representation");
 
     validateMetrics(metricsSystem, 0, 1, 0);
   }

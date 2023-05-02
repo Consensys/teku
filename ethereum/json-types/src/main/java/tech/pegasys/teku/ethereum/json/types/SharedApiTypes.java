@@ -19,10 +19,13 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import java.util.Optional;
 import java.util.function.Function;
+import org.apache.tuweni.bytes.Bytes48;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData;
 import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData.GetGenesisApiDataBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
@@ -51,6 +54,18 @@ public class SharedApiTypes {
                   GetGenesisApiData::getGenesisForkVersion,
                   GetGenesisApiDataBuilder::genesisForkVersion)
               .build());
+
+  public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_API_TYPE =
+      DeserializableTypeDefinition.string(BLSPublicKey.class)
+          .name("Pubkey")
+          .formatter(BLSPublicKey::toString)
+          .parser(value -> BLSPublicKey.fromBytesCompressedValidate(Bytes48.fromHexString(value)))
+          .pattern("^0x[a-fA-F0-9]{96}$")
+          .example(
+              "0x93247f2209abcacf57b75a51dafae777f9dd38bc7053d1af526f220a7489a6d3a2753e5f3e8b1cfe39b56f43611df74a")
+          .description(
+              "The validator's BLS public key, uniquely identifying them. _48-bytes, hex encoded with 0x prefix, case insensitive._")
+          .build();
 
   public static <T extends SszData, S extends SszSchema<T>>
       DeserializableTypeDefinition<T> withDataWrapper(final S schema) {

@@ -18,7 +18,10 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getRequestBodyFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
@@ -51,8 +54,28 @@ public class SetFeeRecipientTest {
   }
 
   @Test
+  void metadata_shouldHandle202() {
+    verifyMetadataEmptyResponse(handler, SC_ACCEPTED);
+  }
+
+  @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
+  }
+
+  @Test
+  void metadata_shouldHandle401() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_UNAUTHORIZED);
+  }
+
+  @Test
+  void metadata_shouldHandle403() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_FORBIDDEN);
+  }
+
+  @Test
+  void metadata_shouldHandle404() throws JsonProcessingException {
+    verifyMetadataErrorResponse(handler, SC_NOT_FOUND);
   }
 
   @Test
@@ -71,11 +94,6 @@ public class SetFeeRecipientTest {
               handler.handleRequest(request);
             })
         .hasMessageContaining("Bellatrix is not currently scheduled");
-  }
-
-  @Test
-  void metadata_shouldHandle202() {
-    verifyMetadataEmptyResponse(handler, SC_ACCEPTED);
   }
 
   @Test

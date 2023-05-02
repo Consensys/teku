@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.block;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
@@ -28,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -81,11 +81,16 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilit
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
+
+  @VisibleForTesting
+  public static final BLSSignatureVerifier DEFAULT_DEPOSIT_SIGNATURE_VERIFIER =
+      BLSSignatureVerifier.SIMPLE;
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
    * Setting to <code>false</code> significantly speeds up state initialization
    */
-  public static boolean blsVerifyDeposit = true;
+  @VisibleForTesting
+  public static BLSSignatureVerifier depositSignatureVerifier = DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -667,8 +672,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     safelyProcess(
         () -> {
-          final boolean depositSignaturesAreAllGood =
-              !blsVerifyDeposit || batchVerifyDepositSignatures(deposits);
+          final boolean depositSignaturesAreAllGood = batchVerifyDepositSignatures(deposits);
           for (Deposit deposit : deposits) {
             processDeposit(state, deposit, depositSignaturesAreAllGood);
           }
@@ -687,7 +691,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         signatures.add(deposit.getData().getSignature());
       }
       // Overwhelmingly often we expect all the deposit signatures to be good
-      return BLS.batchVerify(publicKeys, messages, signatures);
+      return depositSignatureVerifier.verify(publicKeys, messages, signatures);
     } catch (final BlsException e) {
       return false;
     }
@@ -767,9 +771,8 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
     try {
-      return !blsVerifyDeposit
-          || BLS.verify(
-              pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
+      return depositSignatureVerifier.verify(
+          pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
     } catch (final BlsException e) {
       return false;
     }
@@ -815,8 +818,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     final Supplier<ValidatorExitContext> validatorExitContextSupplier =
         beaconStateMutators.createValidatorExitContextSupplier(state);
     processVoluntaryExitsNoValidation(state, exits, validatorExitContextSupplier);
-    BlockValidationResult signaturesValid =
-        verifyVoluntaryExits(state, exits, BLSSignatureVerifier.SIMPLE);
+    BlockValidationResult signaturesValid = verifyVoluntaryExits(state, exits, signatureVerifier);
     if (!signaturesValid.isValid()) {
       throw new BlockProcessingException(signaturesValid.getFailureReason());
     }

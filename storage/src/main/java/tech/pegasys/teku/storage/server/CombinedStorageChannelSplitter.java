@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -72,8 +71,8 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, List<BlobSidecar>> finalizedBlobSidecars) {
-    return updateDelegate.onFinalizedBlocks(finalizedBlocks, finalizedBlobSidecars);
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+    return updateDelegate.onFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot);
   }
 
   @Override
@@ -106,13 +105,18 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    return updateDelegate.onBlobsSidecar(blobsSidecar);
+  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
+    return updateDelegate.onNoBlobsSlot(slotAndBlockRoot);
   }
 
   @Override
-  public SafeFuture<Void> onBlobsSidecarRemoval(final SlotAndBlockRoot blobsSidecarKey) {
-    return updateDelegate.onBlobsSidecarRemoval(blobsSidecarKey);
+  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
+    return updateDelegate.onBlobSidecar(blobSidecar);
+  }
+
+  @Override
+  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
+    return updateDelegate.onBlobSidecarsRemoval(slot);
   }
 
   @Override
@@ -224,11 +228,5 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       UInt64 startSlot, UInt64 endSlot, UInt64 limit) {
     return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecarKeys(startSlot, endSlot, limit));
-  }
-
-  @Override
-  public SafeFuture<Optional<BlobsSidecar>> getBlobsSidecar(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return asyncRunner.runAsync(() -> queryDelegate.getBlobsSidecar(slotAndBlockRoot));
   }
 }

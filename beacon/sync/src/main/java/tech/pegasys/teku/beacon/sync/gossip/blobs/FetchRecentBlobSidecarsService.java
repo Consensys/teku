@@ -19,9 +19,11 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchBlobSidecarTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.gossip.AbstractFetchService;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
@@ -31,8 +33,6 @@ public class FetchRecentBlobSidecarsService
     implements RecentBlobSidecarFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private static final int MAX_CONCURRENT_REQUESTS = 3;
 
   private final BlobSidecarPool blobSidecarPool;
   private final ForwardSync forwardSync;
@@ -57,9 +57,12 @@ public class FetchRecentBlobSidecarsService
       final AsyncRunner asyncRunner,
       final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
-      final FetchTaskFactory fetchTaskFactory) {
+      final FetchTaskFactory fetchTaskFactory,
+      final Spec spec) {
+    final int maxConcurrentRequests =
+        FetchRecentBlocksService.MAX_CONCURRENT_REQUESTS * spec.getMaxBlobsPerBlock().orElse(1);
     return new FetchRecentBlobSidecarsService(
-        asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, MAX_CONCURRENT_REQUESTS);
+        asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
   }
 
   @Override

@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 
 public class SyncSourceBatchTest {
 
@@ -58,14 +58,14 @@ public class SyncSourceBatchTest {
   private final TargetChain targetChain =
       chainWith(new SlotAndBlockRoot(UInt64.valueOf(1000), Bytes32.ZERO));
   private final InlineEventThread eventThread = new InlineEventThread();
-  private final BlobsSidecarManager blobsSidecarManager = mock(BlobsSidecarManager.class);
+  private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private final ConflictResolutionStrategy conflictResolutionStrategy =
       mock(ConflictResolutionStrategy.class);
   private final Map<Batch, List<StubSyncSource>> syncSources = new HashMap<>();
 
   @BeforeEach
   public void setUp() {
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
   }
 
   @Test
@@ -136,7 +136,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void requestMoreBlocks_shouldRequestBlobSidecarsWhenRequired() {
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Runnable callback = mock(Runnable.class);
     final Batch batch = createBatch(70, 50);
@@ -232,7 +232,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void shouldReportAsInvalidWhenUnexpectedNumberOfBlobSidecarsWereReceived() {
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Batch batch = createBatch(10, 10);
 
@@ -255,7 +255,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void shouldReportAsInvalidWhenBlobSidecarsWithUnexpectedSlotsWereReceived() {
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Batch batch = createBatch(10, 10);
 
@@ -286,7 +286,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void shouldMarkBatchAsInconsistentWhenUnexpectedBlobSidecarsWithRootsWereReceived() {
-    when(blobsSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Batch batch = createBatch(10, 10);
 
@@ -320,7 +320,7 @@ public class SyncSourceBatchTest {
     final SyncSourceBatch batch =
         new SyncSourceBatch(
             eventThread,
-            blobsSidecarManager,
+            blobSidecarManager,
             emptySourceSelector,
             conflictResolutionStrategy,
             targetChain,
@@ -349,7 +349,7 @@ public class SyncSourceBatchTest {
     final SyncSourceBatch batch =
         new SyncSourceBatch(
             eventThread,
-            blobsSidecarManager,
+            blobSidecarManager,
             syncSourceProvider,
             conflictResolutionStrategy,
             targetChain,

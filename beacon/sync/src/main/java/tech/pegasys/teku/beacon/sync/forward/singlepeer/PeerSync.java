@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,7 +40,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.blobs.BlobsSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -69,13 +71,12 @@ public class PeerSync {
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
-  private final BlobsSidecarManager blobsSidecarManager;
+  private final BlobSidecarManager blobSidecarManager;
+  private final BlobSidecarPool blobSidecarPool;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
   private final Counter blockImportFailureResult;
-  private final Counter blobSidecarImportSuccessResult;
-  private final Counter blobSidecarImportFailureResult;
 
   private final AtomicInteger throttledRequestCount = new AtomicInteger(0);
 
@@ -85,29 +86,23 @@ public class PeerSync {
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobsSidecarManager blobsSidecarManager,
+      final BlobSidecarManager blobSidecarManager,
+      final BlobSidecarPool blobSidecarPool,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
-    this.blobsSidecarManager = blobsSidecarManager;
+    this.blobSidecarManager = blobSidecarManager;
+    this.blobSidecarPool = blobSidecarPool;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
             "block_import_total",
             "The number of block imports performed",
             "result");
-    final LabelledMetric<Counter> blobSidecarImportCounter =
-        metricsSystem.createLabelledCounter(
-            TekuMetricCategory.BEACON,
-            "blob_sidecar_import_total",
-            "The number of blob sidecars imports performed",
-            "result");
     this.blockImportSuccessResult = blockImportCounter.labels("imported");
     this.blockImportFailureResult = blockImportCounter.labels("rejected");
-    this.blobSidecarImportSuccessResult = blobSidecarImportCounter.labels("imported");
-    this.blobSidecarImportFailureResult = blobSidecarImportCounter.labels("rejected");
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
@@ -170,7 +165,10 @@ public class PeerSync {
 
               final SafeFuture<Void> blobSidecarsRequest;
 
-              if (blobsSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
+              final PeerSyncBlobSidecarListener blobSidecarListener =
+                  new PeerSyncBlobSidecarListener(requestContext.startSlot, requestContext.endSlot);
+
+              if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
                     "Request {} blob sidecars starting at {} from peer {}",
                     requestContext.count,
@@ -178,11 +176,7 @@ public class PeerSync {
                     peer.getId());
                 blobSidecarsRequest =
                     peer.requestBlobSidecarsByRange(
-                        requestContext.startSlot,
-                        requestContext.count,
-                        blobSidecar ->
-                            importBlobSidecar(
-                                blobSidecar, requestContext.startSlot, requestContext.endSlot));
+                        requestContext.startSlot, requestContext.count, blobSidecarListener);
               } else {
                 blobSidecarsRequest = SafeFuture.COMPLETE;
               }
@@ -195,7 +189,12 @@ public class PeerSync {
                       readyForNextRequest,
                       requestContext.startSlot,
                       requestContext.count,
-                      this::importBlock);
+                      block -> {
+                        // at this point, blob sidecars (if any) have been received
+                        final Optional<List<BlobSidecar>> blobSidecars =
+                            blobSidecarListener.getReceivedBlobSidecars(block.getSlot());
+                        return importBlock(block, blobSidecars);
+                      });
 
               LOG.debug(
                   "Request {} blocks starting at {} from peer {}",
@@ -203,11 +202,14 @@ public class PeerSync {
                   requestContext.startSlot,
                   peer.getId());
 
-              final SafeFuture<Void> blocksRequest =
-                  peer.requestBlocksByRange(
-                      requestContext.startSlot, requestContext.count, blockListener);
-
-              return SafeFuture.allOfFailFast(blocksRequest, blobSidecarsRequest)
+              return blobSidecarsRequest
+                  .thenCompose(
+                      __ ->
+                          peer.requestBlocksByRange(
+                              requestContext.startSlot, requestContext.count, blockListener))
+                  // the received blob sidecars (if any) can be cleaned from the cache because the
+                  // blocks have been imported. They are also cleaned in case of failures.
+                  .alwaysRun(blobSidecarListener::clearReceivedBlobSidecars)
                   .thenApply(__ -> blockListener);
             })
         .thenCompose(
@@ -274,11 +276,6 @@ public class PeerSync {
       }
     }
 
-    if (rootException instanceof FailedBlobSidecarImportException) {
-      LOG.warn(String.format("Failed to import blob sidecar from peer (%s)", peer), rootException);
-      return PeerSyncResult.BLOB_SIDECAR_IMPORT_FAILED;
-    }
-
     if (rootException instanceof CancellationException) {
       return PeerSyncResult.CANCELLED;
     }
@@ -335,10 +332,16 @@ public class PeerSync {
     }
   }
 
-  private SafeFuture<Void> importBlock(final SignedBeaconBlock block) {
+  private SafeFuture<Void> importBlock(
+      final SignedBeaconBlock block, final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
+    // Add blob sidecars to the pool in order for them to be available when the block is being
+    // imported
+    maybeBlobSidecars.ifPresent(
+        blobSidecars -> blobSidecarPool.onBlobSidecarsFromSync(block, blobSidecars));
+
     return blockImporter
         .importBlock(block)
         .thenAccept(
@@ -351,31 +354,6 @@ public class PeerSync {
                 blockImportSuccessResult.inc();
               }
             });
-  }
-
-  private SafeFuture<Void> importBlobSidecar(
-      final BlobSidecar blobSidecar, final UInt64 startSlot, final UInt64 endSlot) {
-    if (stopped.get()) {
-      throw new CancellationException("Peer sync was cancelled");
-    }
-    final UInt64 sidecarSlot = blobSidecar.getSlot();
-    if (sidecarSlot.isLessThan(startSlot) || sidecarSlot.isGreaterThan(endSlot)) {
-      final String exceptionMessage =
-          String.format(
-              "Blob sidecar with slot %s is not in the requested slot range (%s - %s)",
-              sidecarSlot, startSlot, endSlot);
-      return SafeFuture.failedFuture(new FailedBlobSidecarImportException(exceptionMessage));
-    }
-    return blobsSidecarManager
-        .importBlobSidecar(blobSidecar)
-        .exceptionallyCompose(
-            error -> {
-              LOG.debug("Blob sidecar import failed at slot {}", sidecarSlot);
-              blobSidecarImportFailureResult.inc();
-              return SafeFuture.failedFuture(
-                  new FailedBlobSidecarImportException(blobSidecar, error));
-            })
-        .thenRun(blobSidecarImportSuccessResult::inc);
   }
 
   private void disconnectFromPeer(final Eth2Peer peer) {

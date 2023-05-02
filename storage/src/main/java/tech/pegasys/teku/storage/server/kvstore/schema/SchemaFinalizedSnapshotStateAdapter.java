@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
@@ -45,15 +44,6 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getColumnBlobSidecarBySlotRootBlobIndex();
   }
 
-  public KvStoreColumn<SlotAndBlockRoot, Bytes> getColumnBlobsSidecarBySlotAndBlockRoot() {
-    return delegate.getColumnBlobsSidecarBySlotAndBlockRoot();
-  }
-
-  public KvStoreColumn<SlotAndBlockRoot, Void>
-      getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot() {
-    return delegate.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot();
-  }
-
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("SLOTS_BY_FINALIZED_ROOT", getColumnSlotsByFinalizedRoot())
@@ -62,10 +52,9 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
-        .put("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", getColumnBlobsSidecarBySlotAndBlockRoot())
         .put(
-            "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
-            getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot())
+            "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnBlobSidecarBySlotRootBlobIndex())
         .build();
   }
 

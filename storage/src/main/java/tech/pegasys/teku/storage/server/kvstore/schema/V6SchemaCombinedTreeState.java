@@ -19,9 +19,7 @@ import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSeri
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.BYTES_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.COMPRESSED_BRANCH_INFO_KV_STORE_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER;
-import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER;
 import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.UINT64_SERIALIZER;
-import static tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer.VOID_SERIALIZER;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Collection;
@@ -34,7 +32,6 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranch
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.serialization.KvStoreSerializer;
 
@@ -50,8 +47,6 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<Bytes32, CompressedBranchInfo> finalizedStateTreeBranchesByRoot;
 
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> blobSidecarBySlotRootBlobIndex;
-  private final KvStoreColumn<SlotAndBlockRoot, Bytes> blobsSidecarBySlotAndBlockRoot;
-  private final KvStoreColumn<SlotAndBlockRoot, Void> unconfirmedBlobsSidecarBySlotAndBlockRoot;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -81,12 +76,6 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             V6_FINALIZED_OFFSET + 8,
             BYTES32_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec));
-    blobsSidecarBySlotAndBlockRoot =
-        KvStoreColumn.create(
-            finalizedOffset + 12, SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER, BYTES_SERIALIZER);
-    unconfirmedBlobsSidecarBySlotAndBlockRoot =
-        KvStoreColumn.create(
-            finalizedOffset + 13, SLOT_AND_BLOCK_ROOT_KEY_SERIALIZER, VOID_SERIALIZER);
     blobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
             finalizedOffset + 14,
@@ -96,7 +85,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         List.of(
             asColumnId(finalizedOffset + 9),
             asColumnId(finalizedOffset + 10),
-            asColumnId(finalizedOffset + 11));
+            asColumnId(finalizedOffset + 11),
+            asColumnId(finalizedOffset + 12),
+            asColumnId(finalizedOffset + 13));
   }
 
   @Override
@@ -146,17 +137,6 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
-  public KvStoreColumn<SlotAndBlockRoot, Bytes> getColumnBlobsSidecarBySlotAndBlockRoot() {
-    return blobsSidecarBySlotAndBlockRoot;
-  }
-
-  @Override
-  public KvStoreColumn<SlotAndBlockRoot, Void>
-      getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot() {
-    return unconfirmedBlobsSidecarBySlotAndBlockRoot;
-  }
-
-  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return Map.of(
         "GENESIS_TIME", getVariableGenesisTime(),
@@ -189,10 +169,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put("SLOTS_BY_FINALIZED_STATE_ROOT", getColumnSlotsByFinalizedStateRoot())
         .put("NON_CANONICAL_BLOCKS_BY_ROOT", getColumnNonCanonicalBlocksByRoot())
         .put("NON_CANONICAL_BLOCK_ROOTS_BY_SLOT", getColumnNonCanonicalRootsBySlot())
-        .put("BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT", getColumnBlobsSidecarBySlotAndBlockRoot())
         .put(
-            "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
-            getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot())
+            "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnBlobSidecarBySlotRootBlobIndex())
         .build();
   }
 

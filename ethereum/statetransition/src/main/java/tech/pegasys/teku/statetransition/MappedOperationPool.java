@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition;
 
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.MessageWithValidatorId;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -54,16 +57,22 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
 
   private final String metricType;
 
+  private final TimeProvider timeProvider;
+
   public MappedOperationPool(
       final String metricType,
       final MetricsSystem metricsSystem,
       final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
-      final OperationValidator<T> operationValidator) {
+      final OperationValidator<T> operationValidator,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider) {
     this(
         metricType,
         metricsSystem,
         slotToSszListSchemaSupplier,
         operationValidator,
+        asyncRunner,
+        timeProvider,
         DEFAULT_OPERATION_POOL_SIZE);
   }
 
@@ -72,6 +81,8 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
       final MetricsSystem metricsSystem,
       final Function<UInt64, SszListSchema<T, ?>> slotToSszListSchemaSupplier,
       final OperationValidator<T> operationValidator,
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final int operationPoolSize) {
 
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
@@ -89,6 +100,54 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
             OPERATION_POOL_SIZE_VALIDATION_REASON + metricType,
             "Total number of attempts to add an operation to the pool, broken down by validation result",
             "result");
+
+    this.timeProvider = timeProvider;
+    asyncRunner.runWithFixedDelay(
+        this::updateLocalSubmissions,
+        Duration.ofMinutes(10),
+        this::updateLocalSubmissionsErrorHandler);
+  }
+
+  private void updateLocalSubmissionsErrorHandler(Throwable throwable) {
+    LOG.debug("Failed to update " + metricType, throwable);
+  }
+
+  private void updateLocalSubmissions() {
+    final UInt64 staleTime =
+        timeProvider.getTimeInSeconds().minus(Duration.ofHours(2).getSeconds());
+    final List<OperationPoolEntry<T>> staleLocalOperations =
+        operations.values().stream()
+            .filter(OperationPoolEntry::isLocal)
+            .filter(entry -> entry.getTimeSubmitted().isLessThanOrEqualTo(staleTime))
+            .collect(Collectors.toList());
+    if (!staleLocalOperations.isEmpty()) {
+      LOG.info(
+          "Re-publishing {} operations that are still in the local {} operation pool",
+          staleLocalOperations.size(),
+          metricType);
+    }
+    int i = 0;
+    for (OperationPoolEntry<T> entry : staleLocalOperations) {
+      if (++i % 200 == 0) {
+        try {
+          // if we're processing large numbers, don't flood the network...
+          Thread.sleep(100);
+        } catch (InterruptedException e) {
+          LOG.debug(e);
+        }
+      }
+      operationValidator
+          .validateForGossip(entry.getMessage())
+          .thenAcceptChecked(
+              result -> {
+                validationReasonCounter.labels(result.code().toString()).inc();
+                if (result.code().equals(ValidationResultCode.ACCEPT)) {
+                  entry.setTimeSubmitted(timeProvider.getTimeInSeconds());
+                  subscribers.forEach(s -> s.onOperationAdded(entry.getMessage(), result, false));
+                }
+              })
+          .finish(err -> LOG.debug("Failed to resubmit local operation", err));
+    }
   }
 
   private static InternalValidationResult rejectForDuplicatedMessage(
@@ -171,7 +230,9 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
     items.forEach(
         item -> {
           final int validatorIndex = item.getValidatorId();
-          operations.putIfAbsent(validatorIndex, new OperationPoolEntry<>(item, false));
+          operations.putIfAbsent(
+              validatorIndex,
+              new OperationPoolEntry<>(item, false, timeProvider.getTimeInSeconds()));
         });
   }
 
@@ -212,7 +273,9 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
             result -> {
               validationReasonCounter.labels(result.code().toString()).inc();
               if (result.code().equals(ValidationResultCode.ACCEPT)) {
-                operations.put(validatorIndex, new OperationPoolEntry<>(item, !fromNetwork));
+                operations.put(
+                    validatorIndex,
+                    new OperationPoolEntry<>(item, !fromNetwork, timeProvider.getTimeInSeconds()));
                 subscribers.forEach(s -> s.onOperationAdded(item, result, fromNetwork));
               }
               return result;

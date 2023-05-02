@@ -27,7 +27,6 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -52,7 +51,7 @@ public interface Database extends AutoCloseable {
   UpdateResult update(StorageUpdate event);
 
   void storeFinalizedBlocks(
-      Collection<SignedBeaconBlock> blocks, Map<UInt64, BlobsSidecar> blobsSidecarBySlot);
+      Collection<SignedBeaconBlock> blocks, Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot);
 
   void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
 
@@ -60,57 +59,31 @@ public interface Database extends AutoCloseable {
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
-  void storeUnconfirmedBlobsSidecar(BlobsSidecar blobsSidecar);
+  void storeBlobSidecar(BlobSidecar blobSidecar);
 
-  void confirmBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+  void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
-  Optional<BlobsSidecar> getBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
-
-  void removeBlobsSidecar(SlotAndBlockRoot slotAndBlockRoot);
+  void removeBlobSidecars(UInt64 slot);
 
   /**
-   * this prune method will delete BlobsSidecars (including the unconfirmed ones) starting from the
-   * oldest BlobsSidecars (by slot) up to BlobsSidecars at {@code lastSlotToPrune} (inclusive). The
-   * pruning process will be limited to maximum {@code pruneLimit} BlobsSidecars
+   * This prune method will delete BlobSidecars starting from the oldest BlobSidecars (by slot) up
+   * to BlobSidecars at {@code lastSlotToPrune} (inclusive). The pruning process will be stopped if
+   * {@code pruneLimit} reached completing the current slot. So, if pruneLimit happened at index#0
+   * BlobSidecar and there are 2 BlobSidecars in a slot, index#1 will be removed too. Main purpose
+   * of pruneLimit is to softly cap DB operation time.
    *
-   * @param lastSlotToPrune
-   * @param pruneLimit
+   * @param lastSlotToPrune inclusive, not reached if limit happens first
+   * @param pruneLimit soft BlobSidecars (not slots) limit
    * @return true if number of pruned blobs reached the pruneLimit, false otherwise
    */
-  boolean pruneOldestBlobsSidecar(UInt64 lastSlotToPrune, int pruneLimit);
-
-  /**
-   * this prune method will delete unconfirmed BlobsSidecars starting from the oldest BlobsSidecars
-   * (by slot) up to BlobsSidecars at {@code lastSlotToPrune} (inclusive). The pruning process will
-   * be limited to maximum {@code pruneLimit} BlobsSidecars
-   *
-   * @param lastSlotToPrune
-   * @param pruneLimit
-   * @return true if number of pruned blobs reached the pruneLimit, false otherwise
-   */
-  boolean pruneOldestUnconfirmedBlobsSidecars(UInt64 lastSlotToPrune, int pruneLimit);
+  boolean pruneOldestBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
 
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
 
-  @MustBeClosed
-  Stream<BlobsSidecar> streamBlobsSidecars(UInt64 startSlot, UInt64 endSlot);
-
-  @MustBeClosed
-  Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecarsAsSsz(
-      UInt64 startSlot, UInt64 endSlot);
-
-  @MustBeClosed
-  Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(UInt64 startSlot, UInt64 endSlot);
-
-  @MustBeClosed
-  Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecars(UInt64 startSlot, UInt64 endSlot);
-
   Optional<UInt64> getEarliestBlobSidecarSlot();
-
-  Optional<UInt64> getEarliestBlobsSidecarSlot();
 
   Optional<OnDiskStoreData> createMemoryStore();
 
@@ -215,7 +188,7 @@ public interface Database extends AutoCloseable {
 
   Map<String, Long> getColumnCounts();
 
-  Map<String, Long> getBlobsSidecarColumnCounts();
+  long getBlobSidecarColumnCount();
 
   void migrate();
 

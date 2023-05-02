@@ -20,10 +20,8 @@ import com.google.errorprone.annotations.MustBeClosed;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,7 +29,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -127,10 +125,6 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
   }
 
-  public Optional<Bytes> getBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-    return db.get(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
-  }
-
   @MustBeClosed
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
@@ -140,44 +134,10 @@ public class V4FinalizedKvStoreDao {
         new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
-  @MustBeClosed
-  public Stream<Map.Entry<SlotAndBlockRoot, Bytes>> streamBlobsSidecar(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return db.stream(
-            schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
-            new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
-            new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT))
-        .map(entry -> entry);
-  }
-
-  @MustBeClosed
-  public Stream<SlotAndBlockRoot> streamBlobsSidecarKeys(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return db.streamKeys(
-        schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
-        new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
-        new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT));
-  }
-
-  @MustBeClosed
-  public Stream<SlotAndBlockRoot> streamUnconfirmedBlobsSidecar(
-      final UInt64 startSlot, final UInt64 endSlot) {
-    return db.streamKeys(
-        schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
-        new SlotAndBlockRoot(startSlot, MIN_BLOCK_ROOT),
-        new SlotAndBlockRoot(endSlot, MAX_BLOCK_ROOT));
-  }
-
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
     return db.getFirstEntry(schema.getColumnBlobSidecarBySlotRootBlobIndex())
         .map(ColumnEntry::getKey)
         .map(SlotAndBlockRootAndBlobIndex::getSlot);
-  }
-
-  public Optional<UInt64> getEarliestBlobsSidecarSlot() {
-    return db.getFirstEntry(schema.getColumnBlobsSidecarBySlotAndBlockRoot())
-        .map(ColumnEntry::getKey)
-        .map(SlotAndBlockRoot::getSlot);
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
@@ -232,19 +192,10 @@ public class V4FinalizedKvStoreDao {
     return columnCounts;
   }
 
-  public Map<String, Long> getBlobsSidecarColumnCounts() {
-    final Map<String, Long> columnCounts = new LinkedHashMap<>();
-
-    schema.getColumnMap().entrySet().stream()
-        .filter(
-            stringKvStoreColumnEntry ->
-                List.of(
-                        "UNCONFIRMED_BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT",
-                        "BLOBS_SIDECAR_BY_SLOT_AND_BLOCK_ROOT")
-                    .contains(stringKvStoreColumnEntry.getKey()))
-        .collect(Collectors.toMap(Entry::getKey, Entry::getValue))
-        .forEach((k, v) -> columnCounts.put(k, db.size(v)));
-    return columnCounts;
+  public long getBlobSidecarColumnCount() {
+    final KvStoreColumn<?, ?> column =
+        schema.getColumnMap().get("BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX");
+    return db.size(column);
   }
 
   @MustBeClosed
@@ -329,32 +280,25 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    public void addBlobSidecar(final BlobSidecar blobSidecar) {
       transaction.put(
-          schema.getColumnBlobsSidecarBySlotAndBlockRoot(),
-          new SlotAndBlockRoot(
-              blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
-          blobsSidecar.sszSerialize());
+          schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+          new SlotAndBlockRootAndBlobIndex(
+              blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex()),
+          blobSidecar.sszSerialize());
     }
 
     @Override
-    public void addUnconfirmedBlobsSidecar(final BlobsSidecar blobsSidecar) {
+    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
       transaction.put(
-          schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(),
-          new SlotAndBlockRoot(
-              blobsSidecar.getBeaconBlockSlot(), blobsSidecar.getBeaconBlockRoot()),
-          null);
+          schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
+          Bytes.EMPTY);
     }
 
     @Override
-    public void removeBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-      transaction.delete(schema.getColumnBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
-    }
-
-    @Override
-    public void confirmBlobsSidecar(final SlotAndBlockRoot slotAndBlockRoot) {
-      transaction.delete(
-          schema.getColumnUnconfirmedBlobsSidecarBySlotAndBlockRoot(), slotAndBlockRoot);
+    public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
     }
 
     @Override
