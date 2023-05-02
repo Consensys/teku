@@ -283,6 +283,8 @@ public class HistoricalBatchFetcher {
   private SafeFuture<Void> processReceivedBlockByRoot(final SignedBeaconBlock block) {
     blocksToImport.add(block);
     if (blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
+      // It could be not filled if we have no real blocks from startSlot to endSlot
+      blobSidecarsBySlotToImport.putIfAbsent(block.getSlot(), new ArrayList<>());
       final int numberOfKzgCommitments =
           block
               .getMessage()

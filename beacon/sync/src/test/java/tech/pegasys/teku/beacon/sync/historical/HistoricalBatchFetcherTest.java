@@ -27,12 +27,14 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -146,11 +148,7 @@ public class HistoricalBatchFetcherTest {
         .thenReturn(SafeFuture.completedFuture(true));
     when(blobSidecarManager.createAvailabilityChecker(any()))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(any()))
-        .thenAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.validResult(i.getArgument(0))));
+    setupValidResult();
   }
 
   @Test
@@ -201,13 +199,7 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-    when(blobSidecarsAvailabilityChecker.validate(any()))
-        .thenAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.invalidResult(
-                        i.getArgument(0), new IllegalStateException("oopsy"))));
-
+    setupInvalidResult(new IllegalStateException("oopsy"));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
     peer.completePendingRequests();
@@ -325,6 +317,7 @@ public class HistoricalBatchFetcherTest {
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
     Map<UInt64, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
     if (blobSidecarsRequired) {
+      // BlobSidecars for slot 20 which is lastBlockRoot will also exist there
       assertThat(
               blobSidecars.values().stream()
                   .flatMap(Collection::stream)
@@ -334,10 +327,11 @@ public class HistoricalBatchFetcherTest {
               blobSidecars.keySet().stream()
                   .allMatch(
                       slot ->
-                          slot.isLessThanOrEqualTo(maxSlot)
-                              && slot.isGreaterThan(maxSlot.minus(batchSize))))
+                          (slot.isLessThanOrEqualTo(maxSlot)
+                                  && slot.isGreaterThan(maxSlot.minus(batchSize)))
+                              || slot.equals(lastBlockInBatch.getSlot())))
           .isTrue();
-      assertThat(blobSidecars.keySet().size()).isEqualTo(batchSize);
+      assertThat(blobSidecars.keySet().size()).isEqualTo(batchSize + 1);
     } else {
       assertThat(blobSidecars).isEmpty();
     }
@@ -496,5 +490,25 @@ public class HistoricalBatchFetcherTest {
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Expected first block to descend from last received block");
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
+  }
+
+  private void setupInvalidResult(final Throwable throwable) {
+    Mockito.reset(blobSidecarsAvailabilityChecker);
+    when(blobSidecarsAvailabilityChecker.validate(any()))
+        .thenAnswer(
+            i ->
+                SafeFuture.completedFuture(
+                    BlobSidecarsAndValidationResult.invalidResult(null, throwable)));
+  }
+
+  @SuppressWarnings("unchecked")
+  private void setupValidResult() {
+    Mockito.reset(blobSidecarsAvailabilityChecker);
+    when(blobSidecarsAvailabilityChecker.validate(any()))
+        .thenAnswer(
+            i ->
+                SafeFuture.completedFuture(
+                    BlobSidecarsAndValidationResult.validResult(
+                        ((Optional<List<BlobSidecar>>) i.getArgument(0)).orElseThrow())));
   }
 }
