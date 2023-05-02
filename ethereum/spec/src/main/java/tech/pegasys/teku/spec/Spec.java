@@ -339,7 +339,7 @@ public class Spec {
           .getSignedBlindedBlockContentsSchema()
           .sszDeserialize(serializedData);
     } else {
-      return atSlot(slot)
+      return specVersion
           .getSchemaDefinitions()
           .getSignedBlindedBeaconBlockSchema()
           .sszDeserialize(serializedData);
