@@ -54,6 +54,11 @@ public class BlobSidecarsAndValidationResult {
         BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.of(cause));
   }
 
+  public static BlobSidecarsAndValidationResult notAvailable(final Throwable cause) {
+    return new BlobSidecarsAndValidationResult(
+        BlobSidecarsValidationResult.NOT_AVAILABLE, Collections.emptyList(), Optional.of(cause));
+  }
+
   private BlobSidecarsAndValidationResult(
       final BlobSidecarsValidationResult validationResult,
       final List<BlobSidecar> blobSidecars,
