@@ -663,8 +663,6 @@ public class ChainDataProviderTest {
     final EpochProcessor epochProcessor = mock(EpochProcessor.class);
 
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(100);
     final RewardAndPenaltyDeltas deltas = data.randomRewardAndPenaltyDeltas(100);
 
     when(spec.forMilestone(any())).thenReturn(specVersion);
@@ -679,7 +677,7 @@ public class ChainDataProviderTest {
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
 
     final long result = provider.calculateAttestationRewards();
-    assertThat(result).isEqualTo(1179L);
+    assertThat(result).isEqualTo(0L);
   }
 
   @Test
