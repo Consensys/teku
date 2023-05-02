@@ -990,6 +990,11 @@ public final class DataStructureUtil {
     return toSigned(blockAndState);
   }
 
+  public SignedBlockAndState randomSignedBlockAndStateWithValidatorLogic(final int validatorCount) {
+    final BeaconBlockAndState blockAndState = randomBlockAndStateWithValidatorLogic(validatorCount);
+    return toSigned(blockAndState);
+  }
+
   public SignedBlockAndState toSigned(BeaconBlockAndState blockAndState) {
     final SignedBeaconBlock signedBlock = signedBlock(blockAndState.getBlock());
     return new SignedBlockAndState(signedBlock, blockAndState.getState());
@@ -1006,11 +1011,6 @@ public final class DataStructureUtil {
 
   public BeaconBlockAndState randomBlockAndState(final BeaconState state) {
     return randomBlockAndState(state.getSlot(), state, randomBytes32());
-  }
-
-  public BeaconBlockAndState randomBlockAndState(final int validatorCount) {
-    final BeaconState state = randomBeaconState(validatorCount);
-    return randomBlockAndStateWithValidatorLogic(state.getSlot(), state, randomBytes32());
   }
 
   private BeaconBlockAndState randomBlockAndState(
@@ -1033,10 +1033,15 @@ public final class DataStructureUtil {
     return new BeaconBlockAndState(block, matchingState);
   }
 
+  public BeaconBlockAndState randomBlockAndStateWithValidatorLogic(final int validatorCount) {
+    final BeaconState state = randomBeaconState(validatorCount);
+    return randomBlockAndStateWithValidatorLogic(state.getSlot(), state, randomBytes32());
+  }
+
   private BeaconBlockAndState randomBlockAndStateWithValidatorLogic(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody(slot, state.getValidators().size());
-    final UInt64 proposerIndex = randomUInt64();
+    final UInt64 proposerIndex = randomUInt64(state.getValidators().size());
     final BeaconBlockHeader latestHeader =
         new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
 
