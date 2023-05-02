@@ -84,7 +84,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   private List<BlobSidecar> blobSidecarsAdditional;
   private List<KZGCommitment> kzgCommitmentsAdditional;
 
-  private SafeFuture<Void> trackerCompletionFuture = new SafeFuture<>();
+  private final SafeFuture<Void> trackerCompletionFuture = new SafeFuture<>();
 
   private ForkChoiceBlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker;
 
