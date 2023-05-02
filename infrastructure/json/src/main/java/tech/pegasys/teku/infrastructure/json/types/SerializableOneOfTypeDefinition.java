@@ -26,7 +26,8 @@ import java.util.function.Predicate;
 
 public class SerializableOneOfTypeDefinition<TObject>
     implements SerializableTypeDefinition<TObject> {
-  private final Map<Predicate<TObject>, SerializableTypeDefinition<? extends TObject>> types;
+  private final Map<Predicate<TObject>, ? extends SerializableTypeDefinition<? extends TObject>>
+      types;
   private final Optional<String> name;
   private final Optional<String> title;
   private final Optional<String> description;
@@ -35,7 +36,8 @@ public class SerializableOneOfTypeDefinition<TObject>
       final Optional<String> name,
       final Optional<String> title,
       final Optional<String> description,
-      final Map<Predicate<TObject>, SerializableTypeDefinition<? extends TObject>> types) {
+      final Map<Predicate<TObject>, ? extends SerializableTypeDefinition<? extends TObject>>
+          types) {
     this.name = name;
     this.title = title;
     this.description = description;
