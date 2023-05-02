@@ -678,7 +678,7 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
 
-    final long result = provider.calculateAttestationRewards(state);
+    final long result = provider.calculateAttestationRewards();
     assertThat(result).isEqualTo(1179L);
   }
 

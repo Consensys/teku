@@ -64,7 +64,6 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -83,8 +82,6 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -734,7 +731,7 @@ public class ChainDataProvider {
     final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
 
     final UInt64 proposerIndex = block.getProposerIndex();
-    final long attestationsBlockRewards = calculateAttestationRewards(state);
+    final long attestationsBlockRewards = calculateAttestationRewards();
     final long syncAggregateBlockRewards =
         calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
     final long proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
@@ -811,25 +808,8 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected long calculateAttestationRewards(
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    final SpecMilestone specMilestone = getMilestoneAtSlot(state.getSlot());
-    final SpecVersion specVersion = spec.forMilestone(specMilestone);
-    final EpochProcessor epochProcessor = specVersion.getEpochProcessor();
-    final ValidatorStatuses validatorStatuses =
-        specVersion.getValidatorStatusFactory().createValidatorStatuses(state);
-    final RewardAndPenaltyDeltas rewardAndPenaltyDeltas =
-        epochProcessor.getRewardAndPenaltyDeltas(state, validatorStatuses);
-
-    long rewards = 0;
-    for (int i = 0; i < state.getValidators().size(); i++) {
-      final RewardAndPenaltyDeltas.RewardAndPenalty rewardAndPenalty =
-          rewardAndPenaltyDeltas.getDelta(i);
-      rewards +=
-          rewardAndPenalty.getReward().longValue() - rewardAndPenalty.getPenalty().longValue();
-    }
-
-    return rewards;
+  protected long calculateAttestationRewards() {
+    return 0L;
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
