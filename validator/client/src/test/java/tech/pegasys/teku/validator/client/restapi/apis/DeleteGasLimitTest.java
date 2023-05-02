@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataEmptyResponse;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -70,6 +71,11 @@ public class DeleteGasLimitTest {
     when(proposerConfigManager.deleteGasLimit(any())).thenReturn(true);
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_NO_CONTENT);
+  }
+
+  @Test
+  void metadata_shouldHandle204() {
+    verifyMetadataEmptyResponse(handler, SC_NO_CONTENT);
   }
 
   @Test
