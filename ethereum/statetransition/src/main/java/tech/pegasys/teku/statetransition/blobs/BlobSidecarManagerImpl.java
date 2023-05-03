@@ -64,7 +64,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final NavigableMap<UInt64, Map<Bytes32, BlobsSidecar>> validatedPendingBlobs =
       new ConcurrentSkipListMap<>();
 
-  private final Subscribers<ImportedBlobSidecarListener> importedBlobSidecarSubscribers =
+  private final Subscribers<ImportedBlobSidecarListener> preparedBlobSidecarSubscribers =
       Subscribers.create(true);
 
   public BlobSidecarManagerImpl(
@@ -90,7 +90,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
-  public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
+  public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       final SignedBlobSidecar signedBlobSidecar) {
 
     final Optional<InternalValidationResult> maybeInvalid =
@@ -106,19 +106,21 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     validationResult.thenAccept(
         result -> {
           switch (result.code()) {
-            case SAVE_FOR_FUTURE:
-              futureBlobSidecars.add(signedBlobSidecar);
-              break;
-            case ACCEPT:
-              final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
-              importBlobSidecar(blobSidecar)
-                  .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
+            case IGNORE:
+              // do nothing
               break;
             case REJECT:
               invalidBlobSidecarRoots.put(
                   signedBlobSidecar.getBlobSidecar().hashTreeRoot(), result);
               break;
-            default:
+            case SAVE_FOR_FUTURE:
+              futureBlobSidecars.add(signedBlobSidecar);
+              break;
+            case ACCEPT:
+              final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
+              prepareForBlockImport(blobSidecar)
+                  .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
+              break;
           }
         });
 
@@ -127,16 +129,16 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   @SuppressWarnings("unused")
-  public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
+  public SafeFuture<Void> prepareForBlockImport(final BlobSidecar blobSidecar) {
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
-    importedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobSidecar));
+    preparedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobSidecar));
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public void subscribeToImportedBlobSidecars(
+  public void subscribeToPreparedBlobSidecars(
       final ImportedBlobSidecarListener importedBlobSidecarListener) {
-    importedBlobSidecarSubscribers.subscribe(importedBlobSidecarListener);
+    preparedBlobSidecarSubscribers.subscribe(importedBlobSidecarListener);
   }
 
   @Override
@@ -190,9 +192,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     }
 
     final BlockBlobSidecarsTracker blockBlobsSidecarsTracker =
-        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
-
-    blockBlobsSidecarsTracker.setBlock(block);
+        blobSidecarPool.getOrCreateBlockBlobsSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
         spec, asyncRunner, recentChainData, blockBlobsSidecarsTracker);
@@ -209,7 +209,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         .prune(slot)
         .forEach(
             blobSidecar ->
-                validateAndImportBlobSidecar(blobSidecar).ifExceptionGetsHereRaiseABug());
+                validateAndPrepareForBlockImport(blobSidecar).ifExceptionGetsHereRaiseABug());
   }
 
   @VisibleForTesting

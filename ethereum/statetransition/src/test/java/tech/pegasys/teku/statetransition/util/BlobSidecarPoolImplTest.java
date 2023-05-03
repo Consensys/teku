@@ -248,7 +248,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
     final BlockBlobSidecarsTracker blobsSidecarsTracker =
-        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
+        blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
 
     assertThat(blobsSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
@@ -277,10 +277,27 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
     final BlockBlobSidecarsTracker blobsSidecarsTracker =
-        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
+            blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
 
     assertThat(blobsSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
+    assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
+    assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
+    assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();
+
+    assertBlobSidecarsCount(0);
+    assertBlobSidecarsTrackersCount(1);
+  }
+
+  @Test
+  public void getOrCreateBlockBlobsSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
+    final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+
+    final BlockBlobSidecarsTracker blobsSidecarsTracker =
+        blobSidecarPool.getOrCreateBlockBlobsSidecarsTracker(block);
+
     assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
     assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
     assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();

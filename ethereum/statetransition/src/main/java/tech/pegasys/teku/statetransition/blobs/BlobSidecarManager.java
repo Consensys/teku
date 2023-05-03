@@ -27,18 +27,18 @@ public interface BlobSidecarManager {
       new BlobSidecarManager() {
 
         @Override
-        public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
+        public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
             final SignedBlobSidecar signedBlobSidecar) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
         @Override
-        public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
+        public SafeFuture<Void> prepareForBlockImport(final BlobSidecar blobSidecar) {
           return SafeFuture.COMPLETE;
         }
 
         @Override
-        public void subscribeToImportedBlobSidecars(
+        public void subscribeToPreparedBlobSidecars(
             final ImportedBlobSidecarListener importedBlobSidecarListener) {}
 
         @Override
@@ -62,12 +62,12 @@ public interface BlobSidecarManager {
         }
       };
 
-  SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
+  SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       SignedBlobSidecar signedBlobSidecar);
 
-  SafeFuture<Void> importBlobSidecar(BlobSidecar blobSidecar);
+  SafeFuture<Void> prepareForBlockImport(BlobSidecar blobSidecar);
 
-  void subscribeToImportedBlobSidecars(ImportedBlobSidecarListener importedBlobSidecarListener);
+  void subscribeToPreparedBlobSidecars(ImportedBlobSidecarListener importedBlobSidecarListener);
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 

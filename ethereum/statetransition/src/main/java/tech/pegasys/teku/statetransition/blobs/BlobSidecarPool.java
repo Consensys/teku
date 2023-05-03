@@ -46,7 +46,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         }
 
         @Override
-        public BlockBlobSidecarsTracker getBlockBlobsSidecarsTracker(SignedBeaconBlock block) {
+        public BlockBlobSidecarsTracker getOrCreateBlockBlobsSidecarsTracker(SignedBeaconBlock block) {
           throw new UnsupportedOperationException();
         }
 
@@ -82,7 +82,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
 
   Set<BlobIdentifier> getAllRequiredBlobSidecars();
 
-  BlockBlobSidecarsTracker getBlockBlobsSidecarsTracker(SignedBeaconBlock block);
+  BlockBlobSidecarsTracker getOrCreateBlockBlobsSidecarsTracker(SignedBeaconBlock block);
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
 

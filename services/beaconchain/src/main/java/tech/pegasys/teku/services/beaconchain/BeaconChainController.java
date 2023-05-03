@@ -316,9 +316,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentBlobSidecarFetcher.subscribeBlobSidecarFetched(
         (blobSidecar) ->
             blobSidecarManager
-                .importBlobSidecar(blobSidecar)
+                .prepareForBlockImport(blobSidecar)
                 .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
-    blobSidecarManager.subscribeToImportedBlobSidecars(
+    blobSidecarManager.subscribeToPreparedBlobSidecars(
         blobSidecar ->
             recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
@@ -921,7 +921,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndImportBlobSidecar)
+            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
