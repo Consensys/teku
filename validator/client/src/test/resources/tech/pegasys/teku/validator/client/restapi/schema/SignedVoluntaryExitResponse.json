@@ -1,0 +1,10 @@
+{
+  "title" : "SignedVoluntaryExitResponse",
+  "type" : "object",
+  "required" : [ "data" ],
+  "properties" : {
+    "data" : {
+      "$ref" : "#/components/schemas/SignedVoluntaryExit"
+    }
+  }
+}

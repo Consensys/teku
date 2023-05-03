@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Rewards" ],
+    "tags" : [ "Beacon", "Rewards", "Experimental" ],
     "operationId" : "getBlockRewards",
     "summary" : "Get Block Rewards",
     "description" : "Retrieve block reward info for a single block.",
@@ -37,16 +37,6 @@
       },
       "500" : {
         "description" : "Internal server error",
-        "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/HttpErrorResponse"
-            }
-          }
-        }
-      },
-      "501" : {
-        "description" : "Not implemented",
         "content" : {
           "application/json" : {
             "schema" : {

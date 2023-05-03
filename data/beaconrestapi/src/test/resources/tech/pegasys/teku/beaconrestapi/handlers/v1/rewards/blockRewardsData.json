@@ -1,1 +1,1 @@
-{"execution_optimistic":false,"finalized":true,"data":{"proposer_index":"123","total":"123","attestations":"123","sync_aggregate":"123","proposer_slashings":"123","attester_slashings":"123"}}
+{"execution_optimistic":false,"finalized":true,"data":{"proposer_index":"123","total":"2135","attestations":"283","sync_aggregate":"672","proposer_slashings":"982","attester_slashings":"198"}}

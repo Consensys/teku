@@ -24,11 +24,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
@@ -48,6 +50,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
+import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
@@ -558,31 +561,70 @@ public class ChainDataProviderTest {
   }
 
   @Test
+  public void getBlockRewardsFromBlockId_shouldCheckStateAndBlockAreHandled()
+      throws ExecutionException, InterruptedException {
+    final ChainDataProvider provider = setupAltairState();
+    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
+        provider.getBlockRewardsFromBlockId("head");
+
+    final Optional<BlockAndMetaData> blockAndMetadata = provider.getBlockAndMetaData("head").get();
+    assertThat(blockAndMetadata).isNotEmpty();
+    verify(mockCombinedChainDataClient, times(1))
+        .getStateByBlockRoot(blockAndMetadata.get().getData().getRoot());
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  public void getBlockRewardData_shouldGetData() {
+    final Spec spec = TestSpecFactory.createMinimalAltair();
+    final DataStructureUtil data = new DataStructureUtil(spec);
+    final ChainDataProvider provider = setupAltairState();
+
+    final SignedBlockAndState signedBlockAndState =
+        data.randomSignedBlockAndStateWithValidatorLogic(100);
+    final BlockAndMetaData blockAndMetaData =
+        new BlockAndMetaData(
+            signedBlockAndState.getBlock(), SpecMilestone.ALTAIR, true, false, true);
+
+    final ObjectAndMetaData<BlockRewardData> result =
+        provider.getBlockRewardData(blockAndMetaData, signedBlockAndState.getState());
+
+    final BlockRewardData blockRewardData =
+        new BlockRewardData(
+            signedBlockAndState.getBlock().getProposerIndex(), 0L, 35L, 62500000L, 62500000L);
+    final ObjectAndMetaData<BlockRewardData> expectedOutput =
+        new ObjectAndMetaData<>(blockRewardData, SpecMilestone.ALTAIR, true, false, true);
+    assertThat(result).isEqualTo(expectedOutput);
+  }
+
+  @Test
   public void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
-    final UInt64 reward = UInt64.valueOf(1234);
+    final long reward = 1234L;
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
     final int[] participantIndices = new int[] {0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30};
     final SyncAggregate syncAggregate = data.randomSyncAggregate(participantIndices);
 
-    final int syncAggregateBlockRewards =
+    final long syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards)
-        .isEqualTo(reward.times(participantIndices.length).intValue());
+    assertThat(syncAggregateBlockRewards).isEqualTo(reward * participantIndices.length);
   }
 
   @Test
   public void calculateProposerSyncAggregateBlockRewards_emptySyncAggregate() {
-    final UInt64 reward = UInt64.valueOf(1234);
+    final long reward = 1234L;
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
     final SyncAggregate syncAggregate = data.emptySyncAggregate();
 
-    final int syncAggregateBlockRewards =
+    final long syncAggregateBlockRewards =
         provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(0);
+    assertThat(syncAggregateBlockRewards).isEqualTo(0L);
   }
 
   @Test
@@ -590,13 +632,12 @@ public class ChainDataProviderTest {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
-    final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
+    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(100);
 
-    final UInt64 result =
+    final long result =
         provider.calculateProposerSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    final UInt64 expectedReward = UInt64.valueOf(62500000);
-    assertThat(result).isEqualTo(expectedReward);
+    assertThat(result).isEqualTo(62500000L);
   }
 
   @Test
@@ -604,13 +645,12 @@ public class ChainDataProviderTest {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil data = new DataStructureUtil(spec);
     final ChainDataProvider provider = setupAltairState();
-    final BeaconBlockAndState blockAndState = data.randomBlockAndState(100);
+    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(100);
 
-    final UInt64 result =
+    final long result =
         provider.calculateAttesterSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    final UInt64 expectedReward = UInt64.valueOf(62500000);
-    assertThat(result).isEqualTo(expectedReward);
+    assertThat(result).isEqualTo(62500000L);
   }
 
   @Test
@@ -623,8 +663,6 @@ public class ChainDataProviderTest {
     final EpochProcessor epochProcessor = mock(EpochProcessor.class);
 
     final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(100);
     final RewardAndPenaltyDeltas deltas = data.randomRewardAndPenaltyDeltas(100);
 
     when(spec.forMilestone(any())).thenReturn(specVersion);
@@ -638,8 +676,8 @@ public class ChainDataProviderTest {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
 
-    final long result = provider.calculateAttestationRewards(state);
-    assertThat(result).isEqualTo(1179L);
+    final long result = provider.calculateAttestationRewards();
+    assertThat(result).isEqualTo(0L);
   }
 
   @Test
@@ -836,7 +874,7 @@ public class ChainDataProviderTest {
     assertThatThrownBy(
             () ->
                 chainDataProvider.getExpectedWithdrawalsFromState(
-                    dataStructureUtil.randomBeaconState(UInt64.ONE), Optional.of(UInt64.ONE)))
+                    dataStructureUtil.randomBeaconState(ONE), Optional.of(ONE)))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("historic");
   }
@@ -848,7 +886,7 @@ public class ChainDataProviderTest {
     assertThatThrownBy(
             () ->
                 chainDataProvider.getExpectedWithdrawalsFromState(
-                    data.randomBeaconState(UInt64.ONE), Optional.empty()))
+                    data.randomBeaconState(ONE), Optional.empty()))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("pre-capella");
   }

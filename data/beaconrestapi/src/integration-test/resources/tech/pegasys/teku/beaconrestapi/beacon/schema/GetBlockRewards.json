@@ -21,9 +21,9 @@
         },
         "total" : {
           "type" : "string",
-          "description" : "unsigned 64 bit integer",
+          "description" : "long string",
           "example" : "1",
-          "format" : "uint64"
+          "format" : "long"
         },
         "attestations" : {
           "type" : "string",
@@ -33,21 +33,21 @@
         },
         "sync_aggregate" : {
           "type" : "string",
-          "description" : "unsigned 64 bit integer",
+          "description" : "long string",
           "example" : "1",
-          "format" : "uint64"
+          "format" : "long"
         },
         "proposer_slashings" : {
           "type" : "string",
-          "description" : "unsigned 64 bit integer",
+          "description" : "long string",
           "example" : "1",
-          "format" : "uint64"
+          "format" : "long"
         },
         "attester_slashings" : {
           "type" : "string",
-          "description" : "unsigned 64 bit integer",
+          "description" : "long string",
           "example" : "1",
-          "format" : "uint64"
+          "format" : "long"
         }
       }
     }

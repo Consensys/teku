@@ -17,22 +17,19 @@ import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockRewardData {
-  private final UInt64 proposerIndex;
-  private final UInt64 total;
-  private final Long attestations;
-  private final UInt64 syncAggregate;
-  private final UInt64 proposerSlashings;
-  private final UInt64 attesterSlashings;
+  private UInt64 proposerIndex;
+  private final long attestations;
+  private final long syncAggregate;
+  private final long proposerSlashings;
+  private final long attesterSlashings;
 
   public BlockRewardData(
       final UInt64 proposerIndex,
-      final UInt64 total,
-      final Long attestations,
-      final UInt64 syncAggregate,
-      final UInt64 proposerSlashings,
-      final UInt64 attesterSlashings) {
+      final long attestations,
+      final long syncAggregate,
+      final long proposerSlashings,
+      final long attesterSlashings) {
     this.proposerIndex = proposerIndex;
-    this.total = total;
     this.attestations = attestations;
     this.syncAggregate = syncAggregate;
     this.proposerSlashings = proposerSlashings;
@@ -43,23 +40,23 @@ public class BlockRewardData {
     return proposerIndex;
   }
 
-  public UInt64 getTotal() {
-    return total;
+  public long getTotal() {
+    return attestations + syncAggregate + proposerSlashings + attesterSlashings;
   }
 
-  public Long getAttestations() {
+  public long getAttestations() {
     return attestations;
   }
 
-  public UInt64 getSyncAggregate() {
+  public long getSyncAggregate() {
     return syncAggregate;
   }
 
-  public UInt64 getProposerSlashings() {
+  public long getProposerSlashings() {
     return proposerSlashings;
   }
 
-  public UInt64 getAttesterSlashings() {
+  public long getAttesterSlashings() {
     return attesterSlashings;
   }
 
@@ -72,17 +69,32 @@ public class BlockRewardData {
       return false;
     }
     BlockRewardData that = (BlockRewardData) o;
-    return Objects.equals(proposerIndex, that.proposerIndex)
-        && Objects.equals(total, that.total)
-        && Objects.equals(attestations, that.attestations)
-        && Objects.equals(syncAggregate, that.syncAggregate)
-        && Objects.equals(proposerSlashings, that.proposerSlashings)
-        && Objects.equals(attesterSlashings, that.attesterSlashings);
+    return attestations == that.attestations
+        && syncAggregate == that.syncAggregate
+        && proposerSlashings == that.proposerSlashings
+        && attesterSlashings == that.attesterSlashings
+        && Objects.equals(proposerIndex, that.proposerIndex);
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        proposerIndex, total, attestations, syncAggregate, proposerSlashings, attesterSlashings);
+        proposerIndex, attestations, syncAggregate, proposerSlashings, attesterSlashings);
+  }
+
+  @Override
+  public String toString() {
+    return "BlockRewardData{"
+        + "proposerIndex="
+        + proposerIndex
+        + ", attestations="
+        + attestations
+        + ", syncAggregate="
+        + syncAggregate
+        + ", proposerSlashings="
+        + proposerSlashings
+        + ", attesterSlashings="
+        + attesterSlashings
+        + '}';
   }
 }
