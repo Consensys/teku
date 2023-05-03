@@ -68,8 +68,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
+
   @SuppressWarnings("unused")
   private final BlobsBundleValidator blobsBundleValidator;
+
   private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
