@@ -120,13 +120,13 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilBellatrix.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsBundle blobsBundle = dataStructureUtilBellatrix.randomBlobsBundle();
     final ExecutionPayload executionPayloadBellatrix =
         dataStructureUtilBellatrix.randomExecutionPayload();
     assertThat(executionPayloadBellatrix).isInstanceOf(ExecutionPayloadBellatrix.class);
 
     when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadBellatrix, blockValue, blobsBundle));
+        .thenReturn(
+            dummySuccessfulResponseWithNoBlobsBundle(executionPayloadBellatrix, blockValue));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -149,13 +149,12 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilCapella.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsBundle blobsBundle = dataStructureUtilCapella.randomBlobsBundle();
     final ExecutionPayload executionPayloadCapella =
         dataStructureUtilCapella.randomExecutionPayload();
     assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadCapella.class);
 
     when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue, blobsBundle));
+        .thenReturn(dummySuccessfulResponseWithNoBlobsBundle(executionPayloadCapella, blockValue));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -197,6 +196,16 @@ class EngineGetPayloadV3Test {
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);
+  }
+
+  private SafeFuture<Response<GetPayloadV3Response>> dummySuccessfulResponseWithNoBlobsBundle(
+      final ExecutionPayload executionPayload, final UInt256 blockValue) {
+    return SafeFuture.completedFuture(
+        new Response<>(
+            new GetPayloadV3Response(
+                ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
+                blockValue,
+                null)));
   }
 
   private SafeFuture<Response<GetPayloadV3Response>> dummySuccessfulResponse(
