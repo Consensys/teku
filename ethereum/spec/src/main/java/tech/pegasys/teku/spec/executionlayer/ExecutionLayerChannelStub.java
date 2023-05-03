@@ -394,6 +394,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     return requestedPowBlocks;
   }
 
+  @SuppressWarnings("unused")
   private static class HeadAndAttributes {
     private final Bytes32 head;
     private final PayloadBuildingAttributes attributes;
