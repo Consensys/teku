@@ -273,7 +273,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldReturnNotAvailableIfTrackerLiesWithCompletionButItIsNot() {
+  void shouldThrowIfTrackerLiesWithCompletionButItIsNot() {
     prepareInitialAvailability(Availability.PARTIAL);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
