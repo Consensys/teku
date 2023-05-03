@@ -463,7 +463,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected void initBlobSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final FutureItems<SignedBlobSidecar> futureBlobSidecars =
-          FutureItems.create(SignedBlobSidecar::getSlot, futureItemsMetric, "sidecars");
+          FutureItems.create(SignedBlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
 
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
           LimitedMap.createSynchronized(500);

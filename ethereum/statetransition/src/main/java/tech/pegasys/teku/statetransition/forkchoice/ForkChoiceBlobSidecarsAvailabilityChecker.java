@@ -45,7 +45,6 @@ import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAvailabilityChecker {
-  private static final Duration DEFAULT_WAIT_FOR_TRACKER_COMPLETION_TIMEOUT = Duration.ofSeconds(4);
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -72,7 +71,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
-    this.waitForTrackerCompletionTimeout = DEFAULT_WAIT_FOR_TRACKER_COMPLETION_TIMEOUT;
+    this.waitForTrackerCompletionTimeout =
+        calculateCompletionTimeout(spec, blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot());
   }
 
   @VisibleForTesting
@@ -92,7 +92,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   @Override
   public boolean initiateDataAvailabilityCheck() {
     asyncRunner
-        .runAsync(this::validatePartially)
+        .runAsync(this::validateImmediatelyAvailable)
         .thenCompose(this::completeValidation)
         .propagateTo(validationResult);
 
@@ -105,31 +105,26 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   @Override
-  public SafeFuture<BlobSidecarsAndValidationResult> validate(
-      final List<BlobSidecar> blobSidecars) {
-    return SafeFuture.of(
-        () -> {
-          if (!blobSidecars.isEmpty()) {
-            return internalValidate(blobSidecars);
-          }
+  public BlobSidecarsAndValidationResult validateImmediately(final List<BlobSidecar> blobSidecars) {
 
-          if (!isBlockInDataAvailabilityWindow()) {
-            return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-          }
+    final List<KZGCommitment> kzgCommitments = kzgCommitmentsSupplier.get();
 
-          if (kzgCommitmentsSupplier.get().isEmpty()) {
-            return BlobSidecarsAndValidationResult.validResult(List.of());
-          }
+    if (!blobSidecars.isEmpty()) {
+      return validateBatch(blobSidecars, kzgCommitments);
+    }
 
-          return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
-        });
+    if (isBlockOutsideDataAvailabilityWindow()) {
+      return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+    }
+
+    if (kzgCommitments.isEmpty()) {
+      return BlobSidecarsAndValidationResult.validResult(List.of());
+    }
+
+    return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
   }
 
-  private BlobSidecarsAndValidationResult internalValidate(final List<BlobSidecar> blobSidecars) {
-    return internalValidate(blobSidecars, kzgCommitmentsSupplier.get());
-  }
-
-  private BlobSidecarsAndValidationResult internalValidate(
+  private BlobSidecarsAndValidationResult validateBatch(
       final List<BlobSidecar> blobSidecars, final List<KZGCommitment> kzgCommitments) {
     final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
     try {
@@ -158,7 +153,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
    * @return a validation result only in case it is a definitive result. If the validation needs to
    *     be completed it returns empty
    */
-  private Optional<BlobSidecarsAndValidationResult> validatePartially() {
+  private Optional<BlobSidecarsAndValidationResult> validateImmediatelyAvailable() {
     final List<KZGCommitment> kzgCommitmentsInBlock = kzgCommitmentsSupplier.get();
 
     final List<KZGCommitment> kzgCommitmentsToValidate;
@@ -184,7 +179,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
       if (blobSidecarsToValidate.isEmpty()
           && kzgCommitmentsInBlock.size() > 0
-          && !isBlockInDataAvailabilityWindow()) {
+          && isBlockOutsideDataAvailabilityWindow()) {
         // there are no available blobs so far, but we are outside the availability window. We can
         // skip additional checks
         return Optional.of(BlobSidecarsAndValidationResult.NOT_REQUIRED);
@@ -193,7 +188,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
     // perform the actual validation
     final BlobSidecarsAndValidationResult result =
-        internalValidate(blobSidecarsToValidate, kzgCommitmentsToValidate);
+        validateBatch(blobSidecarsToValidate, kzgCommitmentsToValidate);
 
     if (result.isFailure()) {
       return Optional.of(result);
@@ -231,8 +226,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                 blockBlobSidecarsTracker
                     .getCompletionFuture()
                     .orTimeout(waitForTrackerCompletionTimeout)
-                    .thenApplyChecked(__ -> internalValidateAdditional())
-                    .thenApply(this::internalComputeFinalValidationResult)
+                    .thenApplyChecked(__ -> computeAndValidateRemaining())
+                    .thenApply(this::computeFinalValidationResult)
                     .exceptionallyCompose(
                         error ->
                             ExceptionUtil.getCause(error, TimeoutException.class)
@@ -256,7 +251,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
    *
    * @return validation result for the batch
    */
-  private BlobSidecarsAndValidationResult internalValidateAdditional() {
+  private BlobSidecarsAndValidationResult computeAndValidateRemaining() {
     checkState(
         blockBlobSidecarsTracker.isCompleted(),
         "BlobSidecar tracker assumed to be completed but it is not.");
@@ -286,7 +281,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
               }
             });
 
-    return internalValidate(
+    return validateBatch(
         additionalBlobSidecarsToBeValidated, additionalKzgCommitmentsToBeValidated);
   }
 
@@ -299,7 +294,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
    * @param additionalBlobSidecarsAndValidationResult
    * @return
    */
-  private BlobSidecarsAndValidationResult internalComputeFinalValidationResult(
+  private BlobSidecarsAndValidationResult computeFinalValidationResult(
       final BlobSidecarsAndValidationResult additionalBlobSidecarsAndValidationResult) {
     if (additionalBlobSidecarsAndValidationResult.isFailure()) {
       return additionalBlobSidecarsAndValidationResult;
@@ -325,11 +320,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
     if (completeValidatedBlobSidecars.size() < kzgCommitmentsSupplier.get().size()) {
       // we haven't verified enough blobs to match the commitments present in the block
-
+      // this should never happen in practice. If it does, is likely a bug and should be fixed.
       checkState(
-          !isBlockInDataAvailabilityWindow(),
-          "Validated blobs are less than commitments present in block");
+          isBlockOutsideDataAvailabilityWindow(),
+          "Validated blobs are less than commitments present in block.");
 
+      LOG.error(
+          "Inconsistent state detected: validated blobs is less then commitments in block. Since slot is outside availability the window we can consider blobs as NOT_REQUIRED.");
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
     }
 
@@ -337,8 +334,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         Collections.unmodifiableList(completeValidatedBlobSidecars));
   }
 
-  private boolean isBlockInDataAvailabilityWindow() {
-    return spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(
+  private boolean isBlockOutsideDataAvailabilityWindow() {
+    return !spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(
         recentChainData.getStore(), blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot());
   }
 
@@ -356,5 +353,9 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                 .stream()
                 .map(SszKZGCommitment::getKZGCommitment)
                 .collect(Collectors.toUnmodifiableList()));
+  }
+
+  static Duration calculateCompletionTimeout(final Spec spec, final UInt64 slot) {
+    return Duration.ofMillis((spec.atSlot(slot).getConfig().getSecondsPerSlot() * 1000L) / 3);
   }
 }

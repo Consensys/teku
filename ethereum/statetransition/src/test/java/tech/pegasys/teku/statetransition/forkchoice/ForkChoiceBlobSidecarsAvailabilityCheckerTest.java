@@ -316,28 +316,36 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     whenDataAvailability(blobSidecarsComplete, kzgCommitmentsComplete).thenReturn(true);
 
-    assertAvailable(blobSidecarsAvailabilityChecker.validate(blobSidecarsComplete));
+    assertAvailable(
+        SafeFuture.completedFuture(
+            blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete)));
   }
 
   @Test
   void validate_shouldNotAvailable() {
     prepareInitialAvailability(Availability.FULL);
 
-    assertNotAvailable(blobSidecarsAvailabilityChecker.validate(Collections.emptyList()));
+    assertNotAvailable(
+        SafeFuture.completedFuture(
+            blobSidecarsAvailabilityChecker.validateImmediately(Collections.emptyList())));
   }
 
   @Test
   void validate_shouldReturnAvailableOnEmptyBlobs() {
     prepareInitialAvailabilityWithEmptyCommitmentsBlock();
 
-    assertAvailable(blobSidecarsAvailabilityChecker.validate(Collections.emptyList()));
+    assertAvailable(
+        SafeFuture.completedFuture(
+            blobSidecarsAvailabilityChecker.validateImmediately(Collections.emptyList())));
   }
 
   @Test
   void validate_shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
     prepareBlockAndBlobSidecarsOutsideAvailabilityWindow();
 
-    assertNotRequired(blobSidecarsAvailabilityChecker.validate(Collections.emptyList()));
+    assertNotRequired(
+        SafeFuture.completedFuture(
+            blobSidecarsAvailabilityChecker.validateImmediately(Collections.emptyList())));
   }
 
   private void assertNotRequired(
@@ -513,52 +521,6 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     verify(miscHelpers, never()).isDataAvailable(any(), any(), any(), any());
   }
 
-  private void prepareBlockAndBlobSidecarsInAvailabilityWindow(
-      final Availability blobsAvailability) {
-    prepareBlockAndBlobSidecarsInAvailabilityWindow(blobsAvailability, Optional.empty());
-  }
-
-  private void prepareBlockAndBlobSidecarsInAvailabilityWindow(
-      final Availability blobsAvailability, final Optional<SignedBeaconBlock> providedBlock) {
-    block = providedBlock.orElse(dataStructureUtil.randomSignedBeaconBlockWithCommitments(4));
-
-    when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(true);
-
-    switch (blobsAvailability) {
-      case FULL:
-        blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlock(block);
-        blobSidecarsInitial = blobSidecarsComplete;
-        blobSidecarsAdditional = List.of();
-        break;
-      case EMPTY:
-        blobSidecarsComplete = List.of();
-        blobSidecarsInitial = List.of();
-        blobSidecarsAdditional = List.of();
-        break;
-      case PARTIAL:
-        blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlock(block);
-        blobSidecarsComplete =
-            dataStructureUtil.randomBlobSidecarsForBlock(block).stream()
-                .filter(blobSidecar -> blobSidecar.getIndex().mod(2).isZero())
-                .collect(Collectors.toUnmodifiableList());
-        break;
-    }
-
-    final ImmutableSortedMap.Builder<UInt64, BlobSidecar> mapBuilder =
-        ImmutableSortedMap.naturalOrder();
-    blobSidecarsComplete.forEach(
-        blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
-
-    when(blockBlobSidecarsTracker.getBlockBody())
-        .thenReturn(block.getMessage().getBody().toVersionDeneb());
-    when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(mapBuilder.build());
-    when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
-
-    blobSidecarsAvailabilityChecker =
-        new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker);
-  }
-
   private void prepareBlockAndBlobSidecarsOutsideAvailabilityWindow() {
     block = dataStructureUtil.randomSignedBeaconBlock();
     blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlock(block);
@@ -577,7 +539,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker);
+            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, Duration.ofSeconds(30));
   }
 
   private enum Availability {
