@@ -464,11 +464,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           BlobSidecarValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
-              spec,
-              recentChainData,
-              blobSidecarValidator,
-              storageQueryChannel,
-              storageUpdateChannel);
+              spec, recentChainData, blobSidecarValidator, storageQueryChannel);
       eventChannels.subscribe(SlotEventsChannel.class, blobSidecarManagerImpl);
 
       blobSidecarManager = blobSidecarManagerImpl;
