@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.InvalidRemoteResponseException;
+import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
@@ -118,12 +120,13 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilBellatrix.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
+    final BlobsBundle blobsBundle = dataStructureUtilBellatrix.randomBlobsBundle();
     final ExecutionPayload executionPayloadBellatrix =
         dataStructureUtilBellatrix.randomExecutionPayload();
     assertThat(executionPayloadBellatrix).isInstanceOf(ExecutionPayloadBellatrix.class);
 
     when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadBellatrix, blockValue));
+        .thenReturn(dummySuccessfulResponse(executionPayloadBellatrix, blockValue, blobsBundle));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -146,12 +149,13 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilCapella.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
+    final BlobsBundle blobsBundle = dataStructureUtilCapella.randomBlobsBundle();
     final ExecutionPayload executionPayloadCapella =
         dataStructureUtilCapella.randomExecutionPayload();
     assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadCapella.class);
 
     when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue));
+        .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue, blobsBundle));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -174,12 +178,13 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilDeneb.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
+    final BlobsBundle blobsBundle = dataStructureUtilDeneb.randomBlobsBundle();
     final ExecutionPayload executionPayloadCapella =
         dataStructureUtilDeneb.randomExecutionPayload();
     assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue));
+        .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue, blobsBundle));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
@@ -195,11 +200,15 @@ class EngineGetPayloadV3Test {
   }
 
   private SafeFuture<Response<GetPayloadV3Response>> dummySuccessfulResponse(
-      final ExecutionPayload executionPayload, final UInt256 blockValue) {
+      final ExecutionPayload executionPayload,
+      final UInt256 blockValue,
+      final BlobsBundle blobsBundle) {
     return SafeFuture.completedFuture(
         new Response<>(
             new GetPayloadV3Response(
-                ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload), blockValue)));
+                ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
+                blockValue,
+                BlobsBundleV1.fromInternalBlobsBundle(blobsBundle))));
   }
 
   private SafeFuture<Response<GetPayloadV3Response>> dummyFailedResponse(

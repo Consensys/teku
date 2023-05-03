@@ -17,11 +17,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -72,12 +70,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<BlobsBundle> engineGetBlobsBundle(
-            UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
-          return SafeFuture.completedFuture(null);
-        }
-
-        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -120,14 +112,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    */
   SafeFuture<ExecutionPayload> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
-
-  /**
-   * This is low level method, use {@link
-   * ExecutionLayerBlockProductionManager#initiateBlockAndBlobsProduction(ExecutionPayloadContext,
-   * BeaconState, boolean)} instead
-   */
-  SafeFuture<BlobsBundle> engineGetBlobsBundle(
-      UInt64 slot, final Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional);
 
   // builder namespace
   SafeFuture<Void> builderRegisterValidators(

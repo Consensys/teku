@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import java.util.Collections;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -33,10 +31,9 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
-  // TODO: Switch to actual Builder API when Deneb version is ready
-  protected static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_BUILDER_DUMMY =
-      SafeFuture.completedFuture(
-          new BlobsBundle(Bytes32.ZERO, Collections.emptyList(), Collections.emptyList()));
+  // TODO: Switch to actual engine and builder API
+  protected static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_DUMMY =
+      SafeFuture.completedFuture(BlobsBundle.EMPTY_BUNDLE);
 
   private static final UInt64 EXECUTION_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
 
@@ -90,19 +87,12 @@ public class ExecutionLayerBlockProductionManagerImpl
     if (!isBlind) {
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
-      final SafeFuture<BlobsBundle> blobsBundleFuture =
-          executionPayloadFuture.thenCompose(
-              executionPayload ->
-                  executionLayerChannel.engineGetBlobsBundle(
-                      blockSlotState.getSlot(),
-                      context.getPayloadId(),
-                      Optional.of(executionPayload)));
       result =
           new ExecutionPayloadResult(
               context,
               Optional.of(executionPayloadFuture),
               Optional.empty(),
-              Optional.of(blobsBundleFuture));
+              Optional.of(BLOBS_BUNDLE_DUMMY));
     } else {
       result = builderGetHeader(context, blockSlotState, true);
     }
@@ -128,6 +118,6 @@ public class ExecutionLayerBlockProductionManagerImpl
         executionPayloadContext,
         Optional.empty(),
         Optional.of(executionPayloadHeaderFuture),
-        postDeneb ? Optional.of(BLOBS_BUNDLE_BUILDER_DUMMY) : Optional.empty());
+        postDeneb ? Optional.of(BLOBS_BUNDLE_DUMMY) : Optional.empty());
   }
 }

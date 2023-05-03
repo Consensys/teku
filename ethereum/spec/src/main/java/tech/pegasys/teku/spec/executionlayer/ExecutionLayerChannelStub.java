@@ -39,12 +39,12 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -302,43 +301,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<BlobsBundle> engineGetBlobsBundle(
-      UInt64 slot, Bytes8 payloadId, Optional<ExecutionPayload> executionPayloadOptional) {
-    final Optional<SchemaDefinitionsDeneb> schemaDefinitionsDeneb =
-        spec.atSlot(slot).getSchemaDefinitions().toVersionDeneb();
-
-    if (schemaDefinitionsDeneb.isEmpty()) {
-      return SafeFuture.failedFuture(
-          new UnsupportedOperationException(
-              "getBlobsBundle not supported for pre-Deneb milestones"));
-    }
-
-    final Optional<HeadAndAttributes> maybeHeadAndAttrs =
-        payloadIdToHeadAndAttrsCache.getCached(payloadId);
-    if (maybeHeadAndAttrs.isEmpty()) {
-      return SafeFuture.failedFuture(new RuntimeException("payloadId not found in cache"));
-    }
-
-    final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
-
-    if (headAndAttrs.currentExecutionPayload.isEmpty()
-        || headAndAttrs.currentKzgCommitments.isEmpty()
-        || headAndAttrs.currentBlobs.isEmpty()) {
-      return SafeFuture.failedFuture(new RuntimeException("missing required data from cache"));
-    }
-
-    final BlobsBundle blobsBundle =
-        new BlobsBundle(
-            headAndAttrs.currentExecutionPayload.orElseThrow().getBlockHash(),
-            headAndAttrs.currentKzgCommitments.orElseThrow(),
-            headAndAttrs.currentBlobs.orElseThrow());
-
-    LOG.info("getBlobsBundle: slot: {} -> blobsBundle: {}", slot, blobsBundle.toBriefBlobsString());
-
-    return SafeFuture.completedFuture(blobsBundle);
-  }
-
-  @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     return SafeFuture.COMPLETE;
@@ -437,7 +399,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     private final PayloadBuildingAttributes attributes;
     private Optional<ExecutionPayload> currentExecutionPayload = Optional.empty();
     private Optional<List<Blob>> currentBlobs = Optional.empty();
-    private Optional<List<KZGCommitment>> currentKzgCommitments = Optional.empty();
+    private Optional<List<KZGCommitment>> currentCommitments = Optional.empty();
+    private Optional<List<KZGProof>> currentProofs = Optional.empty();
 
     private HeadAndAttributes(Bytes32 head, PayloadBuildingAttributes attributes) {
       this.head = head;
@@ -518,11 +481,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     final List<Blob> blobs = blobsUtil.generateBlobs(slot, blobsToGenerate);
 
-    final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
+    final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
+    final List<KZGProof> proofs = blobsUtil.computeKzgProofs(slot, blobs, commitments);
 
     headAndAttrs.currentBlobs = Optional.of(blobs);
-    headAndAttrs.currentKzgCommitments = Optional.of(kzgCommitments);
+    headAndAttrs.currentCommitments = Optional.of(commitments);
+    headAndAttrs.currentProofs = Optional.of(proofs);
 
-    return blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments);
+    return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
   }
 }

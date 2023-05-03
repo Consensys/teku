@@ -77,7 +77,6 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
 
     methods.add(EngineApiMethods.ENGINE_NEW_PAYLOAD.getName() + "V3");
     methods.add(EngineApiMethods.ENGINE_GET_PAYLOAD.getName() + "V3");
-    methods.add(EngineApiMethods.ENGINE_GET_BLOBS_BUNDLE.getName() + "V1");
 
     return methods;
   }

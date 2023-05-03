@@ -396,12 +396,20 @@ public final class DataStructureUtil {
     return new SszPublicKey(randomPublicKey());
   }
 
+  public List<KZGCommitment> randomKZGCommitments(final int size) {
+    return IntStream.range(0, size).mapToObj(__ -> randomKZGCommitment()).collect(toList());
+  }
+
   public KZGCommitment randomKZGCommitment() {
     return KZGCommitment.fromBytesCompressed(randomBytes48());
   }
 
   public SszKZGCommitment randomSszKZGCommitment() {
     return new SszKZGCommitment(randomKZGCommitment());
+  }
+
+  public List<KZGProof> randomKZGProofs(final int size) {
+    return IntStream.range(0, size).mapToObj(__ -> randomKZGProof()).collect(toList());
   }
 
   public KZGProof randomKZGProof() {
@@ -2133,14 +2141,16 @@ public final class DataStructureUtil {
   public BlobsBundle randomBlobsBundle() {
     final BlobSchema blobSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
-    List<KZGCommitment> kzgs =
+    List<KZGCommitment> commitments =
         randomSszKzgCommitmentList().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .collect(toList());
+    List<KZGProof> proofs =
+        IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
     return new BlobsBundle(
-        randomBytes32(),
-        kzgs,
-        IntStream.range(0, kzgs.size())
+        commitments,
+        proofs,
+        IntStream.range(0, commitments.size())
             .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
             .collect(toList()));
   }

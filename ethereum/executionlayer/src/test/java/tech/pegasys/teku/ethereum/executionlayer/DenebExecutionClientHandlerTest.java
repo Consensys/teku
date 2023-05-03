@@ -31,11 +31,9 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
@@ -76,7 +74,8 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             new Response<>(
                 new GetPayloadV3Response(
                     ExecutionPayloadV3.fromInternalExecutionPayload(data.randomExecutionPayload()),
-                    dataStructureUtil.randomUInt256())));
+                    dataStructureUtil.randomUInt256(),
+                    null)));
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 bellatrixSlot =
@@ -111,7 +110,8 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             new Response<>(
                 new GetPayloadV3Response(
                     ExecutionPayloadV3.fromInternalExecutionPayload(data.randomExecutionPayload()),
-                    UInt256.MAX_VALUE)));
+                    UInt256.MAX_VALUE,
+                    null)));
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 capellaSlot = denebSpecWithForkSchedule.computeStartSlotAtEpoch(capellaForkEpoch);
@@ -132,7 +132,8 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                 new GetPayloadV3Response(
                     ExecutionPayloadV3.fromInternalExecutionPayload(
                         dataStructureUtil.randomExecutionPayload()),
-                    UInt256.MAX_VALUE)));
+                    UInt256.MAX_VALUE,
+                    BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()))));
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
@@ -212,22 +213,6 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final SafeFuture<PayloadStatus> future = handler.engineNewPayload(payload);
     verify(executionEngineClient).newPayloadV3(payloadV3);
     assertThat(future).isCompleted();
-  }
-
-  @SuppressWarnings("FutureReturnValueIgnored")
-  @Test
-  void engineGetBlobsBundle_shouldCallGetBlobsBundleV1() {
-    final ExecutionClientHandler handler = getHandler();
-    final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
-    final Bytes8 payloadId = dataStructureUtil.randomBytes8();
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
-    final SafeFuture<Response<BlobsBundleV1>> dummyResponse =
-        SafeFuture.completedFuture(
-            new Response<>(BlobsBundleV1.fromInternalBlobsBundle(blobsBundle)));
-    when(executionEngineClient.getBlobsBundleV1(payloadId)).thenReturn(dummyResponse);
-
-    handler.engineGetBlobsBundle(payloadId, slot);
-    verify(executionEngineClient).getBlobsBundleV1(payloadId);
   }
 
   private ExecutionPayloadContext randomContext() {

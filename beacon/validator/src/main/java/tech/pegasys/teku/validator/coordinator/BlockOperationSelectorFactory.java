@@ -284,7 +284,7 @@ public class BlockOperationSelectorFactory {
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
                 executionPayloadResult
-                    .getKzgs()
+                    .getCommitments()
                     .orElseThrow()
                     .thenApply(
                         kzgs ->

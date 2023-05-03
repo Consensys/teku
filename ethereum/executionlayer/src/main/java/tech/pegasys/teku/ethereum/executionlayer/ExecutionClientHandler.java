@@ -16,9 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -41,13 +39,6 @@ public interface ExecutionClientHandler {
 
   SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
-
-  default SafeFuture<BlobsBundle> engineGetBlobsBundle(Bytes8 payloadId, UInt64 slot) {
-    throw new IllegalArgumentException(
-        String.format(
-            "Pre-Deneb execution client handler is called to get Deneb BlobsBundleV1 for payload `%s`, slot %s",
-            payloadId, slot));
-  }
 
   SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);
 
