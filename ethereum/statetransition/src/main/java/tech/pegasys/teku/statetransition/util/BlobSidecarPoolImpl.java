@@ -206,7 +206,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @VisibleForTesting
-  BlockBlobSidecarsTracker getBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot)  {
+  BlockBlobSidecarsTracker getBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot) {
     return blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
   }
 

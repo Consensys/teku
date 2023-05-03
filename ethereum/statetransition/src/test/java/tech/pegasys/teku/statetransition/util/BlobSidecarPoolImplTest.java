@@ -277,7 +277,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
     final BlockBlobSidecarsTracker blobsSidecarsTracker =
-            blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
+        blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
 
     assertThat(blobsSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
@@ -290,7 +290,8 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  public void getOrCreateBlockBlobsSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
+  public void
+      getOrCreateBlockBlobsSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
     final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
