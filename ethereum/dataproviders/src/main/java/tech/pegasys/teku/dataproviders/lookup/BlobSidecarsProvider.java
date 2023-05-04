@@ -24,7 +24,7 @@ public interface BlobSidecarsProvider {
   BlobSidecarsProvider NOOP = (block) -> SafeFuture.completedFuture(Optional.empty());
 
   default SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(SignedBeaconBlock block) {
-    return getBlobSidecars(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
+    return getBlobSidecars(block.getSlotAndBlockRoot());
   }
 
   SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);

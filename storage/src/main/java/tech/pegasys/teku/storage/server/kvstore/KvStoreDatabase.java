@@ -316,7 +316,7 @@ public class KvStoreDatabase implements Database {
             }
             final List<BlobSidecar> blobSidecars = finalizedBlobSidecarsBySlot.get(block.getSlot());
             if (blobSidecars.isEmpty()) {
-              updater.addNoBlobsSlot(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
+              updater.addNoBlobsSlot(block.getSlotAndBlockRoot());
             } else {
               blobSidecars.forEach(updater::addBlobSidecar);
             }

@@ -94,11 +94,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final BlockCheckpoints blockCheckpoints,
       final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
-    final SlotAndBlockRoot slotAndBlockRoot =
-        new SlotAndBlockRoot(block.getSlot(), block.getRoot());
     maybeBlobSidecars.ifPresent(
-        blobSidecars -> this.blobSidecars.put(slotAndBlockRoot, blobSidecars));
-    putStateRoot(state.hashTreeRoot(), slotAndBlockRoot);
+        blobSidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars));
+    putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }
 
   @Override
