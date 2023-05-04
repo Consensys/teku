@@ -147,6 +147,7 @@ public class SyncingNodeManager {
         new BlockManager(
             recentChainData,
             blockImporter,
+            blobSidecarPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

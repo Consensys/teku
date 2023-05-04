@@ -318,7 +318,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blobSidecarManager
                 .prepareForBlockImport(blobSidecar)
                 .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
-    blobSidecarManager.subscribeToPreparedBlobSidecars(
+    blobSidecarManager.subscribeToReceivedBlobSidecar(
         blobSidecar ->
             recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
@@ -1039,6 +1039,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new BlockManager(
             recentChainData,
             blockImporter,
+            blobSidecarPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

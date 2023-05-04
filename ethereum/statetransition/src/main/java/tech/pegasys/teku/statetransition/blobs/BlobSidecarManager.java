@@ -38,8 +38,8 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public void subscribeToPreparedBlobSidecars(
-            final ImportedBlobSidecarListener importedBlobSidecarListener) {}
+        public void subscribeToReceivedBlobSidecar(
+            final ReceivedBlobSidecarListener receivedBlobSidecarListener) {}
 
         @Override
         public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
@@ -67,7 +67,7 @@ public interface BlobSidecarManager {
 
   SafeFuture<Void> prepareForBlockImport(BlobSidecar blobSidecar);
 
-  void subscribeToPreparedBlobSidecars(ImportedBlobSidecarListener importedBlobSidecarListener);
+  void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
@@ -79,7 +79,7 @@ public interface BlobSidecarManager {
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 
-  interface ImportedBlobSidecarListener {
-    void onBlobSidecarImported(BlobSidecar blobSidecar);
+  interface ReceivedBlobSidecarListener {
+    void onBlobSidecarReceived(BlobSidecar blobSidecar);
   }
 }

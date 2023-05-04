@@ -583,6 +583,7 @@ public class BlobSidecarPoolImplTest {
               when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
               when(tracker.getBlockBody())
                   .thenReturn(Optional.of((BeaconBlockBodyDeneb) block.getMessage().getBody()));
+              when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
               when(tracker.isFetchTriggered()).thenReturn(true);
               return tracker;
             });
@@ -591,7 +592,7 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blobSidecarPool.removeAllForBlock(block.getSlotAndBlockRoot());
+    blobSidecarPool.removeAllForBlock(block.getRoot());
 
     assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(missingBlobs);
 
@@ -626,7 +627,7 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blobSidecarPool.removeAllForBlock(slotAndBlockRoot);
+    blobSidecarPool.removeAllForBlock(slotAndBlockRoot.getBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).containsExactly(slotAndBlockRoot.getBlockRoot());
 
@@ -661,7 +662,7 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blobSidecarPool.removeAllForBlock(slotAndBlockRoot);
+    blobSidecarPool.removeAllForBlock(slotAndBlockRoot.getBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();

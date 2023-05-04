@@ -190,12 +190,12 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
   }
 
-  public synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
-    orderedBlobSidecarsTrackers.remove(slotAndBlockRoot);
-    final BlockBlobSidecarsTracker removedTracker =
-        blockBlobSidecarsTrackers.remove(slotAndBlockRoot.getBlockRoot());
+  @Override
+  public synchronized void removeAllForBlock(final Bytes32 blockRoot) {
+    final BlockBlobSidecarsTracker removedTracker = blockBlobSidecarsTrackers.remove(blockRoot);
 
     if (removedTracker != null) {
+      orderedBlobSidecarsTrackers.remove(removedTracker.getSlotAndBlockRoot());
 
       dropMissingContent(removedTracker);
 
@@ -221,7 +221,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       toRemove.add(slotAndBlockRoot);
     }
 
-    toRemove.forEach(this::removeAllForBlock);
+    toRemove.stream().map(SlotAndBlockRoot::getBlockRoot).forEach(this::removeAllForBlock);
   }
 
   @Override
@@ -337,7 +337,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       if (toRemove == null) {
         break;
       }
-      removeAllForBlock(toRemove);
+      removeAllForBlock(toRemove.getBlockRoot());
     }
   }
 

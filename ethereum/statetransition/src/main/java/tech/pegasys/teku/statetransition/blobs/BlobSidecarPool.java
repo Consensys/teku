@@ -41,6 +41,9 @@ public interface BlobSidecarPool extends SlotEventsChannel {
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
 
         @Override
+        public void removeAllForBlock(final Bytes32 blockRoot) {}
+
+        @Override
         public boolean containsBlobSidecar(final BlobIdentifier blobIdentifier) {
           return false;
         }
@@ -78,6 +81,8 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   void onNewBlock(SignedBeaconBlock block);
 
   void onBlobSidecarsFromSync(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+
+  void removeAllForBlock(Bytes32 blockRoot);
 
   boolean containsBlobSidecar(BlobIdentifier blobIdentifier);
 

@@ -13,14 +13,8 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
-import static java.util.Collections.emptyMap;
-
-import com.google.common.annotations.VisibleForTesting;
-import java.util.Collections;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,7 +25,6 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -61,10 +54,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   private final StorageUpdateChannel storageUpdateChannel;
 
-  private final NavigableMap<UInt64, Map<Bytes32, BlobsSidecar>> validatedPendingBlobs =
-      new ConcurrentSkipListMap<>();
-
-  private final Subscribers<ImportedBlobSidecarListener> preparedBlobSidecarSubscribers =
+  private final Subscribers<ReceivedBlobSidecarListener> receivedBlobSidecarSubscribers =
       Subscribers.create(true);
 
   public BlobSidecarManagerImpl(
@@ -128,17 +118,16 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  @SuppressWarnings("unused")
   public SafeFuture<Void> prepareForBlockImport(final BlobSidecar blobSidecar) {
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
-    preparedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarImported(blobSidecar));
+    receivedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarReceived(blobSidecar));
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public void subscribeToPreparedBlobSidecars(
-      final ImportedBlobSidecarListener importedBlobSidecarListener) {
-    preparedBlobSidecarSubscribers.subscribe(importedBlobSidecarListener);
+  public void subscribeToReceivedBlobSidecar(
+      final ReceivedBlobSidecarListener receivedBlobSidecarListener) {
+    receivedBlobSidecarSubscribers.subscribe(receivedBlobSidecarListener);
   }
 
   @Override
@@ -200,8 +189,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public void onSlot(final UInt64 slot) {
-    validatedPendingBlobs.headMap(slot.minusMinZero(1)).clear();
-
     blobSidecarPool.onSlot(slot);
 
     futureBlobSidecars.onSlot(slot);
@@ -210,13 +197,5 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         .forEach(
             blobSidecar ->
                 validateAndPrepareForBlockImport(blobSidecar).ifExceptionGetsHereRaiseABug());
-  }
-
-  @VisibleForTesting
-  Map<Bytes32, BlobsSidecar> getValidatedPendingBlobsForSlot(final UInt64 slot) {
-
-    return Optional.ofNullable(validatedPendingBlobs.get(slot))
-        .map(Collections::unmodifiableMap)
-        .orElse(emptyMap());
   }
 }
