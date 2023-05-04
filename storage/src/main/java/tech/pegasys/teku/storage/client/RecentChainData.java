@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -75,6 +76,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   private final BlockProvider blockProvider;
   private final StateAndBlockSummaryProvider stateProvider;
+  private final BlobSidecarsProvider blobSidecarsProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final VoteUpdateChannel voteUpdateChannel;
@@ -102,6 +104,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
+      final BlobSidecarsProvider blobSidecarsProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
@@ -112,6 +115,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
+    this.blobSidecarsProvider = blobSidecarsProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -146,6 +150,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .specProvider(spec)
             .blockProvider(blockProvider)
             .stateProvider(stateProvider)
+            .blobSidecarsProvider(blobSidecarsProvider)
             .storeConfig(storeConfig)
             .build();
 
