@@ -30,6 +30,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -250,6 +252,45 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasCauseInstanceOf(InvalidCheckpointException.class);
+  }
+
+  @Test
+  public void storeAndRetrieveBlobSidecars_shouldHandleAllPossibleCases() {
+    final UpdatableStore store = createGenesisStore();
+
+    // BlobSidecars not stored
+    final SignedBlockAndState hotBlockAndState1 =
+      chainBuilder.generateBlockAtSlot(1, ChainBuilder.BlockOptions.create().setStoreBlobsSidecar(false));
+    final StoreTransaction tx1 = store.startTransaction(new StubStorageUpdateChannel());
+    final Optional<List<BlobSidecar>> maybeBlobSidecars1 = chainBuilder.getBlobSidecars(hotBlockAndState1.getRoot());
+    assertThat(maybeBlobSidecars1).isEmpty();
+    tx1.putBlockAndState(
+      hotBlockAndState1.getBlock(), hotBlockAndState1.getState(), spec.calculateBlockCheckpoints(hotBlockAndState1.getState()), maybeBlobSidecars1);
+    assertThat(tx1.commit()).isCompleted();
+    assertThat(store.retrieveBlobSidecars(hotBlockAndState1.getSlotAndBlockRoot())).isCompletedWithValueMatching(Optional::isEmpty);
+
+    // random BlobSidecars stored
+    final SignedBlockAndState hotBlockAndState2 =
+      chainBuilder.generateBlockAtSlot(2, ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
+    final StoreTransaction tx2 = store.startTransaction(new StubStorageUpdateChannel());
+    final Optional<List<BlobSidecar>> maybeBlobSidecars2 = chainBuilder.getBlobSidecars(hotBlockAndState2.getRoot());
+    assertThat(maybeBlobSidecars2.orElseThrow()).isNotEmpty();
+    tx2.putBlockAndState(
+      hotBlockAndState2.getBlock(), hotBlockAndState2.getState(), spec.calculateBlockCheckpoints(hotBlockAndState2.getState()), maybeBlobSidecars2);
+    assertThat(tx2.commit()).isCompleted();
+    assertThat(store.retrieveBlobSidecars(hotBlockAndState2.getSlotAndBlockRoot())).isCompletedWithValue(maybeBlobSidecars2);
+
+
+    // BlobSidecars stored, no Blobs block
+    final SignedBlockAndState hotBlockAndState3 =
+      chainBuilder.generateBlockAtSlot(3, ChainBuilder.BlockOptions.create().setBlobSidecars(Collections.emptyList()));
+    final StoreTransaction tx3 = store.startTransaction(new StubStorageUpdateChannel());
+    final Optional<List<BlobSidecar>> maybeBlobSidecars3 = chainBuilder.getBlobSidecars(hotBlockAndState3.getRoot());
+    assertThat(maybeBlobSidecars3.orElseThrow()).isEmpty();
+    tx3.putBlockAndState(
+      hotBlockAndState3.getBlock(), hotBlockAndState3.getState(), spec.calculateBlockCheckpoints(hotBlockAndState3.getState()), maybeBlobSidecars3);
+    assertThat(tx3.commit()).isCompleted();
+    assertThat(store.retrieveBlobSidecars(hotBlockAndState3.getSlotAndBlockRoot())).isCompletedWithValue(maybeBlobSidecars3);
   }
 
   private void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {

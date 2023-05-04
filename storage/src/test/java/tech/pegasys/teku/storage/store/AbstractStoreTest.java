@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -139,6 +140,7 @@ public abstract class AbstractStoreTest {
         .metricsSystem(new StubMetricsSystem())
         .specProvider(spec)
         .blockProvider(blockProviderFromChainBuilder())
+        .blobSidecarsProvider(blobSidecarsProviderFromChainBuilder())
         .stateProvider(StateAndBlockSummaryProvider.NOOP)
         .anchor(Optional.empty())
         .genesisTime(genesis.getState().getGenesisTime())
@@ -168,5 +170,10 @@ public abstract class AbstractStoreTest {
                 .map(chainBuilder::getBlock)
                 .flatMap(Optional::stream)
                 .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
+  }
+
+  protected BlobSidecarsProvider blobSidecarsProviderFromChainBuilder() {
+    return (slotAndBlockRoot) ->
+        SafeFuture.completedFuture(chainBuilder.getBlobSidecars(slotAndBlockRoot.getBlockRoot()));
   }
 }
