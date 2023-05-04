@@ -67,22 +67,18 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
   @Override
   public SafeFuture<BlobSidecarsAndValidationResult> validate(
-      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
+      final List<BlobSidecar> blobSidecars) {
     return SafeFuture.of(
         () -> {
-          if (maybeBlobSidecars.isPresent() && !maybeBlobSidecars.get().isEmpty()) {
-            return internalValidate(maybeBlobSidecars.get());
+          if (!blobSidecars.isEmpty()) {
+            return internalValidate(blobSidecars);
           }
 
           // When no blobs are available, it is ok to not have them (NOT_REQUIRED) if:
 
           // 1. The block is not in the availability window
-          if (maybeBlobSidecars.isEmpty()) {
-            if (!isBlockInDataAvailabilityWindow()) {
-              return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-            } else {
-              return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
-            }
+          if (!isBlockInDataAvailabilityWindow()) {
+            return BlobSidecarsAndValidationResult.NOT_REQUIRED;
           }
           // 2. The number of kzg commitments in the block is 0
           if (getKzgCommitmentsInBlock().isEmpty()) {

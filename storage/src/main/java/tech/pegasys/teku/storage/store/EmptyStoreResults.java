@@ -41,5 +41,5 @@ public abstract class EmptyStoreResults {
       SafeFuture.completedFuture(Optional.empty());
 
   public static final SafeFuture<Optional<List<BlobSidecar>>> NO_BLOB_SIDECARS_FUTURE =
-    SafeFuture.completedFuture(Optional.empty());
+      SafeFuture.completedFuture(Optional.empty());
 }

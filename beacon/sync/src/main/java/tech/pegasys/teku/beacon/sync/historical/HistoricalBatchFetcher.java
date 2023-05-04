@@ -17,6 +17,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -283,8 +284,6 @@ public class HistoricalBatchFetcher {
   private SafeFuture<Void> processReceivedBlockByRoot(final SignedBeaconBlock block) {
     blocksToImport.add(block);
     if (blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
-      // It could be not filled if we have no real blocks from startSlot to endSlot
-      blobSidecarsBySlotToImport.putIfAbsent(block.getSlot(), new ArrayList<>());
       final int numberOfKzgCommitments =
           block
               .getMessage()
@@ -403,12 +402,12 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobSidecars(final SignedBeaconBlock block) {
-    final Optional<List<BlobSidecar>> maybeBlobSidecars =
-        Optional.ofNullable(blobSidecarsBySlotToImport.get(block.getSlot()));
-    LOG.trace("Validating {} blob sidecars for block {}", maybeBlobSidecars, block.getRoot());
+    blobSidecarsBySlotToImport.putIfAbsent(block.getSlot(), Collections.emptyList());
+    final List<BlobSidecar> blobSidecars = blobSidecarsBySlotToImport.get(block.getSlot());
+    LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     return blobSidecarManager
         .createAvailabilityChecker(block)
-        .validate(maybeBlobSidecars)
+        .validate(blobSidecars)
         .thenAccept(
             validationResult -> {
               if (validationResult.isFailure()) {

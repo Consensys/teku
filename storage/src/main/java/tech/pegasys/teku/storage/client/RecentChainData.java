@@ -523,7 +523,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
-    final SlotAndBlockRoot slotAndBlockRoot) {
+      final SlotAndBlockRoot slotAndBlockRoot) {
     if (store == null) {
       return EmptyStoreResults.NO_BLOB_SIDECARS_FUTURE;
     }

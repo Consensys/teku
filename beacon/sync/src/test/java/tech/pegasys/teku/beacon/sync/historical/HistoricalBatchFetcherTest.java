@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -492,9 +491,10 @@ public class HistoricalBatchFetcherTest {
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
   }
 
+  @SuppressWarnings("unchecked")
   private void setupInvalidResult(final Throwable throwable) {
     Mockito.reset(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(any()))
+    when(blobSidecarsAvailabilityChecker.validate(any(List.class)))
         .thenAnswer(
             i ->
                 SafeFuture.completedFuture(
@@ -504,11 +504,10 @@ public class HistoricalBatchFetcherTest {
   @SuppressWarnings("unchecked")
   private void setupValidResult() {
     Mockito.reset(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(any()))
+    when(blobSidecarsAvailabilityChecker.validate(any(List.class)))
         .thenAnswer(
             i ->
                 SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.validResult(
-                        ((Optional<List<BlobSidecar>>) i.getArgument(0)).orElseThrow())));
+                    BlobSidecarsAndValidationResult.validResult(i.getArgument(0))));
   }
 }
