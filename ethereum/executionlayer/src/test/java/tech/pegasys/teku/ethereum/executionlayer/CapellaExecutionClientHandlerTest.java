@@ -40,10 +40,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -84,8 +84,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                     data.randomUInt256())));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
-    final SafeFuture<ExecutionPayloadWithValue> future =
-        handler.engineGetPayload(context, bellatrixSlot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, bellatrixSlot);
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
     verify(executionEngineClient, never()).getPayloadV1(any());
 
@@ -112,14 +111,14 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                     UInt256.MAX_VALUE)));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
-    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
     assertThat(future).isCompleted();
     assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadCapella.class);
   }
 
   @Test
-  void engineNewPayload_capellaFork() throws ExecutionException, InterruptedException {
+  void engineNewPayload_capellaFork() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);

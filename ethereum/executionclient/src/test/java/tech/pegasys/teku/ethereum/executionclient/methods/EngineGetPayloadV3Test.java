@@ -41,10 +41,11 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.GetPayloadResponseDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV3Test {
@@ -120,6 +121,7 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilBellatrix.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
+    final BlobsBundle blobsBundle = BlobsBundle.EMPTY_BUNDLE;
     final ExecutionPayload executionPayloadBellatrix =
         dataStructureUtilBellatrix.randomExecutionPayload();
     assertThat(executionPayloadBellatrix).isInstanceOf(ExecutionPayloadBellatrix.class);
@@ -133,9 +135,9 @@ class EngineGetPayloadV3Test {
 
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, bellatrixSpec);
 
-    final ExecutionPayloadWithValue expectedPayloadWithValue =
-        new ExecutionPayloadWithValue(executionPayloadBellatrix, blockValue);
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
+    final GetPayloadResponse expectedGetPayloadResponse =
+        new GetPayloadResponseDeneb(executionPayloadBellatrix, blockValue, blobsBundle);
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);
@@ -149,6 +151,7 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilCapella.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
+    final BlobsBundle blobsBundle = BlobsBundle.EMPTY_BUNDLE;
     final ExecutionPayload executionPayloadCapella =
         dataStructureUtilCapella.randomExecutionPayload();
     assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadCapella.class);
@@ -161,9 +164,9 @@ class EngineGetPayloadV3Test {
 
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, capellaSpec);
 
-    final ExecutionPayloadWithValue expectedPayloadWithValue =
-        new ExecutionPayloadWithValue(executionPayloadCapella, blockValue);
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
+    final GetPayloadResponse expectedGetPayloadResponse =
+        new GetPayloadResponseDeneb(executionPayloadCapella, blockValue, blobsBundle);
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);
@@ -178,21 +181,20 @@ class EngineGetPayloadV3Test {
         dataStructureUtilDeneb.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
     final BlobsBundle blobsBundle = dataStructureUtilDeneb.randomBlobsBundle();
-    final ExecutionPayload executionPayloadCapella =
-        dataStructureUtilDeneb.randomExecutionPayload();
-    assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadDeneb.class);
+    final ExecutionPayload executionPayloadDeneb = dataStructureUtilDeneb.randomExecutionPayload();
+    assertThat(executionPayloadDeneb).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadCapella, blockValue, blobsBundle));
+        .thenReturn(dummySuccessfulResponse(executionPayloadDeneb, blockValue, blobsBundle));
 
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
 
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, denebSpec);
 
-    final ExecutionPayloadWithValue expectedPayloadWithValue =
-        new ExecutionPayloadWithValue(executionPayloadCapella, blockValue);
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
+    final GetPayloadResponse expectedGetPayloadResponse =
+        new GetPayloadResponseDeneb(executionPayloadDeneb, blockValue, blobsBundle);
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);

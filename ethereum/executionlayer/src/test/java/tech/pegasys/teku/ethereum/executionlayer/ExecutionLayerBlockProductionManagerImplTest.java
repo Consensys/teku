@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -48,9 +49,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.GetPayloadResponseCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.GetPayloadResponseDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerBlockProductionManagerImplTest {
@@ -59,7 +62,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
   private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
-  private Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -319,8 +322,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+    final GetPayloadResponse getPayloadResponse =
+        prepareEngineGetPayloadResponseDeneb(executionPayloadContext, UInt256.ZERO, slot);
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -328,12 +331,13 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadHeaderFuture()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundleFuture().orElseThrow())
-        .isEqualTo(BLOBS_BUNDLE_DUMMY);
 
     final ExecutionPayload executionPayload =
         executionPayloadResult.getExecutionPayloadFuture().orElseThrow().get();
-    assertThat(executionPayload).isEqualTo(payload);
+    assertThat(executionPayload).isEqualTo(getPayloadResponse.getExecutionPayload());
+    final BlobsBundle blobsBundle =
+        executionPayloadResult.getBlobsBundleFuture().orElseThrow().get();
+    assertThat(blobsBundle).isEqualTo(getPayloadResponse.getBlobsBundle());
 
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
         .contains(executionPayloadResult);
@@ -435,12 +439,23 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final ExecutionPayloadContext executionPayloadContext,
       final UInt256 blockValue,
       final UInt64 slot) {
-
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
-        .thenReturn(SafeFuture.completedFuture(new ExecutionPayloadWithValue(payload, blockValue)));
+        .thenReturn(SafeFuture.completedFuture(new GetPayloadResponseCapella(payload, blockValue)));
     return payload;
+  }
+
+  private GetPayloadResponse prepareEngineGetPayloadResponseDeneb(
+      final ExecutionPayloadContext executionPayloadContext,
+      final UInt256 blockValue,
+      final UInt64 slot) {
+    final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+    final GetPayloadResponseDeneb getPayloadResponse =
+        new GetPayloadResponseDeneb(payload, blockValue, blobsBundle);
+    when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
+        .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
+    return getPayloadResponse;
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(

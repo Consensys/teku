@@ -36,11 +36,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -80,8 +80,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
 
     final UInt64 bellatrixSlot =
         denebSpecWithForkSchedule.computeStartSlotAtEpoch(bellatrixForkEpoch);
-    final SafeFuture<ExecutionPayloadWithValue> future =
-        handler.engineGetPayload(context, bellatrixSlot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, bellatrixSlot);
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     verify(executionEngineClient, never()).getPayloadV2(any());
     verify(executionEngineClient, never()).getPayloadV1(any());
@@ -115,8 +114,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 capellaSlot = denebSpecWithForkSchedule.computeStartSlotAtEpoch(capellaForkEpoch);
-    final SafeFuture<ExecutionPayloadWithValue> future =
-        handler.engineGetPayload(context, capellaSlot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, capellaSlot);
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     assertThat(future).isCompleted();
     assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadCapella.class);
@@ -137,7 +135,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
-    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     assertThat(future).isCompleted();
     assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadDeneb.class);

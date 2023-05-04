@@ -45,14 +45,17 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.GetPayloadResponseDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -191,7 +194,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> engineGetPayload(
+  public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     if (!bellatrixActivationDetected) {
       LOG.info(
@@ -253,15 +256,29 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                 UInt256.ZERO,
                 payloadAttributes.getTimestamp()));
 
-    maybeHeadAndAttrs.get().currentExecutionPayload = Optional.of(executionPayload);
+    headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
+
+    if (headAndAttrs.currentCommitments.isEmpty()
+        || headAndAttrs.currentProofs.isEmpty()
+        || headAndAttrs.currentBlobs.isEmpty()) {
+      return SafeFuture.failedFuture(new RuntimeException("missing required data from cache"));
+    }
+
+    final BlobsBundle blobsBundle =
+        new BlobsBundle(
+            headAndAttrs.currentCommitments.orElseThrow(),
+            headAndAttrs.currentProofs.orElseThrow(),
+            headAndAttrs.currentBlobs.orElseThrow());
 
     LOG.info(
-        "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
+        "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}, blobsBundle: {}",
         executionPayloadContext.getPayloadId(),
         slot,
-        executionPayload.getBlockHash());
+        executionPayload.getBlockHash(),
+        blobsBundle.toBriefString());
 
-    return SafeFuture.completedFuture(executionPayload);
+    return SafeFuture.completedFuture(
+        new GetPayloadResponseDeneb(executionPayload, UInt256.ZERO, blobsBundle));
   }
 
   @Override
@@ -317,6 +334,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     SafeFuture<ExecutionPayloadHeader> payloadHeaderFuture =
         engineGetPayload(executionPayloadContext, slot)
+            .thenApply(GetPayloadResponse::getExecutionPayload)
             .thenApply(
                 executionPayload -> {
                   LOG.info(

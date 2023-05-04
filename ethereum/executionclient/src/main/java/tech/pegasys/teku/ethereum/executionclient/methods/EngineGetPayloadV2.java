@@ -22,10 +22,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.GetPayloadResponseCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
-public class EngineGetPayloadV2 extends AbstractEngineJsonRpcMethod<ExecutionPayloadWithValue> {
+public class EngineGetPayloadV2 extends AbstractEngineJsonRpcMethod<GetPayloadResponse> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -47,7 +48,7 @@ public class EngineGetPayloadV2 extends AbstractEngineJsonRpcMethod<ExecutionPay
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadWithValue> execute(final JsonRpcRequestParams params) {
+  public SafeFuture<GetPayloadResponse> execute(final JsonRpcRequestParams params) {
     final ExecutionPayloadContext executionPayloadContext =
         params.getRequiredParameter(0, ExecutionPayloadContext.class);
     final UInt64 slot = params.getRequiredParameter(1, UInt64.class);
@@ -66,9 +67,10 @@ public class EngineGetPayloadV2 extends AbstractEngineJsonRpcMethod<ExecutionPay
               final ExecutionPayloadSchema<?> payloadSchema =
                   SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getExecutionPayloadSchema();
-              return new ExecutionPayloadWithValue(
-                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
-                  response.blockValue);
+              return (GetPayloadResponse)
+                  new GetPayloadResponseCapella(
+                      response.executionPayload.asInternalExecutionPayload(payloadSchema),
+                      response.blockValue);
             })
         .thenPeek(
             payloadAndValue ->
