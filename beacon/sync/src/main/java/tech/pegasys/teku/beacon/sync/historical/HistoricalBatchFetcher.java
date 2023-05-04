@@ -403,12 +403,12 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobSidecars(final SignedBeaconBlock block) {
-    final Optional<List<BlobSidecar>> blobSidecarsOptional =
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
         Optional.ofNullable(blobSidecarsBySlotToImport.get(block.getSlot()));
-    LOG.trace("Validating {} blob sidecars for block {}", blobSidecarsOptional, block.getRoot());
+    LOG.trace("Validating {} blob sidecars for block {}", maybeBlobSidecars, block.getRoot());
     return blobSidecarManager
         .createAvailabilityChecker(block)
-        .validate(blobSidecarsOptional)
+        .validate(maybeBlobSidecars)
         .thenAccept(
             validationResult -> {
               if (validationResult.isFailure()) {

@@ -255,11 +255,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints checkpoints,
-      Optional<List<BlobSidecar>> blobSidecarsOptional) {
+      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     blocks.put(block.getRoot(), block);
     blockStates.put(block.getRoot(), state);
     blockCheckpoints.put(block.getRoot(), checkpoints);
-    blobSidecarsOptional.ifPresent(
+    maybeBlobSidecars.ifPresent(
         blobSidecars ->
             this.blobSidecars.put(
                 new SlotAndBlockRoot(block.getSlot(), block.getRoot()), blobSidecars));

@@ -399,7 +399,7 @@ public class ForkChoiceUtil {
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
       final boolean isBlockOptimistic,
-      final Optional<List<BlobSidecar>> blobSidecarsOptional) {
+      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
 
     BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
 
@@ -418,7 +418,7 @@ public class ForkChoiceUtil {
         isBlockOptimistic);
 
     // Add new block to store
-    store.putBlockAndState(signedBlock, postState, blockCheckpoints, blobSidecarsOptional);
+    store.putBlockAndState(signedBlock, postState, blockCheckpoints, maybeBlobSidecars);
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

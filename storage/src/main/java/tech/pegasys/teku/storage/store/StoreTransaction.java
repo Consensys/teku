@@ -92,11 +92,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,
-      Optional<List<BlobSidecar>> blobSidecarsOptional) {
+      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(block.getSlot(), block.getRoot());
-    blobSidecarsOptional.ifPresent(
+    maybeBlobSidecars.ifPresent(
         blobSidecars -> this.blobSidecars.put(slotAndBlockRoot, blobSidecars));
     putStateRoot(state.hashTreeRoot(), slotAndBlockRoot);
   }

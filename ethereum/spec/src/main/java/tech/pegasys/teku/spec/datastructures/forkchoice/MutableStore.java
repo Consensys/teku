@@ -31,7 +31,7 @@ public interface MutableStore extends ReadOnlyStore {
       SignedBeaconBlock block,
       BeaconState state,
       BlockCheckpoints checkpoints,
-      Optional<List<BlobSidecar>> blobSidecarsOptional);
+      Optional<List<BlobSidecar>> maybeBlobSidecars);
 
   default void putBlockAndState(SignedBlockAndState blockAndState, BlockCheckpoints checkpoints) {
     putBlockAndState(
