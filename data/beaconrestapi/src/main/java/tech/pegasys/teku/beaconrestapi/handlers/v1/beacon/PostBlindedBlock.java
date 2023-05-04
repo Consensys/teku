@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -87,7 +88,7 @@ public class PostBlindedBlock extends RestApiEndpoint {
                     SC_INTERNAL_SERVER_ERROR,
                     "An internal error occurred, check the server logs for more details.");
               } else {
-                return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+                return AsyncApiResponse.respondWithError(SC_BAD_REQUEST, blockResult.getRejectionReason().get());
               }
             }));
   }
