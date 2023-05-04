@@ -16,49 +16,42 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 
 public class BlobsBundle {
 
-  private final Bytes32 blockHash;
-  private final List<KZGCommitment> kzgs;
+  public static final BlobsBundle EMPTY_BUNDLE = new BlobsBundle(List.of(), List.of(), List.of());
+
+  private final List<KZGCommitment> commitments;
+  private final List<KZGProof> proofs;
   private final List<Blob> blobs;
 
   public BlobsBundle(
-      final Bytes32 blockHash, final List<KZGCommitment> kzgs, final List<Blob> blobs) {
-    this.blockHash = blockHash;
-    this.kzgs = kzgs;
+      final List<KZGCommitment> commitments, final List<KZGProof> proofs, final List<Blob> blobs) {
+    this.commitments = commitments;
+    this.proofs = proofs;
     this.blobs = blobs;
   }
 
-  public Bytes32 getBlockHash() {
-    return blockHash;
+  public List<KZGCommitment> getCommitments() {
+    return commitments;
   }
 
-  public List<KZGCommitment> getKzgs() {
-    return kzgs;
+  public List<KZGProof> getProofs() {
+    return proofs;
   }
 
   public List<Blob> getBlobs() {
     return blobs;
   }
 
-  public String toBriefBlobsString() {
-    return MoreObjects.toStringHelper(this)
-        .add("blockHash", blockHash)
-        .add("kzgs", kzgs)
-        .add("blobs", blobs.stream().map(Blob::toBriefString).collect(Collectors.toList()))
-        .toString();
-  }
-
   /** It's very big, use carefully */
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("blockHash", blockHash)
-        .add("kzgs", kzgs)
+        .add("commitments", commitments)
+        .add("proofs", proofs)
         .add("blobs", blobs)
         .toString();
   }
@@ -72,13 +65,13 @@ public class BlobsBundle {
       return false;
     }
     final BlobsBundle that = (BlobsBundle) o;
-    return Objects.equals(blockHash, that.blockHash)
-        && Objects.equals(kzgs, that.kzgs)
+    return Objects.equals(commitments, that.commitments)
+        && Objects.equals(proofs, that.proofs)
         && Objects.equals(blobs, that.blobs);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(blockHash, kzgs, blobs);
+    return Objects.hash(commitments, proofs, blobs);
   }
 }

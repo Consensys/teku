@@ -280,24 +280,24 @@ public class BlockOperationSelectorFactory {
       final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture) {
     final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
         SchemaDefinitionsDeneb.required(schemaDefinitions);
-    final SafeFuture<SszList<SszKZGCommitment>> commitments =
+    final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments =
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
                 executionPayloadResult
-                    .getKzgs()
+                    .getCommitments()
                     .orElseThrow()
                     .thenApply(
-                        kzgs ->
+                        commitments ->
                             schemaDefinitionsDeneb
                                 .getBeaconBlockBodySchema()
                                 .toVersionDeneb()
                                 .orElseThrow()
                                 .getBlobKzgCommitmentsSchema()
                                 .createFromElements(
-                                    kzgs.stream()
+                                    commitments.stream()
                                         .map(SszKZGCommitment::new)
                                         .collect(Collectors.toList()))));
-    bodyBuilder.blobKzgCommitments(commitments);
+    bodyBuilder.blobKzgCommitments(blobKzgCommitments);
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {

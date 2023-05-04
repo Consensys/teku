@@ -37,7 +37,7 @@ public class BlobsBundleValidatorImpl implements BlobsBundleValidator {
         .map(
             executionPayload ->
                 miscHelpers.verifyKZGCommitmentsAgainstTransactions(
-                    executionPayload.getTransactions().asList(), blobsBundle.getKzgs()))
+                    executionPayload.getTransactions().asList(), blobsBundle.getCommitments()))
         .orElse(true)) {
       throw new BlobsBundleValidationException(
           "KZG commitments doesn't match the versioned hashes in the transactions");
@@ -45,7 +45,7 @@ public class BlobsBundleValidatorImpl implements BlobsBundleValidator {
 
     // Optionally sanity-check that the KZG commitments match the blobs (as produced by the
     // execution engine
-    if (blobsBundle.getKzgs().size() != blobsBundle.getBlobs().size()) {
+    if (blobsBundle.getCommitments().size() != blobsBundle.getBlobs().size()) {
       throw new BlobsBundleValidationException("KZG commitments size doesn't match blobs size");
     }
 
@@ -54,7 +54,7 @@ public class BlobsBundleValidatorImpl implements BlobsBundleValidator {
             i ->
                 miscHelpers
                     .blobToKzgCommitment(blobsBundle.getBlobs().get(i))
-                    .equals(blobsBundle.getKzgs().get(i)))
+                    .equals(blobsBundle.getCommitments().get(i)))
         .anyMatch(result -> !result)) {
       throw new BlobsBundleValidationException("Blobs not matching KZG commitments");
     }

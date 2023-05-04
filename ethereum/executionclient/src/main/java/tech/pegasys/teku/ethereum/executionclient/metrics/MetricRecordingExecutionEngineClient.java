@@ -19,7 +19,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -53,7 +52,6 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       "forkchoice_updated_with_attributesV2";
   public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
-  public static final String GET_BLOBS_BUNDLE_V1_METHOD = "engine_getBlobsBundleV1";
 
   private final ExecutionEngineClient delegate;
 
@@ -96,11 +94,6 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   @Override
   public SafeFuture<Response<GetPayloadV3Response>> getPayloadV3(final Bytes8 payloadId) {
     return countRequest(() -> delegate.getPayloadV3(payloadId), GET_PAYLOAD_V3_METHOD);
-  }
-
-  @Override
-  public SafeFuture<Response<BlobsBundleV1>> getBlobsBundleV1(final Bytes8 payloadId) {
-    return countRequest(() -> delegate.getBlobsBundleV1(payloadId), GET_BLOBS_BUNDLE_V1_METHOD);
   }
 
   @Override
