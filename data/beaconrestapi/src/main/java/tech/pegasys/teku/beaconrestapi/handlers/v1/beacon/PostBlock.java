@@ -118,8 +118,8 @@ public class PostBlock extends RestApiEndpoint {
                     return AsyncApiResponse.respondWithError(
                         SC_INTERNAL_SERVER_ERROR, result.getRejectionReason().get());
                   } else {
-                    return AsyncApiResponse.respondWithError(SC_BAD_REQUEST, result.getRejectionReason().get());
-//                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+                    return AsyncApiResponse.respondWithError(
+                        SC_BAD_REQUEST, result.getRejectionReason().get());
                   }
                 }));
   }

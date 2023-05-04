@@ -88,7 +88,8 @@ public class PostBlindedBlock extends RestApiEndpoint {
                     SC_INTERNAL_SERVER_ERROR,
                     "An internal error occurred, check the server logs for more details.");
               } else {
-                return AsyncApiResponse.respondWithError(SC_BAD_REQUEST, blockResult.getRejectionReason().get());
+                return AsyncApiResponse.respondWithError(
+                    SC_BAD_REQUEST, blockResult.getRejectionReason().get());
               }
             }));
   }
