@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -519,6 +520,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
     return store.retrieveBlockState(rootAtSlot.get());
+  }
+
+  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+    final SlotAndBlockRoot slotAndBlockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.NO_BLOB_SIDECARS_FUTURE;
+    }
+    return store.retrieveBlobSidecars(slotAndBlockRoot);
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UInt64 slot) {
