@@ -35,9 +35,15 @@ public class GetPayloadResponseCapella extends GetPayloadResponseBellatrix {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (!(o instanceof GetPayloadResponseCapella)) return false;
-    if (!super.equals(o)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof GetPayloadResponseCapella)) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
     final GetPayloadResponseCapella that = (GetPayloadResponseCapella) o;
     return Objects.equals(blockValue, that.blockValue);
   }

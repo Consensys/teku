@@ -32,8 +32,12 @@ public class GetPayloadResponseBellatrix implements GetPayloadResponse {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     final GetPayloadResponseBellatrix that = (GetPayloadResponseBellatrix) o;
     return Objects.equals(executionPayload, that.executionPayload);
   }
