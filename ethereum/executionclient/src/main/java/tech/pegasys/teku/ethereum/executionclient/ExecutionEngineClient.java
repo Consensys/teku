@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.executionclient;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.executionclient.schema.BlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -42,8 +41,6 @@ public interface ExecutionEngineClient {
   SafeFuture<Response<GetPayloadV2Response>> getPayloadV2(Bytes8 payloadId);
 
   SafeFuture<Response<GetPayloadV3Response>> getPayloadV3(Bytes8 payloadId);
-
-  SafeFuture<Response<BlobsBundleV1>> getBlobsBundleV1(Bytes8 payloadId);
 
   SafeFuture<Response<PayloadStatusV1>> newPayloadV1(ExecutionPayloadV1 executionPayload);
 
