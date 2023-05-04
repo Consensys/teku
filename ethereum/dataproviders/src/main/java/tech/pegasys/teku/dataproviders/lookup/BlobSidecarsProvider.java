@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 public interface BlobSidecarsProvider {
   BlobSidecarsProvider NOOP = (block) -> SafeFuture.completedFuture(Optional.empty());
 
-  default SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(SignedBeaconBlock block) {
+  default SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(final SignedBeaconBlock block) {
     return getBlobSidecars(block.getSlotAndBlockRoot());
   }
 

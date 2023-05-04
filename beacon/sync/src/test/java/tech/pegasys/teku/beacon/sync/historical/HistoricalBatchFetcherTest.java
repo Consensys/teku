@@ -316,7 +316,7 @@ public class HistoricalBatchFetcherTest {
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
     Map<UInt64, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
     if (blobSidecarsRequired) {
-      // BlobSidecars for slot 20 which is lastBlockRoot will also exist there
+      // BlobSidecars for slot 20 which is lastBlockRoot should be also in a result
       assertThat(
               blobSidecars.values().stream()
                   .flatMap(Collection::stream)

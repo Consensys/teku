@@ -402,6 +402,7 @@ public class HistoricalBatchFetcher {
   }
 
   private SafeFuture<Void> validateBlobSidecars(final SignedBeaconBlock block) {
+    // We are in availability window, but lastBlock could be not pre-filled with empty list
     blobSidecarsBySlotToImport.putIfAbsent(block.getSlot(), Collections.emptyList());
     final List<BlobSidecar> blobSidecars = blobSidecarsBySlotToImport.get(block.getSlot());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());

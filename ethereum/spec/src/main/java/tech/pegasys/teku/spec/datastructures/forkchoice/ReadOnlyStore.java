@@ -124,6 +124,15 @@ public interface ReadOnlyStore {
 
   SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot checkpoint);
 
+  /**
+   * Returns list of blobSidecars
+   *
+   * @param slotAndBlockRoot for block root and slot
+   * @return one of
+   *     <p>- blobSidecars from the block,
+   *     <p>- empty Optional, when there are no data for the block, it's either pre-Deneb or pruned,
+   *     <p>- empty List, when there is `blobSidecar` data for the block, but it contains 0 Blobs.
+   */
   SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState();

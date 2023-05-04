@@ -27,13 +27,14 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface MutableStore extends ReadOnlyStore {
 
+  // Optional.empty() BlobSidecars for pre-Deneb blocks or out of availability window
   void putBlockAndState(
       SignedBeaconBlock block,
       BeaconState state,
       BlockCheckpoints checkpoints,
       Optional<List<BlobSidecar>> maybeBlobSidecars);
 
-  default void putBlockAndState(SignedBlockAndState blockAndState, BlockCheckpoints checkpoints) {
+  default void putBlockAndState(final SignedBlockAndState blockAndState, final BlockCheckpoints checkpoints) {
     putBlockAndState(
         blockAndState.getBlock(), blockAndState.getState(), checkpoints, Optional.empty());
   }

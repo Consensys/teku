@@ -245,7 +245,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   @Override
   public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
-      SlotAndBlockRoot slotAndBlockRoot) {
+      final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.completedFuture(Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)));
   }
 

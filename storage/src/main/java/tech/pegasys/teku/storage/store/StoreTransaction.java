@@ -434,7 +434,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
-      SlotAndBlockRoot slotAndBlockRoot) {
+      final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.completedFuture(Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)));
   }
 }
