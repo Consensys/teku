@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
+import java.util.Objects;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.GetPayloadResponseBellatrix;
@@ -30,5 +31,19 @@ public class GetPayloadResponseCapella extends GetPayloadResponseBellatrix {
   @Override
   public UInt256 getBlockValue() {
     return blockValue;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetPayloadResponseCapella)) return false;
+    if (!super.equals(o)) return false;
+    final GetPayloadResponseCapella that = (GetPayloadResponseCapella) o;
+    return Objects.equals(blockValue, that.blockValue);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), blockValue);
   }
 }

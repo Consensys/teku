@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 
+import java.util.Objects;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -33,5 +34,19 @@ public class GetPayloadResponseDeneb extends GetPayloadResponseCapella {
   @Override
   public BlobsBundle getBlobsBundle() {
     return blobsBundle;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (!(o instanceof GetPayloadResponseDeneb)) return false;
+    if (!super.equals(o)) return false;
+    final GetPayloadResponseDeneb that = (GetPayloadResponseDeneb) o;
+    return Objects.equals(blobsBundle, that.blobsBundle);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), blobsBundle);
   }
 }

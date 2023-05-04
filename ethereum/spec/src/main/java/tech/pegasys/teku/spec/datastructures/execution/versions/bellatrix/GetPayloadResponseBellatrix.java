@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix;
 
+import java.util.Objects;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 
@@ -27,5 +28,18 @@ public class GetPayloadResponseBellatrix implements GetPayloadResponse {
   @Override
   public ExecutionPayload getExecutionPayload() {
     return executionPayload;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final GetPayloadResponseBellatrix that = (GetPayloadResponseBellatrix) o;
+    return Objects.equals(executionPayload, that.executionPayload);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(executionPayload);
   }
 }
