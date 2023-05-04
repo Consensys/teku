@@ -34,7 +34,8 @@ public interface MutableStore extends ReadOnlyStore {
       BlockCheckpoints checkpoints,
       Optional<List<BlobSidecar>> maybeBlobSidecars);
 
-  default void putBlockAndState(final SignedBlockAndState blockAndState, final BlockCheckpoints checkpoints) {
+  default void putBlockAndState(
+      final SignedBlockAndState blockAndState, final BlockCheckpoints checkpoints) {
     putBlockAndState(
         blockAndState.getBlock(), blockAndState.getState(), checkpoints, Optional.empty());
   }
