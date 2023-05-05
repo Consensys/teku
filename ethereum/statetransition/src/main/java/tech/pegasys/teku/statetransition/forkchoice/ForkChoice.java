@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
@@ -399,9 +400,22 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
-    // TODO: replace Optional.empty() with blobSidecars Optional
+
+    // TODO: test me thoroughly
+    final Optional<List<BlobSidecar>> blobSidecars;
+    if (blobSidecarsAndValidationResult.isNotRequired()) {
+      // Outside availability window or pre-Deneb
+      blobSidecars = Optional.empty();
+    } else if (blobSidecarsAndValidationResult.isValid()) {
+      blobSidecars = Optional.of(blobSidecarsAndValidationResult.getBlobSidecars());
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Unexpected attempt to store invalid blob sidecars (%s) for block: %s",
+              blobSidecarsAndValidationResult, block));
+    }
     forkChoiceUtil.applyBlockToStore(
-        transaction, block, postState, payloadResult.hasNotValidatedStatus(), Optional.empty());
+        transaction, block, postState, payloadResult.hasNotValidatedStatus(), blobSidecars);
 
     if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
