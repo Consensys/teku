@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.GetPayloadResponseCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -805,8 +804,7 @@ class ExecutionLayerManagerImplTest {
       final UInt256 blockValue,
       final UInt64 slot) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-    final GetPayloadResponseCapella getPayloadResponse =
-        new GetPayloadResponseCapella(payload, blockValue);
+    final GetPayloadResponse getPayloadResponse = new GetPayloadResponse(payload, blockValue);
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
     return getPayloadResponse;

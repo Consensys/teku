@@ -51,8 +51,6 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.GetPayloadResponseCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.GetPayloadResponseDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -323,7 +321,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
-        prepareEngineGetPayloadResponseDeneb(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, UInt256.ZERO, slot);
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -441,18 +439,18 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final UInt64 slot) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
-        .thenReturn(SafeFuture.completedFuture(new GetPayloadResponseCapella(payload, blockValue)));
+        .thenReturn(SafeFuture.completedFuture(new GetPayloadResponse(payload, blockValue)));
     return payload;
   }
 
-  private GetPayloadResponse prepareEngineGetPayloadResponseDeneb(
+  private GetPayloadResponse prepareEngineGetPayloadResponseWithBlobs(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt256 blockValue,
       final UInt64 slot) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
-    final GetPayloadResponseDeneb getPayloadResponse =
-        new GetPayloadResponseDeneb(payload, blockValue, blobsBundle);
+    final GetPayloadResponse getPayloadResponse =
+        new GetPayloadResponse(payload, blockValue, blobsBundle);
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
     return getPayloadResponse;
