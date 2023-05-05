@@ -13,18 +13,65 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import java.util.Objects;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 
-public interface GetPayloadResponse {
+public class GetPayloadResponse {
 
-  ExecutionPayload getExecutionPayload();
+  private final ExecutionPayload executionPayload;
+  private final UInt256 blockValue;
+  private final BlobsBundle blobsBundle;
 
-  default UInt256 getBlockValue() {
-    return UInt256.ZERO;
+  public GetPayloadResponse(final ExecutionPayload executionPayload) {
+    this.executionPayload = executionPayload;
+    this.blockValue = UInt256.ZERO;
+    this.blobsBundle = BlobsBundle.EMPTY_BUNDLE;
   }
 
-  default BlobsBundle getBlobsBundle() {
-    return BlobsBundle.EMPTY_BUNDLE;
+  public GetPayloadResponse(final ExecutionPayload executionPayload, final UInt256 blockValue) {
+    this.executionPayload = executionPayload;
+    this.blockValue = blockValue;
+    this.blobsBundle = BlobsBundle.EMPTY_BUNDLE;
+  }
+
+  public GetPayloadResponse(
+      final ExecutionPayload executionPayload,
+      final UInt256 blockValue,
+      final BlobsBundle blobsBundle) {
+    this.executionPayload = executionPayload;
+    this.blockValue = blockValue;
+    this.blobsBundle = blobsBundle;
+  }
+
+  public ExecutionPayload getExecutionPayload() {
+    return executionPayload;
+  }
+
+  public UInt256 getBlockValue() {
+    return blockValue;
+  }
+
+  public BlobsBundle getBlobsBundle() {
+    return blobsBundle;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof GetPayloadResponse)) {
+      return false;
+    }
+    final GetPayloadResponse that = (GetPayloadResponse) o;
+    return Objects.equals(executionPayload, that.executionPayload)
+        && Objects.equals(blockValue, that.blockValue)
+        && Objects.equals(blobsBundle, that.blobsBundle);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(executionPayload, blockValue, blobsBundle);
   }
 }

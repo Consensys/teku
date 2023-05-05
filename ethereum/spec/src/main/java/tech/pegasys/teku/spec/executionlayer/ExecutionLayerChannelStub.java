@@ -55,7 +55,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.GetPayloadResponseDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -222,6 +221,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
     final PayloadBuildingAttributes payloadAttributes = headAndAttrs.attributes;
 
+    final List<Bytes> transactions = generateTransactions(slot, headAndAttrs);
+
     final ExecutionPayload executionPayload =
         spec.atSlot(slot)
             .getSchemaDefinitions()
@@ -244,9 +245,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .extraData(Bytes.EMPTY)
                         .baseFeePerGas(UInt256.ONE)
                         .blockHash(Bytes32.random())
-                        .transactions(generateTransactions(slot, headAndAttrs))
+                        .transactions(transactions)
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .excessDataGas(() -> UInt256.ZERO));
+
     // we assume all blocks are produced locally
     lastValidBlock =
         Optional.of(
@@ -258,27 +260,23 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
 
-    if (headAndAttrs.currentCommitments.isEmpty()
-        || headAndAttrs.currentProofs.isEmpty()
-        || headAndAttrs.currentBlobs.isEmpty()) {
-      return SafeFuture.failedFuture(new RuntimeException("missing required data from cache"));
-    }
-
-    final BlobsBundle blobsBundle =
-        new BlobsBundle(
-            headAndAttrs.currentCommitments.orElseThrow(),
-            headAndAttrs.currentProofs.orElseThrow(),
-            headAndAttrs.currentBlobs.orElseThrow());
-
     LOG.info(
-        "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}, blobsBundle: {}",
+        "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
         executionPayloadContext.getPayloadId(),
         slot,
-        executionPayload.getBlockHash(),
-        blobsBundle.toBriefString());
+        executionPayload.getBlockHash());
 
-    return SafeFuture.completedFuture(
-        new GetPayloadResponseDeneb(executionPayload, UInt256.ZERO, blobsBundle));
+    final GetPayloadResponse getPayloadResponse =
+        headAndAttrs
+            .currentBlobsBundle
+            .map(
+                blobsBundle -> {
+                  LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
+                  return new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle);
+                })
+            .orElse(new GetPayloadResponse(executionPayload));
+
+    return SafeFuture.completedFuture(getPayloadResponse);
   }
 
   @Override
@@ -417,9 +415,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     private final Bytes32 head;
     private final PayloadBuildingAttributes attributes;
     private Optional<ExecutionPayload> currentExecutionPayload = Optional.empty();
-    private Optional<List<Blob>> currentBlobs = Optional.empty();
-    private Optional<List<KZGCommitment>> currentCommitments = Optional.empty();
-    private Optional<List<KZGProof>> currentProofs = Optional.empty();
+    private Optional<BlobsBundle> currentBlobsBundle = Optional.empty();
 
     private HeadAndAttributes(Bytes32 head, PayloadBuildingAttributes attributes) {
       this.head = head;
@@ -499,13 +495,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final UInt64 slot, final HeadAndAttributes headAndAttrs) {
 
     final List<Blob> blobs = blobsUtil.generateBlobs(slot, blobsToGenerate);
-
     final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
     final List<KZGProof> proofs = blobsUtil.computeKzgProofs(slot, blobs, commitments);
 
-    headAndAttrs.currentBlobs = Optional.of(blobs);
-    headAndAttrs.currentCommitments = Optional.of(commitments);
-    headAndAttrs.currentProofs = Optional.of(proofs);
+    final BlobsBundle blobsBundle = new BlobsBundle(commitments, proofs, blobs);
+
+    headAndAttrs.currentBlobsBundle = Optional.of(blobsBundle);
 
     return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
   }

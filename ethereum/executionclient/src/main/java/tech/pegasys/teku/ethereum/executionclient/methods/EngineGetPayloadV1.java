@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.GetPayloadResponseBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class EngineGetPayloadV1 extends AbstractEngineJsonRpcMethod<GetPayloadResponse> {
@@ -67,9 +66,7 @@ public class EngineGetPayloadV1 extends AbstractEngineJsonRpcMethod<GetPayloadRe
               final ExecutionPayloadSchema<?> payloadSchema =
                   SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
                       .getExecutionPayloadSchema();
-              return (GetPayloadResponse)
-                  new GetPayloadResponseBellatrix(
-                      payload.asInternalExecutionPayload(payloadSchema));
+              return new GetPayloadResponse(payload.asInternalExecutionPayload(payloadSchema));
             })
         .thenPeek(
             payloadAndValue ->

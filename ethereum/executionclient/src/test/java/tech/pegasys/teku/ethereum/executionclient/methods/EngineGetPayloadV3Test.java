@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.GetPayloadResponseDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV3Test {
@@ -136,7 +135,7 @@ class EngineGetPayloadV3Test {
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, bellatrixSpec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponseDeneb(executionPayloadBellatrix, blockValue, blobsBundle);
+        new GetPayloadResponse(executionPayloadBellatrix, blockValue, blobsBundle);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
@@ -165,7 +164,7 @@ class EngineGetPayloadV3Test {
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, capellaSpec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponseDeneb(executionPayloadCapella, blockValue, blobsBundle);
+        new GetPayloadResponse(executionPayloadCapella, blockValue, blobsBundle);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
@@ -193,7 +192,7 @@ class EngineGetPayloadV3Test {
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, denebSpec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponseDeneb(executionPayloadDeneb, blockValue, blobsBundle);
+        new GetPayloadResponse(executionPayloadDeneb, blockValue, blobsBundle);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));

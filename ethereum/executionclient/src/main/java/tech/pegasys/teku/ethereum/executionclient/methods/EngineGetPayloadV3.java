@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.GetPayloadResponseDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -74,11 +73,10 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                   SchemaDefinitionsBellatrix.required(schemaDefinitions)
                       .getExecutionPayloadSchema();
               final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
-              return (GetPayloadResponse)
-                  new GetPayloadResponseDeneb(
-                      response.executionPayload.asInternalExecutionPayload(payloadSchema),
-                      response.blockValue,
-                      blobsBundle);
+              return new GetPayloadResponse(
+                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
+                  response.blockValue,
+                  blobsBundle);
             })
         .thenPeek(
             payloadAndValue ->

@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.GetPayloadResponseCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV2Test {
@@ -131,7 +130,7 @@ class EngineGetPayloadV2Test {
     jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, bellatrixSpec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponseCapella(executionPayloadBellatrix, blockValue);
+        new GetPayloadResponse(executionPayloadBellatrix, blockValue);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV2(eq(executionPayloadContext.getPayloadId()));
@@ -159,7 +158,7 @@ class EngineGetPayloadV2Test {
     jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, capellaSpec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponseCapella(executionPayloadCapella, blockValue);
+        new GetPayloadResponse(executionPayloadCapella, blockValue);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV2(eq(executionPayloadContext.getPayloadId()));
