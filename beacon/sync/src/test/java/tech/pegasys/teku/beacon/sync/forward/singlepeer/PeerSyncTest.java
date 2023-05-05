@@ -553,7 +553,8 @@ public class PeerSyncTest extends AbstractSyncTest {
       if (!blobSidecarsBySlot.containsKey(slot)) {
         Assertions.fail("Blob sidecars for slot %s is missing", slot);
       }
-      verify(blobSidecarPool).onBlobSidecarsFromSync(any(), eq(blobSidecarsBySlot.get(slot)));
+      verify(blobSidecarPool)
+          .onCompletedBlockAndBlobSidecars(any(), eq(blobSidecarsBySlot.get(slot)));
     }
   }
 

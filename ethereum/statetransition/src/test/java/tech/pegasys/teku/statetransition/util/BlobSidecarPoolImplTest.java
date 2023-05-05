@@ -249,14 +249,14 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  public void onBlobSidecarsFromSync_shouldCreateTrackerIgnoringHistoricalTolerance() {
+  public void onCompletedBlockAndBlobSidecars_shouldCreateTrackerIgnoringHistoricalTolerance() {
     final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
 
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
-    blobSidecarPool.onBlobSidecarsFromSync(block, blobSidecars);
+    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
@@ -285,7 +285,7 @@ public class BlobSidecarPoolImplTest {
 
     final List<BlobSidecar> blobSidecars = List.of();
 
-    blobSidecarPool.onBlobSidecarsFromSync(block, blobSidecars);
+    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 

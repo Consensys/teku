@@ -250,7 +250,7 @@ class BatchImporterTest {
 
   private void blobSidecarsImportedSuccessfully(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    verify(blobSidecarPool).onBlobSidecarsFromSync(block, blobSidecars);
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, blobSidecars);
     verifyNoMoreInteractions(blobSidecarPool);
   }
 
