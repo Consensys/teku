@@ -30,6 +30,8 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 
 public class BlobsBundleV1 {
@@ -67,6 +69,15 @@ public class BlobsBundleV1 {
             .collect(Collectors.toList()),
         blobsBundle.getBlobs().stream()
             .map(SszByteVectorImpl::getBytes)
+            .collect(Collectors.toList()));
+  }
+
+  public BlobsBundle asInternalBlobsBundle(final BlobSchema blobSchema) {
+    return new BlobsBundle(
+        commitments.stream().map(KZGCommitment::new).collect(Collectors.toList()),
+        proofs.stream().map(KZGProof::new).collect(Collectors.toList()),
+        blobs.stream()
+            .map(blobBytes -> new Blob(blobSchema, blobBytes))
             .collect(Collectors.toList()));
   }
 
