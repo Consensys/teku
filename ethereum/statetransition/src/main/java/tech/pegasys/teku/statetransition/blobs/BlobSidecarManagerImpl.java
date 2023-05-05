@@ -108,8 +108,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
               break;
             case ACCEPT:
               final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
-              prepareForBlockImport(blobSidecar)
-                  .finish(err -> LOG.error("Failed to process received BlobSidecar.", err));
+              prepareForBlockImport(blobSidecar);
               break;
           }
         });
@@ -118,10 +117,9 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public SafeFuture<Void> prepareForBlockImport(final BlobSidecar blobSidecar) {
+  public void prepareForBlockImport(final BlobSidecar blobSidecar) {
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
     receivedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarReceived(blobSidecar));
-    return SafeFuture.COMPLETE;
   }
 
   @Override

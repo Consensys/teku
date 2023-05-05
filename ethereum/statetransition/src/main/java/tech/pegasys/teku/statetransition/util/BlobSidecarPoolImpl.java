@@ -158,6 +158,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   @Override
   public synchronized void onNewBlock(final SignedBeaconBlock block) {
+    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
+      return;
+    }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }

@@ -33,9 +33,7 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public SafeFuture<Void> prepareForBlockImport(final BlobSidecar blobSidecar) {
-          return SafeFuture.COMPLETE;
-        }
+        public void prepareForBlockImport(final BlobSidecar blobSidecar) {}
 
         @Override
         public void subscribeToReceivedBlobSidecar(
@@ -65,7 +63,7 @@ public interface BlobSidecarManager {
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       SignedBlobSidecar signedBlobSidecar);
 
-  SafeFuture<Void> prepareForBlockImport(BlobSidecar blobSidecar);
+  void prepareForBlockImport(BlobSidecar blobSidecar);
 
   void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 

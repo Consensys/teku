@@ -140,6 +140,24 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
+  public void onNewBlock_shouldIgnorePreDenebBlocks() {
+    final Spec spec = TestSpecFactory.createMainnetCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    blobSidecarPool.onNewBlock(block);
+
+    assertThat(blobSidecarPool.containsBlock(block)).isFalse();
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+
+    assertBlobSidecarsCount(0);
+    assertBlobSidecarsTrackersCount(0);
+  }
+
+  @Test
   public void onNewBlobSidecarOnNewBlock_addTrackerWithBothBlockAndBlobSidecar() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
