@@ -35,9 +35,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
@@ -200,5 +203,29 @@ public class BlobSidecarManagerTest {
     verify(blobSidecarPool).onNewBlobSidecar(futureBlobSidecarsList.get(0).getBlobSidecar());
     verify(receivedBlobSidecarListener)
         .onBlobSidecarReceived(futureBlobSidecarsList.get(0).getBlobSidecar());
+  }
+
+  @Test
+  void createAvailabilityChecker_shouldReturnANotRequiredAvailabilityCheckerWhenBlockIsPreDeneb() {
+    final Spec spec = TestSpecFactory.createMainnetCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    assertThat(blobSidecarManager.createAvailabilityChecker(block))
+        .isEqualTo(BlobSidecarsAvailabilityChecker.NOT_REQUIRED);
+  }
+
+  @Test
+  void createAvailabilityChecker_shouldReturnAnAvailabilityChecker() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
+    when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
+
+    when(blobSidecarPool.getOrCreateBlockBlobsSidecarsTracker(block))
+        .thenReturn(blockBlobSidecarsTracker);
+
+    assertThat(blobSidecarManager.createAvailabilityChecker(block))
+        .isInstanceOf(ForkChoiceBlobSidecarsAvailabilityChecker.class);
   }
 }
