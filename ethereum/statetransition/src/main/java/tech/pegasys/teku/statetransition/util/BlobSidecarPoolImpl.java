@@ -298,7 +298,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
               if (existingTracker.isFetchTriggered()) {
                 // block has been set for the first time and we previously triggered fetching of
-                // missing blobSidecars fetch. So we may have requested to fetch more sidecars
+                // missing blobSidecars. So we may have requested to fetch more sidecars
                 // than the block actually requires. Let's drop them.
                 existingTracker
                     .getUnusedBlobSidecarsForBlock()
