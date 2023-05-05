@@ -345,24 +345,20 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
-    final Optional<Duration> fetchDelay = calculateFetchDelay(slotAndBlockRoot);
-
-    if (fetchDelay.isEmpty()) {
-      return;
-    }
+    final Duration fetchDelay = calculateFetchDelay(slotAndBlockRoot);
 
     asyncRunner
-        .runAfterDelay(() -> this.fetchMissingContent(slotAndBlockRoot), fetchDelay.get())
+        .runAfterDelay(() -> this.fetchMissingContent(slotAndBlockRoot), fetchDelay)
         .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting
-  Optional<Duration> calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
+  Duration calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
     final UInt64 slot = slotAndBlockRoot.getSlot();
 
     if (slot.isLessThan(getCurrentSlot())) {
       // old slot
-      return Optional.empty();
+      return Duration.ZERO;
     }
 
     final UInt64 nowMillis = timeProvider.getTimeInMillis();
@@ -373,7 +369,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
       // late block, we already produced attestations on previous head,
       // so let's wait our target delay before trying to fetch
-      return Optional.of(Duration.ofMillis(TARGET_WAIT_MILLIS.intValue()));
+      return Duration.ofMillis(TARGET_WAIT_MILLIS.intValue());
     }
 
     final UInt64 upperLimitRelativeToAttDue =
@@ -384,7 +380,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     final UInt64 finalTime =
         targetMillis.min(upperLimitRelativeToAttDue).max(nowMillis.plus(MIN_WAIT_MILLIS));
 
-    return Optional.of(Duration.ofMillis(finalTime.minus(nowMillis).intValue()));
+    return Duration.ofMillis(finalTime.minus(nowMillis).intValue());
   }
 
   private synchronized void fetchMissingContent(final SlotAndBlockRoot slotAndBlockRoot) {
