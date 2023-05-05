@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
@@ -43,6 +44,7 @@ public class BlockManager extends Service
 
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
+  private final BlobSidecarPool blobSidecarPool;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator validator;
   private final TimeProvider timeProvider;
@@ -63,6 +65,7 @@ public class BlockManager extends Service
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
+      final BlobSidecarPool blobSidecarPool,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
@@ -72,6 +75,7 @@ public class BlockManager extends Service
       final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
+    this.blobSidecarPool = blobSidecarPool;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
@@ -152,9 +156,10 @@ public class BlockManager extends Service
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block) {
-    // Check if any pending blocks can now be imported
     final Bytes32 blockRoot = block.getRoot();
+    blobSidecarPool.removeAllForBlock(blockRoot);
     pendingBlocks.remove(block);
+    // Check if any pending blocks can now be imported
     final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);
     children.forEach(pendingBlocks::remove);
     children.forEach(this::importBlockIgnoringResult);
@@ -218,6 +223,9 @@ public class BlockManager extends Service
   private SafeFuture<BlockImportResult> handleBlockImport(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance) {
+
+    blobSidecarPool.onNewBlock(block);
+
     return blockImporter
         .importBlock(block, blockImportPerformance)
         .thenPeek(
@@ -283,6 +291,7 @@ public class BlockManager extends Service
 
     invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
     pendingBlocks.remove(block);
+    blobSidecarPool.removeAllForBlock(blockRoot);
 
     pendingBlocks
         .getItemsDependingOn(blockRoot, true)
@@ -292,6 +301,7 @@ public class BlockManager extends Service
                   blockToDrop.getMessage().hashTreeRoot(),
                   BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
               pendingBlocks.remove(blockToDrop);
+              blobSidecarPool.removeAllForBlock(blockToDrop.getRoot());
             });
   }
 

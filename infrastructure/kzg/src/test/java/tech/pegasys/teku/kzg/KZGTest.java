@@ -151,6 +151,12 @@ public final class KZGTest {
   }
 
   @Test
+  public void testVerifyingEmptyBatch() {
+    loadTrustedSetup();
+    assertThat(kzg.verifyBlobKzgProofBatch(List.of(), List.of(), List.of())).isTrue();
+  }
+
+  @Test
   public void testComputingAndVerifyingBatchSingleProof() {
     loadTrustedSetup();
     final int numberOfBlobs = 1;

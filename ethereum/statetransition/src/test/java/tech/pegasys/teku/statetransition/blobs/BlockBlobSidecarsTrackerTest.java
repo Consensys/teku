@@ -113,6 +113,7 @@ public class BlockBlobSidecarsTrackerTest {
     blockBlobSidecarsTracker.setBlock(block);
 
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isCompleted();
+    assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
 
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars()).isEmpty();
     assertThat(blockBlobSidecarsTracker.getBlobSidecars()).isEmpty();
@@ -164,12 +165,15 @@ public class BlockBlobSidecarsTrackerTest {
 
       if (idx == blobIdentifiersForBlock.size() - 1) {
         SafeFutureAssert.assertThatSafeFuture(completionFuture).isCompleted();
+        assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
       } else {
         SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
+        assertThat(blockBlobSidecarsTracker.isCompleted()).isFalse();
       }
     }
 
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isCompleted();
+    assertThat(blockBlobSidecarsTracker.isCompleted()).isTrue();
   }
 
   @Test

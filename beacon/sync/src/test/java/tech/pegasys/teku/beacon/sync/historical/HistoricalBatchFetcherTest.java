@@ -146,11 +146,8 @@ public class HistoricalBatchFetcherTest {
         .thenReturn(SafeFuture.completedFuture(true));
     when(blobSidecarManager.createAvailabilityChecker(any()))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(anyList()))
-        .thenAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.validResult(i.getArgument(0))));
+    when(blobSidecarsAvailabilityChecker.validateImmediately(anyList()))
+        .thenAnswer(i -> BlobSidecarsAndValidationResult.validResult(i.getArgument(0)));
   }
 
   @Test
@@ -201,12 +198,11 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-    when(blobSidecarsAvailabilityChecker.validate(anyList()))
+    when(blobSidecarsAvailabilityChecker.validateImmediately(anyList()))
         .thenAnswer(
             i ->
-                SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.invalidResult(
-                        i.getArgument(0), new IllegalStateException("oopsy"))));
+                BlobSidecarsAndValidationResult.invalidResult(
+                    i.getArgument(0), new IllegalStateException("oopsy")));
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();

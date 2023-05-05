@@ -53,7 +53,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public class FuzzUtil {
@@ -146,8 +145,7 @@ public class FuzzUtil {
               structuredInput.getSignedBlock(),
               signatureVerifier,
               Optional.empty(),
-              KzgCommitmentsProcessor.create(specVersion.miscHelpers()),
-              BlobsSidecarAvailabilityChecker.NOOP);
+              KzgCommitmentsProcessor.create(specVersion.miscHelpers()));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (StateTransitionException e) {

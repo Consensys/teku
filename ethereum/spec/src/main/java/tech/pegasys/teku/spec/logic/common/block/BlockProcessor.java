@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvali
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public interface BlockProcessor {
@@ -59,8 +58,7 @@ public interface BlockProcessor {
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws StateTransitionException;
 
   /**
@@ -81,8 +79,7 @@ public interface BlockProcessor {
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
@@ -91,8 +88,7 @@ public interface BlockProcessor {
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
