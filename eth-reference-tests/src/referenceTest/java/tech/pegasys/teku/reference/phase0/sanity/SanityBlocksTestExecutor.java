@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
@@ -125,8 +124,7 @@ public class SanityBlocksTestExecutor implements TestExecutor {
                     ? BLSSignatureVerifier.NO_OP
                     : BLSSignatureVerifier.SIMPLE,
                 Optional.empty(),
-                kzgCommitmentsProcessor,
-                BlobsSidecarAvailabilityChecker.NOOP);
+                kzgCommitmentsProcessor);
       }
       return result;
     } catch (StateTransitionException e) {

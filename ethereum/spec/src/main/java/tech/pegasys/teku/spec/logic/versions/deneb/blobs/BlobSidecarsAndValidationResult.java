@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public class BlobSidecarsAndValidationResult {
@@ -52,6 +53,11 @@ public class BlobSidecarsAndValidationResult {
       final List<BlobSidecar> blobSidecars, final Throwable cause) {
     return new BlobSidecarsAndValidationResult(
         BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.of(cause));
+  }
+
+  public static BlobSidecarsAndValidationResult notAvailable(final Throwable cause) {
+    return new BlobSidecarsAndValidationResult(
+        BlobSidecarsValidationResult.NOT_AVAILABLE, Collections.emptyList(), Optional.of(cause));
   }
 
   private BlobSidecarsAndValidationResult(
@@ -112,5 +118,11 @@ public class BlobSidecarsAndValidationResult {
   @Override
   public int hashCode() {
     return Objects.hash(validationResult, blobSidecars, cause);
+  }
+
+  public String toLogString() {
+    return String.format(
+        "result %s, blob sidecars: %d, cause: %s",
+        validationResult, blobSidecars.size(), cause.map(ExceptionUtil::getMessageOrSimpleName));
   }
 }

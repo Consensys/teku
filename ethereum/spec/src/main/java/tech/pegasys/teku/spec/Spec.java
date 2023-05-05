@@ -96,7 +96,6 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -701,8 +700,7 @@ public class Spec {
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
@@ -713,8 +711,7 @@ public class Spec {
               IndexedAttestationCache.NOOP,
               signatureVerifier,
               payloadExecutor,
-              kzgCommitmentsProcessor,
-              blobsSidecarAvailabilityChecker);
+              kzgCommitmentsProcessor);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -731,8 +728,7 @@ public class Spec {
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NO_OP,
               Optional.empty(),
-              KzgCommitmentsProcessor.NOOP,
-              BlobsSidecarAvailabilityChecker.NOOP);
+              KzgCommitmentsProcessor.NOOP);
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }

@@ -140,6 +140,24 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
+  public void onNewBlock_shouldIgnorePreDenebBlocks() {
+    final Spec spec = TestSpecFactory.createMainnetCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+    blobSidecarPool.onNewBlock(block);
+
+    assertThat(blobSidecarPool.containsBlock(block)).isFalse();
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+
+    assertBlobSidecarsCount(0);
+    assertBlobSidecarsTrackersCount(0);
+  }
+
+  @Test
   public void onNewBlobSidecarOnNewBlock_addTrackerWithBothBlockAndBlobSidecar() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
@@ -248,7 +266,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
     final BlockBlobSidecarsTracker blobsSidecarsTracker =
-        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
+        blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
 
     assertThat(blobsSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
@@ -277,10 +295,28 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
     final BlockBlobSidecarsTracker blobsSidecarsTracker =
-        blobSidecarPool.getBlockBlobsSidecarsTracker(block);
+        blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
 
     assertThat(blobsSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
+    assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
+    assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
+    assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();
+
+    assertBlobSidecarsCount(0);
+    assertBlobSidecarsTrackersCount(1);
+  }
+
+  @Test
+  public void
+      getOrCreateBlockBlobsSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
+    final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+
+    final BlockBlobSidecarsTracker blobsSidecarsTracker =
+        blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block);
+
     assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
     assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
     assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();
@@ -565,6 +601,7 @@ public class BlobSidecarPoolImplTest {
               when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
               when(tracker.getBlockBody())
                   .thenReturn(Optional.of((BeaconBlockBodyDeneb) block.getMessage().getBody()));
+              when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
               when(tracker.isFetchTriggered()).thenReturn(true);
               return tracker;
             });
@@ -573,7 +610,7 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blobSidecarPool.removeAllForBlock(block.getSlotAndBlockRoot());
+    blobSidecarPool.removeAllForBlock(block.getRoot());
 
     assertThat(requiredBlobSidecarDroppedEvents).containsExactlyElementsOf(missingBlobs);
 
@@ -608,7 +645,7 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blobSidecarPool.removeAllForBlock(slotAndBlockRoot);
+    blobSidecarPool.removeAllForBlock(slotAndBlockRoot.getBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).containsExactly(slotAndBlockRoot.getBlockRoot());
 
@@ -643,7 +680,7 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 
-    blobSidecarPool.removeAllForBlock(slotAndBlockRoot);
+    blobSidecarPool.removeAllForBlock(slotAndBlockRoot.getBlockRoot());
 
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
