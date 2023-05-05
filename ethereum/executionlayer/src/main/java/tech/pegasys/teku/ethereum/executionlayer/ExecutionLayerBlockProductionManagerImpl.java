@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -31,7 +32,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
-  // TODO: Switch to actual engine and builder API
+  // TODO: Switch to actual builder API
   protected static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_DUMMY =
       SafeFuture.completedFuture(BlobsBundle.EMPTY_BUNDLE);
 
@@ -67,7 +68,9 @@ public class ExecutionLayerBlockProductionManagerImpl
     final ExecutionPayloadResult result;
     if (!isBlind) {
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
-          executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
+          executionLayerChannel
+              .engineGetPayload(context, blockSlotState.getSlot())
+              .thenApply(GetPayloadResponse::getExecutionPayload);
       result =
           new ExecutionPayloadResult(
               context, Optional.of(executionPayloadFuture), Optional.empty(), Optional.empty());
@@ -85,14 +88,18 @@ public class ExecutionLayerBlockProductionManagerImpl
       final boolean isBlind) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
-      final SafeFuture<ExecutionPayload> executionPayloadFuture =
+      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
           executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
+      final SafeFuture<ExecutionPayload> executionPayloadFuture =
+          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
+      final SafeFuture<BlobsBundle> blobsBundleFuture =
+          getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle);
       result =
           new ExecutionPayloadResult(
               context,
               Optional.of(executionPayloadFuture),
               Optional.empty(),
-              Optional.of(BLOBS_BUNDLE_DUMMY));
+              Optional.of(blobsBundleFuture));
     } else {
       result = builderGetHeader(context, blockSlotState, true);
     }

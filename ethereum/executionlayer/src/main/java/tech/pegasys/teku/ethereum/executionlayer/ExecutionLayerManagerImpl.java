@@ -52,10 +52,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -202,19 +202,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> engineGetPayload(
+  public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, false)
-        .thenApply(ExecutionPayloadWithValue::getExecutionPayload)
         .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
-  SafeFuture<ExecutionPayloadWithValue> engineGetPayloadForFallback(
+  SafeFuture<GetPayloadResponse> engineGetPayloadForFallback(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, true);
   }
 
-  private SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
+  private SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt64 slot,
       final boolean isFallbackCall) {

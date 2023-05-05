@@ -43,9 +43,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 
 public class ExecutionBuilderModule {
 
@@ -83,7 +83,7 @@ public class ExecutionBuilderModule {
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload) {
+      final SafeFuture<GetPayloadResponse> localGetPayloadResponse) {
     final Optional<SignedValidatorRegistration> validatorRegistration =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
 
@@ -108,7 +108,7 @@ public class ExecutionBuilderModule {
     if (fallbackReason != null) {
       return Optional.of(
           getResultFromLocalExecutionPayload(
-              localExecutionPayload, state.getSlot(), fallbackReason));
+              localGetPayloadResponse, state.getSlot(), fallbackReason));
     }
 
     return Optional.empty();
@@ -117,10 +117,10 @@ public class ExecutionBuilderModule {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
-    final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload =
+    final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
         executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
     final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
-        validateBuilderGetHeader(executionPayloadContext, state, localExecutionPayload);
+        validateBuilderGetHeader(executionPayloadContext, state, localGetPayloadResponse);
     if (validationResult.isPresent()) {
       return validationResult.get();
     }
@@ -140,8 +140,8 @@ public class ExecutionBuilderModule {
         executionPayloadContext.getParentHash());
 
     // Ensures we can still propose a builder block even if getPayload fails
-    final SafeFuture<Optional<ExecutionPayloadWithValue>> safeLocalExecutionPayload =
-        localExecutionPayload.thenApply(Optional::of).exceptionally(__ -> Optional.empty());
+    final SafeFuture<Optional<GetPayloadResponse>> safeLocalGetPayloadResponse =
+        localGetPayloadResponse.thenApply(Optional::of).exceptionally(__ -> Optional.empty());
 
     return builderClient
         .orElseThrow()
@@ -156,32 +156,35 @@ public class ExecutionBuilderModule {
                     executionPayloadContext.getParentHash(),
                     signedBuilderBidMaybe))
         .thenComposeCombined(
-            safeLocalExecutionPayload,
-            (signedBuilderBidMaybe, maybeLocalExecutionPayload) -> {
+            safeLocalGetPayloadResponse,
+            (signedBuilderBidMaybe, maybeLocalGetPayloadResponse) -> {
               if (signedBuilderBidMaybe.isEmpty()) {
                 return getResultFromLocalExecutionPayload(
-                    localExecutionPayload, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
+                    localGetPayloadResponse, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
               } else {
                 final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
                 // Treat the local block value as zero if local payload is unavailable
-                final UInt256 localPayloadValue =
-                    maybeLocalExecutionPayload
-                        .map(ExecutionPayloadWithValue::getValue)
+                final UInt256 localBlockValue =
+                    maybeLocalGetPayloadResponse
+                        .map(GetPayloadResponse::getBlockValue)
                         .orElse(UInt256.ZERO);
                 final UInt256 builderBidValue = signedBuilderBid.getMessage().getValue();
 
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
-                if (isLocalPayloadValueWinning(builderBidValue, localPayloadValue)) {
-                  logLocalPayloadWin(builderBidValue, localPayloadValue);
+                if (isLocalPayloadValueWinning(builderBidValue, localBlockValue)) {
+                  logLocalPayloadWin(builderBidValue, localBlockValue);
                   return getResultFromLocalExecutionPayload(
-                      localExecutionPayload, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
+                      localGetPayloadResponse, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
 
-                final Optional<ExecutionPayload> localPayload =
-                    maybeLocalExecutionPayload.map(ExecutionPayloadWithValue::getExecutionPayload);
+                final Optional<ExecutionPayload> localExecutionPayload =
+                    maybeLocalGetPayloadResponse.map(GetPayloadResponse::getExecutionPayload);
                 return getResultFromSignedBuilderBid(
-                    signedBuilderBidMaybe.get(), state, validatorRegistration.get(), localPayload);
+                    signedBuilderBidMaybe.get(),
+                    state,
+                    validatorRegistration.get(),
+                    localExecutionPayload);
               }
             })
         .exceptionallyCompose(
@@ -190,7 +193,7 @@ public class ExecutionBuilderModule {
                   "Unable to obtain a valid bid from builder. Falling back to local execution engine.",
                   error);
               return getResultFromLocalExecutionPayload(
-                  localExecutionPayload, slot, FallbackReason.BUILDER_ERROR);
+                  localGetPayloadResponse, slot, FallbackReason.BUILDER_ERROR);
             });
   }
 
@@ -292,21 +295,21 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<HeaderWithFallbackData> getResultFromLocalExecutionPayload(
-      final SafeFuture<ExecutionPayloadWithValue> localExecutionPayload,
+      final SafeFuture<GetPayloadResponse> localGetPayloadResponse,
       final UInt64 slot,
       final FallbackReason reason) {
-    return localExecutionPayload.thenApply(
-        executionPayload -> {
+    return localGetPayloadResponse.thenApply(
+        getPayloadResponse -> {
           ExecutionPayloadHeader executionPayloadHeader =
               spec.atSlot(slot)
                   .getSchemaDefinitions()
                   .toVersionBellatrix()
                   .orElseThrow()
                   .getExecutionPayloadHeaderSchema()
-                  .createFromExecutionPayload(executionPayload.getExecutionPayload());
+                  .createFromExecutionPayload(getPayloadResponse.getExecutionPayload());
           return HeaderWithFallbackData.create(
               executionPayloadHeader,
-              new FallbackData(executionPayload.getExecutionPayload(), reason));
+              new FallbackData(getPayloadResponse.getExecutionPayload(), reason));
         });
   }
 
