@@ -13,19 +13,24 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
-public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<ExecutionPayloadWithValue> {
+public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadResponse> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -47,7 +52,7 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<ExecutionPay
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadWithValue> execute(final JsonRpcRequestParams params) {
+  public SafeFuture<GetPayloadResponse> execute(final JsonRpcRequestParams params) {
     final ExecutionPayloadContext executionPayloadContext =
         params.getRequiredParameter(0, ExecutionPayloadContext.class);
     final UInt64 slot = params.getRequiredParameter(1, UInt64.class);
@@ -63,12 +68,15 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<ExecutionPay
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(
             response -> {
+              final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
               final ExecutionPayloadSchema<?> payloadSchema =
-                  SchemaDefinitionsBellatrix.required(spec.atSlot(slot).getSchemaDefinitions())
+                  SchemaDefinitionsBellatrix.required(schemaDefinitions)
                       .getExecutionPayloadSchema();
-              return new ExecutionPayloadWithValue(
+              final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
+              return new GetPayloadResponse(
                   response.executionPayload.asInternalExecutionPayload(payloadSchema),
-                  response.blockValue);
+                  response.blockValue,
+                  blobsBundle);
             })
         .thenPeek(
             payloadAndValue ->
@@ -78,5 +86,17 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<ExecutionPay
                     executionPayloadContext.getPayloadId(),
                     slot,
                     payloadAndValue));
+  }
+
+  private BlobsBundle getBlobsBundle(
+      final GetPayloadV3Response response, final SchemaDefinitions schemaDefinitions) {
+    return schemaDefinitions
+        .toVersionDeneb()
+        .map(SchemaDefinitionsDeneb::getBlobSchema)
+        .flatMap(
+            blobSchema ->
+                Optional.ofNullable(response.blobsBundle)
+                    .map(blobsBundleV1 -> blobsBundleV1.asInternalBlobsBundle(blobSchema)))
+        .orElse(BlobsBundle.EMPTY_BUNDLE);
   }
 }

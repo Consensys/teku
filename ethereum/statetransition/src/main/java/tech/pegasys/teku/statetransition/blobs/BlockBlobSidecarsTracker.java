@@ -16,8 +16,10 @@ package tech.pegasys.teku.statetransition.blobs;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import java.util.Collections;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -51,8 +53,8 @@ public class BlockBlobSidecarsTracker {
     this.maxBlobsPerBlock = maxBlobsPerBlock;
   }
 
-  public NavigableMap<UInt64, BlobSidecar> getBlobSidecars() {
-    return blobSidecars;
+  public SortedMap<UInt64, BlobSidecar> getBlobSidecars() {
+    return Collections.unmodifiableSortedMap(blobSidecars);
   }
 
   public SafeFuture<Void> getCompletionFuture() {
@@ -91,7 +93,7 @@ public class BlockBlobSidecarsTracker {
     final Optional<BeaconBlockBodyDeneb> body = blockBody.get();
     checkState(body.isPresent(), "Block must me known to call this method");
 
-    final UInt64 firstUnusedIndex = maxBlobsPerBlock.min(body.get().getBlobKzgCommitments().size());
+    final UInt64 firstUnusedIndex = UInt64.valueOf(body.get().getBlobKzgCommitments().size());
     return UInt64.range(firstUnusedIndex, maxBlobsPerBlock)
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
@@ -142,16 +144,18 @@ public class BlockBlobSidecarsTracker {
     return slotAndBlockRoot;
   }
 
-  public boolean checkCompletion() {
+  private void checkCompletion() {
     if (blobSidecarsComplete.isDone()) {
-      return true;
+      return;
     }
     final boolean complete = areBlobsComplete();
     if (complete) {
       blobSidecarsComplete.complete(null);
     }
+  }
 
-    return complete;
+  public boolean isCompleted() {
+    return blobSidecarsComplete.isDone();
   }
 
   public boolean isFetchTriggered() {

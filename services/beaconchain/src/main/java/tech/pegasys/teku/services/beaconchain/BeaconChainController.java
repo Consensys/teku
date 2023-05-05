@@ -84,6 +84,7 @@ import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -142,6 +143,7 @@ import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validation.VoluntaryExitValidator;
@@ -312,11 +314,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final RecentBlobSidecarFetcher recentBlobSidecarFetcher =
         syncService.getRecentBlobSidecarFetcher();
     recentBlobSidecarFetcher.subscribeBlobSidecarFetched(
-        (blobSidecar) ->
-            blobSidecarManager
-                .importBlobSidecar(blobSidecar)
-                .finish(err -> LOG.error("Failed to process recently fetched blob sidecar.", err)));
-    blobSidecarManager.subscribeToImportedBlobSidecars(
+        (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar));
+    blobSidecarManager.subscribeToReceivedBlobSidecar(
         blobSidecar ->
             recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
@@ -460,11 +459,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      final FutureItems<SignedBlobSidecar> futureBlobSidecars =
+          FutureItems.create(SignedBlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
+
+      final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
+          LimitedMap.createSynchronized(500);
+
       final BlobSidecarValidator blobSidecarValidator =
           BlobSidecarValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
-              spec, recentChainData, blobSidecarValidator, storageQueryChannel);
+              spec,
+              beaconAsyncRunner,
+              recentChainData,
+              blobSidecarPool,
+              blobSidecarValidator,
+              futureBlobSidecars,
+              invalidBlobSidecarRoots,
+              storageQueryChannel);
       eventChannels.subscribe(SlotEventsChannel.class, blobSidecarManagerImpl);
 
       blobSidecarManager = blobSidecarManagerImpl;
@@ -905,7 +917,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
-            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndImportBlobSidecar)
+            .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)
             .gossipedAttesterSlashingProcessor(attesterSlashingPool::addRemote)
@@ -1023,6 +1035,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new BlockManager(
             recentChainData,
             blockImporter,
+            blobSidecarPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,

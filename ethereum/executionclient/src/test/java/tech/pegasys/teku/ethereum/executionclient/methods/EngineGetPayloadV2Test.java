@@ -39,9 +39,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineGetPayloadV2Test {
@@ -129,9 +129,9 @@ class EngineGetPayloadV2Test {
 
     jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, bellatrixSpec);
 
-    final ExecutionPayloadWithValue expectedPayloadWithValue =
-        new ExecutionPayloadWithValue(executionPayloadBellatrix, blockValue);
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
+    final GetPayloadResponse expectedGetPayloadResponse =
+        new GetPayloadResponse(executionPayloadBellatrix, blockValue);
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV2(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);
@@ -157,9 +157,9 @@ class EngineGetPayloadV2Test {
 
     jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, capellaSpec);
 
-    final ExecutionPayloadWithValue expectedPayloadWithValue =
-        new ExecutionPayloadWithValue(executionPayloadCapella, blockValue);
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedPayloadWithValue);
+    final GetPayloadResponse expectedGetPayloadResponse =
+        new GetPayloadResponse(executionPayloadCapella, blockValue);
+    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV2(eq(executionPayloadContext.getPayloadId()));
     verifyNoMoreInteractions(executionEngineClient);

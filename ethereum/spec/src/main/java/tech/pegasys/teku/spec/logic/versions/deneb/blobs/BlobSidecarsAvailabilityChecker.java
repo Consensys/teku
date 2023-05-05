@@ -14,12 +14,8 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.blobs;
 
 import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult.NOT_REQUIRED_RESULT_FUTURE;
-import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult.validResult;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -42,36 +38,14 @@ public interface BlobSidecarsAvailabilityChecker {
         }
 
         @Override
-        public SafeFuture<BlobSidecarsAndValidationResult> validate(
+        public BlobSidecarsAndValidationResult validateImmediately(
             final List<BlobSidecar> blobSidecars) {
-          return NOT_REQUIRED_RESULT_FUTURE;
+          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
         }
       };
 
   BlobSidecarsAvailabilityChecker NOT_REQUIRED = NOOP;
 
-  Function<List<BlobSidecar>, BlobSidecarsAvailabilityChecker> ALREADY_CHECKED =
-      (blobSidecars) -> {
-        final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsValidResult =
-            SafeFuture.completedFuture(validResult(blobSidecars));
-        return new BlobSidecarsAvailabilityChecker() {
-          @Override
-          public boolean initiateDataAvailabilityCheck() {
-            return true;
-          }
-
-          @Override
-          public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
-            return blobSidecarsValidResult;
-          }
-
-          @Override
-          public SafeFuture<BlobSidecarsAndValidationResult> validate(
-              final List<BlobSidecar> blobSidecars) {
-            return blobSidecarsValidResult;
-          }
-        };
-      };
   /**
    * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(
    * ExecutionPayloadHeader , ExecutionPayload )}
@@ -84,10 +58,5 @@ public interface BlobSidecarsAvailabilityChecker {
   SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult();
 
   /** Only perform the {@link MiscHelpersDeneb#isDataAvailable} check */
-  SafeFuture<BlobSidecarsAndValidationResult> validate(List<BlobSidecar> blobSidecars);
-
-  default SafeFuture<BlobSidecarsAndValidationResult> validate(
-      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
-    return validate(maybeBlobSidecars.orElse(Collections.emptyList()));
-  }
+  BlobSidecarsAndValidationResult validateImmediately(List<BlobSidecar> blobSidecars);
 }

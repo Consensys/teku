@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -74,8 +73,7 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException {
     super.processBlock(
         genericState,
@@ -83,17 +81,9 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
         indexedAttestationCache,
         signatureVerifier,
         payloadExecutor,
-        kzgCommitmentsProcessor,
-        blobsSidecarAvailabilityChecker);
+        kzgCommitmentsProcessor);
 
     processBlobKzgCommitments(genericState, block.getBody(), kzgCommitmentsProcessor);
-
-    final boolean blobsRetrievalStarted =
-        blobsSidecarAvailabilityChecker.initiateDataAvailabilityCheck();
-    if (!blobsRetrievalStarted) {
-      throw new BlockProcessingException(
-          "Blobs Sidecar availability check initiation has been rejected");
-    }
   }
 
   @Override

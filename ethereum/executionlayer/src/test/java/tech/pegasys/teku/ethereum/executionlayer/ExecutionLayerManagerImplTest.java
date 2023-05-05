@@ -49,9 +49,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerManagerImplTest {
@@ -149,16 +149,16 @@ class ExecutionLayerManagerImplTest {
   }
 
   @Test
-  public void engineGetPayload_shouldReturnPayloadViaEngine() {
+  public void engineGetPayload_shouldReturnGetPayloadResponseViaEngine() {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    final ExecutionPayload payload =
+    final GetPayloadResponse getPayloadResponse =
         prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
 
     assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
-        .isCompletedWithValue(payload);
+        .isCompletedWithValue(getPayloadResponse);
 
     // we expect no calls to builder
     verifyNoInteractions(builderClient);
@@ -175,11 +175,11 @@ class ExecutionLayerManagerImplTest {
     executionLayerManager = createExecutionLayerChannelImpl(false, false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
 
-    final ExecutionPayload payload =
+    final GetPayloadResponse getPayloadResponse =
         prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
 
     assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
-        .isCompletedWithValue(payload);
+        .isCompletedWithValue(getPayloadResponse);
 
     // we expect no calls to builder
     verifyNoInteractions(builderClient);
@@ -238,7 +238,8 @@ class ExecutionLayerManagerImplTest {
     final UInt256 builderValue =
         prepareBuilderGetHeaderResponse(executionPayloadContext, false).getValue();
     final ExecutionPayload localExecutionPayload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, builderValue, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, builderValue, slot)
+            .getExecutionPayload();
 
     // we expect result from the local engine
     final ExecutionPayloadHeader expectedHeader =
@@ -275,7 +276,8 @@ class ExecutionLayerManagerImplTest {
         prepareBuilderGetHeaderResponse(executionPayloadContext, false).getValue();
     final ExecutionPayload localExecutionPayload =
         prepareEngineGetPayloadResponse(
-            executionPayloadContext, builderValue.multiply(51).divide(100), slot);
+                executionPayloadContext, builderValue.multiply(51).divide(100), slot)
+            .getExecutionPayload();
 
     // we expect result from the local engine
     final ExecutionPayloadHeader expectedHeader =
@@ -356,7 +358,8 @@ class ExecutionLayerManagerImplTest {
 
     prepareBuilderGetHeaderResponse(executionPayloadContext, false);
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -387,7 +390,8 @@ class ExecutionLayerManagerImplTest {
 
     prepareBuilderGetHeaderFailure(executionPayloadContext);
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -444,7 +448,8 @@ class ExecutionLayerManagerImplTest {
 
     prepareBuilderGetHeaderResponse(executionPayloadContext, false);
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -474,7 +479,8 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -507,7 +513,8 @@ class ExecutionLayerManagerImplTest {
     prepareBuilderGetHeaderResponse(executionPayloadContext, true);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -538,7 +545,8 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconStatePreMerge(slot);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -569,7 +577,8 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -602,7 +611,8 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -635,7 +645,8 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot)
+            .getExecutionPayload();
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -788,16 +799,15 @@ class ExecutionLayerManagerImplTest {
         .thenReturn(SafeFuture.failedFuture(new Throwable("error")));
   }
 
-  private ExecutionPayload prepareEngineGetPayloadResponse(
+  private GetPayloadResponse prepareEngineGetPayloadResponse(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt256 blockValue,
       final UInt64 slot) {
-
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-
+    final GetPayloadResponse getPayloadResponse = new GetPayloadResponse(payload, blockValue);
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
-        .thenReturn(SafeFuture.completedFuture(new ExecutionPayloadWithValue(payload, blockValue)));
-    return payload;
+        .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
+    return getPayloadResponse;
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(

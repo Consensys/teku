@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -147,7 +146,8 @@ public class HistoricalBatchFetcherTest {
         .thenReturn(SafeFuture.completedFuture(true));
     when(blobSidecarManager.createAvailabilityChecker(any()))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    setupValidResult();
+    when(blobSidecarsAvailabilityChecker.validateImmediately(anyList()))
+        .thenAnswer(i -> BlobSidecarsAndValidationResult.validResult(i.getArgument(0)));
   }
 
   @Test
@@ -198,7 +198,12 @@ public class HistoricalBatchFetcherTest {
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
-    setupInvalidResult(new IllegalStateException("oopsy"));
+    when(blobSidecarsAvailabilityChecker.validateImmediately(anyList()))
+        .thenAnswer(
+            i ->
+                BlobSidecarsAndValidationResult.invalidResult(
+                    i.getArgument(0), new IllegalStateException("oopsy")));
+
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
     peer.completePendingRequests();
@@ -489,25 +494,5 @@ public class HistoricalBatchFetcherTest {
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Expected first block to descend from last received block");
     verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
-  }
-
-  @SuppressWarnings("unchecked")
-  private void setupInvalidResult(final Throwable throwable) {
-    Mockito.reset(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(any(List.class)))
-        .thenAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.invalidResult(null, throwable)));
-  }
-
-  @SuppressWarnings("unchecked")
-  private void setupValidResult() {
-    Mockito.reset(blobSidecarsAvailabilityChecker);
-    when(blobSidecarsAvailabilityChecker.validate(any(List.class)))
-        .thenAnswer(
-            i ->
-                SafeFuture.completedFuture(
-                    BlobSidecarsAndValidationResult.validResult(i.getArgument(0))));
   }
 }

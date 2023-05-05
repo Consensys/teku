@@ -21,6 +21,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -93,6 +95,7 @@ public class BlockManagerTest {
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
   private final PendingPool<SignedBeaconBlock> pendingBlocks =
       new PoolFactory(metricsSystem)
           .createPendingPoolForBlocks(
@@ -133,6 +136,7 @@ public class BlockManagerTest {
       new BlockManager(
           localRecentChainData,
           blockImporter,
+          blobSidecarPool,
           pendingBlocks,
           futureBlocks,
           invalidBlockRoots,
@@ -200,6 +204,7 @@ public class BlockManagerTest {
 
     safeJoin(blockManager.importBlock(nextBlock));
     verify(subscriber).onBlockImported(nextBlock, false);
+    verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
   }
 
   @Test
@@ -278,6 +283,7 @@ public class BlockManagerTest {
         new BlockManager(
             localRecentChainData,
             blockImporter,
+            blobSidecarPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -352,6 +358,11 @@ public class BlockManagerTest {
 
     assertThat(blockManager.importBlock(nextBlock)).isCompleted();
     assertThat(pendingBlocks.size()).isEqualTo(0);
+
+    // pool should get notified for new block and then should be notified to drop content due to
+    // block import completion
+    verify(blobSidecarPool).onNewBlock(nextBlock);
+    verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
   }
 
   @Test
@@ -364,6 +375,10 @@ public class BlockManagerTest {
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
+
+    // blob pool should be notified about new block only
+    verify(blobSidecarPool).onNewBlock(nextBlock);
+    verifyNoMoreInteractions(blobSidecarPool);
   }
 
   @Test
@@ -415,6 +430,12 @@ public class BlockManagerTest {
     // Gossip next block, causing dependent blocks to be dropped when the import fails
     assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(pendingBlocks.size()).isEqualTo(0);
+
+    // verify blob sidecars pool get notified to drop content
+    invalidBlockDescendants.stream()
+        .forEach(
+            invalidBlockDescendant ->
+                verify(blobSidecarPool).removeAllForBlock(invalidBlockDescendant.getRoot()));
 
     // If any invalid block is again gossiped, it should be ignored
     invalidBlockDescendants.stream()
