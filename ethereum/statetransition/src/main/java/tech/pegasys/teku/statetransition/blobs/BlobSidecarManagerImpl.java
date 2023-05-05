@@ -179,7 +179,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     }
 
     final BlockBlobSidecarsTracker blockBlobsSidecarsTracker =
-        blobSidecarPool.getOrCreateBlockBlobsSidecarsTracker(block);
+        blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
         spec, asyncRunner, recentChainData, blockBlobsSidecarsTracker);

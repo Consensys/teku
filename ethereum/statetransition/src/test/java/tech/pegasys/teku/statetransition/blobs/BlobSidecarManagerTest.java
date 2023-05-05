@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.blobs;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -222,7 +221,7 @@ public class BlobSidecarManagerTest {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
-    when(blobSidecarPool.getOrCreateBlockBlobsSidecarsTracker(block))
+    when(blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block))
         .thenReturn(blockBlobSidecarsTracker);
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))

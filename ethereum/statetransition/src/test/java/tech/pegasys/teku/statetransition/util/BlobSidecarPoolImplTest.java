@@ -315,7 +315,7 @@ public class BlobSidecarPoolImplTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
 
     final BlockBlobSidecarsTracker blobsSidecarsTracker =
-        blobSidecarPool.getOrCreateBlockBlobsSidecarsTracker(block);
+        blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
     assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();

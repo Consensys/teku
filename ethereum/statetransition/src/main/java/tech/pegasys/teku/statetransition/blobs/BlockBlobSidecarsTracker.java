@@ -93,7 +93,7 @@ public class BlockBlobSidecarsTracker {
     final Optional<BeaconBlockBodyDeneb> body = blockBody.get();
     checkState(body.isPresent(), "Block must me known to call this method");
 
-    final UInt64 firstUnusedIndex = maxBlobsPerBlock.min(body.get().getBlobKzgCommitments().size());
+    final UInt64 firstUnusedIndex = UInt64.valueOf(body.get().getBlobKzgCommitments().size());
     return UInt64.range(firstUnusedIndex, maxBlobsPerBlock)
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }

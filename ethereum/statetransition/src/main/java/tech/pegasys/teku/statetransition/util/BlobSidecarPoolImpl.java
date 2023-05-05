@@ -128,11 +128,12 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       final Spec spec, final SlotAndBlockRoot slotAndBlockRoot) {
     return new BlockBlobSidecarsTracker(
         slotAndBlockRoot,
-        spec.atSlot(slotAndBlockRoot.getSlot())
-            .getConfig()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getMaxRequestBlobSidecars());
+        UInt64.valueOf(
+            spec.atSlot(slotAndBlockRoot.getSlot())
+                .getConfig()
+                .toVersionDeneb()
+                .orElseThrow()
+                .getMaxBlobsPerBlock()));
   }
 
   @Override
@@ -168,7 +169,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public synchronized BlockBlobSidecarsTracker getOrCreateBlockBlobsSidecarsTracker(
+  public synchronized BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
       final SignedBeaconBlock block) {
     return internalOnNewBlock(block);
   }
@@ -296,10 +297,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
               }
 
               if (existingTracker.isFetchTriggered()) {
-                // block has been set for the first time and we fetched missing blobSidecars, so we
-                // may
-                // have requested to the fetcher more sidecars than the block actually requires.
-                // Let's drop them.
+                // block has been set for the first time and we previously triggered fetching of
+                // missing blobSidecars fetch. So we may have requested to fetch more sidecars
+                // than the block actually requires. Let's drop them.
                 existingTracker
                     .getUnusedBlobSidecarsForBlock()
                     .forEach(
