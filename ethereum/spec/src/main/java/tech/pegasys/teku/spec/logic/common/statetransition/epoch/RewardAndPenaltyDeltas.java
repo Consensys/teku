@@ -23,7 +23,7 @@ public class RewardAndPenaltyDeltas {
   public RewardAndPenaltyDeltas(final int validatorCount) {
     this.deltas = new ArrayList<>(validatorCount);
     for (int i = 0; i < validatorCount; i++) {
-      deltas.add(new RewardAndPenalty());
+      deltas.add(new AggregatedRewardAndPenalty());
     }
   }
 
