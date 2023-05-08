@@ -437,9 +437,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    if (forkChoiceUpdateHeadOnBlockImportEnabled) {
-      updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
-    }
+    updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
@@ -517,10 +515,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // a better choice than the block itself.  So the first block we receive that is a
     // child of our current chain head, must be the new chain head. If we'd had any other
     // child of the current chain head we'd have already selected it as head.
-    if (recentChainData
-        .getBestBlockRoot()
-        .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
-        .orElse(false)) {
+    if (forkChoiceUpdateHeadOnBlockImportEnabled
+        && recentChainData
+            .getBestBlockRoot()
+            .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
+            .orElse(false)) {
+      // NOTE: disabled by --Xfork-choice-update-head-on-block-import-enabled=false,
+      // this check avoids running fork choice on blocks that arrive if they descend from head,
+      // but we're far better off just running fork choice and applying the normal rules
       return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
     }
 
