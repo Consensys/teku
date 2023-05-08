@@ -62,7 +62,7 @@ public class PeerSync {
           FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS,
           FailureReason.FAILED_STATE_TRANSITION,
           FailureReason.UNKNOWN_PARENT,
-          FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK);
+          FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
 
   private static final Logger LOG = LogManager.getLogger();
   static final int MAX_THROTTLED_REQUESTS = 10;
@@ -340,7 +340,7 @@ public class PeerSync {
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
     maybeBlobSidecars.ifPresent(
-        blobSidecars -> blobSidecarPool.onBlobSidecarsFromSync(block, blobSidecars));
+        blobSidecars -> blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars));
 
     return blockImporter
         .importBlock(block)
