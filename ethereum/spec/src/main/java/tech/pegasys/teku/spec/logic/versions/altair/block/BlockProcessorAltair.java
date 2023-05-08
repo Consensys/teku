@@ -146,7 +146,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         });
   }
 
-  protected Optional<UInt64> processAttestationProposerReward(
+  public Optional<UInt64> processAttestationProposerReward(
       final MutableBeaconStateAltair state,
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
