@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
@@ -104,12 +105,28 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
           final UInt64 rewardNumerator =
               baseReward.times(weight).times(unslashedParticipatingIncrements);
           validatorDeltas.reward(
+              getComponentForParticipationFlagIndex(flagIndex),
               rewardNumerator.dividedBy(activeIncrements.times(WEIGHT_DENOMINATOR)));
         }
       } else if (flagIndex != TIMELY_HEAD_FLAG_INDEX) {
-        validatorDeltas.penalize(baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR));
+        validatorDeltas.penalize(
+            getComponentForParticipationFlagIndex(flagIndex),
+            baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR));
       }
     }
+  }
+
+  private RewardComponent getComponentForParticipationFlagIndex(int index) {
+    switch (index) {
+      case 0:
+        return RewardComponent.SOURCE;
+      case 1:
+        return RewardComponent.TARGET;
+      case 2:
+        return RewardComponent.HEAD;
+    }
+
+    throw new IllegalArgumentException("Invalid participation flag index " + index);
   }
 
   /**
@@ -156,7 +173,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
           validator.getCurrentEpochEffectiveBalance().times(inactivityScores.get(i).get());
 
       final UInt64 penalty = penaltyNumerator.dividedBy(penaltyDenominator);
-      deltas.getDelta(i).penalize(penalty);
+      deltas.getDelta(i).penalize(RewardComponent.INACTIVITY, penalty);
     }
   }
 

@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.InclusionInfo;
@@ -99,6 +100,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
         totalBalances,
         baseReward,
         finalityDelay,
+        RewardComponent.SOURCE,
         delta);
   }
 
@@ -114,6 +116,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
         totalBalances,
         baseReward,
         finalityDelay,
+        RewardComponent.TARGET,
         delta);
   }
 
@@ -129,6 +132,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
         totalBalances,
         baseReward,
         finalityDelay,
+        RewardComponent.HEAD,
         delta);
   }
 
@@ -147,9 +151,12 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
                           "Validator was active in previous epoch but has no inclusion information."));
       final UInt64 proposerReward = getProposerReward(baseReward);
       final UInt64 maxAttesterReward = baseReward.minus(proposerReward);
-      delta.reward(maxAttesterReward.dividedBy(inclusionInfo.getDelay()));
+      delta.reward(
+          RewardComponent.INCLUSION_DELAY, maxAttesterReward.dividedBy(inclusionInfo.getDelay()));
 
-      deltas.getDelta(inclusionInfo.getProposerIndex()).reward(getProposerReward(baseReward));
+      deltas
+          .getDelta(inclusionInfo.getProposerIndex())
+          .reward(RewardComponent.INCLUSION_DELAY, getProposerReward(baseReward));
     }
   }
 
@@ -162,6 +169,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
     if (isInactivityLeak(finalityDelay)) {
       // If validator is performing optimally this cancels all rewards for a neutral balance
       delta.penalize(
+          RewardComponent.INACTIVITY,
           specConfig
               .getBaseRewardsPerEpoch()
               .times(baseReward)
@@ -169,6 +177,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
 
       if (validator.isSlashed() || !validator.isPreviousEpochTargetAttester()) {
         delta.penalize(
+            RewardComponent.INACTIVITY,
             validator
                 .getCurrentEpochEffectiveBalance()
                 .times(finalityDelay)
@@ -187,22 +196,24 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
       final TotalBalances totalBalances,
       final UInt64 baseReward,
       final UInt64 finalityDelay,
+      final RewardComponent component,
       final RewardAndPenalty delta) {
     final UInt64 totalBalance = totalBalances.getCurrentEpochActiveValidators();
     if (indexInUnslashedAttestingIndices) {
       if (finalityDelay.isGreaterThan(specConfig.getMinEpochsToInactivityPenalty())) {
         // Since full base reward will be canceled out by inactivity penalty deltas,
         // optimal participation receives full base reward compensation here.
-        delta.reward(baseReward);
+        delta.reward(component, baseReward);
       } else {
         final UInt64 rewardNumerator =
             baseReward.times(attestingBalance.dividedBy(specConfig.getEffectiveBalanceIncrement()));
         delta.reward(
+            component,
             rewardNumerator.dividedBy(
                 totalBalance.dividedBy(specConfig.getEffectiveBalanceIncrement())));
       }
     } else {
-      delta.penalize(baseReward);
+      delta.penalize(component, baseReward);
     }
   }
 

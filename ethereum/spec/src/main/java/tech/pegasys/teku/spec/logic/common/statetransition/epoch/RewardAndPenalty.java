@@ -17,9 +17,17 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface RewardAndPenalty {
 
-  void reward(UInt64 amount);
+  enum RewardComponent {
+    HEAD,
+    SOURCE,
+    TARGET,
+    INCLUSION_DELAY,
+    INACTIVITY
+  }
 
-  void penalize(UInt64 amount);
+  void reward(RewardComponent component, UInt64 amount);
+
+  void penalize(RewardComponent component, UInt64 amount);
 
   UInt64 getReward();
 

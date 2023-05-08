@@ -18,15 +18,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 
 public class DetailedRewardAndPenalty {
-
-  public enum RewardComponent {
-    HEAD,
-    SOURCE,
-    TARGET,
-    INCLUSION_DELAY
-  }
 
   private final Map<RewardComponent, UInt64> rewards =
       new HashMap<>(RewardComponent.values().length);
