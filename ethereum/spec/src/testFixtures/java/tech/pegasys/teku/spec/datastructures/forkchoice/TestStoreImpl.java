@@ -260,9 +260,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     blockStates.put(block.getRoot(), state);
     blockCheckpoints.put(block.getRoot(), checkpoints);
     maybeBlobSidecars.ifPresent(
-        blobSidecars ->
-            this.blobSidecars.put(
-                new SlotAndBlockRoot(block.getSlot(), block.getRoot()), blobSidecars));
+        blobSidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars));
   }
 
   @Override
