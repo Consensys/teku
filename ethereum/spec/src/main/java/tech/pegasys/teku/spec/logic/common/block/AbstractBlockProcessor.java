@@ -77,7 +77,6 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
@@ -135,8 +134,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws StateTransitionException {
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     final BeaconState result =
@@ -146,8 +144,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             indexedAttestationCache,
             signatureVerifier,
             payloadExecutor,
-            kzgCommitmentsProcessor,
-            blobsSidecarAvailabilityChecker);
+            kzgCommitmentsProcessor);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
           "Batch signature verification failed for block " + signedBlock.toLogString());
@@ -162,8 +159,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws StateTransitionException {
     try {
       final BlockValidationResult preValidationResult =
@@ -180,8 +176,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               indexedAttestationCache,
               signatureVerifier,
               payloadExecutor,
-              kzgCommitmentsProcessor,
-              blobsSidecarAvailabilityChecker);
+              kzgCommitmentsProcessor);
 
       BlockValidationResult blockValidationResult =
           validateBlockPostProcessing(
@@ -326,8 +321,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException {
     return preState.updated(
         state ->
@@ -337,8 +331,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
                 indexedAttestationCache,
                 signatureVerifier,
                 payloadExecutor,
-                kzgCommitmentsProcessor,
-                blobsSidecarAvailabilityChecker));
+                kzgCommitmentsProcessor));
   }
 
   protected void processBlock(
@@ -347,8 +340,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor,
-      final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker)
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());

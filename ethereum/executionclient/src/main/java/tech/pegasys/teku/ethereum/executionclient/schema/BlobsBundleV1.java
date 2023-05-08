@@ -23,48 +23,49 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes48Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteVectorImpl;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 
 public class BlobsBundleV1 {
-  @JsonSerialize(using = BytesSerializer.class)
-  @JsonDeserialize(using = Bytes32Deserializer.class)
-  private final Bytes32 blockHash;
+  @JsonSerialize(contentUsing = BytesSerializer.class)
+  @JsonDeserialize(contentUsing = Bytes48Deserializer.class)
+  private final List<Bytes48> commitments;
 
   @JsonSerialize(contentUsing = BytesSerializer.class)
   @JsonDeserialize(contentUsing = Bytes48Deserializer.class)
-  private final List<Bytes48> kzgs;
+  private final List<Bytes48> proofs;
 
   @JsonSerialize(contentUsing = BytesSerializer.class)
   @JsonDeserialize(contentUsing = BytesDeserializer.class)
   private final List<Bytes> blobs;
 
   public BlobsBundleV1(
-      @JsonProperty("blockHash") final Bytes32 blockHash,
-      @JsonProperty("kzgs") final List<Bytes48> kzgs,
+      @JsonProperty("commitments") final List<Bytes48> commitments,
+      @JsonProperty("proofs") final List<Bytes48> proofs,
       @JsonProperty("blobs") final List<Bytes> blobs) {
-    checkNotNull(blockHash, "blockHash");
-    checkNotNull(kzgs, "kzgs");
+    checkNotNull(commitments, "commitments");
+    checkNotNull(proofs, "proofs");
     checkNotNull(blobs, "blobs");
-    this.blockHash = blockHash;
-    this.kzgs = kzgs;
+    this.commitments = commitments;
+    this.proofs = proofs;
     this.blobs = blobs;
   }
 
   public static BlobsBundleV1 fromInternalBlobsBundle(final BlobsBundle blobsBundle) {
     return new BlobsBundleV1(
-        blobsBundle.getBlockHash(),
-        blobsBundle.getKzgs().stream()
+        blobsBundle.getCommitments().stream()
             .map(KZGCommitment::getBytesCompressed)
+            .collect(Collectors.toList()),
+        blobsBundle.getProofs().stream()
+            .map(KZGProof::getBytesCompressed)
             .collect(Collectors.toList()),
         blobsBundle.getBlobs().stream()
             .map(SszByteVectorImpl::getBytes)
@@ -73,9 +74,11 @@ public class BlobsBundleV1 {
 
   public BlobsBundle asInternalBlobsBundle(final BlobSchema blobSchema) {
     return new BlobsBundle(
-        blockHash,
-        kzgs.stream().map(KZGCommitment::new).collect(Collectors.toList()),
-        blobs.stream().map(bytes -> new Blob(blobSchema, bytes)).collect(Collectors.toList()));
+        commitments.stream().map(KZGCommitment::new).collect(Collectors.toList()),
+        proofs.stream().map(KZGProof::new).collect(Collectors.toList()),
+        blobs.stream()
+            .map(blobBytes -> new Blob(blobSchema, blobBytes))
+            .collect(Collectors.toList()));
   }
 
   @Override
@@ -87,26 +90,28 @@ public class BlobsBundleV1 {
       return false;
     }
     final BlobsBundleV1 that = (BlobsBundleV1) o;
-    return Objects.equals(blockHash, that.blockHash)
-        && Objects.equals(kzgs, that.kzgs)
+    return Objects.equals(commitments, that.commitments)
+        && Objects.equals(proofs, that.proofs)
         && Objects.equals(blobs, that.blobs);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(blockHash, kzgs, blobs);
+    return Objects.hash(commitments, proofs, blobs);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("blockHash", blockHash)
-        .add("kzgs", kzgs)
         .add(
-            "blobs",
-            blobs.stream()
-                .map(blob -> blob.slice(0, 7).toUnprefixedHexString())
-                .collect(Collectors.toList()))
+            "commitments",
+            commitments.stream().map(this::bytesToBriefString).collect(Collectors.toList()))
+        .add("proofs", proofs.stream().map(this::bytesToBriefString).collect(Collectors.toList()))
+        .add("blobs", blobs.stream().map(this::bytesToBriefString).collect(Collectors.toList()))
         .toString();
+  }
+
+  private String bytesToBriefString(final Bytes bytes) {
+    return bytes.slice(0, 7).toUnprefixedHexString();
   }
 }

@@ -27,10 +27,14 @@ public class GetPayloadV3Response {
   @JsonDeserialize(using = UInt256AsHexDeserializer.class)
   public final UInt256 blockValue;
 
+  public final BlobsBundleV1 blobsBundle;
+
   public GetPayloadV3Response(
       @JsonProperty("executionPayload") final ExecutionPayloadV3 executionPayload,
-      @JsonProperty("blockValue") final UInt256 blockValue) {
+      @JsonProperty("blockValue") final UInt256 blockValue,
+      @JsonProperty("blobsBundle") final BlobsBundleV1 blobsBundle) {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
+    this.blobsBundle = blobsBundle;
   }
 }

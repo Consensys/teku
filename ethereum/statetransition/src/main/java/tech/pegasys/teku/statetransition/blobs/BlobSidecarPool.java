@@ -17,14 +17,19 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public interface BlobSidecarPool {
+public interface BlobSidecarPool extends SlotEventsChannel {
 
   BlobSidecarPool NOOP =
       new BlobSidecarPool() {
+        @Override
+        public void onSlot(UInt64 slot) {}
+
         @Override
         public void onNewBlobSidecar(final BlobSidecar blobSidecar) {}
 
@@ -32,8 +37,11 @@ public interface BlobSidecarPool {
         public void onNewBlock(final SignedBeaconBlock block) {}
 
         @Override
-        public void onBlobSidecarsFromSync(
+        public void onCompletedBlockAndBlobSidecars(
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
+
+        @Override
+        public void removeAllForBlock(final Bytes32 blockRoot) {}
 
         @Override
         public boolean containsBlobSidecar(final BlobIdentifier blobIdentifier) {
@@ -41,7 +49,8 @@ public interface BlobSidecarPool {
         }
 
         @Override
-        public BlockBlobSidecarsTracker getBlockBlobsSidecarsTracker(SignedBeaconBlock block) {
+        public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
+            SignedBeaconBlock block) {
           throw new UnsupportedOperationException();
         }
 
@@ -71,13 +80,15 @@ public interface BlobSidecarPool {
 
   void onNewBlock(SignedBeaconBlock block);
 
-  void onBlobSidecarsFromSync(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+  void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+
+  void removeAllForBlock(Bytes32 blockRoot);
 
   boolean containsBlobSidecar(BlobIdentifier blobIdentifier);
 
   Set<BlobIdentifier> getAllRequiredBlobSidecars();
 
-  BlockBlobSidecarsTracker getBlockBlobsSidecarsTracker(SignedBeaconBlock block);
+  BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(SignedBeaconBlock block);
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
 

@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.util;
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
+import com.google.common.collect.Streams;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -71,16 +73,26 @@ public class BlobsUtil {
   }
 
   public List<KZGCommitment> blobsToKzgCommitments(final UInt64 slot, final List<Blob> blobs) {
-    final MiscHelpersDeneb miscHelpersDeneb =
-        spec.atSlot(slot).miscHelpers().toVersionDeneb().orElseThrow();
-
+    final MiscHelpersDeneb miscHelpersDeneb = getMiscHelpers(slot);
     return blobs.stream().map(miscHelpersDeneb::blobToKzgCommitment).collect(Collectors.toList());
+  }
+
+  public List<KZGProof> computeKzgProofs(
+      final UInt64 slot, final List<Blob> blobs, final List<KZGCommitment> kzgCommitments) {
+    final MiscHelpersDeneb miscHelpersDeneb = getMiscHelpers(slot);
+    return Streams.zip(
+            blobs.stream(), kzgCommitments.stream(), miscHelpersDeneb::computeBlobKzgProof)
+        .collect(Collectors.toList());
   }
 
   public List<Blob> generateBlobs(final UInt64 slot, final int count) {
     return IntStream.range(0, count)
         .mapToObj(__ -> generateBlob(slot))
         .collect(Collectors.toList());
+  }
+
+  private MiscHelpersDeneb getMiscHelpers(final UInt64 slot) {
+    return spec.atSlot(slot).miscHelpers().toVersionDeneb().orElseThrow();
   }
 
   private Blob generateBlob(final UInt64 slot) {

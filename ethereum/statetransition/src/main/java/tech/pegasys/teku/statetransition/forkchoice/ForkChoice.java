@@ -58,8 +58,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker.BlobsSidecarAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -295,8 +295,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final KzgCommitmentsProcessor kzgCommitmentsProcessor =
         KzgCommitmentsProcessor.create(specVersion.miscHelpers());
 
-    final BlobsSidecarAvailabilityChecker blobsSidecarAvailabilityChecker =
-        BlobsSidecarAvailabilityChecker.NOOP;
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+        blobSidecarManager.createAvailabilityChecker(block);
+
+    blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck();
 
     final BeaconState postState;
     try {
@@ -307,8 +309,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   blockSlotState.get(),
                   indexedAttestationCache,
                   Optional.of(payloadExecutor),
-                  kzgCommitmentsProcessor,
-                  blobsSidecarAvailabilityChecker);
+                  kzgCommitmentsProcessor);
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
@@ -321,8 +322,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenCombineAsync(
-            blobsSidecarAvailabilityChecker.getAvailabilityCheckResult(),
-            (payloadResult, blobsSidecarAndValidationResult) ->
+            blobSidecarsAvailabilityChecker.getAvailabilityCheckResult(),
+            (payloadResult, blobSidecarsAndValidationResult) ->
                 importBlockAndState(
                     block,
                     blockSlotState.get(),
@@ -331,7 +332,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     indexedAttestationCache,
                     postState,
                     payloadResult,
-                    blobsSidecarAndValidationResult),
+                    blobSidecarsAndValidationResult),
             forkChoiceExecutor);
   }
 
@@ -343,7 +344,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final CapturingIndexedAttestationCache indexedAttestationCache,
       final BeaconState postState,
       final PayloadValidationResult payloadValidationResult,
-      final BlobsSidecarAndValidationResult blobsSidecarAndValidationResult) {
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
     blockImportPerformance.ifPresent(BlockImportPerformance::beginImporting);
     final PayloadStatus payloadResult = payloadValidationResult.getStatus();
     if (payloadResult.hasInvalidStatus()) {
@@ -377,20 +378,24 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
-    if (blobsSidecarAndValidationResult.isFailure()) {
-      LOG.error(
-          "blobsSidecar validation result: {}",
-          blobsSidecarAndValidationResult.getValidationResult());
-      return BlockImportResult.failedBlobsAvailabilityCheck(
-          blobsSidecarAndValidationResult.getCause());
-    } else if (blobsSidecarAndValidationResult.isNotRequired()) {
-      LOG.debug(
-          "blobsSidecar validation result: {}",
-          blobsSidecarAndValidationResult.getValidationResult());
-    } else if (blobsSidecarAndValidationResult.isValid()) {
-      LOG.debug(
-          "blobsSidecar validation result: {}",
-          blobsSidecarAndValidationResult.getValidationResult());
+    switch (blobSidecarsAndValidationResult.getValidationResult()) {
+      case VALID:
+      case NOT_REQUIRED:
+        LOG.debug(
+            "blobsSidecar validation result: {}", blobSidecarsAndValidationResult::toLogString);
+
+        break;
+      case NOT_AVAILABLE:
+        LOG.warn(
+            "blobsSidecar validation result: {}", blobSidecarsAndValidationResult::toLogString);
+        return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
+            blobSidecarsAndValidationResult.getCause());
+
+      case INVALID:
+        LOG.error(
+            "blobsSidecar validation result: {}", blobSidecarsAndValidationResult::toLogString);
+        return BlockImportResult.failedDataAvailabilityCheckInvalid(
+            blobSidecarsAndValidationResult.getCause());
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -442,9 +447,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    if (forkChoiceUpdateHeadOnBlockImportEnabled) {
-      updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
-    }
+    updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
@@ -522,10 +525,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // a better choice than the block itself.  So the first block we receive that is a
     // child of our current chain head, must be the new chain head. If we'd had any other
     // child of the current chain head we'd have already selected it as head.
-    if (recentChainData
-        .getBestBlockRoot()
-        .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
-        .orElse(false)) {
+    if (forkChoiceUpdateHeadOnBlockImportEnabled
+        && recentChainData
+            .getBestBlockRoot()
+            .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
+            .orElse(false)) {
+      // NOTE: disabled by --Xfork-choice-update-head-on-block-import-enabled=false,
+      // this check avoids running fork choice on blocks that arrive if they descend from head,
+      // but we're far better off just running fork choice and applying the normal rules
       return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
     }
 

@@ -38,7 +38,6 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -47,17 +46,16 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -70,7 +68,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
+
+  @SuppressWarnings("unused")
   private final BlobsBundleValidator blobsBundleValidator;
+
   private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
@@ -201,19 +202,18 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> engineGetPayload(
+  public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, false)
-        .thenApply(ExecutionPayloadWithValue::getExecutionPayload)
         .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 
-  SafeFuture<ExecutionPayloadWithValue> engineGetPayloadForFallback(
+  SafeFuture<GetPayloadResponse> engineGetPayloadForFallback(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     return engineGetPayload(executionPayloadContext, slot, true);
   }
 
-  private SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
+  private SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext,
       final UInt64 slot,
       final boolean isFallbackCall) {
@@ -239,24 +239,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       final TransitionConfiguration transitionConfiguration) {
     return executionClientHandler.engineExchangeTransitionConfiguration(transitionConfiguration);
-  }
-
-  @Override
-  public SafeFuture<BlobsBundle> engineGetBlobsBundle(
-      final UInt64 slot,
-      final Bytes8 payloadId,
-      Optional<ExecutionPayload> executionPayloadOptional) {
-    LOG.trace(
-        "calling engineGetBlobsBundle(slot={}, executionPayloadOptional={})",
-        slot,
-        executionPayloadOptional);
-    return executionClientHandler
-        .engineGetBlobsBundle(payloadId, slot)
-        .thenApplyChecked(
-            blobsBundle -> {
-              blobsBundleValidator.validate(blobsBundle, executionPayloadOptional);
-              return blobsBundle;
-            });
   }
 
   @Override

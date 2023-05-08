@@ -128,11 +128,12 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       final Spec spec, final SlotAndBlockRoot slotAndBlockRoot) {
     return new BlockBlobSidecarsTracker(
         slotAndBlockRoot,
-        spec.atSlot(slotAndBlockRoot.getSlot())
-            .getConfig()
-            .toVersionDeneb()
-            .orElseThrow()
-            .getMaxRequestBlobSidecars());
+        UInt64.valueOf(
+            spec.atSlot(slotAndBlockRoot.getSlot())
+                .getConfig()
+                .toVersionDeneb()
+                .orElseThrow()
+                .getMaxBlobsPerBlock()));
   }
 
   @Override
@@ -158,45 +159,23 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   @Override
   public synchronized void onNewBlock(final SignedBeaconBlock block) {
+    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
+      return;
+    }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
-
-    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
-
-    getOrCreateBlobSidecarsTracker(
-        slotAndBlockRoot,
-        newTracker -> {
-          newTracker.setBlock(block);
-          onFirstSeen(slotAndBlockRoot);
-        },
-        existingTracker -> {
-          if (!existingTracker.setBlock(block)) {
-            // block was already set
-            return;
-          }
-
-          if (existingTracker.isFetchTriggered()) {
-            // block has been set for the first time and we fetched missing blobSidecars, so we may
-            // have requested to the fetcher more sidecars than the block actually requires.
-            // Let's drop them.
-            existingTracker
-                .getUnusedBlobSidecarsForBlock()
-                .forEach(
-                    blobIdentifier ->
-                        requiredBlobSidecarDroppedSubscribers.deliver(
-                            RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
-                            blobIdentifier));
-          }
-        });
-
-    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
-      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
-    }
+    internalOnNewBlock(block);
   }
 
   @Override
-  public synchronized void onBlobSidecarsFromSync(
+  public synchronized BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
+      final SignedBeaconBlock block) {
+    return internalOnNewBlock(block);
+  }
+
+  @Override
+  public synchronized void onCompletedBlockAndBlobSidecars(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
@@ -215,12 +194,12 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
   }
 
-  public synchronized void removeAllForBlock(final SlotAndBlockRoot slotAndBlockRoot) {
-    orderedBlobSidecarsTrackers.remove(slotAndBlockRoot);
-    final BlockBlobSidecarsTracker removedTracker =
-        blockBlobSidecarsTrackers.remove(slotAndBlockRoot.getBlockRoot());
+  @Override
+  public synchronized void removeAllForBlock(final Bytes32 blockRoot) {
+    final BlockBlobSidecarsTracker removedTracker = blockBlobSidecarsTrackers.remove(blockRoot);
 
     if (removedTracker != null) {
+      orderedBlobSidecarsTrackers.remove(removedTracker.getSlotAndBlockRoot());
 
       dropMissingContent(removedTracker);
 
@@ -230,10 +209,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
   }
 
-  @Override
-  public synchronized BlockBlobSidecarsTracker getBlockBlobsSidecarsTracker(
-      final SignedBeaconBlock block) {
-    return getOrCreateBlobSidecarsTracker(block.getSlotAndBlockRoot(), __ -> {}, __ -> {});
+  @VisibleForTesting
+  BlockBlobSidecarsTracker getBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot) {
+    return blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
   }
 
   @VisibleForTesting
@@ -247,7 +225,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       toRemove.add(slotAndBlockRoot);
     }
 
-    toRemove.forEach(this::removeAllForBlock);
+    toRemove.stream().map(SlotAndBlockRoot::getBlockRoot).forEach(this::removeAllForBlock);
   }
 
   @Override
@@ -302,6 +280,43 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     return blockBlobSidecarsTrackers.size();
   }
 
+  private BlockBlobSidecarsTracker internalOnNewBlock(final SignedBeaconBlock block) {
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+
+    final BlockBlobSidecarsTracker tracker =
+        getOrCreateBlobSidecarsTracker(
+            slotAndBlockRoot,
+            newTracker -> {
+              newTracker.setBlock(block);
+              onFirstSeen(slotAndBlockRoot);
+            },
+            existingTracker -> {
+              if (!existingTracker.setBlock(block)) {
+                // block was already set
+                return;
+              }
+
+              if (existingTracker.isFetchTriggered()) {
+                // block has been set for the first time and we previously triggered fetching of
+                // missing blobSidecars. So we may have requested to fetch more sidecars
+                // than the block actually requires. Let's drop them.
+                existingTracker
+                    .getUnusedBlobSidecarsForBlock()
+                    .forEach(
+                        blobIdentifier ->
+                            requiredBlobSidecarDroppedSubscribers.deliver(
+                                RequiredBlobSidecarDroppedSubscriber::onRequiredBlobSidecarDropped,
+                                blobIdentifier));
+              }
+            });
+
+    if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
+      sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    }
+
+    return tracker;
+  }
+
   private BlockBlobSidecarsTracker getOrCreateBlobSidecarsTracker(
       final SlotAndBlockRoot slotAndBlockRoot,
       final Consumer<BlockBlobSidecarsTracker> onNew,
@@ -325,29 +340,25 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       if (toRemove == null) {
         break;
       }
-      removeAllForBlock(toRemove);
+      removeAllForBlock(toRemove.getBlockRoot());
     }
   }
 
   private void onFirstSeen(final SlotAndBlockRoot slotAndBlockRoot) {
-    final Optional<Duration> fetchDelay = calculateFetchDelay(slotAndBlockRoot);
-
-    if (fetchDelay.isEmpty()) {
-      return;
-    }
+    final Duration fetchDelay = calculateFetchDelay(slotAndBlockRoot);
 
     asyncRunner
-        .runAfterDelay(() -> this.fetchMissingContent(slotAndBlockRoot), fetchDelay.get())
+        .runAfterDelay(() -> this.fetchMissingContent(slotAndBlockRoot), fetchDelay)
         .ifExceptionGetsHereRaiseABug();
   }
 
   @VisibleForTesting
-  Optional<Duration> calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
+  Duration calculateFetchDelay(final SlotAndBlockRoot slotAndBlockRoot) {
     final UInt64 slot = slotAndBlockRoot.getSlot();
 
     if (slot.isLessThan(getCurrentSlot())) {
       // old slot
-      return Optional.empty();
+      return Duration.ZERO;
     }
 
     final UInt64 nowMillis = timeProvider.getTimeInMillis();
@@ -358,7 +369,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (nowMillis.isGreaterThanOrEqualTo(attestationDueMillis)) {
       // late block, we already produced attestations on previous head,
       // so let's wait our target delay before trying to fetch
-      return Optional.of(Duration.ofMillis(TARGET_WAIT_MILLIS.intValue()));
+      return Duration.ofMillis(TARGET_WAIT_MILLIS.intValue());
     }
 
     final UInt64 upperLimitRelativeToAttDue =
@@ -369,7 +380,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     final UInt64 finalTime =
         targetMillis.min(upperLimitRelativeToAttDue).max(nowMillis.plus(MIN_WAIT_MILLIS));
 
-    return Optional.of(Duration.ofMillis(finalTime.minus(nowMillis).intValue()));
+    return Duration.ofMillis(finalTime.minus(nowMillis).intValue());
   }
 
   private synchronized void fetchMissingContent(final SlotAndBlockRoot slotAndBlockRoot) {
@@ -380,7 +391,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       return;
     }
 
-    if (blockBlobSidecarsTracker.checkCompletion()) {
+    if (blockBlobSidecarsTracker.isCompleted()) {
       return;
     }
 

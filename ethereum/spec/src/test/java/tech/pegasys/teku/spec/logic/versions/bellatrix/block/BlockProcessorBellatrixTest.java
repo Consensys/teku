@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltairTest;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -46,8 +45,7 @@ public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
                     block,
                     BLSSignatureVerifier.SIMPLE,
                     Optional.empty(),
-                    KzgCommitmentsProcessor.NOOP,
-                    BlobsSidecarAvailabilityChecker.NOOP))
+                    KzgCommitmentsProcessor.NOOP))
         .isInstanceOf(StateTransitionException.class);
   }
 }

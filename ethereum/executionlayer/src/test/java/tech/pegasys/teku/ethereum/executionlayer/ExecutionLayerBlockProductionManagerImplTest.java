@@ -23,7 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerBlockProductionManagerImpl.BLOBS_BUNDLE_BUILDER_DUMMY;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerBlockProductionManagerImpl.BLOBS_BUNDLE_DUMMY;
 
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -49,9 +49,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerBlockProductionManagerImplTest {
@@ -60,7 +60,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
   private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
-  private Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private Spec spec = TestSpecFactory.createMinimalDeneb();
 
   private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -238,7 +238,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
 
     assertThat(executionPayloadResult.getBlobsBundleFuture().orElseThrow())
-        .isEqualTo(BLOBS_BUNDLE_BUILDER_DUMMY);
+        .isEqualTo(BLOBS_BUNDLE_DUMMY);
 
     // we expect local engine header as result
     final HeaderWithFallbackData expectedResult =
@@ -285,7 +285,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
 
     assertThat(executionPayloadResult.getBlobsBundleFuture().orElseThrow())
-        .isEqualTo(BLOBS_BUNDLE_BUILDER_DUMMY);
+        .isEqualTo(BLOBS_BUNDLE_DUMMY);
 
     SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionPayloadResult.getExecutionPayloadHeaderFuture().orElseThrow();
@@ -320,10 +320,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
-    final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
-    final BlobsBundle blobsBundle =
-        prepareEngineGetBlobsBundleResponse(executionPayloadContext, slot);
+    final GetPayloadResponse getPayloadResponse =
+        prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, UInt256.ZERO, slot);
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -332,12 +330,12 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadHeaderFuture()).isEmpty();
 
-    assertThat(executionPayloadResult.getBlobsBundleFuture().orElseThrow().get())
-        .isEqualTo(blobsBundle);
-
     final ExecutionPayload executionPayload =
         executionPayloadResult.getExecutionPayloadFuture().orElseThrow().get();
-    assertThat(executionPayload).isEqualTo(payload);
+    assertThat(executionPayload).isEqualTo(getPayloadResponse.getExecutionPayload());
+    final BlobsBundle blobsBundle =
+        executionPayloadResult.getBlobsBundleFuture().orElseThrow().get();
+    assertThat(blobsBundle).isEqualTo(getPayloadResponse.getBlobsBundle());
 
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
         .contains(executionPayloadResult);
@@ -439,21 +437,23 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final ExecutionPayloadContext executionPayloadContext,
       final UInt256 blockValue,
       final UInt64 slot) {
-
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
-        .thenReturn(SafeFuture.completedFuture(new ExecutionPayloadWithValue(payload, blockValue)));
+        .thenReturn(SafeFuture.completedFuture(new GetPayloadResponse(payload, blockValue)));
     return payload;
   }
 
-  private BlobsBundle prepareEngineGetBlobsBundleResponse(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+  private GetPayloadResponse prepareEngineGetPayloadResponseWithBlobs(
+      final ExecutionPayloadContext executionPayloadContext,
+      final UInt256 blockValue,
+      final UInt64 slot) {
+    final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
-
-    when(executionClientHandler.engineGetBlobsBundle(executionPayloadContext.getPayloadId(), slot))
-        .thenReturn(SafeFuture.completedFuture(blobsBundle));
-    return blobsBundle;
+    final GetPayloadResponse getPayloadResponse =
+        new GetPayloadResponse(payload, blockValue, blobsBundle);
+    when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
+        .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
+    return getPayloadResponse;
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(

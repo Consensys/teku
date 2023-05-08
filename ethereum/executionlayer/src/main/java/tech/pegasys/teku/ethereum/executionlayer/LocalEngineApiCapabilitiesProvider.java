@@ -20,7 +20,6 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
@@ -55,9 +54,6 @@ public class LocalEngineApiCapabilitiesProvider implements EngineApiCapabilities
     // Fork Choice Updated
     supportedMethods.add(new EngineForkChoiceUpdatedV1(executionEngineClient));
     supportedMethods.add(new EngineForkChoiceUpdatedV2(executionEngineClient, spec));
-
-    // Get Blobs Bundle
-    supportedMethods.add(new EngineGetBlobsBundleV1(executionEngineClient, spec));
 
     // Exchange Transition Configuration
     supportedMethods.add(new EngineExchangeTransitionConfigurationV1(executionEngineClient));

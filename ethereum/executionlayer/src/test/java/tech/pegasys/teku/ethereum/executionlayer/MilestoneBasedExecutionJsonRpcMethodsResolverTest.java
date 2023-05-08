@@ -27,7 +27,6 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetBlobsBundleV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV3;
@@ -133,7 +132,6 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
         arguments(EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV2.class),
         arguments(
             EngineApiMethods.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION,
-            EngineExchangeTransitionConfigurationV1.class),
-        arguments(EngineApiMethods.ENGINE_GET_BLOBS_BUNDLE, EngineGetBlobsBundleV1.class));
+            EngineExchangeTransitionConfigurationV1.class));
   }
 }

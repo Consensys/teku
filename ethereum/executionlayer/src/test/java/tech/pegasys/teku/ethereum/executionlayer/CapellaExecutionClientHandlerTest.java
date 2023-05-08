@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -36,16 +35,15 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -86,8 +84,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                     data.randomUInt256())));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
-    final SafeFuture<ExecutionPayloadWithValue> future =
-        handler.engineGetPayload(context, bellatrixSlot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, bellatrixSlot);
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
     verify(executionEngineClient, never()).getPayloadV1(any());
 
@@ -114,14 +111,14 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                     UInt256.MAX_VALUE)));
     when(executionEngineClient.getPayloadV2(context.getPayloadId())).thenReturn(dummyResponse);
 
-    final SafeFuture<ExecutionPayloadWithValue> future = handler.engineGetPayload(context, slot);
+    final SafeFuture<GetPayloadResponse> future = handler.engineGetPayload(context, slot);
     verify(executionEngineClient).getPayloadV2(context.getPayloadId());
     assertThat(future).isCompleted();
     assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadCapella.class);
   }
 
   @Test
-  void engineNewPayload_capellaFork() throws ExecutionException, InterruptedException {
+  void engineNewPayload_capellaFork() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);
@@ -225,16 +222,5 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
         .forkChoiceUpdatedV1(forkChoiceStateV1, payloadAttributes);
     verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
     assertThat(future).isCompleted();
-  }
-
-  @Test
-  public void engineGetBlobsBundle_throwsNotYetSupported() {
-    final ExecutionClientHandler handler = getHandler();
-    assertThatThrownBy(
-            () ->
-                handler.engineGetBlobsBundle(
-                    Bytes8.fromHexString("abcd1234abcd1234"), UInt64.valueOf(123)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Can't find method with name engine_getBlobsBundle");
   }
 }

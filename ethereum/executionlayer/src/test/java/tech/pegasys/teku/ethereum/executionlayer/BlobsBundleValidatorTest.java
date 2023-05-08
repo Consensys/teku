@@ -44,8 +44,7 @@ public class BlobsBundleValidatorTest {
   @Test
   public void shouldVerifyAgainstPayloadTransactions() throws Exception {
     final BlobsBundle blobsBundle =
-        new BlobsBundle(
-            dataStructureUtil.randomBytes32(), Collections.emptyList(), Collections.emptyList());
+        new BlobsBundle(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(false);
     assertThatThrownBy(
@@ -57,12 +56,12 @@ public class BlobsBundleValidatorTest {
   }
 
   @Test
-  public void shouldMatchSizesOfKzgsAndBlobs() {
+  public void shouldMatchSizesOfCommitmentsAndBlobs() {
     when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(true);
     final BlobsBundle blobsBundle =
         new BlobsBundle(
-            dataStructureUtil.randomBytes32(),
             List.of(dataStructureUtil.randomKZGCommitment()),
+            List.of(dataStructureUtil.randomKZGProof()),
             Collections.emptyList());
     assertThatThrownBy(() -> blobsBundleValidator.validate(blobsBundle, Optional.empty()))
         .isInstanceOf(BlobsBundleValidationException.class)
@@ -80,13 +79,15 @@ public class BlobsBundleValidatorTest {
         .isInstanceOf(BlobsBundleValidationException.class)
         .hasMessage("Blobs not matching KZG commitments");
 
+    final int numberOfBlobs = blobsBundle.getBlobs().size();
     final BlobsBundle blobsBundle2 =
         new BlobsBundle(
-            blobsBundle.getBlockHash(),
-            IntStream.range(0, blobsBundle.getKzgs().size())
+            IntStream.range(0, numberOfBlobs)
                 .mapToObj(__ -> commitment)
                 .collect(Collectors.toList()),
+            dataStructureUtil.randomKZGProofs(numberOfBlobs),
             blobsBundle.getBlobs());
+    new BlobsBundle(blobsBundle.getCommitments(), blobsBundle.getProofs(), blobsBundle.getBlobs());
     blobsBundleValidator.validate(blobsBundle2, Optional.empty());
   }
 }

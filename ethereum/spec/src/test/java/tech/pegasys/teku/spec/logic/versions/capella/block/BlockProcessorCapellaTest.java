@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrixTest;
-import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobsSidecarAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -64,8 +63,7 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
                     block,
                     BLSSignatureVerifier.SIMPLE,
                     Optional.empty(),
-                    KzgCommitmentsProcessor.NOOP,
-                    BlobsSidecarAvailabilityChecker.NOOP))
+                    KzgCommitmentsProcessor.NOOP))
         .isInstanceOf(StateTransitionException.class);
   }
 

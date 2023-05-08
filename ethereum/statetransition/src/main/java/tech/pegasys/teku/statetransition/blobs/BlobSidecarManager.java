@@ -27,19 +27,17 @@ public interface BlobSidecarManager {
       new BlobSidecarManager() {
 
         @Override
-        public SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
+        public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
             final SignedBlobSidecar signedBlobSidecar) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
         @Override
-        public SafeFuture<Void> importBlobSidecar(final BlobSidecar blobSidecar) {
-          return SafeFuture.COMPLETE;
-        }
+        public void prepareForBlockImport(final BlobSidecar blobSidecar) {}
 
         @Override
-        public void subscribeToImportedBlobSidecars(
-            final ImportedBlobSidecarListener importedBlobSidecarListener) {}
+        public void subscribeToReceivedBlobSidecar(
+            final ReceivedBlobSidecarListener receivedBlobSidecarListener) {}
 
         @Override
         public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
@@ -62,12 +60,12 @@ public interface BlobSidecarManager {
         }
       };
 
-  SafeFuture<InternalValidationResult> validateAndImportBlobSidecar(
+  SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       SignedBlobSidecar signedBlobSidecar);
 
-  SafeFuture<Void> importBlobSidecar(BlobSidecar blobSidecar);
+  void prepareForBlockImport(BlobSidecar blobSidecar);
 
-  void subscribeToImportedBlobSidecars(ImportedBlobSidecarListener importedBlobSidecarListener);
+  void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
@@ -79,7 +77,7 @@ public interface BlobSidecarManager {
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 
-  interface ImportedBlobSidecarListener {
-    void onBlobSidecarImported(BlobSidecar blobSidecar);
+  interface ReceivedBlobSidecarListener {
+    void onBlobSidecarReceived(BlobSidecar blobSidecar);
   }
 }

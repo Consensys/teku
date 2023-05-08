@@ -18,13 +18,11 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadWithValue;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -73,13 +71,13 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<ExecutionPayloadWithValue> engineGetPayload(
+  public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(slot).build();
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_GET_PAYLOAD, ExecutionPayloadWithValue.class)
+        .getMethod(EngineApiMethods.ENGINE_GET_PAYLOAD, GetPayloadResponse.class)
         .execute(params);
   }
 
@@ -103,16 +101,6 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
         .getMethod(
             EngineApiMethods.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION,
             TransitionConfiguration.class)
-        .execute(params);
-  }
-
-  @Override
-  public SafeFuture<BlobsBundle> engineGetBlobsBundle(final Bytes8 payloadId, final UInt64 slot) {
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(payloadId).add(slot).build();
-
-    return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_GET_BLOBS_BUNDLE, BlobsBundle.class)
         .execute(params);
   }
 }
