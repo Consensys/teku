@@ -15,9 +15,11 @@ package tech.pegasys.teku.statetransition.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -57,8 +59,10 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -66,6 +70,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
@@ -87,7 +92,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 public class BlockManagerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  // TODO: we want to actually test that we are safe pre-Deneb too
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
@@ -111,12 +117,13 @@ public class BlockManagerTest {
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionLayerChannel.NOOP);
+  private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,
           new InlineEventThread(),
           localRecentChainData,
-          BlobSidecarManager.NOOP,
+          blobSidecarManager,
           forkChoiceNotifier,
           transitionBlockValidator);
 
@@ -165,6 +172,8 @@ public class BlockManagerTest {
         .chainUpdater()
         .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
     assertThat(blockManager.start()).isCompleted();
+    when(blobSidecarManager.createAvailabilityChecker(any()))
+        .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
   }
 
   private void forwardBlockImportedNotificationsTo(final BlockManager blockManager) {
@@ -180,6 +189,7 @@ public class BlockManagerTest {
   @AfterEach
   public void cleanup() {
     assertThat(blockManager.stop()).isCompleted();
+    reset(blobSidecarManager);
   }
 
   @Test
@@ -656,6 +666,27 @@ public class BlockManagerTest {
     assertThat(blockManager.validateAndImportBlock(block))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verifyNoInteractions(eventLogger);
+  }
+
+  @Test
+  void onDeneb_shouldStoreBlobSidecarsAlongWithBlock() {
+    SignedBlockAndState signedBlockAndState =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+    final SignedBeaconBlock block = signedBlockAndState.getBlock();
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
+    reset(blobSidecarManager);
+    when(blobSidecarManager.createAvailabilityChecker(eq(block)))
+        .thenReturn(blobSidecarsAvailabilityChecker);
+    final List<BlobSidecar> blobSidecars =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState.getRoot()).orElseThrow();
+    assertThat(blobSidecars).isNotEmpty();
+
+    assertThat(blockManager.importBlock(block))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
   }
 
   private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {

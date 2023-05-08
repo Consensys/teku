@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.spec.generator;
 
+import static tech.pegasys.teku.spec.config.SpecConfigDeneb.BLOB_TX_TYPE;
+import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -42,6 +45,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -424,5 +429,23 @@ public class BlockProposalTestUtil {
       throw new RuntimeException(e);
     }
     return spec.getBeaconProposerIndex(state, state.getSlot());
+  }
+
+  /** Transaction cooked to look like Blob transaction for specific kzgCommitment */
+  public Transaction randomExecutionPayloadVersionedHashTransaction(
+      final KZGCommitment kzgCommitment) {
+    final Bytes txBytes =
+        Bytes.wrap(
+            BLOB_TX_TYPE,
+            Bytes.wrap(new byte[188]),
+            Bytes.fromHexString("C0000000"),
+            VERSIONED_HASH_VERSION_KZG,
+            Hash.sha256(kzgCommitment.getBytesCompressed()).slice(1));
+    final TransactionSchema schema =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+            .getExecutionPayloadSchema()
+            .getTransactionSchema();
+    // TODO: fix SSZ error, lol
+    return schema.fromBytes(txBytes);
   }
 }
