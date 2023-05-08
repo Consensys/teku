@@ -37,7 +37,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void onNewBlock(final SignedBeaconBlock block) {}
 
         @Override
-        public void onBlobSidecarsFromSync(
+        public void onCompletedBlockAndBlobSidecars(
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
 
         @Override
@@ -80,7 +80,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
 
   void onNewBlock(SignedBeaconBlock block);
 
-  void onBlobSidecarsFromSync(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+  void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
   void removeAllForBlock(Bytes32 blockRoot);
 

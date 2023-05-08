@@ -116,7 +116,7 @@ public class BatchImporter {
         blockRoot);
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
-    blobSidecarPool.onBlobSidecarsFromSync(block, blobSidecars);
+    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return importBlock(block, source);
   }
 
