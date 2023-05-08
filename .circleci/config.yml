@@ -1,11 +1,11 @@
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
-  win: circleci/windows@2.4.1
+  win: circleci/windows@5.0
 executors:
   small_executor:
     docker:
-      - image: cimg/openjdk:11.0.13
+      - image: cimg/openjdk:17.0
         auth: &docker-auth
           # Don't panic, throw away account to avoid Docker rate limits when downloading.
           # Second reason we're doing this is so that forked PRs from external contributors works ie env vars aren't visible to forked PRs from within contexts
@@ -27,7 +27,7 @@ executors:
 
   medium_executor:
     docker:
-      - image: cimg/openjdk:11.0.13
+      - image: cimg/openjdk:17.0
         auth:
           <<: *docker-auth
     resource_class: medium
@@ -39,7 +39,7 @@ executors:
 
   medium_plus_executor:
     docker:
-      - image: cimg/openjdk:11.0.13
+      - image: cimg/openjdk:17.0
         auth:
           <<: *docker-auth
     resource_class: "medium+"
@@ -50,7 +50,7 @@ executors:
 
   large_executor:
     docker:
-      - image: cimg/openjdk:11.0.13
+      - image: cimg/openjdk:17.0
         auth:
           <<: *docker-auth
     resource_class: large
@@ -61,7 +61,7 @@ executors:
 
   machine_executor_amd64:
     machine:
-      image: ubuntu-2004:202201-02 # Ubuntu 20.04, Docker v20.10.12, Docker Compose v1.29.2
+      image: ubuntu-2204:2022.10.2 # https://circleci.com/developer/machine/image/ubuntu-2204
       docker_layer_caching: true
     working_directory: ~/project
     environment:
@@ -70,7 +70,7 @@ executors:
 
   machine_executor_arm64:
     machine:
-      image: ubuntu-2004:202201-02 # Ubuntu 20.04, Docker v20.10.12, Docker Compose v1.29.2
+      image: ubuntu-2204:2022.10.2 # https://circleci.com/developer/machine/image/ubuntu-2204
     resource_class: arm.medium
     environment:
       architecture: "arm64"
