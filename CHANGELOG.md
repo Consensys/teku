@@ -1,6 +1,7 @@
 # Changelog
 
 ## Upcoming Breaking Changes
+- Upgrading source code to Java 17 meaning users will need to upgrade their Java install to at least 17, or use the jdk17 variant of the docker image. 
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
 - The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
