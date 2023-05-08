@@ -777,7 +777,6 @@ public class BlobSidecarPoolImplTest {
 
     final Duration fetchDelay = blobSidecarPool.calculateFetchDelay(slotAndBlockRoot);
 
-    // we can only wait 200ms less than target
     assertThat(fetchDelay).isEqualTo(Duration.ZERO);
   }
 
