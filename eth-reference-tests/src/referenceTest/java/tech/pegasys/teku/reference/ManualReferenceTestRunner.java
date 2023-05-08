@@ -108,7 +108,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   private static boolean filterByMilestone(final TestDefinition testDefinition) {
     final Optional<String> maybeMilestoneOverride = environmentVariableOverride("ENV_MILESTONE");
 
-    if (MILESTONE.isEmpty() && maybeMilestoneOverride.isEmpty()) {
+    if (MILESTONE.isBlank() && maybeMilestoneOverride.isEmpty()) {
       return true;
     }
 
@@ -120,7 +120,7 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
     final Optional<String> maybeDisplayNameOverride =
         environmentVariableOverride("ENV_DISPLAY_NAME");
 
-    if (DISPLAY_NAME.isEmpty() && maybeDisplayNameOverride.isEmpty()) {
+    if (DISPLAY_NAME.isBlank() && maybeDisplayNameOverride.isEmpty()) {
       return true;
     }
 
