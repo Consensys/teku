@@ -15,6 +15,7 @@ package tech.pegasys.teku.reference;
 
 import com.google.errorprone.annotations.MustBeClosed;
 import java.io.IOException;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,16 +39,30 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
    *
    * <p>e.g. set to "ssz_static" to run only ssz static tests or "ssz_static/Attestation" for only
    * attestation ssz tests.
+   *
+   * <p>May be overridden by the ENV_TEST_TYPE environment variable.
    */
   private static final String TEST_TYPE = "fork_choice";
 
-  /** Filter test to run to those from the specified spec. One of general, minimal or mainnet */
+  /**
+   * Filter test to run to those from the specified spec. One of general, minimal or mainnet
+   *
+   * <p>May be overridden by the ENV_SPEC environment variable.
+   */
   private static final String SPEC = "";
 
-  /** Filter test to run only those for a specific milestone. Use values from TestFork. */
-  private static final String MILESTONE = null;
+  /**
+   * Filter test to run only those for a specific milestone. Use values from TestFork.
+   *
+   * <p>May be overridden by the ENV_MILESTONE environment variable.
+   */
+  private static final String MILESTONE = "";
 
-  /** Filter tests to run only those where the display name contains this string. */
+  /**
+   * Filter tests to run only those where the display name contains this string.
+   *
+   * <p>May be overridden by the ENV_DISPLAY_NAME environment variable.
+   */
   private static final String DISPLAY_NAME = "";
 
   @ParameterizedTest(name = "{0}")
@@ -61,17 +76,58 @@ public class ManualReferenceTestRunner extends Eth2ReferenceTestCase {
   @MustBeClosed
   static Stream<Arguments> loadReferenceTests() throws IOException {
     return ReferenceTestFinder.findReferenceTests()
-        .filter(
-            testDefinition ->
-                SPEC.isBlank() || testDefinition.getConfigName().equalsIgnoreCase(SPEC))
-        .filter(testDefinition -> testDefinition.getTestType().startsWith(TEST_TYPE))
-        .filter(ManualReferenceTestRunner::isSelectedMilestone)
-        .filter(test -> test.getDisplayName().contains(DISPLAY_NAME))
+        .filter(ManualReferenceTestRunner::filterBySpec)
+        .filter(ManualReferenceTestRunner::filterByTestType)
+        .filter(ManualReferenceTestRunner::filterByMilestone)
+        .filter(ManualReferenceTestRunner::filterByDisplayName)
         .map(testDefinition -> Arguments.of(testDefinition.getDisplayName(), testDefinition));
   }
 
+  private static boolean filterByTestType(final TestDefinition testDefinition) {
+    final Optional<String> maybeTestTypeOverride = environmentVariableOverride("ENV_TEST_TYPE");
+
+    if (TEST_TYPE.isBlank() && maybeTestTypeOverride.isEmpty()) {
+      return true;
+    }
+
+    return testDefinition.getTestType().startsWith(maybeTestTypeOverride.orElse(TEST_TYPE));
+  }
+
   @SuppressWarnings("ConstantConditions")
-  private static boolean isSelectedMilestone(final TestDefinition testDefinition) {
-    return MILESTONE == null || MILESTONE.equals(testDefinition.getFork());
+  private static boolean filterBySpec(final TestDefinition testDefinition) {
+    final Optional<String> maybeSpecOverride = environmentVariableOverride("ENV_SPEC");
+
+    if (SPEC.isBlank() && maybeSpecOverride.isEmpty()) {
+      return true;
+    }
+
+    return testDefinition.getConfigName().equalsIgnoreCase(maybeSpecOverride.orElse(SPEC));
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private static boolean filterByMilestone(final TestDefinition testDefinition) {
+    final Optional<String> maybeMilestoneOverride = environmentVariableOverride("ENV_MILESTONE");
+
+    if (MILESTONE.isBlank() && maybeMilestoneOverride.isEmpty()) {
+      return true;
+    }
+
+    return maybeMilestoneOverride.orElse(MILESTONE).equals(testDefinition.getFork());
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private static boolean filterByDisplayName(final TestDefinition testDefinition) {
+    final Optional<String> maybeDisplayNameOverride =
+        environmentVariableOverride("ENV_DISPLAY_NAME");
+
+    if (DISPLAY_NAME.isBlank() && maybeDisplayNameOverride.isEmpty()) {
+      return true;
+    }
+
+    return testDefinition.getDisplayName().contains(maybeDisplayNameOverride.orElse(DISPLAY_NAME));
+  }
+
+  private static Optional<String> environmentVariableOverride(final String name) {
+    return Optional.ofNullable(System.getenv(name));
   }
 }
