@@ -33,7 +33,7 @@ public class ExpectedDeltas extends Container2<ExpectedDeltas, SszUInt64List, Ss
   public RewardAndPenaltyDeltas getDeltas() {
     final SszUInt64List rewards = getField0();
     final SszUInt64List penalties = getField1();
-    final RewardAndPenaltyDeltas deltas = new RewardAndPenaltyDeltas(rewards.size());
+    final RewardAndPenaltyDeltas deltas = RewardAndPenaltyDeltas.aggregated(rewards.size());
     for (int i = 0; i < rewards.size(); i++) {
       // We are using the aggregated deltas, so it does not matter what component we use here
       deltas.getDelta(i).reward(RewardComponent.HEAD, rewards.get(i).get());
