@@ -133,6 +133,20 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+    final Optional<UInt64> maybeProposerReward =
+        processAttestationProposerReward(state, attestation, indexedAttestationProvider);
+
+    maybeProposerReward.ifPresent(
+        proposerReward -> {
+          final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
+          beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
+        });
+  }
+
+  public Optional<UInt64> processAttestationProposerReward(
+      final MutableBeaconStateAltair state,
+      final Attestation attestation,
+      final IndexedAttestationProvider indexedAttestationProvider) {
     final AttestationData data = attestation.getData();
 
     final List<Integer> participationFlagIndices =
@@ -185,15 +199,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     }
 
     if (!proposerRewardNumerator.isZero()) {
-      final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
       final UInt64 proposerRewardDenominator =
           WEIGHT_DENOMINATOR
               .minus(PROPOSER_WEIGHT)
               .times(WEIGHT_DENOMINATOR)
               .dividedBy(PROPOSER_WEIGHT);
       final UInt64 proposerReward = proposerRewardNumerator.dividedBy(proposerRewardDenominator);
-      beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
+      return Optional.of(proposerReward);
     }
+
+    return Optional.empty();
   }
 
   @Override
