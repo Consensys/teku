@@ -16,6 +16,9 @@ package tech.pegasys.teku.api.migrated;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.DetailedRewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 
 public class TotalAttestationReward {
 
@@ -32,6 +35,27 @@ public class TotalAttestationReward {
     this.target = target;
     this.source = source;
     this.inclusionDelay = inclusionDelay;
+  }
+
+  public TotalAttestationReward(long validatorIndex, final RewardAndPenalty rewardAndPenalty) {
+    this.validatorIndex = validatorIndex;
+
+    if (!rewardAndPenalty.getClass().isAssignableFrom(DetailedRewardAndPenalty.class)) {
+      throw new IllegalStateException("Can't cast RewardAndPenalty to DetailedRewardAndPenalty");
+    }
+    final DetailedRewardAndPenalty detailedRewardAndPenalty =
+        (DetailedRewardAndPenalty) rewardAndPenalty;
+
+    this.head =
+        detailedRewardAndPenalty.getReward(RewardComponent.HEAD).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.HEAD).longValue();
+    this.target =
+        detailedRewardAndPenalty.getReward(RewardComponent.TARGET).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.TARGET).longValue();
+    this.source =
+        detailedRewardAndPenalty.getReward(RewardComponent.SOURCE).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.SOURCE).longValue();
+    this.inclusionDelay = Optional.empty();
   }
 
   public long getValidatorIndex() {

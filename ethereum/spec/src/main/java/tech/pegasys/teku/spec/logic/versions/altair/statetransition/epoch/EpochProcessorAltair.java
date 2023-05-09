@@ -88,6 +88,21 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     return calculator.getDeltas();
   }
 
+  @Override
+  public RewardAndPenaltyDeltas getDetailedRewardAndPenaltyDeltas(
+      final BeaconState genericState, final ValidatorStatuses validatorStatuses) {
+    final BeaconStateAltair state = BeaconStateAltair.required(genericState);
+    final RewardsAndPenaltiesCalculatorAltair calculator =
+        new RewardsAndPenaltiesCalculatorAltair(
+            specConfigAltair,
+            state,
+            validatorStatuses,
+            miscHelpersAltair,
+            beaconStateAccessorsAltair);
+
+    return calculator.getDetailedDeltas();
+  }
+
   /**
    * Corresponds to process_participation_flag_updates in beacon-chain spec
    *

@@ -46,6 +46,11 @@ public abstract class RewardsAndPenaltiesCalculator {
 
   public abstract RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException;
 
+  public RewardAndPenaltyDeltas getDetailedDeltas() throws IllegalArgumentException {
+    // TODO-lucas not implemented
+    return null;
+  }
+
   protected UInt64 getFinalityDelay() {
     return finalityDelay;
   }
