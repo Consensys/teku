@@ -64,7 +64,10 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -81,10 +84,17 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -731,7 +741,7 @@ public class ChainDataProvider {
     final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
 
     final UInt64 proposerIndex = block.getProposerIndex();
-    final long attestationsBlockRewards = calculateAttestationRewards();
+    final long attestationsBlockRewards = calculateAttestationRewards(block, state);
     final long syncAggregateBlockRewards =
         calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
     final long proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
@@ -808,8 +818,37 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected long calculateAttestationRewards() {
-    return 0L;
+  protected long calculateAttestationRewards(
+      final BeaconBlock block,
+      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
+    final SpecVersion specVersion = spec.forMilestone(getMilestoneAtSlot(state.getSlot()));
+    final SpecConfig specConfig = spec.getSpecConfig(spec.computeEpochAtSlot(state.getSlot()));
+
+    final SpecLogicAltair specLogicAltair =
+        SpecLogicAltair.create(
+            SpecConfigAltair.required(specConfig),
+            SchemaDefinitionsAltair.required(specVersion.getSchemaDefinitions()));
+
+    // TODO Fix: Don't want to use cast
+    final BlockProcessor blockProcessor = specLogicAltair.getBlockProcessor();
+    assert blockProcessor instanceof BlockProcessorAltair;
+    BlockProcessorAltair blockProcessorAltair = (BlockProcessorAltair) blockProcessor;
+
+    final BeaconStateAltair stateAltair = BeaconStateAltair.required(state);
+    final MutableBeaconStateAltair mutableBeaconStateAltair = stateAltair.createWritableCopy();
+    final IndexedAttestationCache indexedAttestationCache = IndexedAttestationCache.NOOP;
+
+    long attestationRewards = 0L;
+    for (final Attestation attestation : block.getBody().getAttestations()) {
+      final AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider =
+          blockProcessorAltair.createIndexedAttestationProvider(state, indexedAttestationCache);
+      Optional<UInt64> value =
+          blockProcessorAltair.processAttestationProposerReward(
+              mutableBeaconStateAltair, attestation, indexedAttestationProvider);
+      attestationRewards += value.map(UInt64::longValue).orElse(0L);
+    }
+
+    return attestationRewards;
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
