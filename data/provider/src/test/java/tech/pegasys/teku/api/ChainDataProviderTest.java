@@ -529,7 +529,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final SignedBlockAndState blockAndState = storageSystem.chainUpdater().advanceChain();
 
     final long result =
-        provider.calculateAttestationRewards(
+        provider.calculateAttestationBlockRewards(
             blockAndState.getBlock().getMessage(), blockAndState.getState());
     assertThat(result).isEqualTo(0L);
   }

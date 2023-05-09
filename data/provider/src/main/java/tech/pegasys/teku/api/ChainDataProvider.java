@@ -737,7 +737,7 @@ public class ChainDataProvider {
     final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
 
     final UInt64 proposerIndex = block.getProposerIndex();
-    final long attestationsBlockRewards = calculateAttestationRewards(block, state);
+    final long attestationsBlockRewards = calculateAttestationBlockRewards(block, state);
     final long syncAggregateBlockRewards =
         calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
     final long proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
@@ -814,7 +814,7 @@ public class ChainDataProvider {
   }
 
   @VisibleForTesting
-  protected long calculateAttestationRewards(
+  protected long calculateAttestationBlockRewards(
       final BeaconBlock block,
       final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
     final SpecVersion specVersion = spec.forMilestone(getMilestoneAtSlot(state.getSlot()));
