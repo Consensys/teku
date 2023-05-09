@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.StorageUpdate;
@@ -124,11 +123,6 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
               return SafeFuture.COMPLETE;
             })
         .ifExceptionGetsHereRaiseABug();
-  }
-
-  @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    return retry(() -> delegate.onNoBlobsSlot(slotAndBlockRoot));
   }
 
   @Override

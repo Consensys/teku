@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -42,8 +41,6 @@ public interface StorageUpdateChannel extends ChannelInterface {
   SafeFuture<Void> onWeakSubjectivityUpdate(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
   SafeFuture<Void> onFinalizedDepositSnapshot(DepositTreeSnapshot depositTreeSnapshot);
-
-  SafeFuture<Void> onNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<Void> onBlobSidecar(BlobSidecar blobSidecar);
 

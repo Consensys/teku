@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -244,9 +245,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.completedFuture(Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)));
+    return SafeFuture.completedFuture(
+        Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)).orElse(Collections.emptyList()));
   }
 
   // Mutable methods

@@ -530,7 +530,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return blobSidecarsProvider.getBlobSidecars(slotAndBlockRoot);
   }

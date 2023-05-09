@@ -408,9 +408,6 @@ public class DebugDbCommand implements Runnable {
         for (final Iterator<SlotAndBlockRootAndBlobIndex> it = keyStream.iterator();
             it.hasNext(); ) {
           final SlotAndBlockRootAndBlobIndex key = it.next();
-          if (key.isNoBlobsKey()) {
-            continue;
-          }
           final BlobSidecar blobSidecar = database.getBlobSidecar(key).orElseThrow();
           out.putNextEntry(
               new ZipEntry(

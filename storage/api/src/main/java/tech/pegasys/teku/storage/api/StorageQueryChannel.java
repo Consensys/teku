@@ -63,6 +63,8 @@ public interface StorageQueryChannel extends ChannelInterface {
    */
   SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(final Set<Bytes32> blockRoots);
 
+  // FIXME: description
+  // FIXME: we expect we will determinate availability window borders separately
   /**
    * Returns list of blobSidecars
    *
@@ -72,7 +74,7 @@ public interface StorageQueryChannel extends ChannelInterface {
    *     <p>- empty Optional, when there are no data for the block, it's either pre-Deneb or pruned,
    *     <p>- empty List, when there is `blobSidecar` data for the block, but it contains 0 Blobs.
    */
-  SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+  SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(final Bytes32 stateRoot);

@@ -522,22 +522,15 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void addHotBlobSidecarSlot(
         final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
-      if (blobSidecars.isEmpty()) {
-        transaction.put(
-            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-            SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
-            Bytes.EMPTY);
-      } else {
-        blobSidecars.forEach(
-            blobSidecar ->
-                transaction.put(
-                    schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-                    new SlotAndBlockRootAndBlobIndex(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        blobSidecar.getIndex()),
-                    blobSidecar.sszSerialize()));
-      }
+      blobSidecars.forEach(
+          blobSidecar ->
+              transaction.put(
+                  schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+                  new SlotAndBlockRootAndBlobIndex(
+                      slotAndBlockRoot.getSlot(),
+                      slotAndBlockRoot.getBlockRoot(),
+                      blobSidecar.getIndex()),
+                  blobSidecar.sszSerialize()));
     }
 
     @Override
@@ -670,14 +663,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
           new SlotAndBlockRootAndBlobIndex(
               blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex()),
           blobSidecar.sszSerialize());
-    }
-
-    @Override
-    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-      transaction.put(
-          schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
-          Bytes.EMPTY);
     }
 
     @Override

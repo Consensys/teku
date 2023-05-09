@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.storage.store;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
@@ -40,6 +41,6 @@ public abstract class EmptyStoreResults {
   public static final SafeFuture<Optional<StateGenerationTask>> EMPTY_STATE_GENERATION_TASK =
       SafeFuture.completedFuture(Optional.empty());
 
-  public static final SafeFuture<Optional<List<BlobSidecar>>> NO_BLOB_SIDECARS_FUTURE =
-      SafeFuture.completedFuture(Optional.empty());
+  public static final SafeFuture<List<BlobSidecar>> NO_BLOB_SIDECARS_FUTURE =
+      SafeFuture.completedFuture(Collections.emptyList());
 }

@@ -22,7 +22,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -61,11 +60,6 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedDepositSnapshot(
       final DepositTreeSnapshot depositTreeSnapshot) {
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.COMPLETE;
   }
 

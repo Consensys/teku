@@ -160,11 +160,6 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.fromRunnable(() -> database.storeNoBlobsSlot(slotAndBlockRoot));
-  }
-
-  @Override
   public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
     return SafeFuture.fromRunnable(() -> database.storeBlobSidecar(blobSidecar));
   }
@@ -220,7 +215,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+  public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(
         () -> {
@@ -228,20 +223,12 @@ public class ChainStorage
               database.streamBlobSidecarKeys(
                   slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())) {
             final List<BlobSidecar> blobSidecars = new ArrayList<>();
-            boolean noKeys = true;
             for (Iterator<SlotAndBlockRootAndBlobIndex> iterator = keyStream.iterator();
                 iterator.hasNext(); ) {
-              noKeys = false;
               final SlotAndBlockRootAndBlobIndex key = iterator.next();
-              if (!key.isNoBlobsKey()) {
-                blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
-              }
+              blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
             }
-            if (noKeys) {
-              return Optional.empty();
-            } else {
-              return Optional.of(blobSidecars);
-            }
+            return blobSidecars;
           }
         });
   }
@@ -322,11 +309,7 @@ public class ChainStorage
           final List<SlotAndBlockRootAndBlobIndex> result;
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
-            result =
-                blobSidecars
-                    .filter(key -> !key.isNoBlobsKey())
-                    .limit(limit.longValue())
-                    .collect(Collectors.toList());
+            result = blobSidecars.limit(limit.longValue()).collect(Collectors.toList());
           }
           return result;
         });

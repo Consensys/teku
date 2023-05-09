@@ -527,7 +527,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveBlockState(rootAtSlot.get());
   }
 
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot) {
     if (store == null) {
       return EmptyStoreResults.NO_BLOB_SIDECARS_FUTURE;

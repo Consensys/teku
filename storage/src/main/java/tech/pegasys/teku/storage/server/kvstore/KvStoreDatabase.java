@@ -314,12 +314,7 @@ public class KvStoreDatabase implements Database {
             if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlot())) {
               return;
             }
-            final List<BlobSidecar> blobSidecars = finalizedBlobSidecarsBySlot.get(block.getSlot());
-            if (blobSidecars.isEmpty()) {
-              updater.addNoBlobsSlot(block.getSlotAndBlockRoot());
-            } else {
-              blobSidecars.forEach(updater::addBlobSidecar);
-            }
+            finalizedBlobSidecarsBySlot.get(block.getSlot()).forEach(updater::addBlobSidecar);
           });
       updater.commit();
     }
@@ -766,18 +761,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.addNoBlobsSlot(slotAndBlockRoot);
-      updater.commit();
-    }
-  }
-
-  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    if (key.isNoBlobsKey()) {
-      return Optional.empty();
-    }
     final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
@@ -804,7 +788,7 @@ public class KvStoreDatabase implements Database {
         final boolean finished = remaining < 0;
         final SlotAndBlockRootAndBlobIndex key = it.next();
         // Before we finish we should check that there are no BlobSidecars left in the same slot
-        if (finished && (key.isNoBlobsKey() || key.getBlobIndex().equals(ZERO))) {
+        if (finished && key.getBlobIndex().equals(ZERO)) {
           break;
         }
         updater.removeBlobSidecar(key);

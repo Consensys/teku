@@ -271,9 +271,6 @@ public class NoOpDatabase implements Database {
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
 
   @Override
-  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {}
-
-  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     return Optional.empty();
   }
