@@ -82,7 +82,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Expected an altair state but got: "
+                    "Expected an altair blockProcessor but got: "
                         + blockProcessor.getClass().getSimpleName()));
   }
 
