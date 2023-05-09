@@ -144,7 +144,7 @@ class DeserializableObjectTypeDefinitionTest {
 
   private static class MutableValue {
     private String required;
-    private Optional<String> optional;
+    private Optional<String> optional = Optional.empty();
 
     public String getRequired() {
       return required;
@@ -183,7 +183,7 @@ class DeserializableObjectTypeDefinitionTest {
 
   private static class ImmutableValueBuilder {
     private String required;
-    private Optional<String> optional;
+    private Optional<String> optional = Optional.empty();
 
     public ImmutableValueBuilder required(final String required) {
       this.required = required;
