@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -74,6 +75,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   private final MiscHelpersAltair miscHelpersAltair;
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
   private final SyncCommitteeUtil syncCommitteeUtil;
+
+  public static BlockProcessorAltair required(final BlockProcessor blockProcessor) {
+    return blockProcessor
+        .toVersionAltair()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected an altair state but got: "
+                        + blockProcessor.getClass().getSimpleName()));
+  }
 
   public BlockProcessorAltair(
       final SpecConfigAltair specConfig,
@@ -359,5 +370,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No blob Kzg commitments in Altair");
+  }
+
+  @Override
+  public Optional<BlockProcessorAltair> toVersionAltair() {
+    return Optional.of(this);
   }
 }
