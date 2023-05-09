@@ -1026,7 +1026,7 @@ public final class DataStructureUtil {
   private BeaconBlockAndState randomBlockAndState(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
-    final UInt64 proposerIndex = randomUInt64();
+    final UInt64 proposerIndex = UInt64.valueOf(randomPositiveInt());
     final BeaconBlockHeader latestHeader =
         new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
 
@@ -2413,7 +2413,7 @@ public final class DataStructureUtil {
 
   public RewardAndPenaltyDeltas randomRewardAndPenaltyDeltas(final int validatorCount) {
     final RewardAndPenaltyDeltas rewardAndPenaltyDeltas =
-        new RewardAndPenaltyDeltas(validatorCount);
+        RewardAndPenaltyDeltas.aggregated(validatorCount);
     for (int i = 0; i < validatorCount; i++) {
       // We are using the aggregated deltas, so it does not matter what component we use here
       final RewardAndPenalty rewardAndPenalty = rewardAndPenaltyDeltas.getDelta(i);

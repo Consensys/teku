@@ -57,7 +57,7 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
   @Override
   public RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException {
     final RewardAndPenaltyDeltas deltas =
-        new RewardAndPenaltyDeltas(validatorStatuses.getValidatorCount());
+        RewardAndPenaltyDeltas.aggregated(validatorStatuses.getValidatorCount());
 
     for (int flagIndex = 0; flagIndex < PARTICIPATION_FLAG_WEIGHTS.size(); flagIndex++) {
       processFlagIndexDeltas(deltas, flagIndex);

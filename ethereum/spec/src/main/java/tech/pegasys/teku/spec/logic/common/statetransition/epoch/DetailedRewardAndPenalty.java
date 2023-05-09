@@ -18,9 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 
-public class DetailedRewardAndPenalty {
+public class DetailedRewardAndPenalty implements RewardAndPenalty {
 
   private final Map<RewardComponent, UInt64> rewards =
       new HashMap<>(RewardComponent.values().length);
@@ -36,17 +35,14 @@ public class DetailedRewardAndPenalty {
             });
   }
 
+  @Override
   public void reward(final RewardComponent component, final UInt64 amount) {
     rewards.merge(component, amount, UInt64::plus);
   }
 
+  @Override
   public void penalize(final RewardComponent component, final UInt64 amount) {
     penalties.merge(component, amount, UInt64::plus);
-  }
-
-  public void add(final DetailedRewardAndPenalty other) {
-    other.rewards.forEach((k, v) -> rewards.merge(k, v, UInt64::plus));
-    other.penalties.forEach((k, v) -> penalties.merge(k, v, UInt64::plus));
   }
 
   public UInt64 getReward(final RewardComponent component) {
@@ -55,6 +51,16 @@ public class DetailedRewardAndPenalty {
 
   public UInt64 getPenalty(final RewardComponent component) {
     return penalties.get(component);
+  }
+
+  @Override
+  public UInt64 getReward() {
+    return rewards.values().stream().reduce(UInt64::plus).orElse(UInt64.ZERO);
+  }
+
+  @Override
+  public UInt64 getPenalty() {
+    return penalties.values().stream().reduce(UInt64::plus).orElse(UInt64.ZERO);
   }
 
   @Override

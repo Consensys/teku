@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.migrated;
 
+import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,6 +47,14 @@ public class StateSyncCommitteesData {
     StateSyncCommitteesData that = (StateSyncCommitteesData) o;
     return Objects.equals(validators, that.validators)
         && Objects.equals(validatorAggregates, that.validatorAggregates);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("validators", validators)
+        .add("validatorAggregates", validatorAggregates)
+        .toString();
   }
 
   @Override
