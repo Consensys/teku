@@ -1026,7 +1026,7 @@ public final class DataStructureUtil {
   private BeaconBlockAndState randomBlockAndState(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
-    final UInt64 proposerIndex = randomUInt64();
+    final UInt64 proposerIndex = UInt64.valueOf(randomPositiveInt());
     final BeaconBlockHeader latestHeader =
         new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
 
