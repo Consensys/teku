@@ -53,7 +53,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
 
   public RewardAndPenaltyDeltas getDeltas(final Step step) throws IllegalArgumentException {
     final RewardAndPenaltyDeltas deltas =
-        new RewardAndPenaltyDeltas(validatorStatuses.getValidatorCount());
+        RewardAndPenaltyDeltas.aggregated(validatorStatuses.getValidatorCount());
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
     final List<ValidatorStatus> statuses = validatorStatuses.getStatuses();
     final UInt64 finalityDelay = getFinalityDelay();

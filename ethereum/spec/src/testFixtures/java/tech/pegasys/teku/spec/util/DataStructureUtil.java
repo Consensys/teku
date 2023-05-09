@@ -2413,7 +2413,7 @@ public final class DataStructureUtil {
 
   public RewardAndPenaltyDeltas randomRewardAndPenaltyDeltas(final int validatorCount) {
     final RewardAndPenaltyDeltas rewardAndPenaltyDeltas =
-        new RewardAndPenaltyDeltas(validatorCount);
+        RewardAndPenaltyDeltas.aggregated(validatorCount);
     for (int i = 0; i < validatorCount; i++) {
       // We are using the aggregated deltas, so it does not matter what component we use here
       final RewardAndPenalty rewardAndPenalty = rewardAndPenaltyDeltas.getDelta(i);

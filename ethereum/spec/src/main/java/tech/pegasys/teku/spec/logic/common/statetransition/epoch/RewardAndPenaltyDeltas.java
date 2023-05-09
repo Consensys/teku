@@ -16,14 +16,24 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 import com.google.common.base.MoreObjects;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class RewardAndPenaltyDeltas {
   private final List<RewardAndPenalty> deltas;
 
-  public RewardAndPenaltyDeltas(final int validatorCount) {
+  public static RewardAndPenaltyDeltas detailed(final int validatorCount) {
+    return new RewardAndPenaltyDeltas(validatorCount, DetailedRewardAndPenalty::new);
+  }
+
+  public static RewardAndPenaltyDeltas aggregated(final int validatorCount) {
+    return new RewardAndPenaltyDeltas(validatorCount, AggregatedRewardAndPenalty::new);
+  }
+
+  private RewardAndPenaltyDeltas(
+      final int validatorCount, final Supplier<RewardAndPenalty> rewardAndPenaltySupplier) {
     this.deltas = new ArrayList<>(validatorCount);
     for (int i = 0; i < validatorCount; i++) {
-      deltas.add(new AggregatedRewardAndPenalty());
+      deltas.add(rewardAndPenaltySupplier.get());
     }
   }
 
