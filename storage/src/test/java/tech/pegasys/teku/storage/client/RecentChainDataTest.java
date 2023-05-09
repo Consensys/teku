@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -61,7 +62,7 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class RecentChainDataTest {
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecConfig genesisSpecConfig = spec.getGenesisSpecConfig();
   private StorageSystem storageSystem;
@@ -786,6 +787,36 @@ class RecentChainDataTest {
 
     final SignedBeaconBlock block = storageSystem.chainUpdater().advanceChain().getBlock();
     assertThat(recentChainData.getSlotForBlockRoot(block.getRoot())).contains(block.getSlot());
+  }
+
+  @Test
+  void retrieveBlobSidecars_shouldReturnBlobSidecarsWhenExists() {
+    initPostGenesis();
+
+    final SignedBlockAndState block =
+        chainBuilder.generateBlockAtSlot(
+            UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
+    final Optional<List<BlobSidecar>> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    storageSystem.chainUpdater().saveBlock(block, blobSidecars);
+    assertThat(blobSidecars.orElseThrow()).isNotEmpty();
+
+    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecarsFuture =
+        recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
+    assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
+  }
+
+  @Test
+  void retrieveBlobSidecars_shouldReturnNoBlobSidecarsWhenNotExists() {
+    initPostGenesis();
+
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(UInt64.valueOf(1));
+    final Optional<List<BlobSidecar>> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    storageSystem.chainUpdater().saveBlock(block, blobSidecars);
+    assertThat(blobSidecars.orElseThrow()).isEmpty();
+
+    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecarsFuture =
+        recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
+    assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
   }
 
   @Test

@@ -18,7 +18,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -45,15 +44,6 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot) {}
-
-        @Override
-        public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
-
-        @Override
-        public void discardBlobSidecarsByBlock(final SignedBeaconBlock block) {}
-
-        @Override
         public BlobSidecarsAvailabilityChecker createAvailabilityChecker(
             final SignedBeaconBlock block) {
           return BlobSidecarsAvailabilityChecker.NOOP;
@@ -68,12 +58,6 @@ public interface BlobSidecarManager {
   void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
-
-  void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
-
-  void storeBlobSidecar(BlobSidecar blobSidecar);
-
-  void discardBlobSidecarsByBlock(SignedBeaconBlock block);
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 

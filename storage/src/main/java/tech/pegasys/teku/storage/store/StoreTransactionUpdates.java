@@ -16,10 +16,12 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -37,6 +39,7 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots;
   private final boolean optimisticTransitionBlockRootSet;
@@ -49,6 +52,7 @@ class StoreTransactionUpdates {
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars,
       final Map<Bytes32, UInt64> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
@@ -59,6 +63,7 @@ class StoreTransactionUpdates {
     checkNotNull(hotBlocks, "Hot blocks are required");
     checkNotNull(hotBlockAndStates, "Hot states are required");
     checkNotNull(hotStatesToPersist, "Hot states to persist are required");
+    checkNotNull(hotBlobSidecars, "Hot blobSidecars are required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(stateRoots, "State roots are required");
 
@@ -67,6 +72,7 @@ class StoreTransactionUpdates {
     this.hotBlocks = hotBlocks;
     this.hotBlockAndStates = hotBlockAndStates;
     this.hotStatesToPersist = hotStatesToPersist;
+    this.hotBlobSidecars = hotBlobSidecars;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
@@ -82,6 +88,7 @@ class StoreTransactionUpdates {
         tx.bestJustifiedCheckpoint,
         hotBlocks,
         hotStatesToPersist,
+        hotBlobSidecars,
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,

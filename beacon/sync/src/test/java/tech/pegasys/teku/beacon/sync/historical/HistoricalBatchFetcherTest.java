@@ -321,6 +321,7 @@ public class HistoricalBatchFetcherTest {
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
     Map<UInt64, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
     if (blobSidecarsRequired) {
+      // BlobSidecars for slot 20 which is lastBlockRoot should be also in a result
       assertThat(
               blobSidecars.values().stream()
                   .flatMap(Collection::stream)
@@ -330,10 +331,11 @@ public class HistoricalBatchFetcherTest {
               blobSidecars.keySet().stream()
                   .allMatch(
                       slot ->
-                          slot.isLessThanOrEqualTo(maxSlot)
-                              && slot.isGreaterThan(maxSlot.minus(batchSize))))
+                          (slot.isLessThanOrEqualTo(maxSlot)
+                                  && slot.isGreaterThan(maxSlot.minus(batchSize)))
+                              || slot.equals(lastBlockInBatch.getSlot())))
           .isTrue();
-      assertThat(blobSidecars.keySet().size()).isEqualTo(batchSize);
+      assertThat(blobSidecars.keySet().size()).isEqualTo(batchSize + 1);
     } else {
       assertThat(blobSidecars).isEmpty();
     }

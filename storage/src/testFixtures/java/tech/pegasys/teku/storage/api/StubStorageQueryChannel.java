@@ -143,4 +143,10 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return SafeFuture.completedFuture(List.of());
   }
+
+  @Override
+  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
 }

@@ -35,7 +35,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarManagerTest {
@@ -54,7 +52,6 @@ public class BlobSidecarManagerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
-  private final StorageUpdateChannel storageUpdateChannel = mock(StorageUpdateChannel.class);
   private final BlobSidecarValidator blobSidecarValidator = mock(BlobSidecarValidator.class);
   private final BlobSidecarPoolImpl blobSidecarPool = mock(BlobSidecarPoolImpl.class);
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
@@ -71,8 +68,7 @@ public class BlobSidecarManagerTest {
           blobSidecarValidator,
           futureBlobSidecars,
           invalidBlobSidecarRoots,
-          storageQueryChannel,
-          storageUpdateChannel);
+          storageQueryChannel);
 
   private final ReceivedBlobSidecarListener receivedBlobSidecarListener =
       mock(ReceivedBlobSidecarListener.class);
@@ -82,25 +78,9 @@ public class BlobSidecarManagerTest {
 
   @BeforeEach
   void setUp() {
-    when(storageUpdateChannel.onBlobSidecar(any())).thenReturn(SafeFuture.COMPLETE);
-    when(storageUpdateChannel.onNoBlobsSlot(any())).thenReturn(SafeFuture.COMPLETE);
     when(blobSidecarValidator.validate(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     blobSidecarManager.subscribeToReceivedBlobSidecar(receivedBlobSidecarListener);
-  }
-
-  @Test
-  void shouldStoreBlobSidecar() {
-    blobSidecarManager.storeBlobSidecar(blobSidecar);
-    verify(storageUpdateChannel).onBlobSidecar(blobSidecar);
-  }
-
-  @Test
-  void shouldStoreNoBlobsSlot() {
-    final SlotAndBlockRoot noBlobsSlotAndRoot =
-        new SlotAndBlockRoot(UInt64.valueOf(3), Bytes32.ZERO);
-    blobSidecarManager.storeNoBlobsSlot(noBlobsSlotAndRoot);
-    verify(storageUpdateChannel).onNoBlobsSlot(noBlobsSlotAndRoot);
   }
 
   @Test
