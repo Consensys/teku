@@ -105,7 +105,7 @@ public class RewardsTestExecutorAltair implements TestExecutor {
       final ValidatorStatuses validatorStatuses, final Consumer<RewardAndPenaltyDeltas> step) {
     return () -> {
       final RewardAndPenaltyDeltas deltas =
-          new RewardAndPenaltyDeltas(validatorStatuses.getValidatorCount());
+          RewardAndPenaltyDeltas.aggregated(validatorStatuses.getValidatorCount());
       step.accept(deltas);
       return deltas;
     };
