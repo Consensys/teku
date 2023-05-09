@@ -930,6 +930,10 @@ public class ChainBuilder {
       return storeBlobSidecars;
     }
 
+    public Optional<KZGProof> getKzgProof() {
+      return kzgProof;
+    }
+
     public boolean getSkipStateTransition() {
       return skipStateTransition;
     }
