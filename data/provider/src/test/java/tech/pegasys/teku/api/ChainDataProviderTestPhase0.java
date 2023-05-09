@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,10 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
@@ -35,7 +32,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -49,51 +45,36 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
-import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
-import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
-import tech.pegasys.teku.spec.util.BeaconStateBuilderCapella;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ChainDataProviderTest extends AbstractChainDataProviderTest {
+public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
+
   @Override
   protected Spec getSpec() {
-    return TestSpecFactory.createMinimalCapella();
+    return TestSpecFactory.createMinimalPhase0();
   }
 
   @Test
@@ -321,274 +302,33 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  public void getStateSyncCommittees_shouldGetCommittees() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final List<UInt64> committeeIndices =
-        List.of(UInt64.valueOf(6), UInt64.valueOf(9), UInt64.valueOf(0));
+  public void getStateSyncCommittees_shouldReturnEmptyListBeforeAltair() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
+        data.randomBeaconState();
+    when(mockCombinedChainDataClient.getBestState())
+        .thenReturn(Optional.of(completedFuture(internalState)));
 
     final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
         provider.getStateSyncCommittees("head", Optional.empty());
     assertThatSafeFuture(future)
         .isCompletedWithOptionalContaining(
-            new ObjectAndMetaData<>(
-                new StateSyncCommitteesData(committeeIndices, List.of(committeeIndices)),
-                SpecMilestone.CAPELLA,
-                false,
-                true,
-                false));
+            addMetaData(new StateSyncCommitteesData(List.of(), List.of()), ZERO));
   }
 
   @Test
-  public void getStateSyncCommittees_shouldRejectFarFutureEpoch() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final SafeFuture<Optional<ObjectAndMetaData<StateSyncCommitteesData>>> future =
-        provider.getStateSyncCommittees("head", Optional.of(UInt64.valueOf("1024000")));
-    SafeFutureAssert.assertThatSafeFuture(future)
-        .isCompletedExceptionallyWith(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void getSyncCommitteeRewardsFromBlockId_noSpecifiedValidators() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
-        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
-
-    final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.increaseReward(0, -247L);
-    expectedOutput.increaseReward(6, -247L);
-    expectedOutput.increaseReward(9, 247L);
-    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
-  }
-
-  @Test
-  public void getSyncCommitteeRewardsFromBlockId_specifyValidators() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
-        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of("0", "9"));
-
-    final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.increaseReward(0, -247L);
-    expectedOutput.increaseReward(9, 247L);
-    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
-  }
-
-  @Test
-  public void getSyncCommitteeRewardsFromBlockId_emptyBlockAndMetaData() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.empty());
-
-    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
-        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
-    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
-  }
-
-  @Test
-  public void getCommitteeIndices_withSpecifiedValidators() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(32);
-
-    final List<BLSPublicKey> stateValidators =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
-    final List<BLSPublicKey> committeeKeys =
-        List.of(
-            stateValidators.get(1),
-            stateValidators.get(4),
-            stateValidators.get(6),
-            stateValidators.get(7),
-            stateValidators.get(9),
-            stateValidators.get(11));
-
-    final Set<String> validators =
-        Set.of(committeeKeys.get(0).toHexString(), committeeKeys.get(2).toHexString(), "4");
-    final Map<Integer, Integer> committeeIndices =
-        provider.getCommitteeIndices(committeeKeys, validators, state);
-
-    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 1, 4, 2, 6));
-  }
-
-  @Test
-  public void getCommitteeIndices_withNoSpecifiedValidators() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(32);
-
-    final List<BLSPublicKey> stateValidators =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
-    final List<BLSPublicKey> committeeKeys =
-        List.of(
-            stateValidators.get(1),
-            stateValidators.get(4),
-            stateValidators.get(6),
-            stateValidators.get(7),
-            stateValidators.get(9),
-            stateValidators.get(11));
-
-    final Map<Integer, Integer> committeeIndices =
-        provider.getCommitteeIndices(committeeKeys, Set.of(), state);
-
-    assertThat(committeeIndices)
-        .containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 1, 4, 2, 6, 3, 7, 4, 9, 5, 11));
-  }
-
-  @Test
-  public void getCommitteeIndices_withSpecifiedValidatorsNotInCommittee() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(32);
-
-    final List<BLSPublicKey> stateValidators =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
-    final List<BLSPublicKey> committeeKeys =
-        List.of(
-            stateValidators.get(1),
-            stateValidators.get(4),
-            stateValidators.get(6),
-            stateValidators.get(7),
-            stateValidators.get(9),
-            stateValidators.get(11));
-
-    final Set<String> validators =
-        Set.of(
-            data.randomPublicKey().toHexString(), // Validator not in committee
-            "2", // Validator not in committee
-            committeeKeys.get(5).toHexString());
-
-    assertThatThrownBy(() -> provider.getCommitteeIndices(committeeKeys, validators, state))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageMatching(
-            "'0xae1bc418d145757d2ad60438fcfb769c75b5d29b1a80f34c1b4073275be6b70706b8581718c91bf47021ee03789668ea' "
-                + "is not a valid hex encoded public key or validator index in the committee");
-  }
-
-  @Test
-  public void getBlockRewardsFromBlockId_shouldCheckStateAndBlockAreHandled()
-      throws ExecutionException, InterruptedException {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
-        provider.getBlockRewardsFromBlockId("head");
-
-    final Optional<BlockAndMetaData> blockAndMetadata = provider.getBlockAndMetaData("head").get();
-    assertThat(blockAndMetadata).isNotEmpty();
-    verify(mockCombinedChainDataClient, times(1))
-        .getStateByBlockRoot(blockAndMetadata.get().getData().getRoot());
-    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
-  }
-
-  @Test
-  public void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
-    final long reward = 1234L;
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final int[] participantIndices = new int[] {0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30};
-    final SyncAggregate syncAggregate = data.randomSyncAggregate(participantIndices);
-
-    final long syncAggregateBlockRewards =
-        provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(reward * participantIndices.length);
-  }
-
-  @Test
-  public void calculateProposerSyncAggregateBlockRewards_emptySyncAggregate() {
-    final long reward = 1234L;
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final SyncAggregate syncAggregate = data.emptySyncAggregate();
-
-    final long syncAggregateBlockRewards =
-        provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(0L);
-  }
-
-  @Test
-  public void calculateProposerSlashingsRewards_shouldCalculateRewards() {
-    final Spec spec = TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil data = new DataStructureUtil(spec);
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(16);
-
-    final long result =
-        provider.calculateProposerSlashingsRewards(
-            blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
-  }
-
-  @Test
-  public void calculateAttesterSlashingsRewards_shouldCalculateRewards() {
-    final Spec spec = TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil data = new DataStructureUtil(spec);
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(100);
-
-    final long result =
-        provider.calculateAttesterSlashingsRewards(
-            blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
-  }
-
-  @Test
-  public void calculateAttestationRewards_shouldCalculateRewards() {
-    final Spec spec = spy(TestSpecFactory.createMinimalAltair());
-    final SpecVersion specVersion = mock(SpecVersion.class);
-    final SpecMilestone specMilestone = mock(SpecMilestone.class);
-    final ValidatorStatusFactory validatorStatusFactory = mock(ValidatorStatusFactory.class);
-    final ValidatorStatuses validatorStatuses = mock(ValidatorStatuses.class);
-    final EpochProcessor epochProcessor = mock(EpochProcessor.class);
-
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-    final RewardAndPenaltyDeltas deltas = data.randomRewardAndPenaltyDeltas(100);
-
-    when(spec.forMilestone(any())).thenReturn(specVersion);
-    doReturn(specVersion).when(spec).atSlot(any());
-    when(specVersion.getMilestone()).thenReturn(specMilestone);
-    when(specVersion.getEpochProcessor()).thenReturn(epochProcessor);
-    when(specVersion.getValidatorStatusFactory()).thenReturn(validatorStatusFactory);
-    when(validatorStatusFactory.createValidatorStatuses(any())).thenReturn(validatorStatuses);
-    when(epochProcessor.getRewardAndPenaltyDeltas(any(), any())).thenReturn(deltas);
-
+  public void getSyncCommitteeRewardsFromBlockId_slotIsPreAltair() {
     final ChainDataProvider provider =
         new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    final long result = provider.calculateAttestationRewards();
-    assertThat(result).isEqualTo(0L);
-  }
-
-  @Test
-  public void getLightClientBootstrap_shouldGetBootstrap() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        getHeadState();
-
-    BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
-
-    when(mockCombinedChainDataClient.getStateByBlockRoot(eq(expectedBlockHeader.getRoot())))
-        .thenReturn(completedFuture(Optional.of(internalState)));
-
-    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
-        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
-
-    LightClientBootstrap bootstrap = safeJoin(future).orElseThrow().getData();
-
-    assertThat(bootstrap.get(0)).isEqualTo(expectedBlockHeader);
-    assertThat(bootstrap.get(1))
-        .isEqualTo(BeaconStateAltair.required(internalState).getCurrentSyncCommittee());
-  }
-
-  @Test
-  public void getLightClientBootstrap_shouldReturnEmptyWhenBlockNotFound() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState internalState =
-        getHeadState();
-
-    BeaconBlockHeader expectedBlockHeader = BeaconBlockHeader.fromState(internalState);
-
-    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
-        .thenReturn(completedFuture(Optional.empty()));
-
-    final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
-        provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
-    assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+    final SafeFuture<Optional<SyncCommitteeRewardData>> future =
+        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
+    assertThat(future).isCompletedExceptionally();
+    assertThatThrownBy(future::get).hasCauseInstanceOf(BadRequestException.class);
+    assertThatThrownBy(future::get)
+        .hasMessageMatching(
+            "tech.pegasys.teku.api.exceptions.BadRequestException: "
+                + "Slot [0-9]+ is pre altair, and no sync committee information is available");
   }
 
   @Test
@@ -606,6 +346,17 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> future =
         provider.getLightClientBoostrap(expectedBlockHeader.getRoot());
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+  }
+
+  @Test
+  public void getStateFork_shouldGetForkAtGenesis() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+
+    final Bytes4 bytes4 = Bytes4.fromHexString("0x00000001");
+    final SafeFuture<Optional<ObjectAndMetaData<Fork>>> result = provider.getStateFork("genesis");
+    assertThatSafeFuture(result)
+        .isCompletedWithOptionalContaining(addMetaData(new Fork(bytes4, bytes4, ZERO), ZERO));
   }
 
   @Test
@@ -661,11 +412,10 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  void pathParamMaySupportAltair_shouldBeTrueIfAltairSupported() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    assertThat(provider.stateParameterMaySupportAltair("genesis")).isTrue();
-    assertThat(provider.stateParameterMaySupportAltair("1")).isTrue();
-    assertThat(provider.stateParameterMaySupportAltair("0x00")).isTrue();
+  void pathParamMaySupportAltair_shouldBeFalseIfAltairNotSupported() {
+    final ChainDataProvider provider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    assertThat(provider.stateParameterMaySupportAltair("genesis")).isFalse();
   }
 
   @Test
@@ -723,85 +473,15 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  void getExpectedWithdrawalsFailsForHistoricRequest() {
-    final Spec capella = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
-    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
+  void getExpectedWithdrawalsFailsPreCapella() {
+    final ChainDataProvider chainDataProvider =
+        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
     assertThatThrownBy(
             () ->
                 chainDataProvider.getExpectedWithdrawalsFromState(
-                    dataStructureUtil.randomBeaconState(ONE), Optional.of(ONE)))
+                    data.randomBeaconState(ONE), Optional.empty()))
         .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("historic");
-  }
-
-  @Test
-  void getExpectedWithdrawalsFailsTooFarInFutureRequest() {
-    final Spec capella = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
-    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
-    assertThatThrownBy(
-            () ->
-                chainDataProvider.getExpectedWithdrawalsFromState(
-                    dataStructureUtil.randomBeaconState(UInt64.ZERO),
-                    Optional.of(UInt64.valueOf(129))))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("more than 128 slots ahead");
-  }
-
-  @Test
-  void getExpectedWithdrawalsGeneratesList() {
-    final Spec capella = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(capella);
-    final ChainDataProvider chainDataProvider = setupBySpec(capella, dataStructureUtil, 16);
-    final BeaconStateBuilderCapella capellaBuilder = dataStructureUtil.stateBuilderCapella();
-
-    capellaBuilder.slot(UInt64.valueOf(1024_000));
-    capellaBuilder.nextWithdrawalIndex(UInt64.valueOf(10));
-    final List<Validator> validators = new ArrayList<>();
-    while (validators.size() < 16) {
-      validators.add(
-          dataStructureUtil.randomValidator(
-              dataStructureUtil.randomPublicKey(),
-              dataStructureUtil.randomEth1WithdrawalCredentials(),
-              specConfig.getMaxEffectiveBalance()));
-    }
-    final UInt64 eff = specConfig.getMaxEffectiveBalance();
-    capellaBuilder.balances(
-        eff.plus(1024_000),
-        eff,
-        eff,
-        eff,
-        eff,
-        eff,
-        eff,
-        eff,
-        eff,
-        eff,
-        eff,
-        eff.plus(1),
-        eff,
-        eff,
-        eff,
-        eff);
-    capellaBuilder.validators(
-        dataStructureUtil
-            .getBeaconStateSchema()
-            .getValidatorsSchema()
-            .createFromElements(validators));
-
-    final List<Withdrawal> withdrawals =
-        chainDataProvider.getExpectedWithdrawalsFromState(capellaBuilder.build(), Optional.empty());
-
-    assertThat(withdrawals).hasSize(2);
-    assertThat(withdrawals.get(0).getValidatorIndex()).isEqualTo(UInt64.valueOf(11));
-    assertThat(withdrawals.get(0).getAddress())
-        .isEqualTo(Bytes20.fromHexString("0xe3e971940135644a0301719de8cf58a3d046f15d"));
-    assertThat(withdrawals.get(0).getAmount()).isEqualTo(UInt64.valueOf(1));
-    assertThat(withdrawals.get(1).getValidatorIndex()).isEqualTo(UInt64.valueOf(0));
-    assertThat(withdrawals.get(1).getAddress())
-        .isEqualTo(Bytes20.fromHexString("0xefb81f94c0579a0e6caa16fd7b4b78da2771e359"));
-    assertThat(withdrawals.get(1).getAmount()).isEqualTo(UInt64.valueOf(1024_000));
+        .hasMessageContaining("pre-capella");
   }
 
   @ParameterizedTest(name = "given slot={0} when epoch={1} then randao={2}")
@@ -841,7 +521,12 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     return args.stream();
   }
 
-  private tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState getHeadState() {
-    return safeJoin(mockCombinedChainDataClient.getChainHead().orElseThrow().getState());
+  private <T> ObjectAndMetaData<T> addMetaData(final T expected, final UInt64 slot) {
+    return new ObjectAndMetaData<>(
+        expected,
+        spec.atSlot(slot).getMilestone(),
+        false,
+        true,
+        combinedChainDataClient.isFinalized(slot));
   }
 }
