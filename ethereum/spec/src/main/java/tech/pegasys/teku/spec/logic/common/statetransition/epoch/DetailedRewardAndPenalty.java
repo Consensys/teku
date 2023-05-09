@@ -35,10 +35,12 @@ public class DetailedRewardAndPenalty implements RewardAndPenalty {
             });
   }
 
+  @Override
   public void reward(final RewardComponent component, final UInt64 amount) {
     rewards.merge(component, amount, UInt64::plus);
   }
 
+  @Override
   public void penalize(final RewardComponent component, final UInt64 amount) {
     penalties.merge(component, amount, UInt64::plus);
   }
