@@ -80,8 +80,21 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
 
     final List<String> missingRequiredFields =
         deserializableFields.keySet().stream()
+            .filter(key -> !presentFields.contains(key))
             .filter(
-                key -> !presentFields.contains(key) && deserializableFields.get(key).isRequired())
+                key -> {
+                  final DeserializableFieldDefinition<TObject, TBuilder> objectField =
+                      deserializableFields.get(key);
+                  if (objectField.isRequired()) {
+                    return true;
+                  }
+                  // set missing fields to Optional.empty() instead of null
+                  if (objectField instanceof OptionalDeserializableFieldDefinition) {
+                    ((OptionalDeserializableFieldDefinition<TObject, TBuilder, ?>) objectField)
+                        .setFieldToEmpty(builder);
+                  }
+                  return false;
+                })
             .collect(Collectors.toList());
     if (!missingRequiredFields.isEmpty()) {
       throw new MissingRequiredFieldException(
