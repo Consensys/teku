@@ -175,6 +175,11 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
+  public synchronized  Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(SignedBeaconBlock block) {
+    return Optional.ofNullable(blockBlobSidecarsTrackers.get(block.getRoot()));
+  }
+
+  @Override
   public synchronized void onCompletedBlockAndBlobSidecars(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();

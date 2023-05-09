@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -55,6 +56,11 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         }
 
         @Override
+        public Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(SignedBeaconBlock block) {
+          return Optional.empty();
+        }
+
+        @Override
         public Set<BlobIdentifier> getAllRequiredBlobSidecars() {
           return Collections.emptySet();
         }
@@ -89,6 +95,8 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   Set<BlobIdentifier> getAllRequiredBlobSidecars();
 
   BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(SignedBeaconBlock block);
+
+  Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(SignedBeaconBlock block);
 
   void subscribeRequiredBlobSidecar(RequiredBlobSidecarSubscriber requiredBlobSidecarSubscriber);
 
