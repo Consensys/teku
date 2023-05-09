@@ -68,7 +68,6 @@ public abstract class AbstractChainDataProviderTest {
     this.data = new DataStructureUtil(spec);
     specConfig = spec.getGenesisSpecConfig();
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE, spec);
-    SpecConfig specConfig = spec.getGenesisSpecConfig();
 
     final UInt64 slot = UInt64.valueOf(specConfig.getSlotsPerEpoch() * 3L);
     final UInt64 actualBalance = specConfig.getMaxEffectiveBalance().plus(100000);
