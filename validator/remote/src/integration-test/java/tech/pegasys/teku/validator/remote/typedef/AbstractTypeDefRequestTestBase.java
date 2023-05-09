@@ -47,12 +47,8 @@ public class AbstractTypeDefRequestTestBase {
   protected final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
 
   @BeforeEach
-  public void beforeEach() throws IOException {
-    mockWebServer.start();
-  }
-
-  @BeforeEach
   public void beforeEach(SpecContext specContext) throws Exception {
+    mockWebServer.start();
     dataStructureUtil = specContext.getDataStructureUtil();
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
