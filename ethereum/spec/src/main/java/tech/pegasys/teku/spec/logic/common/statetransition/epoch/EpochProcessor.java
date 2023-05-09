@@ -64,6 +64,12 @@ public interface EpochProcessor {
       ValidatorStatuses validatorStatuses,
       Function<RewardsAndPenaltiesCalculator, RewardAndPenaltyDeltas> calculatorFunction);
 
+  default RewardAndPenaltyDeltas getDetailedRewardAndPenaltyDeltas(
+      BeaconState state, ValidatorStatuses validatorStatuses) {
+    // TODO-lucas not implemented
+    return null;
+  }
+
   BeaconState processEpoch(BeaconState preState) throws EpochProcessingException;
 
   default void initProgressiveTotalBalancesIfRequired(
