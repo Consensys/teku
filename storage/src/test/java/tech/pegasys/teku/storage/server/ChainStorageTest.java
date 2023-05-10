@@ -100,7 +100,7 @@ public class ChainStorageTest {
   public void onFinalizedBlocksAndBlobSidecars_shouldAcceptValidBlocks_startFromAnchorWithBlock(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
-    testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, false, false);
+    testOnFinalizedBlocksAndBlobSidecars(storageSystemSupplier, false, false);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -108,7 +108,7 @@ public class ChainStorageTest {
   public void onFinalizedBlocksAndBlobSidecars_shouldAcceptValidBlocks_startFromAnchorWithoutBlock(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
-    testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, true, false);
+    testOnFinalizedBlocksAndBlobSidecars(storageSystemSupplier, true, false);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -116,7 +116,7 @@ public class ChainStorageTest {
   public void onFinalizedBlocksAndBlobSidecars_shouldAcceptValidBlocks_inBatches(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
-    testOnFinalizedBlocksAndBlobsSidecars(storageSystemSupplier, true, true);
+    testOnFinalizedBlocksAndBlobSidecars(storageSystemSupplier, true, true);
   }
 
   public void testOnFinalizedBlocks(
@@ -126,7 +126,7 @@ public class ChainStorageTest {
     testOnFinalized(storageSystemSupplier, initializeWithAnchorStateAlone, executeInBatches, false);
   }
 
-  public void testOnFinalizedBlocksAndBlobsSidecars(
+  public void testOnFinalizedBlocksAndBlobSidecars(
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier,
       final boolean initializeWithAnchorStateAlone,
       final boolean executeInBatches) {

@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -329,17 +328,6 @@ public class Spec {
         .orElseThrow(() -> new RuntimeException("Deneb milestone is required to load blob sidecar"))
         .getBlobSidecarSchema()
         .sszDeserialize(serializedBlobSidecar);
-  }
-
-  public BlobsSidecar deserializeBlobsSidecar(
-      final Bytes serializedBlobsSidecar, final UInt64 slot) {
-    return atSlot(slot)
-        .getSchemaDefinitions()
-        .toVersionDeneb()
-        .orElseThrow(
-            () -> new RuntimeException("Deneb milestone is required to load execution payload"))
-        .getBlobsSidecarSchema()
-        .sszDeserialize(serializedBlobsSidecar);
   }
 
   public ExecutionPayloadHeader deserializeJsonExecutionPayloadHeader(
