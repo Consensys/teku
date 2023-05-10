@@ -21,11 +21,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
@@ -35,7 +34,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -55,7 +53,6 @@ import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.BeaconState;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -63,13 +60,10 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
@@ -81,16 +75,13 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class ChainDataProviderTest extends AbstractChainDataProviderTest {
+
   @Override
   protected Spec getSpec() {
     return TestSpecFactory.createMinimalCapella();
@@ -350,115 +341,39 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   @Test
   public void getSyncCommitteeRewardsFromBlockId_noSpecifiedValidators() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
+    final Set<String> validators = Set.of();
+    when(rewardCalculator.getSyncCommitteeRewardData(eq(validators), any(), any(), any()))
+        .thenReturn(mock(SyncCommitteeRewardData.class));
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
-
-    final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.increaseReward(0, -247L);
-    expectedOutput.increaseReward(6, -247L);
-    expectedOutput.increaseReward(9, 247L);
-    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
+    verify(rewardCalculator)
+        .getSyncCommitteeRewardData(
+            eq(validators), any(), eq(new SyncCommitteeRewardData(false, false)), any());
+    assertThat(future).isCompleted();
   }
 
   @Test
   public void getSyncCommitteeRewardsFromBlockId_specifyValidators() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
+    final Set<String> validators = Set.of("0", "9");
+    when(rewardCalculator.getSyncCommitteeRewardData(eq(validators), any(), any(), any()))
+        .thenReturn(mock(SyncCommitteeRewardData.class));
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
-        provider.getSyncCommitteeRewardsFromBlockId("head", Set.of("0", "9"));
-
-    final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
-    expectedOutput.increaseReward(0, -247L);
-    expectedOutput.increaseReward(9, 247L);
-    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithOptionalContaining(expectedOutput);
+        provider.getSyncCommitteeRewardsFromBlockId("head", validators);
+    verify(rewardCalculator)
+        .getSyncCommitteeRewardData(
+            eq(validators), any(), eq(new SyncCommitteeRewardData(false, false)), any());
+    assertThat(future).isCompleted();
   }
 
   @Test
   public void getSyncCommitteeRewardsFromBlockId_emptyBlockAndMetaData() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
     when(mockCombinedChainDataClient.getChainHead()).thenReturn(Optional.empty());
-
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
-  }
-
-  @Test
-  public void getCommitteeIndices_withSpecifiedValidators() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(32);
-
-    final List<BLSPublicKey> stateValidators =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
-    final List<BLSPublicKey> committeeKeys =
-        List.of(
-            stateValidators.get(1),
-            stateValidators.get(4),
-            stateValidators.get(6),
-            stateValidators.get(7),
-            stateValidators.get(9),
-            stateValidators.get(11));
-
-    final Set<String> validators =
-        Set.of(committeeKeys.get(0).toHexString(), committeeKeys.get(2).toHexString(), "4");
-    final Map<Integer, Integer> committeeIndices =
-        provider.getCommitteeIndices(committeeKeys, validators, state);
-
-    assertThat(committeeIndices).containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 1, 4, 2, 6));
-  }
-
-  @Test
-  public void getCommitteeIndices_withNoSpecifiedValidators() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(32);
-
-    final List<BLSPublicKey> stateValidators =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
-    final List<BLSPublicKey> committeeKeys =
-        List.of(
-            stateValidators.get(1),
-            stateValidators.get(4),
-            stateValidators.get(6),
-            stateValidators.get(7),
-            stateValidators.get(9),
-            stateValidators.get(11));
-
-    final Map<Integer, Integer> committeeIndices =
-        provider.getCommitteeIndices(committeeKeys, Set.of(), state);
-
-    assertThat(committeeIndices)
-        .containsExactlyInAnyOrderEntriesOf(Map.of(0, 1, 1, 4, 2, 6, 3, 7, 4, 9, 5, 11));
-  }
-
-  @Test
-  public void getCommitteeIndices_withSpecifiedValidatorsNotInCommittee() {
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state =
-        data.randomBeaconState(32);
-
-    final List<BLSPublicKey> stateValidators =
-        state.getValidators().stream().map(Validator::getPublicKey).collect(toList());
-    final List<BLSPublicKey> committeeKeys =
-        List.of(
-            stateValidators.get(1),
-            stateValidators.get(4),
-            stateValidators.get(6),
-            stateValidators.get(7),
-            stateValidators.get(9),
-            stateValidators.get(11));
-
-    final Set<String> validators =
-        Set.of(
-            data.randomPublicKey().toHexString(), // Validator not in committee
-            "2", // Validator not in committee
-            committeeKeys.get(5).toHexString());
-
-    assertThatThrownBy(() -> provider.getCommitteeIndices(committeeKeys, validators, state))
-        .isInstanceOf(BadRequestException.class)
-        .hasMessageMatching(
-            "'0xae1bc418d145757d2ad60438fcfb769c75b5d29b1a80f34c1b4073275be6b70706b8581718c91bf47021ee03789668ea' "
-                + "is not a valid hex encoded public key or validator index in the committee");
+    verifyNoMoreInteractions(rewardCalculator);
   }
 
   @Test
@@ -476,82 +391,38 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     verify(mockCombinedChainDataClient, times(1))
         .getStateByBlockRoot(blockAndMetadata.get().getData().getRoot());
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+    verifyNoMoreInteractions(rewardCalculator);
   }
 
   @Test
-  public void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
-    final long reward = 1234L;
+  public void getRewardsFromBlockId_shouldCallThrough()
+      throws ExecutionException, InterruptedException {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final int[] participantIndices = new int[] {0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30};
-    final SyncAggregate syncAggregate = data.randomSyncAggregate(participantIndices);
+    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateInternal)));
 
-    final long syncAggregateBlockRewards =
-        provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(reward * participantIndices.length);
+    final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
+        provider.getBlockRewardsFromBlockId("head");
+
+    final Optional<BlockAndMetaData> blockAndMetadata = provider.getBlockAndMetaData("head").get();
+    assertThat(blockAndMetadata).isNotEmpty();
+    verify(mockCombinedChainDataClient, times(1))
+        .getStateByBlockRoot(blockAndMetadata.get().getData().getRoot());
+    verify(rewardCalculator, times(1)).getBlockRewardData(eq(blockAndMetadata.get()), any());
+    assertThat(future).isCompleted();
   }
 
   @Test
-  public void calculateProposerSyncAggregateBlockRewards_emptySyncAggregate() {
-    final long reward = 1234L;
+  public void getRewardsFromBlockId_shouldReturnEmptyIfBlockNotFound()
+      throws ExecutionException, InterruptedException {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final SyncAggregate syncAggregate = data.emptySyncAggregate();
-
-    final long syncAggregateBlockRewards =
-        provider.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
-    assertThat(syncAggregateBlockRewards).isEqualTo(0L);
-  }
-
-  @Test
-  public void calculateProposerSlashingsRewards_shouldCalculateRewards() {
-    final Spec spec = TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil data = new DataStructureUtil(spec);
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(16);
-
-    final long result =
-        provider.calculateProposerSlashingsRewards(
-            blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
-  }
-
-  @Test
-  public void calculateAttesterSlashingsRewards_shouldCalculateRewards() {
-    final Spec spec = TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil data = new DataStructureUtil(spec);
-    final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(100);
-
-    final long result =
-        provider.calculateAttesterSlashingsRewards(
-            blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
-  }
-
-  @Test
-  public void calculateAttestationRewards_shouldCalculateRewards() {
-    final Spec spec = spy(TestSpecFactory.createMinimalAltair());
-    final SpecVersion specVersion = mock(SpecVersion.class);
-    final SpecMilestone specMilestone = mock(SpecMilestone.class);
-    final ValidatorStatusFactory validatorStatusFactory = mock(ValidatorStatusFactory.class);
-    final ValidatorStatuses validatorStatuses = mock(ValidatorStatuses.class);
-    final EpochProcessor epochProcessor = mock(EpochProcessor.class);
-
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-    final RewardAndPenaltyDeltas deltas = data.randomRewardAndPenaltyDeltas(100);
-
-    when(spec.forMilestone(any())).thenReturn(specVersion);
-    doReturn(specVersion).when(spec).atSlot(any());
-    when(specVersion.getMilestone()).thenReturn(specMilestone);
-    when(specVersion.getEpochProcessor()).thenReturn(epochProcessor);
-    when(specVersion.getValidatorStatusFactory()).thenReturn(validatorStatusFactory);
-    when(validatorStatusFactory.createValidatorStatuses(any())).thenReturn(validatorStatuses);
-    when(epochProcessor.getRewardAndPenaltyDeltas(any(), any())).thenReturn(deltas);
-
-    final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
-
-    final long result = provider.calculateAttestationRewards();
-    assertThat(result).isEqualTo(0L);
+    final String slot = "1122334455";
+    when(mockCombinedChainDataClient.getBlockAtSlotExact(eq(UInt64.valueOf(slot)), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
+        provider.getBlockRewardsFromBlockId(slot);
+    SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
+    verifyNoMoreInteractions(rewardCalculator);
   }
 
   @Test
