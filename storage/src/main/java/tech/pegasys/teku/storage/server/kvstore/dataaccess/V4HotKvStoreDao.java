@@ -266,7 +266,7 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void addHotBlobSidecarSlot(
+    public void addHotBlobSidecarsForBlock(
         final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
       blobSidecars.forEach(
           blobSidecar ->
@@ -314,6 +314,11 @@ public class V4HotKvStoreDao {
     @Override
     public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
       transaction.put(schema.getVariableFinalizedDepositSnapshot(), finalizedDepositSnapshot);
+    }
+
+    @Override
+    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
     }
 
     @Override

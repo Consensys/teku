@@ -120,12 +120,12 @@ public class BlobSidecarsByRangeMessageHandler
     totalBlobSidecarsRequestedCounter.inc(requestedCount.longValue());
 
     combinedChainDataClient
-        .getEarliestAvailableBlobSidecarEpoch()
+        .getEarliestAvailableBlobSidecarSlot()
         .thenCompose(
-            earliestAvailableEpoch -> {
+            earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
               if (checkRequestInMinEpochsRange(requestEpoch)
-                  && !checkBlobSidecarsAreAvailable(earliestAvailableEpoch, requestEpoch)) {
+                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlot)) {
                 return SafeFuture.failedFuture(
                     new RpcException.ResourceUnavailableException(
                         "Requested blob sidecars are not available."));
@@ -148,9 +148,9 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   private boolean checkBlobSidecarsAreAvailable(
-      final Optional<UInt64> earliestAvailableSidecarEpoch, final UInt64 requestEpoch) {
-    return earliestAvailableSidecarEpoch
-        .map(earliestEpoch -> earliestEpoch.isLessThanOrEqualTo(requestEpoch))
+      final Optional<UInt64> earliestAvailableSidecarSlot, final UInt64 requestSlot) {
+    return earliestAvailableSidecarSlot
+        .map(earliestSlot -> earliestSlot.isLessThanOrEqualTo(requestSlot))
         .orElse(false);
   }
 

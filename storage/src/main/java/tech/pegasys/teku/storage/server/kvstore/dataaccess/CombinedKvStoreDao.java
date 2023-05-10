@@ -348,8 +348,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @Override
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
-    return db.getFirstEntry(schema.getColumnBlobSidecarBySlotRootBlobIndex())
-        .map(entry -> entry.getKey().getSlot());
+    return db.get(schema.getVariableEarliestBlobSidecarSlot());
   }
 
   @Override
@@ -520,7 +519,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addHotBlobSidecarSlot(
+    public void addHotBlobSidecarsForBlock(
         final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
       blobSidecars.forEach(
           blobSidecar ->
@@ -575,6 +574,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void removeDepositsFromBlockEvent(final UInt64 blockNumber) {
       transaction.delete(schema.getColumnDepositsFromBlockEvents(), blockNumber);
+    }
+
+    @Override
+    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
     }
 
     @Override

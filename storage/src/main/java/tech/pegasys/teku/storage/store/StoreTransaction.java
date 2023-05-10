@@ -72,6 +72,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
+  Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -92,10 +93,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,
-      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
+      final Optional<List<BlobSidecar>> maybeBlobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
     maybeBlobSidecars.ifPresent(
-        blobSidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars));
+        blobSidecars -> {
+          this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
+          if (maybeEarliestBlobSidecarTransactionSlot.isEmpty()) {
+            maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
+          }
+        });
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }
 

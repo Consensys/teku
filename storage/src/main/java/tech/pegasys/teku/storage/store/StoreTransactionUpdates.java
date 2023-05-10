@@ -40,6 +40,7 @@ class StoreTransactionUpdates {
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars;
+  private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots;
   private final boolean optimisticTransitionBlockRootSet;
@@ -53,6 +54,7 @@ class StoreTransactionUpdates {
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
@@ -64,6 +66,7 @@ class StoreTransactionUpdates {
     checkNotNull(hotBlockAndStates, "Hot states are required");
     checkNotNull(hotStatesToPersist, "Hot states to persist are required");
     checkNotNull(hotBlobSidecars, "Hot blobSidecars are required");
+    checkNotNull(maybeEarliestBlobSidecarSlot, "Hot maybe earliest blobSidecar slot is required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(stateRoots, "State roots are required");
 
@@ -73,6 +76,7 @@ class StoreTransactionUpdates {
     this.hotBlockAndStates = hotBlockAndStates;
     this.hotStatesToPersist = hotStatesToPersist;
     this.hotBlobSidecars = hotBlobSidecars;
+    this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
@@ -89,6 +93,7 @@ class StoreTransactionUpdates {
         hotBlocks,
         hotStatesToPersist,
         hotBlobSidecars,
+        maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,

@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -87,8 +88,12 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
-    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot));
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+    return retry(
+        () ->
+            delegate.onFinalizedBlocks(
+                finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot));
   }
 
   @Override

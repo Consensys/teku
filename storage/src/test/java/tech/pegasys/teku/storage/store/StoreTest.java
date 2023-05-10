@@ -263,51 +263,54 @@ class StoreTest extends AbstractStoreTest {
         chainBuilder.generateBlockAtSlot(
             1, ChainBuilder.BlockOptions.create().setStoreBlobsSidecar(false));
     final StoreTransaction tx1 = store.startTransaction(new StubStorageUpdateChannel());
-    final Optional<List<BlobSidecar>> maybeBlobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         chainBuilder.getBlobSidecars(hotBlockAndState1.getRoot());
-    assertThat(maybeBlobSidecars1).isEmpty();
+    assertThat(blobSidecars1).isEmpty();
     tx1.putBlockAndState(
         hotBlockAndState1.getBlock(),
         hotBlockAndState1.getState(),
         spec.calculateBlockCheckpoints(hotBlockAndState1.getState()),
-        maybeBlobSidecars1);
+        Optional.of(blobSidecars1),
+        Optional.of(hotBlockAndState1.getSlot()));
     assertThat(tx1.commit()).isCompleted();
     assertThat(store.retrieveBlobSidecars(hotBlockAndState1.getSlotAndBlockRoot()))
-        .isCompletedWithValueMatching(Optional::isEmpty);
+        .isCompletedWithValueMatching(List::isEmpty);
 
     // random BlobSidecars stored
     final SignedBlockAndState hotBlockAndState2 =
         chainBuilder.generateBlockAtSlot(
             2, ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
     final StoreTransaction tx2 = store.startTransaction(new StubStorageUpdateChannel());
-    final Optional<List<BlobSidecar>> maybeBlobSidecars2 =
+    final List<BlobSidecar> blobSidecars2 =
         chainBuilder.getBlobSidecars(hotBlockAndState2.getRoot());
-    assertThat(maybeBlobSidecars2.orElseThrow()).isNotEmpty();
+    assertThat(blobSidecars2).isNotEmpty();
     tx2.putBlockAndState(
         hotBlockAndState2.getBlock(),
         hotBlockAndState2.getState(),
         spec.calculateBlockCheckpoints(hotBlockAndState2.getState()),
-        maybeBlobSidecars2);
+        Optional.of(blobSidecars2),
+        Optional.of(hotBlockAndState2.getSlot()));
     assertThat(tx2.commit()).isCompleted();
     assertThat(store.retrieveBlobSidecars(hotBlockAndState2.getSlotAndBlockRoot()))
-        .isCompletedWithValue(maybeBlobSidecars2);
+        .isCompletedWithValue(blobSidecars2);
 
     // BlobSidecars stored, no Blobs block
     final SignedBlockAndState hotBlockAndState3 =
         chainBuilder.generateBlockAtSlot(
             3, ChainBuilder.BlockOptions.create().setBlobSidecars(Collections.emptyList()));
     final StoreTransaction tx3 = store.startTransaction(new StubStorageUpdateChannel());
-    final Optional<List<BlobSidecar>> maybeBlobSidecars3 =
+    final List<BlobSidecar> blobSidecars3 =
         chainBuilder.getBlobSidecars(hotBlockAndState3.getRoot());
-    assertThat(maybeBlobSidecars3.orElseThrow()).isEmpty();
+    assertThat(blobSidecars3).isEmpty();
     tx3.putBlockAndState(
         hotBlockAndState3.getBlock(),
         hotBlockAndState3.getState(),
         spec.calculateBlockCheckpoints(hotBlockAndState3.getState()),
-        maybeBlobSidecars3);
+        Optional.of(blobSidecars3),
+        Optional.of(hotBlockAndState3.getSlot()));
     assertThat(tx3.commit()).isCompleted();
     assertThat(store.retrieveBlobSidecars(hotBlockAndState3.getSlotAndBlockRoot()))
-        .isCompletedWithValue(maybeBlobSidecars3);
+        .isCompletedWithValue(blobSidecars3);
   }
 
   private void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {

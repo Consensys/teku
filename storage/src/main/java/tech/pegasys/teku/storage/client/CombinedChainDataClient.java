@@ -477,10 +477,8 @@ public class CombinedChainDataClient {
             });
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarEpoch() {
-    return historicalChainData
-        .getEarliestAvailableBlobSidecarSlot()
-        .thenApply(slot -> slot.map(spec::computeEpochAtSlot));
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
+    return historicalChainData.getEarliestAvailableBlobSidecarSlot();
   }
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(

@@ -408,10 +408,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    addParentStateRoots(spec, blockSlotState, transaction);
-    // TODO: replace Optional.empty() with blobSidecars Optional
+    final UInt64 earliestAffectedSlot = addParentStateRoots(spec, blockSlotState, transaction);
     forkChoiceUtil.applyBlockToStore(
-        transaction, block, postState, payloadResult.hasNotValidatedStatus(), Optional.empty());
+        transaction,
+        block,
+        postState,
+        payloadResult.hasNotValidatedStatus(),
+        // TODO: replace Optional.empty() with blobSidecars Optional when ready
+        Optional.empty(),
+        earliestAffectedSlot);
 
     if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());

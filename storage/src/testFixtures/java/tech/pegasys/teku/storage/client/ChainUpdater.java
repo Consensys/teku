@@ -234,9 +234,12 @@ public class ChainUpdater {
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
-    final Optional<List<BlobSidecar>> maybeBlobSidecars =
-        chainBuilder.getBlobSidecars(block.getRoot());
-    saveBlock(block, maybeBlobSidecars);
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    if (blobSidecars.isEmpty()) {
+      saveBlock(block);
+    } else {
+      saveBlock(block, blobSidecars);
+    }
     return block;
   }
 
@@ -246,6 +249,7 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
+        Optional.empty(),
         Optional.empty());
     assertThat(tx.commit()).isCompleted();
     recentChainData
@@ -264,19 +268,21 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
+        Optional.empty(),
         Optional.empty());
     assertThat(tx.commit()).isCompleted();
     saveBlockTime(block);
   }
 
-  public void saveBlock(
-      final SignedBlockAndState block, final Optional<List<BlobSidecar>> blobSidecars) {
+  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        blobSidecars);
+        Optional.of(blobSidecars),
+        // FIXME: maybe few slots before
+        Optional.of(block.getSlot()));
     assertThat(tx.commit()).isCompleted();
     recentChainData
         .getUpdatableForkChoiceStrategy()

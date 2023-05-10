@@ -48,6 +48,7 @@ class StoreTransactionUpdatesFactory {
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars;
+  private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
@@ -70,6 +71,7 @@ class StoreTransactionUpdatesFactory {
     hotBlockAndStates = new ConcurrentHashMap<>(tx.blockData);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
     hotBlobSidecars = new ConcurrentHashMap<>(tx.blobSidecars);
+    maybeEarliestBlobSidecarSlot = tx.maybeEarliestBlobSidecarTransactionSlot;
   }
 
   public static StoreTransactionUpdates create(
@@ -245,6 +247,7 @@ class StoreTransactionUpdatesFactory {
         hotBlockAndStates,
         getHotStatesToPersist(),
         hotBlobSidecars,
+        maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,

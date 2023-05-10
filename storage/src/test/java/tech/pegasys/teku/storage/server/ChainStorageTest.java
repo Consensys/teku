@@ -197,11 +197,22 @@ public class ChainStorageTest {
           Lists.partition(missingHistoricalBlocks, batchSize);
       for (int i = batches.size() - 1; i >= 0; i--) {
         final List<SignedBeaconBlock> batch = batches.get(i);
-        chainStorage.onFinalizedBlocks(batch, finalizedBlobSidecars).ifExceptionGetsHereRaiseABug();
+        Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
+        if (!batch.isEmpty()) {
+          maybeEarliestBlobSidecarSlot = Optional.of(batch.get(0).getSlot());
+        }
+        chainStorage
+            .onFinalizedBlocks(batch, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
+            .ifExceptionGetsHereRaiseABug();
       }
     } else {
+      Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
+      if (!missingHistoricalBlocks.isEmpty()) {
+        maybeEarliestBlobSidecarSlot = Optional.of(missingHistoricalBlocks.get(0).getSlot());
+      }
       chainStorage
-          .onFinalizedBlocks(missingHistoricalBlocks, finalizedBlobSidecars)
+          .onFinalizedBlocks(
+              missingHistoricalBlocks, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
           .ifExceptionGetsHereRaiseABug();
     }
 
@@ -275,7 +286,8 @@ public class ChainStorageTest {
             .streamBlocksAndStates(0, firstMissingBlockSlot)
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
-    final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(invalidBlocks, Map.of());
+    final SafeFuture<Void> result =
+        chainStorage.onFinalizedBlocks(invalidBlocks, Map.of(), Optional.empty());
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)
@@ -314,7 +326,8 @@ public class ChainStorageTest {
     // Remove a block from the middle
     blocks.remove(blocks.size() / 2);
 
-    final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(blocks, Map.of());
+    final SafeFuture<Void> result =
+        chainStorage.onFinalizedBlocks(blocks, Map.of(), Optional.empty());
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)
@@ -353,7 +366,8 @@ public class ChainStorageTest {
     // Remove a block from the end
     blocks.remove(blocks.size() - 1);
 
-    final SafeFuture<Void> result = chainStorage.onFinalizedBlocks(blocks, Map.of());
+    final SafeFuture<Void> result =
+        chainStorage.onFinalizedBlocks(blocks, Map.of(), Optional.empty());
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)

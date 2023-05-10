@@ -94,7 +94,15 @@ public class SchemaFinalizedSnapshotStateAdapter implements SchemaFinalizedSnaps
     return delegate.getOptimisticTransitionBlockSlot();
   }
 
+  public KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
+    return delegate.getVariableEarliestBlobSidecarSlot();
+  }
+
   public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot());
+    return Map.of(
+        "OPTIMISTIC_TRANSITION_BLOCK_SLOT",
+        getOptimisticTransitionBlockSlot(),
+        "EARLIEST_BLOB_SIDECAR_SLOT",
+        getVariableEarliestBlobSidecarSlot());
   }
 }

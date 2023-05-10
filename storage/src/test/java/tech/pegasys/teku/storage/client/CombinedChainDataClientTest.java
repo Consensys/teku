@@ -140,7 +140,7 @@ class CombinedChainDataClientTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(UInt64.ONE)));
 
     final Optional<UInt64> result =
-        SafeFutureAssert.safeJoin(client.getEarliestAvailableBlobSidecarEpoch());
+        SafeFutureAssert.safeJoin(client.getEarliestAvailableBlobSidecarSlot());
 
     assertThat(result).hasValue(UInt64.ZERO);
   }

@@ -152,8 +152,8 @@ public class ChainBuilder {
     return Optional.ofNullable(blobsSidecarsByHash.get(blockRoot));
   }
 
-  public Optional<List<BlobSidecar>> getBlobSidecars(final Bytes32 blockRoot) {
-    return Optional.ofNullable(blobSidecarsByHash.get(blockRoot));
+  public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
   }
 
   /**
@@ -222,6 +222,7 @@ public class ChainBuilder {
     return blobSidecars.entrySet().stream()
         .filter(slot -> slot.getKey().isGreaterThanOrEqualTo(fromSlot))
         .filter(slot -> slot.getKey().isLessThanOrEqualTo(toSlot))
+        .filter(entry -> !entry.getValue().isEmpty())
         .sorted(Map.Entry.comparingByKey());
   }
 
@@ -507,6 +508,9 @@ public class ChainBuilder {
 
   private void trackBlobSidecars(
       final UInt64 slot, final Bytes32 blockRoot, final List<BlobSidecar> blobSidecarList) {
+    if (blobsSidecars.isEmpty()) {
+      return;
+    }
     blobSidecars.put(slot, blobSidecarList);
     blobSidecarsByHash.put(blockRoot, blobSidecarList);
   }

@@ -304,7 +304,8 @@ public class KvStoreDatabase implements Database {
 
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, List<BlobSidecar>> finalizedBlobSidecarsBySlot) {
+      final Map<UInt64, List<BlobSidecar>> finalizedBlobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
@@ -316,6 +317,11 @@ public class KvStoreDatabase implements Database {
             }
             finalizedBlobSidecarsBySlot.get(block.getSlot()).forEach(updater::addBlobSidecar);
           });
+      // FIXME: it's not guaranteed to be run in the same transaction and blocks flow below too.
+      final Optional<UInt64> maybeEarliestBlobSidecarSlotDb = dao.getEarliestBlobSidecarSlot();
+      if (maybeEarliestBlobSidecarSlotDb.isEmpty() && maybeEarliestBlobSidecar.isPresent()) {
+        updater.setEarliestBlobSidecarSlot(maybeEarliestBlobSidecar.get());
+      }
       updater.commit();
     }
   }
@@ -511,7 +517,8 @@ public class KvStoreDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     if (blocks.isEmpty()) {
       return;
     }
@@ -536,7 +543,7 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot);
+    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
   }
 
   @Override
@@ -782,6 +789,7 @@ public class KvStoreDatabase implements Database {
         final FinalizedUpdater updater = finalizedUpdater()) {
       int remaining = pruneLimit;
       int pruned = 0;
+      Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
       for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
           it.hasNext(); ) {
         --remaining;
@@ -792,8 +800,10 @@ public class KvStoreDatabase implements Database {
           break;
         }
         updater.removeBlobSidecar(key);
+        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
         ++pruned;
       }
+      earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
       updater.commit();
 
       // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
@@ -888,6 +898,15 @@ public class KvStoreDatabase implements Database {
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
       updater.addHotBlobSidecars(update.getHotBlobSidecars());
+      update
+          .getMaybeEarliestBlobSidecarSlot()
+          .ifPresent(
+              earliestBlobSidecarSlot -> {
+                // FIXME: the same, not in the same transaction
+                if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
+                  updater.setEarliestBlobSidecarSlot(earliestBlobSidecarSlot);
+                }
+              });
 
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());

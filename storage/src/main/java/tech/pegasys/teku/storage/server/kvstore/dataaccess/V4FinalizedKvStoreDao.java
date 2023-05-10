@@ -135,9 +135,7 @@ public class V4FinalizedKvStoreDao {
   }
 
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
-    return db.getFirstEntry(schema.getColumnBlobSidecarBySlotRootBlobIndex())
-        .map(ColumnEntry::getKey)
-        .map(SlotAndBlockRootAndBlobIndex::getSlot);
+    return db.get(schema.getVariableEarliestBlobSidecarSlot());
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
@@ -291,6 +289,11 @@ public class V4FinalizedKvStoreDao {
     @Override
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
+    }
+
+    @Override
+    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
     }
 
     @Override

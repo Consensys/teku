@@ -28,6 +28,7 @@ import static tech.pegasys.teku.storage.server.RetryingStorageUpdateChannel.MAX_
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -68,15 +69,16 @@ class RetryingStorageUpdateChannelTest {
   void onFinalizedBlocks_shouldRetryUntilSuccess() {
     final List<SignedBeaconBlock> blocks = Collections.emptyList();
     final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = Map.of();
-    when(delegate.onFinalizedBlocks(blocks, blobSidecarsBySlot))
+    when(delegate.onFinalizedBlocks(blocks, blobSidecarsBySlot, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 1")))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 2")))
         .thenReturn(SafeFuture.completedFuture(null));
 
-    final SafeFuture<Void> result = retryingChannel.onFinalizedBlocks(blocks, blobSidecarsBySlot);
+    final SafeFuture<Void> result =
+        retryingChannel.onFinalizedBlocks(blocks, blobSidecarsBySlot, Optional.empty());
 
     assertThat(result).isCompleted();
-    verify(delegate, times(3)).onFinalizedBlocks(blocks, blobSidecarsBySlot);
+    verify(delegate, times(3)).onFinalizedBlocks(blocks, blobSidecarsBySlot, Optional.empty());
   }
 
   @Test
@@ -159,8 +161,9 @@ class RetryingStorageUpdateChannelTest {
     assertThatThrownBy(() -> retryingChannel.onStorageUpdate(event))
         .isInstanceOf(FatalServiceFailureException.class);
 
-    assertThatSafeFuture(retryingChannel.onFinalizedBlocks(Collections.emptyList(), Map.of()))
+    assertThatSafeFuture(
+            retryingChannel.onFinalizedBlocks(Collections.emptyList(), Map.of(), Optional.empty()))
         .isCompletedExceptionallyWith(ShuttingDownException.class);
-    verify(delegate, never()).onFinalizedBlocks(any(), any());
+    verify(delegate, never()).onFinalizedBlocks(any(), any(), any());
   }
 }

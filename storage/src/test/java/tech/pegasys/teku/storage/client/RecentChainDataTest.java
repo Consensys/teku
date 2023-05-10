@@ -796,11 +796,11 @@ class RecentChainDataTest {
     final SignedBlockAndState block =
         chainBuilder.generateBlockAtSlot(
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
-    final Optional<List<BlobSidecar>> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    assertThat(blobSidecars).isNotEmpty();
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
-    assertThat(blobSidecars.orElseThrow()).isNotEmpty();
 
-    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecarsFuture =
+    final SafeFuture<List<BlobSidecar>> blobSidecarsFuture =
         recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
     assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
   }
@@ -810,11 +810,11 @@ class RecentChainDataTest {
     initPostGenesis();
 
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(UInt64.valueOf(1));
-    final Optional<List<BlobSidecar>> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
-    assertThat(blobSidecars.orElseThrow()).isEmpty();
+    assertThat(blobSidecars).isEmpty();
 
-    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecarsFuture =
+    final SafeFuture<List<BlobSidecar>> blobSidecarsFuture =
         recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
     assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
   }

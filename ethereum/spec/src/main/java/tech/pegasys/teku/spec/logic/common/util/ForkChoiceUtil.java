@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class ForkChoiceUtil {
 
@@ -399,7 +400,8 @@ public class ForkChoiceUtil {
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
       final boolean isBlockOptimistic,
-      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
+      final Optional<List<BlobSidecar>> maybeBlobSidecars,
+      final UInt64 earliestAffectedSlot) {
 
     BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
 
@@ -418,7 +420,15 @@ public class ForkChoiceUtil {
         isBlockOptimistic);
 
     // Add new block to store
-    store.putBlockAndState(signedBlock, postState, blockCheckpoints, maybeBlobSidecars);
+    store.putBlockAndState(
+        signedBlock,
+        postState,
+        blockCheckpoints,
+        maybeBlobSidecars,
+        miscHelpers
+            .toVersionDeneb()
+            .map(MiscHelpersDeneb::computeDenebStartSlot)
+            .map(denebSlot -> denebSlot.max(earliestAffectedSlot)));
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

@@ -43,6 +43,7 @@ public class StorageUpdate {
   private final Map<Bytes32, BeaconState> hotStates;
   private final Map<Bytes32, UInt64> deletedHotBlocks;
   private final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars;
+  private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
   private final boolean blobsSidecarEnabled;
@@ -56,6 +57,7 @@ public class StorageUpdate {
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
       final boolean optimisticTransitionBlockRootSet,
@@ -68,6 +70,7 @@ public class StorageUpdate {
     this.hotBlocks = hotBlocks;
     this.hotStates = hotStates;
     this.hotBlobSidecars = hotBlobSidecars;
+    this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.deletedHotBlocks = deletedHotBlocks;
     this.stateRoots = stateRoots;
     this.optimisticTransitionBlockRootSet = optimisticTransitionBlockRootSet;
@@ -87,6 +90,7 @@ public class StorageUpdate {
             && deletedHotBlocks.isEmpty()
             && stateRoots.isEmpty()
             && hotBlobSidecars.isEmpty()
+            && maybeEarliestBlobSidecarSlot.isEmpty()
             && !optimisticTransitionBlockRootSet;
   }
 
@@ -116,6 +120,10 @@ public class StorageUpdate {
 
   public Map<SlotAndBlockRoot, List<BlobSidecar>> getHotBlobSidecars() {
     return hotBlobSidecars;
+  }
+
+  public Optional<UInt64> getMaybeEarliestBlobSidecarSlot() {
+    return maybeEarliestBlobSidecarSlot;
   }
 
   public Map<Bytes32, BeaconState> getHotStates() {
