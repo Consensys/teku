@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -29,6 +28,7 @@ import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -99,7 +99,7 @@ public class GetState extends RestApiEndpoint {
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
         .withField(
             "data",
-            getSchemaDefinitionForAllMilestones(
+            MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
                 "BeaconState",
                 SchemaDefinitions::getBeaconStateSchema,
