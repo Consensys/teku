@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -103,7 +104,7 @@ public class PostBlindedBlock extends RestApiEndpoint {
                 + " The beacon node performs the required validation.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
-            MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones(
+            getSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
                 "SignedBlindedBlock",
                 SchemaDefinitions::getSignedBlindedBeaconBlockSchema,
