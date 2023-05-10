@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -30,6 +29,7 @@ import java.util.List;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.AllBlocksAtSlotData;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -91,7 +91,7 @@ public class GetAllBlocksAtSlot extends RestApiEndpoint {
   public static SerializableTypeDefinition<AllBlocksAtSlotData> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableOneOfTypeDefinition<BeaconBlock> messageType =
-        getSchemaDefinitionForAllMilestones(
+        MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones(
             schemaDefinitionCache,
             "BeaconBlock",
             SchemaDefinitions::getBeaconBlockSchema,
