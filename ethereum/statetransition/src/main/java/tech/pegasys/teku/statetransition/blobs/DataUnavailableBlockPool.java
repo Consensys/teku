@@ -1,109 +1,126 @@
-package tech.pegasys.teku.statetransition.blobs;
+/*
+ * Copyright ConsenSys Software Inc., 2023
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
 
-import com.google.common.base.Throwables;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
-import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.storage.server.ShuttingDownException;
+package tech.pegasys.teku.statetransition.blobs;
 
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.Cancellable;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.block.BlockManager;
 
 public class DataUnavailableBlockPool {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final Queue<SignedBeaconBlock> awaitingDataAvailabilityQueue = new ArrayBlockingQueue<>(10);
+  private static final Duration WAIT_BEFORE_RETRY = Duration.ofSeconds(1);
+
+  private final Queue<SignedBeaconBlock> awaitingDataAvailabilityQueue =
+      new ArrayBlockingQueue<>(10);
   private final BlockManager blockManager;
   private final BlobSidecarPool blobSidecarPool;
   private final AsyncRunner asyncRunner;
 
-  private Optional<SignedBeaconBlock> retryingBlock = Optional.empty();
-
-  private Duration currentDelay = Duration.ofSeconds(4);
-
+  private Optional<Cancellable> delayedRetryTask = Optional.empty();
+  private boolean blockImportInProgress = false;
   private boolean inSync = false;
 
-  public DataUnavailableBlockPool(final BlockManager blockManager, final BlobSidecarPool blobSidecarPool, final  AsyncRunner asyncRunner) {
+  public DataUnavailableBlockPool(
+      final BlockManager blockManager,
+      final BlobSidecarPool blobSidecarPool,
+      final AsyncRunner asyncRunner) {
     this.blockManager = blockManager;
     this.blobSidecarPool = blobSidecarPool;
     this.asyncRunner = asyncRunner;
   }
 
-  public synchronized void addDataUnavailableBlockBlock(final SignedBeaconBlock block) {
-    if (retryingBlock.isEmpty()) {
-      retryingBlock = Optional.of(block);
-      scheduleNextRetry();
-    } else {
-      if (retryingBlock.get().equals(block) || awaitingDataAvailabilityQueue.contains(block)) {
-        // Already retrying this block.
-        return;
-      }
-      if (!awaitingDataAvailabilityQueue.offer(block)) {
-        LOG.info(
-                "Discarding block {} as execution retry pool capacity exceeded", block.toLogString());
-      }
+  public synchronized void addDataUnavailableBlock(final SignedBeaconBlock block) {
+    if (!inSync) {
+      return;
     }
 
-    Optional<BlockBlobSidecarsTracker> asd = blobSidecarPool.getBlockBlobSidecarsTracker(block);
-
-  }
-
-  private synchronized void scheduleNextRetry() {
-    retryingBlock.ifPresent(
-            block ->
-                    asyncRunner
-                            .runAfterDelay(() -> retryExecution(block), currentDelay)
-                            .ifExceptionGetsHereRaiseABug());
-  }
-
-  private synchronized void retryExecution(final SignedBeaconBlock block) {
-    LOG.info("Retrying execution of block {}", block.toLogString());
-    SafeFuture.of(() -> blockManager.importBlock(block))
-            .exceptionally(BlockImportResult::internalError)
-            .thenAccept(result -> handleExecutionResult(block, result))
-            .finish(
-                    error -> {
-                      if (!(Throwables.getRootCause(error) instanceof ShuttingDownException)) {
-                        LOG.error("Failed to schedule payload re-execution", error);
-                      }
-                      scheduleNextRetry();
-                    });
-  }
-
-  private boolean isDataNotAvailableResult(final BlockImportResult importResult) {
-    return Optional.ofNullable(importResult.getFailureReason()).map(failureReason -> failureReason.equals(FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE))
-            .orElse(false);
-  }
-
-  private synchronized void handleExecutionResult(
-          final SignedBeaconBlock block, final BlockImportResult importResult) {
-    if (importResult.hasFailedExecutingExecutionPayload()) {
-
-      if (awaitingDataAvailabilityQueue.isEmpty() || isDataNotAvailableResult(importResult)) {
-        scheduleNextRetry();
-      } else {
-        // Try a different block
-        final SignedBeaconBlock nextBlock = awaitingDataAvailabilityQueue.remove();
-        awaitingDataAvailabilityQueue.add(block);
-        retryingBlock = Optional.of(nextBlock);
-        scheduleNextRetry();
-      }
-    } else {
-      retryingBlock = Optional.ofNullable(awaitingDataAvailabilityQueue.poll());
-      retryingBlock.ifPresent(this::retryExecution);
+    boolean wasEmpty = awaitingDataAvailabilityQueue.isEmpty();
+    if (!awaitingDataAvailabilityQueue.offer(block)) {
+      LOG.info(
+          "Discarding block {} as execution retry pool capacity exceeded", block.toLogString());
+      return;
+    }
+    if (wasEmpty) {
+      tryToReimport();
     }
   }
 
-
-  void onSyncingStatusChanged(boolean inSync) {
+  public synchronized void onSyncingStatusChanged(boolean inSync) {
     this.inSync = inSync;
+
+    delayedRetryTask.ifPresent(Cancellable::cancel);
+    delayedRetryTask = Optional.empty();
+    awaitingDataAvailabilityQueue.clear();
+  }
+
+  private synchronized void tryToReimport() {
+
+    if (blockImportInProgress) {
+      return;
+    }
+
+    if (awaitingDataAvailabilityQueue.isEmpty()) {
+      delayedRetryTask = Optional.empty();
+      return;
+    }
+
+    // first block in queue with data available
+    final Optional<SignedBeaconBlock> maybeSelectedBlock =
+        awaitingDataAvailabilityQueue.stream().filter(this::isBlockTrackerCompleted).findFirst();
+
+    if (maybeSelectedBlock.isPresent()) {
+      final SignedBeaconBlock selectedBlock = maybeSelectedBlock.get();
+      awaitingDataAvailabilityQueue.remove(selectedBlock);
+
+      blockImportInProgress = true;
+      blockManager
+          .importBlock(maybeSelectedBlock.get())
+          .thenAccept(this::handleImportResult)
+          .finish(error -> LOG.error("An error occurred during block import", error));
+
+    } else {
+      // the queue is not empty but no block has data available yet. Wait before recheck.
+      delayedRetryTask =
+          Optional.of(
+              asyncRunner.runCancellableAfterDelay(
+                  this::tryToReimport,
+                  WAIT_BEFORE_RETRY,
+                  throwable ->
+                      LOG.error(
+                          "An error occurred while executing deferred block import", throwable)));
+    }
+  }
+
+  private synchronized void handleImportResult(final BlockImportResult blockImportResult) {
+    blockImportInProgress = false;
+
+    tryToReimport();
+  }
+
+  private boolean isBlockTrackerCompleted(final SignedBeaconBlock block) {
+    return blobSidecarPool
+        .getBlockBlobSidecarsTracker(block)
+        .map(BlockBlobSidecarsTracker::isCompleted)
+        .orElse(false);
   }
 }

@@ -56,7 +56,8 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         }
 
         @Override
-        public Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(SignedBeaconBlock block) {
+        public Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(
+            SignedBeaconBlock block) {
           return Optional.empty();
         }
 

@@ -111,6 +111,7 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
@@ -252,6 +253,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
       Optional.empty();
+  protected volatile Optional<DataUnavailableBlockPool> dataUnavailableBlockPool = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
@@ -1048,6 +1050,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
           new FailedExecutionPool(blockManager, beaconAsyncRunner);
       blockManager.subscribeFailedPayloadExecution(failedExecutionPool::addFailedBlock);
     }
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      final DataUnavailableBlockPool dataUnavailableBlockPool =
+          new DataUnavailableBlockPool(blockManager, blobSidecarPool, beaconAsyncRunner);
+      blockManager.subscribeDataUnavailable(dataUnavailableBlockPool::addDataUnavailableBlock);
+
+      this.dataUnavailableBlockPool = Optional.of(dataUnavailableBlockPool);
+    }
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
@@ -1090,6 +1099,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     // depositProvider subscription
     syncService.subscribeToSyncStateChangesAndUpdate(
         syncState -> depositProvider.onSyncingStatusChanged(syncState.isInSync()));
+
+    // Data Unavailable block pool
+    dataUnavailableBlockPool.ifPresent(
+        pool ->
+            syncService.subscribeToSyncStateChangesAndUpdate(
+                syncState -> pool.onSyncingStatusChanged(syncState.isInSync())));
 
     // forkChoice subscription
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(syncService.getOptimisticSyncSubscriber());
