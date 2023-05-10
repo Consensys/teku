@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -26,13 +28,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -326,8 +327,8 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  public Function<SignedBeaconBlock, SafeFuture<SignedBeaconBlockAndBlobsSidecar>>
-      createSidecarSupplementSelector() {
+  public Function<SignedBeaconBlock, SafeFuture<List<SignedBlobSidecar>>>
+      createBlobSidecarsSupplementSelector() {
     return signedBeaconBlock -> {
       final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
           spec.atSlot(signedBeaconBlock.getSlot())
@@ -337,18 +338,10 @@ public class BlockOperationSelectorFactory {
       return executionLayerBlockProductionManager
           .getCachedPayloadResult(signedBeaconBlock.getSlot())
           .orElseThrow(() -> new IllegalStateException("payloadResult is required"))
-          .getBlobs()
+          .getBlobsBundle()
           .orElseThrow(() -> new IllegalStateException("blobs are required"))
-          .thenApply(
-              blobs ->
-                  new SignedBeaconBlockAndBlobsSidecar(
-                      schemaDefinitionsDeneb.getSignedBeaconBlockAndBlobsSidecarSchema(),
-                      signedBeaconBlock,
-                      createBlobsSidecar()));
+          // TODO: need to create a SignedBlobSidecar from the BlobsBundle
+          .thenApply(blobsBundle -> Collections.emptyList());
     };
-  }
-
-  private BlobsSidecar createBlobsSidecar() {
-    throw new UnsupportedOperationException("Deprecated");
   }
 }

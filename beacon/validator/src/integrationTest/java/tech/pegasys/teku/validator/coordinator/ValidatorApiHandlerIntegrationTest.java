@@ -30,7 +30,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -74,8 +75,9 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(DefaultPerformanceTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
-  private final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel =
-      mock(BlockAndBlobsSidecarGossipChannel.class);
+  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlobSidecarGossipChannel blobSidecarGossipChannel =
+      mock(BlobSidecarGossipChannel.class);
   private final ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   private final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   private final ForkChoiceTrigger forkChoiceTrigger = mock(ForkChoiceTrigger.class);
@@ -97,7 +99,8 @@ public class ValidatorApiHandlerIntegrationTest {
           blockFactory,
           blockImportChannel,
           blockGossipChannel,
-          blockAndBlobsSidecarGossipChannel,
+          blobSidecarPool,
+          blobSidecarGossipChannel,
           attestationPool,
           attestationManager,
           attestationTopicSubscriber,

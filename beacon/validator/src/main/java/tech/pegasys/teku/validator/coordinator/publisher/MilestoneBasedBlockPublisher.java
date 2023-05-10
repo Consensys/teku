@@ -18,11 +18,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -39,7 +40,8 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel,
+      final BlobSidecarPool blobSidecarPool,
+      final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     this.spec = spec;
@@ -48,13 +50,15 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
             blockFactory, blockGossipChannel, blockImportChannel, performanceTracker, dutyMetrics);
 
     // Not needed for all milestones
-    final Supplier<BlockPublisherDeneb> blockAndBlobsSidecarPublisherSupplier =
+    final Supplier<BlockPublisherDeneb> blockAndBlobSidecarsPublisherSupplier =
         Suppliers.memoize(
             () ->
                 new BlockPublisherDeneb(
                     blockFactory,
                     blockImportChannel,
-                    blockAndBlobsSidecarGossipChannel,
+                    blockGossipChannel,
+                    blobSidecarPool,
+                    blobSidecarGossipChannel,
                     performanceTracker,
                     dutyMetrics));
 
@@ -64,7 +68,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
               if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-                registeredPublishers.put(milestone, blockAndBlobsSidecarPublisherSupplier.get());
+                registeredPublishers.put(milestone, blockAndBlobSidecarsPublisherSupplier.get());
               } else {
                 registeredPublishers.put(milestone, blockPublisherPhase0);
               }

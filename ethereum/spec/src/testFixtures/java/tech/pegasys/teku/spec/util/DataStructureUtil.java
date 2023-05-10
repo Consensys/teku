@@ -2067,6 +2067,12 @@ public final class DataStructureUtil {
   }
 
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
+    return randomSignedBlobSidecarsForBlock(block).stream()
+        .map(SignedBlobSidecar::getBlobSidecar)
+        .collect(toList());
+  }
+
+  public List<SignedBlobSidecar> randomSignedBlobSidecarsForBlock(final SignedBeaconBlock block) {
     final int numberOfKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
             .getBlobKzgCommitments()
@@ -2078,7 +2084,7 @@ public final class DataStructureUtil {
                     .slot(block.getSlot())
                     .blockRoot(block.getRoot())
                     .index(UInt64.valueOf(index))
-                    .build())
+                    .buildSigned())
         .collect(toList());
   }
 
