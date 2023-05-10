@@ -57,7 +57,8 @@ public class DataUnavailableBlockPool {
     boolean wasEmpty = awaitingDataAvailabilityQueue.isEmpty();
     if (!awaitingDataAvailabilityQueue.offer(block)) {
       LOG.info(
-          "Discarding block {} as execution retry pool capacity exceeded", block.toLogString());
+          "Discarding block {} as data unavailable retry pool capacity exceeded",
+          block::toLogString);
       return;
     }
     if (wasEmpty) {

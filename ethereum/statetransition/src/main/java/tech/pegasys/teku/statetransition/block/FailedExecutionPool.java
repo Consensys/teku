@@ -60,7 +60,7 @@ public class FailedExecutionPool {
       }
       if (!awaitingExecutionQueue.offer(block)) {
         LOG.info(
-            "Discarding block {} as execution retry pool capacity exceeded", block.toLogString());
+            "Discarding block {} as execution retry pool capacity exceeded", block::toLogString);
       }
     }
   }
