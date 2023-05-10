@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -820,11 +821,15 @@ public class ChainDataProvider {
     final SpecVersion specVersion = spec.forMilestone(getMilestoneAtSlot(state.getSlot()));
     final BlockProcessorAltair blockProcessor =
         BlockProcessorAltair.required(specVersion.getBlockProcessor());
-    final IndexedAttestationCache indexedAttestationCache = IndexedAttestationCache.NOOP;
+
+    final BeaconStateAltair state1 = BeaconStateAltair.required(state);
+    state1.getPreviousEpochParticipation();
 
     final List<Optional<UInt64>> rewards = new ArrayList<>();
+    final MutableBeaconStateAltair mutableBeaconStateAltair =
+        BeaconStateAltair.required(state).createWritableCopy();
     final AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider =
-        blockProcessor.createIndexedAttestationProvider(state, indexedAttestationCache);
+        blockProcessor.createIndexedAttestationProvider(state, IndexedAttestationCache.capturing());
     block
         .getBody()
         .getAttestations()
@@ -832,9 +837,7 @@ public class ChainDataProvider {
             attestation ->
                 rewards.add(
                     blockProcessor.processAttestationProposerReward(
-                        BeaconStateAltair.required(state).createWritableCopy(),
-                        attestation,
-                        indexedAttestationProvider)));
+                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)));
 
     return rewards.stream()
         .filter(Optional::isPresent)
