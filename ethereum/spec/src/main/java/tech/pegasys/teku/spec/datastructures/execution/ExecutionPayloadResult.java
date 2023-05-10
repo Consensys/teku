@@ -51,7 +51,7 @@ public class ExecutionPayloadResult {
     return executionPayloadHeaderFuture;
   }
 
-  public Optional<SafeFuture<BlobsBundle>> getBlobsBundleFuture() {
+  public Optional<SafeFuture<BlobsBundle>> getBlobsBundle() {
     return blobsBundleFuture;
   }
 
