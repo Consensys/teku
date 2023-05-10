@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -46,6 +47,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -226,9 +229,16 @@ public class ValidatorDataProvider {
         .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
   }
 
-  public SafeFuture<SendSignedBlockResult> submitSignedBlock(
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock) {
-    return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
+  public SafeFuture<SendSignedBlockResult> submitSignedBlock(final BlockContainer blockContainer) {
+    if (blockContainer instanceof tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock) {
+      return validatorApiChannel.sendSignedBlock(
+          (tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock) blockContainer);
+    }
+    if (blockContainer instanceof SignedBlockContents) {
+      throw new NotImplementedException("Not Yet Implemented");
+    }
+    throw new IllegalArgumentException(
+        "Cannot determine block type. Must be either SignedBeaconBlock or SignedBlockContent");
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(

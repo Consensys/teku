@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -101,11 +101,11 @@ public class PostBlock extends RestApiEndpoint {
       return;
     }
 
-    final SignedBeaconBlock signedBeaconBlock = request.getRequestBody();
+    final BlockContainer blockContainer = request.getRequestBody();
 
     request.respondAsync(
         validatorDataProvider
-            .submitSignedBlock(signedBeaconBlock)
+            .submitSignedBlock(blockContainer)
             .thenApply(
                 result -> {
                   if (result.getRejectionReason().isEmpty()) {
