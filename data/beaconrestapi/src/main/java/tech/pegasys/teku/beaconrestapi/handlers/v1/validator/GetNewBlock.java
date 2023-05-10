@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
@@ -28,6 +27,7 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -90,7 +90,7 @@ public class GetNewBlock extends RestApiEndpoint {
   private static SerializableTypeDefinition<BeaconBlock> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<BeaconBlock> beaconBlockType =
-        getSchemaDefinitionForAllMilestones(
+        MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones(
             schemaDefinitionCache,
             "BeaconState",
             SchemaDefinitions::getBeaconBlockSchema,
