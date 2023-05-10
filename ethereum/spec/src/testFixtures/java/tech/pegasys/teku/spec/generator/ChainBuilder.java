@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.generator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 import static org.assertj.core.util.Preconditions.checkState;
 
 import java.util.ArrayList;
@@ -49,8 +48,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -92,10 +89,8 @@ public class ChainBuilder {
   private final AttestationGenerator attestationGenerator;
   private final AttesterSlashingGenerator attesterSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
-  private final NavigableMap<UInt64, BlobsSidecar> blobsSidecars = new TreeMap<>();
   private final NavigableMap<UInt64, List<BlobSidecar>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
-  private final Map<Bytes32, BlobsSidecar> blobsSidecarsByHash = new HashMap<>();
   private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
@@ -104,7 +99,6 @@ public class ChainBuilder {
       final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
-      final Map<UInt64, BlobsSidecar> existingBlobsSidecars,
       final Map<UInt64, List<BlobSidecar>> existingBlobSidecars) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
@@ -113,10 +107,8 @@ public class ChainBuilder {
     attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     blockProposalTestUtil = new BlockProposalTestUtil(spec);
     blocks.putAll(existingBlocks);
-    blobsSidecars.putAll(existingBlobsSidecars);
-    blobSidecars.putAll(existingBlobSidecars);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
-    blobsSidecars.values().forEach(b -> blobsSidecarsByHash.put(b.getBeaconBlockRoot(), b));
+    blobSidecars.putAll(existingBlobSidecars);
     blobSidecars
         .values()
         .forEach(
@@ -132,12 +124,7 @@ public class ChainBuilder {
   }
 
   public static ChainBuilder create(final Spec spec, final List<BLSKeyPair> validatorKeys) {
-    return new ChainBuilder(
-        spec,
-        validatorKeys,
-        Collections.emptyMap(),
-        Collections.emptyMap(),
-        Collections.emptyMap());
+    return new ChainBuilder(spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap());
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
@@ -146,10 +133,6 @@ public class ChainBuilder {
 
   public Optional<SignedBlockAndState> getBlockAndState(final Bytes32 blockRoot) {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
-  }
-
-  public Optional<BlobsSidecar> getBlobsSidecar(final Bytes32 blockRoot) {
-    return Optional.ofNullable(blobsSidecarsByHash.get(blockRoot));
   }
 
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
@@ -163,7 +146,7 @@ public class ChainBuilder {
    * @return An independent copy of this ChainBuilder
    */
   public ChainBuilder fork() {
-    return new ChainBuilder(spec, validatorKeys, blocks, blobsSidecars, blobSidecars);
+    return new ChainBuilder(spec, validatorKeys, blocks, blobSidecars);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -202,14 +185,6 @@ public class ChainBuilder {
     return blocks.values().stream()
         .filter(b -> b.getBlock().getSlot().isGreaterThanOrEqualTo(fromSlot))
         .filter(b -> b.getBlock().getSlot().isLessThanOrEqualTo(toSlot));
-  }
-
-  public Stream<SignedBlockAndState> streamBlocksAndStatesUpTo(final long toSlot) {
-    return streamBlocksAndStatesUpTo(UInt64.valueOf(toSlot));
-  }
-
-  public Stream<SignedBlockAndState> streamBlocksAndStatesUpTo(final UInt64 toSlot) {
-    return blocks.values().stream().filter(b -> b.getBlock().getSlot().compareTo(toSlot) <= 0);
   }
 
   public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
@@ -334,15 +309,9 @@ public class ChainBuilder {
     spec.getGenesisSchemaDefinitions()
         .toVersionDeneb()
         .ifPresent(
-            schemaDefinitions -> {
-              final BlobsSidecarSchema blobsSidecarSchema =
-                  schemaDefinitions.getBlobsSidecarSchema();
-              final BlobsSidecar blobsSidecar =
-                  blobsSidecarSchema.createEmpty(blockAndState.getRoot(), blockAndState.getSlot());
-              trackBlobsSidecar(blobsSidecar);
-              trackBlobSidecars(
-                  blockAndState.getSlot(), blockAndState.getRoot(), Collections.emptyList());
-            });
+            schemaDefinitions ->
+                trackBlobSidecars(
+                    blockAndState.getSlot(), blockAndState.getRoot(), Collections.emptyList()));
 
     return blockAndState;
   }
@@ -507,17 +476,12 @@ public class ChainBuilder {
   }
 
   private void trackBlobSidecars(
-      final UInt64 slot, final Bytes32 blockRoot, final List<BlobSidecar> blobSidecarList) {
-    if (blobsSidecars.isEmpty()) {
+      final UInt64 slot, final Bytes32 blockRoot, final List<BlobSidecar> blobSidecars) {
+    if (blobSidecars.isEmpty()) {
       return;
     }
-    blobSidecars.put(slot, blobSidecarList);
-    blobSidecarsByHash.put(blockRoot, blobSidecarList);
-  }
-
-  private void trackBlobsSidecar(final BlobsSidecar blobsSidecar) {
-    blobsSidecars.put(blobsSidecar.getBeaconBlockSlot(), blobsSidecar);
-    blobsSidecarsByHash.put(blobsSidecar.getBeaconBlockRoot(), blobsSidecar);
+    this.blobSidecars.put(slot, blobSidecars);
+    blobSidecarsByHash.put(blockRoot, blobSidecars);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
@@ -542,7 +506,7 @@ public class ChainBuilder {
 
       if (denebMilestoneReached(slot) && options.getGenerateRandomBlobs()) {
         nextBlockAndState =
-            generateBlockWithRandomBlobsSidecar(
+            generateBlockWithRandomBlobSidecars(
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else if (denebMilestoneReached(slot)) {
         nextBlockAndState =
@@ -652,7 +616,7 @@ public class ChainBuilder {
     return nextBlockAndState;
   }
 
-  private SignedBlockAndState generateBlockWithRandomBlobsSidecar(
+  private SignedBlockAndState generateBlockWithRandomBlobSidecars(
       final UInt64 slot,
       final BlockOptions options,
       final BeaconState preState,
@@ -661,7 +625,7 @@ public class ChainBuilder {
       final SszList<Attestation> attestations,
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
-    List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
+    final List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
 
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
@@ -689,7 +653,7 @@ public class ChainBuilder {
         spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
 
     if (options.isStoreBlobSidecarsEnabled()) {
-      List<BlobSidecar> blobSidecarList =
+      final List<BlobSidecar> blobSidecars =
           IntStream.range(0, randomBlobs.size())
               .mapToObj(
                   index -> {
@@ -707,7 +671,7 @@ public class ChainBuilder {
                         miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
                   })
               .collect(Collectors.toList());
-      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecarList);
+      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecars);
     }
     return nextBlockAndState;
   }
@@ -835,7 +799,7 @@ public class ChainBuilder {
     private Optional<KZGProof> kzgProof = Optional.empty();
     private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
     private boolean generateRandomBlobs = false;
-    private boolean storeBlobsSidecar = true;
+    private boolean storeBlobSidecars = true;
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
 
@@ -901,8 +865,8 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setStoreBlobsSidecar(final boolean storeBlobsSidecar) {
-      this.storeBlobsSidecar = storeBlobsSidecar;
+    public BlockOptions setStoreBlobSidecars(final boolean storeBlobSidecars) {
+      this.storeBlobSidecars = storeBlobSidecars;
       return this;
     }
 
@@ -967,7 +931,7 @@ public class ChainBuilder {
     }
 
     public boolean isStoreBlobSidecarsEnabled() {
-      return storeBlobsSidecar;
+      return storeBlobSidecars;
     }
 
     public Optional<KZGProof> getKzgProof() {

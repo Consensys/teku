@@ -261,7 +261,7 @@ class StoreTest extends AbstractStoreTest {
     // BlobSidecars not stored
     final SignedBlockAndState hotBlockAndState1 =
         chainBuilder.generateBlockAtSlot(
-            1, ChainBuilder.BlockOptions.create().setStoreBlobsSidecar(false));
+            1, ChainBuilder.BlockOptions.create().setStoreBlobSidecars(false));
     final StoreTransaction tx1 = store.startTransaction(new StubStorageUpdateChannel());
     final List<BlobSidecar> blobSidecars1 =
         chainBuilder.getBlobSidecars(hotBlockAndState1.getRoot());

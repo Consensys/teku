@@ -43,7 +43,7 @@ public class BlobSidecarPruner extends Service {
   private final Duration pruneInterval;
   private final int pruneLimit;
   private final TimeProvider timeProvider;
-  private final boolean blobSidecarStorageCountersEnabled;
+  private final boolean blobSidecarsStorageCountersEnabled;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<UInt64> genesisTime = Optional.empty();
@@ -59,16 +59,16 @@ public class BlobSidecarPruner extends Service {
       final TimeProvider timeProvider,
       final Duration pruneInterval,
       final int pruneLimit,
-      final boolean blobSidecarStorageCountersEnabled) {
+      final boolean blobSidecarsStorageCountersEnabled) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
-    this.blobSidecarStorageCountersEnabled = blobSidecarStorageCountersEnabled;
+    this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
 
-    if (blobSidecarStorageCountersEnabled) {
+    if (blobSidecarsStorageCountersEnabled) {
       LabelledGauge labelledGauge =
           metricsSystem.createLabelledGauge(
               TekuMetricCategory.STORAGE,
@@ -102,7 +102,7 @@ public class BlobSidecarPruner extends Service {
   private void pruneBlobs() {
     pruneBlobsPriorToAvailabilityWindow();
 
-    if (blobSidecarStorageCountersEnabled) {
+    if (blobSidecarsStorageCountersEnabled) {
       blobColumnSize.set(database.getBlobSidecarColumnCount());
       earliestBlobSidecarSlot.set(
           database.getEarliestBlobSidecarSlot().map(UInt64::longValue).orElse(-1L));

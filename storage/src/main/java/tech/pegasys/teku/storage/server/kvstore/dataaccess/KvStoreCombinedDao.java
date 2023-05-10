@@ -231,7 +231,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
 
-    void addBlobSidecar(BlobSidecar blobsSidecar);
+    void addBlobSidecar(BlobSidecar blobSidecar);
 
     void removeBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 

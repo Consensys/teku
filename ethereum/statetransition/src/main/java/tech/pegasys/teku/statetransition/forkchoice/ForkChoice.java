@@ -382,18 +382,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       case VALID:
       case NOT_REQUIRED:
         LOG.debug(
-            "blobsSidecar validation result: {}", blobSidecarsAndValidationResult::toLogString);
+            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
 
         break;
       case NOT_AVAILABLE:
         LOG.warn(
-            "blobsSidecar validation result: {}", blobSidecarsAndValidationResult::toLogString);
+            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             blobSidecarsAndValidationResult.getCause());
 
       case INVALID:
         LOG.error(
-            "blobsSidecar validation result: {}", blobSidecarsAndValidationResult::toLogString);
+            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             blobSidecarsAndValidationResult.getCause());
     }
