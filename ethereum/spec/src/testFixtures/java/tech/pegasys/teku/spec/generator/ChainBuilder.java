@@ -502,7 +502,7 @@ public class ChainBuilder {
 
       if (denebMilestoneReached(slot) && options.getGenerateRandomBlobs()) {
         nextBlockAndState =
-            generateBlockWithRandomBlobsSidecar(
+            generateBlockWithRandomBlobSidecars(
                 slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
       } else if (denebMilestoneReached(slot)) {
         nextBlockAndState =
@@ -612,7 +612,7 @@ public class ChainBuilder {
     return nextBlockAndState;
   }
 
-  private SignedBlockAndState generateBlockWithRandomBlobsSidecar(
+  private SignedBlockAndState generateBlockWithRandomBlobSidecars(
       final UInt64 slot,
       final BlockOptions options,
       final BeaconState preState,
@@ -621,7 +621,7 @@ public class ChainBuilder {
       final SszList<Attestation> attestations,
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
-    List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
+    final List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
 
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
