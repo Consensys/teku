@@ -38,6 +38,7 @@ import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
+import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -83,6 +85,7 @@ class Store implements UpdatableStore {
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
+  private final BlobSidecarsProvider blobSidecarsProvider;
   final ForkChoiceStrategy forkChoiceStrategy;
 
   private final Optional<Checkpoint> initialCheckpoint;
@@ -105,6 +108,7 @@ class Store implements UpdatableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
+      final BlobSidecarsProvider blobSidecarsProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -162,6 +166,7 @@ class Store implements UpdatableStore {
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
             blockProvider);
+    this.blobSidecarsProvider = blobSidecarsProvider;
   }
 
   public static UpdatableStore create(
@@ -170,6 +175,7 @@ class Store implements UpdatableStore {
       final Spec spec,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
+      final BlobSidecarsProvider blobSidecarsProvider,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
       final UInt64 genesisTime,
@@ -211,6 +217,7 @@ class Store implements UpdatableStore {
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
         stateAndBlockProvider,
+        blobSidecarsProvider,
         stateTaskQueue,
         initialCheckpoint,
         time,
@@ -520,6 +527,12 @@ class Store implements UpdatableStore {
             spec,
             checkpoint.toSlotAndBlockRoot(spec),
             blockRoot -> SafeFuture.completedFuture(Optional.of(latestStateAtEpoch))));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return blobSidecarsProvider.getBlobSidecars(slotAndBlockRoot);
   }
 
   UInt64 getHighestVotedValidatorIndex() {

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncSt
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -69,6 +71,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
+  Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -88,9 +91,12 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   public void putBlockAndState(
       final SignedBeaconBlock block,
       final BeaconState state,
-      final BlockCheckpoints blockCheckpoints) {
+      final BlockCheckpoints blockCheckpoints,
+      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
-    putStateRoot(state.hashTreeRoot(), new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
+    maybeBlobSidecars.ifPresent(
+        blobSidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars));
+    putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }
 
   @Override
@@ -424,5 +430,16 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getBlock)
         .or(() -> store.getBlockIfAvailable(blockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
+        Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
+    if (maybeBlobSidecars.isPresent()) {
+      return SafeFuture.completedFuture(maybeBlobSidecars);
+    }
+    return store.retrieveBlobSidecars(slotAndBlockRoot);
   }
 }
