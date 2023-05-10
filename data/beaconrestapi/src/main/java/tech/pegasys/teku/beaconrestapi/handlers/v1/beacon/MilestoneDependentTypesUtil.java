@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -38,17 +39,8 @@ public class MilestoneDependentTypesUtil {
           final String title,
           final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
           final BiPredicate<T, SpecMilestone> predicate) {
-    final SerializableOneOfTypeDefinitionBuilder<T> builder =
-        new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
-    for (SpecMilestone milestone : SpecMilestone.values()) {
-      final Optional<SszSchema<? extends T>> schemaDefinition =
-          schemaGetter.apply(schemaDefinitionCache.getSchemaDefinition(milestone));
-      schemaDefinition.ifPresent(
-          sszSchema ->
-              builder.withType(
-                  value -> predicate.test(value, milestone), sszSchema.getJsonTypeDefinition()));
-    }
-    return builder.build();
+    return getAvailableSchemaDefinitions(
+        schemaDefinitionCache, title, schemaGetter, predicate, List.of(SpecMilestone.values()));
   }
 
   public static <T extends SszData>
@@ -58,9 +50,24 @@ public class MilestoneDependentTypesUtil {
           final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
           final BiPredicate<T, SpecMilestone> predicate,
           final SpecMilestone milestone) {
+    return getAvailableSchemaDefinitions(
+        schemaDefinitionCache,
+        title,
+        schemaGetter,
+        predicate,
+        SpecMilestone.getMilestonesUpTo(milestone));
+  }
+
+  private static <T extends SszData>
+      SerializableOneOfTypeDefinition<T> getAvailableSchemaDefinitions(
+          final SchemaDefinitionCache schemaDefinitionCache,
+          final String title,
+          final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
+          final BiPredicate<T, SpecMilestone> predicate,
+          final List<SpecMilestone> milestones) {
     final SerializableOneOfTypeDefinitionBuilder<T> builder =
         new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
-    for (SpecMilestone milestoneValue : SpecMilestone.getMilestonesUpTo(milestone)) {
+    for (SpecMilestone milestoneValue : milestones) {
       final Optional<SszSchema<? extends T>> schemaDefinition =
           schemaGetter.apply(schemaDefinitionCache.getSchemaDefinition(milestoneValue));
       schemaDefinition.ifPresent(
