@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -74,7 +73,7 @@ public class PostBlock extends RestApiEndpoint {
                 + " The beacon node performs the required validation.")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
-            getSchemaDefinitionForAllMilestones(
+            MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
                 "SignedBeaconBlock",
                 SchemaDefinitions::getSignedBeaconBlockSchema,

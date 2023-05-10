@@ -16,8 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -32,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -130,12 +129,13 @@ public class GetNewBlock extends RestApiEndpoint {
         .name("ProduceBlockV2Response")
         .withField(
             "data",
-            getSchemaDefinitionForAllMilestones(
+            MilestoneDependentTypesUtil.getSchemaDefinitionUpToMilestone(
                 schemaDefinitionCache,
                 "Block",
                 SchemaDefinitions::getBeaconBlockSchema,
                 (beaconBlock, milestone) ->
-                    schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone)),
+                    schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone),
+                SpecMilestone.CAPELLA),
             Function.identity())
         .withField(
             "version",
@@ -150,7 +150,7 @@ public class GetNewBlock extends RestApiEndpoint {
         .name("ProduceBlockContentsResponse")
         .withField(
             "data",
-            getAvailableSchemaDefinitionForAllMilestones(
+            MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
                 "BlockContents",
                 schemaDefinitions ->

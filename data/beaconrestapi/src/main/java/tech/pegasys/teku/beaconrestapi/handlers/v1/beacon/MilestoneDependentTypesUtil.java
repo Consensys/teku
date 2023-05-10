@@ -52,6 +52,27 @@ public class MilestoneDependentTypesUtil {
   }
 
   public static <T extends SszData>
+      SerializableOneOfTypeDefinition<T> getAvailableSchemaDefinitionUpToMilestone(
+          final SchemaDefinitionCache schemaDefinitionCache,
+          final String title,
+          final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
+          final BiPredicate<T, SpecMilestone> predicate,
+          final SpecMilestone milestone) {
+    final SerializableOneOfTypeDefinitionBuilder<T> builder =
+        new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
+    for (SpecMilestone milestoneValue : SpecMilestone.getMilestonesUpTo(milestone)) {
+      final Optional<SszSchema<? extends T>> schemaDefinition =
+          schemaGetter.apply(schemaDefinitionCache.getSchemaDefinition(milestoneValue));
+      schemaDefinition.ifPresent(
+          sszSchema ->
+              builder.withType(
+                  value -> predicate.test(value, milestoneValue),
+                  sszSchema.getJsonTypeDefinition()));
+    }
+    return builder.build();
+  }
+
+  public static <T extends SszData>
       SerializableOneOfTypeDefinition<T> getSchemaDefinitionForAllMilestones(
           final SchemaDefinitionCache schemaDefinitionCache,
           final String title,
@@ -59,6 +80,17 @@ public class MilestoneDependentTypesUtil {
           final BiPredicate<T, SpecMilestone> predicate) {
     return getAvailableSchemaDefinitionForAllMilestones(
         schemaDefinitionCache, title, schemaGetter.andThen(Optional::of), predicate);
+  }
+
+  public static <T extends SszData>
+      SerializableOneOfTypeDefinition<T> getSchemaDefinitionUpToMilestone(
+          final SchemaDefinitionCache schemaDefinitionCache,
+          final String title,
+          final Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter,
+          final BiPredicate<T, SpecMilestone> predicate,
+          final SpecMilestone milestone) {
+    return getAvailableSchemaDefinitionUpToMilestone(
+        schemaDefinitionCache, title, schemaGetter.andThen(Optional::of), predicate, milestone);
   }
 
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
