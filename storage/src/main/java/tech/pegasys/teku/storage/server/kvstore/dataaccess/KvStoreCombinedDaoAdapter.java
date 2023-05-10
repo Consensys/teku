@@ -517,6 +517,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
+      finalizedUpdater.setEarliestBlobSidecarSlot(slot);
+    }
+
+    @Override
     public void addMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {
       hotUpdater.addMinGenesisTimeBlock(event);
     }
@@ -534,11 +539,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setFinalizedDepositSnapshot(final DepositTreeSnapshot finalizedDepositSnapshot) {
       hotUpdater.setFinalizedDepositSnapshot(finalizedDepositSnapshot);
-    }
-
-    @Override
-    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
-      hotUpdater.setEarliestBlobSidecarSlot(slot);
     }
 
     @Override

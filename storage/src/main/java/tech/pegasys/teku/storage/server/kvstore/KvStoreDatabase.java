@@ -897,17 +897,12 @@ public class KvStoreDatabase implements Database {
 
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
-      updater.addHotBlobSidecars(update.getHotBlobSidecars());
-      update
-          .getMaybeEarliestBlobSidecarSlot()
-          .ifPresent(
-              earliestBlobSidecarSlot -> {
-                // FIXME: the same, not in the same transaction
-                if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
-                  updater.setEarliestBlobSidecarSlot(earliestBlobSidecarSlot);
-                }
-              });
-
+      if (update.isBlobSidecarsEnabled()) {
+        updater.addHotBlobSidecars(update.getHotBlobSidecars());
+        update
+            .getMaybeEarliestBlobSidecarSlot()
+            .ifPresent(this::updateEarliestBlobSidecarSlotIfNeeded);
+      }
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
@@ -921,6 +916,16 @@ public class KvStoreDatabase implements Database {
     DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
+  }
+
+  private void updateEarliestBlobSidecarSlotIfNeeded(final UInt64 earliestBlobSidecarSlot) {
+    // FIXME: the same, not in the same transaction
+    if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
+      try (final FinalizedUpdater finalizedUpdater = finalizedUpdater()) {
+        finalizedUpdater.setEarliestBlobSidecarSlot(earliestBlobSidecarSlot);
+        finalizedUpdater.commit();
+      }
+    }
   }
 
   private Optional<SlotAndExecutionPayloadSummary> updateFinalizedData(

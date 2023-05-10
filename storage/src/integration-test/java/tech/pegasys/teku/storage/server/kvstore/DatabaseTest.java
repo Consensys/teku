@@ -35,7 +35,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,6 +80,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.generator.ChainProperties;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
+import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.server.Database;
@@ -206,8 +206,6 @@ public class DatabaseTest {
     final BlobSidecar blobSidecar3 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(3), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final SlotAndBlockRoot slotAndBlockRootNoBlobs =
-        new SlotAndBlockRoot(UInt64.valueOf(4), dataStructureUtil.randomBytes32());
     final BlobSidecar blobSidecar5 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(5), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
@@ -219,10 +217,42 @@ public class DatabaseTest {
     database.storeBlobSidecar(blobSidecar2bis);
     database.storeBlobSidecar(blobSidecar5);
     database.storeBlobSidecar(blobSidecar3);
-    database.storeNoBlobsSlot(slotAndBlockRootNoBlobs);
 
-    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(6L);
-    assertThat(database.getEarliestBlobSidecarSlot()).contains(ONE);
+    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(5L);
+    assertThat(database.getEarliestBlobSidecarSlot()).isEmpty();
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.of(blobSidecar1.getSlot()),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            true));
+    assertThat(database.getEarliestBlobSidecarSlot()).contains(blobSidecar1.getSlot());
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.of(blobSidecar3.getSlot()),
+            Map.of(),
+            Map.of(),
+            false,
+            Optional.empty(),
+            true));
+    // Will not be overridden from Database interface, only initial set
+    assertThat(database.getEarliestBlobSidecarSlot()).contains(blobSidecar1.getSlot());
 
     // all added blobs must be there
     List.of(blobSidecar1, blobSidecar2, blobSidecar2bis, blobSidecar3, blobSidecar5)
@@ -230,13 +260,8 @@ public class DatabaseTest {
             blobSidecar ->
                 assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecar)))
                     .contains(blobSidecar));
-    // empty blobSidecar not visible directly, only with stream keys or getEarliestBlobSidecarSlot
-    assertThat(
-            database.getBlobSidecar(
-                SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRootNoBlobs)))
-        .isEmpty();
 
-    // non added blobs must not be there
+    // non added and empty blobs should be empty
     assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecarNotAdded))).isEmpty();
 
     // all blobs must be streamed ordered by slot
@@ -247,7 +272,6 @@ public class DatabaseTest {
         blobSidecarToKey(blobSidecar2),
         blobSidecarToKey(blobSidecar2bis),
         blobSidecarToKey(blobSidecar3),
-        SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRootNoBlobs),
         blobSidecarToKey(blobSidecar5));
     assertBlobSidecars(
         Map.of(
@@ -257,8 +281,6 @@ public class DatabaseTest {
             List.of(blobSidecar2, blobSidecar2bis),
             blobSidecar3.getSlot(),
             List.of(blobSidecar3),
-            slotAndBlockRootNoBlobs.getSlot(),
-            Collections.emptyList(),
             blobSidecar5.getSlot(),
             List.of(blobSidecar5)));
 
@@ -270,16 +292,14 @@ public class DatabaseTest {
         blobSidecarToKey(blobSidecar2),
         blobSidecarToKey(blobSidecar2bis),
         blobSidecarToKey(blobSidecar3),
-        SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRootNoBlobs),
         blobSidecarToKey(blobSidecar5));
     assertBlobSidecars(
         Map.of(
             blobSidecar2.getSlot(), List.of(blobSidecar2, blobSidecar2bis),
             blobSidecar3.getSlot(), List.of(blobSidecar3),
-            slotAndBlockRootNoBlobs.getSlot(), Collections.emptyList(),
             blobSidecar5.getSlot(), List.of(blobSidecar5)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(2));
-    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(5L);
+    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // let's prune up to slot 1 (nothing will be pruned)
     assertThat(database.pruneOldestBlobSidecars(ONE, 10)).isFalse();
@@ -289,36 +309,28 @@ public class DatabaseTest {
         blobSidecarToKey(blobSidecar2),
         blobSidecarToKey(blobSidecar2bis),
         blobSidecarToKey(blobSidecar3),
-        SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRootNoBlobs),
         blobSidecarToKey(blobSidecar5));
     assertBlobSidecars(
         Map.of(
             blobSidecar2.getSlot(), List.of(blobSidecar2, blobSidecar2bis),
             blobSidecar3.getSlot(), List.of(blobSidecar3),
-            slotAndBlockRootNoBlobs.getSlot(), Collections.emptyList(),
             blobSidecar5.getSlot(), List.of(blobSidecar5)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(2));
-    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(5L);
+    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(4L);
 
     // let's prune all from slot 4 excluded
     assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(3), 10)).isFalse();
     assertBlobSidecarKeys(
-        slotAndBlockRootNoBlobs.getSlot(),
-        blobSidecar5.getSlot(),
-        SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRootNoBlobs),
-        blobSidecarToKey(blobSidecar5));
-    assertBlobSidecars(
-        Map.of(
-            slotAndBlockRootNoBlobs.getSlot(), Collections.emptyList(),
-            blobSidecar5.getSlot(), List.of(blobSidecar5)));
+        blobSidecar1.getSlot(), blobSidecar5.getSlot(), blobSidecarToKey(blobSidecar5));
+    assertBlobSidecars(Map.of(blobSidecar5.getSlot(), List.of(blobSidecar5)));
     assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(4));
-    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(2L);
+    assertThat(database.getBlobSidecarColumnCount()).isEqualTo(1L);
 
     // let's prune all
-    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 2)).isTrue();
+    assertThat(database.pruneOldestBlobSidecars(UInt64.valueOf(5), 1)).isTrue();
     // all empty now
     assertBlobSidecarKeys(ZERO, UInt64.valueOf(10));
-    assertThat(database.getEarliestBlobSidecarSlot()).isEmpty();
+    assertThat(database.getEarliestBlobSidecarSlot()).contains(UInt64.valueOf(6));
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(0L);
   }
 
@@ -401,9 +413,9 @@ public class DatabaseTest {
     add(List.of(blockC));
 
     // Add corresponding blobs sidecars
-    addBlobSidecars(forkA.getBlobSidecars(blockA.getRoot()).orElseThrow());
-    addBlobSidecars(forkB.getBlobSidecars(blockB.getRoot()).orElseThrow());
-    addBlobSidecars(chainBuilder.getBlobSidecars(blockC.getRoot()).orElseThrow());
+    addBlobSidecars(forkA.getBlobSidecars(blockA.getRoot()));
+    addBlobSidecars(forkB.getBlobSidecars(blockB.getRoot()));
+    addBlobSidecars(chainBuilder.getBlobSidecars(blockC.getRoot()));
 
     // Verify all blocks are available
     assertThat(store.retrieveBlock(blockA.getRoot()))
@@ -428,7 +440,7 @@ public class DatabaseTest {
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
     add(List.of(finalBlock));
-    addBlobSidecars(chainBuilder.getBlobSidecars(finalBlock.getRoot()).orElseThrow());
+    addBlobSidecars(chainBuilder.getBlobSidecars(finalBlock.getRoot()));
 
     final UInt64 finalEpoch = chainBuilder.getLatestEpoch().plus(ONE);
     final SignedBlockAndState finalizedBlock =
@@ -2204,11 +2216,6 @@ public class DatabaseTest {
                   database.getBlobSidecar(
                       new SlotAndBlockRootAndBlobIndex(block.getSlot(), block.getRoot(), ZERO)))
               .isEmpty();
-          assertThat(
-                  database.getBlobSidecar(
-                      SlotAndBlockRootAndBlobIndex.createNoBlobsKey(
-                          block.getSlot(), block.getRoot())))
-              .isEmpty();
         });
   }
 
@@ -2356,13 +2363,9 @@ public class DatabaseTest {
       for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobSidecarsStream.iterator();
           iterator.hasNext(); ) {
         final SlotAndBlockRootAndBlobIndex key = iterator.next();
-        if (key.isNoBlobsKey()) {
-          blobSidecarsDb.put(key.getSlot(), Collections.emptyList());
-        } else {
-          final List<BlobSidecar> currentSlotBlobs =
-              blobSidecarsDb.computeIfAbsent(key.getSlot(), __ -> new ArrayList<>());
-          currentSlotBlobs.add(database.getBlobSidecar(key).orElseThrow());
-        }
+        final List<BlobSidecar> currentSlotBlobs =
+            blobSidecarsDb.computeIfAbsent(key.getSlot(), __ -> new ArrayList<>());
+        currentSlotBlobs.add(database.getBlobSidecar(key).orElseThrow());
       }
     }
 

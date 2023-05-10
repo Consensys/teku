@@ -317,11 +317,6 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
-      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
-    }
-
-    @Override
     public void commit() {
       // Commit db updates
       transaction.commit();

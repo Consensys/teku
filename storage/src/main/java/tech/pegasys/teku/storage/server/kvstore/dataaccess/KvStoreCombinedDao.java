@@ -195,8 +195,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
 
-    void setEarliestBlobSidecarSlot(UInt64 slot);
-
     void commit();
 
     void cancel();
