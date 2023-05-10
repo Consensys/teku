@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -110,10 +111,11 @@ public class GetNewBlock extends RestApiEndpoint {
                     .orElseThrow(ChainDataUnavailableException::new)));
   }
 
-  private static SerializableOneOfTypeDefinition<Object> getResponseTypes(
+  private static SerializableOneOfTypeDefinition<BlockContainer> getResponseTypes(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    final SerializableOneOfTypeDefinitionBuilder<Object> builder =
-        new SerializableOneOfTypeDefinitionBuilder<>().description("Request successful");
+    final SerializableOneOfTypeDefinitionBuilder<BlockContainer> builder =
+        new SerializableOneOfTypeDefinitionBuilder<BlockContainer>()
+            .description("Request successful");
     builder.withType(
         value -> value instanceof BeaconBlock, getBeaconBlockResponseType(schemaDefinitionCache));
     builder.withType(
