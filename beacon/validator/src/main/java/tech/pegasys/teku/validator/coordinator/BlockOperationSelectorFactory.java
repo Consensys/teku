@@ -327,6 +327,7 @@ public class BlockOperationSelectorFactory {
     };
   }
 
+  @SuppressWarnings("unused")
   public Function<SignedBeaconBlock, SafeFuture<List<SignedBlobSidecar>>>
       createBlobSidecarsSupplementSelector() {
     return signedBeaconBlock -> {
