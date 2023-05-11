@@ -239,7 +239,7 @@ public class ValidatorDataProvider {
       throw new NotImplementedException("Not Yet Implemented");
     }
     throw new IllegalArgumentException(
-        "Cannot determine block type. Must be either SignedBeaconBlock or SignedBlockContent");
+        "Cannot determine block type. Must be either SignedBeaconBlock or SignedBlockContents");
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(

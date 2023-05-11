@@ -115,6 +115,6 @@ public class BeaconBlock
 
   @Override
   public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
-    return BeaconBlockSummary.super.getSignedBeaconBlock();
+    return Optional.empty();
   }
 }
