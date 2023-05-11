@@ -24,9 +24,11 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -66,6 +68,32 @@ class MiscHelpersDenebTest {
             versionedHashes.stream().allMatch(hash -> hash.isVersion(VERSIONED_HASH_VERSION_KZG)))
         .isTrue();
     assertThat(versionedHashes.stream().allMatch(hash -> hash.equals(VERSIONED_HASH))).isTrue();
+  }
+
+  @Test
+  public void shouldComputeDenebStartSlot() {
+    assertThat(miscHelpersDeneb.computeDenebStartSlot()).isEqualTo(UInt64.valueOf(0));
+    final Spec spec2 =
+        TestSpecFactory.createDeneb(
+            SpecConfigLoader.loadConfig(
+                "minimal",
+                phase0Builder ->
+                    phase0Builder
+                        .altairBuilder(altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                        .bellatrixBuilder(
+                            bellatrixBuilder -> bellatrixBuilder.bellatrixForkEpoch(UInt64.ZERO))
+                        .capellaBuilder(
+                            capellaBuilder -> capellaBuilder.capellaForkEpoch(UInt64.ZERO))
+                        .denebBuilder(
+                            denebBuilder ->
+                                denebBuilder
+                                    .denebForkEpoch(UInt64.valueOf(2))
+                                    .kzgNoop(true)
+                                    .trustedSetupPath(""))));
+    final MiscHelpersDeneb miscHelpersDeneb2 =
+        new MiscHelpersDeneb(spec2.getGenesisSpecConfig().toVersionDeneb().orElseThrow());
+    assertThat(miscHelpersDeneb2.computeDenebStartSlot())
+        .isEqualTo(UInt64.valueOf(spec2.slotsPerEpoch(UInt64.ZERO)).times(2));
   }
 
   private Bytes loadData(final String location) throws IOException {

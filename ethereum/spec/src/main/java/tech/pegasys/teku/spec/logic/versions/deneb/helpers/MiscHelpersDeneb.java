@@ -164,7 +164,6 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
         .orElse(0);
   }
 
-  // TODO: Test correctness
   public UInt64 computeDenebStartSlot() {
     final UInt64 denebForkEpoch = specConfig.toVersionDeneb().orElseThrow().getDenebForkEpoch();
     return denebForkEpoch.times(specConfig.getSlotsPerEpoch());
