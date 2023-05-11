@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequiredFieldException;
@@ -79,10 +79,8 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
       }
     }
 
-    final List<String> missingFields =
-        deserializableFields.keySet().stream()
-            .filter(key -> !presentFields.contains(key))
-            .collect(Collectors.toList());
+    final Stream<String> missingFields =
+        deserializableFields.keySet().stream().filter(key -> !presentFields.contains(key));
 
     final List<String> missingRequiredFields = new ArrayList<>();
 
