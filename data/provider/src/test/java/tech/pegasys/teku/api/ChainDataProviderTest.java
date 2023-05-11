@@ -342,13 +342,11 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   public void getSyncCommitteeRewardsFromBlockId_noSpecifiedValidators() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
     final Set<String> validators = Set.of();
-    when(rewardCalculator.getSyncCommitteeRewardData(eq(validators), any(), any(), any()))
+    when(rewardCalculator.getSyncCommitteeRewardData(eq(validators), any(), any()))
         .thenReturn(mock(SyncCommitteeRewardData.class));
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
-    verify(rewardCalculator)
-        .getSyncCommitteeRewardData(
-            eq(validators), any(), eq(new SyncCommitteeRewardData(false, false)), any());
+    verify(rewardCalculator).getSyncCommitteeRewardData(eq(validators), any(), any());
     assertThat(future).isCompleted();
   }
 
@@ -356,13 +354,11 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   public void getSyncCommitteeRewardsFromBlockId_specifyValidators() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
     final Set<String> validators = Set.of("0", "9");
-    when(rewardCalculator.getSyncCommitteeRewardData(eq(validators), any(), any(), any()))
+    when(rewardCalculator.getSyncCommitteeRewardData(eq(validators), any(), any()))
         .thenReturn(mock(SyncCommitteeRewardData.class));
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", validators);
-    verify(rewardCalculator)
-        .getSyncCommitteeRewardData(
-            eq(validators), any(), eq(new SyncCommitteeRewardData(false, false)), any());
+    verify(rewardCalculator).getSyncCommitteeRewardData(eq(validators), any(), any());
     assertThat(future).isCompleted();
   }
 
@@ -395,7 +391,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  public void getRewardsFromBlockId_shouldCallThrough()
+  public void getBlockRewardsFromBlockId_shouldCallThrough()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
     when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
@@ -413,7 +409,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  public void getRewardsFromBlockId_shouldReturnEmptyIfBlockNotFound()
+  public void getBlockRewardsFromBlockId_shouldReturnEmptyIfBlockNotFound()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
     final String slot = "1122334455";

@@ -548,9 +548,6 @@ public class ChainDataProvider {
               }
               final BlockAndMetaData blockAndMetaData = result.get();
               final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
-              final SyncCommitteeRewardData data =
-                  new SyncCommitteeRewardData(
-                      blockAndMetaData.isExecutionOptimistic(), blockAndMetaData.isFinalized());
 
               return combinedChainDataClient
                   .getStateByBlockRoot(block.getRoot())
@@ -559,7 +556,7 @@ public class ChainDataProvider {
                           maybeState.map(
                               state ->
                                   rewardCalculator.getSyncCommitteeRewardData(
-                                      validators, block, data, state)));
+                                      validators, blockAndMetaData, state)));
             });
   }
 

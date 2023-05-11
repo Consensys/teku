@@ -16,6 +16,10 @@ package tech.pegasys.teku.api;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +32,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -112,6 +121,101 @@ public class RewardCalculatorTest {
     assertThatThrownBy(() -> calculator.getCommitteeIndices(committeeKeys, validators, state))
         .isInstanceOf(BadRequestException.class)
         .hasMessageMatching("'0x[0-9a-f]+' " + "was not found in the committee");
+  }
+
+  @Test
+  void calculateAttestationRewards_shouldCalculateRewards() {
+    final long result = calculator.calculateAttestationRewards();
+    assertThat(result).isEqualTo(0L);
+  }
+
+  @Test
+  void getBlockRewardData_shouldRejectPreAltair() {
+    final RewardCalculator rewardCalculator =
+        new RewardCalculator(TestSpecFactory.createMinimalPhase0());
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
+    final BlockAndMetaData blockAndMetaData = mock(BlockAndMetaData.class);
+    when(blockAndMetaData.getData()).thenReturn(dataStructureUtil.randomSignedBeaconBlock());
+    assertThatThrownBy(
+            () -> rewardCalculator.getBlockRewardData(blockAndMetaData, mock(BeaconState.class)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("is pre altair,");
+  }
+
+  @Test
+  void getSyncCommitteeRewardsFromBlockId_shouldRejectPreAltair() {
+    final RewardCalculator rewardCalculator =
+        new RewardCalculator(TestSpecFactory.createMinimalPhase0());
+    final DataStructureUtil dataStructureUtil =
+        new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
+    final BlockAndMetaData blockAndMetaData =
+        new BlockAndMetaData(
+            dataStructureUtil.randomSignedBeaconBlock(),
+            spec.getGenesisSpec().getMilestone(),
+            false,
+            true,
+            false);
+    assertThatThrownBy(
+            () ->
+                rewardCalculator.getSyncCommitteeRewardData(
+                    Set.of(), blockAndMetaData, mock(BeaconState.class)))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("is pre altair,");
+  }
+
+  @Test
+  void test_getProposerReward() {
+    final BeaconState state = data.randomBeaconState();
+    final long participantReward = spec.getSyncCommitteeParticipantReward(state).longValue();
+    final long proposerWeight = PROPOSER_WEIGHT.longValue();
+    final long weightDenominator = WEIGHT_DENOMINATOR.longValue();
+    final long expected = participantReward * proposerWeight / (weightDenominator - proposerWeight);
+
+    assertThat(calculator.getProposerReward(state)).isEqualTo(expected);
+  }
+
+  @Test
+  void calculateProposerSlashingsRewards_shouldCalculateRewards() {
+    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(16);
+    final long result =
+        calculator.calculateProposerSlashingsRewards(
+            blockAndState.getBlock(), blockAndState.getState());
+    assertThat(result).isEqualTo(62500000L);
+  }
+
+  @Test
+  void calculateAttesterSlashingsRewards_shouldCalculateRewards() {
+    final BeaconBlockAndState blockAndState = data.randomBlockAndStateWithValidatorLogic(100);
+    final long result =
+        calculator.calculateAttesterSlashingsRewards(
+            blockAndState.getBlock(), blockAndState.getState());
+    assertThat(result).isEqualTo(62500000L);
+  }
+
+  @Test
+  void calculateProposerSyncAggregateBlockRewards_manySyncAggregateIndices() {
+    final long reward = 1234L;
+    final int[] participantIndices = new int[] {0, 3, 4, 7, 16, 17, 20, 23, 25, 26, 29, 30};
+    final SyncAggregate syncAggregate = data.randomSyncAggregate(participantIndices);
+
+    final long syncAggregateBlockRewards =
+        calculator.calculateProposerSyncAggregateBlockRewards(reward, syncAggregate);
+    assertThat(syncAggregateBlockRewards).isEqualTo(reward * participantIndices.length);
+  }
+
+  @Test
+  void getSyncCommitteeRewardsFromBlockId_noSpecifiedValidators() {
+    final SignedBlockAndState blockAndState = data.randomSignedBlockAndStateWithValidatorLogic(16);
+    final BlockAndMetaData blockAndMetaData =
+        new BlockAndMetaData(
+            blockAndState.getBlock(), spec.getGenesisSpec().getMilestone(), false, true, false);
+
+    final SyncCommitteeRewardData expectedOutput = new SyncCommitteeRewardData(false, false);
+
+    final SyncCommitteeRewardData rewardData =
+        calculator.getSyncCommitteeRewardData(Set.of(), blockAndMetaData, blockAndState.getState());
+    assertThat(rewardData).isEqualTo(expectedOutput);
   }
 
   @ParameterizedTest

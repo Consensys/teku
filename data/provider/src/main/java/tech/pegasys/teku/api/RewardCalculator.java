@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -64,13 +65,16 @@ public class RewardCalculator {
               + " is pre altair, and no sync committee information is available");
     }
 
-    final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
-    final long proposerReward =
-        participantReward
-            .times(PROPOSER_WEIGHT)
-            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT))
-            .longValue();
+    final long proposerReward = getProposerReward(state);
     return blockAndMetaData.map(__ -> calculateBlockRewards(proposerReward, block, state));
+  }
+
+  long getProposerReward(final BeaconState state) {
+    final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
+    return participantReward
+        .times(PROPOSER_WEIGHT)
+        .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT))
+        .longValue();
   }
 
   Map<Integer, Integer> getCommitteeIndices(
@@ -105,7 +109,11 @@ public class RewardCalculator {
   }
 
   SyncCommitteeRewardData getSyncCommitteeRewardData(
-      Set<String> validators, BeaconBlock block, SyncCommitteeRewardData data, BeaconState state) {
+      Set<String> validators, BlockAndMetaData blockAndMetadata, BeaconState state) {
+    final BeaconBlock block = blockAndMetadata.getData().getMessage();
+    final SyncCommitteeRewardData rewardData =
+        new SyncCommitteeRewardData(
+            blockAndMetadata.isExecutionOptimistic(), blockAndMetadata.isFinalized());
     if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       throw new BadRequestException(
           "Slot "
@@ -122,7 +130,7 @@ public class RewardCalculator {
         getCommitteeIndices(committeeKeys, validators, state);
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
     return calculateSyncCommitteeRewards(
-        committeeIndices, participantReward.longValue(), block, data);
+        committeeIndices, participantReward.longValue(), block, rewardData);
   }
 
   private BlockRewardData calculateBlockRewards(
@@ -144,18 +152,19 @@ public class RewardCalculator {
         attesterSlashingsBlockRewards);
   }
 
-  private long calculateAttestationRewards() {
+  @VisibleForTesting
+  long calculateAttestationRewards() {
     return 0L;
   }
 
-  private long calculateProposerSyncAggregateBlockRewards(
-      long proposerReward, SyncAggregate aggregate) {
+  @VisibleForTesting
+  long calculateProposerSyncAggregateBlockRewards(long proposerReward, SyncAggregate aggregate) {
     final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
     return proposerReward * syncCommitteeBits.getBitCount();
   }
 
-  private long calculateProposerSlashingsRewards(
-      final BeaconBlock beaconBlock, final BeaconState state) {
+  @VisibleForTesting
+  long calculateProposerSlashingsRewards(final BeaconBlock beaconBlock, final BeaconState state) {
     final SszList<ProposerSlashing> proposerSlashings =
         beaconBlock.getBody().getProposerSlashings();
 
@@ -172,8 +181,8 @@ public class RewardCalculator {
     return proposerSlashingsRewards;
   }
 
-  private long calculateAttesterSlashingsRewards(
-      final BeaconBlock beaconBlock, final BeaconState state) {
+  @VisibleForTesting
+  long calculateAttesterSlashingsRewards(final BeaconBlock beaconBlock, final BeaconState state) {
     final SszList<AttesterSlashing> attesterSlashings =
         beaconBlock.getBody().getAttesterSlashings();
 
@@ -227,6 +236,7 @@ public class RewardCalculator {
     return data;
   }
 
+  @VisibleForTesting
   void checkValidatorsList(List<BLSPublicKey> committeeKeys, Set<String> validators) {
     final Set<BLSPublicKey> keysSet = new HashSet<>(committeeKeys);
     for (String v : validators) {
