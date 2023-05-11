@@ -53,10 +53,13 @@ public class EpochAttestationRewardsCalculator {
   private List<Integer> getValidatorIndexes(
       final BeaconState state, final List<String> validatorPublicKeys) {
     final SszList<Validator> allValidators = state.getValidators();
-    // Find all indexes of validators to include in result
+
     return IntStream.range(0, allValidators.size())
         .filter(
-            i -> validatorPublicKeys.contains(allValidators.get(i).getPublicKey().toHexString()))
+            i ->
+                validatorPublicKeys.isEmpty()
+                    || validatorPublicKeys.contains(
+                        allValidators.get(i).getPublicKey().toHexString()))
         .boxed()
         .collect(toList());
   }
