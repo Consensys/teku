@@ -40,7 +40,7 @@ public class MetricsConfig {
   public static final int DEFAULT_METRICS_PUBLICATION_INTERVAL = 60;
   public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = true;
   public static final boolean DEFAULT_TICK_PERFORMANCE_ENABLED = false;
-  public static final boolean DEFAULT_BLOBS_SIDECAR_STORAGE_COUNTERS_ENABLED = false;
+  public static final boolean DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED = false;
 
   private final boolean metricsEnabled;
   private final int metricsPort;
@@ -52,7 +52,7 @@ public class MetricsConfig {
   private final int idleTimeoutSeconds;
   private final boolean blockPerformanceEnabled;
   private final boolean tickPerformanceEnabled;
-  private final boolean blobsSidecarStorageCountersEnabled;
+  private final boolean blobSidecarsStorageCountersEnabled;
 
   private MetricsConfig(
       final boolean metricsEnabled,
@@ -65,7 +65,7 @@ public class MetricsConfig {
       final int idleTimeoutSeconds,
       final boolean blockPerformanceEnabled,
       final boolean tickPerformanceEnabled,
-      final boolean blobsSidecarStorageCountersEnabled) {
+      final boolean blobSidecarsStorageCountersEnabled) {
     this.metricsEnabled = metricsEnabled;
     this.metricsPort = metricsPort;
     this.metricsInterface = metricsInterface;
@@ -76,7 +76,7 @@ public class MetricsConfig {
     this.idleTimeoutSeconds = idleTimeoutSeconds;
     this.blockPerformanceEnabled = blockPerformanceEnabled;
     this.tickPerformanceEnabled = tickPerformanceEnabled;
-    this.blobsSidecarStorageCountersEnabled = blobsSidecarStorageCountersEnabled;
+    this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
   }
 
   public static MetricsConfigBuilder builder() {
@@ -123,8 +123,8 @@ public class MetricsConfig {
     return tickPerformanceEnabled;
   }
 
-  public boolean isBlobsSidecarStorageCountersEnabled() {
-    return blobsSidecarStorageCountersEnabled;
+  public boolean isBlobSidecarsStorageCountersEnabled() {
+    return blobSidecarsStorageCountersEnabled;
   }
 
   public static final class MetricsConfigBuilder {
@@ -139,8 +139,8 @@ public class MetricsConfig {
     private int idleTimeoutSeconds = DEFAULT_IDLE_TIMEOUT_SECONDS;
     private boolean blockPerformanceEnabled = DEFAULT_BLOCK_PERFORMANCE_ENABLED;
     private boolean tickPerformanceEnabled = DEFAULT_TICK_PERFORMANCE_ENABLED;
-    private boolean blobsSidecarStorageCountersEnabled =
-        DEFAULT_BLOBS_SIDECAR_STORAGE_COUNTERS_ENABLED;
+    private boolean blobSidecarsStorageCountersEnabled =
+        DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED;
 
     private MetricsConfigBuilder() {}
 
@@ -206,9 +206,9 @@ public class MetricsConfig {
       return this;
     }
 
-    public MetricsConfigBuilder blobsSidecarStorageCountersEnabled(
-        final boolean blobsSidecarStorageCountersEnabled) {
-      this.blobsSidecarStorageCountersEnabled = blobsSidecarStorageCountersEnabled;
+    public MetricsConfigBuilder blobSidecarsStorageCountersEnabled(
+        final boolean blobSidecarsStorageCountersEnabled) {
+      this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
       return this;
     }
 
@@ -224,7 +224,7 @@ public class MetricsConfig {
           idleTimeoutSeconds,
           blockPerformanceEnabled,
           tickPerformanceEnabled,
-          blobsSidecarStorageCountersEnabled);
+          blobSidecarsStorageCountersEnabled);
     }
   }
 }

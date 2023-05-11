@@ -877,7 +877,7 @@ public class KvStoreDatabase implements Database {
             update.isFinalizedOptimisticTransitionBlockRootSet(),
             update.getOptimisticTransitionBlockRoot());
 
-    if (update.isBlobsSidecarEnabled()) {
+    if (update.isBlobSidecarsEnabled()) {
       updateBlobSidecars(update.getFinalizedBlocks(), update.getDeletedHotBlocks());
     }
 
