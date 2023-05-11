@@ -26,9 +26,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 public class StateRootCollector {
   private static final Logger LOG = LogManager.getLogger();
 
-  // TODO: explain what is returned
-  // TODO: test it
-  public static UInt64 addParentStateRoots(
+  public static void addParentStateRoots(
       final Spec spec, final BeaconState blockSlotState, final StoreTransaction transaction) {
     final UInt64 newBlockSlot = blockSlotState.getSlot();
     final int slotsPerHistoricalRoot = spec.getSpecConfig(newBlockSlot).getSlotsPerHistoricalRoot();
@@ -43,7 +41,7 @@ public class StateRootCollector {
       final Bytes32 previousBlockRoot = getValue(blockRoots, slot.minus(1), slotsPerHistoricalRoot);
       if (!previousBlockRoot.equals(parentBlockRoot)) {
         // Reached the first slot of the parent block - its state root is already be imported
-        return newBlockSlot;
+        return;
       }
       transaction.putStateRoot(
           getValue(stateRoots, slot, slotsPerHistoricalRoot),
@@ -53,8 +51,6 @@ public class StateRootCollector {
     if (!slot.isZero()) {
       LOG.warn("Missing some state root mappings prior to slot {}", minimumSlot);
     }
-
-    return slot;
   }
 
   private static Bytes32 getValue(

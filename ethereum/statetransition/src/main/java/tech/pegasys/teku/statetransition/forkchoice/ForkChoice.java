@@ -408,7 +408,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    final UInt64 earliestAffectedSlot = addParentStateRoots(spec, blockSlotState, transaction);
+    final UInt64 earliestAffectedSlot =
+        recentChainData
+            .getSlotForBlockRoot(block.getParentRoot())
+            .map(UInt64::increment)
+            .orElse(block.getSlot());
+    addParentStateRoots(spec, blockSlotState, transaction);
     forkChoiceUtil.applyBlockToStore(
         transaction,
         block,
