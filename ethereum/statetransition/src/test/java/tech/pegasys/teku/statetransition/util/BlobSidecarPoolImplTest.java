@@ -265,14 +265,14 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
-    final BlockBlobSidecarsTracker blobsSidecarsTracker =
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
 
-    assertThat(blobsSidecarsTracker.getBlobSidecars().values())
+    assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
-    assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
-    assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
-    assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isCompleted();
+    assertThat(blockBlobSidecarsTracker.getBlockBody()).isPresent();
+    assertThat(blockBlobSidecarsTracker.isFetchTriggered()).isFalse();
+    assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isCompleted();
 
     assertBlobSidecarsCount(blobSidecars.size());
     assertBlobSidecarsTrackersCount(1);
@@ -294,14 +294,14 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
 
-    final BlockBlobSidecarsTracker blobsSidecarsTracker =
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
 
-    assertThat(blobsSidecarsTracker.getBlobSidecars().values())
+    assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(blobSidecars);
-    assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
-    assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
-    assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();
+    assertThat(blockBlobSidecarsTracker.getBlockBody()).isPresent();
+    assertThat(blockBlobSidecarsTracker.isFetchTriggered()).isFalse();
+    assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isNotCompleted();
 
     assertBlobSidecarsCount(0);
     assertBlobSidecarsTrackersCount(1);
@@ -309,17 +309,17 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   public void
-      getOrCreateBlockBlobsSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
+      getOrCreateBlockblockBlobSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
     final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
 
-    final BlockBlobSidecarsTracker blobsSidecarsTracker =
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block);
 
-    assertThat(blobsSidecarsTracker.getBlockBody()).isPresent();
-    assertThat(blobsSidecarsTracker.isFetchTriggered()).isFalse();
-    assertThatSafeFuture(blobsSidecarsTracker.getCompletionFuture()).isNotCompleted();
+    assertThat(blockBlobSidecarsTracker.getBlockBody()).isPresent();
+    assertThat(blockBlobSidecarsTracker.isFetchTriggered()).isFalse();
+    assertThatSafeFuture(blockBlobSidecarsTracker.getCompletionFuture()).isNotCompleted();
 
     assertBlobSidecarsCount(0);
     assertBlobSidecarsTrackersCount(1);
@@ -781,7 +781,7 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  void getAllRequiredBlobSidecars_shouldReturnAllRequiredBlobsSidecars() {
+  void getAllRequiredBlobSidecars_shouldReturnAllRequiredBlobSidecars() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final Set<BlobIdentifier> missingBlobs1 =

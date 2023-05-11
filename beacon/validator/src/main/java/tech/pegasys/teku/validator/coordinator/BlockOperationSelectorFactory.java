@@ -13,13 +13,10 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,10 +25,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -324,25 +319,6 @@ public class BlockOperationSelectorFactory {
                 executionLayerBlockProductionManager.getUnblindedPayload(
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
-    };
-  }
-
-  @SuppressWarnings("unused")
-  public Function<SignedBeaconBlock, SafeFuture<List<SignedBlobSidecar>>>
-      createBlobSidecarsSupplementSelector() {
-    return signedBeaconBlock -> {
-      final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-          spec.atSlot(signedBeaconBlock.getSlot())
-              .getSchemaDefinitions()
-              .toVersionDeneb()
-              .orElseThrow();
-      return executionLayerBlockProductionManager
-          .getCachedPayloadResult(signedBeaconBlock.getSlot())
-          .orElseThrow(() -> new IllegalStateException("payloadResult is required"))
-          .getBlobsBundle()
-          .orElseThrow(() -> new IllegalStateException("blobs are required"))
-          // TODO: need to create a SignedBlobSidecar from the BlobsBundle
-          .thenApply(blobsBundle -> Collections.emptyList());
     };
   }
 }

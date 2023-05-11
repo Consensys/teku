@@ -242,7 +242,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   /**
    * Knowing that:
    *
-   * <p>(1) `validatedBlobSidecars` contains already validated blobsSidecars
+   * <p>(1) `validatedBlobSidecars` contains already validated blobSidecars
    *
    * <p>(2) `blockBlobSidecarsTracker` is now completed
    *

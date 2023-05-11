@@ -13,12 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
@@ -27,6 +24,7 @@ import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
+@SuppressWarnings("unused")
 public class BlockPublisherDeneb extends AbstractBlockPublisher {
 
   private final BlobSidecarPool blobSidecarPool;
@@ -50,24 +48,6 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
       final SignedBeaconBlock block) {
-    return blockFactory
-        .supplementBlockWithBlobSidecars(block)
-        .thenAccept(
-            blobSidecars -> {
-              publishBlockAndBlobSidecars(block, blobSidecars);
-              // TODO: fix, it's ugly
-              blobSidecarPool.onCompletedBlockAndBlobSidecars(
-                  block,
-                  blobSidecars.stream()
-                      .map(SignedBlobSidecar::getBlobSidecar)
-                      .collect(Collectors.toList()));
-            })
-        .thenCompose(__ -> blockImportChannel.importBlock(block));
-  }
-
-  private void publishBlockAndBlobSidecars(
-      final SignedBeaconBlock block, final List<SignedBlobSidecar> blobSidecars) {
-    blockGossipChannel.publishBlock(block);
-    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 }
