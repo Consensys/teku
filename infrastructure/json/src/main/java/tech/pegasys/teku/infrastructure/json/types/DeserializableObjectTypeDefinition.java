@@ -18,6 +18,7 @@ import static java.util.stream.Collectors.toSet;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -67,10 +68,10 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
     for (; t == JsonToken.FIELD_NAME; t = p.nextToken()) {
       String fieldName = p.getCurrentName();
       p.nextToken();
-      final DeserializableFieldDefinition<TObject, TBuilder> objectField =
+      final DeserializableFieldDefinition<TObject, TBuilder> fieldDefinition =
           deserializableFields.get(fieldName);
-      if (objectField != null) {
-        objectField.readField(builder, p);
+      if (fieldDefinition != null) {
+        fieldDefinition.readField(builder, p);
         presentFields.add(fieldName);
       } else {
         LOG.debug("Unknown field: {}", fieldName);
@@ -78,24 +79,28 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
       }
     }
 
-    final List<String> missingRequiredFields =
+    final List<String> missingFields =
         deserializableFields.keySet().stream()
             .filter(key -> !presentFields.contains(key))
-            .filter(
-                key -> {
-                  final DeserializableFieldDefinition<TObject, TBuilder> objectField =
-                      deserializableFields.get(key);
-                  if (objectField.isRequired()) {
-                    return true;
-                  }
-                  // set optional missing fields to Optional.empty()
-                  if (objectField instanceof OptionalDeserializableFieldDefinition) {
-                    ((OptionalDeserializableFieldDefinition<TObject, TBuilder, ?>) objectField)
-                        .setFieldToEmpty(builder);
-                  }
-                  return false;
-                })
             .collect(Collectors.toList());
+
+    final List<String> missingRequiredFields = new ArrayList<>();
+
+    missingFields.forEach(
+        field -> {
+          final DeserializableFieldDefinition<TObject, TBuilder> fieldDefinition =
+              deserializableFields.get(field);
+          if (fieldDefinition.isRequired()) {
+            missingRequiredFields.add(field);
+          } else {
+            // set missing optional fields to empty
+            if (fieldDefinition instanceof OptionalDeserializableFieldDefinition) {
+              ((OptionalDeserializableFieldDefinition<TObject, TBuilder, ?>) fieldDefinition)
+                  .setFieldToEmpty(builder);
+            }
+          }
+        });
+
     if (!missingRequiredFields.isEmpty()) {
       throw new MissingRequiredFieldException(
           "required fields: (" + String.join(", ", missingRequiredFields) + ") were not set");
