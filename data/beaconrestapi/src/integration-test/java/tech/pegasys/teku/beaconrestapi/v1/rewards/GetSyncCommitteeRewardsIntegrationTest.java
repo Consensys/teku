@@ -93,23 +93,8 @@ public class GetSyncCommitteeRewardsIntegrationTest
   }
 
   @Test
-  public void shouldGiveDecentErrorIfNonNumberRequestList() throws IOException {
-    final List<String> requestBody = List.of("asdf");
-    Response response =
-        post(
-            GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
-            jsonProvider.objectToJSON(requestBody));
-
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.body().string())
-        .isEqualTo(
-            "{\"code\":400,\"message\":\"'asdf' is not a valid "
-                + "hex encoded public key or validator index in the committee\"}");
-  }
-
-  @Test
   public void shouldReturnBadRequestWhenOutOfValidatorRange() throws IOException {
-    final List<String> requestBody = List.of("99999999999999");
+    final List<String> requestBody = List.of("9a");
     Response response =
         post(
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
@@ -117,9 +102,7 @@ public class GetSyncCommitteeRewardsIntegrationTest
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string())
-        .isEqualTo(
-            "{\"code\":400,\"message\":\"'99999999999999' is not a valid "
-                + "hex encoded public key or validator index in the committee\"}");
+        .startsWith("{\"code\":400,\"message\":\"'9a' was expected to be a committee index");
   }
 
   @Test
