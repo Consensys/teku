@@ -25,6 +25,11 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 
+/**
+ * This pool is designed to track chain tips blocks that has been attempted to import but failed due
+ * to data unavailability. These are chain tips only because blocks with unknown parent will fail
+ * with UNKNOWN_BLOCK and will be tracked in the block pendingPool.
+ */
 public class DataUnavailableBlockPool {
   private static final Logger LOG = LogManager.getLogger();
 
