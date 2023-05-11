@@ -238,17 +238,21 @@ public class RewardCalculatorTest {
   @Test
   void calculateSyncCommitteeRewards_shouldNotChangeValuesWhenAggregateEmpty() {
     final SyncCommitteeRewardData data = mock(SyncCommitteeRewardData.class);
-    assertThat(calculator.calculateSyncCommitteeRewards(Map.of(1,1), 1L, Optional.empty(), data)).isEqualTo(data);
+    assertThat(calculator.calculateSyncCommitteeRewards(Map.of(1, 1), 1L, Optional.empty(), data))
+        .isEqualTo(data);
     verifyNoMoreInteractions(data);
   }
 
   @Test
   void calculateSyncCommitteeRewards_shouldAdjustVRewards() {
-    final SyncCommitteeRewardData rewardData = new SyncCommitteeRewardData(false,false);
+    final SyncCommitteeRewardData rewardData = new SyncCommitteeRewardData(false, false);
     rewardData.increaseReward(1, 1L);
-    rewardData.decreaseReward(2,-1L);
+    rewardData.decreaseReward(2, -1L);
     final SyncAggregate aggregate = data.randomSyncAggregate(1);
-    assertThat(calculator.calculateSyncCommitteeRewards(Map.of(1,1, 2,2), 1L, Optional.of(aggregate), rewardData)).isEqualTo(rewardData);
+    assertThat(
+            calculator.calculateSyncCommitteeRewards(
+                Map.of(1, 1, 2, 2), 1L, Optional.of(aggregate), rewardData))
+        .isEqualTo(rewardData);
   }
 
   static Stream<Arguments> validatorsListTestCases() {
