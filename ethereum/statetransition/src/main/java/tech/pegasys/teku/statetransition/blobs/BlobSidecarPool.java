@@ -50,6 +50,11 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         }
 
         @Override
+        public boolean containsBlock(Bytes32 blockRoot) {
+          return false;
+        }
+
+        @Override
         public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
             SignedBeaconBlock block) {
           throw new UnsupportedOperationException();
@@ -92,6 +97,8 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   void removeAllForBlock(Bytes32 blockRoot);
 
   boolean containsBlobSidecar(BlobIdentifier blobIdentifier);
+
+  boolean containsBlock(Bytes32 blockRoot);
 
   Set<BlobIdentifier> getAllRequiredBlobSidecars();
 
