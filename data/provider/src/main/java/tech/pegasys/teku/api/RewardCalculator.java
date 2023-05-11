@@ -111,9 +111,6 @@ public class RewardCalculator {
   SyncCommitteeRewardData getSyncCommitteeRewardData(
       Set<String> validators, BlockAndMetaData blockAndMetadata, BeaconState state) {
     final BeaconBlock block = blockAndMetadata.getData().getMessage();
-    final SyncCommitteeRewardData rewardData =
-        new SyncCommitteeRewardData(
-            blockAndMetadata.isExecutionOptimistic(), blockAndMetadata.isFinalized());
     if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       throw new BadRequestException(
           "Slot "
@@ -129,8 +126,15 @@ public class RewardCalculator {
     final Map<Integer, Integer> committeeIndices =
         getCommitteeIndices(committeeKeys, validators, state);
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
+
+    final SyncCommitteeRewardData rewardData =
+        new SyncCommitteeRewardData(
+            blockAndMetadata.isExecutionOptimistic(), blockAndMetadata.isFinalized());
     return calculateSyncCommitteeRewards(
-        committeeIndices, participantReward.longValue(), block, rewardData);
+        committeeIndices,
+        participantReward.longValue(),
+        block.getBody().getOptionalSyncAggregate(),
+        rewardData);
   }
 
   private BlockRewardData calculateBlockRewards(
@@ -214,19 +218,21 @@ public class RewardCalculator {
     return currentRewards + rewardsAdditions.longValue();
   }
 
-  private SyncCommitteeRewardData calculateSyncCommitteeRewards(
+  @VisibleForTesting
+  SyncCommitteeRewardData calculateSyncCommitteeRewards(
       final Map<Integer, Integer> committeeIndices,
-      final Long participantReward,
-      final BeaconBlock block,
+      final long participantReward,
+      final Optional<SyncAggregate> maybeAggregate,
       final SyncCommitteeRewardData data) {
-    final Optional<SyncAggregate> aggregate = block.getBody().getOptionalSyncAggregate();
-    if (aggregate.isEmpty()) {
+    if (maybeAggregate.isEmpty()) {
       return data;
     }
 
+    final SyncAggregate aggregate = maybeAggregate.get();
+
     committeeIndices.forEach(
         (i, key) -> {
-          if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
+          if (aggregate.getSyncCommitteeBits().getBit(i)) {
             data.increaseReward(key, participantReward);
           } else {
             data.decreaseReward(key, participantReward);

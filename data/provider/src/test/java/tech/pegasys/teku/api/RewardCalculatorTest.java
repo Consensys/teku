@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
@@ -232,6 +233,22 @@ public class RewardCalculatorTest {
     } else {
       calculator.checkValidatorsList(committeeKeys, Set.of(validatorString));
     }
+  }
+
+  @Test
+  void calculateSyncCommitteeRewards_shouldNotChangeValuesWhenAggregateEmpty() {
+    final SyncCommitteeRewardData data = mock(SyncCommitteeRewardData.class);
+    assertThat(calculator.calculateSyncCommitteeRewards(Map.of(1,1), 1L, Optional.empty(), data)).isEqualTo(data);
+    verifyNoMoreInteractions(data);
+  }
+
+  @Test
+  void calculateSyncCommitteeRewards_shouldAdjustVRewards() {
+    final SyncCommitteeRewardData rewardData = new SyncCommitteeRewardData(false,false);
+    rewardData.increaseReward(1, 1L);
+    rewardData.decreaseReward(2,-1L);
+    final SyncAggregate aggregate = data.randomSyncAggregate(1);
+    assertThat(calculator.calculateSyncCommitteeRewards(Map.of(1,1, 2,2), 1L, Optional.of(aggregate), rewardData)).isEqualTo(rewardData);
   }
 
   static Stream<Arguments> validatorsListTestCases() {
