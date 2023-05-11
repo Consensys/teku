@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -74,9 +75,8 @@ public class HistoricalBatchFetcher {
   private final BlobSidecarManager blobSidecarManager;
   private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
-  private final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlotToImport =
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlotToImport =
       new ConcurrentHashMap<>();
-  // FIXME: is it ok just by slot?
   private Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
   private final AtomicInteger requestCount = new AtomicInteger(0);
   private final AsyncBLSSignatureVerifier signatureVerificationService;
@@ -255,7 +255,7 @@ public class HistoricalBatchFetcher {
 
   private void processBlobSidecar(final BlobSidecar blobSidecar) {
     blobSidecarsBySlotToImport
-        .computeIfAbsent(blobSidecar.getSlot(), __ -> new ArrayList<>())
+        .computeIfAbsent(blobSidecar.getSlotAndBlockRoot(), __ -> new ArrayList<>())
         .add(blobSidecar);
   }
 
@@ -402,7 +402,8 @@ public class HistoricalBatchFetcher {
 
   private void validateBlobSidecars(final SignedBeaconBlock block) {
     final List<BlobSidecar> blobSidecars =
-        blobSidecarsBySlotToImport.getOrDefault(block.getSlot(), Collections.emptyList());
+        blobSidecarsBySlotToImport.getOrDefault(
+            block.getSlotAndBlockRoot(), Collections.emptyList());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     final BlobSidecarsAndValidationResult validationResult =
         blobSidecarManager.createAvailabilityChecker(block).validateImmediately(blobSidecars);
