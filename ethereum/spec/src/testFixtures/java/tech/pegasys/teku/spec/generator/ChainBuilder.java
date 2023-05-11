@@ -304,7 +304,7 @@ public class ChainBuilder {
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
 
-    // add empty list of blob sidecars to the genesis block if genesis is in the Deneb milestone
+    // add an empty list of blob sidecars to the genesis block if genesis is in the Deneb milestone
     spec.getGenesisSchemaDefinitions()
         .toVersionDeneb()
         .ifPresent(
