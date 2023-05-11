@@ -11,15 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SignedBlindedBlockContents
-    extends Container2<SignedBlindedBlockContents, SignedBeaconBlock, SignedBlindedBlobSidecars> {
+    extends Container2<SignedBlindedBlockContents, SignedBeaconBlock, SignedBlindedBlobSidecars>
+    implements BlockContainer {
 
   SignedBlindedBlockContents(
       final SignedBlindedBlockContentsSchema type, final TreeNode backingNode) {
@@ -33,8 +36,9 @@ public class SignedBlindedBlockContents
     super(schema, signedBeaconBlock, signedBlindedBlobSidecars);
   }
 
-  public SignedBeaconBlock getSignedBeaconBlock() {
-    return getField0();
+  @Override
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+    return Optional.of(getField0());
   }
 
   public SignedBlindedBlobSidecars getSignedBlindedBlobSidecars() {
