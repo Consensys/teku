@@ -137,22 +137,6 @@ class AttestationStateSelectorTest {
     assertThat(selectedState).isEqualTo(chainHead.getState());
   }
 
-  @Test
-  void shouldUseAncestorAtEarliestSlotWhenBlockIsAFork() {
-    final ChainBuilder forkBuilder = chainBuilder.fork();
-    // Advance chain so finalized checkpoint isn't suitable
-    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(25));
-
-    final SignedBlockAndState expected = forkBuilder.generateBlockAtSlot(16);
-    chainUpdater.saveBlock(expected);
-    final SignedBlockAndState forkBlock = forkBuilder.generateBlockAtSlot(24);
-    chainUpdater.saveBlock(forkBlock);
-
-    final SafeFuture<Optional<BeaconState>> result =
-        selectStateFor(UInt64.valueOf(25), forkBlock.getRoot());
-    assertThatSafeFuture(result).isCompletedWithOptionalContaining(expected.getState());
-  }
-
   private SafeFuture<Optional<BeaconState>> selectStateFor(
       final UInt64 attestationSlot, final Bytes32 blockRoot) {
     final AttestationData attestationData = attestationFor(attestationSlot, blockRoot);

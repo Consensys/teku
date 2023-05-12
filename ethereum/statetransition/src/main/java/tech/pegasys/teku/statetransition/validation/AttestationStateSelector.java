@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
-import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -151,18 +150,12 @@ public class AttestationStateSelector {
 
     // if we have at least one head descendant of the target that has a justified checkpoint at same
     // or older slot
-
-    final List<ProtoNodeData> chainHeads = recentChainData.getChainHeads();
-    if (chainHeads.stream()
-        .noneMatch(
+    return recentChainData.getChainHeads().stream()
+        .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot))
+        .filter(
             head ->
                 isJustifiedCheckpointOfHeadOlderOrEqualToAttestationTargetSlot(
-                    head, targetBlockSlot))) {
-      return false;
-    }
-
-    return chainHeads.stream()
-        .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot))
+                    head, targetBlockSlot))
         .findFirst()
         .isEmpty();
   }
