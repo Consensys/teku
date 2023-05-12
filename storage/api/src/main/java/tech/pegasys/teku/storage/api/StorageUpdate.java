@@ -122,7 +122,7 @@ public class StorageUpdate {
     return hotBlobSidecars;
   }
 
-  public Optional<UInt64> getMaybeEarliestBlobSidecarSlot() {
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
     return maybeEarliestBlobSidecarSlot;
   }
 

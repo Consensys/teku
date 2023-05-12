@@ -444,9 +444,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final SlotAndBlockRoot slotAndBlockRoot) {
     final Optional<List<BlobSidecar>> maybeBlobSidecars =
         Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
-    if (maybeBlobSidecars.isPresent()) {
-      return SafeFuture.completedFuture(maybeBlobSidecars.orElseThrow());
-    }
-    return store.retrieveBlobSidecars(slotAndBlockRoot);
+    return maybeBlobSidecars
+        .map(SafeFuture::completedFuture)
+        .orElseGet(() -> store.retrieveBlobSidecars(slotAndBlockRoot));
   }
 }
