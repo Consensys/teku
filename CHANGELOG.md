@@ -23,6 +23,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Set `User-Agent` header to "teku/v<version>" (e.g. teku/v23.4.0) when making builder bid requests to help builders identify clients and versions. Use `--builder-set-user-agent-header=false` to disable.
 - Included more context when a request to an external signer fails.
 - Added `/eth/v1/beacon/rewards/blocks/{block_id}` rest api endpoint.
-- Filtering attestations with old target checkpoint
 
 ### Bug Fixes
+
+- Filtering attestations with old target checkpoint
