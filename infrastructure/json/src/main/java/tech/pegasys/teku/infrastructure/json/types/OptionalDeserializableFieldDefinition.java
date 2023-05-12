@@ -42,6 +42,11 @@ public class OptionalDeserializableFieldDefinition<TObject, TBuilder, TField>
     setter.accept(target, value);
   }
 
+  @Override
+  public Optional<OptionalDeserializableFieldDefinition<TObject, TBuilder, ?>> toOptional() {
+    return Optional.of(this);
+  }
+
   public void setFieldToEmpty(final TBuilder target) {
     setter.accept(target, Optional.empty());
   }

@@ -92,10 +92,7 @@ class DeserializableObjectTypeDefinition<TObject, TBuilder>
             missingRequiredFields.add(field);
           } else {
             // if missing field is optional, set it to empty
-            if (fieldDefinition instanceof OptionalDeserializableFieldDefinition) {
-              ((OptionalDeserializableFieldDefinition<TObject, TBuilder, ?>) fieldDefinition)
-                  .setFieldToEmpty(builder);
-            }
+            fieldDefinition.toOptional().ifPresent(fd -> fd.setFieldToEmpty(builder));
           }
         });
 
