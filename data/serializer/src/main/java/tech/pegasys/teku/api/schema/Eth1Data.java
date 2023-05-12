@@ -25,13 +25,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 @SuppressWarnings("JavaCase")
 public class Eth1Data {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 deposit_root;
+  public Bytes32 deposit_root;
 
   @Schema(type = "string", format = "uint64")
-  public final UInt64 deposit_count;
+  public UInt64 deposit_count;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 block_hash;
+  public Bytes32 block_hash;
+
+  public Eth1Data() {}
 
   public Eth1Data(final tech.pegasys.teku.spec.datastructures.blocks.Eth1Data eth1Data) {
     deposit_count = eth1Data.getDepositCount();
@@ -52,6 +54,30 @@ public class Eth1Data {
   public tech.pegasys.teku.spec.datastructures.blocks.Eth1Data asInternalEth1Data() {
     return new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
         deposit_root, deposit_count, block_hash);
+  }
+
+  public Bytes32 getDepositRoot() {
+    return deposit_root;
+  }
+
+  public UInt64 getDepositCount() {
+    return deposit_count;
+  }
+
+  public Bytes32 getBlockHash() {
+    return block_hash;
+  }
+
+  public void setDepositRoot(Bytes32 deposit_root) {
+    this.deposit_root = deposit_root;
+  }
+
+  public void setDepositCount(UInt64 deposit_count) {
+    this.deposit_count = deposit_count;
+  }
+
+  public void setBlockHash(Bytes32 block_hash) {
+    this.block_hash = block_hash;
   }
 
   @Override

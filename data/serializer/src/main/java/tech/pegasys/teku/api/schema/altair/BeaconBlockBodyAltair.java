@@ -36,7 +36,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 @SuppressWarnings("JavaCase")
 public class BeaconBlockBodyAltair extends BeaconBlockBody {
   @JsonProperty("sync_aggregate")
-  public final SyncAggregate syncAggregate;
+  public SyncAggregate syncAggregate;
+
+  public BeaconBlockBodyAltair() {}
 
   @JsonCreator
   public BeaconBlockBodyAltair(
@@ -69,6 +71,14 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
     super(message);
     this.syncAggregate = new SyncAggregate(message.getSyncAggregate());
     checkNotNull(syncAggregate, "Sync Aggregate is required for altair blocks");
+  }
+
+  public SyncAggregate getSyncAggregate() {
+    return syncAggregate;
+  }
+
+  public void setSyncAggregate(SyncAggregate syncAggregate) {
+    this.syncAggregate = syncAggregate;
   }
 
   @Override

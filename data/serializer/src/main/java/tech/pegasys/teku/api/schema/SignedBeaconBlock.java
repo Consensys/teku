@@ -61,6 +61,22 @@ public class SignedBeaconBlock implements SignedBlock, BlockContainer {
 
   public SignedBeaconBlock() {}
 
+  public BeaconBlock getBeaconBlock() {
+    return this.message;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setBeaconBlock(BeaconBlock message) {
+    this.message = message;
+  }
+
+  public void setSignature(BLSSignature signature) {
+    this.signature = signature;
+  }
+
   public static SignedBeaconBlock create(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody beaconBlock =

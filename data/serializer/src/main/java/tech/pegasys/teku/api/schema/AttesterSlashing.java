@@ -22,8 +22,10 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.Atteste
 
 @SuppressWarnings("JavaCase")
 public class AttesterSlashing {
-  public final IndexedAttestation attestation_1;
-  public final IndexedAttestation attestation_2;
+  public IndexedAttestation attestation_1;
+  public IndexedAttestation attestation_2;
+
+  public AttesterSlashing() {}
 
   public AttesterSlashing(
       tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing attesterSlashing) {
@@ -42,6 +44,22 @@ public class AttesterSlashing {
   public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
       asInternalAttesterSlashing(final Spec spec) {
     return asInternalAttesterSlashing(spec.atSlot(attestation_1.data.slot));
+  }
+
+  public IndexedAttestation getAttestation1() {
+    return attestation_1;
+  }
+
+  public void setAttestation1(IndexedAttestation attestation_1) {
+    this.attestation_1 = attestation_1;
+  }
+
+  public IndexedAttestation getAttestation2() {
+    return attestation_2;
+  }
+
+  public void setAttestation2(IndexedAttestation attestation_2) {
+    this.attestation_2 = attestation_2;
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing

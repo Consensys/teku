@@ -28,12 +28,14 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationS
 @SuppressWarnings("JavaCase")
 public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public final Bytes aggregation_bits;
+  public Bytes aggregation_bits;
 
-  public final AttestationData data;
+  public AttestationData data;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public final BLSSignature signature;
+  public BLSSignature signature;
+
+  public Attestation() {}
 
   public Attestation(tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
     this.aggregation_bits = attestation.getAggregationBits().sszSerialize();
@@ -48,6 +50,30 @@ public class Attestation {
       @JsonProperty("signature") final BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;
     this.data = data;
+    this.signature = signature;
+  }
+
+  public Bytes getAggregationBits() {
+    return aggregation_bits;
+  }
+
+  public void setAggregationBits(Bytes aggregation_bits) {
+    this.aggregation_bits = aggregation_bits;
+  }
+
+  public AttestationData getData() {
+    return data;
+  }
+
+  public void setData(AttestationData data) {
+    this.data = data;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

@@ -22,10 +22,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 @SuppressWarnings("JavaCase")
 public class VoluntaryExit {
   @Schema(type = "string", format = "uint64")
-  public final UInt64 epoch;
+  public UInt64 epoch;
 
   @Schema(type = "string", format = "uint64")
-  public final UInt64 validator_index;
+  public UInt64 validator_index;
+
+  public VoluntaryExit() {}
 
   public VoluntaryExit(
       tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit voluntaryExit) {
@@ -38,6 +40,22 @@ public class VoluntaryExit {
       @JsonProperty("epoch") final UInt64 epoch,
       @JsonProperty("validator_index") final UInt64 validator_index) {
     this.epoch = epoch;
+    this.validator_index = validator_index;
+  }
+
+  public UInt64 getEpoch() {
+    return epoch;
+  }
+
+  public void setEpoch(UInt64 epoch) {
+    this.epoch = epoch;
+  }
+
+  public UInt64 getValidatorIndex() {
+    return validator_index;
+  }
+
+  public void setValidatorIndex(UInt64 validator_index) {
     this.validator_index = validator_index;
   }
 

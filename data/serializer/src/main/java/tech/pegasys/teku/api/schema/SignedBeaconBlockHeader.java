@@ -22,10 +22,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 
 public class SignedBeaconBlockHeader {
-  public final BeaconBlockHeader message;
+  public BeaconBlockHeader message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public final BLSSignature signature;
+  public BLSSignature signature;
+
+  public SignedBeaconBlockHeader() {}
 
   public SignedBeaconBlockHeader(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader signedHeader) {
@@ -38,6 +40,22 @@ public class SignedBeaconBlockHeader {
       @JsonProperty("message") final BeaconBlockHeader message,
       @JsonProperty("signature") final BLSSignature signature) {
     this.message = message;
+    this.signature = signature;
+  }
+
+  public BeaconBlockHeader getMessage() {
+    return message;
+  }
+
+  public void setMessage(BeaconBlockHeader message) {
+    this.message = message;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

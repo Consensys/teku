@@ -34,6 +34,7 @@ public class DeserializableOneOfTypeDefinition<TObject, TBuilder>
     this.parserTypes = parserTypes;
   }
 
+  @SuppressWarnings("unused")
   public static <TObject, TBuilder>
       DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> object(
           @SuppressWarnings("unused") final Class<TObject> type,

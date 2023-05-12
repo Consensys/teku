@@ -32,18 +32,20 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 @SuppressWarnings("JavaCase")
 public class BeaconBlockBody {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public final BLSSignature randao_reveal;
+  public BLSSignature randao_reveal;
 
-  public final Eth1Data eth1_data;
+  public Eth1Data eth1_data;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 graffiti;
+  public Bytes32 graffiti;
 
-  public final List<ProposerSlashing> proposer_slashings;
-  public final List<AttesterSlashing> attester_slashings;
-  public final List<Attestation> attestations;
-  public final List<Deposit> deposits;
-  public final List<SignedVoluntaryExit> voluntary_exits;
+  public List<ProposerSlashing> proposer_slashings;
+  public List<AttesterSlashing> attester_slashings;
+  public List<Attestation> attestations;
+  public List<Deposit> deposits;
+  public List<SignedVoluntaryExit> voluntary_exits;
+
+  public BeaconBlockBody() {}
 
   @JsonCreator
   public BeaconBlockBody(
@@ -85,6 +87,70 @@ public class BeaconBlockBody {
         body.getVoluntaryExits().stream()
             .map(SignedVoluntaryExit::new)
             .collect(Collectors.toList());
+  }
+
+  public BLSSignature getRandaoReveal() {
+    return randao_reveal;
+  }
+
+  public Eth1Data getEth1Data() {
+    return eth1_data;
+  }
+
+  public Bytes32 getGraffiti() {
+    return graffiti;
+  }
+
+  public List<ProposerSlashing> getProposerSlashings() {
+    return proposer_slashings;
+  }
+
+  public List<AttesterSlashing> getAttesterSlashings() {
+    return attester_slashings;
+  }
+
+  public List<Attestation> getAttestations() {
+    return attestations;
+  }
+
+  public List<Deposit> getDeposits() {
+    return deposits;
+  }
+
+  public List<SignedVoluntaryExit> getVoluntaryExits() {
+    return voluntary_exits;
+  }
+
+  public void setRandaoReveal(BLSSignature randao_reveal) {
+    this.randao_reveal = randao_reveal;
+  }
+
+  public void setEth1Data(Eth1Data eth1_data) {
+    this.eth1_data = eth1_data;
+  }
+
+  public void setGraffiti(Bytes32 graffiti) {
+    this.graffiti = graffiti;
+  }
+
+  public void setProposerSlashings(List<ProposerSlashing> proposer_slashings) {
+    this.proposer_slashings = proposer_slashings;
+  }
+
+  public void setAttesterSlashings(List<AttesterSlashing> attester_slashings) {
+    this.attester_slashings = attester_slashings;
+  }
+
+  public void setAttestations(List<Attestation> attestations) {
+    this.attestations = attestations;
+  }
+
+  public void setDeposits(List<Deposit> deposits) {
+    this.deposits = deposits;
+  }
+
+  public void setVoluntaryExits(List<SignedVoluntaryExit> voluntary_exits) {
+    this.voluntary_exits = voluntary_exits;
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
