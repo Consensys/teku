@@ -27,16 +27,18 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 @SuppressWarnings("JavaCase")
 public class DepositData {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
-  public final BLSPubKey pubkey;
+  public BLSPubKey pubkey;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 withdrawal_credentials;
+  public Bytes32 withdrawal_credentials;
 
   @Schema(type = "string", format = "uint64")
-  public final UInt64 amount;
+  public UInt64 amount;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public final BLSSignature signature;
+  public BLSSignature signature;
+
+  public DepositData() {}
 
   public DepositData(tech.pegasys.teku.spec.datastructures.operations.DepositData depositData) {
     this.pubkey = new BLSPubKey(depositData.getPubkey().toSSZBytes());
@@ -53,6 +55,38 @@ public class DepositData {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
+    this.signature = signature;
+  }
+
+  public BLSPubKey getPubkey() {
+    return pubkey;
+  }
+
+  public void setPubkey(BLSPubKey pubkey) {
+    this.pubkey = pubkey;
+  }
+
+  public Bytes32 getWithdrawalCredentials() {
+    return withdrawal_credentials;
+  }
+
+  public void setWithdrawalCredentials(Bytes32 withdrawal_credentials) {
+    this.withdrawal_credentials = withdrawal_credentials;
+  }
+
+  public UInt64 getAmount() {
+    return amount;
+  }
+
+  public void setAmount(UInt64 amount) {
+    this.amount = amount;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

@@ -27,9 +27,11 @@ import org.apache.tuweni.bytes.Bytes32;
 public class Deposit {
   @ArraySchema(
       schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
-  public final List<Bytes32> proof;
+  public List<Bytes32> proof;
 
-  public final DepositData data;
+  public DepositData data;
+
+  public Deposit() {}
 
   public Deposit(tech.pegasys.teku.spec.datastructures.operations.Deposit deposit) {
     this.proof = deposit.getProof().streamUnboxed().collect(Collectors.toList());
@@ -41,6 +43,22 @@ public class Deposit {
       @JsonProperty("proof") final List<Bytes32> proof,
       @JsonProperty("data") final DepositData data) {
     this.proof = proof;
+    this.data = data;
+  }
+
+  public List<Bytes32> getProof() {
+    return proof;
+  }
+
+  public void setProof(List<Bytes32> proof) {
+    this.proof = proof;
+  }
+
+  public DepositData getData() {
+    return data;
+  }
+
+  public void setData(DepositData data) {
     this.data = data;
   }
 

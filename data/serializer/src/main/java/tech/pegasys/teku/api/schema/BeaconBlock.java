@@ -30,22 +30,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 @SuppressWarnings("JavaCase")
 public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
   @Schema(type = "string", format = "uint64")
-  public final UInt64 slot;
+  public UInt64 slot;
 
   @Schema(type = "string", format = "uint64")
-  public final UInt64 proposer_index;
+  public UInt64 proposer_index;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 parent_root;
+  public Bytes32 parent_root;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public final Bytes32 state_root;
+  public Bytes32 state_root;
 
-  protected final BeaconBlockBody body;
-
-  public BeaconBlockBody getBody() {
-    return body;
-  }
+  protected BeaconBlockBody body;
 
   protected BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
@@ -66,6 +62,48 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
     this.proposer_index = proposer_index;
     this.parent_root = parent_root;
     this.state_root = state_root;
+    this.body = body;
+  }
+
+  public BeaconBlock() {}
+
+  public UInt64 getSlot() {
+    return slot;
+  }
+
+  public UInt64 getProposerIndex() {
+    return proposer_index;
+  }
+
+  public Bytes32 getParentRoot() {
+    return parent_root;
+  }
+
+  public Bytes32 getStateRoot() {
+    return state_root;
+  }
+
+  public BeaconBlockBody getBody() {
+    return body;
+  }
+
+  public void setSlot(UInt64 slot) {
+    this.slot = slot;
+  }
+
+  public void setProposerIndex(UInt64 proposer_index) {
+    this.proposer_index = proposer_index;
+  }
+
+  public void setParentRoot(Bytes32 parent_root) {
+    this.parent_root = parent_root;
+  }
+
+  public void setStateRoot(Bytes32 state_root) {
+    this.state_root = state_root;
+  }
+
+  public void setBody(BeaconBlockBody body) {
     this.body = body;
   }
 

@@ -30,12 +30,14 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.Index
 @SuppressWarnings("JavaCase")
 public class IndexedAttestation {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
-  public final List<UInt64> attesting_indices;
+  public List<UInt64> attesting_indices;
 
-  public final AttestationData data;
+  public AttestationData data;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public final BLSSignature signature;
+  public BLSSignature signature;
+
+  public IndexedAttestation() {}
 
   public IndexedAttestation(
       tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
@@ -52,6 +54,30 @@ public class IndexedAttestation {
       @JsonProperty("signature") final BLSSignature signature) {
     this.attesting_indices = attesting_indices;
     this.data = data;
+    this.signature = signature;
+  }
+
+  public List<UInt64> getAttestingIndices() {
+    return attesting_indices;
+  }
+
+  public void setAttestingIndices(List<UInt64> attesting_indices) {
+    this.attesting_indices = attesting_indices;
+  }
+
+  public AttestationData getData() {
+    return data;
+  }
+
+  public void setData(AttestationData data) {
+    this.data = data;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

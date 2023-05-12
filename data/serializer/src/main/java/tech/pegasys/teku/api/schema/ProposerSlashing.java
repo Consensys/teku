@@ -19,8 +19,10 @@ import java.util.Objects;
 
 @SuppressWarnings("JavaCase")
 public class ProposerSlashing {
-  public final SignedBeaconBlockHeader signed_header_1;
-  public final SignedBeaconBlockHeader signed_header_2;
+  public SignedBeaconBlockHeader signed_header_1;
+  public SignedBeaconBlockHeader signed_header_2;
+
+  public ProposerSlashing() {}
 
   public ProposerSlashing(
       tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing proposerSlashing) {
@@ -34,6 +36,22 @@ public class ProposerSlashing {
       @JsonProperty("signed_header_2") final SignedBeaconBlockHeader header_2) {
     this.signed_header_1 = header_1;
     this.signed_header_2 = header_2;
+  }
+
+  public SignedBeaconBlockHeader getSignedHeader1() {
+    return signed_header_1;
+  }
+
+  public void setSignedHeader1(SignedBeaconBlockHeader signed_header_1) {
+    this.signed_header_1 = signed_header_1;
+  }
+
+  public SignedBeaconBlockHeader getSignedHeader2() {
+    return signed_header_2;
+  }
+
+  public void setSignedHeader2(SignedBeaconBlockHeader signed_header_2) {
+    this.signed_header_2 = signed_header_2;
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing

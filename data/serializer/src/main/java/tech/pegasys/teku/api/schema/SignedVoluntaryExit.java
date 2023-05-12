@@ -20,10 +20,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 
 public class SignedVoluntaryExit {
-  public final VoluntaryExit message;
+  public VoluntaryExit message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public final BLSSignature signature;
+  public BLSSignature signature;
+
+  public SignedVoluntaryExit() {}
 
   public SignedVoluntaryExit(
       tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
@@ -43,6 +45,22 @@ public class SignedVoluntaryExit {
       final tech.pegasys.teku.bls.BLSSignature signature) {
     this.message = new VoluntaryExit(message);
     this.signature = new BLSSignature(signature);
+  }
+
+  public VoluntaryExit getMessage() {
+    return message;
+  }
+
+  public void setMessage(VoluntaryExit message) {
+    this.message = message;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setSignature(BLSSignature signature) {
+    this.signature = signature;
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit

@@ -26,6 +26,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 @SuppressWarnings("JavaCase")
 public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
 
+  public BeaconBlockAltair() {}
+
   public BeaconBlockAltair(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     super(
         message.getSlot(),
