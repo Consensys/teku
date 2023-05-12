@@ -153,6 +153,33 @@ class AttestationStateSelectorTest {
     assertThatSafeFuture(result).isCompletedWithOptionalContaining(expected.getState());
   }
 
+  @Test
+  void shouldIgnoreAttestationsWithTargetWhichIsAlreadyJustified() {
+    chainUpdater.updateBestBlock(
+        chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.ONE)));
+
+    final ChainBuilder forkBuilder = chainBuilder.fork();
+
+    final SignedBlockAndState forkBlock =
+        forkBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
+
+    chainUpdater.saveBlock(forkBlock);
+
+    // advance chain head to epoch 3 and justify epoch 2
+    chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.valueOf(3)));
+    chainUpdater.justifyEpoch(2);
+
+    // Attestation slot of the fork block is before an already justified checkpoint
+    final UInt64 attestationSlot = spec.computeStartSlotAtEpoch(forkBlock.getSlot());
+    final Bytes32 blockRoot = forkBlock.getRoot();
+
+    final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationSlot, blockRoot);
+
+    final Optional<BeaconState> selectedState = safeJoin(result);
+
+    assertThat(selectedState).isEmpty();
+  }
+
   private SafeFuture<Optional<BeaconState>> selectStateFor(
       final UInt64 attestationSlot, final Bytes32 blockRoot) {
     final AttestationData attestationData = attestationFor(attestationSlot, blockRoot);
