@@ -140,12 +140,12 @@ class AttestationStateSelectorTest {
   @Test
   void shouldIgnoreAttestationsWithTargetWhichIsAlreadyJustified() {
     chainUpdater.updateBestBlock(
-            chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.ONE)));
+        chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.ONE)));
 
     final ChainBuilder forkBuilder = chainBuilder.fork();
 
     final SignedBlockAndState forkBlock =
-            forkBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
+        forkBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
 
     chainUpdater.saveBlock(forkBlock);
 

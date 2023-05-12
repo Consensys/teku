@@ -48,12 +48,12 @@ public class AttestationStateSelector {
     }
     final ChainHead chainHead = maybeChainHead.get();
 
-    final Bytes32 attestedBlockRoot = attestationData.getBeaconBlockRoot();
+    final Bytes32 targetBlockRoot = attestationData.getBeaconBlockRoot();
     final UInt64 attestationSlot = attestationData.getSlot();
     final UInt64 attestationEpoch = attestationData.getTarget().getEpoch();
 
-    // If attestedBlockRoot is the current chain head, use the chain head
-    if (chainHead.getRoot().equals(attestedBlockRoot)) {
+    // If targetBlockRoot is the current chain head, use the chain head
+    if (chainHead.getRoot().equals(targetBlockRoot)) {
       return chainHead
           .getState()
           .thenCompose(state -> resolveStateForAttestation(attestationData, state));
@@ -64,7 +64,7 @@ public class AttestationStateSelector {
     if (attestationEpoch
         .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
         .isGreaterThan(headEpoch)) {
-      if (isAncestorOfChainHead(chainHead.getRoot(), attestedBlockRoot, attestationSlot)) {
+      if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot, attestationSlot)) {
         return chainHead.getState().thenApply(Optional::of);
       }
     }
@@ -82,13 +82,13 @@ public class AttestationStateSelector {
     // This maximises the chance that the state we get will be on the canonical fork and so useful
     // for other requests, and means all attestations for that epoch refer to the same slot,
     // minimising the number of states we need
-    final Optional<UInt64> targetBlockSlot = recentChainData.getSlotForBlockRoot(attestedBlockRoot);
+    final Optional<UInt64> targetBlockSlot = recentChainData.getSlotForBlockRoot(targetBlockRoot);
     if (targetBlockSlot.isEmpty()) {
       // Block became unknown, so ignore it
       return completedFuture(Optional.empty());
     }
 
-    if (isTargetTooOld(attestedBlockRoot, targetBlockSlot.get())) {
+    if (isJustificationTooOld(targetBlockRoot, targetBlockSlot.get())) {
       // we already justified a more recent slot on all compatible heads
       LOG.debug(
           "Ignored attestation gossip: attestationData target {}, source {}, head {} , slot {}",
@@ -102,12 +102,12 @@ public class AttestationStateSelector {
     final Checkpoint requiredCheckpoint;
     if (targetBlockSlot.get().isLessThan(earliestSlot)) {
       // Target block is from before the earliest slot so just roll it forward.
-      requiredCheckpoint = new Checkpoint(spec.computeEpochAtSlot(earliestSlot), attestedBlockRoot);
+      requiredCheckpoint = new Checkpoint(spec.computeEpochAtSlot(earliestSlot), targetBlockRoot);
     } else {
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
           recentChainData.getForkChoiceStrategy().orElseThrow();
       final Optional<Bytes32> maybeAncestorRoot =
-          forkChoiceStrategy.getAncestor(attestedBlockRoot, earliestSlot);
+          forkChoiceStrategy.getAncestor(targetBlockRoot, earliestSlot);
       if (maybeAncestorRoot.isEmpty()) {
         // The target block has become unknown or doesn't extend from finalized anymore
         // so we can now ignore it.
@@ -136,26 +136,27 @@ public class AttestationStateSelector {
         .orElse(false);
   }
 
-  private Boolean isJustifiedCheckpointOfHeadOlderOrEqualToAttestationTargetSlot(
-      final ProtoNodeData head, final UInt64 targetBlockSlot) {
+  private Boolean isJustifiedCheckpointOfHeadOlderOrEqualToAttestationJustifiedSlot(
+      final ProtoNodeData head, final UInt64 justifiedBlockSlot) {
     final Checkpoint justifiedCheckpoint = head.getCheckpoints().getJustifiedCheckpoint();
-    final Optional<UInt64> maybeHeadTargetSlot =
+    final Optional<UInt64> maybeHeadJustifiedSlot =
         recentChainData.getSlotForBlockRoot(justifiedCheckpoint.getRoot());
-    return maybeHeadTargetSlot
-        .map(headTargetSlot -> headTargetSlot.isLessThanOrEqualTo(targetBlockSlot))
+    return maybeHeadJustifiedSlot
+        .map(slot -> slot.isLessThanOrEqualTo(justifiedBlockSlot))
         .orElse(false);
   }
 
-  private boolean isTargetTooOld(final Bytes32 targetBlockRoot, final UInt64 targetBlockSlot) {
+  private boolean isJustificationTooOld(
+      final Bytes32 justifiedRoot, final UInt64 justifiedBlockSlot) {
 
-    // if we have at least one head descendant of the target that has a justified checkpoint at same
-    // or older slot
     return recentChainData.getChainHeads().stream()
-        .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot))
+        // must be attesting to a viable chain
+        .filter(head -> isAncestorOfChainHead(head.getRoot(), justifiedRoot, justifiedBlockSlot))
+        // must be attesting to something that progresses justification
         .filter(
             head ->
-                isJustifiedCheckpointOfHeadOlderOrEqualToAttestationTargetSlot(
-                    head, targetBlockSlot))
+                isJustifiedCheckpointOfHeadOlderOrEqualToAttestationJustifiedSlot(
+                    head, justifiedBlockSlot))
         .findFirst()
         .isEmpty();
   }
