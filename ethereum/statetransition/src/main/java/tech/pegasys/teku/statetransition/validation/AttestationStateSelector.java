@@ -15,7 +15,10 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
+import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,6 +32,7 @@ import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationStateSelector {
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final RecentChainData recentChainData;
 
@@ -87,6 +91,12 @@ public class AttestationStateSelector {
 
     if (isTargetTooOld(attestedBlockRoot, targetBlockSlot.get())) {
       // we already justified a more recent slot on all compatible heads
+      LOG.debug(
+          "Ignored attestation gossip: attestationData target {}, source {}, head {} , slot {}",
+          attestationData.getTarget().getRoot(),
+          attestationData.getSource().getRoot(),
+          attestationData.getBeaconBlockRoot(),
+          attestationData.getSlot());
       return completedFuture(Optional.empty());
     }
 
@@ -135,12 +145,17 @@ public class AttestationStateSelector {
     // if we have at least one head descendant of the target that has a justified checkpoint at same
     // or older slot
 
-    return recentChainData.getChainHeads().stream()
-        .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot))
-        .filter(
+    final List<ProtoNodeData> chainHeads = recentChainData.getChainHeads();
+    if (chainHeads.stream()
+        .noneMatch(
             head ->
                 isJustifiedCheckpointOfHeadOlderOrEqualToAttestationTargetSlot(
-                    head, targetBlockSlot))
+                    head, targetBlockSlot))) {
+      return false;
+    }
+
+    return chainHeads.stream()
+        .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot))
         .findFirst()
         .isEmpty();
   }
