@@ -117,6 +117,13 @@ public class AttestationStateSelector {
       requiredCheckpoint =
           new Checkpoint(spec.computeEpochAtSlot(earliestSlot), maybeAncestorRoot.get());
     }
+    LOG.debug(
+        "Retrieving checkpoint state for attestationData target {}, source {}, head {} , slot {}; required checkpoint block root {}",
+        attestationData.getTarget().getRoot(),
+        attestationData.getSource().getRoot(),
+        attestationData.getBeaconBlockRoot(),
+        attestationData.getSlot(),
+        requiredCheckpoint.getRoot());
     return recentChainData.retrieveCheckpointState(requiredCheckpoint);
   }
 
