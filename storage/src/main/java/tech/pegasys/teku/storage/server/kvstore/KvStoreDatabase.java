@@ -319,7 +319,6 @@ public class KvStoreDatabase implements Database {
                 .get(block.getSlotAndBlockRoot())
                 .forEach(updater::addBlobSidecar);
           });
-      // FIXME: it's not guaranteed to be run in the same transaction and blocks flow below too.
       final Optional<UInt64> maybeEarliestBlobSidecarSlotDb = dao.getEarliestBlobSidecarSlot();
       if (maybeEarliestBlobSidecarSlotDb.isEmpty() && maybeEarliestBlobSidecar.isPresent()) {
         updater.setEarliestBlobSidecarSlot(maybeEarliestBlobSidecar.get());
@@ -901,9 +900,7 @@ public class KvStoreDatabase implements Database {
       updater.addHotStates(update.getHotStates());
       if (update.isBlobSidecarsEnabled()) {
         updater.addHotBlobSidecars(update.getHotBlobSidecars());
-        update
-            .getMaybeEarliestBlobSidecarSlot()
-            .ifPresent(this::updateEarliestBlobSidecarSlotIfNeeded);
+        update.getEarliestBlobSidecarSlot().ifPresent(this::updateEarliestBlobSidecarSlotIfNeeded);
       }
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
