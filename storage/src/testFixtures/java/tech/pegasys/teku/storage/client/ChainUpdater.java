@@ -275,14 +275,20 @@ public class ChainUpdater {
   }
 
   public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
+    saveBlock(block, blobSidecars, block.getSlot());
+  }
+
+  public void saveBlock(
+      final SignedBlockAndState block,
+      final List<BlobSidecar> blobSidecars,
+      final UInt64 earliestBlobSidecarSlot) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
         Optional.of(blobSidecars),
-        // FIXME: maybe few slots before
-        Optional.of(block.getSlot()));
+        Optional.of(earliestBlobSidecarSlot));
     assertThat(tx.commit()).isCompleted();
     recentChainData
         .getUpdatableForkChoiceStrategy()
