@@ -88,6 +88,15 @@ public class AttestationStateSelector {
       return completedFuture(Optional.empty());
     }
 
+    // Check if the attestations head block state is already available in cache and usable
+    if (targetBlockSlot.get().isGreaterThanOrEqualTo(earliestSlot)) {
+      final Optional<BeaconState> maybeState =
+          recentChainData.getStore().getBlockStateIfAvailable(targetBlockRoot);
+      if (maybeState.isPresent()) {
+        return SafeFuture.completedFuture(maybeState);
+      }
+    }
+
     if (isJustificationTooOld(targetBlockRoot, targetBlockSlot.get())) {
       // we already justified a more recent slot on all compatible heads
       LOG.debug(

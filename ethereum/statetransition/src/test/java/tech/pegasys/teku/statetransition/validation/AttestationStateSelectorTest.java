@@ -164,6 +164,38 @@ class AttestationStateSelectorTest {
     assertThat(selectedState).isEmpty();
   }
 
+  @Test
+  void shouldNotRegenerateStateForAttestationsWithTargetWhichIsAlreadyJustified() {
+    // Advance the chain far enough that the finalized checkpoint isn't usable
+    chainUpdater.updateBestBlock(
+        chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.valueOf(3))));
+
+    final ChainBuilder forkBuilder = chainBuilder.fork();
+
+    final SignedBlockAndState forkBlock =
+        forkBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(3)).plus(1));
+
+    chainUpdater.saveBlock(forkBlock);
+
+    // advance chain head to epoch 5 and justify epoch 4
+    chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.valueOf(5)));
+    chainUpdater.justifyEpoch(4);
+
+    // Attestation slot of the fork block is before an already justified checkpoint
+    final UInt64 attestationSlot = forkBlock.getSlot();
+    final Bytes32 blockRoot = forkBlock.getRoot();
+
+    final SafeFuture<Optional<BeaconState>> resultWithCache =
+        selectStateFor(attestationSlot, blockRoot);
+    assertThatSafeFuture(resultWithCache).isCompletedWithOptionalContaining(forkBlock.getState());
+
+    recentChainData.getStore().clearCaches();
+
+    final SafeFuture<Optional<BeaconState>> resultWithNoCache =
+        selectStateFor(attestationSlot, blockRoot);
+    assertThatSafeFuture(resultWithNoCache).isCompletedWithEmptyOptional();
+  }
+
   private SafeFuture<Optional<BeaconState>> selectStateFor(
       final UInt64 attestationSlot, final Bytes32 blockRoot) {
     final AttestationData attestationData = attestationFor(attestationSlot, blockRoot);
