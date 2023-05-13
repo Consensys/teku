@@ -53,7 +53,8 @@ public class StoreAssertions {
             "stateProvider",
             "checkpointStates",
             "forkChoiceStrategy",
-            "blobSidecarsProvider")
+            "blobSidecarsProvider",
+            "earliestBlobSidecarSlotProvider")
         .isEqualTo(expectedState);
     assertThat(actualState.getOrderedBlockRoots())
         .containsExactlyElementsOf(expectedState.getOrderedBlockRoots());
