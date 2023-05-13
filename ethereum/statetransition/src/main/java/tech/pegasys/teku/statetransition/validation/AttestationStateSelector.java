@@ -99,7 +99,7 @@ public class AttestationStateSelector {
 
     if (isJustificationTooOld(targetBlockRoot, targetBlockSlot.get())) {
       // we already justified a more recent slot on all compatible heads
-      LOG.debug(
+      LOG.trace(
           "Ignored attestation gossip: attestationData target {}, source {}, head {} , slot {}",
           attestationData.getTarget().getRoot(),
           attestationData.getSource().getRoot(),
