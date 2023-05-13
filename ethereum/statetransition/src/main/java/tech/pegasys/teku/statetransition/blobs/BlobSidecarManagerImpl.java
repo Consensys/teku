@@ -15,8 +15,6 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import java.util.Map;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -27,19 +25,15 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
-import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
-import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsChannel {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final AsyncRunner asyncRunner;
@@ -52,8 +46,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   @SuppressWarnings("unused")
   private final StorageQueryChannel storageQueryChannel;
 
-  private final StorageUpdateChannel storageUpdateChannel;
-
   private final Subscribers<ReceivedBlobSidecarListener> receivedBlobSidecarSubscribers =
       Subscribers.create(true);
 
@@ -65,8 +57,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final BlobSidecarValidator validator,
       final FutureItems<SignedBlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
-      final StorageQueryChannel storageQueryChannel,
-      final StorageUpdateChannel storageUpdateChannel) {
+      final StorageQueryChannel storageQueryChannel) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
@@ -74,7 +65,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     this.blobSidecarPool = blobSidecarPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
-    this.storageUpdateChannel = storageUpdateChannel;
     this.storageQueryChannel = storageQueryChannel;
   }
 
@@ -131,44 +121,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   @Override
   public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
     return spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(recentChainData.getStore(), slot);
-  }
-
-  @Override
-  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    storageUpdateChannel
-        .onNoBlobsSlot(slotAndBlockRoot)
-        .thenRun(() -> LOG.debug("Slot {} with no BlobSidecars stored", slotAndBlockRoot))
-        .ifExceptionGetsHereRaiseABug();
-  }
-
-  @Override
-  public void storeBlobSidecar(final BlobSidecar blobSidecar) {
-    storageUpdateChannel
-        .onBlobSidecar(blobSidecar)
-        .thenRun(
-            () ->
-                LOG.debug(
-                    "BlobSidecar stored for {}",
-                    () ->
-                        new SlotAndBlockRootAndBlobIndex(
-                            blobSidecar.getSlot(),
-                            blobSidecar.getBlockRoot(),
-                            blobSidecar.getIndex())))
-        .ifExceptionGetsHereRaiseABug();
-  }
-
-  @Override
-  public void discardBlobSidecarsByBlock(final SignedBeaconBlock block) {
-    storageUpdateChannel
-        .onBlobSidecarsRemoval(block.getSlot())
-        .thenRun(
-            () ->
-                LOG.debug(
-                    () ->
-                        String.format(
-                            "BlobsSidecar discarded for %s",
-                            new SlotAndBlockRoot(block.getSlot(), block.getRoot()))))
-        .ifExceptionGetsHereRaiseABug();
   }
 
   @Override

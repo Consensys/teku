@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -51,6 +52,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<Bytes32, BlockCheckpoints> blockCheckpoints;
   protected Map<Checkpoint, BeaconState> checkpointStates;
   protected Map<UInt64, VoteTracker> votes;
+  protected Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
@@ -67,7 +69,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<Bytes32, BeaconState> blockStates,
       final Map<Bytes32, BlockCheckpoints> blockCheckpoints,
       final Map<Checkpoint, BeaconState> checkpointStates,
-      final Map<UInt64, VoteTracker> votes) {
+      final Map<UInt64, VoteTracker> votes,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
     this.spec = spec;
     this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
@@ -80,6 +83,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.blockCheckpoints = blockCheckpoints;
     this.checkpointStates = checkpointStates;
     this.votes = votes;
+    this.blobSidecars = blobSidecars;
   }
 
   // Readonly methods
@@ -239,13 +243,24 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return SafeFuture.completedFuture(Optional.of(latestStateAtEpoch));
   }
 
+  @Override
+  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.completedFuture(Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)));
+  }
+
   // Mutable methods
   @Override
   public void putBlockAndState(
-      final SignedBeaconBlock block, final BeaconState state, final BlockCheckpoints checkpoints) {
+      final SignedBeaconBlock block,
+      final BeaconState state,
+      final BlockCheckpoints checkpoints,
+      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     blocks.put(block.getRoot(), block);
     blockStates.put(block.getRoot(), state);
     blockCheckpoints.put(block.getRoot(), checkpoints);
+    maybeBlobSidecars.ifPresent(
+        blobSidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars));
   }
 
   @Override

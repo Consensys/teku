@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.forkchoice;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,8 +24,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -70,6 +73,7 @@ public class TestStoreFactory {
         new HashMap<>(),
         new HashMap<>(),
         new HashMap<>(),
+        new HashMap<>(),
         new HashMap<>());
   }
 
@@ -91,6 +95,7 @@ public class TestStoreFactory {
     Map<Bytes32, BeaconState> blockStates = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
     Map<UInt64, VoteTracker> votes = new HashMap<>();
+    Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
 
     blocks.put(anchorRoot, anchor.getSignedBeaconBlock().orElseThrow());
     blockStates.put(anchorRoot, anchorState);
@@ -112,7 +117,8 @@ public class TestStoreFactory {
         blockStates,
         blockCheckpoints,
         checkpointStates,
-        votes);
+        votes,
+        blobSidecars);
   }
 
   private BeaconState createRandomGenesisState() {

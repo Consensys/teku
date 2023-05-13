@@ -116,9 +116,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -183,6 +183,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -1024,7 +1026,7 @@ public final class DataStructureUtil {
   private BeaconBlockAndState randomBlockAndState(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
-    final UInt64 proposerIndex = randomUInt64();
+    final UInt64 proposerIndex = UInt64.valueOf(randomPositiveInt());
     final BeaconBlockHeader latestHeader =
         new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
 
@@ -2411,12 +2413,12 @@ public final class DataStructureUtil {
 
   public RewardAndPenaltyDeltas randomRewardAndPenaltyDeltas(final int validatorCount) {
     final RewardAndPenaltyDeltas rewardAndPenaltyDeltas =
-        new RewardAndPenaltyDeltas(validatorCount);
+        RewardAndPenaltyDeltas.aggregated(validatorCount);
     for (int i = 0; i < validatorCount; i++) {
-      final RewardAndPenaltyDeltas.RewardAndPenalty rewardAndPenalty =
-          rewardAndPenaltyDeltas.getDelta(i);
-      rewardAndPenalty.reward(randomUInt64(1000));
-      rewardAndPenalty.penalize(randomUInt64(1000));
+      // We are using the aggregated deltas, so it does not matter what component we use here
+      final RewardAndPenalty rewardAndPenalty = rewardAndPenaltyDeltas.getDelta(i);
+      rewardAndPenalty.reward(RewardComponent.HEAD, randomUInt64(1000));
+      rewardAndPenalty.penalize(RewardComponent.HEAD, randomUInt64(1000));
     }
 
     return rewardAndPenaltyDeltas;

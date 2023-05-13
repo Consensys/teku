@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static tech.pegasys.teku.infrastructure.time.TimeProvider.MILLIS_PER_SECOND;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -396,7 +398,8 @@ public class ForkChoiceUtil {
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
-      final boolean isBlockOptimistic) {
+      final boolean isBlockOptimistic,
+      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
 
     BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
 
@@ -415,7 +418,7 @@ public class ForkChoiceUtil {
         isBlockOptimistic);
 
     // Add new block to store
-    store.putBlockAndState(signedBlock, postState, blockCheckpoints);
+    store.putBlockAndState(signedBlock, postState, blockCheckpoints, maybeBlobSidecars);
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

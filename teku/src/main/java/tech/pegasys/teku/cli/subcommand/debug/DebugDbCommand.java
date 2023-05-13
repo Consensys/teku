@@ -359,8 +359,8 @@ public class DebugDbCommand implements Runnable {
   }
 
   @Command(
-      name = "dump-blobs-sidecar",
-      description = "Writes all blobs sidecars in the database as a zip of SSZ files",
+      name = "dump-blob-sidecars",
+      description = "Writes all blob sidecars in the database as a zip of SSZ files",
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
@@ -370,21 +370,21 @@ public class DebugDbCommand implements Runnable {
       optionListHeading = "%nOptions:%n",
       footerHeading = "%n",
       footer = "Teku is licensed under the Apache License 2.0")
-  public int dumpBlobsSidecar(
+  public int dumpBlobSidecars(
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               names = {"--from-slot"},
-              description = "Dump blobs sidecars starting from a given slot (inclusive)")
+              description = "Dump blob sidecars starting from a given slot (inclusive)")
           final Long fromSlot,
       @Option(
               names = {"--to-slot"},
-              description = "Dump blobs sidecars up to a given slot (inclusive)")
+              description = "Dump blob sidecars up to a given slot (inclusive)")
           final Long toSlot,
       @Option(
               required = true,
               names = {"--output", "-o"},
-              description = "File to write blobs sidecars to")
+              description = "File to write blob sidecars to")
           final Path outputFile)
       throws Exception {
 

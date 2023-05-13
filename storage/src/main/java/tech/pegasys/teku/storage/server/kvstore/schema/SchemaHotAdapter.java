@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 
 public class SchemaHotAdapter implements Schema {
   private final SchemaCombined delegate;
@@ -62,6 +63,11 @@ public class SchemaHotAdapter implements Schema {
 
   public KvStoreColumn<Bytes32, BeaconState> getColumnHotStatesByRoot() {
     return delegate.getColumnHotStatesByRoot();
+  }
+
+  public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      getColumnBlobSidecarBySlotRootBlobIndex() {
+    return delegate.getColumnBlobSidecarBySlotRootBlobIndex();
   }
 
   public KvStoreVariable<UInt64> getVariableGenesisTime() {
@@ -102,13 +108,22 @@ public class SchemaHotAdapter implements Schema {
 
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
-        "HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot(),
-        "CHECKPOINT_STATES", getColumnCheckpointStates(),
-        "VOTES", getColumnVotes(),
-        "DEPOSITS_FROM_BLOCK_EVENTS", getColumnDepositsFromBlockEvents(),
-        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT", getColumnStateRootToSlotAndBlockRoot(),
-        "HOT_STATES_BY_ROOT", getColumnHotStatesByRoot(),
-        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT", getColumnHotBlockCheckpointEpochsByRoot());
+        "HOT_BLOCKS_BY_ROOT",
+        getColumnHotBlocksByRoot(),
+        "CHECKPOINT_STATES",
+        getColumnCheckpointStates(),
+        "VOTES",
+        getColumnVotes(),
+        "DEPOSITS_FROM_BLOCK_EVENTS",
+        getColumnDepositsFromBlockEvents(),
+        "STATE_ROOT_TO_SLOT_AND_BLOCK_ROOT",
+        getColumnStateRootToSlotAndBlockRoot(),
+        "HOT_STATES_BY_ROOT",
+        getColumnHotStatesByRoot(),
+        "HOT_BLOCK_CHECKPOINT_EPOCHS_BY_ROOT",
+        getColumnHotBlockCheckpointEpochsByRoot(),
+        "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+        getColumnBlobSidecarBySlotRootBlobIndex());
   }
 
   public Map<String, KvStoreVariable<?>> getVariableMap() {

@@ -17,9 +17,11 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecars;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 
 public class BlindedBlockContents
-    extends Container2<BlindedBlockContents, BeaconBlock, BlindedBlobSidecars> {
+    extends Container2<BlindedBlockContents, BeaconBlock, BlindedBlobSidecars>
+    implements BlockContainer {
 
   BlindedBlockContents(final BlindedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);

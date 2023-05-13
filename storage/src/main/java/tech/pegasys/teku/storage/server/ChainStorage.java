@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.storage.server;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -215,6 +217,33 @@ public class ChainStorage
   public SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(
       final Set<Bytes32> blockRoots) {
     return SafeFuture.of(() -> database.getHotBlocks(blockRoots));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<SlotAndBlockRootAndBlobIndex> keyStream =
+              database.streamBlobSidecarKeys(
+                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())) {
+            final List<BlobSidecar> blobSidecars = new ArrayList<>();
+            boolean noKeys = true;
+            for (Iterator<SlotAndBlockRootAndBlobIndex> iterator = keyStream.iterator();
+                iterator.hasNext(); ) {
+              noKeys = false;
+              final SlotAndBlockRootAndBlobIndex key = iterator.next();
+              if (!key.isNoBlobsKey()) {
+                blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
+              }
+            }
+            if (noKeys) {
+              return Optional.empty();
+            } else {
+              return Optional.of(blobSidecars);
+            }
+          }
+        });
   }
 
   @Override

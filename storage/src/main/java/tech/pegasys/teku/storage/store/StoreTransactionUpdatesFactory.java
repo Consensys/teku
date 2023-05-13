@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -45,6 +47,7 @@ class StoreTransactionUpdatesFactory {
 
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final AnchorPoint latestFinalized;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots = new ConcurrentHashMap<>();
@@ -66,6 +69,7 @@ class StoreTransactionUpdatesFactory {
                     Map.Entry::getKey, entry -> entry.getValue().toBlockAndCheckpoints()));
     hotBlockAndStates = new ConcurrentHashMap<>(tx.blockData);
     stateRoots = new ConcurrentHashMap<>(tx.stateRoots);
+    hotBlobSidecars = new ConcurrentHashMap<>(tx.blobSidecars);
   }
 
   public static StoreTransactionUpdates create(
@@ -96,8 +100,10 @@ class StoreTransactionUpdatesFactory {
   private StoreTransactionUpdates buildFinalizedUpdates(final Checkpoint finalizedCheckpoint) {
     final Map<Bytes32, Bytes32> finalizedChildToParent =
         collectFinalizedRoots(latestFinalized.getRoot());
-    Set<SignedBeaconBlock> finalizedBlocks = collectFinalizedBlocks(tx, finalizedChildToParent);
-    Map<Bytes32, BeaconState> finalizedStates = collectFinalizedStates(tx, finalizedChildToParent);
+    final Set<SignedBeaconBlock> finalizedBlocks =
+        collectFinalizedBlocks(tx, finalizedChildToParent);
+    final Map<Bytes32, BeaconState> finalizedStates =
+        collectFinalizedStates(tx, finalizedChildToParent);
 
     final FinalizedChainData.Builder finalizedChainDataBuilder = FinalizedChainData.builder();
     final boolean optimisticTransitionBlockRootSet;
@@ -238,6 +244,7 @@ class StoreTransactionUpdatesFactory {
         hotBlocks,
         hotBlockAndStates,
         getHotStatesToPersist(),
+        hotBlobSidecars,
         prunedHotBlockRoots,
         stateRoots,
         optimisticTransitionBlockRootSet,

@@ -227,9 +227,9 @@ public class DatabaseTest {
     // all added blobs must be there
     List.of(blobSidecar1, blobSidecar2, blobSidecar2bis, blobSidecar3, blobSidecar5)
         .forEach(
-            blobsSidecar ->
-                assertThat(database.getBlobSidecar(blobSidecarToKey(blobsSidecar)))
-                    .contains(blobsSidecar));
+            blobSidecar ->
+                assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecar)))
+                    .contains(blobSidecar));
     // empty blobSidecar not visible directly, only with stream keys or getEarliestBlobSidecarSlot
     assertThat(
             database.getBlobSidecar(
@@ -423,7 +423,7 @@ public class DatabaseTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
-    assertBlobsSidecarAvailabilityExceptPruned(blocksWithAvailableSidecars, List.of());
+    assertBlobSidecarsAvailabilityExceptPruned(blocksWithAvailableSidecars, List.of());
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
@@ -449,7 +449,7 @@ public class DatabaseTest {
             .map(SignedBlockAndState::getBlock)
             .collect(toList());
 
-    assertBlobsSidecarAvailabilityExceptPruned(
+    assertBlobSidecarsAvailabilityExceptPruned(
         canonicalBlocksWithAvailableSidecars, List.of(blockA.getBlock(), blockB.getBlock()));
   }
 
@@ -2188,7 +2188,7 @@ public class DatabaseTest {
     }
   }
 
-  private void assertBlobsSidecarAvailabilityExceptPruned(
+  private void assertBlobSidecarsAvailabilityExceptPruned(
       final Collection<SignedBeaconBlock> availableBlocksSidecars,
       final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
     availableBlocksSidecars.forEach(
@@ -2225,7 +2225,7 @@ public class DatabaseTest {
   }
 
   private void addBlobSidecars(final List<BlobSidecar> blobSidecars) {
-    blobSidecars.forEach(blobsSidecar -> database.storeBlobSidecar(blobsSidecar));
+    blobSidecars.forEach(blobSidecar -> database.storeBlobSidecar(blobSidecar));
   }
 
   private void add(final Collection<SignedBlockAndState> blocks) {
@@ -2336,9 +2336,9 @@ public class DatabaseTest {
 
   private void assertBlobSidecarKeys(
       final UInt64 from, final UInt64 to, SlotAndBlockRootAndBlobIndex... keys) {
-    try (final Stream<SlotAndBlockRootAndBlobIndex> blobsSidecarStream =
+    try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
         database.streamBlobSidecarKeys(from, to)) {
-      final List<SlotAndBlockRootAndBlobIndex> keysFromDb = blobsSidecarStream.collect(toList());
+      final List<SlotAndBlockRootAndBlobIndex> keysFromDb = blobSidecarsStream.collect(toList());
       assertThat(keysFromDb).isEqualTo(Arrays.asList(keys));
     }
   }
@@ -2350,10 +2350,10 @@ public class DatabaseTest {
     }
 
     final Map<UInt64, List<BlobSidecar>> blobSidecarsDb = new HashMap<>();
-    try (final Stream<SlotAndBlockRootAndBlobIndex> blobsSidecarStream =
+    try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
         database.streamBlobSidecarKeys(slots.get(0), slots.get(slots.size() - 1))) {
 
-      for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobsSidecarStream.iterator();
+      for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobSidecarsStream.iterator();
           iterator.hasNext(); ) {
         final SlotAndBlockRootAndBlobIndex key = iterator.next();
         if (key.isNoBlobsKey()) {

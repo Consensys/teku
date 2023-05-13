@@ -106,8 +106,8 @@ public class SyncingStatus {
     private UInt64 headSlot;
     private UInt64 syncDistance;
     private boolean isSyncing;
-    private Optional<Boolean> isOptimistic;
-    private Optional<Boolean> elOffline;
+    private Optional<Boolean> isOptimistic = Optional.empty();
+    private Optional<Boolean> elOffline = Optional.empty();
 
     private Builder() {}
 

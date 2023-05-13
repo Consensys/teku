@@ -446,6 +446,17 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addHotBlobSidecars(final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
+      hotUpdater.addHotBlobSidecars(blobSidecars);
+    }
+
+    @Override
+    public void addHotBlobSidecarSlot(
+        final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
+      hotUpdater.addHotBlobSidecarSlot(slotAndBlockRoot, blobSidecars);
+    }
+
+    @Override
     public void pruneHotStateRoots(final List<Bytes32> stateRoots) {
       hotUpdater.pruneHotStateRoots(stateRoots);
     }

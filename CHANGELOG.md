@@ -10,6 +10,7 @@
 - The command argument `--Xdeposit-snapshot-enabled` will be removed, just remove it from commandline/configuration if you use it, updated argument `--deposit-snapshot-enabled` defaults to true now.
 
 ## Current Releases
+
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
 
 ## Unreleased Changes
@@ -17,8 +18,6 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 ### Additions and Improvements
- - Set `User-Agent` header to "teku/v<version>" (e.g. teku/v23.4.0) when making builder bid requests to help builders identify clients and versions. Use `--builder-set-user-agent-header=false` to disable. 
- - Included more context when a request to an external signer fails.
- - Added `/eth/v1/beacon/rewards/blocks/{block_id}` rest api endpoint.
 
 ### Bug Fixes
+

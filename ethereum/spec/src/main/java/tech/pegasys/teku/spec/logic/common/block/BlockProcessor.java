@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.Validator
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
@@ -171,4 +172,8 @@ public interface BlockProcessor {
       BeaconBlockBody body,
       KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException;
+
+  default Optional<BlockProcessorAltair> toVersionAltair() {
+    return Optional.empty();
+  }
 }

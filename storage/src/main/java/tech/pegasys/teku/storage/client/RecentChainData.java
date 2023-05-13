@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
+import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -74,6 +76,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   private final BlockProvider blockProvider;
   private final StateAndBlockSummaryProvider stateProvider;
+  private final BlobSidecarsProvider blobSidecarsProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final VoteUpdateChannel voteUpdateChannel;
@@ -101,6 +104,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
+      final BlobSidecarsProvider blobSidecarsProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
@@ -111,6 +115,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
+    this.blobSidecarsProvider = blobSidecarsProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -145,6 +150,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .specProvider(spec)
             .blockProvider(blockProvider)
             .stateProvider(stateProvider)
+            .blobSidecarsProvider(blobSidecarsProvider)
             .storeConfig(storeConfig)
             .build();
 
@@ -519,6 +525,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
     return store.retrieveBlockState(rootAtSlot.get());
+  }
+
+  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    if (store == null) {
+      return EmptyStoreResults.NO_BLOB_SIDECARS_FUTURE;
+    }
+    return store.retrieveBlobSidecars(slotAndBlockRoot);
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UInt64 slot) {

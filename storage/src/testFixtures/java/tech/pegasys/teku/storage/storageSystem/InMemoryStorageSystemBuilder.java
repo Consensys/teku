@@ -62,6 +62,10 @@ public class InMemoryStorageSystemBuilder {
     return create().storageMode(storageMode).build();
   }
 
+  public static StorageSystem buildDefault(final StateStorageMode storageMode, final Spec spec) {
+    return create().storageMode(storageMode).specProvider(spec).build();
+  }
+
   public static StorageSystem buildDefault(final Spec spec) {
     return create().specProvider(spec).build();
   }

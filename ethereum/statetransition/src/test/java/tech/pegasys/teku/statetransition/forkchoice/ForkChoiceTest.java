@@ -196,7 +196,7 @@ class ForkChoiceTest {
     //
     // .thenReturn(SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE));
 
-    importBlockWithError(blockAndState, FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK);
+    importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
 
     //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();

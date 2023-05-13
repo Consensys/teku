@@ -110,23 +110,22 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       names = {"--Xdata-storage-blobs-pruning-interval"},
       hidden = true,
       paramLabel = "<INTEGER>",
-      description = "Interval in seconds between blobs sidecars pruning",
+      description = "Interval in seconds between blob sidecars pruning",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
-  private long blobsSidecarsPruningIntervalSeconds =
+  private long blobsPruningIntervalSeconds =
       StorageConfiguration.DEFAULT_BLOBS_PRUNING_INTERVAL.toSeconds();
 
   @CommandLine.Option(
       names = {"--Xdata-storage-blobs-pruning-limit"},
       hidden = true,
       paramLabel = "<INTEGER>",
-      description =
-          "Maximum number of blobs sidecars that can be pruned in in each pruning session",
+      description = "Maximum number of blob sidecars that can be pruned in in each pruning session",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
-  private int blobsSidecarsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
+  private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
 
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
@@ -144,8 +143,8 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
                 .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds))
-                .blobsPruningInterval(Duration.ofSeconds(blobsSidecarsPruningIntervalSeconds))
-                .blobsPruningLimit(blobsSidecarsPruningLimit));
+                .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
+                .blobsPruningLimit(blobsPruningLimit));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())
