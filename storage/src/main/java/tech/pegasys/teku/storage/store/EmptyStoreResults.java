@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -43,4 +44,7 @@ public abstract class EmptyStoreResults {
 
   public static final SafeFuture<List<BlobSidecar>> NO_BLOB_SIDECARS_FUTURE =
       SafeFuture.completedFuture(Collections.emptyList());
+
+  public static final SafeFuture<Optional<UInt64>> NO_EARLIEST_BLOB_SIDECAR_SLOT_FUTURE =
+      SafeFuture.completedFuture(Optional.empty());
 }

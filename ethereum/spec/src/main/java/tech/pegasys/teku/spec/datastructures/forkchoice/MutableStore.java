@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,12 +28,22 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface MutableStore extends ReadOnlyStore {
 
-  // Optional.empty() BlobSidecars for pre-Deneb blocks or out of availability window
+  /**
+   * Stores recent block data in Mutable store
+   *
+   * @param block Block
+   * @param state Corresponding state
+   * @param checkpoints Checkpoints
+   * @param blobSidecars empty list for pre-Deneb blocks or out of availability window, otherwise
+   *     actual data
+   * @param earliestBlobSidecarSlot not required even post-Deneb, saved only once, subsequent saves
+   *     will not override it
+   */
   void putBlockAndState(
       SignedBeaconBlock block,
       BeaconState state,
       BlockCheckpoints checkpoints,
-      Optional<List<BlobSidecar>> maybeBlobSidecars,
+      List<BlobSidecar> blobSidecars,
       Optional<UInt64> earliestBlobSidecarSlot);
 
   default void putBlockAndState(
@@ -41,7 +52,7 @@ public interface MutableStore extends ReadOnlyStore {
         blockAndState.getBlock(),
         blockAndState.getState(),
         checkpoints,
-        Optional.empty(),
+        Collections.emptyList(),
         Optional.empty());
   }
 

@@ -126,6 +126,8 @@ public interface ReadOnlyStore {
 
   SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
+  SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot();
+
   SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState();
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(

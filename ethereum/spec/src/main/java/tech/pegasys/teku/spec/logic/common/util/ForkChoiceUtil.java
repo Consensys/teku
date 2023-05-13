@@ -400,7 +400,7 @@ public class ForkChoiceUtil {
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
       final boolean isBlockOptimistic,
-      final Optional<List<BlobSidecar>> maybeBlobSidecars,
+      final List<BlobSidecar> blobSidecars,
       final UInt64 earliestAffectedSlot) {
 
     BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
@@ -424,7 +424,7 @@ public class ForkChoiceUtil {
         signedBlock,
         postState,
         blockCheckpoints,
-        maybeBlobSidecars,
+        blobSidecars,
         miscHelpers
             .toVersionDeneb()
             .map(MiscHelpersDeneb::computeDenebStartSlot)

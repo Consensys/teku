@@ -93,6 +93,7 @@ public class ChainBuilder {
   private final NavigableMap<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
   private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
+  private Optional<UInt64> earliestBlobSidecarSlot;
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
 
@@ -100,7 +101,8 @@ public class ChainBuilder {
       final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -118,6 +120,7 @@ public class ChainBuilder {
                 blobSidecarsByHash.put(b.get(0).getBlockRoot(), b);
               }
             });
+    earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -125,7 +128,8 @@ public class ChainBuilder {
   }
 
   public static ChainBuilder create(final Spec spec, final List<BLSKeyPair> validatorKeys) {
-    return new ChainBuilder(spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap());
+    return new ChainBuilder(
+        spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap(), Optional.empty());
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
@@ -140,6 +144,10 @@ public class ChainBuilder {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
   }
 
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
+    return earliestBlobSidecarSlot;
+  }
+
   /**
    * Create an independent {@code ChainBuilder} with the same history as the current builder. This
    * independent copy can now create a divergent chain.
@@ -147,7 +155,7 @@ public class ChainBuilder {
    * @return An independent copy of this ChainBuilder
    */
   public ChainBuilder fork() {
-    return new ChainBuilder(spec, validatorKeys, blocks, blobSidecars);
+    return new ChainBuilder(spec, validatorKeys, blocks, blobSidecars, earliestBlobSidecarSlot);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -318,6 +326,20 @@ public class ChainBuilder {
 
   public List<SignedBlockAndState> generateBlocksUpToSlot(final long slot) {
     return generateBlocksUpToSlot(UInt64.valueOf(slot));
+  }
+
+  public List<SignedBlockAndState> generateBlocksUpToSlot(
+      final long slot, final BlockOptions options) {
+    assertBlockCanBeGenerated();
+    final List<SignedBlockAndState> generated = new ArrayList<>();
+
+    SignedBlockAndState latestBlock = getLatestBlockAndState();
+    while (latestBlock.getState().getSlot().compareTo(slot) < 0) {
+      latestBlock = generateBlockAtSlot(latestBlock.getSlot().plus(1), options);
+      generated.add(latestBlock);
+    }
+
+    return generated;
   }
 
   public List<SignedBlockAndState> generateBlocksUpToSlot(final UInt64 slot) {

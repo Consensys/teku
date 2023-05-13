@@ -30,6 +30,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -77,6 +78,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final BlockProvider blockProvider;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlobSidecarsProvider blobSidecarsProvider;
+  private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   protected final FinalizedCheckpointChannel finalizedCheckpointChannel;
   protected final StorageUpdateChannel storageUpdateChannel;
   protected final VoteUpdateChannel voteUpdateChannel;
@@ -105,6 +107,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final BlobSidecarsProvider blobSidecarsProvider,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
@@ -116,6 +119,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
     this.blobSidecarsProvider = blobSidecarsProvider;
+    this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
@@ -151,6 +155,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
             .blockProvider(blockProvider)
             .stateProvider(stateProvider)
             .blobSidecarsProvider(blobSidecarsProvider)
+            .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
             .storeConfig(storeConfig)
             .build();
 
@@ -533,6 +538,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return EmptyStoreResults.NO_BLOB_SIDECARS_FUTURE;
     }
     return store.retrieveBlobSidecars(slotAndBlockRoot);
+  }
+
+  public SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot() {
+    if (store == null) {
+      return EmptyStoreResults.NO_EARLIEST_BLOB_SIDECAR_SLOT_FUTURE;
+    }
+    return store.retrieveEarliestBlobSidecarSlot();
   }
 
   public Optional<Bytes32> getBlockRootBySlot(final UInt64 slot) {

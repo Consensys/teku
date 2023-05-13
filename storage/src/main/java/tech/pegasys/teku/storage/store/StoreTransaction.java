@@ -93,16 +93,15 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,
-      final Optional<List<BlobSidecar>> maybeBlobSidecars,
+      final List<BlobSidecar> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
-    maybeBlobSidecars.ifPresent(
-        blobSidecars -> {
-          this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
-          if (maybeEarliestBlobSidecarTransactionSlot.isEmpty()) {
-            maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
-          }
-        });
+    if (!blobSidecars.isEmpty()) {
+      this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
+    }
+    if (maybeEarliestBlobSidecarTransactionSlot.isEmpty()) {
+      maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
+    }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }
 
@@ -447,5 +446,20 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     return maybeBlobSidecars
         .map(SafeFuture::completedFuture)
         .orElseGet(() -> store.retrieveBlobSidecars(slotAndBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot() {
+    // we look up it in store first because if something is there, tx data is irrelevant
+    return store
+        .retrieveEarliestBlobSidecarSlot()
+        .thenApply(
+            storeEarliestBlobSidecarSlot -> {
+              if (storeEarliestBlobSidecarSlot.isEmpty()) {
+                return maybeEarliestBlobSidecarTransactionSlot;
+              } else {
+                return storeEarliestBlobSidecarSlot;
+              }
+            });
   }
 }

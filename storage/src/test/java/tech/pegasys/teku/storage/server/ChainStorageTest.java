@@ -142,7 +142,9 @@ public class ChainStorageTest {
     setup(storageSystemSupplier);
 
     // Build small chain
-    chainBuilder.generateBlocksUpToSlot(spec.slotsPerEpoch(ZERO) * 3L);
+    chainBuilder.generateBlocksUpToSlot(
+        spec.slotsPerEpoch(ZERO) * 3L,
+        ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
 
     // Retrieve anchor data
     final Checkpoint anchorCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(3);
@@ -192,25 +194,29 @@ public class ChainStorageTest {
 
     final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecars =
         testBlobSidecars ? missingHistoricalBlobSidecars : Map.of();
+    assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+    Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
+    if (!finalizedBlobSidecars.isEmpty()) {
+      maybeEarliestBlobSidecarSlot =
+          finalizedBlobSidecars.entrySet().stream()
+              .sorted(Map.Entry.comparingByKey())
+              .filter(entry -> !entry.getValue().isEmpty())
+              .findFirst()
+              .map(entry -> entry.getValue().get(0).getSlot());
+    }
+
     if (executeInBatches) {
       final int batchSize = missingHistoricalBlocks.size() / 3;
       final List<List<SignedBeaconBlock>> batches =
           Lists.partition(missingHistoricalBlocks, batchSize);
       for (int i = batches.size() - 1; i >= 0; i--) {
         final List<SignedBeaconBlock> batch = batches.get(i);
-        Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
-        if (!batch.isEmpty()) {
-          maybeEarliestBlobSidecarSlot = Optional.of(batch.get(0).getSlot());
-        }
         chainStorage
             .onFinalizedBlocks(batch, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
             .ifExceptionGetsHereRaiseABug();
       }
     } else {
-      Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
-      if (!missingHistoricalBlocks.isEmpty()) {
-        maybeEarliestBlobSidecarSlot = Optional.of(missingHistoricalBlocks.get(0).getSlot());
-      }
       chainStorage
           .onFinalizedBlocks(
               missingHistoricalBlocks, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
@@ -247,8 +253,13 @@ public class ChainStorageTest {
                         missingHistoricalBlobSidecars.getOrDefault(
                             missingHistoricalBlock.getSlotAndBlockRoot(),
                             Collections.emptyList())));
+        assertThat(maybeEarliestBlobSidecarSlot).isNotEmpty();
+        assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
+            .isCompletedWithValue(maybeEarliestBlobSidecarSlot);
       } else {
         assertThatSafeFuture(sidecarsResult).isCompletedWithValueMatching(List::isEmpty);
+        assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
+            .isCompletedWithValueMatching(Optional::isEmpty);
       }
     }
   }

@@ -21,6 +21,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 
 import com.google.common.base.Throwables;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -419,8 +420,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         block,
         postState,
         payloadResult.hasNotValidatedStatus(),
-        // TODO: replace Optional.empty() with blobSidecars Optional when ready
-        Optional.empty(),
+        // TODO: replace emptyList with blobSidecars Optional when ready
+        Collections.emptyList(),
         earliestAffectedSlot);
 
     if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {

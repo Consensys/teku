@@ -23,6 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -41,6 +42,7 @@ public class StoreBuilder {
   private BlockProvider blockProvider;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
   private BlobSidecarsProvider blobSidecarsProvider;
+  private EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
   private final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot = new HashMap<>();
@@ -111,6 +113,7 @@ public class StoreBuilder {
         blockProvider,
         stateAndBlockProvider,
         blobSidecarsProvider,
+        earliestBlobSidecarSlotProvider,
         anchor,
         time,
         genesisTime,
@@ -176,6 +179,13 @@ public class StoreBuilder {
   public StoreBuilder blobSidecarsProvider(final BlobSidecarsProvider blobSidecarsProvider) {
     checkNotNull(blobSidecarsProvider);
     this.blobSidecarsProvider = blobSidecarsProvider;
+    return this;
+  }
+
+  public StoreBuilder earliestBlobSidecarSlotProvider(
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
+    checkNotNull(earliestBlobSidecarSlotProvider);
+    this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     return this;
   }
 
