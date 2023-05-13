@@ -90,7 +90,7 @@ public class AttestationStateSelector {
 
     if (isJustificationTooOld(targetBlockRoot, targetBlockSlot.get())) {
       // we already justified a more recent slot on all compatible heads
-      LOG.trace(
+      LOG.debug(
           "Ignored attestation gossip: attestationData target {}, source {}, head {} , slot {}",
           attestationData.getTarget().getRoot(),
           attestationData.getSource().getRoot(),
@@ -116,7 +116,7 @@ public class AttestationStateSelector {
       requiredCheckpoint =
           new Checkpoint(spec.computeEpochAtSlot(earliestSlot), maybeAncestorRoot.get());
     }
-    LOG.debug(
+    LOG.trace(
         "Retrieving checkpoint state for attestationData target {}, source {}, head {} , slot {}; required checkpoint block root {}",
         attestationData.getTarget().getRoot(),
         attestationData.getSource().getRoot(),
