@@ -337,7 +337,7 @@ public class HistoricalBatchFetcherTest {
             blobSidecarCaptor.capture(),
             earliestBlobSidecarSlotCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
-    Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
     if (blobSidecarsRequired) {
       assertThat(blobSidecars).isEmpty();
       // start slot is in availability window, it's the earliest known blob sidecar slot

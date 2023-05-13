@@ -918,7 +918,6 @@ public class KvStoreDatabase implements Database {
   }
 
   private void updateEarliestBlobSidecarSlotIfNeeded(final UInt64 earliestBlobSidecarSlot) {
-    // FIXME: the same, not in the same transaction
     if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
       try (final FinalizedUpdater finalizedUpdater = finalizedUpdater()) {
         finalizedUpdater.setEarliestBlobSidecarSlot(earliestBlobSidecarSlot);

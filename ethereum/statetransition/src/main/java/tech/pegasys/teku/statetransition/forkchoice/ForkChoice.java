@@ -420,7 +420,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         block,
         postState,
         payloadResult.hasNotValidatedStatus(),
-        // TODO: replace emptyList with blobSidecars Optional when ready
+        // TODO: replace emptyList with blobSidecars when ready
         Collections.emptyList(),
         earliestAffectedSlot);
 

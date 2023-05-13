@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public interface MutableStore extends ReadOnlyStore {
 
   /**
-   * Stores recent block data in Mutable store
+   * Stores recent block and corresponding data
    *
    * @param block Block
    * @param state Corresponding state
