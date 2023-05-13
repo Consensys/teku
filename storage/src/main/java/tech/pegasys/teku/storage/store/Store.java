@@ -305,6 +305,13 @@ class Store implements UpdatableStore {
   }
 
   @Override
+  public void clearCaches() {
+    states.clear();
+    checkpointStates.clear();
+    blocks.clear();
+  }
+
+  @Override
   public StoreTransaction startTransaction(final StorageUpdateChannel storageUpdateChannel) {
     return startTransaction(storageUpdateChannel, StoreUpdateHandler.NOOP);
   }

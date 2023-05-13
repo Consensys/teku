@@ -112,4 +112,9 @@ public class BeaconBlock
   public Optional<BeaconBlock> getBeaconBlock() {
     return Optional.of(this);
   }
+
+  @Override
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+    return Optional.empty();
+  }
 }
