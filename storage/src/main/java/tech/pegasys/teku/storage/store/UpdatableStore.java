@@ -37,6 +37,9 @@ public interface UpdatableStore extends ReadOnlyStore {
   @Override
   ForkChoiceStrategy getForkChoiceStrategy();
 
+  /** Clears in-memory caches. This is not something you'll want to do in production codee... */
+  void clearCaches();
+
   interface StoreTransaction extends MutableStore {
     SafeFuture<Void> commit();
 
