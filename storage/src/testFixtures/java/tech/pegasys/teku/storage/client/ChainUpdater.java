@@ -288,7 +288,7 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        Collections.emptyList(),
+        blobSidecars,
         Optional.of(earliestBlobSidecarSlot));
     assertThat(tx.commit()).isCompleted();
     recentChainData
