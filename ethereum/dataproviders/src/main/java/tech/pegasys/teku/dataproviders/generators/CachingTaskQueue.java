@@ -218,6 +218,10 @@ public class CachingTaskQueue<K, V> {
     cache.keySet().removeIf(removalCondition);
   }
 
+  public void clear() {
+    cache.clear();
+  }
+
   public interface CacheableTask<K, V> {
     /**
      * The key that uniquely identifies this task. Two tasks with equal keys should also have
