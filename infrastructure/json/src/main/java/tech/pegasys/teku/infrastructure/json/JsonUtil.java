@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
@@ -88,6 +89,14 @@ public class JsonUtil {
   public static <T> T parse(final String json, final DeserializableTypeDefinition<T> type)
       throws JsonProcessingException {
     return parse(() -> FACTORY.createParser(json), type);
+  }
+
+  public static <T> T parse(
+      final String json, final DeserializableOneOfTypeDefinition<T, ?> oneOfType)
+      throws JsonProcessingException {
+    final DeserializableTypeDefinition<? extends T> typeDefinition =
+        oneOfType.getMatchingType(json);
+    return parse(json, typeDefinition);
   }
 
   public static <T> T parse(

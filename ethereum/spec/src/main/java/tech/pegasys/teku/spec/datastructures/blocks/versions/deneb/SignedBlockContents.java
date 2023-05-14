@@ -13,13 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.Optional;
+import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SignedBlockContents
-    extends Container2<SignedBlockContents, SignedBeaconBlock, SignedBlobSidecars> {
+    extends Container2<SignedBlockContents, SignedBeaconBlock, SignedBlobSidecars>
+    implements BlockContainer {
 
   SignedBlockContents(final SignedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
@@ -32,11 +36,16 @@ public class SignedBlockContents
     super(schema, signedBeaconBlock, signedBlobSidecars);
   }
 
-  public SignedBeaconBlock getSignedBeaconBlock() {
-    return getField0();
+  @Override
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+    return Optional.of(getField0());
   }
 
-  public SignedBlobSidecars getSignedBlobSidecars() {
-    return getField1();
+  @Override
+  public Optional<SignedBlobSidecars> getSignedBlobSidecars() {
+    return Optional.of(getField1());
   }
+
+  public static Predicate<BlockContainer> isInstance =
+      signedBlockContents -> signedBlockContents instanceof SignedBlockContents;
 }

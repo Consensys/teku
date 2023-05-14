@@ -11,18 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.api.schema.deneb;
 
-import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
-
-public interface BlockContainer {
-
-  default Optional<SignedBeaconBlock> getSignedBeaconBlock() {
-    return Optional.empty();
-  }
-
-  default Optional<SignedBlobSidecars> getSignedBlobSidecars() {
-    return Optional.empty();
-  }
-}
+public interface BlockContainer {}
