@@ -57,6 +57,8 @@ public abstract class AbstractChainDataProviderTest {
 
   protected SignedBlockAndState bestBlock;
   protected Bytes32 blockRoot;
+
+  protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
   protected final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
@@ -92,7 +94,7 @@ public abstract class AbstractChainDataProviderTest {
   protected ChainDataProvider setupBySpec(
       final Spec spec, final DataStructureUtil dataStructureUtil, final int validatorCount) {
     final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient);
+        new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient, rewardCalculator);
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       final SszList<Validator> validators =

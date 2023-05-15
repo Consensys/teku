@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,6 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.api.schema.deneb;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-
-// TODO: remove once the block publishing is switched to a decoupling version
-public interface BlockAndBlobsSidecarGossipChannel extends VoidReturningChannelInterface {
-  void publishBlockAndBlobsSidecar(SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar);
-}
+public interface BlockContainer {}

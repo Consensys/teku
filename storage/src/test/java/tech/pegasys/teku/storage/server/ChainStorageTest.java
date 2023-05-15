@@ -245,7 +245,7 @@ public class ChainStorageTest {
                                       .map(Optional::get)
                                       .collect(Collectors.toList())));
       if (testBlobSidecars) {
-        // verify blobs sidecar for a block is available
+        // verify blob sidecars for a block are available
         assertThatSafeFuture(sidecarsResult)
             .isCompletedWithValueMatching(
                 list ->

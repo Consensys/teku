@@ -261,7 +261,7 @@ public class DatabaseTest {
                 assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecar)))
                     .contains(blobSidecar));
 
-    // non added and empty blobs should be empty
+    // non added blobs must not be there
     assertThat(database.getBlobSidecar(blobSidecarToKey(blobSidecarNotAdded))).isEmpty();
 
     // all blobs must be streamed ordered by slot
@@ -387,7 +387,7 @@ public class DatabaseTest {
     // Add base blocks
     addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
 
-    // add blobs sidecars
+    // add blob sidecars
     addBlobSidecars(chainBuilder.streamBlobSidecars().collect(toList()));
 
     // Set target slot at which to create duplicate blocks
@@ -412,7 +412,7 @@ public class DatabaseTest {
     add(List.of(blockB));
     add(List.of(blockC));
 
-    // Add corresponding blobs sidecars
+    // Add corresponding blob sidecars
     addBlobSidecars(forkA.getBlobSidecars(blockA.getRoot()));
     addBlobSidecars(forkB.getBlobSidecars(blockB.getRoot()));
     addBlobSidecars(chainBuilder.getBlobSidecars(blockC.getRoot()));
@@ -425,7 +425,7 @@ public class DatabaseTest {
     assertThat(store.retrieveBlock(blockC.getRoot()))
         .isCompletedWithValue(Optional.of(blockC.getBlock().getMessage()));
 
-    // verify we have all blobs sidecar are available
+    // verify all blob sidecars are available
     final List<SignedBeaconBlock> blocksWithAvailableSidecars =
         Stream.concat(
                 Stream.concat(
