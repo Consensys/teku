@@ -36,7 +36,7 @@ public class BlockContentsSchema
       final BlobSidecarSchema blobSidecarSchema) {
     super(
         "BlockContents",
-        namedSchema("beacon_block", beaconBlockSchema),
+        namedSchema("block", beaconBlockSchema),
         namedSchema(
             FIELD_BLOB_SIDECARS,
             SszListSchema.create(blobSidecarSchema, specConfig.getMaxBlobsPerBlock())));

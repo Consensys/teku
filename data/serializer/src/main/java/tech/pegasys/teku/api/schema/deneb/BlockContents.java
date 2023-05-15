@@ -14,12 +14,11 @@
 package tech.pegasys.teku.api.schema.deneb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 public class BlockContents {
 
@@ -40,7 +39,8 @@ public class BlockContents {
       final tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
           blockContents) {
     this.beaconBlock = new BeaconBlockDeneb(blockContents.getBeaconBlock());
-    this.blobSidecars = blockContents.getBlobSidecars().stream().map(BlobSidecar::new).collect(Collectors.toList());
+    this.blobSidecars =
+        blockContents.getBlobSidecars().stream().map(BlobSidecar::new).collect(Collectors.toList());
   }
 
   public static BlockContents create(
@@ -50,9 +50,14 @@ public class BlockContents {
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
-      asInternalBlockContents(final BlockContentsSchema blockContentsSchema, final BlobSidecarSchema blobSidecarSchema, final Spec spec) {
+      asInternalBlockContents(
+          final BlockContentsSchema blockContentsSchema,
+          final BlobSidecarSchema blobSidecarSchema,
+          final Spec spec) {
     return blockContentsSchema.create(
         beaconBlock.asInternalBeaconBlock(spec),
-        blobSidecars.stream().map(blobSidecar -> blobSidecar.asInternalBlobSidecar(blobSidecarSchema)).collect(Collectors.toList()));
+        blobSidecars.stream()
+            .map(blobSidecar -> blobSidecar.asInternalBlobSidecar(blobSidecarSchema))
+            .collect(Collectors.toList()));
   }
 }

@@ -36,7 +36,7 @@ public class SignedBlockContentsSchema
       final SignedBeaconBlockSchema signedBeaconBlockSchema) {
     super(
         "SignedBlockContents",
-        namedSchema("signed_block_contents", signedBeaconBlockSchema),
+        namedSchema("signed_block", signedBeaconBlockSchema),
         namedSchema(
             FIELD_SIGNED_BLOB_SIDECARS,
             SszListSchema.create(signedBlobSidecarSchema, specConfig.getMaxBlobsPerBlock())));

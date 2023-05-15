@@ -14,11 +14,9 @@
 package tech.pegasys.teku.api.schema.deneb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
-
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
@@ -43,7 +41,9 @@ public class SignedBlockContents implements BlockContainer {
     this.signedBeaconBlockDeneb =
         new SignedBeaconBlockDeneb(signedBlockContents.getSignedBeaconBlock().orElseThrow());
     this.signedBlobSidecars =
-        signedBlockContents.getSignedBlobSidecars().orElseThrow().stream().map(SignedBlobSidecar::new).collect(Collectors.toList());
+        signedBlockContents.getSignedBlobSidecars().orElseThrow().stream()
+            .map(SignedBlobSidecar::new)
+            .collect(Collectors.toList());
   }
 
   public SignedBlockContents() {}
@@ -56,10 +56,16 @@ public class SignedBlockContents implements BlockContainer {
 
   public tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents
       asInternalSignedBlockContents(
-          final SignedBlockContentsSchema signedBlockContentsSchema, final SignedBlobSidecarSchema signedBlobSidecarSchema, final Spec spec) {
+          final SignedBlockContentsSchema signedBlockContentsSchema,
+          final SignedBlobSidecarSchema signedBlobSidecarSchema,
+          final Spec spec) {
     return signedBlockContentsSchema.create(
         signedBeaconBlockDeneb.asInternalSignedBeaconBlock(spec),
-            signedBlobSidecars.stream().map(signedBlobSidecar -> signedBlobSidecar.asInternalSignedBlobSidecar(signedBlobSidecarSchema)).collect(Collectors.toList()));
+        signedBlobSidecars.stream()
+            .map(
+                signedBlobSidecar ->
+                    signedBlobSidecar.asInternalSignedBlobSidecar(signedBlobSidecarSchema))
+            .collect(Collectors.toList()));
   }
 
   public static Predicate<BlockContainer> isInstance =
