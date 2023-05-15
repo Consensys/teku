@@ -42,7 +42,7 @@ public class DepositData {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
 
-  public static DeserializableTypeDefinition<DepositData> DEPOSIT_DATA_TYPE =
+  public static final DeserializableTypeDefinition<DepositData> DEPOSIT_DATA_TYPE =
       DeserializableTypeDefinition.object(DepositData.class)
           .initializer(DepositData::new)
           .withField("pubkey", BLS_PUB_KEY_TYPE, DepositData::getPubkey, DepositData::setPubkey)

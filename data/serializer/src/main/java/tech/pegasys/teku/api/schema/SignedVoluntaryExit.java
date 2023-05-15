@@ -28,7 +28,7 @@ public class SignedVoluntaryExit {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
 
-  public static DeserializableTypeDefinition<SignedVoluntaryExit> SIGNED_VOLUNTARY_EXIT_TYPE =
+  public static final DeserializableTypeDefinition<SignedVoluntaryExit> SIGNED_VOLUNTARY_EXIT_TYPE =
       DeserializableTypeDefinition.object(SignedVoluntaryExit.class)
           .initializer(SignedVoluntaryExit::new)
           .withField(

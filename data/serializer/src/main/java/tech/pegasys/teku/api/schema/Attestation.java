@@ -39,7 +39,7 @@ public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
 
-  public static DeserializableTypeDefinition<Attestation> ATTESTATION_TYPE =
+  public static final DeserializableTypeDefinition<Attestation> ATTESTATION_TYPE =
       DeserializableTypeDefinition.object(Attestation.class)
           .initializer(Attestation::new)
           .withField(

@@ -28,7 +28,7 @@ public class AttesterSlashing {
   public IndexedAttestation attestation_1;
   public IndexedAttestation attestation_2;
 
-  public static DeserializableTypeDefinition<AttesterSlashing> ATTESTER_SLASHING_TYPE =
+  public static final DeserializableTypeDefinition<AttesterSlashing> ATTESTER_SLASHING_TYPE =
       DeserializableTypeDefinition.object(AttesterSlashing.class)
           .initializer(AttesterSlashing::new)
           .withField(

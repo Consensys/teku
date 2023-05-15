@@ -25,7 +25,7 @@ public class ProposerSlashing {
   public SignedBeaconBlockHeader signed_header_1;
   public SignedBeaconBlockHeader signed_header_2;
 
-  public static DeserializableTypeDefinition<ProposerSlashing> PROPOSER_SLASHING_TYPE =
+  public static final DeserializableTypeDefinition<ProposerSlashing> PROPOSER_SLASHING_TYPE =
       DeserializableTypeDefinition.object(ProposerSlashing.class)
           .initializer(ProposerSlashing::new)
           .withField(

@@ -35,7 +35,7 @@ public class Deposit {
 
   public DepositData data;
 
-  public static DeserializableTypeDefinition<Deposit> DEPOSIT_TYPE =
+  public static final DeserializableTypeDefinition<Deposit> DEPOSIT_TYPE =
       DeserializableTypeDefinition.object(Deposit.class)
           .initializer(Deposit::new)
           .withField(

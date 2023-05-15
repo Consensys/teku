@@ -42,7 +42,7 @@ public class IndexedAttestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
 
-  public static DeserializableTypeDefinition<IndexedAttestation> INDEXED_ATTESTATION_TYPE =
+  public static final DeserializableTypeDefinition<IndexedAttestation> INDEXED_ATTESTATION_TYPE =
       DeserializableTypeDefinition.object(IndexedAttestation.class)
           .initializer(IndexedAttestation::new)
           .withField(
