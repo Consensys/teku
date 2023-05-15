@@ -596,6 +596,14 @@ public class ChainBuilder {
         spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
     final List<KZGCommitment> kzgCommitments =
         blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
+    if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
+      maybeGeneratedBlobTransactions =
+          Optional.of(
+              List.of(blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments)));
+    } else {
+      maybeGeneratedBlobTransactions = Optional.empty();
+    }
 
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
@@ -609,7 +617,7 @@ public class ChainBuilder {
                 Optional.of(attesterSlashings),
                 Optional.empty(),
                 options.getEth1Data(),
-                options.getTransactions(),
+                maybeGeneratedBlobTransactions,
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
                 options.getSyncAggregate(),
@@ -659,6 +667,14 @@ public class ChainBuilder {
         spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
     final List<KZGCommitment> kzgCommitments =
         randomBlobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
+    if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
+      maybeGeneratedBlobTransactions =
+          Optional.of(
+              List.of(blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments)));
+    } else {
+      maybeGeneratedBlobTransactions = Optional.empty();
+    }
 
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
@@ -672,7 +688,7 @@ public class ChainBuilder {
                 Optional.of(attesterSlashings),
                 Optional.empty(),
                 options.getEth1Data(),
-                options.getTransactions(),
+                maybeGeneratedBlobTransactions,
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
                 options.getSyncAggregate(),

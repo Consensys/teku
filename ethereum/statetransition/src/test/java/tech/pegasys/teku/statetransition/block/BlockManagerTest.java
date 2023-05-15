@@ -682,7 +682,7 @@ public class BlockManagerTest {
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
     final List<BlobSidecar> blobSidecars =
-        localChain.chainBuilder().getBlobSidecars(signedBlockAndState.getRoot()).orElseThrow();
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState.getRoot());
     assertThat(blobSidecars).isNotEmpty();
 
     assertThat(blockManager.importBlock(block))
