@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -47,7 +48,10 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   }
 
   @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock maybeBlindedBlock) {
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(
+      final BlockContainer maybeBlockContainer) {
+    final SignedBeaconBlock maybeBlindedBlock =
+        maybeBlockContainer.getSignedBeaconBlock().orElseThrow();
     return blockFactory
         .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
         .thenPeek(performanceTracker::saveProducedBlock)
@@ -78,5 +82,5 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   }
 
   abstract SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBeaconBlock block);
+      final BlockContainer blockContainer);
 }

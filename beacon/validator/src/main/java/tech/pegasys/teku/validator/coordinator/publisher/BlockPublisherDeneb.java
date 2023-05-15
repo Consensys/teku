@@ -13,9 +13,15 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.List;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
@@ -24,7 +30,6 @@ import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
-@SuppressWarnings("unused")
 public class BlockPublisherDeneb extends AbstractBlockPublisher {
 
   private final BlobSidecarPool blobSidecarPool;
@@ -47,7 +52,25 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
 
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBeaconBlock block) {
-    throw new UnsupportedOperationException("Not yet implemented");
+      final BlockContainer blockContainer) {
+    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlock().orElseThrow();
+    blockContainer
+        .getSignedBlobSidecars()
+        .map(SignedBlobSidecars::getBlobSidecars)
+        .ifPresent(
+            signedBlobSidecars -> {
+              blobSidecarGossipChannel.publishBlobSidecars(signedBlobSidecars);
+              blobSidecarPool.onCompletedBlockAndBlobSidecars(
+                  block, convertToBlobSidecars(signedBlobSidecars));
+            });
+    blockGossipChannel.publishBlock(block);
+    return blockImportChannel.importBlock(block);
+  }
+
+  private List<BlobSidecar> convertToBlobSidecars(
+      final List<SignedBlobSidecar> signedBlobSidecars) {
+    return signedBlobSidecars.stream()
+        .map(SignedBlobSidecar::getBlobSidecar)
+        .collect(Collectors.toList());
   }
 }

@@ -41,6 +41,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
@@ -248,7 +249,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final BlockContainer blockContainer) {
+    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlock().orElseThrow();
     final UInt64 slot = block.getMessage().getSlot();
     if (block.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
       final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);

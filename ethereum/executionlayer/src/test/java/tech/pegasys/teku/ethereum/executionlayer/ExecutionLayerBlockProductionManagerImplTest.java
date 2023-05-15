@@ -104,7 +104,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundle()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFuture()).isEmpty();
 
     // we expect local engine header as result
     final HeaderWithFallbackData expectedResult =
@@ -152,7 +152,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundle()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFuture()).isEmpty();
     SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionPayloadResult.getExecutionPayloadHeaderFuture().orElseThrow();
     assertThat(headerWithFallbackDataFuture.get()).isEqualTo(expectedResult);
@@ -193,7 +193,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadHeaderFuture()).isEmpty();
-    assertThat(executionPayloadResult.getBlobsBundle()).isEmpty();
+    assertThat(executionPayloadResult.getBlobsBundleFuture()).isEmpty();
 
     final ExecutionPayload executionPayload =
         executionPayloadResult.getExecutionPayloadFuture().orElseThrow().get();
@@ -237,7 +237,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
 
-    assertThat(executionPayloadResult.getBlobsBundle().orElseThrow()).isEqualTo(BLOBS_BUNDLE_DUMMY);
+    assertThat(executionPayloadResult.getBlobsBundleFuture().orElseThrow())
+        .isEqualTo(BLOBS_BUNDLE_DUMMY);
 
     // we expect local engine header as result
     final HeaderWithFallbackData expectedResult =
@@ -283,7 +284,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
 
-    assertThat(executionPayloadResult.getBlobsBundle().orElseThrow()).isEqualTo(BLOBS_BUNDLE_DUMMY);
+    assertThat(executionPayloadResult.getBlobsBundleFuture().orElseThrow())
+        .isEqualTo(BLOBS_BUNDLE_DUMMY);
 
     SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionPayloadResult.getExecutionPayloadHeaderFuture().orElseThrow();
@@ -331,7 +333,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayload executionPayload =
         executionPayloadResult.getExecutionPayloadFuture().orElseThrow().get();
     assertThat(executionPayload).isEqualTo(getPayloadResponse.getExecutionPayload());
-    final BlobsBundle blobsBundle = executionPayloadResult.getBlobsBundle().orElseThrow().get();
+    final BlobsBundle blobsBundle =
+        executionPayloadResult.getBlobsBundleFuture().orElseThrow().get();
     assertThat(blobsBundle).isEqualTo(getPayloadResponse.getBlobsBundle());
 
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
