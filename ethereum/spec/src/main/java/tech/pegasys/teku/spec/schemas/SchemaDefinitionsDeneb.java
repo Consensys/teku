@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -67,7 +66,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobSchema blobSchema;
   private final BlobSidecarSchema blobSidecarSchema;
   private final SignedBlobSidecarSchema signedBlobSidecarSchema;
-  private final SignedBlobSidecarsSchema signedBlobSidecarsSchema;
   private final BlindedBlobSidecarSchema blindedBlobSidecarSchema;
   private final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema;
   private final BlockContentsSchema blockContentsSchema;
@@ -111,8 +109,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blobSchema = new BlobSchema(specConfig);
     this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);
     this.signedBlobSidecarSchema = SignedBlobSidecarSchema.create(blobSidecarSchema);
-    this.signedBlobSidecarsSchema =
-        SignedBlobSidecarsSchema.create(specConfig, signedBlobSidecarSchema);
     this.blindedBlobSidecarSchema = BlindedBlobSidecarSchema.create();
     this.signedBlindedBlobSidecarSchema =
         SignedBlindedBlobSidecarSchema.create(blindedBlobSidecarSchema);
@@ -203,10 +199,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public SignedBlobSidecarSchema getSignedBlobSidecarSchema() {
     return signedBlobSidecarSchema;
-  }
-
-  public SignedBlobSidecarsSchema getSignedBlobSidecarsSchema() {
-    return signedBlobSidecarsSchema;
   }
 
   public BlindedBlobSidecarSchema getBlindedBlobSidecarSchema() {
