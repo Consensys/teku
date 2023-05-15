@@ -13,15 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SignedBlindedBlockContents
-    extends Container2<SignedBlindedBlockContents, SignedBeaconBlock, SignedBlindedBlobSidecars>
+    extends Container2<
+        SignedBlindedBlockContents, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>>
     implements BlockContainer {
 
   SignedBlindedBlockContents(
@@ -32,8 +35,11 @@ public class SignedBlindedBlockContents
   public SignedBlindedBlockContents(
       final SignedBlindedBlockContentsSchema schema,
       final SignedBeaconBlock signedBeaconBlock,
-      final SignedBlindedBlobSidecars signedBlindedBlobSidecars) {
-    super(schema, signedBeaconBlock, signedBlindedBlobSidecars);
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
+    super(
+        schema,
+        signedBeaconBlock,
+        schema.getSignedBlindedBlobSidecarsSchema().createFromElements(signedBlindedBlobSidecars));
   }
 
   @Override
@@ -41,7 +47,7 @@ public class SignedBlindedBlockContents
     return Optional.of(getField0());
   }
 
-  public SignedBlindedBlobSidecars getSignedBlindedBlobSidecars() {
-    return getField1();
+  public List<SignedBlindedBlobSidecar> getSignedBlindedBlobSidecars() {
+    return getField1().asList();
   }
 }
