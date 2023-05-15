@@ -769,8 +769,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
         eventChannels.getPublisher(BlockImportChannel.class, beaconAsyncRunner);
     final BlockGossipChannel blockGossipChannel =
         eventChannels.getPublisher(BlockGossipChannel.class);
-    final BlobSidecarGossipChannel blobSidecarGossipChannel =
-        eventChannels.getPublisher(BlobSidecarGossipChannel.class);
+    final BlobSidecarGossipChannel blobSidecarGossipChannel;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      blobSidecarGossipChannel = eventChannels.getPublisher(BlobSidecarGossipChannel.class);
+    } else {
+      blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
+    }
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient),

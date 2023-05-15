@@ -19,6 +19,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 
 public interface BlobSidecarGossipChannel extends VoidReturningChannelInterface {
 
+  BlobSidecarGossipChannel NOOP = blobSidecar -> {};
+
   default void publishBlobSidecars(final List<SignedBlobSidecar> blobSidecars) {
     blobSidecars.forEach(this::publishBlobSidecar);
   }

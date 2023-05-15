@@ -280,7 +280,7 @@ public class BlockOperationSelectorFactory {
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
                 executionPayloadResult
-                    .getCommitments()
+                    .getCommitmentsFuture()
                     .orElseThrow()
                     .thenApply(
                         commitments ->
