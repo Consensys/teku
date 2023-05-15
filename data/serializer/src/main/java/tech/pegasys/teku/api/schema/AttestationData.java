@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.Checkpoint.CHECKPOINT_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -21,43 +20,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
 public class AttestationData {
   @Schema(type = "string", format = "uint64")
-  public UInt64 slot;
+  public final UInt64 slot;
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 index;
+  public final UInt64 index;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 beacon_block_root;
+  public final Bytes32 beacon_block_root;
 
-  public Checkpoint source;
-  public Checkpoint target;
-
-  public static final DeserializableTypeDefinition<AttestationData> ATTESTATION_DATA_TYPE =
-      DeserializableTypeDefinition.object(AttestationData.class)
-          .initializer(AttestationData::new)
-          .withField(
-              "slot", CoreTypes.UINT64_TYPE, AttestationData::getSlot, AttestationData::setSlot)
-          .withField(
-              "index", CoreTypes.UINT64_TYPE, AttestationData::getIndex, AttestationData::setIndex)
-          .withField(
-              "beacon_block_root",
-              CoreTypes.BYTES32_TYPE,
-              AttestationData::getBeaconBlockRoot,
-              AttestationData::setBeaconBlockRoot)
-          .withField(
-              "source", CHECKPOINT_TYPE, AttestationData::getSource, AttestationData::setSource)
-          .withField(
-              "target", CHECKPOINT_TYPE, AttestationData::getTarget, AttestationData::setTarget)
-          .build();
-
-  public AttestationData() {}
+  public final Checkpoint source;
+  public final Checkpoint target;
 
   @JsonCreator
   public AttestationData(
@@ -79,46 +56,6 @@ public class AttestationData {
     this.beacon_block_root = data.getBeaconBlockRoot();
     this.source = new Checkpoint(data.getSource());
     this.target = new Checkpoint(data.getTarget());
-  }
-
-  public UInt64 getSlot() {
-    return slot;
-  }
-
-  public void setSlot(UInt64 slot) {
-    this.slot = slot;
-  }
-
-  public UInt64 getIndex() {
-    return index;
-  }
-
-  public void setIndex(UInt64 index) {
-    this.index = index;
-  }
-
-  public Bytes32 getBeaconBlockRoot() {
-    return beacon_block_root;
-  }
-
-  public void setBeaconBlockRoot(Bytes32 beacon_block_root) {
-    this.beacon_block_root = beacon_block_root;
-  }
-
-  public Checkpoint getSource() {
-    return source;
-  }
-
-  public void setSource(Checkpoint source) {
-    this.source = source;
-  }
-
-  public Checkpoint getTarget() {
-    return target;
-  }
-
-  public void setTarget(Checkpoint target) {
-    this.target = target;
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.AttestationData

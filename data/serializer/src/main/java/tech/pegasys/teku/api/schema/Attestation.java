@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.AttestationData.ATTESTATION_DATA_TYPE;
-import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 
@@ -23,8 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
@@ -32,27 +28,12 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationS
 @SuppressWarnings("JavaCase")
 public class Attestation {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
-  public Bytes aggregation_bits;
+  public final Bytes aggregation_bits;
 
-  public AttestationData data;
+  public final AttestationData data;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public BLSSignature signature;
-
-  public static final DeserializableTypeDefinition<Attestation> ATTESTATION_TYPE =
-      DeserializableTypeDefinition.object(Attestation.class)
-          .initializer(Attestation::new)
-          .withField(
-              "aggregation_bits",
-              CoreTypes.BYTES_TYPE,
-              Attestation::getAggregationBits,
-              Attestation::setAggregationBits)
-          .withField("data", ATTESTATION_DATA_TYPE, Attestation::getData, Attestation::setData)
-          .withField(
-              "signature", BLS_SIGNATURE_TYPE, Attestation::getSignature, Attestation::setSignature)
-          .build();
-
-  public Attestation() {}
+  public final BLSSignature signature;
 
   public Attestation(tech.pegasys.teku.spec.datastructures.operations.Attestation attestation) {
     this.aggregation_bits = attestation.getAggregationBits().sszSerialize();
@@ -67,30 +48,6 @@ public class Attestation {
       @JsonProperty("signature") final BLSSignature signature) {
     this.aggregation_bits = aggregation_bits;
     this.data = data;
-    this.signature = signature;
-  }
-
-  public Bytes getAggregationBits() {
-    return aggregation_bits;
-  }
-
-  public void setAggregationBits(Bytes aggregation_bits) {
-    this.aggregation_bits = aggregation_bits;
-  }
-
-  public AttestationData getData() {
-    return data;
-  }
-
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

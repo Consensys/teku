@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api.schema.altair;
 
-import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 
@@ -22,8 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SyncAggregate {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES_SSZ)
@@ -32,46 +29,13 @@ public class SyncAggregate {
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   @JsonProperty("sync_committee_signature")
-  public BLSSignature syncCommitteeSignature;
-
-  public static final DeserializableTypeDefinition<SyncAggregate> SYNC_AGGREGATE_TYPE =
-      DeserializableTypeDefinition.object(SyncAggregate.class)
-          .initializer(SyncAggregate::new)
-          .withField(
-              "sync_committee_bits",
-              CoreTypes.BYTES_TYPE,
-              SyncAggregate::getSyncCommitteeBits,
-              SyncAggregate::setSyncCommitteeBits)
-          .withField(
-              "sync_committee_signature",
-              BLS_SIGNATURE_TYPE,
-              SyncAggregate::getSyncCommitteeSignature,
-              SyncAggregate::setSyncCommitteeSignature)
-          .build();
-
-  public SyncAggregate() {}
+  public final BLSSignature syncCommitteeSignature;
 
   @JsonCreator
   public SyncAggregate(
       @JsonProperty("sync_committee_bits") final Bytes syncCommitteeBits,
       @JsonProperty("sync_committee_signature") final BLSSignature syncCommitteeSignature) {
     this.syncCommitteeBits = syncCommitteeBits;
-    this.syncCommitteeSignature = syncCommitteeSignature;
-  }
-
-  public Bytes getSyncCommitteeBits() {
-    return syncCommitteeBits;
-  }
-
-  public void setSyncCommitteeBits(Bytes syncCommitteeBits) {
-    this.syncCommitteeBits = syncCommitteeBits;
-  }
-
-  public BLSSignature getSyncCommitteeSignature() {
-    return syncCommitteeSignature;
-  }
-
-  public void setSyncCommitteeSignature(BLSSignature syncCommitteeSignature) {
     this.syncCommitteeSignature = syncCommitteeSignature;
   }
 

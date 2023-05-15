@@ -20,7 +20,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -28,18 +27,21 @@ import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBlindedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.capella.SignedBlindedBeaconBlockCapella;
-import tech.pegasys.teku.api.schema.deneb.BlockContainer;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.spec.Spec;
 
-public class SignedBeaconBlock implements SignedBlock, BlockContainer {
-  private BeaconBlock message;
+public class SignedBeaconBlock implements SignedBlock {
+  private final BeaconBlock message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public BLSSignature signature;
+  public final BLSSignature signature;
+
+  public BeaconBlock getMessage() {
+    return message;
+  }
 
   protected SignedBeaconBlock(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
@@ -52,24 +54,6 @@ public class SignedBeaconBlock implements SignedBlock, BlockContainer {
       @JsonProperty("message") final BeaconBlock message,
       @JsonProperty("signature") final BLSSignature signature) {
     this.message = message;
-    this.signature = signature;
-  }
-
-  public SignedBeaconBlock() {}
-
-  public BeaconBlock getMessage() {
-    return message;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setMessage(BeaconBlock message) {
-    this.message = message;
-  }
-
-  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 
@@ -134,7 +118,4 @@ public class SignedBeaconBlock implements SignedBlock, BlockContainer {
   public int hashCode() {
     return Objects.hash(message, signature);
   }
-
-  public static Predicate<BlockContainer> isInstance =
-      signedBeaconBlock -> signedBeaconBlock instanceof SignedBeaconBlock;
 }

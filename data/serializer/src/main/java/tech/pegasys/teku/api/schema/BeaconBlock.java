@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.BeaconBlockBody.BEACON_BLOCK_BODY_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -23,8 +22,6 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlindedBlock;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -33,40 +30,22 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 @SuppressWarnings("JavaCase")
 public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
   @Schema(type = "string", format = "uint64")
-  public UInt64 slot;
+  public final UInt64 slot;
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 proposer_index;
+  public final UInt64 proposer_index;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 parent_root;
+  public final Bytes32 parent_root;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 state_root;
+  public final Bytes32 state_root;
 
-  protected BeaconBlockBody body;
+  protected final BeaconBlockBody body;
 
-  public static final DeserializableTypeDefinition<BeaconBlock> BEACON_BLOCK_TYPE =
-      DeserializableTypeDefinition.object(BeaconBlock.class)
-          .initializer(BeaconBlock::new)
-          .withField("slot", CoreTypes.UINT64_TYPE, BeaconBlock::getSlot, BeaconBlock::setSlot)
-          .withField(
-              "proposer_index",
-              CoreTypes.UINT64_TYPE,
-              BeaconBlock::getProposerIndex,
-              BeaconBlock::setProposerIndex)
-          .withField(
-              "parent_root",
-              CoreTypes.BYTES32_TYPE,
-              BeaconBlock::getParentRoot,
-              BeaconBlock::setParentRoot)
-          .withField(
-              "state_root",
-              CoreTypes.BYTES32_TYPE,
-              BeaconBlock::getStateRoot,
-              BeaconBlock::setStateRoot)
-          .withField("body", BEACON_BLOCK_BODY_TYPE, BeaconBlock::getBody, BeaconBlock::setBody)
-          .build();
+  public BeaconBlockBody getBody() {
+    return body;
+  }
 
   protected BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();
@@ -87,48 +66,6 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
     this.proposer_index = proposer_index;
     this.parent_root = parent_root;
     this.state_root = state_root;
-    this.body = body;
-  }
-
-  public BeaconBlock() {}
-
-  public UInt64 getSlot() {
-    return slot;
-  }
-
-  public UInt64 getProposerIndex() {
-    return proposer_index;
-  }
-
-  public Bytes32 getParentRoot() {
-    return parent_root;
-  }
-
-  public Bytes32 getStateRoot() {
-    return state_root;
-  }
-
-  public BeaconBlockBody getBody() {
-    return body;
-  }
-
-  public void setSlot(UInt64 slot) {
-    this.slot = slot;
-  }
-
-  public void setProposerIndex(UInt64 proposer_index) {
-    this.proposer_index = proposer_index;
-  }
-
-  public void setParentRoot(Bytes32 parent_root) {
-    this.parent_root = parent_root;
-  }
-
-  public void setStateRoot(Bytes32 state_root) {
-    this.state_root = state_root;
-  }
-
-  public void setBody(BeaconBlockBody body) {
     this.body = body;
   }
 

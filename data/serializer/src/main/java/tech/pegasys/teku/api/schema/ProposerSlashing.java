@@ -13,34 +13,14 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.SignedBeaconBlockHeader.SIGNED_BLOCK_HEADER_TYPE;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 @SuppressWarnings("JavaCase")
 public class ProposerSlashing {
-  public SignedBeaconBlockHeader signed_header_1;
-  public SignedBeaconBlockHeader signed_header_2;
-
-  public static final DeserializableTypeDefinition<ProposerSlashing> PROPOSER_SLASHING_TYPE =
-      DeserializableTypeDefinition.object(ProposerSlashing.class)
-          .initializer(ProposerSlashing::new)
-          .withField(
-              "signed_header_1",
-              SIGNED_BLOCK_HEADER_TYPE,
-              ProposerSlashing::getSignedHeader1,
-              ProposerSlashing::setSignedHeader1)
-          .withField(
-              "signed_header_2",
-              SIGNED_BLOCK_HEADER_TYPE,
-              ProposerSlashing::getSignedHeader2,
-              ProposerSlashing::setSignedHeader2)
-          .build();
-
-  public ProposerSlashing() {}
+  public final SignedBeaconBlockHeader signed_header_1;
+  public final SignedBeaconBlockHeader signed_header_2;
 
   public ProposerSlashing(
       tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing proposerSlashing) {
@@ -54,22 +34,6 @@ public class ProposerSlashing {
       @JsonProperty("signed_header_2") final SignedBeaconBlockHeader header_2) {
     this.signed_header_1 = header_1;
     this.signed_header_2 = header_2;
-  }
-
-  public SignedBeaconBlockHeader getSignedHeader1() {
-    return signed_header_1;
-  }
-
-  public void setSignedHeader1(SignedBeaconBlockHeader signed_header_1) {
-    this.signed_header_1 = signed_header_1;
-  }
-
-  public SignedBeaconBlockHeader getSignedHeader2() {
-    return signed_header_2;
-  }
-
-  public void setSignedHeader2(SignedBeaconBlockHeader signed_header_2) {
-    this.signed_header_2 = signed_header_2;
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing

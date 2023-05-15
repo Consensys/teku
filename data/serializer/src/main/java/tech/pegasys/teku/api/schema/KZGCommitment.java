@@ -17,20 +17,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class KZGCommitment {
   /** The number of bytes in this value - i.e. 48 */
   private static final int SIZE = 48;
 
   private final Bytes bytes;
-
-  public static final DeserializableTypeDefinition<KZGCommitment> KZG_COMMITMENT_TYPE =
-      DeserializableTypeDefinition.string(KZGCommitment.class)
-          .formatter(KZGCommitment::toHexString)
-          .parser(KZGCommitment::fromHexString)
-          .format("byte")
-          .build();
 
   public KZGCommitment(final Bytes bytes) {
     checkArgument(

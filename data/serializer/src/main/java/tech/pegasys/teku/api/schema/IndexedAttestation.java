@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.AttestationData.ATTESTATION_DATA_TYPE;
-import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -24,9 +22,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -35,34 +30,12 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.Index
 @SuppressWarnings("JavaCase")
 public class IndexedAttestation {
   @ArraySchema(schema = @Schema(type = "string", format = "uint64"))
-  public List<UInt64> attesting_indices;
+  public final List<UInt64> attesting_indices;
 
-  public AttestationData data;
+  public final AttestationData data;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public BLSSignature signature;
-
-  public static final DeserializableTypeDefinition<IndexedAttestation> INDEXED_ATTESTATION_TYPE =
-      DeserializableTypeDefinition.object(IndexedAttestation.class)
-          .initializer(IndexedAttestation::new)
-          .withField(
-              "attesting_indices",
-              new DeserializableListTypeDefinition<>(CoreTypes.UINT64_TYPE),
-              IndexedAttestation::getAttestingIndices,
-              IndexedAttestation::setAttestingIndices)
-          .withField(
-              "data",
-              ATTESTATION_DATA_TYPE,
-              IndexedAttestation::getData,
-              IndexedAttestation::setData)
-          .withField(
-              "signature",
-              BLS_SIGNATURE_TYPE,
-              IndexedAttestation::getSignature,
-              IndexedAttestation::setSignature)
-          .build();
-
-  public IndexedAttestation() {}
+  public final BLSSignature signature;
 
   public IndexedAttestation(
       tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
@@ -79,30 +52,6 @@ public class IndexedAttestation {
       @JsonProperty("signature") final BLSSignature signature) {
     this.attesting_indices = attesting_indices;
     this.data = data;
-    this.signature = signature;
-  }
-
-  public List<UInt64> getAttestingIndices() {
-    return attesting_indices;
-  }
-
-  public void setAttestingIndices(List<UInt64> attesting_indices) {
-    this.attesting_indices = attesting_indices;
-  }
-
-  public AttestationData getData() {
-    return data;
-  }
-
-  public void setData(AttestationData data) {
-    this.data = data;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

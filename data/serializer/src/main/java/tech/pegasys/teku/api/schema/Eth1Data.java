@@ -20,39 +20,18 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
 public class Eth1Data {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 deposit_root;
+  public final Bytes32 deposit_root;
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 deposit_count;
+  public final UInt64 deposit_count;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 block_hash;
-
-  public static final DeserializableTypeDefinition<Eth1Data> ETH_1_DATA_TYPE =
-      DeserializableTypeDefinition.object(Eth1Data.class)
-          .initializer(Eth1Data::new)
-          .withField(
-              "deposit_root",
-              CoreTypes.BYTES32_TYPE,
-              Eth1Data::getDepositRoot,
-              Eth1Data::setDepositRoot)
-          .withField(
-              "deposit_count",
-              CoreTypes.UINT64_TYPE,
-              Eth1Data::getDepositCount,
-              Eth1Data::setDepositCount)
-          .withField(
-              "block_hash", CoreTypes.BYTES32_TYPE, Eth1Data::getBlockHash, Eth1Data::setBlockHash)
-          .build();
-
-  public Eth1Data() {}
+  public final Bytes32 block_hash;
 
   public Eth1Data(final tech.pegasys.teku.spec.datastructures.blocks.Eth1Data eth1Data) {
     deposit_count = eth1Data.getDepositCount();
@@ -73,30 +52,6 @@ public class Eth1Data {
   public tech.pegasys.teku.spec.datastructures.blocks.Eth1Data asInternalEth1Data() {
     return new tech.pegasys.teku.spec.datastructures.blocks.Eth1Data(
         deposit_root, deposit_count, block_hash);
-  }
-
-  public Bytes32 getDepositRoot() {
-    return deposit_root;
-  }
-
-  public UInt64 getDepositCount() {
-    return deposit_count;
-  }
-
-  public Bytes32 getBlockHash() {
-    return block_hash;
-  }
-
-  public void setDepositRoot(Bytes32 deposit_root) {
-    this.deposit_root = deposit_root;
-  }
-
-  public void setDepositCount(UInt64 deposit_count) {
-    this.deposit_count = deposit_count;
-  }
-
-  public void setBlockHash(Bytes32 block_hash) {
-    this.block_hash = block_hash;
   }
 
   @Override

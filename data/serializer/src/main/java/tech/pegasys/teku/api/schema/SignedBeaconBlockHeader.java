@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
-import static tech.pegasys.teku.api.schema.BeaconBlockHeader.BEACON_BLOCK_HEADER_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -22,31 +20,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SignedBeaconBlockHeader {
-  public BeaconBlockHeader message;
+  public final BeaconBlockHeader message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public BLSSignature signature;
-
-  public static final DeserializableTypeDefinition<SignedBeaconBlockHeader>
-      SIGNED_BLOCK_HEADER_TYPE =
-          DeserializableTypeDefinition.object(SignedBeaconBlockHeader.class)
-              .initializer(SignedBeaconBlockHeader::new)
-              .withField(
-                  "message",
-                  BEACON_BLOCK_HEADER_TYPE,
-                  SignedBeaconBlockHeader::getMessage,
-                  SignedBeaconBlockHeader::setMessage)
-              .withField(
-                  "signature",
-                  BLS_SIGNATURE_TYPE,
-                  SignedBeaconBlockHeader::getSignature,
-                  SignedBeaconBlockHeader::setSignature)
-              .build();
-
-  public SignedBeaconBlockHeader() {}
+  public final BLSSignature signature;
 
   public SignedBeaconBlockHeader(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader signedHeader) {
@@ -59,22 +38,6 @@ public class SignedBeaconBlockHeader {
       @JsonProperty("message") final BeaconBlockHeader message,
       @JsonProperty("signature") final BLSSignature signature) {
     this.message = message;
-    this.signature = signature;
-  }
-
-  public BeaconBlockHeader getMessage() {
-    return message;
-  }
-
-  public void setMessage(BeaconBlockHeader message) {
-    this.message = message;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

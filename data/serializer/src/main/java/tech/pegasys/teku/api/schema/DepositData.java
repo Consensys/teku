@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.BLSPubKey.BLS_PUB_KEY_TYPE;
-import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
@@ -24,40 +22,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
 public class DepositData {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES48)
-  public BLSPubKey pubkey;
+  public final BLSPubKey pubkey;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 withdrawal_credentials;
+  public final Bytes32 withdrawal_credentials;
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 amount;
+  public final UInt64 amount;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public BLSSignature signature;
-
-  public static final DeserializableTypeDefinition<DepositData> DEPOSIT_DATA_TYPE =
-      DeserializableTypeDefinition.object(DepositData.class)
-          .initializer(DepositData::new)
-          .withField("pubkey", BLS_PUB_KEY_TYPE, DepositData::getPubkey, DepositData::setPubkey)
-          .withField(
-              "withdrawal_credentials",
-              CoreTypes.BYTES32_TYPE,
-              DepositData::getWithdrawalCredentials,
-              DepositData::setWithdrawalCredentials)
-          .withField(
-              "amount", CoreTypes.UINT64_TYPE, DepositData::getAmount, DepositData::setAmount)
-          .withField(
-              "signature", BLS_SIGNATURE_TYPE, DepositData::getSignature, DepositData::setSignature)
-          .build();
-
-  public DepositData() {}
+  public final BLSSignature signature;
 
   public DepositData(tech.pegasys.teku.spec.datastructures.operations.DepositData depositData) {
     this.pubkey = new BLSPubKey(depositData.getPubkey().toSSZBytes());
@@ -74,38 +53,6 @@ public class DepositData {
     this.pubkey = pubkey;
     this.withdrawal_credentials = withdrawal_credentials;
     this.amount = amount;
-    this.signature = signature;
-  }
-
-  public BLSPubKey getPubkey() {
-    return pubkey;
-  }
-
-  public void setPubkey(BLSPubKey pubkey) {
-    this.pubkey = pubkey;
-  }
-
-  public Bytes32 getWithdrawalCredentials() {
-    return withdrawal_credentials;
-  }
-
-  public void setWithdrawalCredentials(Bytes32 withdrawal_credentials) {
-    this.withdrawal_credentials = withdrawal_credentials;
-  }
-
-  public UInt64 getAmount() {
-    return amount;
-  }
-
-  public void setAmount(UInt64 amount) {
-    this.amount = amount;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

@@ -13,37 +13,17 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.IndexedAttestation.INDEXED_ATTESTATION_TYPE;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
 
 @SuppressWarnings("JavaCase")
 public class AttesterSlashing {
-  public IndexedAttestation attestation_1;
-  public IndexedAttestation attestation_2;
-
-  public static final DeserializableTypeDefinition<AttesterSlashing> ATTESTER_SLASHING_TYPE =
-      DeserializableTypeDefinition.object(AttesterSlashing.class)
-          .initializer(AttesterSlashing::new)
-          .withField(
-              "attestation_1",
-              INDEXED_ATTESTATION_TYPE,
-              AttesterSlashing::getAttestation1,
-              AttesterSlashing::setAttestation1)
-          .withField(
-              "attestation_2",
-              INDEXED_ATTESTATION_TYPE,
-              AttesterSlashing::getAttestation2,
-              AttesterSlashing::setAttestation2)
-          .build();
-
-  public AttesterSlashing() {}
+  public final IndexedAttestation attestation_1;
+  public final IndexedAttestation attestation_2;
 
   public AttesterSlashing(
       tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing attesterSlashing) {
@@ -62,22 +42,6 @@ public class AttesterSlashing {
   public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing
       asInternalAttesterSlashing(final Spec spec) {
     return asInternalAttesterSlashing(spec.atSlot(attestation_1.data.slot));
-  }
-
-  public IndexedAttestation getAttestation1() {
-    return attestation_1;
-  }
-
-  public void setAttestation1(IndexedAttestation attestation_1) {
-    this.attestation_1 = attestation_1;
-  }
-
-  public IndexedAttestation getAttestation2() {
-    return attestation_2;
-  }
-
-  public void setAttestation2(IndexedAttestation attestation_2) {
-    this.attestation_2 = attestation_2;
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing

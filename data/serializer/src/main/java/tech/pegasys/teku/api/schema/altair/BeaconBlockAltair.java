@@ -13,15 +13,11 @@
 
 package tech.pegasys.teku.api.schema.altair;
 
-import static tech.pegasys.teku.api.schema.altair.BeaconBlockBodyAltair.BEACON_BLOCK_ALTAIR_BODY_TYPE;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -29,34 +25,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 
 @SuppressWarnings("JavaCase")
 public class BeaconBlockAltair extends BeaconBlock implements UnsignedBlock {
-  public static final DeserializableTypeDefinition<BeaconBlockAltair> BEACON_BLOCK_ALTAIR_TYPE =
-      DeserializableTypeDefinition.object(BeaconBlockAltair.class)
-          .initializer(BeaconBlockAltair::new)
-          .withField(
-              "slot", CoreTypes.UINT64_TYPE, BeaconBlockAltair::getSlot, BeaconBlockAltair::setSlot)
-          .withField(
-              "proposer_index",
-              CoreTypes.UINT64_TYPE,
-              BeaconBlockAltair::getProposerIndex,
-              BeaconBlockAltair::setProposerIndex)
-          .withField(
-              "parent_root",
-              CoreTypes.BYTES32_TYPE,
-              BeaconBlockAltair::getParentRoot,
-              BeaconBlockAltair::setParentRoot)
-          .withField(
-              "state_root",
-              CoreTypes.BYTES32_TYPE,
-              BeaconBlockAltair::getStateRoot,
-              BeaconBlockAltair::setStateRoot)
-          .withField(
-              "body",
-              BEACON_BLOCK_ALTAIR_BODY_TYPE,
-              BeaconBlockAltair::getBody,
-              BeaconBlockAltair::setBody)
-          .build();
-
-  public BeaconBlockAltair() {}
 
   public BeaconBlockAltair(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     super(
