@@ -39,7 +39,7 @@ public class AttestationData {
   public Checkpoint source;
   public Checkpoint target;
 
-  public static DeserializableTypeDefinition<AttestationData> ATTESTATION_DATA_TYPE =
+  public static final DeserializableTypeDefinition<AttestationData> ATTESTATION_DATA_TYPE =
       DeserializableTypeDefinition.object(AttestationData.class)
           .initializer(AttestationData::new)
           .withField(

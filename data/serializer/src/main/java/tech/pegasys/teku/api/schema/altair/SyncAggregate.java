@@ -34,7 +34,7 @@ public class SyncAggregate {
   @JsonProperty("sync_committee_signature")
   public BLSSignature syncCommitteeSignature;
 
-  public static DeserializableTypeDefinition<SyncAggregate> SYNC_AGGREGATE_TYPE =
+  public static final DeserializableTypeDefinition<SyncAggregate> SYNC_AGGREGATE_TYPE =
       DeserializableTypeDefinition.object(SyncAggregate.class)
           .initializer(SyncAggregate::new)
           .withField(

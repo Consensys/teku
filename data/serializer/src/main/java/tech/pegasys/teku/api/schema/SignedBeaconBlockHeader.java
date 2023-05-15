@@ -30,20 +30,21 @@ public class SignedBeaconBlockHeader {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
 
-  public static DeserializableTypeDefinition<SignedBeaconBlockHeader> SIGNED_BLOCK_HEADER_TYPE =
-      DeserializableTypeDefinition.object(SignedBeaconBlockHeader.class)
-          .initializer(SignedBeaconBlockHeader::new)
-          .withField(
-              "message",
-              BEACON_BLOCK_HEADER_TYPE,
-              SignedBeaconBlockHeader::getMessage,
-              SignedBeaconBlockHeader::setMessage)
-          .withField(
-              "signature",
-              BLS_SIGNATURE_TYPE,
-              SignedBeaconBlockHeader::getSignature,
-              SignedBeaconBlockHeader::setSignature)
-          .build();
+  public static final DeserializableTypeDefinition<SignedBeaconBlockHeader>
+      SIGNED_BLOCK_HEADER_TYPE =
+          DeserializableTypeDefinition.object(SignedBeaconBlockHeader.class)
+              .initializer(SignedBeaconBlockHeader::new)
+              .withField(
+                  "message",
+                  BEACON_BLOCK_HEADER_TYPE,
+                  SignedBeaconBlockHeader::getMessage,
+                  SignedBeaconBlockHeader::setMessage)
+              .withField(
+                  "signature",
+                  BLS_SIGNATURE_TYPE,
+                  SignedBeaconBlockHeader::getSignature,
+                  SignedBeaconBlockHeader::setSignature)
+              .build();
 
   public SignedBeaconBlockHeader() {}
 

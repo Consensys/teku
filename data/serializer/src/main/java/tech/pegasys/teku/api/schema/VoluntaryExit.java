@@ -29,7 +29,7 @@ public class VoluntaryExit {
   @Schema(type = "string", format = "uint64")
   public UInt64 validator_index;
 
-  public static DeserializableTypeDefinition<VoluntaryExit> VOLUNTARY_EXIT_TYPE =
+  public static final DeserializableTypeDefinition<VoluntaryExit> VOLUNTARY_EXIT_TYPE =
       DeserializableTypeDefinition.object(VoluntaryExit.class)
           .initializer(VoluntaryExit::new)
           .withField(
