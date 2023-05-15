@@ -14,37 +14,40 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
+@SuppressWarnings("unused")
 public class BlockPublisherDeneb extends AbstractBlockPublisher {
-  private final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel;
+
+  private final BlobSidecarPool blobSidecarPool;
+  private final BlockGossipChannel blockGossipChannel;
+  private final BlobSidecarGossipChannel blobSidecarGossipChannel;
 
   public BlockPublisherDeneb(
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
-      final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel,
+      final BlockGossipChannel blockGossipChannel,
+      final BlobSidecarPool blobSidecarPool,
+      final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
-    this.blockAndBlobsSidecarGossipChannel = blockAndBlobsSidecarGossipChannel;
+    this.blobSidecarPool = blobSidecarPool;
+    this.blockGossipChannel = blockGossipChannel;
+    this.blobSidecarGossipChannel = blobSidecarGossipChannel;
   }
 
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
       final SignedBeaconBlock block) {
-    final SafeFuture<SignedBeaconBlockAndBlobsSidecar> blockAndBlobsSidecarSafeFuture =
-        blockFactory.supplementBlockWithSidecar(block);
-    return blockAndBlobsSidecarSafeFuture
-        .thenPeek(blockAndBlobsSidecarGossipChannel::publishBlockAndBlobsSidecar)
-        .thenCompose(
-            blockAndBlobsSidecar ->
-                blockImportChannel.importBlock(blockAndBlobsSidecar.getSignedBeaconBlock()));
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 }

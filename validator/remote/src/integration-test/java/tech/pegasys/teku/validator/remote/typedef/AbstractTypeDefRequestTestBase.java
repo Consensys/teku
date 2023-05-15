@@ -15,6 +15,10 @@ package tech.pegasys.teku.validator.remote.typedef;
 
 import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.withDataWrapper;
 
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.jupiter.api.AfterEach;
@@ -58,5 +62,13 @@ public class AbstractTypeDefRequestTestBase {
   @SuppressWarnings("unchecked")
   protected String serializeSszObjectToJsonWithDataWrapper(final SszData value) throws Exception {
     return JsonUtil.serialize(value, withDataWrapper((SszSchema<SszData>) value.getSchema()));
+  }
+
+  protected String readResource(final String resource) {
+    try {
+      return Resources.toString(Resources.getResource(resource), StandardCharsets.UTF_8);
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
+    }
   }
 }

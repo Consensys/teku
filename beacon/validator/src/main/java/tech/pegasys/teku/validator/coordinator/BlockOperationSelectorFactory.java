@@ -17,7 +17,6 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,13 +25,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -284,7 +280,7 @@ public class BlockOperationSelectorFactory {
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
                 executionPayloadResult
-                    .getCommitments()
+                    .getCommitmentsFuture()
                     .orElseThrow()
                     .thenApply(
                         commitments ->
@@ -324,31 +320,5 @@ public class BlockOperationSelectorFactory {
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
     };
-  }
-
-  public Function<SignedBeaconBlock, SafeFuture<SignedBeaconBlockAndBlobsSidecar>>
-      createSidecarSupplementSelector() {
-    return signedBeaconBlock -> {
-      final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-          spec.atSlot(signedBeaconBlock.getSlot())
-              .getSchemaDefinitions()
-              .toVersionDeneb()
-              .orElseThrow();
-      return executionLayerBlockProductionManager
-          .getCachedPayloadResult(signedBeaconBlock.getSlot())
-          .orElseThrow(() -> new IllegalStateException("payloadResult is required"))
-          .getBlobs()
-          .orElseThrow(() -> new IllegalStateException("blobs are required"))
-          .thenApply(
-              blobs ->
-                  new SignedBeaconBlockAndBlobsSidecar(
-                      schemaDefinitionsDeneb.getSignedBeaconBlockAndBlobsSidecarSchema(),
-                      signedBeaconBlock,
-                      createBlobsSidecar()));
-    };
-  }
-
-  private BlobsSidecar createBlobsSidecar() {
-    throw new UnsupportedOperationException("Deprecated");
   }
 }

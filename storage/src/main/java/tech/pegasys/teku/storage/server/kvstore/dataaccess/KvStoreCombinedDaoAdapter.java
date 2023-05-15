@@ -410,11 +410,6 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-      finalizedUpdater.addNoBlobsSlot(slotAndBlockRoot);
-    }
-
-    @Override
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       finalizedUpdater.removeBlobSidecar(key);
     }
@@ -451,9 +446,9 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addHotBlobSidecarSlot(
+    public void addHotBlobSidecarsForBlock(
         final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
-      hotUpdater.addHotBlobSidecarSlot(slotAndBlockRoot, blobSidecars);
+      hotUpdater.addHotBlobSidecarsForBlock(slotAndBlockRoot, blobSidecars);
     }
 
     @Override
@@ -519,6 +514,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void setOptimisticTransitionBlockSlot(final Optional<UInt64> transitionBlockSlot) {
       finalizedUpdater.setOptimisticTransitionBlockSlot(transitionBlockSlot);
+    }
+
+    @Override
+    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
+      finalizedUpdater.setEarliestBlobSidecarSlot(slot);
     }
 
     @Override

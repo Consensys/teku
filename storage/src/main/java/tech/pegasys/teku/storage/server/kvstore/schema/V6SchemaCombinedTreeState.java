@@ -138,17 +138,19 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
 
   @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
-    return Map.of(
-        "GENESIS_TIME", getVariableGenesisTime(),
-        "JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint(),
-        "BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint(),
-        "FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint(),
-        "LATEST_FINALIZED_STATE", getVariableLatestFinalizedState(),
-        "MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock(),
-        "WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint(),
-        "ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint(),
-        "OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot(),
-        "FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot());
+    return ImmutableMap.<String, KvStoreVariable<?>>builder()
+        .put("GENESIS_TIME", getVariableGenesisTime())
+        .put("JUSTIFIED_CHECKPOINT", getVariableJustifiedCheckpoint())
+        .put("BEST_JUSTIFIED_CHECKPOINT", getVariableBestJustifiedCheckpoint())
+        .put("FINALIZED_CHECKPOINT", getVariableFinalizedCheckpoint())
+        .put("LATEST_FINALIZED_STATE", getVariableLatestFinalizedState())
+        .put("MIN_GENESIS_TIME_BLOCK", getVariableMinGenesisTimeBlock())
+        .put("WEAK_SUBJECTIVITY_CHECKPOINT", getVariableWeakSubjectivityCheckpoint())
+        .put("ANCHOR_CHECKPOINT", getVariableAnchorCheckpoint())
+        .put("OPTIMISTIC_TRANSITION_BLOCK_SLOT", getOptimisticTransitionBlockSlot())
+        .put("FINALIZED_DEPOSIT_SNAPSHOT", getVariableFinalizedDepositSnapshot())
+        .put("EARLIEST_BLOB_SIDECAR_SLOT", getVariableEarliestBlobSidecarSlot())
+        .build();
   }
 
   @Override

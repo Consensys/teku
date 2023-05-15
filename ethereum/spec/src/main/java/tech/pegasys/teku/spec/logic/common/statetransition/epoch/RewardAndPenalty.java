@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.networking.eth2.gossip;
+package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-// TODO: remove once the block publishing is switched to a decoupling version
-public interface BlockAndBlobsSidecarGossipChannel extends VoidReturningChannelInterface {
-  void publishBlockAndBlobsSidecar(SignedBeaconBlockAndBlobsSidecar blockAndBlobsSidecar);
+public interface RewardAndPenalty {
+
+  enum RewardComponent {
+    HEAD,
+    SOURCE,
+    TARGET,
+    INCLUSION_DELAY,
+    INACTIVITY
+  }
+
+  void reward(RewardComponent component, UInt64 amount);
+
+  void penalize(RewardComponent component, UInt64 amount);
+
+  UInt64 getReward();
+
+  UInt64 getPenalty();
 }

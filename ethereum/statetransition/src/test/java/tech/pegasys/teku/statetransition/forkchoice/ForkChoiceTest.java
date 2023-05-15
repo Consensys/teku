@@ -39,7 +39,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -60,6 +59,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -81,6 +81,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -100,6 +101,8 @@ class ForkChoiceTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
+  private final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+      mock(BlobSidecarsAvailabilityChecker.class);
   private final AttestationSchema attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final StorageSystem storageSystem =
@@ -154,7 +157,12 @@ class ForkChoiceTest {
     // blobs always available
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       when(blobSidecarManager.createAvailabilityChecker(any()))
-          .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
+          .thenReturn(blobSidecarsAvailabilityChecker);
+      final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
+      when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+          .thenReturn(
+              SafeFuture.completedFuture(
+                  BlobSidecarsAndValidationResult.validResult(blobSidecars)));
     }
   }
 
@@ -173,7 +181,6 @@ class ForkChoiceTest {
     assertThat(reorgEvents).isEmpty();
   }
 
-  @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
   @Test
   void onBlock_shouldCheckBlobsAvailability() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
@@ -181,42 +188,39 @@ class ForkChoiceTest {
 
     importBlock(blockAndState);
 
-    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
 
-  @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
   @Test
   void onBlock_shouldFailIfBlobsAreNotAvailable() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
-    //    when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-    //
-    // .thenReturn(SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE));
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
 
-    importBlockWithError(blockAndState, FailureReason.FAILED_BLOBS_AVAILABILITY_CHECK);
+    importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
 
-    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
 
-  @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
   @Test
   void onBlock_shouldImportIfBlobsAreNotRequired() {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
-    //    when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-    //        .thenReturn(SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_REQUIRED));
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED));
 
     importBlock(blockAndState);
 
-    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
 
   @Test

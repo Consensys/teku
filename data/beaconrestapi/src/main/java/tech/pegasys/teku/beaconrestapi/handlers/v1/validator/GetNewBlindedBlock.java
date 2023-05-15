@@ -16,8 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -32,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
@@ -46,6 +45,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -132,10 +132,11 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
     };
   }
 
-  private static SerializableOneOfTypeDefinition<Object> getResponseTypes(
+  private static SerializableOneOfTypeDefinition<BlockContainer> getResponseTypes(
       final SchemaDefinitionCache schemaDefinitionCache) {
-    final SerializableOneOfTypeDefinitionBuilder<Object> builder =
-        new SerializableOneOfTypeDefinitionBuilder<>().description("Request successful");
+    final SerializableOneOfTypeDefinitionBuilder<BlockContainer> builder =
+        new SerializableOneOfTypeDefinitionBuilder<BlockContainer>()
+            .description("Request successful");
     builder.withType(
         value -> value instanceof BeaconBlock, getBeaconBlockResponseType(schemaDefinitionCache));
     builder.withType(
@@ -150,12 +151,13 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
         .name("GetNewBlindedBlockResponse")
         .withField(
             "data",
-            getSchemaDefinitionForAllMilestones(
+            MilestoneDependentTypesUtil.getSchemaDefinitionUpToMilestone(
                 schemaDefinitionCache,
                 "BlindedBlock",
                 SchemaDefinitions::getBlindedBeaconBlockSchema,
                 (beaconBlock, milestone) ->
-                    schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone)),
+                    schemaDefinitionCache.milestoneAtSlot(beaconBlock.getSlot()).equals(milestone),
+                SpecMilestone.CAPELLA),
             Function.identity())
         .withField(
             "version",
@@ -170,7 +172,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
         .name("GetNewBlindedBlockContentsResponse")
         .withField(
             "data",
-            getAvailableSchemaDefinitionForAllMilestones(
+            MilestoneDependentTypesUtil.getAvailableSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
                 "BlindedBlockContents",
                 schemaDefinitions ->

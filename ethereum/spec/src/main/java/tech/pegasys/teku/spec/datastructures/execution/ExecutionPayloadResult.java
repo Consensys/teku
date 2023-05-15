@@ -55,11 +55,11 @@ public class ExecutionPayloadResult {
     return blobsBundleFuture;
   }
 
-  public Optional<SafeFuture<List<KZGCommitment>>> getCommitments() {
+  public Optional<SafeFuture<List<KZGCommitment>>> getCommitmentsFuture() {
     return blobsBundleFuture.map(future -> future.thenApply(BlobsBundle::getCommitments));
   }
 
-  public Optional<SafeFuture<List<Blob>>> getBlobs() {
+  public Optional<SafeFuture<List<Blob>>> getBlobsFuture() {
     return blobsBundleFuture.map(future -> future.thenApply(BlobsBundle::getBlobs));
   }
 

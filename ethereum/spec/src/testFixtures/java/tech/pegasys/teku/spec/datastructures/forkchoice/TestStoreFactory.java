@@ -74,7 +74,8 @@ public class TestStoreFactory {
         new HashMap<>(),
         new HashMap<>(),
         new HashMap<>(),
-        new HashMap<>());
+        new HashMap<>(),
+        Optional.empty());
   }
 
   private AnchorPoint createAnchorForGenesis() {
@@ -118,7 +119,8 @@ public class TestStoreFactory {
         blockCheckpoints,
         checkpointStates,
         votes,
-        blobSidecars);
+        blobSidecars,
+        Optional.empty());
   }
 
   private BeaconState createRandomGenesisState() {

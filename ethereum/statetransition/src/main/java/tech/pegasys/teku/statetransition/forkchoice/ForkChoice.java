@@ -21,6 +21,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 
 import com.google.common.base.Throwables;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -379,14 +380,24 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           payloadResult.getFailureCause().orElseThrow());
     }
 
-    if (blobSidecarsAndValidationResult.isFailure()) {
-      LOG.error(
-          "blobsSidecar validation result: {}", blobSidecarsAndValidationResult.toLogString());
-      return BlockImportResult.failedBlobsAvailabilityCheck(
-          blobSidecarsAndValidationResult.getCause());
-    } else {
-      LOG.debug(
-          "blobsSidecar validation result: {}", blobSidecarsAndValidationResult.toLogString());
+    switch (blobSidecarsAndValidationResult.getValidationResult()) {
+      case VALID:
+      case NOT_REQUIRED:
+        LOG.debug(
+            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+
+        break;
+      case NOT_AVAILABLE:
+        LOG.warn(
+            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+        return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
+            blobSidecarsAndValidationResult.getCause());
+
+      case INVALID:
+        LOG.error(
+            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+        return BlockImportResult.failedDataAvailabilityCheckInvalid(
+            blobSidecarsAndValidationResult.getCause());
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -399,15 +410,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    final UInt64 earliestAffectedSlot =
+        recentChainData
+            .getSlotForBlockRoot(block.getParentRoot())
+            .map(UInt64::increment)
+            .orElse(block.getSlot());
     addParentStateRoots(spec, blockSlotState, transaction);
 
     // TODO: test me thoroughly
-    final Optional<List<BlobSidecar>> blobSidecars;
+    final List<BlobSidecar> blobSidecars;
     if (blobSidecarsAndValidationResult.isNotRequired()) {
       // Outside availability window or pre-Deneb
-      blobSidecars = Optional.empty();
+      blobSidecars = Collections.emptyList();
     } else if (blobSidecarsAndValidationResult.isValid()) {
-      blobSidecars = Optional.of(blobSidecarsAndValidationResult.getBlobSidecars());
+      blobSidecars = blobSidecarsAndValidationResult.getBlobSidecars();
     } else {
       throw new IllegalStateException(
           String.format(
@@ -415,7 +431,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               blobSidecarsAndValidationResult, block));
     }
     forkChoiceUtil.applyBlockToStore(
-        transaction, block, postState, payloadResult.hasNotValidatedStatus(), blobSidecars);
+        transaction,
+        block,
+        postState,
+        payloadResult.hasNotValidatedStatus(),
+        blobSidecars,
+        earliestAffectedSlot);
 
     if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
@@ -452,9 +473,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     } else {
       result = BlockImportResult.optimisticallySuccessful(block);
     }
-    if (forkChoiceUpdateHeadOnBlockImportEnabled) {
-      updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
-    }
+    updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
   }
@@ -532,10 +551,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     // a better choice than the block itself.  So the first block we receive that is a
     // child of our current chain head, must be the new chain head. If we'd had any other
     // child of the current chain head we'd have already selected it as head.
-    if (recentChainData
-        .getBestBlockRoot()
-        .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
-        .orElse(false)) {
+    if (forkChoiceUpdateHeadOnBlockImportEnabled
+        && recentChainData
+            .getBestBlockRoot()
+            .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
+            .orElse(false)) {
+      // NOTE: disabled by --Xfork-choice-update-head-on-block-import-enabled=false,
+      // this check avoids running fork choice on blocks that arrive if they descend from head,
+      // but we're far better off just running fork choice and applying the normal rules
       return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
     }
 

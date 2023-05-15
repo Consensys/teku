@@ -125,16 +125,16 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public BlobSidecarsAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
-    // Block is pre-Deneb, BlobsSidecar is not supported yet
+    // Block is pre-Deneb, blobs are not supported yet
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return BlobSidecarsAvailabilityChecker.NOT_REQUIRED;
     }
 
-    final BlockBlobSidecarsTracker blockBlobsSidecarsTracker =
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, asyncRunner, recentChainData, blockBlobsSidecarsTracker);
+        spec, asyncRunner, recentChainData, blockBlobSidecarsTracker);
   }
 
   @Override

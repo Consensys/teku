@@ -106,6 +106,10 @@ public class SchemaHotAdapter implements Schema {
     return delegate.getVariableFinalizedDepositSnapshot();
   }
 
+  public KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
+    return delegate.getVariableEarliestBlobSidecarSlot();
+  }
+
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return Map.of(
         "HOT_BLOCKS_BY_ROOT",
@@ -145,7 +149,9 @@ public class SchemaHotAdapter implements Schema {
         "ANCHOR_CHECKPOINT",
         getVariableAnchorCheckpoint(),
         "FINALIZED_DEPOSIT_SNAPSHOT",
-        getVariableFinalizedDepositSnapshot());
+        getVariableFinalizedDepositSnapshot(),
+        "EARLIEST_BLOB_SIDECAR_SLOT",
+        getVariableEarliestBlobSidecarSlot());
   }
 
   @Override

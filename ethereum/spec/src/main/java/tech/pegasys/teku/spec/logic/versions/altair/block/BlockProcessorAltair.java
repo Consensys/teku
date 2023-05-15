@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -74,6 +75,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   private final MiscHelpersAltair miscHelpersAltair;
   private final BeaconStateAccessorsAltair beaconStateAccessorsAltair;
   private final SyncCommitteeUtil syncCommitteeUtil;
+
+  public static BlockProcessorAltair required(final BlockProcessor blockProcessor) {
+    return blockProcessor
+        .toVersionAltair()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected an altair blockProcessor but got: "
+                        + blockProcessor.getClass().getSimpleName()));
+  }
 
   public BlockProcessorAltair(
       final SpecConfigAltair specConfig,
@@ -133,6 +144,20 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final Attestation attestation,
       final IndexedAttestationProvider indexedAttestationProvider) {
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
+    final Optional<UInt64> maybeProposerReward =
+        processAttestationProposerReward(state, attestation, indexedAttestationProvider);
+
+    maybeProposerReward.ifPresent(
+        proposerReward -> {
+          final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
+          beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
+        });
+  }
+
+  public Optional<UInt64> processAttestationProposerReward(
+      final MutableBeaconStateAltair state,
+      final Attestation attestation,
+      final IndexedAttestationProvider indexedAttestationProvider) {
     final AttestationData data = attestation.getData();
 
     final List<Integer> participationFlagIndices =
@@ -185,15 +210,16 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     }
 
     if (!proposerRewardNumerator.isZero()) {
-      final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
       final UInt64 proposerRewardDenominator =
           WEIGHT_DENOMINATOR
               .minus(PROPOSER_WEIGHT)
               .times(WEIGHT_DENOMINATOR)
               .dividedBy(PROPOSER_WEIGHT);
       final UInt64 proposerReward = proposerRewardNumerator.dividedBy(proposerRewardDenominator);
-      beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
+      return Optional.of(proposerReward);
     }
+
+    return Optional.empty();
   }
 
   @Override
@@ -344,5 +370,10 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       final KzgCommitmentsProcessor kzgCommitmentsProcessor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No blob Kzg commitments in Altair");
+  }
+
+  @Override
+  public Optional<BlockProcessorAltair> toVersionAltair() {
+    return Optional.of(this);
   }
 }

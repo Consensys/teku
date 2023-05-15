@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconBlock
     extends Container5<BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
-    implements BeaconBlockSummary {
+    implements BeaconBlockSummary, BlockContainer {
 
   BeaconBlock(final BeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
@@ -111,5 +111,10 @@ public class BeaconBlock
   @Override
   public Optional<BeaconBlock> getBeaconBlock() {
     return Optional.of(this);
+  }
+
+  @Override
+  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+    return Optional.empty();
   }
 }

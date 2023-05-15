@@ -60,6 +60,9 @@ public class BlockManager extends Service
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
       Subscribers.create(true);
 
+  private final Subscribers<DataUnavailableSubscriber> dataUnavailableSubscribers =
+      Subscribers.create(true);
+
   private final Optional<BlockImportMetrics> blockImportMetrics;
 
   public BlockManager(
@@ -152,6 +155,10 @@ public class BlockManager extends Service
 
   public void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber) {
     failedPayloadExecutionSubscribers.subscribe(subscriber);
+  }
+
+  public void subscribeDataUnavailable(final DataUnavailableSubscriber subscriber) {
+    dataUnavailableSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -265,6 +272,13 @@ public class BlockManager extends Service
                     failedPayloadExecutionSubscribers.deliver(
                         FailedPayloadExecutionSubscriber::onPayloadExecutionFailed, block);
                     break;
+                  case FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE:
+                    LOG.warn(
+                        "Unable to import block {} due to data unavailability",
+                        block.toLogString());
+                    dataUnavailableSubscribers.deliver(
+                        DataUnavailableSubscriber::onDataUnavailable, block);
+                    break;
                   default:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",
@@ -316,5 +330,9 @@ public class BlockManager extends Service
 
   public interface FailedPayloadExecutionSubscriber {
     void onPayloadExecutionFailed(SignedBeaconBlock block);
+  }
+
+  public interface DataUnavailableSubscriber {
+    void onDataUnavailable(SignedBeaconBlock block);
   }
 }

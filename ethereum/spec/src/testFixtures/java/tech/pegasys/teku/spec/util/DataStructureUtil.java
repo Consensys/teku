@@ -92,8 +92,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecars;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecars;
@@ -115,10 +113,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -183,6 +180,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -1024,7 +1023,7 @@ public final class DataStructureUtil {
   private BeaconBlockAndState randomBlockAndState(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
     final BeaconBlockBody body = randomBeaconBlockBody();
-    final UInt64 proposerIndex = randomUInt64();
+    final UInt64 proposerIndex = UInt64.valueOf(randomPositiveInt());
     final BeaconBlockHeader latestHeader =
         new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
 
@@ -2051,20 +2050,13 @@ public final class DataStructureUtil {
     return randomBlob().getBytes();
   }
 
-  public BlobsSidecar randomBlobsSidecar() {
-    return randomBlobsSidecar(randomBytes32(), randomUInt64());
-  }
-
-  public BlobsSidecar randomBlobsSidecar(final Bytes32 blockRoot, final UInt64 slot) {
-    final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobsSidecarSchema();
-
-    return randomBlobsSidecar(
-        blockRoot, slot, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()));
-  }
-
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
+    return randomSignedBlobSidecarsForBlock(block).stream()
+        .map(SignedBlobSidecar::getBlobSidecar)
+        .collect(toList());
+  }
+
+  public List<SignedBlobSidecar> randomSignedBlobSidecarsForBlock(final SignedBeaconBlock block) {
     final int numberOfKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
             .getBlobKzgCommitments()
@@ -2076,7 +2068,7 @@ public final class DataStructureUtil {
                     .slot(block.getSlot())
                     .blockRoot(block.getRoot())
                     .index(UInt64.valueOf(index))
-                    .build())
+                    .buildSigned())
         .collect(toList());
   }
 
@@ -2123,21 +2115,6 @@ public final class DataStructureUtil {
     return IntStream.range(0, count).mapToObj(__ -> randomBlobIdentifier()).collect(toList());
   }
 
-  public BlobsSidecar randomBlobsSidecar(
-      final Bytes32 blockRoot, final UInt64 slot, final int numberOfBlobs) {
-    final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobsSidecarSchema();
-
-    return blobsSidecarSchema.create(
-        blockRoot,
-        slot,
-        IntStream.range(0, numberOfBlobs)
-            .mapToObj(__ -> randomBytes(blobsSidecarSchema.getBlobSchema().getLength()))
-            .collect(toList()),
-        randomBytes48());
-  }
-
   public BlobsBundle randomBlobsBundle() {
     final BlobSchema blobSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
@@ -2153,12 +2130,6 @@ public final class DataStructureUtil {
         IntStream.range(0, commitments.size())
             .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
             .collect(toList()));
-  }
-
-  public SignedBeaconBlockAndBlobsSidecar randomSignedBeaconBlockAndBlobsSidecar() {
-    return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-        .getSignedBeaconBlockAndBlobsSidecarSchema()
-        .create(randomSignedBeaconBlock(), randomBlobsSidecar());
   }
 
   public SignedBlobSidecar randomSignedBlobSidecar() {
@@ -2411,12 +2382,12 @@ public final class DataStructureUtil {
 
   public RewardAndPenaltyDeltas randomRewardAndPenaltyDeltas(final int validatorCount) {
     final RewardAndPenaltyDeltas rewardAndPenaltyDeltas =
-        new RewardAndPenaltyDeltas(validatorCount);
+        RewardAndPenaltyDeltas.aggregated(validatorCount);
     for (int i = 0; i < validatorCount; i++) {
-      final RewardAndPenaltyDeltas.RewardAndPenalty rewardAndPenalty =
-          rewardAndPenaltyDeltas.getDelta(i);
-      rewardAndPenalty.reward(randomUInt64(1000));
-      rewardAndPenalty.penalize(randomUInt64(1000));
+      // We are using the aggregated deltas, so it does not matter what component we use here
+      final RewardAndPenalty rewardAndPenalty = rewardAndPenaltyDeltas.getDelta(i);
+      rewardAndPenalty.reward(RewardComponent.HEAD, randomUInt64(1000));
+      rewardAndPenalty.penalize(RewardComponent.HEAD, randomUInt64(1000));
     }
 
     return rewardAndPenaltyDeltas;
