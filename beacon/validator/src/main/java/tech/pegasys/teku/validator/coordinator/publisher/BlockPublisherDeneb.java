@@ -53,7 +53,7 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
       final BlockContainer blockContainer) {
-    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlock().orElseThrow();
+    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlockNow();
     blockContainer
         .getSignedBlobSidecars()
         .map(SignedBlobSidecars::getBlobSidecars)
@@ -61,13 +61,13 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
             signedBlobSidecars -> {
               blobSidecarGossipChannel.publishBlobSidecars(signedBlobSidecars);
               blobSidecarPool.onCompletedBlockAndBlobSidecars(
-                  block, convertToBlobSidecars(signedBlobSidecars));
+                  block, convertToUnsignedBlobSidecars(signedBlobSidecars));
             });
     blockGossipChannel.publishBlock(block);
     return blockImportChannel.importBlock(block);
   }
 
-  private List<BlobSidecar> convertToBlobSidecars(
+  private List<BlobSidecar> convertToUnsignedBlobSidecars(
       final List<SignedBlobSidecar> signedBlobSidecars) {
     return signedBlobSidecars.stream()
         .map(SignedBlobSidecar::getBlobSidecar)

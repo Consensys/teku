@@ -250,17 +250,17 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(final BlockContainer blockContainer) {
-    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlock().orElseThrow();
+    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlockNow();
     final UInt64 slot = block.getMessage().getSlot();
     if (block.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
       final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);
       LOG.info(
           "Block for slot {} was blinded and will only be sent to the beacon node which created it.",
           slot);
-      return blockCreatorApiChannel.sendSignedBlock(block);
+      return blockCreatorApiChannel.sendSignedBlock(blockContainer);
     }
     return relayRequest(
-        apiChannel -> apiChannel.sendSignedBlock(block),
+        apiChannel -> apiChannel.sendSignedBlock(blockContainer),
         BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
         failoversPublishSignedDuties);
   }

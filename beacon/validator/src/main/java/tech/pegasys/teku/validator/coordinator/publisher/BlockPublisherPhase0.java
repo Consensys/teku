@@ -39,7 +39,7 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
       final BlockContainer blockContainer) {
-    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlock().orElseThrow();
+    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlockNow();
     blockGossipChannel.publishBlock(block);
     return blockImportChannel.importBlock(block);
   }
