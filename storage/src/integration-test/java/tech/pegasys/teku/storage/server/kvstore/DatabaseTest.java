@@ -375,7 +375,7 @@ public class DatabaseTest {
     // Add base blocks
     addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
 
-    // add blobs sidecars
+    // add blob sidecars
     addBlobSidecars(chainBuilder.streamBlobSidecars().collect(toList()));
 
     // Set target slot at which to create duplicate blocks
@@ -400,7 +400,7 @@ public class DatabaseTest {
     add(List.of(blockB));
     add(List.of(blockC));
 
-    // Add corresponding blobs sidecars
+    // Add corresponding blob sidecars
     addBlobSidecars(forkA.getBlobSidecars(blockA.getRoot()).orElseThrow());
     addBlobSidecars(forkB.getBlobSidecars(blockB.getRoot()).orElseThrow());
     addBlobSidecars(chainBuilder.getBlobSidecars(blockC.getRoot()).orElseThrow());
@@ -413,7 +413,7 @@ public class DatabaseTest {
     assertThat(store.retrieveBlock(blockC.getRoot()))
         .isCompletedWithValue(Optional.of(blockC.getBlock().getMessage()));
 
-    // verify we have all blobs sidecar are available
+    // verify all blob sidecars are available
     final List<SignedBeaconBlock> blocksWithAvailableSidecars =
         Stream.concat(
                 Stream.concat(

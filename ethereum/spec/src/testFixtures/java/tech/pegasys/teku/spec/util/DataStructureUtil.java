@@ -92,8 +92,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecars;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecars;
@@ -115,7 +113,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Sy
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
@@ -2053,20 +2050,13 @@ public final class DataStructureUtil {
     return randomBlob().getBytes();
   }
 
-  public BlobsSidecar randomBlobsSidecar() {
-    return randomBlobsSidecar(randomBytes32(), randomUInt64());
-  }
-
-  public BlobsSidecar randomBlobsSidecar(final Bytes32 blockRoot, final UInt64 slot) {
-    final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobsSidecarSchema();
-
-    return randomBlobsSidecar(
-        blockRoot, slot, randomInt((int) blobsSidecarSchema.getBlobsSchema().getMaxLength()));
-  }
-
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
+    return randomSignedBlobSidecarsForBlock(block).stream()
+        .map(SignedBlobSidecar::getBlobSidecar)
+        .collect(toList());
+  }
+
+  public List<SignedBlobSidecar> randomSignedBlobSidecarsForBlock(final SignedBeaconBlock block) {
     final int numberOfKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
             .getBlobKzgCommitments()
@@ -2078,7 +2068,7 @@ public final class DataStructureUtil {
                     .slot(block.getSlot())
                     .blockRoot(block.getRoot())
                     .index(UInt64.valueOf(index))
-                    .build())
+                    .buildSigned())
         .collect(toList());
   }
 
@@ -2125,21 +2115,6 @@ public final class DataStructureUtil {
     return IntStream.range(0, count).mapToObj(__ -> randomBlobIdentifier()).collect(toList());
   }
 
-  public BlobsSidecar randomBlobsSidecar(
-      final Bytes32 blockRoot, final UInt64 slot, final int numberOfBlobs) {
-    final BlobsSidecarSchema blobsSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobsSidecarSchema();
-
-    return blobsSidecarSchema.create(
-        blockRoot,
-        slot,
-        IntStream.range(0, numberOfBlobs)
-            .mapToObj(__ -> randomBytes(blobsSidecarSchema.getBlobSchema().getLength()))
-            .collect(toList()),
-        randomBytes48());
-  }
-
   public BlobsBundle randomBlobsBundle() {
     final BlobSchema blobSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
@@ -2155,12 +2130,6 @@ public final class DataStructureUtil {
         IntStream.range(0, commitments.size())
             .mapToObj(__ -> new Blob(blobSchema, randomBytes(blobSchema.getLength())))
             .collect(toList()));
-  }
-
-  public SignedBeaconBlockAndBlobsSidecar randomSignedBeaconBlockAndBlobsSidecar() {
-    return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-        .getSignedBeaconBlockAndBlobsSidecarSchema()
-        .create(randomSignedBeaconBlock(), randomBlobsSidecar());
   }
 
   public SignedBlobSidecar randomSignedBlobSidecar() {
