@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.BLSPubKey.BLS_PUB_KEY_TYPE;
+import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES48;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
@@ -22,6 +24,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
@@ -37,6 +41,21 @@ public class DepositData {
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
+
+  public static DeserializableTypeDefinition<DepositData> DEPOSIT_DATA_TYPE =
+      DeserializableTypeDefinition.object(DepositData.class)
+          .initializer(DepositData::new)
+          .withField("pubkey", BLS_PUB_KEY_TYPE, DepositData::getPubkey, DepositData::setPubkey)
+          .withField(
+              "withdrawal_credentials",
+              CoreTypes.BYTES32_TYPE,
+              DepositData::getWithdrawalCredentials,
+              DepositData::setWithdrawalCredentials)
+          .withField(
+              "amount", CoreTypes.UINT64_TYPE, DepositData::getAmount, DepositData::setAmount)
+          .withField(
+              "signature", BLS_SIGNATURE_TYPE, DepositData::getSignature, DepositData::setSignature)
+          .build();
 
   public DepositData() {}
 

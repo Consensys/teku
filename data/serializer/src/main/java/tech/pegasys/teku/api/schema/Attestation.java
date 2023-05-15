@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.AttestationData.ATTESTATION_DATA_TYPE;
+import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES_SSZ;
 
@@ -21,6 +23,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
@@ -34,6 +38,19 @@ public class Attestation {
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
+
+  public static DeserializableTypeDefinition<Attestation> ATTESTATION_TYPE =
+      DeserializableTypeDefinition.object(Attestation.class)
+          .initializer(Attestation::new)
+          .withField(
+              "aggregation_bits",
+              CoreTypes.BYTES_TYPE,
+              Attestation::getAggregationBits,
+              Attestation::setAggregationBits)
+          .withField("data", ATTESTATION_DATA_TYPE, Attestation::getData, Attestation::setData)
+          .withField(
+              "signature", BLS_SIGNATURE_TYPE, Attestation::getSignature, Attestation::setSignature)
+          .build();
 
   public Attestation() {}
 

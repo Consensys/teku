@@ -13,8 +13,15 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.Attestation.ATTESTATION_TYPE;
+import static tech.pegasys.teku.api.schema.AttesterSlashing.ATTESTER_SLASHING_TYPE;
+import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
+import static tech.pegasys.teku.api.schema.Deposit.DEPOSIT_TYPE;
+import static tech.pegasys.teku.api.schema.Eth1Data.ETH_1_DATA_TYPE;
+import static tech.pegasys.teku.api.schema.ProposerSlashing.PROPOSER_SLASHING_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+import static tech.pegasys.teku.api.schema.SignedVoluntaryExit.SIGNED_VOLUNTARY_EXIT_TYPE;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -25,6 +32,9 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -44,6 +54,51 @@ public class BeaconBlockBody {
   public List<Attestation> attestations;
   public List<Deposit> deposits;
   public List<SignedVoluntaryExit> voluntary_exits;
+
+  public static final DeserializableTypeDefinition<BeaconBlockBody> BEACON_BLOCK_BODY_TYPE =
+      DeserializableTypeDefinition.object(BeaconBlockBody.class)
+          .initializer(BeaconBlockBody::new)
+          .withField(
+              "randao_reveal",
+              BLS_SIGNATURE_TYPE,
+              BeaconBlockBody::getRandaoReveal,
+              BeaconBlockBody::setRandaoReveal)
+          .withField(
+              "eth1_data",
+              ETH_1_DATA_TYPE,
+              BeaconBlockBody::getEth1Data,
+              BeaconBlockBody::setEth1Data)
+          .withField(
+              "graffiti",
+              CoreTypes.BYTES32_TYPE,
+              BeaconBlockBody::getGraffiti,
+              BeaconBlockBody::setGraffiti)
+          .withField(
+              "proposer_slashings",
+              new DeserializableListTypeDefinition<>(PROPOSER_SLASHING_TYPE),
+              BeaconBlockBody::getProposerSlashings,
+              BeaconBlockBody::setProposerSlashings)
+          .withField(
+              "attester_slashings",
+              new DeserializableListTypeDefinition<>(ATTESTER_SLASHING_TYPE),
+              BeaconBlockBody::getAttesterSlashings,
+              BeaconBlockBody::setAttesterSlashings)
+          .withField(
+              "attestations",
+              new DeserializableListTypeDefinition<>(ATTESTATION_TYPE),
+              BeaconBlockBody::getAttestations,
+              BeaconBlockBody::setAttestations)
+          .withField(
+              "deposits",
+              new DeserializableListTypeDefinition<>(DEPOSIT_TYPE),
+              BeaconBlockBody::getDeposits,
+              BeaconBlockBody::setDeposits)
+          .withField(
+              "voluntary_exits",
+              new DeserializableListTypeDefinition<>(SIGNED_VOLUNTARY_EXIT_TYPE),
+              BeaconBlockBody::getVoluntaryExits,
+              BeaconBlockBody::setVoluntaryExits)
+          .build();
 
   public BeaconBlockBody() {}
 

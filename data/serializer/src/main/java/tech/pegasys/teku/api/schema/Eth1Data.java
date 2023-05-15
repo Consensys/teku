@@ -20,6 +20,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
@@ -32,6 +34,23 @@ public class Eth1Data {
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public Bytes32 block_hash;
+
+  public static final DeserializableTypeDefinition<Eth1Data> ETH_1_DATA_TYPE =
+      DeserializableTypeDefinition.object(Eth1Data.class)
+          .initializer(Eth1Data::new)
+          .withField(
+              "deposit_root",
+              CoreTypes.BYTES32_TYPE,
+              Eth1Data::getDepositRoot,
+              Eth1Data::setDepositRoot)
+          .withField(
+              "deposit_count",
+              CoreTypes.UINT64_TYPE,
+              Eth1Data::getDepositCount,
+              Eth1Data::setDepositCount)
+          .withField(
+              "block_hash", CoreTypes.BYTES32_TYPE, Eth1Data::getBlockHash, Eth1Data::setBlockHash)
+          .build();
 
   public Eth1Data() {}
 

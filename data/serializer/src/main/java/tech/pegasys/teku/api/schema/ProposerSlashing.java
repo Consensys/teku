@@ -13,14 +13,32 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.SignedBeaconBlockHeader.SIGNED_BLOCK_HEADER_TYPE;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 @SuppressWarnings("JavaCase")
 public class ProposerSlashing {
   public SignedBeaconBlockHeader signed_header_1;
   public SignedBeaconBlockHeader signed_header_2;
+
+  public static DeserializableTypeDefinition<ProposerSlashing> PROPOSER_SLASHING_TYPE =
+      DeserializableTypeDefinition.object(ProposerSlashing.class)
+          .initializer(ProposerSlashing::new)
+          .withField(
+              "signed_header_1",
+              SIGNED_BLOCK_HEADER_TYPE,
+              ProposerSlashing::getSignedHeader1,
+              ProposerSlashing::setSignedHeader1)
+          .withField(
+              "signed_header_2",
+              SIGNED_BLOCK_HEADER_TYPE,
+              ProposerSlashing::getSignedHeader2,
+              ProposerSlashing::setSignedHeader2)
+          .build();
 
   public ProposerSlashing() {}
 
