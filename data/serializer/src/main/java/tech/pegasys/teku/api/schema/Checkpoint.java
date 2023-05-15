@@ -21,27 +21,16 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Checkpoint {
   public static final Checkpoint EMPTY = new Checkpoint(UInt64.ZERO, Bytes32.ZERO);
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 epoch;
+  public final UInt64 epoch;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 root;
-
-  public static final DeserializableTypeDefinition<Checkpoint> CHECKPOINT_TYPE =
-      DeserializableTypeDefinition.object(Checkpoint.class)
-          .initializer(Checkpoint::new)
-          .withField("epoch", CoreTypes.UINT64_TYPE, Checkpoint::getEpoch, Checkpoint::setEpoch)
-          .withField("root", CoreTypes.BYTES32_TYPE, Checkpoint::getRoot, Checkpoint::setRoot)
-          .build();
-
-  public Checkpoint() {}
+  public final Bytes32 root;
 
   public Checkpoint(tech.pegasys.teku.spec.datastructures.state.Checkpoint checkpoint) {
     this.epoch = checkpoint.getEpoch();
@@ -52,22 +41,6 @@ public class Checkpoint {
   public Checkpoint(
       @JsonProperty("epoch") final UInt64 epoch, @JsonProperty("root") final Bytes32 root) {
     this.epoch = epoch;
-    this.root = root;
-  }
-
-  public UInt64 getEpoch() {
-    return epoch;
-  }
-
-  public void setEpoch(UInt64 epoch) {
-    this.epoch = epoch;
-  }
-
-  public Bytes32 getRoot() {
-    return root;
-  }
-
-  public void setRoot(Bytes32 root) {
     this.root = root;
   }
 

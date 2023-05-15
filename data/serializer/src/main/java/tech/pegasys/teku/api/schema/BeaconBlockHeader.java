@@ -21,56 +21,24 @@ import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
 public class BeaconBlockHeader {
+  @Schema(type = "string", format = "uint64")
+  public final UInt64 slot;
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 slot;
-
-  @Schema(type = "string", format = "uint64")
-  public UInt64 proposer_index;
+  public final UInt64 proposer_index;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 parent_root;
+  public final Bytes32 parent_root;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 state_root;
+  public final Bytes32 state_root;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
-  public Bytes32 body_root;
-
-  public static final DeserializableTypeDefinition<BeaconBlockHeader> BEACON_BLOCK_HEADER_TYPE =
-      DeserializableTypeDefinition.object(BeaconBlockHeader.class)
-          .initializer(BeaconBlockHeader::new)
-          .withField(
-              "slot", CoreTypes.UINT64_TYPE, BeaconBlockHeader::getSlot, BeaconBlockHeader::setSlot)
-          .withField(
-              "proposer_index",
-              CoreTypes.UINT64_TYPE,
-              BeaconBlockHeader::getProposerIndex,
-              BeaconBlockHeader::setProposerIndex)
-          .withField(
-              "parent_root",
-              CoreTypes.BYTES32_TYPE,
-              BeaconBlockHeader::getParentRoot,
-              BeaconBlockHeader::setParentRoot)
-          .withField(
-              "state_root",
-              CoreTypes.BYTES32_TYPE,
-              BeaconBlockHeader::getStateRoot,
-              BeaconBlockHeader::setStateRoot)
-          .withField(
-              "body_root",
-              CoreTypes.BYTES32_TYPE,
-              BeaconBlockHeader::getBodyRoot,
-              BeaconBlockHeader::setBodyRoot)
-          .build();
-
-  public BeaconBlockHeader() {}
+  public final Bytes32 body_root;
 
   @JsonCreator
   public BeaconBlockHeader(
@@ -93,46 +61,6 @@ public class BeaconBlockHeader {
     this.parent_root = header.getParentRoot();
     this.state_root = header.getStateRoot();
     this.body_root = header.getBodyRoot();
-  }
-
-  public UInt64 getSlot() {
-    return slot;
-  }
-
-  public void setSlot(UInt64 slot) {
-    this.slot = slot;
-  }
-
-  public UInt64 getProposerIndex() {
-    return proposer_index;
-  }
-
-  public void setProposerIndex(UInt64 proposer_index) {
-    this.proposer_index = proposer_index;
-  }
-
-  public Bytes32 getParentRoot() {
-    return parent_root;
-  }
-
-  public void setParentRoot(Bytes32 parent_root) {
-    this.parent_root = parent_root;
-  }
-
-  public Bytes32 getStateRoot() {
-    return state_root;
-  }
-
-  public void setStateRoot(Bytes32 state_root) {
-    this.state_root = state_root;
-  }
-
-  public Bytes32 getBodyRoot() {
-    return body_root;
-  }
-
-  public void setBodyRoot(Bytes32 body_root) {
-    this.body_root = body_root;
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader

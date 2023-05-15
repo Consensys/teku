@@ -13,37 +13,17 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
-import static tech.pegasys.teku.api.schema.VoluntaryExit.VOLUNTARY_EXIT_TYPE;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SignedVoluntaryExit {
-  public VoluntaryExit message;
+  public final VoluntaryExit message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public BLSSignature signature;
-
-  public static final DeserializableTypeDefinition<SignedVoluntaryExit> SIGNED_VOLUNTARY_EXIT_TYPE =
-      DeserializableTypeDefinition.object(SignedVoluntaryExit.class)
-          .initializer(SignedVoluntaryExit::new)
-          .withField(
-              "message",
-              VOLUNTARY_EXIT_TYPE,
-              SignedVoluntaryExit::getMessage,
-              SignedVoluntaryExit::setMessage)
-          .withField(
-              "signature",
-              BLS_SIGNATURE_TYPE,
-              SignedVoluntaryExit::getSignature,
-              SignedVoluntaryExit::setSignature)
-          .build();
-
-  public SignedVoluntaryExit() {}
+  public final BLSSignature signature;
 
   public SignedVoluntaryExit(
       tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit) {
@@ -63,22 +43,6 @@ public class SignedVoluntaryExit {
       final tech.pegasys.teku.bls.BLSSignature signature) {
     this.message = new VoluntaryExit(message);
     this.signature = new BLSSignature(signature);
-  }
-
-  public VoluntaryExit getMessage() {
-    return message;
-  }
-
-  public void setMessage(VoluntaryExit message) {
-    this.message = message;
-  }
-
-  public BLSSignature getSignature() {
-    return signature;
-  }
-
-  public void setSignature(BLSSignature signature) {
-    this.signature = signature;
   }
 
   public tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit

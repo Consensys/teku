@@ -28,9 +28,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.schema.ExecutionPayload;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -43,82 +40,6 @@ public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements
 
   @ArraySchema(schema = @Schema(type = "string", format = "byte"))
   public List<Bytes> transactions;
-
-  public static final DeserializableTypeDefinition<ExecutionPayloadBellatrix>
-      BEACON_BLOCK_DENEB_BODY_TYPE =
-          DeserializableTypeDefinition.object(ExecutionPayloadBellatrix.class)
-              .initializer(ExecutionPayloadBellatrix::new)
-              .withField(
-                  "transactions",
-                  new DeserializableListTypeDefinition<>(CoreTypes.BYTES_TYPE),
-                  ExecutionPayloadBellatrix::getTransactions,
-                  ExecutionPayloadBellatrix::setTransactions)
-              .withField(
-                  "parent_hash",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadBellatrix::getParentHash,
-                  ExecutionPayloadBellatrix::setParentHash)
-              .withField(
-                  "fee_recipient",
-                  CoreTypes.BYTES20_TYPE,
-                  ExecutionPayloadBellatrix::getFeeRecipient,
-                  ExecutionPayloadBellatrix::setFeeRecipient)
-              .withField(
-                  "state_root",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadBellatrix::getStateRoot,
-                  ExecutionPayloadBellatrix::setStateRoot)
-              .withField(
-                  "receipts_root",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadBellatrix::getReceiptsRoot,
-                  ExecutionPayloadBellatrix::setReceiptsRoot)
-              .withField(
-                  "logs_bloom",
-                  CoreTypes.BYTES_TYPE,
-                  ExecutionPayloadBellatrix::getLogsBloom,
-                  ExecutionPayloadBellatrix::setLogsBloom)
-              .withField(
-                  "prev_randao",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadBellatrix::getPrevRandao,
-                  ExecutionPayloadBellatrix::setPrevRandao)
-              .withField(
-                  "block_number",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadBellatrix::getBlockNumber,
-                  ExecutionPayloadBellatrix::setBlockNumber)
-              .withField(
-                  "gas_limit",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadBellatrix::getGasLimit,
-                  ExecutionPayloadBellatrix::setGasLimit)
-              .withField(
-                  "gas_used",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadBellatrix::getGasUsed,
-                  ExecutionPayloadBellatrix::setGasUsed)
-              .withField(
-                  "timestamp",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadBellatrix::getTimestamp,
-                  ExecutionPayloadBellatrix::setTimestamp)
-              .withField(
-                  "extra_data",
-                  CoreTypes.BYTES_TYPE,
-                  ExecutionPayloadBellatrix::getExtraData,
-                  ExecutionPayloadBellatrix::setExtraData)
-              .withField(
-                  "base_fee_per_gas",
-                  CoreTypes.UINT256_TYPE,
-                  ExecutionPayloadBellatrix::getBaseFeePerGas,
-                  ExecutionPayloadBellatrix::setBaseFeePerGas)
-              .withField(
-                  "block_hash",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadBellatrix::getBlockHash,
-                  ExecutionPayloadBellatrix::setBlockHash)
-              .build();
 
   @JsonCreator
   public ExecutionPayloadBellatrix(

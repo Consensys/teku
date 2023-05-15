@@ -19,8 +19,6 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 
 @SuppressWarnings("JavaCase")
 public class BLSPubKey {
@@ -28,13 +26,6 @@ public class BLSPubKey {
   private static final int SIZE = 48;
 
   private final Bytes bytes;
-
-  public static final StringValueTypeDefinition<BLSPubKey> BLS_PUB_KEY_TYPE =
-      DeserializableTypeDefinition.string(BLSPubKey.class)
-          .formatter(BLSPubKey::toString)
-          .parser(BLSPubKey::fromHexString)
-          .format("byte")
-          .build();
 
   public BLSPubKey(Bytes bytes) {
     checkArgument(

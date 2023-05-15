@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api.schema.capella;
 
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.api.schema.capella.Withdrawal.WITHDRAWAL_TYPE;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,9 +30,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.schema.ExecutionPayload;
 import tech.pegasys.teku.api.schema.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -43,87 +39,6 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
   @JsonProperty("withdrawals")
   @ArraySchema(schema = @Schema(type = "string", format = "byte"))
   public List<Withdrawal> withdrawals;
-
-  public static final DeserializableTypeDefinition<ExecutionPayloadCapella>
-      BEACON_BLOCK_DENEB_BODY_TYPE =
-          DeserializableTypeDefinition.object(ExecutionPayloadCapella.class)
-              .initializer(ExecutionPayloadCapella::new)
-              .withField(
-                  "transactions",
-                  new DeserializableListTypeDefinition<>(CoreTypes.BYTES_TYPE),
-                  ExecutionPayloadCapella::getTransactions,
-                  ExecutionPayloadCapella::setTransactions)
-              .withField(
-                  "parent_hash",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadCapella::getParentHash,
-                  ExecutionPayloadCapella::setParentHash)
-              .withField(
-                  "fee_recipient",
-                  CoreTypes.BYTES20_TYPE,
-                  ExecutionPayloadCapella::getFeeRecipient,
-                  ExecutionPayloadCapella::setFeeRecipient)
-              .withField(
-                  "state_root",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadCapella::getStateRoot,
-                  ExecutionPayloadCapella::setStateRoot)
-              .withField(
-                  "receipts_root",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadCapella::getReceiptsRoot,
-                  ExecutionPayloadCapella::setReceiptsRoot)
-              .withField(
-                  "logs_bloom",
-                  CoreTypes.BYTES_TYPE,
-                  ExecutionPayloadCapella::getLogsBloom,
-                  ExecutionPayloadCapella::setLogsBloom)
-              .withField(
-                  "prev_randao",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadCapella::getPrevRandao,
-                  ExecutionPayloadCapella::setPrevRandao)
-              .withField(
-                  "block_number",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadCapella::getBlockNumber,
-                  ExecutionPayloadCapella::setBlockNumber)
-              .withField(
-                  "gas_limit",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadCapella::getGasLimit,
-                  ExecutionPayloadCapella::setGasLimit)
-              .withField(
-                  "gas_used",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadCapella::getGasUsed,
-                  ExecutionPayloadCapella::setGasUsed)
-              .withField(
-                  "timestamp",
-                  CoreTypes.UINT64_TYPE,
-                  ExecutionPayloadCapella::getTimestamp,
-                  ExecutionPayloadCapella::setTimestamp)
-              .withField(
-                  "extra_data",
-                  CoreTypes.BYTES_TYPE,
-                  ExecutionPayloadCapella::getExtraData,
-                  ExecutionPayloadCapella::setExtraData)
-              .withField(
-                  "base_fee_per_gas",
-                  CoreTypes.UINT256_TYPE,
-                  ExecutionPayloadCapella::getBaseFeePerGas,
-                  ExecutionPayloadCapella::setBaseFeePerGas)
-              .withField(
-                  "block_hash",
-                  CoreTypes.BYTES32_TYPE,
-                  ExecutionPayloadCapella::getBlockHash,
-                  ExecutionPayloadCapella::setBlockHash)
-              .withField(
-                  "withdrawals",
-                  new DeserializableListTypeDefinition<>(WITHDRAWAL_TYPE),
-                  ExecutionPayloadCapella::getWithdrawals,
-                  ExecutionPayloadCapella::setWithdrawals)
-              .build();
 
   @JsonCreator
   public ExecutionPayloadCapella(

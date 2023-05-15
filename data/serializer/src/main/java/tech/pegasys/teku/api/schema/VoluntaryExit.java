@@ -17,31 +17,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
 public class VoluntaryExit {
   @Schema(type = "string", format = "uint64")
-  public UInt64 epoch;
+  public final UInt64 epoch;
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 validator_index;
-
-  public static final DeserializableTypeDefinition<VoluntaryExit> VOLUNTARY_EXIT_TYPE =
-      DeserializableTypeDefinition.object(VoluntaryExit.class)
-          .initializer(VoluntaryExit::new)
-          .withField(
-              "epoch", CoreTypes.UINT64_TYPE, VoluntaryExit::getEpoch, VoluntaryExit::setEpoch)
-          .withField(
-              "validator_index",
-              CoreTypes.UINT64_TYPE,
-              VoluntaryExit::getValidatorIndex,
-              VoluntaryExit::setValidatorIndex)
-          .build();
-
-  public VoluntaryExit() {}
+  public final UInt64 validator_index;
 
   public VoluntaryExit(
       tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit voluntaryExit) {
@@ -54,22 +38,6 @@ public class VoluntaryExit {
       @JsonProperty("epoch") final UInt64 epoch,
       @JsonProperty("validator_index") final UInt64 validator_index) {
     this.epoch = epoch;
-    this.validator_index = validator_index;
-  }
-
-  public UInt64 getEpoch() {
-    return epoch;
-  }
-
-  public void setEpoch(UInt64 epoch) {
-    this.epoch = epoch;
-  }
-
-  public UInt64 getValidatorIndex() {
-    return validator_index;
-  }
-
-  public void setValidatorIndex(UInt64 validator_index) {
     this.validator_index = validator_index;
   }
 

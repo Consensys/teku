@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api.schema;
 
-import static tech.pegasys.teku.api.schema.DepositData.DEPOSIT_DATA_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -24,29 +23,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class Deposit {
   @ArraySchema(
       schema = @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32))
-  public List<Bytes32> proof;
+  public final List<Bytes32> proof;
 
-  public DepositData data;
-
-  public static final DeserializableTypeDefinition<Deposit> DEPOSIT_TYPE =
-      DeserializableTypeDefinition.object(Deposit.class)
-          .initializer(Deposit::new)
-          .withField(
-              "proof",
-              new DeserializableListTypeDefinition<>(CoreTypes.BYTES32_TYPE),
-              Deposit::getProof,
-              Deposit::setProof)
-          .withField("data", DEPOSIT_DATA_TYPE, Deposit::getData, Deposit::setData)
-          .build();
-
-  public Deposit() {}
+  public final DepositData data;
 
   public Deposit(tech.pegasys.teku.spec.datastructures.operations.Deposit deposit) {
     this.proof = deposit.getProof().streamUnboxed().collect(Collectors.toList());
@@ -58,22 +41,6 @@ public class Deposit {
       @JsonProperty("proof") final List<Bytes32> proof,
       @JsonProperty("data") final DepositData data) {
     this.proof = proof;
-    this.data = data;
-  }
-
-  public List<Bytes32> getProof() {
-    return proof;
-  }
-
-  public void setProof(List<Bytes32> proof) {
-    this.proof = proof;
-  }
-
-  public DepositData getData() {
-    return data;
-  }
-
-  public void setData(DepositData data) {
     this.data = data;
   }
 
