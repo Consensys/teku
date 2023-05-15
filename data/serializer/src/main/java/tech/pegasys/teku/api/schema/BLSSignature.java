@@ -18,10 +18,17 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSConstants;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class BLSSignature {
   /** The number of bytes in this value - i.e. 96 */
   private static final int SIZE = BLSConstants.BLS_SIGNATURE_SIZE;
+
+  public static final DeserializableTypeDefinition<BLSSignature> BLS_SIGNATURE_TYPE =
+      DeserializableTypeDefinition.string(BLSSignature.class)
+          .formatter(BLSSignature::toString)
+          .parser(BLSSignature::fromHexString)
+          .build();
 
   private final Bytes bytes;
 

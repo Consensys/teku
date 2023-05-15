@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.DepositData.DEPOSIT_DATA_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -23,6 +24,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class Deposit {
   @ArraySchema(
@@ -30,6 +34,17 @@ public class Deposit {
   public List<Bytes32> proof;
 
   public DepositData data;
+
+  public static DeserializableTypeDefinition<Deposit> DEPOSIT_TYPE =
+      DeserializableTypeDefinition.object(Deposit.class)
+          .initializer(Deposit::new)
+          .withField(
+              "proof",
+              new DeserializableListTypeDefinition<>(CoreTypes.BYTES32_TYPE),
+              Deposit::getProof,
+              Deposit::setProof)
+          .withField("data", DEPOSIT_DATA_TYPE, Deposit::getData, Deposit::setData)
+          .build();
 
   public Deposit() {}
 

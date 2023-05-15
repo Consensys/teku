@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.AttestationData.ATTESTATION_DATA_TYPE;
+import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -22,6 +24,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -36,6 +41,26 @@ public class IndexedAttestation {
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
+
+  public static DeserializableTypeDefinition<IndexedAttestation> INDEXED_ATTESTATION_TYPE =
+      DeserializableTypeDefinition.object(IndexedAttestation.class)
+          .initializer(IndexedAttestation::new)
+          .withField(
+              "attesting_indices",
+              new DeserializableListTypeDefinition<>(CoreTypes.UINT64_TYPE),
+              IndexedAttestation::getAttestingIndices,
+              IndexedAttestation::setAttestingIndices)
+          .withField(
+              "data",
+              ATTESTATION_DATA_TYPE,
+              IndexedAttestation::getData,
+              IndexedAttestation::setData)
+          .withField(
+              "signature",
+              BLS_SIGNATURE_TYPE,
+              IndexedAttestation::getSignature,
+              IndexedAttestation::setSignature)
+          .build();
 
   public IndexedAttestation() {}
 

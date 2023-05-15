@@ -13,9 +13,12 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.IndexedAttestation.INDEXED_ATTESTATION_TYPE;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
@@ -24,6 +27,21 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.Atteste
 public class AttesterSlashing {
   public IndexedAttestation attestation_1;
   public IndexedAttestation attestation_2;
+
+  public static DeserializableTypeDefinition<AttesterSlashing> ATTESTER_SLASHING_TYPE =
+      DeserializableTypeDefinition.object(AttesterSlashing.class)
+          .initializer(AttesterSlashing::new)
+          .withField(
+              "attestation_1",
+              INDEXED_ATTESTATION_TYPE,
+              AttesterSlashing::getAttestation1,
+              AttesterSlashing::setAttestation1)
+          .withField(
+              "attestation_2",
+              INDEXED_ATTESTATION_TYPE,
+              AttesterSlashing::getAttestation2,
+              AttesterSlashing::setAttestation2)
+          .build();
 
   public AttesterSlashing() {}
 

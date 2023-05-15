@@ -21,6 +21,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class Checkpoint {
@@ -31,6 +33,13 @@ public class Checkpoint {
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES32)
   public Bytes32 root;
+
+  public static DeserializableTypeDefinition<Checkpoint> CHECKPOINT_TYPE =
+      DeserializableTypeDefinition.object(Checkpoint.class)
+          .initializer(Checkpoint::new)
+          .withField("epoch", CoreTypes.UINT64_TYPE, Checkpoint::getEpoch, Checkpoint::setEpoch)
+          .withField("root", CoreTypes.BYTES32_TYPE, Checkpoint::getRoot, Checkpoint::setRoot)
+          .build();
 
   public Checkpoint() {}
 

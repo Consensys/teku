@@ -50,6 +50,7 @@ public class PostRemoteKeys extends RestApiEndpoint {
             .withBearerAuthSecurity()
             .tags(TAG_KEY_MANAGEMENT)
             .description("Import remote keys for the validator client to request duties for.")
+            // LOOK
             .requestBodyType(ValidatorTypes.POST_REMOTE_KEYS_REQUEST)
             .response(SC_OK, "Success response", ValidatorTypes.POST_KEYS_RESPONSE)
             .withAuthenticationResponses()

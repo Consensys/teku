@@ -13,30 +13,67 @@
 
 package tech.pegasys.teku.api.schema.capella;
 
+import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
+import static tech.pegasys.teku.api.schema.capella.BlsToExecutionChange.BLS_TO_EXECUTION_CHANGE_TYPE;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Optional;
 import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SignedBlsToExecutionChange {
 
   @JsonProperty("message")
-  public final BlsToExecutionChange message;
+  public BlsToExecutionChange message;
 
   @JsonProperty("signature")
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
-  public final BLSSignature signature;
+  public BLSSignature signature;
+
+  public static final DeserializableTypeDefinition<SignedBlsToExecutionChange>
+      SIGNED_BLS_TO_EXECUTION_CHANGE_TYPE =
+          DeserializableTypeDefinition.object(SignedBlsToExecutionChange.class)
+              .initializer(SignedBlsToExecutionChange::new)
+              .withField(
+                  "message",
+                  BLS_TO_EXECUTION_CHANGE_TYPE,
+                  SignedBlsToExecutionChange::getMessage,
+                  SignedBlsToExecutionChange::setMessage)
+              .withField(
+                  "signature",
+                  BLS_SIGNATURE_TYPE,
+                  SignedBlsToExecutionChange::getSignature,
+                  SignedBlsToExecutionChange::setSignature)
+              .build();
 
   @JsonCreator
   public SignedBlsToExecutionChange(
       @JsonProperty("message") final BlsToExecutionChange message,
       @JsonProperty("signature") final BLSSignature signature) {
     this.message = message;
+    this.signature = signature;
+  }
+
+  public SignedBlsToExecutionChange() {}
+
+  public BlsToExecutionChange getMessage() {
+    return message;
+  }
+
+  public void setMessage(BlsToExecutionChange message) {
+    this.message = message;
+  }
+
+  public BLSSignature getSignature() {
+    return signature;
+  }
+
+  public void setSignature(BLSSignature signature) {
     this.signature = signature;
   }
 

@@ -16,22 +16,44 @@ package tech.pegasys.teku.api.schema.capella;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class Withdrawal {
 
   @JsonProperty("index")
-  private final UInt64 index;
+  private UInt64 index;
 
   @JsonProperty("validator_index")
-  private final UInt64 validatorIndex;
+  private UInt64 validatorIndex;
 
   @JsonProperty("address")
-  private final Eth1Address address;
+  private Eth1Address address;
 
   @JsonProperty("amount")
-  private final UInt64 amount;
+  private UInt64 amount;
+
+  public static final DeserializableTypeDefinition<Eth1Address> ETH1ADDRESS_TYPE =
+      DeserializableTypeDefinition.string(Eth1Address.class)
+          .formatter(Eth1Address::toHexString)
+          .parser(Eth1Address::fromHexString)
+          .format("byte")
+          .build();
+
+  public static final DeserializableTypeDefinition<Withdrawal> WITHDRAWAL_TYPE =
+      DeserializableTypeDefinition.object(Withdrawal.class)
+          .initializer(Withdrawal::new)
+          .withField("index", CoreTypes.UINT64_TYPE, Withdrawal::getIndex, Withdrawal::setIndex)
+          .withField(
+              "validator_index",
+              CoreTypes.UINT64_TYPE,
+              Withdrawal::getValidatorIndex,
+              Withdrawal::setValidatorIndex)
+          .withField("address", ETH1ADDRESS_TYPE, Withdrawal::getAddress, Withdrawal::setAddress)
+          .withField("amount", CoreTypes.UINT64_TYPE, Withdrawal::getAmount, Withdrawal::setAmount)
+          .build();
 
   public Withdrawal(
       @JsonProperty("index") final UInt64 index,
@@ -51,6 +73,40 @@ public class Withdrawal {
     this.validatorIndex = withdrawal.getValidatorIndex();
     this.address = Eth1Address.fromBytes(withdrawal.getAddress().getWrappedBytes());
     this.amount = withdrawal.getAmount();
+  }
+
+  public Withdrawal() {}
+
+  public UInt64 getIndex() {
+    return index;
+  }
+
+  public void setIndex(UInt64 index) {
+    this.index = index;
+  }
+
+  public UInt64 getValidatorIndex() {
+    return validatorIndex;
+  }
+
+  public void setValidatorIndex(UInt64 validatorIndex) {
+    this.validatorIndex = validatorIndex;
+  }
+
+  public Eth1Address getAddress() {
+    return address;
+  }
+
+  public void setAddress(Eth1Address address) {
+    this.address = address;
+  }
+
+  public UInt64 getAmount() {
+    return amount;
+  }
+
+  public void setAmount(UInt64 amount) {
+    this.amount = amount;
   }
 
   public tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal

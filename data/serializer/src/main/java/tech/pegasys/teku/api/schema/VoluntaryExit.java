@@ -17,6 +17,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 @SuppressWarnings("JavaCase")
@@ -26,6 +28,18 @@ public class VoluntaryExit {
 
   @Schema(type = "string", format = "uint64")
   public UInt64 validator_index;
+
+  public static DeserializableTypeDefinition<VoluntaryExit> VOLUNTARY_EXIT_TYPE =
+      DeserializableTypeDefinition.object(VoluntaryExit.class)
+          .initializer(VoluntaryExit::new)
+          .withField(
+              "epoch", CoreTypes.UINT64_TYPE, VoluntaryExit::getEpoch, VoluntaryExit::setEpoch)
+          .withField(
+              "validator_index",
+              CoreTypes.UINT64_TYPE,
+              VoluntaryExit::getValidatorIndex,
+              VoluntaryExit::setValidatorIndex)
+          .build();
 
   public VoluntaryExit() {}
 

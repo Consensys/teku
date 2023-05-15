@@ -41,10 +41,6 @@ public class SignedBeaconBlock implements SignedBlock, BlockContainer {
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
 
-  public BeaconBlock getMessage() {
-    return message;
-  }
-
   protected SignedBeaconBlock(
       tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock internalBlock) {
     this.signature = new BLSSignature(internalBlock.getSignature());
@@ -61,15 +57,15 @@ public class SignedBeaconBlock implements SignedBlock, BlockContainer {
 
   public SignedBeaconBlock() {}
 
-  public BeaconBlock getBeaconBlock() {
-    return this.message;
+  public BeaconBlock getMessage() {
+    return message;
   }
 
   public BLSSignature getSignature() {
     return signature;
   }
 
-  public void setBeaconBlock(BeaconBlock message) {
+  public void setMessage(BeaconBlock message) {
     this.message = message;
   }
 

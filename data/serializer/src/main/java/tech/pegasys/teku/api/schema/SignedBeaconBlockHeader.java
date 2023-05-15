@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.BLSSignature.BLS_SIGNATURE_TYPE;
+import static tech.pegasys.teku.api.schema.BeaconBlockHeader.BEACON_BLOCK_HEADER_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES96;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -20,12 +22,28 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SignedBeaconBlockHeader {
   public BeaconBlockHeader message;
 
   @Schema(type = "string", format = "byte", description = DESCRIPTION_BYTES96)
   public BLSSignature signature;
+
+  public static DeserializableTypeDefinition<SignedBeaconBlockHeader> SIGNED_BLOCK_HEADER_TYPE =
+      DeserializableTypeDefinition.object(SignedBeaconBlockHeader.class)
+          .initializer(SignedBeaconBlockHeader::new)
+          .withField(
+              "message",
+              BEACON_BLOCK_HEADER_TYPE,
+              SignedBeaconBlockHeader::getMessage,
+              SignedBeaconBlockHeader::setMessage)
+          .withField(
+              "signature",
+              BLS_SIGNATURE_TYPE,
+              SignedBeaconBlockHeader::getSignature,
+              SignedBeaconBlockHeader::setSignature)
+          .build();
 
   public SignedBeaconBlockHeader() {}
 

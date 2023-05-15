@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.api.schema.deneb;
 
+import static tech.pegasys.teku.api.schema.capella.Withdrawal.WITHDRAWAL_TYPE;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -26,6 +28,9 @@ import tech.pegasys.teku.api.schema.ExecutionPayload;
 import tech.pegasys.teku.api.schema.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.api.schema.capella.Withdrawal;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
@@ -33,7 +38,93 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements ExecutionPayload {
 
   @JsonProperty("excess_data_gas")
-  public final UInt256 excessDataGas;
+  public UInt256 excessDataGas;
+
+  public static final DeserializableTypeDefinition<ExecutionPayloadDeneb>
+      EXECUTION_PAYLOAD_DENEB_TYPE =
+          DeserializableTypeDefinition.object(ExecutionPayloadDeneb.class)
+              .initializer(ExecutionPayloadDeneb::new)
+              .withField(
+                  "transactions",
+                  new DeserializableListTypeDefinition<>(CoreTypes.BYTES_TYPE),
+                  ExecutionPayloadDeneb::getTransactions,
+                  ExecutionPayloadDeneb::setTransactions)
+              .withField(
+                  "parent_hash",
+                  CoreTypes.BYTES32_TYPE,
+                  ExecutionPayloadDeneb::getParentHash,
+                  ExecutionPayloadDeneb::setParentHash)
+              .withField(
+                  "fee_recipient",
+                  CoreTypes.BYTES20_TYPE,
+                  ExecutionPayloadDeneb::getFeeRecipient,
+                  ExecutionPayloadDeneb::setFeeRecipient)
+              .withField(
+                  "state_root",
+                  CoreTypes.BYTES32_TYPE,
+                  ExecutionPayloadDeneb::getStateRoot,
+                  ExecutionPayloadDeneb::setStateRoot)
+              .withField(
+                  "receipts_root",
+                  CoreTypes.BYTES32_TYPE,
+                  ExecutionPayloadDeneb::getReceiptsRoot,
+                  ExecutionPayloadDeneb::setReceiptsRoot)
+              .withField(
+                  "logs_bloom",
+                  CoreTypes.BYTES_TYPE,
+                  ExecutionPayloadDeneb::getLogsBloom,
+                  ExecutionPayloadDeneb::setLogsBloom)
+              .withField(
+                  "prev_randao",
+                  CoreTypes.BYTES32_TYPE,
+                  ExecutionPayloadDeneb::getPrevRandao,
+                  ExecutionPayloadDeneb::setPrevRandao)
+              .withField(
+                  "block_number",
+                  CoreTypes.UINT64_TYPE,
+                  ExecutionPayloadDeneb::getBlockNumber,
+                  ExecutionPayloadDeneb::setBlockNumber)
+              .withField(
+                  "gas_limit",
+                  CoreTypes.UINT64_TYPE,
+                  ExecutionPayloadDeneb::getGasLimit,
+                  ExecutionPayloadDeneb::setGasLimit)
+              .withField(
+                  "gas_used",
+                  CoreTypes.UINT64_TYPE,
+                  ExecutionPayloadDeneb::getGasUsed,
+                  ExecutionPayloadDeneb::setGasUsed)
+              .withField(
+                  "timestamp",
+                  CoreTypes.UINT64_TYPE,
+                  ExecutionPayloadCapella::getTimestamp,
+                  ExecutionPayloadCapella::setTimestamp)
+              .withField(
+                  "extra_data",
+                  CoreTypes.BYTES_TYPE,
+                  ExecutionPayloadDeneb::getExtraData,
+                  ExecutionPayloadDeneb::setExtraData)
+              .withField(
+                  "base_fee_per_gas",
+                  CoreTypes.UINT256_TYPE,
+                  ExecutionPayloadDeneb::getBaseFeePerGas,
+                  ExecutionPayloadDeneb::setBaseFeePerGas)
+              .withField(
+                  "block_hash",
+                  CoreTypes.BYTES32_TYPE,
+                  ExecutionPayloadDeneb::getBlockHash,
+                  ExecutionPayloadDeneb::setBlockHash)
+              .withField(
+                  "withdrawals",
+                  new DeserializableListTypeDefinition<>(WITHDRAWAL_TYPE),
+                  ExecutionPayloadDeneb::getWithdrawals,
+                  ExecutionPayloadDeneb::setWithdrawals)
+              .withField(
+                  "excess_data_gas",
+                  CoreTypes.UINT256_TYPE,
+                  ExecutionPayloadDeneb::getExcessDataGas,
+                  ExecutionPayloadDeneb::setExcessDataGas)
+              .build();
 
   @JsonCreator
   public ExecutionPayloadDeneb(
@@ -76,6 +167,18 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
       final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
     this.excessDataGas = executionPayload.toVersionDeneb().orElseThrow().getExcessDataGas();
+  }
+
+  public ExecutionPayloadDeneb() {
+    super();
+  }
+
+  public UInt256 getExcessDataGas() {
+    return excessDataGas;
+  }
+
+  public void setExcessDataGas(UInt256 excessDataGas) {
+    this.excessDataGas = excessDataGas;
   }
 
   @Override

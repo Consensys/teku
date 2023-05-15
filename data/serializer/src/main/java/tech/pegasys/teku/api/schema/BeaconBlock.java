@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.schema;
 
+import static tech.pegasys.teku.api.schema.BeaconBlockBody.BEACON_BLOCK_BODY_TYPE;
 import static tech.pegasys.teku.api.schema.SchemaConstants.DESCRIPTION_BYTES32;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -22,6 +23,8 @@ import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlindedBlock;
 import tech.pegasys.teku.api.schema.interfaces.UnsignedBlock;
+import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -42,6 +45,28 @@ public class BeaconBlock implements UnsignedBlock, UnsignedBlindedBlock {
   public Bytes32 state_root;
 
   protected BeaconBlockBody body;
+
+  public static final DeserializableTypeDefinition<BeaconBlock> BEACON_BLOCK_TYPE =
+      DeserializableTypeDefinition.object(BeaconBlock.class)
+          .initializer(BeaconBlock::new)
+          .withField("slot", CoreTypes.UINT64_TYPE, BeaconBlock::getSlot, BeaconBlock::setSlot)
+          .withField(
+              "proposer_index",
+              CoreTypes.UINT64_TYPE,
+              BeaconBlock::getProposerIndex,
+              BeaconBlock::setProposerIndex)
+          .withField(
+              "parent_root",
+              CoreTypes.BYTES32_TYPE,
+              BeaconBlock::getParentRoot,
+              BeaconBlock::setParentRoot)
+          .withField(
+              "state_root",
+              CoreTypes.BYTES32_TYPE,
+              BeaconBlock::getStateRoot,
+              BeaconBlock::setStateRoot)
+          .withField("body", BEACON_BLOCK_BODY_TYPE, BeaconBlock::getBody, BeaconBlock::setBody)
+          .build();
 
   protected BeaconBlock(tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock message) {
     this.slot = message.getSlot();

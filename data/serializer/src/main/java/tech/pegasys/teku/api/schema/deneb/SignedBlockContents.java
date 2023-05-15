@@ -13,10 +13,15 @@
 
 package tech.pegasys.teku.api.schema.deneb;
 
+import static tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb.SIGNED_BEACON_BLOCK_DENEB_TYPE;
+import static tech.pegasys.teku.api.schema.deneb.SignedBlobSidecar.SIGNED_BLOB_SIDECAR_TYPE;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableListTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
@@ -27,6 +32,22 @@ public class SignedBlockContents implements BlockContainer {
 
   @JsonProperty("signed_blob_sidecars")
   private List<SignedBlobSidecar> signedBlobSidecars;
+
+  public static final DeserializableTypeDefinition<SignedBlockContents> SIGNED_BLOCK_CONTENTS_TYPE =
+      DeserializableTypeDefinition.object(SignedBlockContents.class)
+          .name("SignedBlockContents")
+          .initializer(SignedBlockContents::new)
+          .withField(
+              "signed_block",
+              SIGNED_BEACON_BLOCK_DENEB_TYPE,
+              SignedBlockContents::getSignedBeaconBlockDeneb,
+              SignedBlockContents::setSignedBeaconBlockDeneb)
+          .withField(
+              "signed_blob_sidecars",
+              new DeserializableListTypeDefinition<>(SIGNED_BLOB_SIDECAR_TYPE),
+              SignedBlockContents::getSignedBlobSidecars,
+              SignedBlockContents::setSignedBlobSidecars)
+          .build();
 
   public SignedBlockContents(
       @JsonProperty("signed_beacon_block") final SignedBeaconBlockDeneb signedBeaconBlockDeneb,
@@ -47,6 +68,22 @@ public class SignedBlockContents implements BlockContainer {
   }
 
   public SignedBlockContents() {}
+
+  public SignedBeaconBlockDeneb getSignedBeaconBlockDeneb() {
+    return this.signedBeaconBlockDeneb;
+  }
+
+  public List<SignedBlobSidecar> getSignedBlobSidecars() {
+    return signedBlobSidecars;
+  }
+
+  public void setSignedBeaconBlockDeneb(SignedBeaconBlockDeneb signedBeaconBlockDeneb) {
+    this.signedBeaconBlockDeneb = signedBeaconBlockDeneb;
+  }
+
+  public void setSignedBlobSidecars(List<SignedBlobSidecar> signedBlobSidecars) {
+    this.signedBlobSidecars = signedBlobSidecars;
+  }
 
   public static BlockContents create(
       final tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents

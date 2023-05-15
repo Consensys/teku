@@ -40,7 +40,7 @@ public class CoreTypes {
           .format("byte")
           .build();
 
-  public static final StringValueTypeDefinition<Bytes> BYTES_SSZ_TYPE =
+  public static final StringValueTypeDefinition<Bytes> BYTES_TYPE =
       DeserializableTypeDefinition.string(Bytes.class)
           .formatter(Bytes::toHexString)
           .parser(Bytes::fromHexString)
