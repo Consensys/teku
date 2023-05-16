@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 
 public class SignedBlockContents implements BlockContainer {
-  @JsonProperty("signed_beacon_block")
+  @JsonProperty("signed_block")
   private SignedBeaconBlockDeneb signedBeaconBlockDeneb;
 
   @JsonProperty("signed_blob_sidecars")

@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 
 public class BlockContents {
 
-  @JsonProperty("beacon_block")
+  @JsonProperty("block")
   private final BeaconBlockDeneb beaconBlock;
 
   @JsonProperty("blob_sidecars")
