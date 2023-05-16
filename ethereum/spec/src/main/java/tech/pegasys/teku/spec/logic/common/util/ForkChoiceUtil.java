@@ -395,6 +395,18 @@ public class ForkChoiceUtil {
     return AttestationProcessingResult.SUCCESSFUL;
   }
 
+  /**
+   * Stores block and associated blobSidecars if any into the store
+   *
+   * @param store Store to apply block to
+   * @param signedBlock Block
+   * @param postState State after applying this block
+   * @param isBlockOptimistic optimistic/non-optimistic
+   * @param blobSidecars BlobSidecars
+   * @param earliestAffectedSlot earliest empty slot before this block or slot of this block if no
+   *     empty (without blocks) slots before. Used for calculation of earliest available blobSidecar
+   *     slot
+   */
   public void applyBlockToStore(
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
@@ -427,7 +439,7 @@ public class ForkChoiceUtil {
         blobSidecars,
         miscHelpers
             .toVersionDeneb()
-            .map(MiscHelpersDeneb::computeDenebStartSlot)
+            .map(MiscHelpersDeneb::computeFirstSlotWithBlobSupport)
             .map(denebSlot -> denebSlot.max(earliestAffectedSlot)));
   }
 

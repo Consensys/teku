@@ -100,7 +100,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
     }
     if (maybeEarliestBlobSidecarTransactionSlot.isEmpty()) {
-      maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
+      this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
     }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }

@@ -72,7 +72,7 @@ class MiscHelpersDenebTest {
 
   @Test
   public void shouldComputeDenebStartSlot() {
-    assertThat(miscHelpersDeneb.computeDenebStartSlot()).isEqualTo(UInt64.valueOf(0));
+    assertThat(miscHelpersDeneb.computeFirstSlotWithBlobSupport()).isEqualTo(UInt64.valueOf(0));
     final Spec spec2 =
         TestSpecFactory.createDeneb(
             SpecConfigLoader.loadConfig(
@@ -92,7 +92,7 @@ class MiscHelpersDenebTest {
                                     .trustedSetupPath(""))));
     final MiscHelpersDeneb miscHelpersDeneb2 =
         new MiscHelpersDeneb(spec2.getGenesisSpecConfig().toVersionDeneb().orElseThrow());
-    assertThat(miscHelpersDeneb2.computeDenebStartSlot())
+    assertThat(miscHelpersDeneb2.computeFirstSlotWithBlobSupport())
         .isEqualTo(UInt64.valueOf(spec2.slotsPerEpoch(UInt64.ZERO)).times(2));
   }
 

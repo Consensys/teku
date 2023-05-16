@@ -319,8 +319,7 @@ public class KvStoreDatabase implements Database {
                 .get(block.getSlotAndBlockRoot())
                 .forEach(updater::addBlobSidecar);
           });
-      final Optional<UInt64> maybeEarliestBlobSidecarSlotDb = dao.getEarliestBlobSidecarSlot();
-      if (maybeEarliestBlobSidecarSlotDb.isEmpty() && maybeEarliestBlobSidecar.isPresent()) {
+      if (maybeEarliestBlobSidecar.isPresent() && dao.getEarliestBlobSidecarSlot().isEmpty()) {
         updater.setEarliestBlobSidecarSlot(maybeEarliestBlobSidecar.get());
       }
       updater.commit();

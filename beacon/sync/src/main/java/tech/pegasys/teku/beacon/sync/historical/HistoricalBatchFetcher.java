@@ -234,7 +234,7 @@ public class HistoricalBatchFetcher {
                           .miscHelpers()
                           .toVersionDeneb()
                           .orElseThrow()
-                          .computeDenebStartSlot()));
+                          .computeFirstSlotWithBlobSupport()));
       LOG.trace(
           "Request {} blob sidecars from {} to {}",
           requestParams.getCount(),
