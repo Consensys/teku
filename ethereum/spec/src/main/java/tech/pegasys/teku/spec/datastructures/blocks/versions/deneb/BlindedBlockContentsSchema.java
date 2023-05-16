@@ -13,33 +13,44 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecars;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarsSchema;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 
 public class BlindedBlockContentsSchema
-    extends ContainerSchema2<BlindedBlockContents, BeaconBlock, BlindedBlobSidecars> {
+    extends ContainerSchema2<BlindedBlockContents, BeaconBlock, SszList<BlindedBlobSidecar>> {
+
+  static final SszFieldName FIELD_BLINDED_BLOB_SIDECARS = () -> "blinded_blob_sidecars";
 
   BlindedBlockContentsSchema(
+      final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlindedBlobSidecarsSchema blindedBlobSidecarsSchema) {
+      final BlindedBlobSidecarSchema blindedBlobSidecarSchema) {
     super(
         "BlindedBlockContents",
         namedSchema("blinded_block", beaconBlockSchema),
-        namedSchema("blinded_blob_sidecars", blindedBlobSidecarsSchema));
+        namedSchema(
+            FIELD_BLINDED_BLOB_SIDECARS,
+            SszListSchema.create(blindedBlobSidecarSchema, specConfig.getMaxBlobsPerBlock())));
   }
 
   public static BlindedBlockContentsSchema create(
+      final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlindedBlobSidecarsSchema blindedBlobSidecarsSchema) {
-    return new BlindedBlockContentsSchema(beaconBlockSchema, blindedBlobSidecarsSchema);
+      final BlindedBlobSidecarSchema blindedBlobSidecarSchema) {
+    return new BlindedBlockContentsSchema(specConfig, beaconBlockSchema, blindedBlobSidecarSchema);
   }
 
   public BlindedBlockContents create(
-      final BeaconBlock beaconBlock, final BlindedBlobSidecars blindedBlobSidecars) {
+      final BeaconBlock beaconBlock, final List<BlindedBlobSidecar> blindedBlobSidecars) {
     return new BlindedBlockContents(this, beaconBlock, blindedBlobSidecars);
   }
 
@@ -48,7 +59,9 @@ public class BlindedBlockContentsSchema
     return new BlindedBlockContents(this, node);
   }
 
-  public BlindedBlobSidecarsSchema getBlindedBlobSidecarsSchema() {
-    return (BlindedBlobSidecarsSchema) getFieldSchema1();
+  @SuppressWarnings("unchecked")
+  public SszListSchema<BlindedBlobSidecar, ?> getBlindedBlobSidecarsSchema() {
+    return (SszListSchema<BlindedBlobSidecar, ?>)
+        getChildSchema(getFieldIndex(FIELD_BLINDED_BLOB_SIDECARS));
   }
 }

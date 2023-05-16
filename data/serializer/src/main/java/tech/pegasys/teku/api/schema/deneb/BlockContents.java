@@ -14,20 +14,23 @@
 package tech.pegasys.teku.api.schema.deneb;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 
 public class BlockContents {
 
-  @JsonProperty("beacon_block")
+  @JsonProperty("block")
   private final BeaconBlockDeneb beaconBlock;
 
   @JsonProperty("blob_sidecars")
-  private final BlobSidecars blobSidecars;
+  private final List<BlobSidecar> blobSidecars;
 
   public BlockContents(
       @JsonProperty("beacon_block") final BeaconBlockDeneb beaconBlock,
-      @JsonProperty("blob_sidecars") final BlobSidecars blobSidecars) {
+      @JsonProperty("blob_sidecars") final List<BlobSidecar> blobSidecars) {
     this.beaconBlock = beaconBlock;
     this.blobSidecars = blobSidecars;
   }
@@ -36,7 +39,8 @@ public class BlockContents {
       final tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
           blockContents) {
     this.beaconBlock = new BeaconBlockDeneb(blockContents.getBeaconBlock());
-    this.blobSidecars = new BlobSidecars(blockContents.getBlobSidecars());
+    this.blobSidecars =
+        blockContents.getBlobSidecars().stream().map(BlobSidecar::new).collect(Collectors.toList());
   }
 
   public static BlockContents create(
@@ -46,9 +50,14 @@ public class BlockContents {
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
-      asInternalBlockContents(final BlockContentsSchema blockContentsSchema, final Spec spec) {
+      asInternalBlockContents(
+          final BlockContentsSchema blockContentsSchema,
+          final BlobSidecarSchema blobSidecarSchema,
+          final Spec spec) {
     return blockContentsSchema.create(
         beaconBlock.asInternalBeaconBlock(spec),
-        blobSidecars.asInternalBlobSidecars(blockContentsSchema.getBlobSidecarsSchema()));
+        blobSidecars.stream()
+            .map(blobSidecar -> blobSidecar.asInternalBlobSidecar(blobSidecarSchema))
+            .collect(Collectors.toList()));
   }
 }
