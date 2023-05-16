@@ -13,14 +13,9 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
-import java.util.List;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -56,21 +51,12 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
     final SignedBeaconBlock block = blockContainer.getSignedBeaconBlockNow();
     blockContainer
         .getSignedBlobSidecars()
-        .map(SignedBlobSidecars::getBlobSidecars)
         .ifPresent(
-            signedBlobSidecars -> {
-              blobSidecarGossipChannel.publishBlobSidecars(signedBlobSidecars);
-              blobSidecarPool.onCompletedBlockAndBlobSidecars(
-                  block, convertToUnsignedBlobSidecars(signedBlobSidecars));
+            blobSidecars -> {
+              blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
+              blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
             });
     blockGossipChannel.publishBlock(block);
     return blockImportChannel.importBlock(block);
-  }
-
-  private List<BlobSidecar> convertToUnsignedBlobSidecars(
-      final List<SignedBlobSidecar> signedBlobSidecars) {
-    return signedBlobSidecars.stream()
-        .map(SignedBlobSidecar::getBlobSidecar)
-        .collect(Collectors.toList());
   }
 }
