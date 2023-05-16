@@ -47,7 +47,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
     this.dutyMetrics = dutyMetrics;
   }
 
-  //TODO: blinding and unblind of BlockContainer (BlindedBlockContents -> BlockContents)
+  // TODO: blinding and unblinding of BlockContainer (BlindedBlockContents -> BlockContents)
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final BlockContainer maybeBlindedBlockContainer) {

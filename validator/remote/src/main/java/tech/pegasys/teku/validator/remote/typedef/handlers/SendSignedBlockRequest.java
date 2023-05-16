@@ -45,7 +45,7 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
     this.preferSszBlockEncoding = new AtomicBoolean(preferSszBlockEncoding);
   }
 
-  public SendSignedBlockResult sendSignedBlock(SignedBeaconBlock signedBeaconBlock) {
+  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock signedBeaconBlock) {
     final ValidatorApiMethod apiMethod =
         signedBeaconBlock.getMessage().getBody().isBlinded()
             ? SEND_SIGNED_BLINDED_BLOCK
