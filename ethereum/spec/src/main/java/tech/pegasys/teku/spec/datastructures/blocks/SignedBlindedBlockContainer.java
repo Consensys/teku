@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 
-public interface BlockContainer {
+public interface SignedBlindedBlockContainer extends BlockContainer {
 
-  default Optional<SignedBeaconBlock> getSignedBeaconBlock() {
+  default Optional<List<SignedBlindedBlobSidecar>> getSignedBlindedBlobSidecars() {
     return Optional.empty();
   }
 }
