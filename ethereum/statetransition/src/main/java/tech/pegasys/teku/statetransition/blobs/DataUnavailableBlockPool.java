@@ -35,6 +35,7 @@ public class DataUnavailableBlockPool {
 
   private static final Duration WAIT_BEFORE_RETRY = Duration.ofSeconds(1);
 
+  // this is a queue of chain tips
   private final Queue<SignedBeaconBlock> awaitingDataAvailabilityQueue =
       new ArrayBlockingQueue<>(10);
   private final BlockManager blockManager;
