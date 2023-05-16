@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.List;
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 
 public interface BlockContainer {
 
@@ -22,7 +23,7 @@ public interface BlockContainer {
     return Optional.empty();
   }
 
-  default Optional<SignedBlobSidecars> getSignedBlobSidecars() {
+  default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.empty();
   }
 }
