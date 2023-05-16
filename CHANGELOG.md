@@ -15,7 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
-- The command argument `--Xengine-exchange-capabilities` has been removed, update to use `--engine-exchange-capabilities` if you are using this option.
+- The command argument `--Xengine-exchange-capabilities` has been removed, update to use `--exchange-capabilities-enabled` if you are using this option.
 - The command argument `--Xdeposit-snapshot-enabled` has been removed, just remove it from commandline/configuration if you use it, updated argument `--deposit-snapshot-enabled` defaults to true now.
 
 ### Additions and Improvements
