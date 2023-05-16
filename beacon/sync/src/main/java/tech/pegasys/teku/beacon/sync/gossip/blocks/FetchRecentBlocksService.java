@@ -96,6 +96,10 @@ public class FetchRecentBlocksService
       // We've already got this block
       return;
     }
+    if (blobSidecarPool.containsBlock(blockRoot)) {
+      // We already have this block, waiting for blobs
+      return;
+    }
     final FetchBlockTask task = createTask(blockRoot);
     if (allTasks.putIfAbsent(blockRoot, task) != null) {
       // We're already tracking this task

@@ -241,8 +241,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
         .orElse(false);
   }
 
-  public synchronized boolean containsBlock(final SignedBeaconBlock block) {
-    return Optional.ofNullable(blockBlobSidecarsTrackers.get(block.getRoot()))
+  @Override
+  public synchronized boolean containsBlock(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blockBlobSidecarsTrackers.get(blockRoot))
         .map(tracker -> tracker.getBlockBody().isPresent())
         .orElse(false);
   }

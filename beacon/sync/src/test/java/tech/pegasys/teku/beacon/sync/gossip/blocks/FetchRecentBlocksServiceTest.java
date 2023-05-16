@@ -78,6 +78,8 @@ public class FetchRecentBlocksServiceTest {
             fetchTaskFactory,
             maxConcurrentRequests);
 
+    // blobs pool doesn't contain blocks by default
+    when(blobSidecarPool.containsBlock(any())).thenReturn(false);
     lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
     recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
   }
@@ -235,6 +237,15 @@ public class FetchRecentBlocksServiceTest {
     when(forwardSync.isSyncActive()).thenReturn(true);
 
     recentBlockFetcher.requestRecentBlock(dataStructureUtil.randomBytes32());
+    assertTaskCounts(0, 0, 0);
+  }
+
+  @Test
+  void shouldNotFetchIfBlockIsWaitingForBlobs() {
+    Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(blobSidecarPool.containsBlock(blockRoot)).thenReturn(true);
+
+    recentBlockFetcher.requestRecentBlock(blockRoot);
     assertTaskCounts(0, 0, 0);
   }
 
