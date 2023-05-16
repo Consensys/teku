@@ -49,8 +49,9 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final BlockContainer maybeBlockContainer) {
-    final SignedBeaconBlock maybeBlindedBlock = maybeBlockContainer.getSignedBeaconBlockNow();
+      final BlockContainer maybeBlindedBlockContainer) {
+    final SignedBeaconBlock maybeBlindedBlock =
+        maybeBlindedBlockContainer.getSignedBeaconBlockNow();
     return blockFactory
         .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
         .thenPeek(performanceTracker::saveProducedBlock)

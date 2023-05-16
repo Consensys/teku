@@ -49,17 +49,18 @@ public class SignedBeaconBlockUnblinderDeneb extends AbstractSignedBeaconBlockUn
 
     checkNotNull(executionPayloadFuture, "executionPayload must be set");
 
-    return executionPayloadFuture.thenApply(
-        executionPayload -> {
-          ExecutionPayloadDeneb.required(executionPayload);
-          final BlindedBeaconBlockBodyDeneb blindedBody =
-              BlindedBeaconBlockBodyDeneb.required(blindedBeaconBlock.getBody());
-          checkState(
-              executionPayload
-                  .hashTreeRoot()
-                  .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
-              "executionPayloadHeader root in blinded block do not match provided executionPayload root");
-          return signedBlindedBeaconBlock.unblind(schemaDefinitions, executionPayload);
-        });
+    return executionPayloadFuture
+        .thenApply(ExecutionPayloadDeneb::required)
+        .thenApply(
+            executionPayload -> {
+              final BlindedBeaconBlockBodyDeneb blindedBody =
+                  BlindedBeaconBlockBodyDeneb.required(blindedBeaconBlock.getBody());
+              checkState(
+                  executionPayload
+                      .hashTreeRoot()
+                      .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
+                  "executionPayloadHeader root in blinded block do not match provided executionPayload root");
+              return signedBlindedBeaconBlock.unblind(schemaDefinitions, executionPayload);
+            });
   }
 }
