@@ -40,6 +40,19 @@ public class MathHelpersTest {
   }
 
   @Test
+  void intToBytes() {
+    assertEquals(
+        Bytes.fromHexString("0xefcdab89"),
+        MathHelpers.uintTo4Bytes(UInt64.valueOf(0x0123456789abcdefL).longValue()));
+    assertEquals(
+        Bytes.fromHexString("0xefcdab8967452301"),
+        MathHelpers.uintTo8Bytes(UInt64.valueOf(0x0123456789abcdefL).longValue()));
+    assertEquals(
+        Bytes.fromHexString("0xefcdab8967452301000000000000000000000000000000000000000000000000"),
+        MathHelpers.uintTo32Bytes(UInt64.valueOf(0x0123456789abcdefL).longValue()));
+  }
+
+  @Test
   void bytesToInt() {
     assertEquals(UInt64.valueOf(0), MathHelpers.bytesToUInt64(Bytes.fromHexString("0x00")));
     assertEquals(UInt64.valueOf(1), MathHelpers.bytesToUInt64(Bytes.fromHexString("0x01")));

@@ -22,19 +22,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class MathHelpers {
 
-  public static long integerSquareRoot(long n) {
+  public static long integerSquareRoot(final long n) {
     checkArgument(n >= 0, "Cannot calculate integerSquareRoot of negative number");
     return integerSquareRootInternal(n);
   }
 
-  public static UInt64 integerSquareRoot(UInt64 n) {
+  public static UInt64 integerSquareRoot(final UInt64 n) {
     if (n.compareTo(UInt64.MAX_VALUE) >= 0) {
       throw new ArithmeticException("uint64 overflow");
     }
     return UInt64.valueOf(integerSquareRootInternal(n.longValue()));
   }
 
-  private static long integerSquareRootInternal(long n) {
+  private static long integerSquareRootInternal(final long n) {
     long x = n;
     long y = Long.divideUnsigned(x + 1, 2);
     while (Long.compareUnsigned(y, x) < 0) {
@@ -45,33 +45,91 @@ public class MathHelpers {
     return x;
   }
 
-  public static Bytes uintToBytes(long value, int numBytes) {
-    int longBytes = Long.SIZE / 8;
-    Bytes valueBytes = Bytes.ofUnsignedLong(value, ByteOrder.LITTLE_ENDIAN);
-    if (numBytes <= longBytes) {
-      return valueBytes.slice(0, numBytes);
-    } else {
-      return Bytes.wrap(valueBytes, Bytes.wrap(new byte[numBytes - longBytes]));
-    }
+  public static Bytes uintTo4Bytes(final long value) {
+    // little endian
+    final byte[] bytes =
+        new byte[] {
+          (byte) ((value) & 0xFF),
+          (byte) ((value >> 8) & 0xFF),
+          (byte) ((value >> 16) & 0xFF),
+          (byte) ((value >> 24) & 0xFF)
+        };
+    return Bytes.wrap(bytes, 0, 4);
   }
 
-  public static Bytes uint64ToBytes(long value) {
-    return uintToBytes(value, 8);
+  public static Bytes uintTo8Bytes(final long value) {
+    // little endian
+    final byte[] bytes =
+        new byte[] {
+          (byte) ((value) & 0xFF),
+          (byte) ((value >> 8) & 0xFF),
+          (byte) ((value >> 16) & 0xFF),
+          (byte) ((value >> 24) & 0xFF),
+          (byte) ((value >> 32) & 0xFF),
+          (byte) ((value >> 40) & 0xFF),
+          (byte) ((value >> 48) & 0xFF),
+          (byte) ((value >> 56) & 0xFF)
+        };
+    return Bytes.wrap(bytes, 0, 8);
   }
 
-  public static Bytes uint64ToBytes(UInt64 value) {
-    return uintToBytes(value.longValue(), 8);
+  public static Bytes32 uintTo32Bytes(final long value) {
+    // little endian
+    final byte[] bytes =
+        new byte[] {
+          (byte) ((value) & 0xFF),
+          (byte) ((value >> 8) & 0xFF),
+          (byte) ((value >> 16) & 0xFF),
+          (byte) ((value >> 24) & 0xFF),
+          (byte) ((value >> 32) & 0xFF),
+          (byte) ((value >> 40) & 0xFF),
+          (byte) ((value >> 48) & 0xFF),
+          (byte) ((value >> 56) & 0xFF),
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        };
+    return Bytes32.wrap(bytes);
   }
 
-  public static Bytes32 uintToBytes32(long value) {
-    return Bytes32.wrap(uintToBytes(value, 32));
+  public static Bytes uint64ToBytes(final long value) {
+    return uintTo8Bytes(value);
   }
 
-  static Bytes32 uintToBytes32(UInt64 value) {
+  public static Bytes uint64ToBytes(final UInt64 value) {
+    return uintTo8Bytes(value.longValue());
+  }
+
+  public static Bytes32 uintToBytes32(final long value) {
+    return uintTo32Bytes(value);
+  }
+
+  static Bytes32 uintToBytes32(final UInt64 value) {
     return uintToBytes32(value.longValue());
   }
 
-  public static UInt64 bytesToUInt64(Bytes data) {
+  public static UInt64 bytesToUInt64(final Bytes data) {
     return UInt64.fromLongBits(data.toLong(ByteOrder.LITTLE_ENDIAN));
   }
 }

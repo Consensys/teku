@@ -25,6 +25,8 @@ public class Hash {
   private static final ThreadLocal<MessageDigest> KECCAK_256_MESSAGE_DIGEST_THREAD_LOCAL =
       ThreadLocal.withInitial(MessageDigestFactory::createKeccak256);
 
+  // Note: We don't use varargs in these methods to avoid creating a Bytes[] instance.
+
   public static Bytes32 sha256(final byte[] input) {
     return Bytes32.wrap(SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get().digest(input));
   }
@@ -35,7 +37,6 @@ public class Hash {
     return Bytes32.wrap(digest.digest());
   }
 
-  // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b) {
     final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     a.update(digest);
@@ -43,13 +44,27 @@ public class Hash {
     return Bytes32.wrap(digest.digest());
   }
 
-  // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
+  public static byte[] sha256Unwrapped(final Bytes a, final Bytes b) {
+    final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
+    a.update(digest);
+    b.update(digest);
+    return digest.digest();
+  }
+
   public static Bytes32 sha256(final Bytes a, final Bytes b, final Bytes c) {
     final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     a.update(digest);
     b.update(digest);
     c.update(digest);
     return Bytes32.wrap(digest.digest());
+  }
+
+  public static byte[] sha256Unwrapped(final Bytes a, final Bytes b, final Bytes c) {
+    final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
+    a.update(digest);
+    b.update(digest);
+    c.update(digest);
+    return digest.digest();
   }
 
   public static Bytes32 keccak256(final Bytes input) {

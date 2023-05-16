@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.sha256Unwrapped;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
@@ -22,7 +23,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.ByteUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -97,7 +97,6 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @return the sequence of sync committee indices
    */
   public IntList getNextSyncCommitteeIndices(final BeaconState state) {
-    final Sha256 sha256 = new Sha256();
     final UInt64 epoch = getCurrentEpoch(state).plus(1);
     final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = activeValidatorIndices.size();
@@ -113,7 +112,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
           miscHelpers.computeShuffledIndex(i % activeValidatorCount, activeValidatorCount, seed);
       final int candidateIndex = activeValidatorIndices.getInt(shuffledIndex);
       final int randomByte =
-          ByteUtil.toUnsignedInt(sha256.digest(seed, uint64ToBytes(i / 32))[i % 32]);
+          ByteUtil.toUnsignedInt(sha256Unwrapped(seed, uint64ToBytes(i / 32))[i % 32]);
       final UInt64 effectiveBalance = validators.get(candidateIndex).getEffectiveBalance();
       if (effectiveBalance
           .times(MAX_RANDOM_BYTE)
