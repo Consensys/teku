@@ -13,14 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 
 public class BlindedBlockContents
-    extends Container2<BlindedBlockContents, BeaconBlock, BlindedBlobSidecars>
+    extends Container2<BlindedBlockContents, BeaconBlock, SszList<BlindedBlobSidecar>>
     implements BlockContainer {
 
   BlindedBlockContents(final BlindedBlockContentsSchema type, final TreeNode backingNode) {
@@ -30,8 +32,11 @@ public class BlindedBlockContents
   public BlindedBlockContents(
       final BlindedBlockContentsSchema schema,
       final BeaconBlock beaconBlock,
-      final BlindedBlobSidecars blindedBlobSidecars) {
-    super(schema, beaconBlock, blindedBlobSidecars);
+      final List<BlindedBlobSidecar> blindedBlobSidecars) {
+    super(
+        schema,
+        beaconBlock,
+        schema.getBlindedBlobSidecarsSchema().createFromElements(blindedBlobSidecars));
   }
 
   // We only need a Blinded BeaconBlock
@@ -39,7 +44,7 @@ public class BlindedBlockContents
     return getField0();
   }
 
-  public BlindedBlobSidecars getBlindedBlobSidecars() {
-    return getField1();
+  public List<BlindedBlobSidecar> getBlindedBlobSidecars() {
+    return getField1().asList();
   }
 }
