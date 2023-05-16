@@ -13,16 +13,17 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class SignedBlockContents
-    extends Container2<SignedBlockContents, SignedBeaconBlock, SignedBlobSidecars>
+    extends Container2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecar>>
     implements BlockContainer {
 
   SignedBlockContents(final SignedBlockContentsSchema type, final TreeNode backingNode) {
@@ -32,8 +33,11 @@ public class SignedBlockContents
   public SignedBlockContents(
       final SignedBlockContentsSchema schema,
       final SignedBeaconBlock signedBeaconBlock,
-      final SignedBlobSidecars signedBlobSidecars) {
-    super(schema, signedBeaconBlock, signedBlobSidecars);
+      final List<SignedBlobSidecar> signedBlobSidecars) {
+    super(
+        schema,
+        signedBeaconBlock,
+        schema.getSignedBlobSidecarsSchema().createFromElements(signedBlobSidecars));
   }
 
   @Override
@@ -42,10 +46,7 @@ public class SignedBlockContents
   }
 
   @Override
-  public Optional<SignedBlobSidecars> getSignedBlobSidecars() {
-    return Optional.of(getField1());
+  public Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
+    return Optional.of(getField1().asList());
   }
-
-  public static Predicate<BlockContainer> isInstance =
-      signedBlockContents -> signedBlockContents instanceof SignedBlockContents;
 }

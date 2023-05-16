@@ -13,33 +13,45 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarsSchema;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 
 public class SignedBlockContentsSchema
-    extends ContainerSchema2<SignedBlockContents, SignedBeaconBlock, SignedBlobSidecars> {
+    extends ContainerSchema2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecar>> {
+
+  static final SszFieldName FIELD_SIGNED_BLOB_SIDECARS = () -> "signed_blob_sidecars";
 
   SignedBlockContentsSchema(
-      final SignedBeaconBlockSchema signedBeaconBlockSchema,
-      final SignedBlobSidecarsSchema signedBlobSidecarsSchema) {
+      final SpecConfigDeneb specConfig,
+      final SignedBlobSidecarSchema signedBlobSidecarSchema,
+      final SignedBeaconBlockSchema signedBeaconBlockSchema) {
     super(
         "SignedBlockContents",
-        namedSchema("signed_block_contents", signedBeaconBlockSchema),
-        namedSchema("signed_blob_sidecars", signedBlobSidecarsSchema));
+        namedSchema("signed_block", signedBeaconBlockSchema),
+        namedSchema(
+            FIELD_SIGNED_BLOB_SIDECARS,
+            SszListSchema.create(signedBlobSidecarSchema, specConfig.getMaxBlobsPerBlock())));
   }
 
   public static SignedBlockContentsSchema create(
-      final SignedBeaconBlockSchema signedBeaconBlockSchema,
-      final SignedBlobSidecarsSchema signedBlobSidecarsSchema) {
-    return new SignedBlockContentsSchema(signedBeaconBlockSchema, signedBlobSidecarsSchema);
+      final SpecConfigDeneb specConfig,
+      final SignedBlobSidecarSchema signedBlobSidecarSchema,
+      final SignedBeaconBlockSchema signedBeaconBlockSchema) {
+    return new SignedBlockContentsSchema(
+        specConfig, signedBlobSidecarSchema, signedBeaconBlockSchema);
   }
 
   public SignedBlockContents create(
-      final SignedBeaconBlock signedBeaconBlock, final SignedBlobSidecars signedBlobSidecars) {
+      final SignedBeaconBlock signedBeaconBlock, final List<SignedBlobSidecar> signedBlobSidecars) {
     return new SignedBlockContents(this, signedBeaconBlock, signedBlobSidecars);
   }
 
@@ -52,7 +64,9 @@ public class SignedBlockContentsSchema
     return (SignedBeaconBlockSchema) getFieldSchema0();
   }
 
-  public SignedBlobSidecarsSchema getSignedBlobSidecarsSchema() {
-    return (SignedBlobSidecarsSchema) getFieldSchema1();
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SignedBlobSidecar, ?> getSignedBlobSidecarsSchema() {
+    return (SszListSchema<SignedBlobSidecar, ?>)
+        getChildSchema(getFieldIndex(FIELD_SIGNED_BLOB_SIDECARS));
   }
 }
