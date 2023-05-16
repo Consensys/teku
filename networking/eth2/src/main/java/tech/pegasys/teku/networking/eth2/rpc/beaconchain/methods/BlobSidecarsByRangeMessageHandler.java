@@ -187,7 +187,7 @@ public class BlobSidecarsByRangeMessageHandler
     } else {
       if (rootCause instanceof StreamClosedException
           || rootCause instanceof ClosedChannelException) {
-        LOG.trace("Stream closed while sending requested blobs sidecars", error);
+        LOG.trace("Stream closed while sending requested blob sidecars", error);
       } else {
         LOG.error("Failed to process blob sidecars request", error);
       }

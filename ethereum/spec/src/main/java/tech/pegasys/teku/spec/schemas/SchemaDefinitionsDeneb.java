@@ -22,7 +22,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSid
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarsSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.Bea
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDenebImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDenebImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsSchema;
@@ -71,8 +69,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   private final BlobSchema blobSchema;
   private final BlobSidecarSchema blobSidecarSchema;
-  private final BlobsSidecarSchema blobsSidecarSchema;
-  private final SignedBeaconBlockAndBlobsSidecarSchema signedBeaconBlockAndBlobsSidecarSchema;
   private final SignedBlobSidecarSchema signedBlobSidecarSchema;
   private final BlobSidecarsSchema blobSidecarsSchema;
   private final SignedBlobSidecarsSchema signedBlobSidecarsSchema;
@@ -119,10 +115,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
     this.blobSchema = new BlobSchema(specConfig);
-    this.blobsSidecarSchema = BlobsSidecarSchema.create(specConfig, blobSchema);
     this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);
-    this.signedBeaconBlockAndBlobsSidecarSchema =
-        SignedBeaconBlockAndBlobsSidecarSchema.create(signedBeaconBlockSchema, blobsSidecarSchema);
     this.signedBlobSidecarSchema = SignedBlobSidecarSchema.create(blobSidecarSchema);
     this.signedBlobSidecarsSchema =
         SignedBlobSidecarsSchema.create(specConfig, signedBlobSidecarSchema);
@@ -213,16 +206,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return blobSchema;
   }
 
-  public BlobsSidecarSchema getBlobsSidecarSchema() {
-    return blobsSidecarSchema;
-  }
-
   public BlobSidecarSchema getBlobSidecarSchema() {
     return blobSidecarSchema;
-  }
-
-  public SignedBeaconBlockAndBlobsSidecarSchema getSignedBeaconBlockAndBlobsSidecarSchema() {
-    return signedBeaconBlockAndBlobsSidecarSchema;
   }
 
   public SignedBlobSidecarSchema getSignedBlobSidecarSchema() {

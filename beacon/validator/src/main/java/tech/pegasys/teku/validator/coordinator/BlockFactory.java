@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockAndBlobsSidecar;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class BlockFactory {
@@ -71,14 +70,6 @@ public class BlockFactory {
           blindedSignedBeaconBlock, operationSelector.createUnblinderSelector());
     }
     return SafeFuture.completedFuture(blindedSignedBeaconBlock);
-  }
-
-  public SafeFuture<SignedBeaconBlockAndBlobsSidecar> supplementBlockWithSidecar(
-      final SignedBeaconBlock unblindedSignedBeaconBlock) {
-    if (unblindedSignedBeaconBlock.isBlinded()) {
-      throw new IllegalArgumentException("Block should be unblinded");
-    }
-    return operationSelector.createSidecarSupplementSelector().apply(unblindedSignedBeaconBlock);
   }
 
   public SignedBeaconBlock blindSignedBeaconBlockIfUnblinded(

@@ -15,8 +15,17 @@ package tech.pegasys.teku.infrastructure.json.types;
 
 import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
+import java.util.Optional;
 
 public interface DeserializableFieldDefinition<TObject, TBuilder>
     extends SerializableFieldDefinition<TObject> {
   void readField(TBuilder target, JsonParser parser) throws IOException;
+
+  default Optional<RequiredDeserializableFieldDefinition<TObject, TBuilder, ?>> toRequired() {
+    return Optional.empty();
+  }
+
+  default Optional<OptionalDeserializableFieldDefinition<TObject, TBuilder, ?>> toOptional() {
+    return Optional.empty();
+  }
 }
