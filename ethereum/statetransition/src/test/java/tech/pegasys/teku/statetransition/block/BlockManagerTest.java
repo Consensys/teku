@@ -29,6 +29,8 @@ import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
+import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID;
+import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
@@ -39,6 +41,7 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRA
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,9 +63,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
@@ -70,6 +75,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -92,65 +98,33 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
 public class BlockManagerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(0);
   private final EventLogger eventLogger = mock(EventLogger.class);
-  // TODO: we want to actually test that we are safe pre-Deneb too
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
   private final BlockImportNotifications blockImportNotifications =
       mock(BlockImportNotifications.class);
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
   private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
-  private final PendingPool<SignedBeaconBlock> pendingBlocks =
-      new PoolFactory(metricsSystem)
-          .createPendingPoolForBlocks(
-              spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+  private PendingPool<SignedBeaconBlock> pendingBlocks;
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
       LimitedMap.createSynchronized(500);
 
-  private final StorageSystem localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
-  private final RecentChainData localRecentChainData = localChain.recentChainData();
+  private StorageSystem localChain;
+  private RecentChainData localRecentChainData;
 
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
-  private final MergeTransitionBlockValidator transitionBlockValidator =
-      new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionLayerChannel.NOOP);
+  private MergeTransitionBlockValidator transitionBlockValidator;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
-  private final ForkChoice forkChoice =
-      new ForkChoice(
-          spec,
-          new InlineEventThread(),
-          localRecentChainData,
-          blobSidecarManager,
-          forkChoiceNotifier,
-          transitionBlockValidator);
+  private ForkChoice forkChoice;
 
-  private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false, Optional.empty());
+  private ExecutionLayerChannelStub executionLayer;
   private final BlockValidator blockValidator = mock(BlockValidator.class);
 
-  private final BlockImporter blockImporter =
-      new BlockImporter(
-          spec,
-          blockImportNotifications,
-          localRecentChainData,
-          forkChoice,
-          WeakSubjectivityFactory.lenientValidator(),
-          executionLayer);
-  private final BlockManager blockManager =
-      new BlockManager(
-          localRecentChainData,
-          blockImporter,
-          blobSidecarPool,
-          pendingBlocks,
-          futureBlocks,
-          invalidBlockRoots,
-          blockValidator,
-          timeProvider,
-          eventLogger,
-          Optional.of(mock(BlockImportMetrics.class)));
+  private BlockImporter blockImporter;
+  private BlockManager blockManager;
 
   private UInt64 currentSlot = GENESIS_SLOT;
 
@@ -167,6 +141,50 @@ public class BlockManagerTest {
 
   @BeforeEach
   public void setup() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+  }
+
+  private void setupWithSpec(final Spec spec) {
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+    this.pendingBlocks =
+        new PoolFactory(metricsSystem)
+            .createPendingPoolForBlocks(
+                spec, historicalBlockTolerance, futureBlockTolerance, maxPendingBlocks);
+    this.localChain = InMemoryStorageSystemBuilder.buildDefault(spec);
+    this.localRecentChainData = localChain.recentChainData();
+    this.transitionBlockValidator =
+        new MergeTransitionBlockValidator(spec, localRecentChainData, ExecutionLayerChannel.NOOP);
+    this.forkChoice =
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            localRecentChainData,
+            blobSidecarManager,
+            forkChoiceNotifier,
+            transitionBlockValidator);
+    this.executionLayer = new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    this.blockImporter =
+        new BlockImporter(
+            spec,
+            blockImportNotifications,
+            localRecentChainData,
+            forkChoice,
+            WeakSubjectivityFactory.lenientValidator(),
+            executionLayer);
+    this.blockManager =
+        new BlockManager(
+            localRecentChainData,
+            blockImporter,
+            blobSidecarPool,
+            pendingBlocks,
+            futureBlocks,
+            invalidBlockRoots,
+            blockValidator,
+            timeProvider,
+            eventLogger,
+            Optional.of(mock(BlockImportMetrics.class)));
     forwardBlockImportedNotificationsTo(blockManager);
     localChain
         .chainUpdater()
@@ -670,23 +688,320 @@ public class BlockManagerTest {
 
   @Test
   void onDeneb_shouldStoreBlobSidecarsAlongWithBlock() {
-    SignedBlockAndState signedBlockAndState =
+    // Import block 1 with blobSidecars
+    final SignedBlockAndState signedBlockAndState1 =
         localChain
             .chainBuilder()
             .generateBlockAtSlot(
                 incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
-    final SignedBeaconBlock block = signedBlockAndState.getBlock();
+    final List<BlobSidecar> blobSidecars1 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
+    assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
+    assertThat(blobSidecars1).isNotEmpty();
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+
+    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+        createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
+
+    assertThat(blockManager.importBlock(block1))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    assertThatStored(block1.getMessage(), blobSidecars1);
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValue(Optional.of(signedBlockAndState1.getSlot()));
+
+    // Import block 2 with blobSidecars
+    final SignedBlockAndState signedBlockAndState2 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars2 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState2.getRoot());
+    assertThat(signedBlockAndState2.getSlot()).isEqualTo(signedBlockAndState1.getSlot().plus(1));
+    assertThat(blobSidecars2).isNotEmpty();
+    assertThatNothingStoredForSlotRoot(signedBlockAndState2.getSlotAndBlockRoot());
+
+    final SignedBeaconBlock block2 = signedBlockAndState2.getBlock();
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker2 =
+        createAvailabilityCheckerWithValidBlobSidecars(block2, blobSidecars2);
+
+    assertThat(blockManager.importBlock(block2))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blobSidecarsAvailabilityChecker2).getAvailabilityCheckResult();
+    assertThatStored(block2.getMessage(), blobSidecars2);
+    // Have not changed
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValue(Optional.of(signedBlockAndState1.getSlot()));
+
+    // Import block 3 with empty blobSidecars
+    final SignedBlockAndState signedBlockAndState3 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                incrementSlot(), BlockOptions.create().setBlobSidecars(Collections.emptyList()));
+    final List<BlobSidecar> blobSidecars3 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState3.getRoot());
+    assertThat(signedBlockAndState3.getSlot()).isEqualTo(signedBlockAndState2.getSlot().plus(1));
+    assertThat(blobSidecars3).isEmpty();
+    assertThatNothingStoredForSlotRoot(signedBlockAndState3.getSlotAndBlockRoot());
+
+    final SignedBeaconBlock block3 = signedBlockAndState3.getBlock();
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker3 =
+        createAvailabilityCheckerWithValidBlobSidecars(block3, blobSidecars3);
+
+    assertThat(blockManager.importBlock(block3))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blobSidecarsAvailabilityChecker3).getAvailabilityCheckResult();
+    assertThatStored(block3.getMessage(), blobSidecars3);
+    // Have not changed
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValue(Optional.of(signedBlockAndState1.getSlot()));
+  }
+
+  @Test
+  void onDeneb_shouldStoreEarliestBlobSidecarSlotCorrectlyWhenItsDenebGenesis() {
+    currentSlot = currentSlot.plus(10);
+    localChain.chainUpdater().setCurrentSlot(currentSlot);
+    blockManager.onSlot(currentSlot);
+    final SignedBlockAndState signedBlockAndState1 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars1 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
+    assertThat(blobSidecars1).isNotEmpty();
+
+    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
+    assertThat(block1.getSlot()).isEqualTo(UInt64.valueOf(10));
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+        createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
+
+    assertThat(blockManager.importBlock(block1))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    assertThatStored(block1.getMessage(), blobSidecars1);
+    // FIXME: should be 0, if Genesis is Deneb, store earliestBlobSidecar on init
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(0)));
+  }
+
+  @Test
+  void onDeneb_shouldStoreEarliestBlobSidecarSlotCorrectlyWhenThereIsGap() {
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
+
+    currentSlot = currentSlot.plus(slotsPerEpoch.plus(2));
+    localChain.chainUpdater().setCurrentSlot(currentSlot);
+    blockManager.onSlot(currentSlot);
+    final SignedBlockAndState signedBlockAndState1 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars1 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
+    assertThat(blobSidecars1).isNotEmpty();
+
+    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
+    assertThat(block1.getSlot()).isEqualTo(UInt64.valueOf(10));
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+        createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
+
+    assertThat(blockManager.importBlock(block1))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    assertThatStored(block1.getMessage(), blobSidecars1);
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValue(Optional.of(slotsPerEpoch));
+  }
+
+  @Test
+  void onDeneb_shouldStoreBlockWhenBlobSidecarsNotRequired() {
+    final SignedBlockAndState signedBlockAndState1 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars1 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
+    assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
+    assertThat(blobSidecars1).isNotEmpty();
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+
+    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+        createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
+
+    assertThat(blockManager.importBlock(block1))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
+        .isCompletedWithValue(Optional.of(block1.getMessage()));
+    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
+        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+  }
+
+  @Test
+  void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsInvalid() {
+    final SignedBlockAndState signedBlockAndState1 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars1 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
+    assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
+    assertThat(blobSidecars1).isNotEmpty();
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+
+    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+        createAvailabilityCheckerWithInvalidBlobSidecars(block1, blobSidecars1);
+
+    assertThat(blockManager.importBlock(block1))
+        .isCompletedWithValueMatching(
+            cause -> cause.getFailureReason().equals(FAILED_DATA_AVAILABILITY_CHECK_INVALID));
+    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
+        .isCompletedWithValue(Optional.empty());
+    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
+        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+  }
+
+  @Test
+  void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsNotAvailable() {
+    final SignedBlockAndState signedBlockAndState1 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars1 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
+    assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
+    assertThat(blobSidecars1).isNotEmpty();
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+
+    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+        createAvailabilityCheckerWithNotAvailableBlobSidecars(block1);
+
+    assertThat(blockManager.importBlock(block1))
+        .isCompletedWithValueMatching(
+            cause -> cause.getFailureReason().equals(FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE));
+    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
+        .isCompletedWithValue(Optional.empty());
+    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
+        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+  }
+
+  @Test
+  void preDeneb_shouldNotWorryAboutBlobSidecars() {
+    setupWithSpec(TestSpecFactory.createMinimalCapella());
+    final SignedBlockAndState signedBlockAndState1 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars1 =
+        localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
+    assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
+    assertThat(blobSidecars1).isEmpty();
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+
+    final SignedBeaconBlock block1 = signedBlockAndState1.getBlock();
+    // pre-Deneb is used NOOP with default not required
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
+        createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
+
+    assertThat(blockManager.importBlock(block1))
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
+    assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
+        .isCompletedWithValue(Optional.of(block1.getMessage()));
+    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
+        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+  }
+
+  private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithValidBlobSidecars(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    reset(blobSidecarManager);
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         mock(BlobSidecarsAvailabilityChecker.class);
-    reset(blobSidecarManager);
     when(blobSidecarManager.createAvailabilityChecker(eq(block)))
         .thenReturn(blobSidecarsAvailabilityChecker);
-    final List<BlobSidecar> blobSidecars =
-        localChain.chainBuilder().getBlobSidecars(signedBlockAndState.getRoot());
-    assertThat(blobSidecars).isNotEmpty();
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(
+            SafeFuture.completedFuture(BlobSidecarsAndValidationResult.validResult(blobSidecars)));
+    return blobSidecarsAvailabilityChecker;
+  }
 
-    assertThat(blockManager.importBlock(block))
-        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+  private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithNotRequiredBlobSidecars(
+      final SignedBeaconBlock block) {
+    reset(blobSidecarManager);
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
+    when(blobSidecarManager.createAvailabilityChecker(eq(block)))
+        .thenReturn(blobSidecarsAvailabilityChecker);
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(BlobSidecarsAndValidationResult.NOT_REQUIRED_RESULT_FUTURE);
+    return blobSidecarsAvailabilityChecker;
+  }
+
+  private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithNotAvailableBlobSidecars(
+      final SignedBeaconBlock block) {
+    reset(blobSidecarManager);
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
+    when(blobSidecarManager.createAvailabilityChecker(eq(block)))
+        .thenReturn(blobSidecarsAvailabilityChecker);
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
+    return blobSidecarsAvailabilityChecker;
+  }
+
+  private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithInvalidBlobSidecars(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    reset(blobSidecarManager);
+    final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+        mock(BlobSidecarsAvailabilityChecker.class);
+    when(blobSidecarManager.createAvailabilityChecker(eq(block)))
+        .thenReturn(blobSidecarsAvailabilityChecker);
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                BlobSidecarsAndValidationResult.invalidResult(
+                    blobSidecars, new RuntimeException("ouch"))));
+    return blobSidecarsAvailabilityChecker;
+  }
+
+  private void assertThatStored(
+      final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
+    assertThat(localRecentChainData.retrieveBlockByRoot(beaconBlock.getRoot()))
+        .isCompletedWithValue(Optional.of(beaconBlock));
+    assertThat(localRecentChainData.retrieveBlobSidecars(beaconBlock.getSlotAndBlockRoot()))
+        .isCompletedWithValue(blobSidecars);
+  }
+
+  private void assertThatNothingStoredForSlotRoot(final SlotAndBlockRoot slotAndBlockRoot) {
+    assertThat(localRecentChainData.retrieveBlockByRoot(slotAndBlockRoot.getBlockRoot()))
+        .isCompletedWithValueMatching(Optional::isEmpty);
+    assertThat(localRecentChainData.retrieveBlobSidecars(slotAndBlockRoot))
+        .isCompletedWithValueMatching(List::isEmpty);
   }
 
   private void assertImportBlockWithResult(SignedBeaconBlock block, FailureReason failureReason) {

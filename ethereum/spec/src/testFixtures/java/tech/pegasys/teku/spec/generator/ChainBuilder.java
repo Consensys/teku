@@ -77,6 +77,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
@@ -626,7 +627,8 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobSidecarSchema blobSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecar> blobSidecars =
@@ -697,7 +699,8 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobSidecarSchema blobSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecar> blobSidecars =
