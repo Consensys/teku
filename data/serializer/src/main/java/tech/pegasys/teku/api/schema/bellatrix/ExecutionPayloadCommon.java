@@ -36,7 +36,7 @@ public abstract class ExecutionPayloadCommon {
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
-  public Bytes32 parentHash;
+  public final Bytes32 parentHash;
 
   @JsonProperty("fee_recipient")
   @Schema(
@@ -44,7 +44,7 @@ public abstract class ExecutionPayloadCommon {
       format = "byte",
       pattern = PATTERN_BYTES20,
       description = DESCRIPTION_BYTES20)
-  public Bytes20 feeRecipient;
+  public final Bytes20 feeRecipient;
 
   @JsonProperty("state_root")
   @Schema(
@@ -52,7 +52,7 @@ public abstract class ExecutionPayloadCommon {
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
-  public Bytes32 stateRoot;
+  public final Bytes32 stateRoot;
 
   @JsonProperty("receipts_root")
   @Schema(
@@ -60,11 +60,11 @@ public abstract class ExecutionPayloadCommon {
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
-  public Bytes32 receiptsRoot;
+  public final Bytes32 receiptsRoot;
 
   @JsonProperty("logs_bloom")
   @Schema(type = "string", format = "byte")
-  public Bytes logsBloom;
+  public final Bytes logsBloom;
 
   @JsonProperty("prev_randao")
   @Schema(
@@ -72,30 +72,30 @@ public abstract class ExecutionPayloadCommon {
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
-  public Bytes32 prevRandao;
+  public final Bytes32 prevRandao;
 
   @JsonProperty("block_number")
   @Schema(type = "string", format = "uint64")
-  public UInt64 blockNumber;
+  public final UInt64 blockNumber;
 
   @JsonProperty("gas_limit")
   @Schema(type = "string", format = "uint64")
-  public UInt64 gasLimit;
+  public final UInt64 gasLimit;
 
   @JsonProperty("gas_used")
   @Schema(type = "string", format = "uint64")
-  public UInt64 gasUsed;
+  public final UInt64 gasUsed;
 
   @Schema(type = "string", format = "uint64")
-  public UInt64 timestamp;
+  public final UInt64 timestamp;
 
   @JsonProperty("extra_data")
   @Schema(type = "string", format = "byte")
-  public Bytes extraData;
+  public final Bytes extraData;
 
   @JsonProperty("base_fee_per_gas")
   @Schema(type = "string", format = "uint256")
-  public UInt256 baseFeePerGas;
+  public final UInt256 baseFeePerGas;
 
   @JsonProperty("block_hash")
   @Schema(
@@ -103,9 +103,7 @@ public abstract class ExecutionPayloadCommon {
       format = "byte",
       pattern = PATTERN_BYTES32,
       description = DESCRIPTION_BYTES32)
-  public Bytes32 blockHash;
-
-  public ExecutionPayloadCommon() {}
+  public final Bytes32 blockHash;
 
   public ExecutionPayloadCommon(
       @JsonProperty("parent_hash") Bytes32 parentHash,
@@ -133,110 +131,6 @@ public abstract class ExecutionPayloadCommon {
     this.timestamp = timestamp;
     this.extraData = extraData;
     this.baseFeePerGas = baseFeePerGas;
-    this.blockHash = blockHash;
-  }
-
-  public Bytes32 getParentHash() {
-    return parentHash;
-  }
-
-  public void setParentHash(Bytes32 parentHash) {
-    this.parentHash = parentHash;
-  }
-
-  public Bytes20 getFeeRecipient() {
-    return feeRecipient;
-  }
-
-  public void setFeeRecipient(Bytes20 feeRecipient) {
-    this.feeRecipient = feeRecipient;
-  }
-
-  public Bytes32 getStateRoot() {
-    return stateRoot;
-  }
-
-  public void setStateRoot(Bytes32 stateRoot) {
-    this.stateRoot = stateRoot;
-  }
-
-  public Bytes32 getReceiptsRoot() {
-    return receiptsRoot;
-  }
-
-  public void setReceiptsRoot(Bytes32 receiptsRoot) {
-    this.receiptsRoot = receiptsRoot;
-  }
-
-  public Bytes getLogsBloom() {
-    return logsBloom;
-  }
-
-  public void setLogsBloom(Bytes logsBloom) {
-    this.logsBloom = logsBloom;
-  }
-
-  public Bytes32 getPrevRandao() {
-    return prevRandao;
-  }
-
-  public void setPrevRandao(Bytes32 prevRandao) {
-    this.prevRandao = prevRandao;
-  }
-
-  public UInt64 getBlockNumber() {
-    return blockNumber;
-  }
-
-  public void setBlockNumber(UInt64 blockNumber) {
-    this.blockNumber = blockNumber;
-  }
-
-  public UInt64 getGasLimit() {
-    return gasLimit;
-  }
-
-  public void setGasLimit(UInt64 gasLimit) {
-    this.gasLimit = gasLimit;
-  }
-
-  public UInt64 getGasUsed() {
-    return gasUsed;
-  }
-
-  public void setGasUsed(UInt64 gasUsed) {
-    this.gasUsed = gasUsed;
-  }
-
-  public UInt64 getTimestamp() {
-    return timestamp;
-  }
-
-  public void setTimestamp(UInt64 timestamp) {
-    this.timestamp = timestamp;
-  }
-
-  public Bytes getExtraData() {
-    return extraData;
-  }
-
-  public void setExtraData(Bytes extraData) {
-    this.extraData = extraData;
-  }
-
-  public UInt256 getBaseFeePerGas() {
-    return baseFeePerGas;
-  }
-
-  public void setBaseFeePerGas(UInt256 baseFeePerGas) {
-    this.baseFeePerGas = baseFeePerGas;
-  }
-
-  public Bytes32 getBlockHash() {
-    return blockHash;
-  }
-
-  public void setBlockHash(Bytes32 blockHash) {
     this.blockHash = blockHash;
   }
 

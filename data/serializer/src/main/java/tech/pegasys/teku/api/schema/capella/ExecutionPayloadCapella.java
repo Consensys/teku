@@ -38,7 +38,7 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
 
   @JsonProperty("withdrawals")
   @ArraySchema(schema = @Schema(type = "string", format = "byte"))
-  public List<Withdrawal> withdrawals;
+  public final List<Withdrawal> withdrawals;
 
   @JsonCreator
   public ExecutionPayloadCapella(
@@ -82,16 +82,6 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
         executionPayload.getOptionalWithdrawals().orElseThrow().stream()
             .map(Withdrawal::new)
             .collect(toList());
-  }
-
-  public ExecutionPayloadCapella() {}
-
-  public List<Withdrawal> getWithdrawals() {
-    return withdrawals;
-  }
-
-  public void setWithdrawals(List<Withdrawal> withdrawals) {
-    this.withdrawals = withdrawals;
   }
 
   @Override

@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements ExecutionPayload {
 
   @ArraySchema(schema = @Schema(type = "string", format = "byte"))
-  public List<Bytes> transactions;
+  public final List<Bytes> transactions;
 
   @JsonCreator
   public ExecutionPayloadBellatrix(
@@ -96,8 +96,6 @@ public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements
             .collect(Collectors.toList());
   }
 
-  public ExecutionPayloadBellatrix() {}
-
   public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload
       asInternalExecutionPayload(final Spec spec, final UInt64 slot) {
     return asInternalExecutionPayload(spec.atSlot(slot));
@@ -137,14 +135,6 @@ public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements
         .baseFeePerGas(baseFeePerGas)
         .blockHash(blockHash)
         .transactions(transactions);
-  }
-
-  public List<Bytes> getTransactions() {
-    return transactions;
-  }
-
-  public void setTransactions(List<Bytes> transactions) {
-    this.transactions = transactions;
   }
 
   @Override
