@@ -111,7 +111,7 @@ public class BlobSidecarPoolImplTest {
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     blobSidecarPool.onNewBlock(block);
 
-    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+    assertThat(blobSidecarPool.containsBlock(block.getRoot())).isTrue();
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
@@ -147,7 +147,7 @@ public class BlobSidecarPoolImplTest {
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
     blobSidecarPool.onNewBlock(block);
 
-    assertThat(blobSidecarPool.containsBlock(block)).isFalse();
+    assertThat(blobSidecarPool.containsBlock(block.getRoot())).isFalse();
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
@@ -172,7 +172,7 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar)))
         .isTrue();
-    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+    assertThat(blobSidecarPool.containsBlock(block.getRoot())).isTrue();
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
@@ -237,8 +237,8 @@ public class BlobSidecarPoolImplTest {
     blobSidecarPool.onNewBlock(blockAtPreviousSlot);
     blobSidecarPool.onNewBlock(block);
 
-    assertThat(blobSidecarPool.containsBlock(blockAtPreviousSlot)).isTrue();
-    assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+    assertThat(blobSidecarPool.containsBlock(blockAtPreviousSlot.getRoot())).isTrue();
+    assertThat(blobSidecarPool.containsBlock(block.getRoot())).isTrue();
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
@@ -332,7 +332,7 @@ public class BlobSidecarPoolImplTest {
 
     blobSidecarPool.onNewBlock(block);
 
-    assertThat(blobSidecarPool.containsBlock(block)).isFalse();
+    assertThat(blobSidecarPool.containsBlock(block.getRoot())).isFalse();
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
@@ -369,7 +369,7 @@ public class BlobSidecarPoolImplTest {
       blobSidecarPool.onNewBlock(block);
 
       final int expectedSize = Math.min(maxItems, i + 1);
-      assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+      assertThat(blobSidecarPool.containsBlock(block.getRoot())).isTrue();
       assertThat(blobSidecarPool.getTotalBlobSidecarsTrackers()).isEqualTo(expectedSize);
       assertBlobSidecarsTrackersCount(expectedSize);
     }
@@ -404,7 +404,7 @@ public class BlobSidecarPoolImplTest {
     // Check that all blocks are in the collection
     assertBlobSidecarsTrackersCount(finalizedBlocks.size() + nonFinalBlocks.size());
     for (SignedBeaconBlock block : allBlocks) {
-      assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+      assertThat(blobSidecarPool.containsBlock(block.getRoot())).isTrue();
     }
 
     // Update finalized checkpoint and prune
@@ -414,7 +414,7 @@ public class BlobSidecarPoolImplTest {
     // Check that all final blocks have been pruned
     assertBlobSidecarsTrackersCount(nonFinalBlocks.size());
     for (SignedBeaconBlock block : nonFinalBlocks) {
-      assertThat(blobSidecarPool.containsBlock(block)).isTrue();
+      assertThat(blobSidecarPool.containsBlock(block.getRoot())).isTrue();
     }
   }
 
