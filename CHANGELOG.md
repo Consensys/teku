@@ -21,5 +21,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 
-### Bug Fixes
+- Add support for Chiado (Gnosis testnet): `--network=chiado`
 
+### Bug Fixes
