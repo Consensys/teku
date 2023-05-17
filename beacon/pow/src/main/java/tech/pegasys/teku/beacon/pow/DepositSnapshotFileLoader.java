@@ -34,7 +34,6 @@ public class DepositSnapshotFileLoader {
   public static final Map<Eth2Network, String> DEFAULT_SNAPSHOT_RESOURCE_PATHS =
       Map.of(
           Eth2Network.GNOSIS, "gnosis.ssz",
-          Eth2Network.CHIADO, "chiado.ssz",
           Eth2Network.PRATER, "goerli.ssz",
           Eth2Network.MAINNET, "mainnet.ssz",
           Eth2Network.SEPOLIA, "sepolia.ssz");
