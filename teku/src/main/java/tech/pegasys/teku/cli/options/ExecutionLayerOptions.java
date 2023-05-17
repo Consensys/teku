@@ -127,7 +127,7 @@ public class ExecutionLayerOptions {
 
   @Option(
       hidden = true,
-      names = {"--exchange-capabilities-enabled", "--Xexchange-capabilities-enabled"},
+      names = {"--exchange-capabilities-enabled"},
       paramLabel = "<BOOLEAN>",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
