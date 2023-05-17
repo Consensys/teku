@@ -24,9 +24,8 @@ public class EpochAttestationRewardsCalculator {
       final SpecVersion specVersion,
       final BeaconState state,
       final List<String> validatorPublicKeys) {
-    //TODO implement EpochAttestationRewardsCalculator business logic
+    // TODO implement EpochAttestationRewardsCalculator business logic
   }
-
 
   public AttestationRewardsData calculate() {
     return new AttestationRewardsData(List.of(), List.of());
