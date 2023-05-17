@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
@@ -117,6 +118,11 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
     return recentChainData.getGenesisTime();
+  }
+
+  public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>
+      retrieveCheckpointState(final Checkpoint checkpoint) {
+    return recentChainData.retrieveCheckpointState(checkpoint);
   }
 
   public GenesisData getGenesisData() {

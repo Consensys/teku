@@ -26,6 +26,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetCheckpointState;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1Data;
@@ -223,6 +224,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetBlockHeaders(dataProvider))
             .endpoint(new GetBlockHeader(dataProvider))
             .endpoint(new PostBlock(dataProvider, spec, schemaCache))
+            .endpoint(new GetCheckpointState(dataProvider))
             .endpoint(new PostBlindedBlock(dataProvider, spec, schemaCache))
             .endpoint(new GetBlock(dataProvider, schemaCache))
             .endpoint(new GetBlindedBlock(dataProvider, schemaCache))
