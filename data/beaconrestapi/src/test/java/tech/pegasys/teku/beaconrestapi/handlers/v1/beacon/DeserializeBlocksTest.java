@@ -20,19 +20,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DeserializeBlocksTest {
@@ -52,13 +47,9 @@ public class DeserializeBlocksTest {
               .withType(
                   SignedBlockContents.isSignedBlockContentsInstance,
                   s -> s.contains("blob_sidecars"),
-                  SignedBlockContentsSchema.create(
-                          spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow(),
-                          SignedBlobSidecarSchema.create(
-                              BlobSidecarSchema.create(
-                                  new BlobSchema(
-                                      spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow()))),
-                          spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema())
+                  SchemaDefinitionsDeneb.required(
+                          spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+                      .getSignedBlockContentsSchema()
                       .getJsonTypeDefinition())
               .build();
 
@@ -76,10 +67,9 @@ public class DeserializeBlocksTest {
               .withType(
                   SignedBlindedBlockContents.isSignedBlindedBlockContentsInstance,
                   s -> s.contains("blob_sidecars"),
-                  SignedBlindedBlockContentsSchema.create(
-                          spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow(),
-                          SignedBlindedBlobSidecarSchema.create(BlindedBlobSidecarSchema.create()),
-                          spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema())
+                  SchemaDefinitionsDeneb.required(
+                          spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+                      .getSignedBlindedBlockContentsSchema()
                       .getJsonTypeDefinition())
               .build();
 
