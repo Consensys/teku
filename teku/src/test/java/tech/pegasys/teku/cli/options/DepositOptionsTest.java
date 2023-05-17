@@ -115,7 +115,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @ValueSource(strings = {"mainnet", "goerli", "prater", "gnosis", "sepolia"})
+  @ValueSource(strings = {"mainnet", "goerli", "prater", "gnosis", "chiado", "sepolia"})
   public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
     final String[] args = {"--network=" + network, "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
