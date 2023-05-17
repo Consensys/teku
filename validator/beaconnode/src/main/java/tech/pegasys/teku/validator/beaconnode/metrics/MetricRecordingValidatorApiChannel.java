@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -207,7 +207,8 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final BlockContainer blockContainer) {
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(
+      final SignedBlockContainer blockContainer) {
     return countDataRequest(
         delegate.sendSignedBlock(blockContainer), BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD);
   }

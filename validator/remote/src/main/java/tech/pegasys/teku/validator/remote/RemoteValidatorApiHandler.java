@@ -53,7 +53,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -292,9 +292,10 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         () -> typeDefClient.createUnsignedBlockContents(slot, randaoReveal, graffiti));
   }
 
-  // TODO: use BlockContainer when passing to typeDefClient
+  // TODO: use SignedBlockContainer when passing to typeDefClient
   @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final BlockContainer blockContainer) {
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(
+      final SignedBlockContainer blockContainer) {
     return sendRequest(
         () -> typeDefClient.sendSignedBlock(blockContainer.getSignedBeaconBlockNow()));
   }

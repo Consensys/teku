@@ -16,8 +16,8 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -47,7 +47,7 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
 
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final BlockContainer blockContainer) {
+      final SignedBlockContainer blockContainer) {
     final SignedBeaconBlock block = blockContainer.getSignedBeaconBlockNow();
     blockContainer
         .getSignedBlobSidecars()

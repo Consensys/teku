@@ -55,8 +55,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -572,7 +572,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final BlockContainer maybeBlindedBlockContainer) {
+      final SignedBlockContainer maybeBlindedBlockContainer) {
     return blockPublisher
         .sendSignedBlock(maybeBlindedBlockContainer)
         .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));

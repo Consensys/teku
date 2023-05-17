@@ -14,9 +14,10 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public interface BlockPublisher {
-  SafeFuture<SendSignedBlockResult> sendSignedBlock(BlockContainer maybeBlindedBlockContainer);
+  SafeFuture<SendSignedBlockResult> sendSignedBlock(
+      SignedBlockContainer maybeBlindedBlockContainer);
 }
