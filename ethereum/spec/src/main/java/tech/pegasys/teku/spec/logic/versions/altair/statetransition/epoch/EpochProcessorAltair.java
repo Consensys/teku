@@ -90,6 +90,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
     return calculator.getDeltas();
   }
 
+  @Override
   public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
       final BeaconState genericState,
       final ValidatorStatuses validatorStatuses,
