@@ -16,70 +16,88 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.io.Resources;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
-import tech.pegasys.teku.api.schema.deneb.BlockContainer;
-import tech.pegasys.teku.api.schema.deneb.SignedBlockContents;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DeserializeBlocksTest {
 
-  public static final DeserializableTypeDefinition<SignedBeaconBlock> SIGNED_BEACON_BLOCK_TYPE =
-      DeserializableTypeDefinition.object(SignedBeaconBlock.class)
-          .name("SignedBeaconBlock")
-          .initializer(SignedBeaconBlock::new)
-          .build();
-  public static final DeserializableTypeDefinition<SignedBlockContents> SIGNED_BLOCK_CONTENTS_TYPE =
-      DeserializableTypeDefinition.object(SignedBlockContents.class)
-          .name("SignedBlockContents")
-          .initializer(SignedBlockContents::new)
-          .build();
-
+  static Spec spec = TestSpecFactory.createMinimalDeneb();
+  DataStructureUtil denebData = new DataStructureUtil(spec);
   public static final DeserializableOneOfTypeDefinition<BlockContainer, BlockContainerBuilder>
-      DESERIALIZABLE_ONE_OF_TYPE_DEFINITION =
+      DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS =
           DeserializableOneOfTypeDefinition.object(
                   BlockContainer.class, BlockContainerBuilder.class)
-              .description(
-                  "Submit a signed beacon block to the beacon node to be imported."
-                      + " The beacon node performs the required validation.")
               .withType(
                   SignedBeaconBlock.isInstance,
                   s -> !s.contains("blob_sidecars"),
-                  SIGNED_BEACON_BLOCK_TYPE)
+                  spec.getGenesisSchemaDefinitions()
+                      .getSignedBeaconBlockSchema()
+                      .getJsonTypeDefinition())
               .withType(
                   SignedBlockContents.isInstance,
                   s -> s.contains("blob_sidecars"),
-                  SIGNED_BLOCK_CONTENTS_TYPE)
+                  SignedBlockContentsSchema.create(
+                          spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow(),
+                          SignedBlobSidecarSchema.create(
+                              BlobSidecarSchema.create(
+                                  new BlobSchema(
+                                      spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow()))),
+                          spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema())
+                      .getJsonTypeDefinition())
               .build();
 
   @Test
-  void shouldDeserializeSignedBlockContents() throws JsonProcessingException {
+  void shouldDeserializeSignedBeaconBlock() throws JsonProcessingException {
+
+    SignedBeaconBlock randomSignedBeaconBlock = denebData.randomSignedBeaconBlock();
+
+    String serializedSignedBeaconBlock =
+        JsonUtil.serialize(
+            randomSignedBeaconBlock,
+            DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
+
     final BlockContainer result =
         JsonUtil.parse(
-            readResource("json/signed_block_contents.json"), DESERIALIZABLE_ONE_OF_TYPE_DEFINITION);
-    assertThat(result).isInstanceOf(SignedBlockContents.class);
+            serializedSignedBeaconBlock,
+            DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
+
+    assertThat(result).isInstanceOf(SignedBeaconBlock.class);
+
+    assertThat(result.getSignedBeaconBlock()).isPresent();
+    assertThat(result.getSignedBlobSidecars()).isEmpty();
   }
 
   @Test
-  void shouldDeserializeSignedBeaconBlock() throws JsonProcessingException {
+  void shouldDeserializeSignedBlockContents() throws JsonProcessingException {
+
+    SignedBlockContents randomSignedBlockContents = denebData.randomSignedBlockContents();
+
+    String serializedSignedBlockContents =
+        JsonUtil.serialize(
+            randomSignedBlockContents,
+            DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
+
     final BlockContainer result =
         JsonUtil.parse(
-            readResource("json/signed_beacon_block.json"), DESERIALIZABLE_ONE_OF_TYPE_DEFINITION);
-    assertThat(result).isInstanceOf(SignedBeaconBlock.class);
-  }
+            serializedSignedBlockContents,
+            DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
+    assertThat(result).isInstanceOf(SignedBlockContents.class);
 
-  protected String readResource(final String resource) {
-    try {
-      return Resources.toString(Resources.getResource(resource), StandardCharsets.UTF_8);
-    } catch (IOException ex) {
-      throw new UncheckedIOException(ex);
-    }
+    assertThat(result.getSignedBeaconBlock()).isPresent();
+    assertThat(result.getSignedBlobSidecars()).isPresent();
+    assertThat(result.getSignedBlobSidecars().get())
+        .hasSize(spec.getMaxBlobsPerBlock().orElseThrow());
   }
 
   private static class BlockContainerBuilder {}

@@ -44,8 +44,8 @@ public class BlindedBlockContentsSchema
 
   public static BlindedBlockContentsSchema create(
       final SpecConfigDeneb specConfig,
-      final BeaconBlockSchema beaconBlockSchema,
-      final BlindedBlobSidecarSchema blindedBlobSidecarSchema) {
+      final BlindedBlobSidecarSchema blindedBlobSidecarSchema,
+      final BeaconBlockSchema beaconBlockSchema) {
     return new BlindedBlockContentsSchema(specConfig, beaconBlockSchema, blindedBlobSidecarSchema);
   }
 
