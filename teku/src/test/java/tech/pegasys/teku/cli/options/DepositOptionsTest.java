@@ -18,12 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -118,10 +115,9 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("getNetworksAndFlagsForDepositSnapshot")
-  public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(
-      final String network, final String flag) {
-    final String[] args = {"--network=" + network, flag};
+  @ValueSource(strings = {"mainnet", "goerli", "prater", "gnosis", "sepolia"})
+  public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
+    final String[] args = {"--network=" + network, "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
     assertThat(config.powchain().getDepositSnapshotPath())
@@ -131,14 +127,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
                     DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
                         Eth2Network.fromStringLenient(network).get()))
                 .toExternalForm());
-  }
-
-  public static Stream<Arguments> getNetworksAndFlagsForDepositSnapshot() {
-    final Set<String> networks = Set.of("mainnet", "goerli", "prater", "gnosis", "sepolia");
-    final Set<String> flags =
-        Set.of("--deposit-snapshot-enabled", "--Xdeposit-snapshot-enabled"); // new and an old one
-    return networks.stream()
-        .flatMap(network -> flags.stream().map(flag -> Arguments.of(network, flag)));
   }
 
   @Test
