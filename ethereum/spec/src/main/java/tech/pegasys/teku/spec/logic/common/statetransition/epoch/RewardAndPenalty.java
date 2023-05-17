@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface RewardAndPenalty {
@@ -32,4 +33,12 @@ public interface RewardAndPenalty {
   UInt64 getReward();
 
   UInt64 getPenalty();
+
+  default Optional<DetailedRewardAndPenalty> asDetailed() {
+    if (this.getClass().isAssignableFrom(DetailedRewardAndPenalty.class)) {
+      return Optional.of((DetailedRewardAndPenalty) this);
+    } else {
+      return Optional.empty();
+    }
+  }
 }

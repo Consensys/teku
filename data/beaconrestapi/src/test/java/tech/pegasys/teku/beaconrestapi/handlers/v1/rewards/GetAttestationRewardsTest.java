@@ -55,7 +55,7 @@ class GetAttestationRewardsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    setHandler(new GetAttestationRewards());
+    setHandler(new GetAttestationRewards(chainDataProvider));
   }
 
   @Test

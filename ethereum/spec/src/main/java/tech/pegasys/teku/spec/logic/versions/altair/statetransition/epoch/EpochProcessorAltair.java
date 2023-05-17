@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.M
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ProgressiveTotalBalancesAltair;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
@@ -86,6 +88,24 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
             beaconStateAccessorsAltair);
 
     return calculator.getDeltas();
+  }
+
+  @Override
+  public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      final BeaconState genericState,
+      final ValidatorStatuses validatorStatuses,
+      final Function<RewardsAndPenaltiesCalculator, RewardAndPenaltyDeltas> calculatorFunction) {
+
+    final BeaconStateAltair state = BeaconStateAltair.required(genericState);
+    final RewardsAndPenaltiesCalculatorAltair calculator =
+        new RewardsAndPenaltiesCalculatorAltair(
+            specConfigAltair,
+            state,
+            validatorStatuses,
+            miscHelpersAltair,
+            beaconStateAccessorsAltair);
+
+    return calculatorFunction.apply(calculator);
   }
 
   /**
