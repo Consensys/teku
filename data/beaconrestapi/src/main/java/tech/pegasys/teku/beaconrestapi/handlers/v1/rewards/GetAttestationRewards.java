@@ -114,7 +114,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
 
     request.respondAsync(
         chainDataProvider
-            .calculateEpochAttestationRewards(epoch, validatorsPubKeys)
+            .calculateAttestationRewardsAtEpoch(epoch, validatorsPubKeys)
             .thenApply(
                 result ->
                     result

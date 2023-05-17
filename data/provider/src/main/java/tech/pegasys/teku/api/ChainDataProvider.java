@@ -584,7 +584,7 @@ public class ChainDataProvider {
             });
   }
 
-  public SafeFuture<Optional<AttestationRewardsData>> calculateEpochAttestationRewards(
+  public SafeFuture<Optional<AttestationRewardsData>> calculateAttestationRewardsAtEpoch(
       final UInt64 epoch, final List<String> validatorsPubKeys) {
     final UInt64 slot = findSlotAtEndOfNextEpoch(epoch);
 
