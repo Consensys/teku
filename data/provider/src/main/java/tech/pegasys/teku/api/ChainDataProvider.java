@@ -593,21 +593,16 @@ public class ChainDataProvider {
           "Can't calculate attestation rewards for for epoch " + epoch + " pre Altair");
     }
 
-    final SafeFuture<Optional<StateAndMetaData>> stateFuture =
-        defaultStateSelectorFactory.forSlot(slot).getState();
-
-    return stateFuture.thenCompose(
-        maybeState -> {
-          if (maybeState.isEmpty()) {
-            return SafeFuture.completedFuture(Optional.empty());
-          }
-
-          final EpochAttestationRewardsCalculator epochAttestationRewardsCalculator =
-              new EpochAttestationRewardsCalculator(
-                  spec.atSlot(slot), maybeState.get().getData(), validatorsPubKeys);
-          return SafeFuture.completedFuture(
-              Optional.of(epochAttestationRewardsCalculator.calculate()));
-        });
+    return defaultStateSelectorFactory
+        .forSlot(slot)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    stateAndMetaData ->
+                        new EpochAttestationRewardsCalculator(
+                                spec.atSlot(slot), maybeState.get().getData(), validatorsPubKeys)
+                            .calculate()));
   }
 
   private UInt64 findSlotAtEndOfNextEpoch(final UInt64 epoch) {
