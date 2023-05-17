@@ -59,7 +59,7 @@ public class EpochAttestationRewardsCalculator {
             i ->
                 validatorPublicKeys.isEmpty()
                     || validatorPublicKeys.contains(
-                        allValidators.get(i).getPublicKey().toHexString()))
+                    allValidators.get(i).getPublicKey().toHexString()))
         .filter(i -> validatorStatuses.getStatuses().get(i).isEligibleValidator())
         .boxed()
         .collect(toList());
