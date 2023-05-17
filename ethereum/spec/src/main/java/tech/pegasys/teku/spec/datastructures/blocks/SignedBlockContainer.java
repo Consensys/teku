@@ -11,6 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.schema.deneb;
+package tech.pegasys.teku.spec.datastructures.blocks;
 
-public interface BlockContainer {}
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+
+public interface SignedBlockContainer extends BlockContainer {
+
+  default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
+    return Optional.empty();
+  }
+}

@@ -15,16 +15,17 @@ package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 
 public class SignedBlockContents
     extends Container2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecar>>
-    implements BlockContainer {
+    implements SignedBlockContainer {
 
   SignedBlockContents(final SignedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
@@ -49,4 +50,7 @@ public class SignedBlockContents
   public Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.of(getField1().asList());
   }
+
+  public static Predicate<SignedBlockContainer> isSignedBlockContentsInstance =
+      signedBlockContent -> signedBlockContent instanceof SignedBlockContents;
 }

@@ -15,17 +15,18 @@ package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 
 public class SignedBlindedBlockContents
     extends Container2<
         SignedBlindedBlockContents, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>>
-    implements BlockContainer {
+    implements SignedBlindedBlockContainer {
 
   SignedBlindedBlockContents(
       final SignedBlindedBlockContentsSchema type, final TreeNode backingNode) {
@@ -47,7 +48,12 @@ public class SignedBlindedBlockContents
     return Optional.of(getField0());
   }
 
-  public List<SignedBlindedBlobSidecar> getSignedBlindedBlobSidecars() {
-    return getField1().asList();
+  @Override
+  public Optional<List<SignedBlindedBlobSidecar>> getSignedBlindedBlobSidecars() {
+    return Optional.of(getField1().asList());
   }
+
+  public static Predicate<SignedBlindedBlockContainer> isSignedBlindedBlockContentsInstance =
+      signedBlindedBlockContents ->
+          signedBlindedBlockContents instanceof SignedBlindedBlockContents;
 }

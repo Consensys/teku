@@ -19,6 +19,7 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
@@ -32,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
-    implements BeaconBlockSummary, BlockContainer {
+    implements BeaconBlockSummary, SignedBlockContainer, SignedBlindedBlockContainer {
 
   SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
@@ -185,4 +186,10 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   public Bytes32 getRoot() {
     return getMessage().hashTreeRoot();
   }
+
+  public static Predicate<SignedBlockContainer> isSignedBeaconBlockInstance =
+      signedBeaconBlock -> signedBeaconBlock instanceof SignedBeaconBlock;
+
+  public static Predicate<SignedBlindedBlockContainer> isSignedBlindedBeaconBlockInstance =
+      signedBlindedBeaconBlock -> signedBlindedBeaconBlock instanceof SignedBeaconBlock;
 }

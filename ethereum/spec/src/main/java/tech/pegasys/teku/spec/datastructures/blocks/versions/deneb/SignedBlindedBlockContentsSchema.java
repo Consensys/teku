@@ -46,8 +46,8 @@ public class SignedBlindedBlockContentsSchema
 
   public static SignedBlindedBlockContentsSchema create(
       final SpecConfigDeneb specConfig,
-      final SignedBeaconBlockSchema signedBeaconBlockSchema,
-      final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema) {
+      final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema,
+      final SignedBeaconBlockSchema signedBeaconBlockSchema) {
     return new SignedBlindedBlockContentsSchema(
         specConfig, signedBeaconBlockSchema, signedBlindedBlobSidecarSchema);
   }
