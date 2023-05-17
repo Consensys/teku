@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
-    implements BeaconBlockSummary, BlockContainer {
+    implements BeaconBlockSummary, SignedBlockContainer, SignedBlindedBlockContainer {
 
   SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
@@ -187,6 +187,9 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return getMessage().hashTreeRoot();
   }
 
-  public static Predicate<BlockContainer> isInstance =
+  public static Predicate<SignedBlockContainer> isSignedBeaconBlockInstance =
       signedBeaconBlock -> signedBeaconBlock instanceof SignedBeaconBlock;
+
+  public static Predicate<SignedBlindedBlockContainer> isSignedBlindedBeaconBlockInstance =
+      signedBlindedBeaconBlock -> signedBlindedBeaconBlock instanceof SignedBeaconBlock;
 }
