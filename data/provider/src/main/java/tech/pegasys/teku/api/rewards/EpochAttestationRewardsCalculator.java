@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
 public class EpochAttestationRewardsCalculator {
@@ -81,7 +82,8 @@ public class EpochAttestationRewardsCalculator {
 
   private List<TotalAttestationReward> totalAttestationRewards() {
     final RewardAndPenaltyDeltas totalRewardAndPenaltyDeltas =
-        epochProcessor.getDetailedRewardAndPenaltyDeltas(state, validatorStatuses);
+        epochProcessor.getRewardAndPenaltyDeltas(state, validatorStatuses,
+            RewardsAndPenaltiesCalculator::getDetailedDeltas);
 
     return validatorIndexes.stream()
         .map(i -> new ImmutablePair<>(i, totalRewardAndPenaltyDeltas.getDelta(i)))
