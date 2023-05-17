@@ -13,86 +13,22 @@
 
 package tech.pegasys.teku.api.rewards;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.List;
-import java.util.stream.IntStream;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
-import tech.pegasys.teku.api.migrated.IdealAttestationReward;
-import tech.pegasys.teku.api.migrated.TotalAttestationReward;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.constants.EthConstants;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
-import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
 public class EpochAttestationRewardsCalculator {
-
-  private static final Logger LOG = LogManager.getLogger();
-
-  private final BeaconState state;
-  private final EpochProcessor epochProcessor;
-  private final ValidatorStatuses validatorStatuses;
-  private final List<Integer> validatorIndexes;
 
   public EpochAttestationRewardsCalculator(
       final SpecVersion specVersion,
       final BeaconState state,
       final List<String> validatorPublicKeys) {
-    this.state = state;
-    this.epochProcessor = specVersion.getEpochProcessor();
-    this.validatorStatuses = specVersion.getValidatorStatusFactory().createValidatorStatuses(state);
-    this.validatorIndexes = getValidatorIndexes(state, validatorPublicKeys);
+    //TODO implement EpochAttestationRewardsCalculator business logic
   }
 
-  private List<Integer> getValidatorIndexes(
-      final BeaconState state, final List<String> validatorPublicKeys) {
-    final SszList<Validator> allValidators = state.getValidators();
-    return IntStream.range(0, allValidators.size())
-        .filter(
-            i ->
-                validatorPublicKeys.isEmpty()
-                    || validatorPublicKeys.contains(
-                        allValidators.get(i).getPublicKey().toHexString()))
-        .filter(i -> validatorStatuses.getStatuses().get(i).isEligibleValidator())
-        .boxed()
-        .collect(toList());
-  }
 
   public AttestationRewardsData calculate() {
-    try {
-      final List<TotalAttestationReward> totalAttestationRewards = totalAttestationRewards();
-      final List<IdealAttestationReward> idealAttestationRewards = idealAttestationRewards();
-      return new AttestationRewardsData(idealAttestationRewards, totalAttestationRewards);
-    } catch (RuntimeException ex) {
-      LOG.error("Error calculating detailed rewards and penalties", ex);
-      throw ex;
-    }
-  }
-
-  private List<TotalAttestationReward> totalAttestationRewards() {
-    final RewardAndPenaltyDeltas totalRewardAndPenaltyDeltas =
-        epochProcessor.getDetailedRewardAndPenaltyDeltas(state, validatorStatuses);
-
-    return validatorIndexes.stream()
-        .map(i -> new ImmutablePair<>(i, totalRewardAndPenaltyDeltas.getDelta(i)))
-        .map(p -> new TotalAttestationReward(p.left, p.right))
-        .collect(toList());
-  }
-
-  public List<IdealAttestationReward> idealAttestationRewards() {
-    // TODO-lucas not implemented yet
-    return IntStream.rangeClosed(0, 32)
-        .boxed()
-        .map(UInt64::valueOf)
-        .map(i -> new IdealAttestationReward(EthConstants.ETH_TO_GWEI.times(i), 0L, 0L, 0L))
-        .collect(toList());
+    return new AttestationRewardsData(List.of(), List.of());
   }
 }

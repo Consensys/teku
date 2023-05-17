@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.api.migrated;
 
+import java.security.InvalidParameterException;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -40,11 +41,13 @@ public class TotalAttestationReward {
   public TotalAttestationReward(long validatorIndex, final RewardAndPenalty rewardAndPenalty) {
     this.validatorIndex = validatorIndex;
 
-    if (!rewardAndPenalty.getClass().isAssignableFrom(DetailedRewardAndPenalty.class)) {
-      throw new IllegalStateException("Can't cast RewardAndPenalty to DetailedRewardAndPenalty");
-    }
     final DetailedRewardAndPenalty detailedRewardAndPenalty =
-        (DetailedRewardAndPenalty) rewardAndPenalty;
+        rewardAndPenalty
+            .asDetailed()
+            .orElseThrow(
+                () ->
+                    new InvalidParameterException(
+                        "TotalAttestationRewards requires a DetailedRewardAndPenalty instance"));
 
     this.head =
         detailedRewardAndPenalty.getReward(RewardComponent.HEAD).longValue()

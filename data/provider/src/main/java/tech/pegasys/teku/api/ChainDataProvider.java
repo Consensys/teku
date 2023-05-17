@@ -587,6 +587,12 @@ public class ChainDataProvider {
   public SafeFuture<Optional<AttestationRewardsData>> calculateEpochAttestationRewards(
       final UInt64 epoch, final List<String> validatorsPubKeys) {
     final UInt64 slot = findSlotAtEndOfNextEpoch(epoch);
+
+    if (!spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      throw new BadRequestException(
+          "Can't calculate attestation rewards for for epoch " + epoch + " pre Altair");
+    }
+
     final SafeFuture<Optional<StateAndMetaData>> stateFuture =
         defaultStateSelectorFactory.forSlot(slot).getState();
 
