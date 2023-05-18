@@ -327,20 +327,20 @@ public class KvStoreDatabase implements Database {
   }
 
   private Optional<UInt64> needToUpdateEarliestBlobSidecarSlot(
-      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+      final Optional<UInt64> maybeNewEarliestBlobSidecarSlot) {
     // New value is absent - not updating
-    if (maybeEarliestBlobSidecarSlot.isEmpty()) {
+    if (maybeNewEarliestBlobSidecarSlot.isEmpty()) {
       return Optional.empty();
     }
     // New value is present, value from DB is absent - updating
     final Optional<UInt64> maybeEarliestFinalizedBlockSlotDb = dao.getEarliestFinalizedBlockSlot();
     if (maybeEarliestFinalizedBlockSlotDb.isEmpty()) {
-      return maybeEarliestBlobSidecarSlot;
+      return maybeNewEarliestBlobSidecarSlot;
     }
     // New value is smaller than value from DB - updating
-    final UInt64 newEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot.get();
+    final UInt64 newEarliestBlobSidecarSlot = maybeNewEarliestBlobSidecarSlot.get();
     if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestFinalizedBlockSlotDb.get())) {
-      return maybeEarliestBlobSidecarSlot;
+      return maybeNewEarliestBlobSidecarSlot;
     } else {
       return Optional.empty();
     }

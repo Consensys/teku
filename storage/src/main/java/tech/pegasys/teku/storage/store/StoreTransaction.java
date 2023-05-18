@@ -99,27 +99,28 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     if (!blobSidecars.isEmpty()) {
       this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
     }
-    needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecarSlot)
-        .ifPresent(slot -> maybeEarliestBlobSidecarTransactionSlot = Optional.of(slot));
+    if (needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecarSlot)) {
+      this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
+    }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
   }
 
-  private Optional<UInt64> needToUpdateEarliestBlobSidecarSlot(
-      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
-    // New value is absent - not updating
-    if (maybeEarliestBlobSidecarSlot.isEmpty()) {
-      return Optional.empty();
+  private boolean needToUpdateEarliestBlobSidecarSlot(
+      final Optional<UInt64> maybeNewEarliestBlobSidecarSlot) {
+    // New value is absent - false
+    if (maybeNewEarliestBlobSidecarSlot.isEmpty()) {
+      return false;
     }
-    // New value is present, old is absent - updating
+    // New value is present, old is absent - true
     if (maybeEarliestBlobSidecarTransactionSlot.isEmpty()) {
-      return maybeEarliestBlobSidecarSlot;
+      return true;
     }
-    // New value is smaller than an old one - updating
-    final UInt64 newEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot.get();
+    // New value is smaller than an old one - true
+    final UInt64 newEarliestBlobSidecarSlot = maybeNewEarliestBlobSidecarSlot.get();
     if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestBlobSidecarTransactionSlot.get())) {
-      return maybeEarliestBlobSidecarSlot;
+      return true;
     } else {
-      return Optional.empty();
+      return false;
     }
   }
 
