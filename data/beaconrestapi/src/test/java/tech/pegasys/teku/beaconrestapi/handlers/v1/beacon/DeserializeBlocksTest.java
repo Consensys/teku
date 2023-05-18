@@ -90,7 +90,8 @@ public class DeserializeBlocksTest {
 
     assertThat(result).isInstanceOf(SignedBeaconBlock.class);
 
-    assertThat(result.getBlock()).isNotNull();
+    assertThat(result.getBlock()).isEqualTo(randomSignedBeaconBlock.getMessage());
+    assertThat(result.getSignedBlock()).isEqualTo(randomSignedBeaconBlock);
     assertThat(result.getSignedBlobSidecars()).isEmpty();
   }
 
