@@ -90,7 +90,6 @@ public class DeserializeBlocksTest {
 
     assertThat(result).isInstanceOf(SignedBeaconBlock.class);
 
-    assertThat(result.getBlock()).isEqualTo(randomSignedBeaconBlock.getMessage());
     assertThat(result.getSignedBlock()).isEqualTo(randomSignedBeaconBlock);
     assertThat(result.getSignedBlobSidecars()).isEmpty();
   }
@@ -112,9 +111,8 @@ public class DeserializeBlocksTest {
     assertThat(result).isInstanceOf(SignedBlockContents.class);
 
     assertThat(result.getSignedBlock()).isEqualTo(randomSignedBlockContents.getSignedBlock());
-    assertThat(result.getSignedBlobSidecars()).isPresent();
-    assertThat(result.getSignedBlobSidecars().get())
-        .hasSize(spec.getMaxBlobsPerBlock().orElseThrow());
+    assertThat(result.getSignedBlobSidecars())
+        .isEqualTo(randomSignedBlockContents.getSignedBlobSidecars());
   }
 
   @Test
@@ -158,9 +156,8 @@ public class DeserializeBlocksTest {
 
     assertThat(result.getSignedBlock())
         .isEqualTo(randomSignedBlindedBlockContents.getSignedBlock());
-    assertThat(result.getSignedBlindedBlobSidecars()).isPresent();
-    assertThat(result.getSignedBlindedBlobSidecars().get())
-        .hasSize(spec.getMaxBlobsPerBlock().orElseThrow());
+    assertThat(result.getSignedBlindedBlobSidecars())
+        .isEqualTo(randomSignedBlindedBlockContents.getSignedBlindedBlobSidecars());
   }
 
   private static class BlockContainerBuilder {}
