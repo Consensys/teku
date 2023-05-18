@@ -21,7 +21,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -60,6 +62,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -75,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.util.BeaconStateBuilderCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -409,8 +413,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  public void getBlockRewardsFromBlockId_shouldReturnEmptyIfBlockNotFound()
-      throws ExecutionException, InterruptedException {
+  public void getBlockRewardsFromBlockId_shouldReturnEmptyIfBlockNotFound() {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
     final String slot = "1122334455";
     when(mockCombinedChainDataClient.getBlockAtSlotExact(eq(UInt64.valueOf(slot)), any()))
@@ -419,6 +422,68 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
         provider.getBlockRewardsFromBlockId(slot);
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
     verifyNoMoreInteractions(rewardCalculator);
+  }
+
+  @Test
+  public void getAttestationRewardsAtEpoch_shouldFailForPreAltair() {
+    final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(phase0Spec);
+    final ChainDataProvider chainDataProvider = setupBySpec(phase0Spec, dataStructureUtil);
+
+    assertThatThrownBy(() -> chainDataProvider.calculateAttestationRewardsAtEpoch(ONE, List.of()))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageContaining("Can't calculate attestation rewards for for epoch 1 pre Altair");
+  }
+
+  @Test
+  public void getAttestationRewardsAtEpoch_shouldReturnEmptyIfStateNotFound() {
+    final ChainDataProvider provider = setupBySpec(spec, data);
+
+    when(mockCombinedChainDataClient.getStateAtSlotExact(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    assertThat(provider.calculateAttestationRewardsAtEpoch(ONE, List.of()))
+        .isCompletedWithValue(Optional.empty());
+  }
+
+  @Test
+  public void getAttestationRewardsAtEpoch_shouldUseStateFromSlotAtEndOfNextEpoch() {
+    final ChainDataProvider provider = setupBySpec(spec, data);
+
+    when(mockCombinedChainDataClient.getStateAtSlotExact(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(data.randomBeaconState())));
+
+    final UInt64 queriedEpoch = ONE;
+    final UInt64 expectedSlot = spec.computeStartSlotAtEpoch(queriedEpoch.plus(2L)).minus(1);
+    provider.calculateAttestationRewardsAtEpoch(queriedEpoch, List.of());
+
+    verify(stateSelectorFactory).forSlot(expectedSlot);
+  }
+
+  @Test
+  public void getAttestationRewardsAtEpoch_shouldCallEpochAttestationRewardCalculator() {
+    final UInt64 queriedEpoch = ONE;
+    final UInt64 expectedSlot = spec.computeStartSlotAtEpoch(queriedEpoch.plus(2L)).minus(1);
+
+    final Spec spySpec = spy(spec);
+    final SpecVersion spySpecVersion = spy(spec.atSlot(expectedSlot));
+    final EpochProcessor spyEpochProcessor = spy(spySpecVersion.getEpochProcessor());
+    doReturn(spySpecVersion).when(spySpec).atSlot(eq(expectedSlot));
+    doReturn(spyEpochProcessor).when(spySpecVersion).getEpochProcessor();
+    final ChainDataProvider provider = setupBySpec(spySpec, data);
+
+    when(mockCombinedChainDataClient.getStateAtSlotExact(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(data.randomBeaconState())));
+
+    assertThat(provider.calculateAttestationRewardsAtEpoch(queriedEpoch, List.of()))
+        .isCompletedWithValueMatching(Optional::isPresent);
+
+    /*
+    Because we instantiate EpochAttestationRewardsCalculator within ChainDataProvider, we are using this "trick" to
+    check that we are correctly doing the call-chain: ChainDataProvider -> EpochAttestationRewardsCalculator ->
+    EpochProcessor#getRewardAndPenaltyDeltas()
+     */
+    verify(spyEpochProcessor).getRewardAndPenaltyDeltas(any(), any(), any());
   }
 
   @Test
