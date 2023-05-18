@@ -19,7 +19,6 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
@@ -187,9 +186,8 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return getMessage().hashTreeRoot();
   }
 
-  public static Predicate<SignedBlockContainer> isSignedBeaconBlockInstance =
-      signedBeaconBlock -> signedBeaconBlock instanceof SignedBeaconBlock;
-
-  public static Predicate<SignedBlindedBlockContainer> isSignedBlindedBeaconBlockInstance =
-      signedBlindedBeaconBlock -> signedBlindedBeaconBlock instanceof SignedBeaconBlock;
+  @Override
+  public SignedBeaconBlock getSignedBlock() {
+    return this;
+  }
 }

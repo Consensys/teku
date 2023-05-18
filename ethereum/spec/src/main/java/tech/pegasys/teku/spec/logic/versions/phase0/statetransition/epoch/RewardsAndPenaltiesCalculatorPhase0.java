@@ -40,12 +40,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
     super(specConfig, miscHelpers, beaconStateAccessors, state, validatorStatuses);
   }
 
-  /**
-   * Return attestation reward/penalty deltas for each validator
-   *
-   * @return
-   * @throws IllegalArgumentException
-   */
+  /** Return attestation reward/penalty deltas for each validator */
   @Override
   public RewardAndPenaltyDeltas getDeltas() throws IllegalArgumentException {
     return getDeltas(this::applyAllDeltas);
@@ -72,6 +67,12 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
       step.apply(deltas, totalBalances, finalityDelay, validator, baseReward, delta);
     }
     return deltas;
+  }
+
+  @Override
+  public RewardAndPenaltyDeltas getDetailedDeltas() throws IllegalArgumentException {
+    throw new UnsupportedOperationException(
+        "Can't calculate detailed RewardAndPenaltyDeltas pre-Altair");
   }
 
   private void applyAllDeltas(
@@ -236,6 +237,7 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
   }
 
   public interface Step {
+
     void apply(
         final RewardAndPenaltyDeltas deltas,
         final TotalBalances totalBalances,
