@@ -59,7 +59,7 @@ public class EpochAttestationRewardsCalculator {
             i ->
                 validatorPublicKeys.isEmpty()
                     || validatorPublicKeys.contains(
-                    allValidators.get(i).getPublicKey().toHexString()))
+                        allValidators.get(i).getPublicKey().toHexString()))
         .filter(i -> validatorStatuses.getStatuses().get(i).isEligibleValidator())
         .boxed()
         .collect(toList());
@@ -82,8 +82,8 @@ public class EpochAttestationRewardsCalculator {
 
   private List<TotalAttestationReward> totalAttestationRewards() {
     final RewardAndPenaltyDeltas totalRewardAndPenaltyDeltas =
-        epochProcessor.getRewardAndPenaltyDeltas(state, validatorStatuses,
-            RewardsAndPenaltiesCalculator::getDetailedDeltas);
+        epochProcessor.getRewardAndPenaltyDeltas(
+            state, validatorStatuses, RewardsAndPenaltiesCalculator::getDetailedDeltas);
 
     return validatorIndexes.stream()
         .map(i -> new ImmutablePair<>(i, totalRewardAndPenaltyDeltas.getDelta(i)))
