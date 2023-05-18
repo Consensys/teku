@@ -22,7 +22,6 @@ import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -79,9 +78,8 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer) {
-    final SignedBeaconBlock maybeBlindedBlock =
-        maybeBlindedBlockContainer.getSignedBeaconBlock().orElseThrow();
-    final SpecMilestone blockMilestone = spec.atSlot(maybeBlindedBlock.getSlot()).getMilestone();
+    final SpecMilestone blockMilestone =
+        spec.atSlot(maybeBlindedBlockContainer.getSlot()).getMilestone();
     return registeredPublishers.get(blockMilestone).sendSignedBlock(maybeBlindedBlockContainer);
   }
 }

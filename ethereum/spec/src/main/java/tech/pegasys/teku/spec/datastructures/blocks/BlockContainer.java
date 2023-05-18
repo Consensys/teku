@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 
@@ -26,6 +27,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 public interface BlockContainer {
 
   BeaconBlock getBlock();
+
+  default UInt64 getSlot() {
+    return getBlock().getSlot();
+  }
 
   default Optional<List<BlobSidecar>> getBlobSidecars() {
     return Optional.empty();
