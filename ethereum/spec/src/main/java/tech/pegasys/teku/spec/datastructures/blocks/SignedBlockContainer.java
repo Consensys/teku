@@ -29,6 +29,11 @@ public interface SignedBlockContainer extends BlockContainer {
   Predicate<SignedBlockContainer> IS_SIGNED_BEACON_BLOCK =
       blockContainer -> blockContainer instanceof SignedBeaconBlock;
 
+  @Override
+  default BeaconBlock getBlock() {
+    return getSignedBlock().getMessage();
+  }
+
   SignedBeaconBlock getSignedBlock();
 
   default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {

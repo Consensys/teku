@@ -19,7 +19,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 
@@ -39,11 +38,6 @@ public class SignedBlockContents
         schema,
         signedBeaconBlock,
         schema.getSignedBlobSidecarsSchema().createFromElements(signedBlobSidecars));
-  }
-
-  @Override
-  public BeaconBlock getBlock() {
-    return getSignedBlock().getBlock();
   }
 
   @Override

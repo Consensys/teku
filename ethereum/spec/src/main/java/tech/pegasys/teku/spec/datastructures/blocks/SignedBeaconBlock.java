@@ -187,11 +187,6 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   }
 
   @Override
-  public BeaconBlock getBlock() {
-    return getMessage();
-  }
-
-  @Override
   public SignedBeaconBlock getSignedBlock() {
     return this;
   }

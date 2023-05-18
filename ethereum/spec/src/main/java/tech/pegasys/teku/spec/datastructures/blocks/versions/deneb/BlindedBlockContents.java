@@ -40,14 +40,9 @@ public class BlindedBlockContents
         schema.getBlindedBlobSidecarsSchema().createFromElements(blindedBlobSidecars));
   }
 
-  // We only need a Blinded BeaconBlock
-  public BeaconBlock getBlindedBeaconBlock() {
-    return getField0();
-  }
-
   @Override
   public BeaconBlock getBlock() {
-    return getBlindedBeaconBlock();
+    return getField0();
   }
 
   @Override
