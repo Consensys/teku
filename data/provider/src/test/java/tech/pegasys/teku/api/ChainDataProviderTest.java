@@ -455,7 +455,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
     final UInt64 queriedEpoch = ONE;
     final UInt64 expectedSlot = spec.computeStartSlotAtEpoch(queriedEpoch.plus(2L)).minus(1);
-    provider.calculateAttestationRewardsAtEpoch(queriedEpoch, List.of());
+    assertThat(provider.calculateAttestationRewardsAtEpoch(queriedEpoch, List.of())).isCompleted();
 
     verify(stateSelectorFactory).forSlot(expectedSlot);
   }
