@@ -77,21 +77,6 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
 
   @Override
   public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
-      final BeaconState genericState, final ValidatorStatuses validatorStatuses) {
-    final BeaconStateAltair state = BeaconStateAltair.required(genericState);
-    final RewardsAndPenaltiesCalculatorAltair calculator =
-        new RewardsAndPenaltiesCalculatorAltair(
-            specConfigAltair,
-            state,
-            validatorStatuses,
-            miscHelpersAltair,
-            beaconStateAccessorsAltair);
-
-    return calculator.getDeltas();
-  }
-
-  @Override
-  public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
       final BeaconState genericState,
       final ValidatorStatuses validatorStatuses,
       final Function<RewardsAndPenaltiesCalculator, RewardAndPenaltyDeltas> calculatorFunction) {

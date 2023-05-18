@@ -83,30 +83,37 @@ public class ChainDataProvider {
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SchemaObjectProvider schemaObjectProvider;
-
   private final RecentChainData recentChainData;
-
   private final RewardCalculator rewardCalculator;
-
-  ChainDataProvider(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final CombinedChainDataClient combinedChainDataClient,
-      final RewardCalculator rewardCalculator) {
-    this.spec = spec;
-    this.combinedChainDataClient = combinedChainDataClient;
-    this.recentChainData = recentChainData;
-    this.schemaObjectProvider = new SchemaObjectProvider(spec);
-    this.defaultBlockSelectorFactory = new BlockSelectorFactory(spec, combinedChainDataClient);
-    this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
-    this.rewardCalculator = rewardCalculator;
-  }
 
   public ChainDataProvider(
       final Spec spec,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
-    this(spec, recentChainData, combinedChainDataClient, new RewardCalculator(spec));
+    this(
+        spec,
+        recentChainData,
+        combinedChainDataClient,
+        new BlockSelectorFactory(spec, combinedChainDataClient),
+        new StateSelectorFactory(spec, combinedChainDataClient),
+        new RewardCalculator(spec));
+  }
+
+  @VisibleForTesting
+  ChainDataProvider(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final BlockSelectorFactory blockSelectorFactory,
+      final StateSelectorFactory stateSelectorFactory,
+      final RewardCalculator rewardCalculator) {
+    this.spec = spec;
+    this.combinedChainDataClient = combinedChainDataClient;
+    this.recentChainData = recentChainData;
+    this.schemaObjectProvider = new SchemaObjectProvider(spec);
+    this.defaultBlockSelectorFactory = blockSelectorFactory;
+    this.defaultStateSelectorFactory = stateSelectorFactory;
+    this.rewardCalculator = rewardCalculator;
   }
 
   public UInt64 getCurrentEpoch(
