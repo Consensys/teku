@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
+import java.util.function.Function;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -22,6 +23,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.AbstractEpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -52,12 +54,14 @@ public class EpochProcessorPhase0 extends AbstractEpochProcessor {
 
   @Override
   public RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
-      BeaconState state, ValidatorStatuses validatorStatuses) {
+      final BeaconState state,
+      final ValidatorStatuses validatorStatuses,
+      final Function<RewardsAndPenaltiesCalculator, RewardAndPenaltyDeltas> calculatorFunction) {
     final RewardsAndPenaltiesCalculatorPhase0 calculator =
         new RewardsAndPenaltiesCalculatorPhase0(
             specConfig, state, validatorStatuses, miscHelpers, beaconStateAccessors);
 
-    return calculator.getDeltas();
+    return calculatorFunction.apply(calculator);
   }
 
   @Override

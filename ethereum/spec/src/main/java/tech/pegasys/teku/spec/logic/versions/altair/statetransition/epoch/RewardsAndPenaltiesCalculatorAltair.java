@@ -67,6 +67,19 @@ public class RewardsAndPenaltiesCalculatorAltair extends RewardsAndPenaltiesCalc
     return deltas;
   }
 
+  @Override
+  public RewardAndPenaltyDeltas getDetailedDeltas() throws IllegalArgumentException {
+    final RewardAndPenaltyDeltas deltas =
+        RewardAndPenaltyDeltas.detailed(validatorStatuses.getValidatorCount());
+
+    for (int flagIndex = 0; flagIndex < PARTICIPATION_FLAG_WEIGHTS.size(); flagIndex++) {
+      processFlagIndexDeltas(deltas, flagIndex);
+    }
+    processInactivityPenaltyDeltas(deltas);
+
+    return deltas;
+  }
+
   /**
    * Corresponds to altair beacon chain accessor get_flag_index_deltas
    *
