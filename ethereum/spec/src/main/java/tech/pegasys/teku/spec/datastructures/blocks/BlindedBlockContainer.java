@@ -14,9 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 
 public interface BlindedBlockContainer extends BlockContainer {
 
-  List<BlindedBlobSidecar> getBlindedBlobSidecars();
+  default Optional<List<BlindedBlobSidecar>> getBlindedBlobSidecars() {
+    return Optional.empty();
+  }
 }

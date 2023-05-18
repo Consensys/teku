@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -50,7 +51,7 @@ public class BlindedBlockContents
   }
 
   @Override
-  public List<BlindedBlobSidecar> getBlindedBlobSidecars() {
-    return getField1().asList();
+  public Optional<List<BlindedBlobSidecar>> getBlindedBlobSidecars() {
+    return Optional.of(getField1().asList());
   }
 }

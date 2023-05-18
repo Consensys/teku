@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconBlock
     extends Container5<BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
-    implements BeaconBlockSummary, BlockContainer {
+    implements BeaconBlockSummary, BlockContainer, BlindedBlockContainer {
 
   BeaconBlock(final BeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
