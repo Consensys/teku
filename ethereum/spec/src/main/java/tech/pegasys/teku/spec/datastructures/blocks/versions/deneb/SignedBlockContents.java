@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -42,15 +41,12 @@ public class SignedBlockContents
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
-    return Optional.of(getField0());
+  public SignedBeaconBlock getSignedBlock() {
+    return getField0();
   }
 
   @Override
   public Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.of(getField1().asList());
   }
-
-  public static Predicate<SignedBlockContainer> isSignedBlockContentsInstance =
-      signedBlockContent -> signedBlockContent instanceof SignedBlockContents;
 }

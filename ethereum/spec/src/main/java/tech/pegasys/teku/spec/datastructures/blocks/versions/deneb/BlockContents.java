@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -35,11 +36,13 @@ public class BlockContents extends Container2<BlockContents, BeaconBlock, SszLis
     super(schema, beaconBlock, schema.getBlobSidecarsSchema().createFromElements(blobSidecars));
   }
 
-  public BeaconBlock getBeaconBlock() {
+  @Override
+  public BeaconBlock getBlock() {
     return getField0();
   }
 
-  public List<BlobSidecar> getBlobSidecars() {
-    return getField1().asList();
+  @Override
+  public Optional<List<BlobSidecar>> getBlobSidecars() {
+    return Optional.of(getField1().asList());
   }
 }

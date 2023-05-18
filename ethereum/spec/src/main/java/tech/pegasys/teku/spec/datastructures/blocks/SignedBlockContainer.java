@@ -15,11 +15,38 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 
 public interface SignedBlockContainer extends BlockContainer {
 
+  Predicate<SignedBlockContainer> IS_SIGNED_BLOCK_CONTENTS =
+      blockContainer -> blockContainer instanceof SignedBlockContents;
+
+  Predicate<SignedBlockContainer> IS_SIGNED_BEACON_BLOCK =
+      blockContainer -> blockContainer instanceof SignedBeaconBlock;
+
+  @Override
+  default BeaconBlock getBlock() {
+    return getSignedBlock().getMessage();
+  }
+
+  SignedBeaconBlock getSignedBlock();
+
   default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.empty();
+  }
+
+  @Override
+  default Optional<List<BlobSidecar>> getBlobSidecars() {
+    return getSignedBlobSidecars()
+        .map(
+            signedBlobSidecars ->
+                signedBlobSidecars.stream()
+                    .map(SignedBlobSidecar::getBlobSidecar)
+                    .collect(Collectors.toList()));
   }
 }
