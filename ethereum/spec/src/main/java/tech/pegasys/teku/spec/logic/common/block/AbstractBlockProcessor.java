@@ -600,7 +600,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  private IndexedAttestationProvider createIndexedAttestationProvider(
+  public IndexedAttestationProvider createIndexedAttestationProvider(
       BeaconState state, IndexedAttestationCache indexedAttestationCache) {
     return (attestation) ->
         indexedAttestationCache.computeIfAbsent(
@@ -868,7 +868,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     }
   }
 
-  protected interface IndexedAttestationProvider {
+  public interface IndexedAttestationProvider {
     IndexedAttestation getIndexedAttestation(final Attestation attestation);
   }
 

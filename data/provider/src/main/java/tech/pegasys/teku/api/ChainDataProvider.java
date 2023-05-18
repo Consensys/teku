@@ -573,7 +573,7 @@ public class ChainDataProvider {
               final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
 
               return combinedChainDataClient
-                  .getStateByBlockRoot(block.getRoot())
+                  .getStateAtSlotExact(block.getSlot().decrement())
                   .thenApply(
                       maybeState ->
                           maybeState.map(
