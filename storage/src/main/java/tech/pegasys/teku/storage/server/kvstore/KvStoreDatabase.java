@@ -319,15 +319,30 @@ public class KvStoreDatabase implements Database {
                 .get(block.getSlotAndBlockRoot())
                 .forEach(updater::addBlobSidecar);
           });
-      if (maybeEarliestBlobSidecar.isPresent()) {
-        final Optional<UInt64> maybeEarliestFinalizedBlockSlotDb =
-            dao.getEarliestFinalizedBlockSlot();
-        if (maybeEarliestFinalizedBlockSlotDb.isEmpty()
-            || maybeEarliestBlobSidecar.get().isLessThan(maybeEarliestFinalizedBlockSlotDb.get())) {
-          updater.setEarliestBlobSidecarSlot(maybeEarliestBlobSidecar.get());
-        }
+      if (needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecar)) {
+        updater.setEarliestBlobSidecarSlot(maybeEarliestBlobSidecar.orElseThrow());
       }
       updater.commit();
+    }
+  }
+
+  private boolean needToUpdateEarliestBlobSidecarSlot(
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+    // New value is absent - false
+    if (maybeEarliestBlobSidecarSlot.isEmpty()) {
+      return false;
+    }
+    // New value is present, value from DB is absent - true
+    final Optional<UInt64> maybeEarliestFinalizedBlockSlotDb = dao.getEarliestFinalizedBlockSlot();
+    if (maybeEarliestFinalizedBlockSlotDb.isEmpty()) {
+      return true;
+    }
+    // New value is smaller than value from DB - true
+    final UInt64 newEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot.get();
+    if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestFinalizedBlockSlotDb.get())) {
+      return true;
+    } else {
+      return false;
     }
   }
 
