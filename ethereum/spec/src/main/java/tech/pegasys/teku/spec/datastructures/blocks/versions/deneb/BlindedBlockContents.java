@@ -19,11 +19,11 @@ import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlindedBlockContainer;
 
 public class BlindedBlockContents
     extends Container2<BlindedBlockContents, BeaconBlock, SszList<BlindedBlobSidecar>>
-    implements BlockContainer {
+    implements BlindedBlockContainer {
 
   BlindedBlockContents(final BlindedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
@@ -44,6 +44,12 @@ public class BlindedBlockContents
     return getField0();
   }
 
+  @Override
+  public BeaconBlock getBlock() {
+    return getBlindedBeaconBlock();
+  }
+
+  @Override
   public List<BlindedBlobSidecar> getBlindedBlobSidecars() {
     return getField1().asList();
   }

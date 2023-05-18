@@ -159,14 +159,14 @@ public class GetNewBlock extends RestApiEndpoint {
                         .map(SchemaDefinitionsDeneb::getBlockContentsSchema),
                 (blockContents, milestone) ->
                     schemaDefinitionCache
-                        .milestoneAtSlot(blockContents.getBeaconBlock().getSlot())
+                        .milestoneAtSlot(blockContents.getBlock().getSlot())
                         .equals(milestone)),
             Function.identity())
         .withField(
             "version",
             MILESTONE_TYPE,
             blockContents ->
-                schemaDefinitionCache.milestoneAtSlot(blockContents.getBeaconBlock().getSlot()))
+                schemaDefinitionCache.milestoneAtSlot(blockContents.getBlock().getSlot()))
         .build();
   }
 
@@ -177,7 +177,7 @@ public class GetNewBlock extends RestApiEndpoint {
         return spec.getForkSchedule().getSpecMilestoneAtSlot(((BeaconBlock) sszData).getSlot());
       } else if (sszData instanceof BlockContents) {
         return spec.getForkSchedule()
-            .getSpecMilestoneAtSlot(((BlockContents) sszData).getBeaconBlock().getSlot());
+            .getSpecMilestoneAtSlot(((BlockContents) sszData).getBlock().getSlot());
       } else {
         throw new UnsupportedOperationException(
             String.format(
