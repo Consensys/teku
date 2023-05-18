@@ -34,12 +34,6 @@ public interface SignedBlockContainer extends BlockContainer {
     return getSignedBlock().getMessage();
   }
 
-  SignedBeaconBlock getSignedBlock();
-
-  default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
-    return Optional.empty();
-  }
-
   @Override
   default Optional<List<BlobSidecar>> getBlobSidecars() {
     return getSignedBlobSidecars()
@@ -48,5 +42,11 @@ public interface SignedBlockContainer extends BlockContainer {
                 signedBlobSidecars.stream()
                     .map(SignedBlobSidecar::getBlobSidecar)
                     .collect(Collectors.toList()));
+  }
+
+  SignedBeaconBlock getSignedBlock();
+
+  default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
+    return Optional.empty();
   }
 }

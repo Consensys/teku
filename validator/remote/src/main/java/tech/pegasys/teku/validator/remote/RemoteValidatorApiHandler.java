@@ -292,12 +292,11 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         () -> typeDefClient.createUnsignedBlockContents(slot, randaoReveal, graffiti));
   }
 
-  // TODO: use SignedBlockContainer when passing to typeDefClient
+  // TODO: pass SignedBlockContainer to typeDefClient
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer) {
-    return sendRequest(
-        () -> typeDefClient.sendSignedBlock(blockContainer.getSignedBeaconBlockNow()));
+    return sendRequest(() -> typeDefClient.sendSignedBlock(blockContainer.getSignedBlock()));
   }
 
   @Override

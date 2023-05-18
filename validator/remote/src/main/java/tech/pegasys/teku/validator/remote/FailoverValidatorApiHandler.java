@@ -251,7 +251,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer) {
-    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlockNow();
+    final SignedBeaconBlock block = blockContainer.getSignedBlock();
     final UInt64 slot = block.getMessage().getSlot();
     if (block.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
       final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);

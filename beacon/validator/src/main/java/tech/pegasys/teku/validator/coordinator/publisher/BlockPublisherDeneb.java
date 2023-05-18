@@ -48,15 +48,19 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
       final SignedBlockContainer blockContainer) {
-    final SignedBeaconBlock block = blockContainer.getSignedBeaconBlockNow();
-    blockContainer
-        .getSignedBlobSidecars()
-        .ifPresent(
-            blobSidecars -> {
-              blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
-              blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
-            });
+    gossipAndImportBlobSidecars(blockContainer);
+    final SignedBeaconBlock block = blockContainer.getSignedBlock();
     blockGossipChannel.publishBlock(block);
     return blockImportChannel.importBlock(block);
+  }
+
+  private void gossipAndImportBlobSidecars(final SignedBlockContainer blockContainer) {
+    blockContainer.getSignedBlobSidecars().ifPresent(blobSidecarGossipChannel::publishBlobSidecars);
+    blockContainer
+        .getBlobSidecars()
+        .ifPresent(
+            blobSidecars ->
+                blobSidecarPool.onCompletedBlockAndBlobSidecars(
+                    blockContainer.getSignedBlock(), blobSidecars));
   }
 }
