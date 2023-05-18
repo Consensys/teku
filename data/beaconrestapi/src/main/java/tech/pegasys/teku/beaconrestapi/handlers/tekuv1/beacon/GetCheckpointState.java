@@ -63,22 +63,24 @@ public class GetCheckpointState extends RestApiEndpoint {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     request.header(CACHE_CONTROL, CACHE_NONE);
 
-    Checkpoint checkpoint =
+    final Checkpoint checkpoint =
         new Checkpoint(
             request.getPathParameter(EPOCH_PARAMETER),
             request.getPathParameter(BLOCK_ROOT_PARAMETER));
+
+    final long start = System.currentTimeMillis();
 
     LOG.info("request: " + checkpoint);
 
     request.respondAsync(
         chainDataProvider
-            .retrieveCheckpointState(
-                new Checkpoint(
-                    request.getPathParameter(EPOCH_PARAMETER),
-                    request.getPathParameter(BLOCK_ROOT_PARAMETER)))
+            .retrieveCheckpointState(checkpoint)
             .thenApply(
                 state -> {
-                  LOG.info("response: state at slot: " + state.map(BeaconState::getSlot));
+                  LOG.info(
+                      "response: state at slot {}, time {} ms",
+                      state.map(BeaconState::getSlot),
+                      System.currentTimeMillis() - start);
                   return AsyncApiResponse.respondWithCode(SC_OK);
                 }));
   }
