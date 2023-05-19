@@ -62,7 +62,7 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   }
 
   public SignedBeaconBlock blind(final SchemaDefinitions schemaDefinitions) {
-    if (getMessage().getBody().isBlinded()) {
+    if (isBlinded()) {
       return this;
     }
 
@@ -86,14 +86,9 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return backingNode.updated(new TreeUpdates(updatesList));
   }
 
-  @Override
-  public boolean isBlinded() {
-    return getMessage().getBody().isBlinded();
-  }
-
   public SignedBeaconBlock unblind(
       final SchemaDefinitions schemaDefinitions, final ExecutionPayload payload) {
-    if (!getMessage().getBody().isBlinded()) {
+    if (!isBlinded()) {
       return this;
     }
 
@@ -195,5 +190,10 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   @Override
   public Optional<SignedBlindedBlockContainer> toBlinded() {
     return isBlinded() ? Optional.of(this) : Optional.empty();
+  }
+
+  @Override
+  public boolean isBlinded() {
+    return getMessage().getBody().isBlinded();
   }
 }
