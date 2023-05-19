@@ -119,7 +119,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
         return spec.getForkSchedule().getSpecMilestoneAtSlot(((BeaconBlock) sszData).getSlot());
       } else if (sszData instanceof BlindedBlockContents) {
         return spec.getForkSchedule()
-            .getSpecMilestoneAtSlot(((BlindedBlockContents) sszData).getBlock().getSlot());
+            .getSpecMilestoneAtSlot(((BlindedBlockContents) sszData).getSlot());
       } else {
         throw new UnsupportedOperationException(
             String.format(
@@ -180,14 +180,14 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
                         .map(SchemaDefinitionsDeneb::getBlindedBlockContentsSchema),
                 (blindedBlockContents, milestone) ->
                     schemaDefinitionCache
-                        .milestoneAtSlot(blindedBlockContents.getBlock().getSlot())
+                        .milestoneAtSlot(blindedBlockContents.getSlot())
                         .equals(milestone)),
             Function.identity())
         .withField(
             "version",
             MILESTONE_TYPE,
             blindedBlockContents ->
-                schemaDefinitionCache.milestoneAtSlot(blindedBlockContents.getBlock().getSlot()))
+                schemaDefinitionCache.milestoneAtSlot(blindedBlockContents.getSlot()))
         .build();
   }
 }
