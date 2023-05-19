@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
+import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -72,7 +73,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final tech.pegasys.teku.api.schema.BeaconBlock blockResponse =
+    final BeaconBlock blockResponse =
         tech.pegasys.teku.api.schema.SignedBeaconBlock.create(signedBeaconBlock).getMessage();
     final GetNewBlockResponseV2 beaconNodeResponse =
         new GetNewBlockResponseV2(specMilestone, blockResponse);
