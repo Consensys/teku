@@ -155,9 +155,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         apiChannel ->
             apiChannel
                 .createUnsignedBlock(slot, randaoReveal, graffiti, blinded)
-                .whenSuccess(
-                    () -> {
-                      if (!failoverDelegates.isEmpty() && blinded) {
+                .thenPeek(
+                    blockContainer -> {
+                      if (!failoverDelegates.isEmpty()
+                          && blockContainer.map(BlockContainer::isBlinded).orElse(false)) {
                         blindedBlockCreatorCache.put(slot, apiChannel);
                       }
                     });
