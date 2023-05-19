@@ -117,4 +117,14 @@ public class BeaconBlock
   public BeaconBlock getBlock() {
     return this;
   }
+
+  @Override
+  public Optional<BlindedBlockContainer> toBlinded() {
+    return isBlinded() ? Optional.of(this) : Optional.empty();
+  }
+
+  @Override
+  public boolean isBlinded() {
+    return getBody().isBlinded();
+  }
 }

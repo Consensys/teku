@@ -2181,7 +2181,7 @@ public final class DataStructureUtil {
     return randomBlockContents(randomUInt64());
   }
 
-  public BlockContents randomBlockContents(UInt64 slot) {
+  public BlockContents randomBlockContents(final UInt64 slot) {
     final List<BlobSidecar> blobSidecarList = randomBlobSidecars(4);
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     return getSchemaDefinitionDeneb().getBlockContentsSchema().create(beaconBlock, blobSidecarList);
@@ -2191,21 +2191,21 @@ public final class DataStructureUtil {
     return randomBlindedBlockContents(randomUInt64());
   }
 
-  public BlindedBlockContents randomBlindedBlockContents(UInt64 slot) {
+  public BlindedBlockContents randomBlindedBlockContents(final UInt64 slot) {
     final List<BlindedBlobSidecar> blindedBlobSidecars = randomBlindedBlobSidecars(4);
-    final BeaconBlock beaconBlock = randomBeaconBlock(slot);
+    final BeaconBlock blindedBeaconBlock = randomBlindedBeaconBlock(slot);
     return getSchemaDefinitionDeneb()
         .getBlindedBlockContentsSchema()
-        .create(beaconBlock, blindedBlobSidecars);
+        .create(blindedBeaconBlock, blindedBlobSidecars);
   }
 
   public SignedBlindedBlockContents randomSignedBlindedBlockContents() {
     final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
         randomSignedBlindedBlobSidecars(4);
-    final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock();
+    final SignedBeaconBlock signedBlindedBeaconBlock = randomSignedBlindedBeaconBlock();
     return getSchemaDefinitionDeneb()
         .getSignedBlindedBlockContentsSchema()
-        .create(signedBeaconBlock, signedBlindedBlobSidecars);
+        .create(signedBlindedBeaconBlock, signedBlindedBlobSidecars);
   }
 
   public SignedBlobSidecar randomSignedBlobSidecar(final UInt64 index) {

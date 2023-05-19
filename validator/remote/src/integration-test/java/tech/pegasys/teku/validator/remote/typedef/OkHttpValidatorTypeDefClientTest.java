@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
+import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -34,7 +35,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -72,7 +73,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final tech.pegasys.teku.api.schema.BeaconBlock blockResponse =
+    final BeaconBlock blockResponse =
         tech.pegasys.teku.api.schema.SignedBeaconBlock.create(signedBeaconBlock).getMessage();
     final GetNewBlockResponseV2 beaconNodeResponse =
         new GetNewBlockResponseV2(specMilestone, blockResponse);
@@ -82,7 +83,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             .setResponseCode(200)
             .setBody(JSON_PROVIDER.objectToJSON(beaconNodeResponse)));
 
-    final Optional<BeaconBlock> producedBlock =
+    final Optional<BlockContainer> producedBlock =
         okHttpValidatorTypeDefClient.createUnsignedBlock(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),

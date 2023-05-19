@@ -65,7 +65,7 @@ public class BlockFactory {
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlockIfBlinded(
       final SignedBeaconBlock blindedSignedBeaconBlock) {
-    if (blindedSignedBeaconBlock.getMessage().getBody().isBlinded()) {
+    if (blindedSignedBeaconBlock.isBlinded()) {
       return spec.unblindSignedBeaconBlock(
           blindedSignedBeaconBlock, operationSelector.createUnblinderSelector());
     }
@@ -74,7 +74,7 @@ public class BlockFactory {
 
   public SignedBeaconBlock blindSignedBeaconBlockIfUnblinded(
       final SignedBeaconBlock unblindedSignedBeaconBlock) {
-    if (unblindedSignedBeaconBlock.getMessage().getBody().isBlinded()) {
+    if (unblindedSignedBeaconBlock.isBlinded()) {
       return unblindedSignedBeaconBlock;
     }
     return spec.blindSignedBeaconBlock(unblindedSignedBeaconBlock);

@@ -4,7 +4,7 @@
   "required" : [ "blinded_block", "blinded_blob_sidecars" ],
   "properties" : {
     "blinded_block" : {
-      "$ref" : "#/components/schemas/BeaconBlockDeneb"
+      "$ref" : "#/components/schemas/BlindedBlockDeneb"
     },
     "blinded_blob_sidecars" : {
       "type" : "array",

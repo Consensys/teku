@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.BlindedBlockEndpointNotAvailableException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
@@ -96,7 +97,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
             : responseHandler;
   }
 
-  public Optional<BeaconBlock> createUnsignedBlock(
+  public Optional<BlockContainer> createUnsignedBlock(
       final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("randao_reveal", randaoReveal.toString());

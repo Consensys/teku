@@ -49,4 +49,9 @@ public class BlindedBlockContents
   public Optional<List<BlindedBlobSidecar>> getBlindedBlobSidecars() {
     return Optional.of(getField1().asList());
   }
+
+  @Override
+  public Optional<BlindedBlockContainer> toBlinded() {
+    return Optional.of(this);
+  }
 }

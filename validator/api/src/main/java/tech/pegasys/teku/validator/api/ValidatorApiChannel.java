@@ -28,10 +28,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -61,14 +59,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
-  SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
+  SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
-
-  SafeFuture<Optional<BlindedBlockContents>> createUnsignedBlindedBlockContents(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
-
-  SafeFuture<Optional<BlockContents>> createUnsignedBlockContents(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
@@ -89,7 +81,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       List<SignedAggregateAndProof> aggregateAndProofs);
 
-  SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock block);
+  SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBlockContainer blockContainer);
 
   SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
