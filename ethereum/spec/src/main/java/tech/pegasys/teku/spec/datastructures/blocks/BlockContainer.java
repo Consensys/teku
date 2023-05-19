@@ -37,11 +37,11 @@ public interface BlockContainer extends SszData {
     return Optional.empty();
   }
 
-  default Optional<BlindedBlockContainer> toBlindedBlockContainer() {
+  default Optional<BlindedBlockContainer> toBlinded() {
     return Optional.empty();
   }
 
   default boolean isBlinded() {
-    return toBlindedBlockContainer().isPresent();
+    return toBlinded().isPresent();
   }
 }

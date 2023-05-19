@@ -193,7 +193,7 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   }
 
   @Override
-  public Optional<SignedBlindedBlockContainer> toSignedBlindedBlockContainer() {
+  public Optional<SignedBlindedBlockContainer> toBlinded() {
     return isBlinded() ? Optional.of(this) : Optional.empty();
   }
 }

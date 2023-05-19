@@ -51,7 +51,7 @@ public class BlindedBlockContents
   }
 
   @Override
-  public Optional<BlindedBlockContainer> toBlindedBlockContainer() {
+  public Optional<BlindedBlockContainer> toBlinded() {
     return Optional.of(this);
   }
 }

@@ -44,11 +44,11 @@ public interface SignedBlockContainer extends SszData {
     return Optional.empty();
   }
 
-  default Optional<SignedBlindedBlockContainer> toSignedBlindedBlockContainer() {
+  default Optional<SignedBlindedBlockContainer> toBlinded() {
     return Optional.empty();
   }
 
   default boolean isBlinded() {
-    return toSignedBlindedBlockContainer().isPresent();
+    return toBlinded().isPresent();
   }
 }

@@ -53,7 +53,7 @@ public class SignedBlindedBlockContents
   }
 
   @Override
-  public Optional<SignedBlindedBlockContainer> toSignedBlindedBlockContainer() {
+  public Optional<SignedBlindedBlockContainer> toBlinded() {
     return Optional.of(this);
   }
 }

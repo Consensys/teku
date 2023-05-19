@@ -119,7 +119,7 @@ public class BeaconBlock
   }
 
   @Override
-  public Optional<BlindedBlockContainer> toBlindedBlockContainer() {
+  public Optional<BlindedBlockContainer> toBlinded() {
     return isBlinded() ? Optional.of(this) : Optional.empty();
   }
 
