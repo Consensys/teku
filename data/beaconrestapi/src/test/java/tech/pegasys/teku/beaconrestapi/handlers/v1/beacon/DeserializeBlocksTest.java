@@ -111,6 +111,7 @@ public class DeserializeBlocksTest {
         JsonUtil.parse(
             serializedSignedBlockContents,
             DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
+
     assertThat(result).isInstanceOf(SignedBlockContents.class);
 
     assertThat(result.getSignedBlock()).isEqualTo(randomSignedBlockContents.getSignedBlock());

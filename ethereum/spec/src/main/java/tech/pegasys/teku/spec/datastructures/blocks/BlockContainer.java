@@ -44,4 +44,8 @@ public interface BlockContainer extends SszData {
   default boolean isBlinded() {
     return toBlinded().isPresent();
   }
+
+  static BlockContainer fromSszData(final SszData sszData) {
+    return (BlockContainer) sszData;
+  }
 }

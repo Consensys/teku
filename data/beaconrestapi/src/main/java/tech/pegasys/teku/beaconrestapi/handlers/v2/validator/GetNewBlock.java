@@ -46,7 +46,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -171,19 +170,8 @@ public class GetNewBlock extends RestApiEndpoint {
 
   @NotNull
   private static Function<SszData, SpecMilestone> getMilestoneSelector(final Spec spec) {
-    return sszData -> {
-      if (sszData instanceof BeaconBlock) {
-        return spec.getForkSchedule().getSpecMilestoneAtSlot(((BeaconBlock) sszData).getSlot());
-      } else if (sszData instanceof BlockContents) {
-        return spec.getForkSchedule().getSpecMilestoneAtSlot(((BlockContents) sszData).getSlot());
-      } else {
-        throw new UnsupportedOperationException(
-            String.format(
-                "Unsupported GetNewBlock response type. Must be of type %s or %s but got %s",
-                BeaconBlock.class.getCanonicalName(),
-                BlindedBlockContents.class.getCanonicalName(),
-                sszData.getClass().getCanonicalName()));
-      }
-    };
+    return sszData ->
+        spec.getForkSchedule()
+            .getSpecMilestoneAtSlot(BlockContainer.fromSszData(sszData).getSlot());
   }
 }

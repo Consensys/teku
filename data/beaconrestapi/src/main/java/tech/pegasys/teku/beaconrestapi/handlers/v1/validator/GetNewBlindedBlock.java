@@ -114,21 +114,9 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
 
   @NotNull
   private static Function<SszData, SpecMilestone> getMilestoneSelector(final Spec spec) {
-    return sszData -> {
-      if (sszData instanceof BeaconBlock) {
-        return spec.getForkSchedule().getSpecMilestoneAtSlot(((BeaconBlock) sszData).getSlot());
-      } else if (sszData instanceof BlindedBlockContents) {
-        return spec.getForkSchedule()
-            .getSpecMilestoneAtSlot(((BlindedBlockContents) sszData).getSlot());
-      } else {
-        throw new UnsupportedOperationException(
-            String.format(
-                "Unsupported GetNewBlindedBlock response type. Must be of type %s or %s but got %s",
-                BeaconBlock.class.getCanonicalName(),
-                BlindedBlockContents.class.getCanonicalName(),
-                sszData.getClass().getCanonicalName()));
-      }
-    };
+    return sszData ->
+        spec.getForkSchedule()
+            .getSpecMilestoneAtSlot(BlockContainer.fromSszData(sszData).getSlot());
   }
 
   private static SerializableOneOfTypeDefinition<BlockContainer> getResponseTypes(
