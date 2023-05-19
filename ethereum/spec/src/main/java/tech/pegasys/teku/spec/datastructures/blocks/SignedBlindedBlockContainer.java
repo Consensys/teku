@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlinded
 public interface SignedBlindedBlockContainer extends SignedBlockContainer {
 
   Predicate<SignedBlindedBlockContainer> IS_SIGNED_BLINDED_BEACON_BLOCK =
-      blockContainer -> blockContainer instanceof SignedBeaconBlock;
+      blockContainer -> blockContainer instanceof SignedBeaconBlock && blockContainer.isBlinded();
 
   Predicate<SignedBlindedBlockContainer> IS_SIGNED_BLINDED_BLOCK_CONTENTS =
       blockContainer -> blockContainer instanceof SignedBlindedBlockContents;

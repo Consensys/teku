@@ -65,7 +65,7 @@ public class DeserializeBlocksTest {
                   SignedBlindedBlockContainer.IS_SIGNED_BLINDED_BEACON_BLOCK,
                   s -> !s.contains("blob_sidecars"),
                   spec.getGenesisSchemaDefinitions()
-                      .getSignedBeaconBlockSchema()
+                      .getSignedBlindedBeaconBlockSchema()
                       .getJsonTypeDefinition())
               .withType(
                   SignedBlindedBlockContainer.IS_SIGNED_BLINDED_BLOCK_CONTENTS,
@@ -121,7 +121,7 @@ public class DeserializeBlocksTest {
   @Test
   void shouldDeserializeSignedBlindedBeaconBlock() throws JsonProcessingException {
 
-    final SignedBeaconBlock randomBlindedBeaconBlock = denebData.randomSignedBeaconBlock();
+    final SignedBeaconBlock randomBlindedBeaconBlock = denebData.randomSignedBlindedBeaconBlock();
 
     final String serializedSignedBeaconBlock =
         JsonUtil.serialize(
