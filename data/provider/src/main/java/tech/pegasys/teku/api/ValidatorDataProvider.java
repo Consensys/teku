@@ -325,10 +325,4 @@ public class ValidatorDataProvider {
 
     return new ValidatorBlockResult(responseCode, result.getRejectionReason(), hashRoot);
   }
-
-  private boolean denebMilestoneReached(UInt64 slot) {
-    return spec.getForkSchedule()
-        .getSpecMilestoneAtSlot(slot)
-        .isGreaterThanOrEqualTo(SpecMilestone.DENEB);
-  }
 }
