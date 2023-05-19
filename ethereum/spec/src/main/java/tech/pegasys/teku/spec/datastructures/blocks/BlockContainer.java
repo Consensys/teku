@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 
 /**
- * Interface used to represent both {@link BlockContents} and {@link BeaconBlock} and their blinded
+ * Interface used to represent both {@link BeaconBlock} and {@link BlockContents} and their blinded
  * variants: <a
  * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
  */
@@ -43,6 +43,10 @@ public interface BlockContainer extends SszData {
 
   default boolean isBlinded() {
     return toBlinded().isPresent();
+  }
+
+  static BlockContainer fromBeaconBlock(final BeaconBlock block) {
+    return block;
   }
 
   static BlockContainer fromSszData(final SszData sszData) {

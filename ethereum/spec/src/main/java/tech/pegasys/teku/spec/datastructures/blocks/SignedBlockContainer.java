@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 
 /**
- * Interface used to represent both {@link SignedBlockContents} and {@link SignedBeaconBlock} and
+ * Interface used to represent both {@link SignedBeaconBlock} and {@link SignedBlockContents} and
  * their blinded variants: <a
  * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
  */

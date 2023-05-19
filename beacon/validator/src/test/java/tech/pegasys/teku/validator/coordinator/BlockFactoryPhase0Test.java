@@ -74,7 +74,7 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 @SuppressWarnings("unchecked")
-class BlockFactoryTest {
+class BlockFactoryPhase0Test {
   private static final Eth1Data ETH1_DATA = new Eth1Data();
 
   final AggregatingAttestationPool attestationsPool = mock(AggregatingAttestationPool.class);
@@ -213,29 +213,6 @@ class BlockFactoryTest {
   }
 
   @Test
-  void blindSignedBeaconBlock_shouldThrowInNonBellatrixBlocks() {
-    final Spec spec = TestSpecFactory.createMinimalAltair();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    final SignedBeaconBlock originalUnblindedSignedBlock =
-        dataStructureUtil.randomSignedBeaconBlock(1);
-
-    assertThatThrownBy(() -> assertBlockBlinded(originalUnblindedSignedBlock, spec))
-        .isInstanceOf(IllegalStateException.class);
-  }
-
-  @Test
-  void blindSignedBeaconBlock_shouldBlindBlockWhenBellatrixIsActive() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-
-    final SignedBeaconBlock originalUnblindedSignedBlock =
-        dataStructureUtil.randomSignedBeaconBlock(1);
-
-    assertBlockBlinded(originalUnblindedSignedBlock, spec);
-  }
-
-  @Test
   void unblindSignedBeaconBlock_shouldUnblindingBlockWhenBellatrixIsActive() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -302,7 +279,7 @@ class BlockFactoryTest {
 
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     final BlockFactory blockFactory =
-        new BlockFactory(
+        new BlockFactoryPhase0(
             spec,
             new BlockOperationSelectorFactory(
                 spec,
@@ -361,8 +338,9 @@ class BlockFactoryTest {
 
     final BeaconBlock block =
         safeJoin(
-            blockFactory.createUnsignedBlock(
-                blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded));
+                blockFactory.createUnsignedBlock(
+                    blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded))
+            .getBlock();
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
@@ -421,9 +399,7 @@ class BlockFactoryTest {
   private SignedBeaconBlock assertBlockBlinded(
       final SignedBeaconBlock beaconBlock, final Spec spec) {
 
-    final BlockFactory blockFactory = createBlockFactory(spec);
-
-    final SignedBeaconBlock block = blockFactory.blindSignedBeaconBlockIfUnblinded(beaconBlock);
+    final SignedBeaconBlock block = blindSignedBeaconBlockIfUnblinded(spec, beaconBlock);
 
     assertThat(block).isNotNull();
     assertThat(block.hashTreeRoot()).isEqualTo(beaconBlock.hashTreeRoot());
@@ -437,7 +413,7 @@ class BlockFactoryTest {
   private BlockFactory createBlockFactory(final Spec spec) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
-    return new BlockFactory(
+    return new BlockFactoryPhase0(
         spec,
         new BlockOperationSelectorFactory(
             spec,
@@ -464,5 +440,13 @@ class BlockFactoryTest {
         SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
             .getExecutionPayloadHeaderSchema()
             .getHeaderOfDefaultPayload();
+  }
+
+  private SignedBeaconBlock blindSignedBeaconBlockIfUnblinded(
+      final Spec spec, final SignedBeaconBlock unblindedSignedBeaconBlock) {
+    if (unblindedSignedBeaconBlock.isBlinded()) {
+      return unblindedSignedBeaconBlock;
+    }
+    return spec.blindSignedBeaconBlock(unblindedSignedBeaconBlock);
   }
 }

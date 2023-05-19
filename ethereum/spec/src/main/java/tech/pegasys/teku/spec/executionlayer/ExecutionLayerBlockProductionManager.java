@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.executionlayer;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -53,6 +55,12 @@ public interface ExecutionLayerBlockProductionManager {
             SignedBeaconBlock signedBlindedBeaconBlock) {
           return SafeFuture.completedFuture(null);
         }
+
+        @Override
+        public SafeFuture<SignedBlobSidecar> getUnblindedBlobSidecar(
+            final SignedBlindedBlobSidecar signedBlindedBlobSidecar) {
+          return SafeFuture.completedFuture(null);
+        }
       };
 
   /**
@@ -81,4 +89,7 @@ public interface ExecutionLayerBlockProductionManager {
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
   SafeFuture<ExecutionPayload> getUnblindedPayload(SignedBeaconBlock signedBlindedBeaconBlock);
+
+  SafeFuture<SignedBlobSidecar> getUnblindedBlobSidecar(
+      SignedBlindedBlobSidecar signedBlindedBlobSidecar);
 }

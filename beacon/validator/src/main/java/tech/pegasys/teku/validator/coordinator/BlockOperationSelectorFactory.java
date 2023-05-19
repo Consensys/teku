@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,7 +27,15 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -280,17 +291,17 @@ public class BlockOperationSelectorFactory {
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
                 executionPayloadResult
-                    .getCommitmentsFuture()
+                    .getBlobsBundleFuture()
                     .orElseThrow()
                     .thenApply(
-                        commitments ->
+                        blobsBundle ->
                             schemaDefinitionsDeneb
                                 .getBeaconBlockBodySchema()
                                 .toVersionDeneb()
                                 .orElseThrow()
                                 .getBlobKzgCommitmentsSchema()
                                 .createFromElements(
-                                    commitments.stream()
+                                    blobsBundle.getCommitments().stream()
                                         .map(SszKZGCommitment::new)
                                         .collect(Collectors.toList()))));
     bodyBuilder.blobKzgCommitments(blobKzgCommitments);
@@ -320,5 +331,82 @@ public class BlockOperationSelectorFactory {
                     bodyUnblinder.getSignedBlindedBeaconBlock()));
       }
     };
+  }
+
+  public Function<BeaconBlock, SafeFuture<List<BlobSidecar>>> createBlobSidecarsSelector() {
+    return block -> {
+      final BlobSidecarSchema blobSidecarSchema =
+          spec.atSlot(block.getSlot())
+              .getSchemaDefinitions()
+              .toVersionDeneb()
+              .orElseThrow()
+              .getBlobSidecarSchema();
+      return getCachedBlobsBundle(block.getSlot())
+          .thenApply(
+              blobsBundle -> {
+                final int numberOfBlobs = blobsBundle.getNumberOfBlobs();
+                final List<BlobSidecar> blobSidecars = new ArrayList<>(numberOfBlobs);
+                for (int i = 0; i < numberOfBlobs; i++) {
+                  final Blob blob = blobsBundle.getBlobs().get(i);
+                  final KZGProof kzgProof = blobsBundle.getProofs().get(i);
+                  final KZGCommitment kzgCommitment = blobsBundle.getCommitments().get(i);
+                  final BlobSidecar blobSidecar =
+                      blobSidecarSchema.create(
+                          block.getRoot(),
+                          UInt64.valueOf(i),
+                          block.getSlot(),
+                          block.getParentRoot(),
+                          block.getProposerIndex(),
+                          blob.getBytes(),
+                          kzgProof.getBytesCompressed(),
+                          kzgCommitment.getBytesCompressed());
+                  blobSidecars.add(blobSidecar);
+                }
+                return blobSidecars;
+              });
+    };
+  }
+
+  public Function<BeaconBlock, SafeFuture<List<BlindedBlobSidecar>>>
+      createBlindedBlobSidecarsSelector() {
+    return block -> {
+      final BlindedBlobSidecarSchema blindedBlobSidecarSchema =
+          spec.atSlot(block.getSlot())
+              .getSchemaDefinitions()
+              .toVersionDeneb()
+              .orElseThrow()
+              .getBlindedBlobSidecarSchema();
+      return getCachedBlobsBundle(block.getSlot())
+          .thenApply(
+              blobsBundle -> {
+                final int numberOfBlobs = blobsBundle.getNumberOfBlobs();
+                final List<BlindedBlobSidecar> blindedBlobSidecars = new ArrayList<>(numberOfBlobs);
+                for (int i = 0; i < numberOfBlobs; i++) {
+                  final Blob blob = blobsBundle.getBlobs().get(i);
+                  final KZGProof kzgProof = blobsBundle.getProofs().get(i);
+                  final KZGCommitment kzgCommitment = blobsBundle.getCommitments().get(i);
+                  final BlindedBlobSidecar blobSidecar =
+                      blindedBlobSidecarSchema.create(
+                          block.getRoot(),
+                          UInt64.valueOf(i),
+                          block.getSlot(),
+                          block.getParentRoot(),
+                          block.getProposerIndex(),
+                          blob.hashTreeRoot(),
+                          kzgProof.getBytesCompressed(),
+                          kzgCommitment.getBytesCompressed());
+                  blindedBlobSidecars.add(blobSidecar);
+                }
+                return blindedBlobSidecars;
+              });
+    };
+  }
+
+  private SafeFuture<BlobsBundle> getCachedBlobsBundle(final UInt64 slot) {
+    return executionLayerBlockProductionManager
+        .getCachedPayloadResult(slot)
+        .orElseThrow(() -> new IllegalStateException("payloadResult is required"))
+        .getBlobsBundleFuture()
+        .orElseThrow(() -> new IllegalStateException("blobs bundle is required"));
   }
 }
