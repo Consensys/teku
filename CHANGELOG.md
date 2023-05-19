@@ -24,3 +24,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - Add support for Chiado (Gnosis testnet): `--network=chiado`
 
 ### Bug Fixes
+
+- Fix a race condition on EL api result handling which may lead to beacon node remain syncing forever
