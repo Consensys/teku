@@ -40,7 +40,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -236,9 +235,8 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer) {
-    final SignedBeaconBlock block = blockContainer.getSignedBlock();
-    final UInt64 slot = block.getMessage().getSlot();
-    if (block.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
+    final UInt64 slot = blockContainer.getSlot();
+    if (blockContainer.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
       final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);
       LOG.info(
           "Block for slot {} was blinded and will only be sent to the beacon node which created it.",
