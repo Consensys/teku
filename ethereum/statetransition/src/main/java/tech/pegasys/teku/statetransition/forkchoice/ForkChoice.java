@@ -21,6 +21,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 
 import com.google.common.base.Throwables;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -408,10 +409,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    final UInt64 earliestAffectedSlot =
+        recentChainData
+            .getSlotForBlockRoot(block.getParentRoot())
+            .map(UInt64::increment)
+            .orElse(block.getSlot());
     addParentStateRoots(spec, blockSlotState, transaction);
-    // TODO: replace Optional.empty() with blobSidecars Optional
     forkChoiceUtil.applyBlockToStore(
-        transaction, block, postState, payloadResult.hasNotValidatedStatus(), Optional.empty());
+        transaction,
+        block,
+        postState,
+        payloadResult.hasNotValidatedStatus(),
+        // TODO: replace emptyList with blobSidecars when ready
+        Collections.emptyList(),
+        earliestAffectedSlot);
 
     if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());

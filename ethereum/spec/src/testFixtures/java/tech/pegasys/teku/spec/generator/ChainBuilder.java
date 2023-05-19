@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -89,9 +90,10 @@ public class ChainBuilder {
   private final AttestationGenerator attestationGenerator;
   private final AttesterSlashingGenerator attesterSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
-  private final NavigableMap<UInt64, List<BlobSidecar>> blobSidecars = new TreeMap<>();
+  private final NavigableMap<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
   private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
+  private Optional<UInt64> earliestBlobSidecarSlot;
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
 
@@ -99,7 +101,8 @@ public class ChainBuilder {
       final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
-      final Map<UInt64, List<BlobSidecar>> existingBlobSidecars) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -117,6 +120,7 @@ public class ChainBuilder {
                 blobSidecarsByHash.put(b.get(0).getBlockRoot(), b);
               }
             });
+    earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -124,7 +128,8 @@ public class ChainBuilder {
   }
 
   public static ChainBuilder create(final Spec spec, final List<BLSKeyPair> validatorKeys) {
-    return new ChainBuilder(spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap());
+    return new ChainBuilder(
+        spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap(), Optional.empty());
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
@@ -135,8 +140,12 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  public Optional<List<BlobSidecar>> getBlobSidecars(final Bytes32 blockRoot) {
-    return Optional.ofNullable(blobSidecarsByHash.get(blockRoot));
+  public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
+  }
+
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
+    return earliestBlobSidecarSlot;
   }
 
   /**
@@ -146,7 +155,7 @@ public class ChainBuilder {
    * @return An independent copy of this ChainBuilder
    */
   public ChainBuilder fork() {
-    return new ChainBuilder(spec, validatorKeys, blocks, blobSidecars);
+    return new ChainBuilder(spec, validatorKeys, blocks, blobSidecars, earliestBlobSidecarSlot);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -187,16 +196,17 @@ public class ChainBuilder {
         .filter(b -> b.getBlock().getSlot().isLessThanOrEqualTo(toSlot));
   }
 
-  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
       final long fromSlot, final long toSlot) {
     return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
-  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
       final UInt64 fromSlot, final UInt64 toSlot) {
     return blobSidecars.entrySet().stream()
-        .filter(slot -> slot.getKey().isGreaterThanOrEqualTo(fromSlot))
-        .filter(slot -> slot.getKey().isLessThanOrEqualTo(toSlot))
+        .filter(slot -> slot.getKey().getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(slot -> slot.getKey().getSlot().isLessThanOrEqualTo(toSlot))
+        .filter(entry -> !entry.getValue().isEmpty())
         .sorted(Map.Entry.comparingByKey());
   }
 
@@ -309,14 +319,27 @@ public class ChainBuilder {
         .toVersionDeneb()
         .ifPresent(
             schemaDefinitions ->
-                trackBlobSidecars(
-                    blockAndState.getSlot(), blockAndState.getRoot(), Collections.emptyList()));
+                trackBlobSidecars(blockAndState.getSlotAndBlockRoot(), Collections.emptyList()));
 
     return blockAndState;
   }
 
   public List<SignedBlockAndState> generateBlocksUpToSlot(final long slot) {
     return generateBlocksUpToSlot(UInt64.valueOf(slot));
+  }
+
+  public List<SignedBlockAndState> generateBlocksUpToSlot(
+      final long slot, final BlockOptions options) {
+    assertBlockCanBeGenerated();
+    final List<SignedBlockAndState> generated = new ArrayList<>();
+
+    SignedBlockAndState latestBlock = getLatestBlockAndState();
+    while (latestBlock.getState().getSlot().compareTo(slot) < 0) {
+      latestBlock = generateBlockAtSlot(latestBlock.getSlot().plus(1), options);
+      generated.add(latestBlock);
+    }
+
+    return generated;
   }
 
   public List<SignedBlockAndState> generateBlocksUpToSlot(final UInt64 slot) {
@@ -475,9 +498,12 @@ public class ChainBuilder {
   }
 
   private void trackBlobSidecars(
-      final UInt64 slot, final Bytes32 blockRoot, final List<BlobSidecar> blobSidecars) {
-    this.blobSidecars.put(slot, blobSidecars);
-    blobSidecarsByHash.put(blockRoot, blobSidecars);
+      final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
+    if (blobSidecars.isEmpty()) {
+      return;
+    }
+    this.blobSidecars.put(slotAndBlockRoot, blobSidecars);
+    blobSidecarsByHash.put(slotAndBlockRoot.getBlockRoot(), blobSidecars);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
@@ -606,7 +632,7 @@ public class ChainBuilder {
                       return Collections.emptyList();
                     }
                   });
-      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecars);
+      trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
     }
 
     return nextBlockAndState;
@@ -667,7 +693,7 @@ public class ChainBuilder {
                         miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
                   })
               .collect(Collectors.toList());
-      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecars);
+      trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
     }
     return nextBlockAndState;
   }

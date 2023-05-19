@@ -72,6 +72,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
   Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
+  Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
   StoreTransaction(
@@ -92,11 +93,35 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,
-      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
+      final List<BlobSidecar> blobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
-    maybeBlobSidecars.ifPresent(
-        blobSidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars));
+    if (!blobSidecars.isEmpty()) {
+      this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
+    }
+    if (needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecarSlot)) {
+      this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
+    }
     putStateRoot(state.hashTreeRoot(), block.getSlotAndBlockRoot());
+  }
+
+  private boolean needToUpdateEarliestBlobSidecarSlot(
+      final Optional<UInt64> maybeNewEarliestBlobSidecarSlot) {
+    // New value is absent - false
+    if (maybeNewEarliestBlobSidecarSlot.isEmpty()) {
+      return false;
+    }
+    // New value is present, old is absent - true
+    if (maybeEarliestBlobSidecarTransactionSlot.isEmpty()) {
+      return true;
+    }
+    // New value is smaller than an old one - true
+    final UInt64 newEarliestBlobSidecarSlot = maybeNewEarliestBlobSidecarSlot.get();
+    if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestBlobSidecarTransactionSlot.get())) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @Override
@@ -433,13 +458,27 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot) {
     final Optional<List<BlobSidecar>> maybeBlobSidecars =
         Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
-    if (maybeBlobSidecars.isPresent()) {
-      return SafeFuture.completedFuture(maybeBlobSidecars);
-    }
-    return store.retrieveBlobSidecars(slotAndBlockRoot);
+    return maybeBlobSidecars
+        .map(SafeFuture::completedFuture)
+        .orElseGet(() -> store.retrieveBlobSidecars(slotAndBlockRoot));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot() {
+    // we look up it in store first because if something is there, tx data is irrelevant
+    return store
+        .retrieveEarliestBlobSidecarSlot()
+        .thenApply(
+            storeEarliestBlobSidecarSlot -> {
+              if (storeEarliestBlobSidecarSlot.isEmpty()) {
+                return maybeEarliestBlobSidecarTransactionSlot;
+              } else {
+                return storeEarliestBlobSidecarSlot;
+              }
+            });
   }
 }

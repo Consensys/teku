@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -53,6 +54,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<Checkpoint, BeaconState> checkpointStates;
   protected Map<UInt64, VoteTracker> votes;
   protected Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
+  protected Optional<UInt64> earliestBlobSidecarSlot;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
       new TestReadOnlyForkChoiceStrategy();
@@ -70,7 +72,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<Bytes32, BlockCheckpoints> blockCheckpoints,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UInt64, VoteTracker> votes,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.timeMillis = secondsToMillis(time);
     this.genesisTime = genesisTime;
@@ -84,6 +87,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     this.checkpointStates = checkpointStates;
     this.votes = votes;
     this.blobSidecars = blobSidecars;
+    this.earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
   }
 
   // Readonly methods
@@ -244,9 +248,15 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.completedFuture(Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)));
+    return SafeFuture.completedFuture(
+        Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)).orElse(Collections.emptyList()));
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot() {
+    return SafeFuture.completedFuture(earliestBlobSidecarSlot);
   }
 
   // Mutable methods
@@ -255,12 +265,17 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints checkpoints,
-      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
+      final List<BlobSidecar> blobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blocks.put(block.getRoot(), block);
     blockStates.put(block.getRoot(), state);
     blockCheckpoints.put(block.getRoot(), checkpoints);
-    maybeBlobSidecars.ifPresent(
-        blobSidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars));
+    if (!blobSidecars.isEmpty()) {
+      this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
+    }
+    if (earliestBlobSidecarSlot.isEmpty()) {
+      earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
+    }
   }
 
   @Override

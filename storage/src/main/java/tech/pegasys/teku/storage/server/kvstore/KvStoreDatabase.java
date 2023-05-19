@@ -304,24 +304,45 @@ public class KvStoreDatabase implements Database {
 
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, List<BlobSidecar>> finalizedBlobSidecarsBySlot) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
             // If there is no slot in BlobSidecar's map it means we are pre-Deneb or not in
             // availability period
-            if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlot())) {
+            if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlotAndBlockRoot())) {
               return;
             }
-            final List<BlobSidecar> blobSidecars = finalizedBlobSidecarsBySlot.get(block.getSlot());
-            if (blobSidecars.isEmpty()) {
-              updater.addNoBlobsSlot(block.getSlotAndBlockRoot());
-            } else {
-              blobSidecars.forEach(updater::addBlobSidecar);
-            }
+            finalizedBlobSidecarsBySlot
+                .get(block.getSlotAndBlockRoot())
+                .forEach(updater::addBlobSidecar);
           });
+
+      needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecar)
+          .ifPresent(updater::setEarliestBlobSidecarSlot);
       updater.commit();
+    }
+  }
+
+  private Optional<UInt64> needToUpdateEarliestBlobSidecarSlot(
+      final Optional<UInt64> maybeNewEarliestBlobSidecarSlot) {
+    // New value is absent - not updating
+    if (maybeNewEarliestBlobSidecarSlot.isEmpty()) {
+      return Optional.empty();
+    }
+    // New value is present, value from DB is absent - updating
+    final Optional<UInt64> maybeEarliestFinalizedBlockSlotDb = dao.getEarliestFinalizedBlockSlot();
+    if (maybeEarliestFinalizedBlockSlotDb.isEmpty()) {
+      return maybeNewEarliestBlobSidecarSlot;
+    }
+    // New value is smaller than value from DB - updating
+    final UInt64 newEarliestBlobSidecarSlot = maybeNewEarliestBlobSidecarSlot.get();
+    if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestFinalizedBlockSlotDb.get())) {
+      return maybeNewEarliestBlobSidecarSlot;
+    } else {
+      return Optional.empty();
     }
   }
 
@@ -516,7 +537,8 @@ public class KvStoreDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     if (blocks.isEmpty()) {
       return;
     }
@@ -541,7 +563,7 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot);
+    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
   }
 
   @Override
@@ -766,18 +788,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.addNoBlobsSlot(slotAndBlockRoot);
-      updater.commit();
-    }
-  }
-
-  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    if (key.isNoBlobsKey()) {
-      return Optional.empty();
-    }
     final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
@@ -798,18 +809,21 @@ public class KvStoreDatabase implements Database {
         final FinalizedUpdater updater = finalizedUpdater()) {
       int remaining = pruneLimit;
       int pruned = 0;
+      Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
       for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
           it.hasNext(); ) {
         --remaining;
         final boolean finished = remaining < 0;
         final SlotAndBlockRootAndBlobIndex key = it.next();
         // Before we finish we should check that there are no BlobSidecars left in the same slot
-        if (finished && (key.isNoBlobsKey() || key.getBlobIndex().equals(ZERO))) {
+        if (finished && key.getBlobIndex().equals(ZERO)) {
           break;
         }
         updater.removeBlobSidecar(key);
+        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
         ++pruned;
       }
+      earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
       updater.commit();
 
       // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
@@ -903,8 +917,10 @@ public class KvStoreDatabase implements Database {
 
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
-      updater.addHotBlobSidecars(update.getHotBlobSidecars());
-
+      if (update.isBlobSidecarsEnabled()) {
+        updater.addHotBlobSidecars(update.getHotBlobSidecars());
+        update.getEarliestBlobSidecarSlot().ifPresent(this::updateEarliestBlobSidecarSlotIfNeeded);
+      }
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
@@ -918,6 +934,15 @@ public class KvStoreDatabase implements Database {
     DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
+  }
+
+  private void updateEarliestBlobSidecarSlotIfNeeded(final UInt64 earliestBlobSidecarSlot) {
+    if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
+      try (final FinalizedUpdater finalizedUpdater = finalizedUpdater()) {
+        finalizedUpdater.setEarliestBlobSidecarSlot(earliestBlobSidecarSlot);
+        finalizedUpdater.commit();
+      }
+    }
   }
 
   private Optional<SlotAndExecutionPayloadSummary> updateFinalizedData(

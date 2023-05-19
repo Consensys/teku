@@ -110,9 +110,12 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     return SafeFuture.fromRunnable(
-        () -> database.storeFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot));
+        () ->
+            database.storeFinalizedBlocks(
+                finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot));
   }
 
   @Override
@@ -157,11 +160,6 @@ public class ChainStorage
   @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getFinalizedBlockAtSlot(slot));
-  }
-
-  @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.fromRunnable(() -> database.storeNoBlobsSlot(slotAndBlockRoot));
   }
 
   @Override
@@ -220,7 +218,7 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+  public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(
         () -> {
@@ -228,20 +226,12 @@ public class ChainStorage
               database.streamBlobSidecarKeys(
                   slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())) {
             final List<BlobSidecar> blobSidecars = new ArrayList<>();
-            boolean noKeys = true;
             for (Iterator<SlotAndBlockRootAndBlobIndex> iterator = keyStream.iterator();
                 iterator.hasNext(); ) {
-              noKeys = false;
               final SlotAndBlockRootAndBlobIndex key = iterator.next();
-              if (!key.isNoBlobsKey()) {
-                blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
-              }
+              blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
             }
-            if (noKeys) {
-              return Optional.empty();
-            } else {
-              return Optional.of(blobSidecars);
-            }
+            return blobSidecars;
           }
         });
   }
@@ -322,11 +312,7 @@ public class ChainStorage
           final List<SlotAndBlockRootAndBlobIndex> result;
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
-            result =
-                blobSidecars
-                    .filter(key -> !key.isNoBlobsKey())
-                    .limit(limit.longValue())
-                    .collect(Collectors.toList());
+            result = blobSidecars.limit(limit.longValue()).collect(Collectors.toList());
           }
           return result;
         });

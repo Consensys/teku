@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
@@ -74,14 +76,18 @@ public class HistoricalBatchFetcherTest {
       ArgumentCaptor.forClass(Collection.class);
 
   @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<Map<UInt64, List<BlobSidecar>>> blobSidecarCaptor =
+  private final ArgumentCaptor<Map<SlotAndBlockRoot, List<BlobSidecar>>> blobSidecarCaptor =
       ArgumentCaptor.forClass(Map.class);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<Optional<UInt64>> earliestBlobSidecarSlotCaptor =
+      ArgumentCaptor.forClass(Optional.class);
 
   private CombinedChainDataClient chainDataClient;
 
   private final int maxRequests = 5;
   private List<SignedBeaconBlock> blockBatch;
-  private Map<UInt64, List<BlobSidecar>> blobSidecarsBatch;
+  private Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBatch;
   private SignedBeaconBlock firstBlockInBatch;
   private SignedBeaconBlock lastBlockInBatch;
   private HistoricalBatchFetcher fetcher;
@@ -91,7 +97,8 @@ public class HistoricalBatchFetcherTest {
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
-    when(storageUpdateChannel.onFinalizedBlocks(any(), any())).thenReturn(SafeFuture.COMPLETE);
+    when(storageUpdateChannel.onFinalizedBlocks(any(), any(), any()))
+        .thenReturn(SafeFuture.COMPLETE);
 
     // Set up main chain and fork chain
     chainBuilder.generateGenesis();
@@ -172,9 +179,13 @@ public class HistoricalBatchFetcherTest {
     assertThat(future).isCompletedWithValue(firstBlockInBatch);
 
     verify(storageUpdateChannel)
-        .onFinalizedBlocks(blockCaptor.capture(), blobSidecarCaptor.capture());
+        .onFinalizedBlocks(
+            blockCaptor.capture(),
+            blobSidecarCaptor.capture(),
+            earliestBlobSidecarSlotCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     assertThat(blobSidecarCaptor.getValue()).isEmpty();
+    assertThat(earliestBlobSidecarSlotCaptor.getValue()).isEmpty();
   }
 
   @Test
@@ -190,9 +201,13 @@ public class HistoricalBatchFetcherTest {
     assertThat(future).isCompletedWithValue(firstBlockInBatch);
 
     verify(storageUpdateChannel)
-        .onFinalizedBlocks(blockCaptor.capture(), blobSidecarCaptor.capture());
+        .onFinalizedBlocks(
+            blockCaptor.capture(),
+            blobSidecarCaptor.capture(),
+            earliestBlobSidecarSlotCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
     assertThat(blobSidecarCaptor.getValue()).isEqualTo(blobSidecarsBatch);
+    assertThat(earliestBlobSidecarSlotCaptor.getValue()).contains(blockBatch.get(0).getSlot());
   }
 
   @Test
@@ -232,7 +247,7 @@ public class HistoricalBatchFetcherTest {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     assertThat(future).isCompletedWithValue(firstBlockInBatch);
 
-    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), any());
+    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), any(), any());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(blockBatch);
   }
 
@@ -275,7 +290,7 @@ public class HistoricalBatchFetcherTest {
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     assertThat(future).isCompletedWithValue(genesis.getBlock());
 
-    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), any());
+    verify(storageUpdateChannel).onFinalizedBlocks(blockCaptor.capture(), any(), any());
     assertThat(blockCaptor.getValue()).containsExactlyElementsOf(targetBatch);
   }
 
@@ -317,27 +332,19 @@ public class HistoricalBatchFetcherTest {
     assertThat(future).isCompletedWithValue(lastBlockInBatch);
 
     verify(storageUpdateChannel)
-        .onFinalizedBlocks(blockCaptor.capture(), blobSidecarCaptor.capture());
+        .onFinalizedBlocks(
+            blockCaptor.capture(),
+            blobSidecarCaptor.capture(),
+            earliestBlobSidecarSlotCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
-    Map<UInt64, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
     if (blobSidecarsRequired) {
-      // BlobSidecars for slot 20 which is lastBlockRoot should be also in a result
-      assertThat(
-              blobSidecars.values().stream()
-                  .flatMap(Collection::stream)
-                  .collect(Collectors.toList()))
-          .isEmpty();
-      assertThat(
-              blobSidecars.keySet().stream()
-                  .allMatch(
-                      slot ->
-                          (slot.isLessThanOrEqualTo(maxSlot)
-                                  && slot.isGreaterThan(maxSlot.minus(batchSize)))
-                              || slot.equals(lastBlockInBatch.getSlot())))
-          .isTrue();
-      assertThat(blobSidecars.keySet().size()).isEqualTo(batchSize + 1);
+      assertThat(blobSidecars).isEmpty();
+      // start slot is in availability window, it's the earliest known blob sidecar slot
+      assertThat(earliestBlobSidecarSlotCaptor.getValue()).contains(UInt64.valueOf(31));
     } else {
       assertThat(blobSidecars).isEmpty();
+      assertThat(earliestBlobSidecarSlotCaptor.getValue()).isEmpty();
     }
   }
 
@@ -368,7 +375,7 @@ public class HistoricalBatchFetcherTest {
     assertThatThrownBy(future::get)
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Received invalid blocks from a different chain");
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
   }
 
   @Test
@@ -396,7 +403,7 @@ public class HistoricalBatchFetcherTest {
     assertThatThrownBy(future::get)
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Failed to deliver full batch");
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
   }
 
   @Test
@@ -418,7 +425,7 @@ public class HistoricalBatchFetcherTest {
 
     assertThat(future).isCompletedExceptionally();
     assertThatThrownBy(future::get).hasCause(error);
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
   }
 
   @Test
@@ -444,7 +451,7 @@ public class HistoricalBatchFetcherTest {
     assertThatThrownBy(future::get)
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Failed to deliver full batch");
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
   }
 
   @Test
@@ -469,7 +476,7 @@ public class HistoricalBatchFetcherTest {
     assertThatThrownBy(future::get)
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Failed to deliver full batch");
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
   }
 
   @Test
@@ -493,6 +500,6 @@ public class HistoricalBatchFetcherTest {
     assertThatThrownBy(future::get)
         .hasCauseInstanceOf(InvalidResponseException.class)
         .hasMessageContaining("Expected first block to descend from last received block");
-    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any());
+    verify(storageUpdateChannel, never()).onFinalizedBlocks(any(), any(), any());
   }
 }

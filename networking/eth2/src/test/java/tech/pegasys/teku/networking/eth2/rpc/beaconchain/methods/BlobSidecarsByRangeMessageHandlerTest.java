@@ -104,7 +104,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void setUp() {
     when(peer.popRequest()).thenReturn(true);
     when(peer.popBlobSidecarRequests(eq(listener), anyLong())).thenReturn(true);
-    when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
+    when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
@@ -169,8 +169,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(5020));
 
     // earliest available sidecar epoch - 5010
-    when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(denebForkEpoch.plus(5009))));
+    when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(denebForkEpoch.plus(5009).times(slotsPerEpoch))));
 
     // start slot in epoch 5000 within MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS range
     final BlobSidecarsByRangeRequestMessage request =
