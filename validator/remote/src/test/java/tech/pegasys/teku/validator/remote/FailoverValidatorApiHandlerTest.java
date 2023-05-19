@@ -56,6 +56,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -576,7 +577,7 @@ class FailoverValidatorApiHandlerTest {
     final UInt64 slot = UInt64.ONE;
     final BLSSignature randaoReveal = DATA_STRUCTURE_UTIL.randomSignature();
 
-    final ValidatorApiChannelRequest<Optional<BeaconBlock>> creationRequest =
+    final ValidatorApiChannelRequest<Optional<BlockContainer>> creationRequest =
         apiChannel -> apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), true);
 
     setupFailures(creationRequest, primaryApiChannel);
