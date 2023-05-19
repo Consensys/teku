@@ -51,4 +51,9 @@ public class SignedBlindedBlockContents
   public Optional<List<SignedBlindedBlobSidecar>> getSignedBlindedBlobSidecars() {
     return Optional.of(getField1().asList());
   }
+
+  @Override
+  public Optional<SignedBlindedBlockContainer> toSignedBlindedBlockContainer() {
+    return Optional.of(this);
+  }
 }

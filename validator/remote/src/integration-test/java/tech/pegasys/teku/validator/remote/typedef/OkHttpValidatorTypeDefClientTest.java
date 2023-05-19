@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -82,7 +82,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             .setResponseCode(200)
             .setBody(JSON_PROVIDER.objectToJSON(beaconNodeResponse)));
 
-    final Optional<BeaconBlock> producedBlock =
+    final Optional<BlockContainer> producedBlock =
         okHttpValidatorTypeDefClient.createUnsignedBlock(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),

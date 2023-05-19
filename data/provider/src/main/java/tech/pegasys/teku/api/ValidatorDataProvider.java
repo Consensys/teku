@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,9 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -121,14 +118,7 @@ public class ValidatorDataProvider {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
-
-    if (denebMilestoneReached(slot)) {
-      return isBlinded
-          ? validatorApiChannel.createUnsignedBlindedBlockContents(slot, randao, graffiti)
-          : validatorApiChannel.createUnsignedBlockContents(slot, randao, graffiti);
-    } else {
-      return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
-    }
+    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
   }
 
   public SafeFuture<? extends Optional<? extends SszData>> getUnsignedBeaconBlockAtSlot(
@@ -230,32 +220,15 @@ public class ValidatorDataProvider {
         .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
   }
 
-  public SafeFuture<SendSignedBlockResult> submitSignedBlock(final BlockContainer blockContainer) {
-    if (blockContainer instanceof tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock) {
-      return validatorApiChannel.sendSignedBlock(
-          (tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock) blockContainer);
-    }
-    if (blockContainer instanceof SignedBlockContents) {
-      throw new NotImplementedException("Not Yet Implemented");
-    }
-    throw new IllegalArgumentException(
-        "Cannot determine block type. Must be either SignedBeaconBlock or SignedBlockContents");
+  public SafeFuture<SendSignedBlockResult> submitSignedBlock(
+      final SignedBlockContainer signedBlockContainer) {
+    return validatorApiChannel.sendSignedBlock(signedBlockContainer);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
-      final BlockContainer blockContainer) {
-    if (blockContainer instanceof tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock) {
-      final tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock signedBeaconBlock =
-          (tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock) blockContainer;
-      LOG.debug("parsed block is from slot: {}", signedBeaconBlock.getMessage().getSlot());
-      return validatorApiChannel.sendSignedBlock(signedBeaconBlock);
-    }
-
-    if (blockContainer instanceof SignedBlindedBlockContents) {
-      throw new NotImplementedException("Not Yet Implemented");
-    }
-    throw new IllegalArgumentException(
-        "Cannot determine block type. Must be either SignedBeaconBlock or SignedBlindedBlockContent");
+      final SignedBlockContainer signedBlockContainer) {
+    LOG.debug("parsed block is from slot: {}", signedBlockContainer.getSlot());
+    return validatorApiChannel.sendSignedBlock(signedBlockContainer);
   }
 
   public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(

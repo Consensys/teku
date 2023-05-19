@@ -15,16 +15,17 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 
 /**
- * Interface used to represent both {@link BlockContents} and {@link BeaconBlock} and all their
+ * Interface used to represent both {@link BlockContents} and {@link BeaconBlock} and their blinded
  * variants: <a
  * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
  */
-public interface BlockContainer {
+public interface BlockContainer extends SszData {
 
   BeaconBlock getBlock();
 
@@ -34,5 +35,13 @@ public interface BlockContainer {
 
   default Optional<List<BlobSidecar>> getBlobSidecars() {
     return Optional.empty();
+  }
+
+  default Optional<BlindedBlockContainer> toBlindedBlockContainer() {
+    return Optional.empty();
+  }
+
+  default boolean isBlinded() {
+    return toBlindedBlockContainer().isPresent();
   }
 }

@@ -55,12 +55,13 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   }
 
   private void gossipAndImportBlobSidecars(final SignedBlockContainer blockContainer) {
-    blockContainer.getSignedBlobSidecars().ifPresent(blobSidecarGossipChannel::publishBlobSidecars);
     blockContainer
-        .getBlobSidecars()
+        .getSignedBlobSidecars()
         .ifPresent(
-            blobSidecars ->
-                blobSidecarPool.onCompletedBlockAndBlobSidecars(
-                    blockContainer.getSignedBlock(), blobSidecars));
+            signedBlobSidecars -> {
+              blobSidecarGossipChannel.publishBlobSidecars(signedBlobSidecars);
+              blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(
+                  blockContainer.getSignedBlock(), signedBlobSidecars);
+            });
   }
 }

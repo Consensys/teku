@@ -86,6 +86,7 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return backingNode.updated(new TreeUpdates(updatesList));
   }
 
+  @Override
   public boolean isBlinded() {
     return getMessage().getBody().isBlinded();
   }
@@ -189,5 +190,10 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   @Override
   public SignedBeaconBlock getSignedBlock() {
     return this;
+  }
+
+  @Override
+  public Optional<SignedBlindedBlockContainer> toSignedBlindedBlockContainer() {
+    return isBlinded() ? Optional.of(this) : Optional.empty();
   }
 }

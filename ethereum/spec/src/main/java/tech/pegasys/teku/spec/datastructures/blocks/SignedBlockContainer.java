@@ -16,37 +16,39 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 
-public interface SignedBlockContainer extends BlockContainer {
-
-  Predicate<SignedBlockContainer> IS_SIGNED_BLOCK_CONTENTS =
-      blockContainer -> blockContainer instanceof SignedBlockContents;
+/**
+ * Interface used to represent both {@link SignedBlockContents} and {@link SignedBeaconBlock} and
+ * their blinded variants: <a
+ * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
+ */
+public interface SignedBlockContainer extends SszData {
 
   Predicate<SignedBlockContainer> IS_SIGNED_BEACON_BLOCK =
       blockContainer -> blockContainer instanceof SignedBeaconBlock;
 
-  @Override
-  default BeaconBlock getBlock() {
-    return getSignedBlock().getMessage();
-  }
-
-  @Override
-  default Optional<List<BlobSidecar>> getBlobSidecars() {
-    return getSignedBlobSidecars()
-        .map(
-            signedBlobSidecars ->
-                signedBlobSidecars.stream()
-                    .map(SignedBlobSidecar::getBlobSidecar)
-                    .collect(Collectors.toList()));
-  }
+  Predicate<SignedBlockContainer> IS_SIGNED_BLOCK_CONTENTS =
+      blockContainer -> blockContainer instanceof SignedBlockContents;
 
   SignedBeaconBlock getSignedBlock();
 
+  default UInt64 getSlot() {
+    return getSignedBlock().getSlot();
+  }
+
   default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.empty();
+  }
+
+  default Optional<SignedBlindedBlockContainer> toSignedBlindedBlockContainer() {
+    return Optional.empty();
+  }
+
+  default boolean isBlinded() {
+    return toSignedBlindedBlockContainer().isPresent();
   }
 }
