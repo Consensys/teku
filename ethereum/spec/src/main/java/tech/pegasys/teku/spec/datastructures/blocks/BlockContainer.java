@@ -45,10 +45,6 @@ public interface BlockContainer extends SszData {
     return toBlinded().isPresent();
   }
 
-  static BlockContainer fromBeaconBlock(final BeaconBlock block) {
-    return block;
-  }
-
   static BlockContainer fromSszData(final SszData sszData) {
     if (sszData instanceof BlockContainer) {
       return (BlockContainer) sszData;
