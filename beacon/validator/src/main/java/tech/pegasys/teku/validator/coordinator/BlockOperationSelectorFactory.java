@@ -385,7 +385,7 @@ public class BlockOperationSelectorFactory {
                   final Blob blob = blobsBundle.getBlobs().get(i);
                   final KZGProof kzgProof = blobsBundle.getProofs().get(i);
                   final KZGCommitment kzgCommitment = blobsBundle.getCommitments().get(i);
-                  final BlindedBlobSidecar blobSidecar =
+                  final BlindedBlobSidecar blindedBlobSidecar =
                       blindedBlobSidecarSchema.create(
                           block.getRoot(),
                           UInt64.valueOf(i),
@@ -395,7 +395,7 @@ public class BlockOperationSelectorFactory {
                           blob.hashTreeRoot(),
                           kzgProof.getBytesCompressed(),
                           kzgCommitment.getBytesCompressed());
-                  blindedBlobSidecars.add(blobSidecar);
+                  blindedBlobSidecars.add(blindedBlobSidecar);
                 }
                 return blindedBlobSidecars;
               });
