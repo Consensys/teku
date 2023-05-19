@@ -48,7 +48,7 @@ public abstract class Web3JClient {
 
   // Default to the provider having a previous failure at startup so we log when it is first
   // available but uses a very old value to make sure we log if the first request fails
-  private long lastError = STARTUP_LAST_ERROR_TIME;
+  private long lastErrorTime = STARTUP_LAST_ERROR_TIME;
   private boolean initialized = false;
 
   protected Web3JClient(
@@ -121,14 +121,14 @@ public abstract class Web3JClient {
 
   protected synchronized void handleSuccess(final boolean isCriticalRequest) {
     if (isCriticalRequest) {
-      if (lastError == STARTUP_LAST_ERROR_TIME) {
+      if (lastErrorTime == STARTUP_LAST_ERROR_TIME) {
         eventLog.executionClientIsOnline();
         executionClientEventsPublisher.onAvailabilityUpdated(true);
-      } else if (lastError != NO_ERROR_TIME) {
+      } else if (lastErrorTime != NO_ERROR_TIME) {
         eventLog.executionClientRecovered();
         executionClientEventsPublisher.onAvailabilityUpdated(true);
       }
-      lastError = NO_ERROR_TIME;
+      lastErrorTime = NO_ERROR_TIME;
     }
   }
 
@@ -156,8 +156,8 @@ public abstract class Web3JClient {
 
   private boolean shouldReportError() {
     final long timeNow = timeProvider.getTimeInMillis().longValue();
-    if (lastError == NO_ERROR_TIME || timeNow - lastError > ERROR_REPEAT_DELAY_MILLIS) {
-      lastError = timeNow;
+    if (lastErrorTime == NO_ERROR_TIME || timeNow - lastErrorTime > ERROR_REPEAT_DELAY_MILLIS) {
+      lastErrorTime = timeNow;
       return true;
     }
     return false;
