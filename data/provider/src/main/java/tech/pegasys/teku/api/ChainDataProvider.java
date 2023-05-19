@@ -37,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
+import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.rewards.EpochAttestationRewardsCalculator;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
@@ -81,30 +83,37 @@ public class ChainDataProvider {
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SchemaObjectProvider schemaObjectProvider;
-
   private final RecentChainData recentChainData;
-
   private final RewardCalculator rewardCalculator;
-
-  ChainDataProvider(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final CombinedChainDataClient combinedChainDataClient,
-      final RewardCalculator rewardCalculator) {
-    this.spec = spec;
-    this.combinedChainDataClient = combinedChainDataClient;
-    this.recentChainData = recentChainData;
-    this.schemaObjectProvider = new SchemaObjectProvider(spec);
-    this.defaultBlockSelectorFactory = new BlockSelectorFactory(spec, combinedChainDataClient);
-    this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
-    this.rewardCalculator = rewardCalculator;
-  }
 
   public ChainDataProvider(
       final Spec spec,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
-    this(spec, recentChainData, combinedChainDataClient, new RewardCalculator(spec));
+    this(
+        spec,
+        recentChainData,
+        combinedChainDataClient,
+        new BlockSelectorFactory(spec, combinedChainDataClient),
+        new StateSelectorFactory(spec, combinedChainDataClient),
+        new RewardCalculator(spec));
+  }
+
+  @VisibleForTesting
+  ChainDataProvider(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final BlockSelectorFactory blockSelectorFactory,
+      final StateSelectorFactory stateSelectorFactory,
+      final RewardCalculator rewardCalculator) {
+    this.spec = spec;
+    this.combinedChainDataClient = combinedChainDataClient;
+    this.recentChainData = recentChainData;
+    this.schemaObjectProvider = new SchemaObjectProvider(spec);
+    this.defaultBlockSelectorFactory = blockSelectorFactory;
+    this.defaultStateSelectorFactory = stateSelectorFactory;
+    this.rewardCalculator = rewardCalculator;
   }
 
   public UInt64 getCurrentEpoch(
@@ -580,6 +589,38 @@ public class ChainDataProvider {
                               state ->
                                   rewardCalculator.getBlockRewardData(blockAndMetaData, state)));
             });
+  }
+
+  public SafeFuture<Optional<AttestationRewardsData>> calculateAttestationRewardsAtEpoch(
+      final UInt64 epoch, final List<String> validatorsPubKeys) {
+    final UInt64 slot = findSlotAtEndOfNextEpoch(epoch);
+
+    if (!spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      throw new BadRequestException(
+          "Can't calculate attestation rewards for for epoch " + epoch + " pre Altair");
+    }
+
+    return defaultStateSelectorFactory
+        .forSlot(slot)
+        .getState()
+        .thenApply(
+            maybeState ->
+                maybeState.map(
+                    stateAndMetaData ->
+                        new EpochAttestationRewardsCalculator(
+                                spec.atSlot(slot), maybeState.get().getData(), validatorsPubKeys)
+                            .calculate()));
+  }
+
+  private UInt64 findSlotAtEndOfNextEpoch(final UInt64 epoch) {
+    /*
+     We need to fetch the state corresponding to the slot at the end of the next epoch because attestations can
+     be included up to the end of the next epoch of the slot they are attesting to.
+
+     Example: if user is requests rewards for epoch 10, we find the slot at the start of epoch 12 and
+     subtract 1 to get the end slot of epoch 11.
+    */
+    return spec.computeStartSlotAtEpoch(epoch.plus(2)).minus(1);
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

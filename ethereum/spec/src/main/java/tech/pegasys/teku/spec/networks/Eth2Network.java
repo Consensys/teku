@@ -24,6 +24,7 @@ public enum Eth2Network {
   SEPOLIA("sepolia"),
   KILN("kiln"),
   GNOSIS("gnosis"),
+  CHIADO("chiado"),
   // Test networks
   MINIMAL("minimal"),
   SWIFT("swift"),

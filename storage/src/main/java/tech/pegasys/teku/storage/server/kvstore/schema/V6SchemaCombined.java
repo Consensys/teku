@@ -81,10 +81,9 @@ public abstract class V6SchemaCombined implements SchemaCombined {
       KvStoreVariable.create(9, CHECKPOINT_SERIALIZER);
   private static final KvStoreVariable<DepositTreeSnapshot> FINALIZED_DEPOSIT_SNAPSHOT =
       KvStoreVariable.create(10, DEPOSIT_SNAPSHOT_SERIALIZER);
-  private static final KvStoreVariable<UInt64> EARLIEST_BLOB_SIDECAR_SLOT =
-      KvStoreVariable.create(11, UINT64_SERIALIZER);
 
   private final KvStoreVariable<UInt64> optimisticTransitionBlockSlot;
+  private final KvStoreVariable<UInt64> earliestBlobSidecarSlot;
 
   protected V6SchemaCombined(final Spec spec, final int finalizedOffset) {
     this.finalizedOffset = finalizedOffset;
@@ -100,6 +99,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
     votes = KvStoreColumn.create(3, UINT64_SERIALIZER, VOTE_TRACKER_SERIALIZER);
 
     optimisticTransitionBlockSlot = KvStoreVariable.create(finalizedOffset + 1, UINT64_SERIALIZER);
+    earliestBlobSidecarSlot = KvStoreVariable.create(finalizedOffset + 2, UINT64_SERIALIZER);
   }
 
   @Override
@@ -189,7 +189,7 @@ public abstract class V6SchemaCombined implements SchemaCombined {
 
   @Override
   public KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot() {
-    return EARLIEST_BLOB_SIDECAR_SLOT;
+    return earliestBlobSidecarSlot;
   }
 
   @Override

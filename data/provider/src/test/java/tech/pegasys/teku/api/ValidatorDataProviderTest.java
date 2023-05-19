@@ -158,14 +158,14 @@ public class ValidatorDataProviderTest {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.DENEB);
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     blockContents = dataStructureUtil.randomBlockContents();
-    when(validatorApiChannel.createUnsignedBlockContents(ONE, signatureInternal, Optional.empty()))
+    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
         .thenReturn(completedFuture(Optional.of(blockContents)));
 
     SafeFuture<? extends Optional<? extends SszData>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
 
     verify(validatorApiChannel)
-        .createUnsignedBlockContents(ONE, signatureInternal, Optional.empty());
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
 
     assertThat(data).isCompleted();
 

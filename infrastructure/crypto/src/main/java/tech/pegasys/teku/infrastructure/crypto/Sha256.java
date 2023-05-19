@@ -24,8 +24,8 @@ import org.apache.tuweni.bytes.Bytes32;
 public class Sha256 {
   private final MessageDigest messageDigest;
 
-  public Sha256() {
-    this.messageDigest = MessageDigestFactory.createSha256();
+  Sha256(final MessageDigest messageDigest) {
+    this.messageDigest = messageDigest;
   }
 
   public byte[] digest(final Bytes a, final Bytes b) {

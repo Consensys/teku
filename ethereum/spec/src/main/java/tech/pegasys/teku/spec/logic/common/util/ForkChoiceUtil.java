@@ -394,6 +394,17 @@ public class ForkChoiceUtil {
     return AttestationProcessingResult.SUCCESSFUL;
   }
 
+  /**
+   * Stores block and associated blobSidecars if any into the store
+   *
+   * @param store Store to apply block to
+   * @param signedBlock Block
+   * @param postState State after applying this block
+   * @param isBlockOptimistic optimistic/non-optimistic
+   * @param blobSidecars BlobSidecars
+   * @param earliestBlobSidecarsSlot not required even post-Deneb, saved only if the new value is
+   *     smaller
+   */
   public void applyBlockToStore(
       final MutableStore store,
       final SignedBeaconBlock signedBlock,

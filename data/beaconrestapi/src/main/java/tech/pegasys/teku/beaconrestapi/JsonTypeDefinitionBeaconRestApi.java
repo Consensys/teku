@@ -39,7 +39,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetVal
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlindedBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
@@ -73,7 +72,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.builder.GetExpectedWithdrawal
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetChainHeadsV1;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetForkChoice;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.GetEvents;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetHealth;
@@ -100,6 +98,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeac
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
@@ -226,9 +225,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostBlock(dataProvider, spec, schemaCache))
             .endpoint(new PostBlindedBlock(dataProvider, spec, schemaCache))
             .endpoint(new GetBlock(dataProvider, schemaCache))
-            .endpoint(
-                new tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock(
-                    dataProvider, schemaCache))
             .endpoint(new GetBlindedBlock(dataProvider, schemaCache))
             .endpoint(new GetFinalizedCheckpointState(dataProvider, spec))
             .endpoint(new GetBlockRoot(dataProvider))
@@ -266,13 +262,10 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             // Rewards Handlers
             .endpoint(new GetSyncCommitteeRewards(dataProvider))
             .endpoint(new GetBlockRewards(dataProvider))
-            .endpoint(new GetAttestationRewards())
+            .endpoint(new GetAttestationRewards(dataProvider.getChainDataProvider()))
             // Validator Handlers
             .endpoint(new PostAttesterDuties(dataProvider))
             .endpoint(new GetProposerDuties(dataProvider))
-            .endpoint(
-                new tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetNewBlock(
-                    dataProvider, schemaCache))
             .endpoint(new GetNewBlock(dataProvider, spec, schemaCache))
             .endpoint(new GetNewBlindedBlock(dataProvider, spec, schemaCache))
             .endpoint(new GetAttestationData(dataProvider))
@@ -292,11 +285,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetForkSchedule(dataProvider))
             .endpoint(new GetSpec(dataProvider))
             // Debug Handlers
-            .endpoint(new GetChainHeadsV1(dataProvider))
             .endpoint(new GetChainHeadsV2(dataProvider))
-            .endpoint(
-                new tech.pegasys.teku.beaconrestapi.handlers.v1.debug.GetState(
-                    dataProvider, spec, schemaCache))
             .endpoint(new GetState(dataProvider, schemaCache))
             .endpoint(new GetForkChoice(dataProvider))
             // Teku Specific Handlers

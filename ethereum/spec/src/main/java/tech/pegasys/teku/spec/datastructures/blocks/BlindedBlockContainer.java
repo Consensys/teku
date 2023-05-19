@@ -11,17 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.blocks;
 
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecars;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 
-public class SignedBlindedBlobSidecarsSupplier
-    extends DataStructureUtilSupplier<SignedBlindedBlobSidecars> {
+public interface BlindedBlockContainer extends BlockContainer {
 
-  public SignedBlindedBlobSidecarsSupplier() {
-    super(DataStructureUtil::randomSignedBlindedBlobSidecars, SpecMilestone.DENEB);
+  default Optional<List<BlindedBlobSidecar>> getBlindedBlobSidecars() {
+    return Optional.empty();
   }
 }

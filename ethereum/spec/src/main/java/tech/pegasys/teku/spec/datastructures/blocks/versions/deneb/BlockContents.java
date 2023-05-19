@@ -13,13 +13,16 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecars;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 
-public class BlockContents extends Container2<BlockContents, BeaconBlock, BlobSidecars>
+public class BlockContents extends Container2<BlockContents, BeaconBlock, SszList<BlobSidecar>>
     implements BlockContainer {
 
   BlockContents(final BlockContentsSchema type, final TreeNode backingNode) {
@@ -29,15 +32,17 @@ public class BlockContents extends Container2<BlockContents, BeaconBlock, BlobSi
   public BlockContents(
       final BlockContentsSchema schema,
       final BeaconBlock beaconBlock,
-      final BlobSidecars blobSidecars) {
-    super(schema, beaconBlock, blobSidecars);
+      final List<BlobSidecar> blobSidecars) {
+    super(schema, beaconBlock, schema.getBlobSidecarsSchema().createFromElements(blobSidecars));
   }
 
-  public BeaconBlock getBeaconBlock() {
+  @Override
+  public BeaconBlock getBlock() {
     return getField0();
   }
 
-  public BlobSidecars getBlobSidecars() {
-    return getField1();
+  @Override
+  public Optional<List<BlobSidecar>> getBlobSidecars() {
+    return Optional.of(getField1().asList());
   }
 }

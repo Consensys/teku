@@ -492,7 +492,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return spec.atSlot(earliestAffectedSlot)
         .miscHelpers()
         .toVersionDeneb()
-        .map(MiscHelpersDeneb::computeDenebStartSlot)
+        .map(MiscHelpersDeneb::computeFirstSlotWithBlobSupport)
         .map(denebSlot -> denebSlot.max(earliestAffectedSlot));
   }
 

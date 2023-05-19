@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
 import java.util.List;
+import java.util.function.Function;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -23,8 +24,45 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 
 public interface EpochProcessor {
+
+  /**
+   * Calculates the penalties and rewards at a specific state for a set of validators. The result of
+   * the calculation will contain exclusively objects of type {@link AggregatedRewardAndPenalty}.
+   *
+   * @param state the beacon state that will be used
+   * @param validatorStatuses a list of validator status
+   * @return a {@link RewardAndPenaltyDeltas} object with the result of rewards and penalties
+   *     calculation for each eligible validator.
+   * @see tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory
+   * @see ValidatorStatus#isEligibleValidator()
+   * @see tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator
+   */
+  default RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
+      BeaconState state, ValidatorStatuses validatorStatuses) {
+    return getRewardAndPenaltyDeltas(
+        state, validatorStatuses, RewardsAndPenaltiesCalculator::getDeltas);
+  }
+
+  /**
+   * Calculates the penalties and rewards at a specific state for a set of validators. The result of
+   * the calculation will contain exclusively objects of type {@link AggregatedRewardAndPenalty} or
+   * {@link DetailedRewardAndPenalty} depending on the function chosen in the
+   * <i>calculatorFunction</i> parameter.
+   *
+   * @param state the beacon state that will be used
+   * @param validatorStatuses a list of validator status
+   * @param calculatorFunction a mapper function defining what method from the {@link
+   *     RewardsAndPenaltiesCalculator} should be used when collecting results.
+   * @return a {@link RewardAndPenaltyDeltas} object with the result of rewards and penalties
+   *     calculation for each eligible validator.
+   * @see tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory
+   * @see ValidatorStatus#isEligibleValidator()
+   * @see tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator
+   */
   RewardAndPenaltyDeltas getRewardAndPenaltyDeltas(
-      BeaconState state, ValidatorStatuses validatorStatuses);
+      BeaconState state,
+      ValidatorStatuses validatorStatuses,
+      Function<RewardsAndPenaltiesCalculator, RewardAndPenaltyDeltas> calculatorFunction);
 
   BeaconState processEpoch(BeaconState preState) throws EpochProcessingException;
 

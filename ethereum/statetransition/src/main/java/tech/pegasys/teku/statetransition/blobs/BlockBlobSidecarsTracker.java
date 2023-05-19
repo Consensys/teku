@@ -45,7 +45,7 @@ public class BlockBlobSidecarsTracker {
   private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
-  private boolean fetchTriggered = false;
+  private volatile boolean fetchTriggered = false;
 
   public BlockBlobSidecarsTracker(
       final SlotAndBlockRoot slotAndBlockRoot, final UInt64 maxBlobsPerBlock) {

@@ -25,6 +25,8 @@ public class Hash {
   private static final ThreadLocal<MessageDigest> KECCAK_256_MESSAGE_DIGEST_THREAD_LOCAL =
       ThreadLocal.withInitial(MessageDigestFactory::createKeccak256);
 
+  // Note: We don't use varargs in these methods to avoid creating a Bytes[] instance.
+
   public static Bytes32 sha256(final byte[] input) {
     return Bytes32.wrap(SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get().digest(input));
   }
@@ -35,7 +37,6 @@ public class Hash {
     return Bytes32.wrap(digest.digest());
   }
 
-  // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b) {
     final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     a.update(digest);
@@ -43,7 +44,6 @@ public class Hash {
     return Bytes32.wrap(digest.digest());
   }
 
-  // Note: Doesn't use varargs to avoid creating a Bytes[] instance.
   public static Bytes32 sha256(final Bytes a, final Bytes b, final Bytes c) {
     final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     a.update(digest);
@@ -56,5 +56,15 @@ public class Hash {
     final MessageDigest digest = KECCAK_256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     input.update(digest);
     return Bytes32.wrap(digest.digest());
+  }
+
+  /**
+   * used when we need to do several hashing in loops, so we can query the thread local once and do
+   * hashings
+   *
+   * @return Sha256
+   */
+  public static Sha256 getSha256Instance() {
+    return new Sha256(SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get());
   }
 }

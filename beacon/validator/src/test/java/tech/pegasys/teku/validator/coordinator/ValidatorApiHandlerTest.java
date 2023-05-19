@@ -78,6 +78,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -458,7 +459,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<BeaconBlock>> result =
+    final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
             ONE, dataStructureUtil.randomSignature(), Optional.empty(), false);
 
@@ -475,7 +476,7 @@ class ValidatorApiHandlerTest {
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
     when(chainDataClient.isOptimisticBlock(parentRoot)).thenReturn(true);
 
-    final SafeFuture<Optional<BeaconBlock>> result =
+    final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
             newSlot, dataStructureUtil.randomSignature(), Optional.empty(), false);
 
@@ -497,7 +498,7 @@ class ValidatorApiHandlerTest {
             blockSlotState, newSlot, randaoReveal, Optional.empty(), false))
         .thenReturn(SafeFuture.completedFuture(createdBlock));
 
-    final SafeFuture<Optional<BeaconBlock>> result =
+    final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty(), false);
 
     verify(blockFactory)

@@ -14,9 +14,10 @@
 package tech.pegasys.teku.spec.logic.common.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
 
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -55,7 +56,8 @@ public class MiscHelpers {
 
   public int computeShuffledIndex(int index, int indexCount, Bytes32 seed) {
     checkArgument(index < indexCount, "CommitteeUtil.computeShuffledIndex1");
-    final Sha256 sha256 = new Sha256();
+
+    final Sha256 sha256 = getSha256Instance();
 
     int indexRet = index;
     final int shuffleRoundCount = specConfig.getShuffleRoundCount();
@@ -72,7 +74,7 @@ public class MiscHelpers {
       int flip = Math.floorMod(pivot + indexCount - indexRet, indexCount);
       int position = Math.max(indexRet, flip);
 
-      Bytes positionDiv256 = uintToBytes(Math.floorDiv(position, 256L), 4);
+      Bytes positionDiv256 = uintTo4Bytes(Math.floorDiv(position, 256L));
       byte[] hashBytes = sha256.digest(seed, roundAsByte, positionDiv256);
 
       int bitIndex = position & 0xff;
@@ -86,9 +88,12 @@ public class MiscHelpers {
     return indexRet;
   }
 
-  public int computeProposerIndex(BeaconState state, IntList indices, Bytes32 seed) {
+  public int computeProposerIndex(
+      final BeaconState state, final IntList indices, final Bytes32 seed) {
     checkArgument(!indices.isEmpty(), "compute_proposer_index indices must not be empty");
-    final Sha256 sha256 = new Sha256();
+
+    final Sha256 sha256 = getSha256Instance();
+
     int i = 0;
     final int total = indices.size();
     byte[] hash = null;
@@ -170,12 +175,13 @@ public class MiscHelpers {
   }
 
   public void shuffleList(int[] input, Bytes32 seed) {
-    final Sha256 sha256 = new Sha256();
 
     int listSize = input.length;
     if (listSize == 0) {
       return;
     }
+
+    final Sha256 sha256 = getSha256Instance();
 
     for (int round = specConfig.getShuffleRoundCount() - 1; round >= 0; round--) {
 
@@ -189,19 +195,18 @@ public class MiscHelpers {
       int mirror1 = (pivot + 2) / 2;
       int mirror2 = (pivot + listSize) / 2;
       for (int i = mirror1; i <= mirror2; i++) {
-
         int flip, bitIndex;
         if (i <= pivot) {
           flip = pivot - i;
           bitIndex = i & 0xff;
           if (bitIndex == 0 || i == mirror1) {
-            hashBytes = sha256.digest(seed, roundAsByte, uintToBytes(i / 256, 4));
+            hashBytes = sha256.digest(seed, roundAsByte, uintTo4Bytes(i / 256));
           }
         } else {
           flip = pivot + listSize - i;
           bitIndex = flip & 0xff;
           if (bitIndex == 0xff || i == pivot + 1) {
-            hashBytes = sha256.digest(seed, roundAsByte, uintToBytes(flip / 256, 4));
+            hashBytes = sha256.digest(seed, roundAsByte, uintTo4Bytes(flip / 256));
           }
         }
 

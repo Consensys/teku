@@ -15,42 +15,40 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 
 /**
- * Interface used to represent both {@link BlockContents} and {@link BeaconBlock} and their blinded
- * variants: <a
+ * Interface used to represent both {@link SignedBlockContents} and {@link SignedBeaconBlock} and
+ * their blinded variants: <a
  * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
  */
-public interface BlockContainer extends SszData {
+public interface SignedBlockContainer extends SszData {
 
-  BeaconBlock getBlock();
+  Predicate<SignedBlockContainer> IS_SIGNED_BEACON_BLOCK =
+      blockContainer -> blockContainer instanceof SignedBeaconBlock;
+
+  Predicate<SignedBlockContainer> IS_SIGNED_BLOCK_CONTENTS =
+      blockContainer -> blockContainer instanceof SignedBlockContents;
+
+  SignedBeaconBlock getSignedBlock();
 
   default UInt64 getSlot() {
-    return getBlock().getSlot();
+    return getSignedBlock().getSlot();
   }
 
-  default Optional<List<BlobSidecar>> getBlobSidecars() {
+  default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.empty();
   }
 
-  default Optional<BlindedBlockContainer> toBlinded() {
+  default Optional<SignedBlindedBlockContainer> toBlinded() {
     return Optional.empty();
   }
 
   default boolean isBlinded() {
     return toBlinded().isPresent();
-  }
-
-  static BlockContainer fromSszData(final SszData sszData) {
-    if (sszData instanceof BlockContainer) {
-      return (BlockContainer) sszData;
-    }
-    throw new IllegalArgumentException(
-        "SszData instance should be of type BlockContainer but it was "
-            + sszData.getClass().getCanonicalName());
   }
 }

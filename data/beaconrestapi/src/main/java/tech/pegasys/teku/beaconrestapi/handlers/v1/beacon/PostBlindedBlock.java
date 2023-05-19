@@ -27,17 +27,15 @@ import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class PostBlindedBlock extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blinded_blocks";
@@ -73,25 +71,26 @@ public class PostBlindedBlock extends RestApiEndpoint {
       return;
     }
 
-    BlockContainer requestBody = request.getRequestBody();
-    final SafeFuture<SendSignedBlockResult> result =
-        validatorDataProvider.submitSignedBlindedBlock(requestBody);
+    final SignedBlockContainer requestBody = request.getRequestBody();
+
     request.respondAsync(
-        result.thenApply(
-            blockResult -> {
-              if (blockResult.getRejectionReason().isEmpty()) {
-                return AsyncApiResponse.respondWithCode(SC_OK);
-              } else if (blockResult
-                  .getRejectionReason()
-                  .get()
-                  .equals(BlockImportResult.FailureReason.INTERNAL_ERROR.name())) {
-                return AsyncApiResponse.respondWithError(
-                    SC_INTERNAL_SERVER_ERROR,
-                    "An internal error occurred, check the server logs for more details.");
-              } else {
-                return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
-              }
-            }));
+        validatorDataProvider
+            .submitSignedBlindedBlock(requestBody)
+            .thenApply(
+                blockResult -> {
+                  if (blockResult.getRejectionReason().isEmpty()) {
+                    return AsyncApiResponse.respondWithCode(SC_OK);
+                  } else if (blockResult
+                      .getRejectionReason()
+                      .get()
+                      .equals(BlockImportResult.FailureReason.INTERNAL_ERROR.name())) {
+                    return AsyncApiResponse.respondWithError(
+                        SC_INTERNAL_SERVER_ERROR,
+                        "An internal error occurred, check the server logs for more details.");
+                  } else {
+                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+                  }
+                }));
   }
 
   private static EndpointMetadata getEndpointMetaData(

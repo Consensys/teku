@@ -114,22 +114,9 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
 
   @NotNull
   private static Function<SszData, SpecMilestone> getMilestoneSelector(final Spec spec) {
-    return sszData -> {
-      if (sszData instanceof BeaconBlock) {
-        return spec.getForkSchedule().getSpecMilestoneAtSlot(((BeaconBlock) sszData).getSlot());
-      } else if (sszData instanceof BlindedBlockContents) {
-        return spec.getForkSchedule()
-            .getSpecMilestoneAtSlot(
-                ((BlindedBlockContents) sszData).getBlindedBeaconBlock().getSlot());
-      } else {
-        throw new UnsupportedOperationException(
-            String.format(
-                "Unsupported GetNewBlindedBlock response type. Must be of type %s or %s but got %s",
-                BeaconBlock.class.getCanonicalName(),
-                BlindedBlockContents.class.getCanonicalName(),
-                sszData.getClass().getCanonicalName()));
-      }
-    };
+    return sszData ->
+        spec.getForkSchedule()
+            .getSpecMilestoneAtSlot(BlockContainer.fromSszData(sszData).getSlot());
   }
 
   private static SerializableOneOfTypeDefinition<BlockContainer> getResponseTypes(
@@ -181,15 +168,14 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
                         .map(SchemaDefinitionsDeneb::getBlindedBlockContentsSchema),
                 (blindedBlockContents, milestone) ->
                     schemaDefinitionCache
-                        .milestoneAtSlot(blindedBlockContents.getBlindedBeaconBlock().getSlot())
+                        .milestoneAtSlot(blindedBlockContents.getSlot())
                         .equals(milestone)),
             Function.identity())
         .withField(
             "version",
             MILESTONE_TYPE,
             blindedBlockContents ->
-                schemaDefinitionCache.milestoneAtSlot(
-                    blindedBlockContents.getBlindedBeaconBlock().getSlot()))
+                schemaDefinitionCache.milestoneAtSlot(blindedBlockContents.getSlot()))
         .build();
   }
 }

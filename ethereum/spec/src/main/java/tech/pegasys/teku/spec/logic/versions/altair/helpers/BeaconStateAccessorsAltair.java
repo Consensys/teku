@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
@@ -97,7 +98,6 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @return the sequence of sync committee indices
    */
   public IntList getNextSyncCommitteeIndices(final BeaconState state) {
-    final Sha256 sha256 = new Sha256();
     final UInt64 epoch = getCurrentEpoch(state).plus(1);
     final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = activeValidatorIndices.size();
@@ -107,6 +107,8 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     final IntList syncCommitteeIndices = new IntArrayList();
     final UInt64 maxEffectiveBalance = config.getMaxEffectiveBalance();
     final int syncCommitteeSize = altairConfig.getSyncCommitteeSize();
+
+    final Sha256 sha256 = getSha256Instance();
 
     while (syncCommitteeIndices.size() < syncCommitteeSize) {
       final int shuffledIndex =
