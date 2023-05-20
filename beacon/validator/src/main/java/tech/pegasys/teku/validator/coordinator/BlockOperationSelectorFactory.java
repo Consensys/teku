@@ -336,10 +336,7 @@ public class BlockOperationSelectorFactory {
   public Function<BeaconBlock, SafeFuture<List<BlobSidecar>>> createBlobSidecarsSelector() {
     return block -> {
       final BlobSidecarSchema blobSidecarSchema =
-          spec.atSlot(block.getSlot())
-              .getSchemaDefinitions()
-              .toVersionDeneb()
-              .orElseThrow()
+          SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
               .getBlobSidecarSchema();
       return getCachedBlobsBundle(block.getSlot())
           .thenApply(
@@ -371,10 +368,7 @@ public class BlockOperationSelectorFactory {
       createBlindedBlobSidecarsSelector() {
     return block -> {
       final BlindedBlobSidecarSchema blindedBlobSidecarSchema =
-          spec.atSlot(block.getSlot())
-              .getSchemaDefinitions()
-              .toVersionDeneb()
-              .orElseThrow()
+          SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
               .getBlindedBlobSidecarSchema();
       return getCachedBlobsBundle(block.getSlot())
           .thenApply(
