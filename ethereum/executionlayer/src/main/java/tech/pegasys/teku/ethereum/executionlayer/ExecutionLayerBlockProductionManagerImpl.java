@@ -20,8 +20,6 @@ import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -114,12 +112,6 @@ public class ExecutionLayerBlockProductionManagerImpl
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     return executionLayerChannel.builderGetPayload(
         signedBlindedBeaconBlock, this::getCachedPayloadResult);
-  }
-
-  @Override
-  public SafeFuture<SignedBlobSidecar> getUnblindedBlobSidecar(
-      final SignedBlindedBlobSidecar signedBlindedBlobSidecar) {
-    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   private ExecutionPayloadResult builderGetHeader(
