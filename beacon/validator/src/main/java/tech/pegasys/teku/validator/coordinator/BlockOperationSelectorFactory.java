@@ -348,8 +348,8 @@ public class BlockOperationSelectorFactory {
                 final List<BlobSidecar> blobSidecars = new ArrayList<>(numberOfBlobs);
                 for (int i = 0; i < numberOfBlobs; i++) {
                   final Blob blob = blobsBundle.getBlobs().get(i);
-                  final KZGProof kzgProof = blobsBundle.getProofs().get(i);
                   final KZGCommitment kzgCommitment = blobsBundle.getCommitments().get(i);
+                  final KZGProof kzgProof = blobsBundle.getProofs().get(i);
                   final BlobSidecar blobSidecar =
                       blobSidecarSchema.create(
                           block.getRoot(),
@@ -358,8 +358,8 @@ public class BlockOperationSelectorFactory {
                           block.getParentRoot(),
                           block.getProposerIndex(),
                           blob.getBytes(),
-                          kzgProof.getBytesCompressed(),
-                          kzgCommitment.getBytesCompressed());
+                          kzgCommitment.getBytesCompressed(),
+                          kzgProof.getBytesCompressed());
                   blobSidecars.add(blobSidecar);
                 }
                 return blobSidecars;
@@ -393,8 +393,8 @@ public class BlockOperationSelectorFactory {
                           block.getParentRoot(),
                           block.getProposerIndex(),
                           blob.hashTreeRoot(),
-                          kzgProof.getBytesCompressed(),
-                          kzgCommitment.getBytesCompressed());
+                          kzgCommitment.getBytesCompressed(),
+                          kzgProof.getBytesCompressed());
                   blindedBlobSidecars.add(blindedBlobSidecar);
                 }
                 return blindedBlobSidecars;
