@@ -448,7 +448,8 @@ class BlockOperationSelectorFactoryTest {
             parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
         .accept(bodyBuilder);
 
-    assertThat(bodyBuilder.blobKzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment))
+    assertThat(bodyBuilder.blobKzgCommitments)
+        .map(SszKZGCommitment::getKZGCommitment)
         .hasSameElementsAs(blobsBundle.getCommitments());
   }
 
