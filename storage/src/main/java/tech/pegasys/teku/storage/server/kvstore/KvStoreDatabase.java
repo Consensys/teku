@@ -649,8 +649,18 @@ public class KvStoreDatabase implements Database {
 
     final Optional<SignedBeaconBlock> finalizedBlock =
         getFinalizedBlock(finalizedCheckpoint.getRoot());
+    final Optional<UInt64> daoEarliestBlobSidecarSlot = dao.getEarliestBlobSidecarSlot();
+    // Include earliestBlobSidecar in Anchor only if slot matches
+    final Optional<UInt64> maybeEarliestBlobSidecarSlot =
+        daoEarliestBlobSidecarSlot.filter(
+            earliestBlobSidecarSlot -> earliestBlobSidecarSlot.equals(finalizedState.getSlot()));
     final AnchorPoint latestFinalized =
-        AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
+        AnchorPoint.create(
+            spec,
+            finalizedCheckpoint,
+            finalizedState,
+            finalizedBlock,
+            maybeEarliestBlobSidecarSlot);
     final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
         dao.getOptimisticTransitionBlockSlot()
             .flatMap(this::getFinalizedBlockAtSlot)
