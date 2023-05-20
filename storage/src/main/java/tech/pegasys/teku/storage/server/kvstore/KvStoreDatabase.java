@@ -482,15 +482,15 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeInitialAnchor(final AnchorPoint anchor) {
+  public void storeInitialAnchor(final AnchorPoint initialAnchor) {
     try (final CombinedUpdater updater = combinedUpdater()) {
       // We should only have a single block / state / checkpoint at anchorpoint initialization
-      final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
+      final Checkpoint anchorCheckpoint = initialAnchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
-      final BeaconState anchorState = anchor.getState();
-      final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
+      final BeaconState anchorState = initialAnchor.getState();
+      final Optional<SignedBeaconBlock> anchorBlock = initialAnchor.getSignedBeaconBlock();
 
-      updater.setAnchor(anchor.getCheckpoint());
+      updater.setAnchor(initialAnchor.getCheckpoint());
       updater.setGenesisTime(anchorState.getGenesisTime());
       updater.setJustifiedCheckpoint(anchorCheckpoint);
       updater.setBestJustifiedCheckpoint(anchorCheckpoint);
@@ -506,6 +506,7 @@ public class KvStoreDatabase implements Database {
           });
 
       putFinalizedState(updater, anchorRoot, anchorState);
+      initialAnchor.getEarliestBlobSidecarSlot().ifPresent(updater::setEarliestBlobSidecarSlot);
 
       updater.commit();
     }

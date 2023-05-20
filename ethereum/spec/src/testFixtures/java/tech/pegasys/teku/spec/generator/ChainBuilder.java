@@ -315,12 +315,10 @@ public class ChainBuilder {
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
 
-    // add an empty list of blob sidecars to the genesis block if genesis is in the Deneb milestone
+    // Set earliest blobSidecar slot if genesis is in the Deneb milestone
     spec.getGenesisSchemaDefinitions()
         .toVersionDeneb()
-        .ifPresent(
-            schemaDefinitions ->
-                trackBlobSidecars(blockAndState.getSlotAndBlockRoot(), Collections.emptyList()));
+        .ifPresent(__ -> earliestBlobSidecarSlot = Optional.of(genesisState.getSlot()));
 
     return blockAndState;
   }

@@ -579,7 +579,9 @@ public final class DataStructureUtil {
   }
 
   public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey) {
-    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsBellatrix.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getBuilderBidSchema()
         .create(
             randomExecutionPayloadHeader(spec.getGenesisSpec()),
@@ -590,7 +592,9 @@ public final class DataStructureUtil {
   }
 
   public BuilderBid randomBuilderBid(final Bytes32 withdrawalsRoot) {
-    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsBellatrix.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getBuilderBidSchema()
         .create(
             randomExecutionPayloadHeader(spec.getGenesisSpec(), withdrawalsRoot),
@@ -599,13 +603,17 @@ public final class DataStructureUtil {
   }
 
   public SignedBuilderBid randomSignedBuilderBid() {
-    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsBellatrix.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getSignedBuilderBidSchema()
         .create(randomBuilderBid(), randomSignature());
   }
 
   public SignedBuilderBid randomSignedBuilderBid(final Bytes32 withdrawalsRoot) {
-    return SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsBellatrix.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getSignedBuilderBidSchema()
         .create(randomBuilderBid(withdrawalsRoot), randomSignature());
   }
@@ -642,7 +650,9 @@ public final class DataStructureUtil {
 
   public Transaction randomExecutionPayloadTransaction() {
     final TransactionSchema schema =
-        SchemaDefinitionsBellatrix.required(spec.getGenesisSchemaDefinitions())
+        SchemaDefinitionsBellatrix.required(
+                spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                    .getSchemaDefinitions())
             .getExecutionPayloadSchema()
             .getTransactionSchema();
     return schema.fromBytes(Bytes.wrap(randomBytes(randomInt(MAX_EP_RANDOM_TRANSACTIONS_SIZE))));
@@ -1955,13 +1965,17 @@ public final class DataStructureUtil {
   }
 
   public Withdrawal randomWithdrawal() {
-    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsCapella.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getWithdrawalSchema()
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
   public HistoricalSummary randomHistoricalSummary() {
-    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsCapella.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getHistoricalSummarySchema()
         .create(SszBytes32.of(randomBytes32()), SszBytes32.of(randomBytes32()));
   }
@@ -1981,7 +1995,9 @@ public final class DataStructureUtil {
   }
 
   public SszList<SignedBlsToExecutionChange> emptySignedBlsToExecutionChangesList() {
-    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsCapella.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getBeaconBlockBodySchema()
         .toVersionCapella()
         .orElseThrow()
@@ -1990,26 +2006,36 @@ public final class DataStructureUtil {
   }
 
   public BlsToExecutionChange randomBlsToExecutionChange() {
-    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsCapella.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
         .create(randomValidatorIndex(), randomPublicKey(), randomBytes20());
   }
 
   public BlsToExecutionChange randomBlsToExecutionChange(final int validatorIndex) {
-    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsCapella.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getBlsToExecutionChangeSchema()
         .create(UInt64.valueOf(validatorIndex), randomPublicKey(), randomBytes20());
   }
 
   public SszList<SignedBlsToExecutionChange> randomSignedBlsToExecutionChangesList() {
     final SszListSchema<SignedBlsToExecutionChange, ?> signedBlsToExecutionChangeSchema =
-        SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+        SchemaDefinitionsCapella.required(
+                spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                    .getSchemaDefinitions())
             .getBeaconBlockBodySchema()
             .toVersionCapella()
             .orElseThrow()
             .getBlsToExecutionChangesSchema();
     final int maxBlsToExecutionChanges =
-        spec.getGenesisSpecConfig().toVersionCapella().orElseThrow().getMaxBlsToExecutionChanges();
+        spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+            .getConfig()
+            .toVersionCapella()
+            .orElseThrow()
+            .getMaxBlsToExecutionChanges();
 
     return randomSszList(
         signedBlsToExecutionChangeSchema,
@@ -2018,7 +2044,9 @@ public final class DataStructureUtil {
   }
 
   public SignedBlsToExecutionChange randomSignedBlsToExecutionChange() {
-    return SchemaDefinitionsCapella.required(spec.getGenesisSchemaDefinitions())
+    return SchemaDefinitionsCapella.required(
+            spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                .getSchemaDefinitions())
         .getSignedBlsToExecutionChangeSchema()
         .create(randomBlsToExecutionChange(), randomSignature());
   }
@@ -2039,7 +2067,10 @@ public final class DataStructureUtil {
 
   public Blob randomBlob() {
     final BlobSchema blobSchema =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
+        SchemaDefinitionsDeneb.required(
+                spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                    .getSchemaDefinitions())
+            .getBlobSchema();
     return blobSchema.create(randomBytes(blobSchema.getLength()));
   }
 
@@ -2114,7 +2145,10 @@ public final class DataStructureUtil {
 
   public BlobsBundle randomBlobsBundle() {
     final BlobSchema blobSchema =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
+        SchemaDefinitionsDeneb.required(
+                spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+                    .getSchemaDefinitions())
+            .getBlobSchema();
     List<KZGCommitment> commitments =
         randomSszKzgCommitmentList().stream()
             .map(SszKZGCommitment::getKZGCommitment)
@@ -2217,7 +2251,9 @@ public final class DataStructureUtil {
   }
 
   private SchemaDefinitionsDeneb getSchemaDefinitionDeneb() {
-    return SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
+    return SchemaDefinitionsDeneb.required(
+        spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+            .getSchemaDefinitions());
   }
 
   public class RandomBlobSidecarBuilder {

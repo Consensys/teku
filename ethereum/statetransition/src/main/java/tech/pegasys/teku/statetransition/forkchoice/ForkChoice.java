@@ -489,7 +489,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .getSlotForBlockRoot(block.getParentRoot())
             .map(UInt64::increment)
             .orElse(block.getSlot());
-    return spec.atSlot(earliestAffectedSlot)
+    return spec.atSlot(block.getSlot())
         .miscHelpers()
         .toVersionDeneb()
         .map(MiscHelpersDeneb::computeFirstSlotWithBlobSupport)

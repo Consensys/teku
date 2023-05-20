@@ -688,12 +688,16 @@ public class BlockManagerTest {
 
   @Test
   void onDeneb_shouldStoreBlobSidecarsAlongWithBlock() {
+    // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
+    incrementSlotTo(slotsPerEpoch);
+
     // Import block 1 with blobSidecars
     final SignedBlockAndState signedBlockAndState1 =
         localChain
             .chainBuilder()
-            .generateBlockAtSlot(
-                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+            .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
     final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
@@ -783,7 +787,7 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThatStored(block1.getMessage(), blobSidecars1);
-    // FIXME: should be 0, if Genesis is Deneb, store earliestBlobSidecar on init
+    // Should be 0, if Genesis is Deneb
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValue(Optional.of(UInt64.valueOf(0)));
   }
@@ -819,11 +823,15 @@ public class BlockManagerTest {
 
   @Test
   void onDeneb_shouldStoreBlockWhenBlobSidecarsNotRequired() {
+    // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
+    incrementSlotTo(slotsPerEpoch);
+
     final SignedBlockAndState signedBlockAndState1 =
         localChain
             .chainBuilder()
-            .generateBlockAtSlot(
-                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+            .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
     final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
@@ -848,11 +856,15 @@ public class BlockManagerTest {
 
   @Test
   void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsInvalid() {
+    // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
+    incrementSlotTo(slotsPerEpoch);
+
     final SignedBlockAndState signedBlockAndState1 =
         localChain
             .chainBuilder()
-            .generateBlockAtSlot(
-                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+            .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
     final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
@@ -878,11 +890,15 @@ public class BlockManagerTest {
 
   @Test
   void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsNotAvailable() {
+    // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
+    setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
+    final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
+    incrementSlotTo(slotsPerEpoch);
+
     final SignedBlockAndState signedBlockAndState1 =
         localChain
             .chainBuilder()
-            .generateBlockAtSlot(
-                incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
+            .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
     final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
@@ -1024,6 +1040,13 @@ public class BlockManagerTest {
   private void assertImportBlockSuccessfully(SignedBeaconBlock block) {
     assertThat(blockManager.importBlock(block))
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+  }
+
+  private void incrementSlotTo(final UInt64 toSlotInclusive) {
+    assertThat(toSlotInclusive.isGreaterThanOrEqualTo(currentSlot)).isTrue();
+    while (toSlotInclusive.isGreaterThan(currentSlot)) {
+      incrementSlot();
+    }
   }
 
   private UInt64 incrementSlot() {
