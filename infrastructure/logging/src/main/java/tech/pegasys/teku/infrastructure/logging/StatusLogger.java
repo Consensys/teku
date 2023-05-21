@@ -383,7 +383,7 @@ public class StatusLogger {
 
   public void adjustingP2pUpperBoundToLowerBound(final int p2pLowerBound) {
     log.warn(
-        "Target number of peers upper bound cannot be set below the default lower bound.  Increasing target to {}.",
+        "Target number of peers upper bound cannot be set below the peers lower bound.  Increasing target to {}.",
         p2pLowerBound);
   }
 
