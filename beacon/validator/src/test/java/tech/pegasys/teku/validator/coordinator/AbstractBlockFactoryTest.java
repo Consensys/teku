@@ -294,23 +294,31 @@ public abstract class AbstractBlockFactoryTest {
   private void setupExecutionLayerBlockAndBlobsProduction() {
     // pre Deneb
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false)))
-        .then(
-            args ->
-                new ExecutionPayloadResult(
-                    args.getArgument(0),
-                    Optional.of(SafeFuture.completedFuture(executionPayload)),
-                    Optional.empty(),
-                    Optional.empty()));
+        .thenAnswer(
+            args -> {
+              ExecutionPayloadResult executionPayloadResult =
+                  new ExecutionPayloadResult(
+                      args.getArgument(0),
+                      Optional.of(SafeFuture.completedFuture(executionPayload)),
+                      Optional.empty(),
+                      Optional.empty());
+              cachedExecutionPayloadResult = executionPayloadResult;
+              return executionPayloadResult;
+            });
     when(executionLayer.initiateBlockProduction(any(), any(), eq(true)))
-        .then(
-            args ->
-                new ExecutionPayloadResult(
-                    args.getArgument(0),
-                    Optional.empty(),
-                    Optional.of(
-                        SafeFuture.completedFuture(
-                            HeaderWithFallbackData.create(executionPayloadHeader))),
-                    Optional.empty()));
+        .thenAnswer(
+            args -> {
+              ExecutionPayloadResult executionPayloadResult =
+                  new ExecutionPayloadResult(
+                      args.getArgument(0),
+                      Optional.empty(),
+                      Optional.of(
+                          SafeFuture.completedFuture(
+                              HeaderWithFallbackData.create(executionPayloadHeader))),
+                      Optional.empty());
+              cachedExecutionPayloadResult = executionPayloadResult;
+              return executionPayloadResult;
+            });
     // post Deneb
     when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false)))
         .thenAnswer(
