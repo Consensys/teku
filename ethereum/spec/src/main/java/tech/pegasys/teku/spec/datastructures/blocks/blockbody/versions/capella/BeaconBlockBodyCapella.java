@@ -32,6 +32,11 @@ public interface BeaconBlockBodyCapella extends BeaconBlockBodyBellatrix {
   SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges();
 
   @Override
+  default Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges() {
+    return Optional.of(getBlsToExecutionChanges());
+  }
+
+  @Override
   BeaconBlockBodySchemaCapella<?> getSchema();
 
   @Override

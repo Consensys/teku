@@ -14,12 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.execution;
 
 import com.google.common.base.MoreObjects;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 
 public class ExecutionPayloadResult {
@@ -53,14 +50,6 @@ public class ExecutionPayloadResult {
 
   public Optional<SafeFuture<BlobsBundle>> getBlobsBundleFuture() {
     return blobsBundleFuture;
-  }
-
-  public Optional<SafeFuture<List<KZGCommitment>>> getCommitmentsFuture() {
-    return blobsBundleFuture.map(future -> future.thenApply(BlobsBundle::getCommitments));
-  }
-
-  public Optional<SafeFuture<List<Blob>>> getBlobsFuture() {
-    return blobsBundleFuture.map(future -> future.thenApply(BlobsBundle::getBlobs));
   }
 
   @Override
