@@ -296,7 +296,7 @@ public abstract class AbstractBlockFactoryTest {
     when(executionLayer.initiateBlockProduction(any(), any(), eq(false)))
         .thenAnswer(
             args -> {
-              ExecutionPayloadResult executionPayloadResult =
+              final ExecutionPayloadResult executionPayloadResult =
                   new ExecutionPayloadResult(
                       args.getArgument(0),
                       Optional.of(SafeFuture.completedFuture(executionPayload)),
@@ -308,7 +308,7 @@ public abstract class AbstractBlockFactoryTest {
     when(executionLayer.initiateBlockProduction(any(), any(), eq(true)))
         .thenAnswer(
             args -> {
-              ExecutionPayloadResult executionPayloadResult =
+              final ExecutionPayloadResult executionPayloadResult =
                   new ExecutionPayloadResult(
                       args.getArgument(0),
                       Optional.empty(),
