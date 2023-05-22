@@ -382,8 +382,12 @@ public class BlockOperationSelectorFactory {
   private SafeFuture<BlobsBundle> getCachedBlobsBundle(final UInt64 slot) {
     return executionLayerBlockProductionManager
         .getCachedPayloadResult(slot)
-        .orElseThrow(() -> new IllegalStateException("payloadResult is required"))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "ExecutionPayloadResult is not available for slot " + slot))
         .getBlobsBundleFuture()
-        .orElseThrow(() -> new IllegalStateException("blobs bundle is required"));
+        .orElseThrow(
+            () -> new IllegalStateException("BlobsBundle is not available for slot " + slot));
   }
 }
