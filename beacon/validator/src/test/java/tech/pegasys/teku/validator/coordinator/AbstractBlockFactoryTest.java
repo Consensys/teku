@@ -45,8 +45,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -208,15 +206,13 @@ public abstract class AbstractBlockFactoryTest {
     }
 
     if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      if (blinded) {
-        assertThat(BlindedBeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments())
-            .map(SszKZGCommitment::getKZGCommitment)
-            .hasSameElementsAs(blobsBundle.getCommitments());
-      } else {
-        assertThat(BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments())
-            .map(SszKZGCommitment::getKZGCommitment)
-            .hasSameElementsAs(blobsBundle.getCommitments());
-      }
+      assertThat(block.getBody().getOptionalBlobKzgCommitments())
+          .hasValueSatisfying(
+              blobKzgCommitments ->
+                  assertThat(blobKzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment))
+                      .hasSameElementsAs(blobsBundle.getCommitments()));
+    } else {
+      assertThat(block.getBody().getOptionalBlobKzgCommitments()).isEmpty();
     }
 
     return blockContainer;

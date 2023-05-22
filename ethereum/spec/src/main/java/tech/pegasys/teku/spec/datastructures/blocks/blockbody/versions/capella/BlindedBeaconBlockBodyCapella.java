@@ -29,12 +29,17 @@ public interface BlindedBeaconBlockBodyCapella extends BlindedBeaconBlockBodyBel
                         + body.getClass().getSimpleName()));
   }
 
+  SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges();
+
+  @Override
+  default Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges() {
+    return Optional.of(getBlsToExecutionChanges());
+  }
+
   @Override
   default Optional<BlindedBeaconBlockBodyCapella> toBlindedVersionCapella() {
     return Optional.of(this);
   }
-
-  SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges();
 
   @Override
   BlindedBeaconBlockBodySchemaCapella<?> getSchema();
