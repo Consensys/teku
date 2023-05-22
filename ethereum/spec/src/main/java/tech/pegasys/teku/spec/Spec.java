@@ -646,12 +646,13 @@ public class Spec {
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
       final SignedBeaconBlock blindedSignedBeaconBlock,
-      final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
+      final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
     return atSlot(blindedSignedBeaconBlock.getSlot())
         .getBlindBlockUtil()
         .map(
             converter ->
-                converter.unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder))
+                converter.unblindSignedBeaconBlock(
+                    blindedSignedBeaconBlock, beaconBlockUnblinderConsumer))
         .orElseGet(
             () -> {
               // this shouldn't happen: BlockFactory should skip unblinding when is not needed
