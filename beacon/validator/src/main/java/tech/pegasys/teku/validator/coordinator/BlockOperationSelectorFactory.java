@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -22,17 +21,15 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
@@ -340,27 +337,20 @@ public class BlockOperationSelectorFactory {
               .getBlobSidecarSchema();
       return getCachedBlobsBundle(block.getSlot())
           .thenApply(
-              blobsBundle -> {
-                final int numberOfBlobs = blobsBundle.getNumberOfBlobs();
-                final List<BlobSidecar> blobSidecars = new ArrayList<>(numberOfBlobs);
-                for (int i = 0; i < numberOfBlobs; i++) {
-                  final Blob blob = blobsBundle.getBlobs().get(i);
-                  final KZGCommitment kzgCommitment = blobsBundle.getCommitments().get(i);
-                  final KZGProof kzgProof = blobsBundle.getProofs().get(i);
-                  final BlobSidecar blobSidecar =
-                      blobSidecarSchema.create(
-                          block.getRoot(),
-                          UInt64.valueOf(i),
-                          block.getSlot(),
-                          block.getParentRoot(),
-                          block.getProposerIndex(),
-                          blob.getBytes(),
-                          kzgCommitment.getBytesCompressed(),
-                          kzgProof.getBytesCompressed());
-                  blobSidecars.add(blobSidecar);
-                }
-                return blobSidecars;
-              });
+              blobsBundle ->
+                  IntStream.range(0, blobsBundle.getNumberOfBlobs())
+                      .mapToObj(
+                          index ->
+                              blobSidecarSchema.create(
+                                  block.getRoot(),
+                                  UInt64.valueOf(index),
+                                  block.getSlot(),
+                                  block.getParentRoot(),
+                                  block.getProposerIndex(),
+                                  blobsBundle.getBlobs().get(index).getBytes(),
+                                  blobsBundle.getCommitments().get(index).getBytesCompressed(),
+                                  blobsBundle.getProofs().get(index).getBytesCompressed()))
+                      .collect(Collectors.toUnmodifiableList()));
     };
   }
 
@@ -372,27 +362,20 @@ public class BlockOperationSelectorFactory {
               .getBlindedBlobSidecarSchema();
       return getCachedBlobsBundle(block.getSlot())
           .thenApply(
-              blobsBundle -> {
-                final int numberOfBlobs = blobsBundle.getNumberOfBlobs();
-                final List<BlindedBlobSidecar> blindedBlobSidecars = new ArrayList<>(numberOfBlobs);
-                for (int i = 0; i < numberOfBlobs; i++) {
-                  final Blob blob = blobsBundle.getBlobs().get(i);
-                  final KZGProof kzgProof = blobsBundle.getProofs().get(i);
-                  final KZGCommitment kzgCommitment = blobsBundle.getCommitments().get(i);
-                  final BlindedBlobSidecar blindedBlobSidecar =
-                      blindedBlobSidecarSchema.create(
-                          block.getRoot(),
-                          UInt64.valueOf(i),
-                          block.getSlot(),
-                          block.getParentRoot(),
-                          block.getProposerIndex(),
-                          blob.hashTreeRoot(),
-                          kzgCommitment.getBytesCompressed(),
-                          kzgProof.getBytesCompressed());
-                  blindedBlobSidecars.add(blindedBlobSidecar);
-                }
-                return blindedBlobSidecars;
-              });
+              blobsBundle ->
+                  IntStream.range(0, blobsBundle.getNumberOfBlobs())
+                      .mapToObj(
+                          index ->
+                              blindedBlobSidecarSchema.create(
+                                  block.getRoot(),
+                                  UInt64.valueOf(index),
+                                  block.getSlot(),
+                                  block.getParentRoot(),
+                                  block.getProposerIndex(),
+                                  blobsBundle.getBlobs().get(index).hashTreeRoot(),
+                                  blobsBundle.getCommitments().get(index).getBytesCompressed(),
+                                  blobsBundle.getProofs().get(index).getBytesCompressed()))
+                      .collect(Collectors.toUnmodifiableList()));
     };
   }
 

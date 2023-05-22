@@ -75,7 +75,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Override
-  BlockFactory createBlockFactory(final Spec spec) {
+  public BlockFactory createBlockFactory(final Spec spec) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     return new BlockFactoryDeneb(
