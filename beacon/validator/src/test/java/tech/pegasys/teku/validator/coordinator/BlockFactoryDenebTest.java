@@ -15,10 +15,14 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.BlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -34,21 +38,25 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   void shouldCreateBlockContentsWhenDenebIsActive() {
 
     prepareDefaultPayload(spec);
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec);
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer = assertBlockCreated(1, spec, false, false);
 
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlobSidecars())
         .hasValueSatisfying(
-            blobSidecars -> assertThat(blobSidecars).hasSize(blobsBundle.getNumberOfBlobs()));
+            blobSidecars ->
+                assertThat(blobSidecars)
+                    .hasSize(3)
+                    .map(BlobSidecar::getBlob)
+                    .hasSameElementsAs(blobsBundle.getBlobs()));
   }
 
   @Test
   void shouldCreateBlindedBlockContentsWhenDenebIsActiveAndBlindedBlockRequested() {
 
     prepareDefaultPayload(spec);
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec);
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer = assertBlockCreated(1, spec, false, true);
 
@@ -57,7 +65,13 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blindedBlockContainer.getBlindedBlobSidecars())
         .hasValueSatisfying(
             blindedBlobSidecars ->
-                assertThat(blindedBlobSidecars).hasSize(blobsBundle.getNumberOfBlobs()));
+                assertThat(blindedBlobSidecars)
+                    .hasSize(3)
+                    .map(BlindedBlobSidecar::getBlobRoot)
+                    .hasSameElementsAs(
+                        blobsBundle.getBlobs().stream()
+                            .map(Blob::hashTreeRoot)
+                            .collect(Collectors.toList())));
   }
 
   @Override

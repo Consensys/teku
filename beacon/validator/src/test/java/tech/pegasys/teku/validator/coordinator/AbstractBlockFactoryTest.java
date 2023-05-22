@@ -288,9 +288,9 @@ public abstract class AbstractBlockFactoryTest {
             .getHeaderOfDefaultPayload();
   }
 
-  protected BlobsBundle prepareBlobsBundle(final Spec spec) {
+  protected BlobsBundle prepareBlobsBundle(final Spec spec, final int count) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(count);
     this.blobsBundle = blobsBundle;
     return blobsBundle;
   }
