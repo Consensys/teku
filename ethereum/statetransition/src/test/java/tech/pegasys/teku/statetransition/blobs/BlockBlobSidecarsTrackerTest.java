@@ -142,14 +142,18 @@ public class BlockBlobSidecarsTrackerTest {
     assertThatThrownBy(() -> Waiter.waitFor(completionFuture2Timeout))
         .hasCauseInstanceOf(TimeoutException.class);
 
-    // make tracker completes
-    blockBlobSidecarsTracker.setBlock(block);
-
     // future2s are timed out
     SafeFutureAssert.assertThatSafeFuture(completionFuture2Timeout).isCompletedExceptionally();
     SafeFutureAssert.assertThatSafeFuture(completionFuture2).isCompletedExceptionally();
 
-    // other futures are completed
+    // while the others are not yet completed
+    SafeFutureAssert.assertThatSafeFuture(completionFuture1).isNotCompleted();
+    SafeFutureAssert.assertThatSafeFuture(completionFuture3).isNotCompleted();
+
+    // make tracker completes
+    blockBlobSidecarsTracker.setBlock(block);
+
+    // other futures are now completed
     SafeFutureAssert.assertThatSafeFuture(completionFuture1).isCompleted();
     SafeFutureAssert.assertThatSafeFuture(completionFuture3).isCompleted();
   }
