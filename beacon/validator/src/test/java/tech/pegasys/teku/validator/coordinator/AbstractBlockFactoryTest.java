@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -225,15 +226,17 @@ public abstract class AbstractBlockFactoryTest {
         .createEmpty();
   }
 
-  protected SignedBeaconBlock assertBlockUnblinded(
+  protected SignedBlockContainer assertBlockUnblinded(
       final SignedBeaconBlock beaconBlock, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
     when(executionLayer.getUnblindedPayload(beaconBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
 
-    final SignedBeaconBlock block =
-        blockFactory.unblindSignedBeaconBlockIfBlinded(beaconBlock).join();
+    final SignedBlockContainer blockContainer =
+        blockFactory.unblindSignedBlockIfBlinded(beaconBlock).join();
+
+    final SignedBeaconBlock block = blockContainer.getSignedBlock();
 
     if (!beaconBlock.getMessage().getBody().isBlinded()) {
       verifyNoInteractions(executionLayer);
@@ -247,7 +250,7 @@ public abstract class AbstractBlockFactoryTest {
     assertThat(block.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isEqualTo(Optional.empty());
 
-    return block;
+    return blockContainer;
   }
 
   protected SignedBeaconBlock assertBlockBlinded(

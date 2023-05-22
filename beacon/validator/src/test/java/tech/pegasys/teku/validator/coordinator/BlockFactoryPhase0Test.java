@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -124,7 +125,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
     final SignedBeaconBlock originalUnblindedSignedBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
 
-    final SignedBeaconBlock unblindedSignedBlock =
+    final SignedBlockContainer unblindedSignedBlock =
         assertBlockUnblinded(originalUnblindedSignedBlock, spec);
 
     assertThat(unblindedSignedBlock).isEqualTo(originalUnblindedSignedBlock);
@@ -138,7 +139,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
     final SignedBeaconBlock originalAltairSignedBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
 
-    final SignedBeaconBlock unblindedSignedBlock =
+    final SignedBlockContainer unblindedSignedBlock =
         assertBlockUnblinded(originalAltairSignedBlock, spec);
 
     assertThat(unblindedSignedBlock).isEqualTo(originalAltairSignedBlock);

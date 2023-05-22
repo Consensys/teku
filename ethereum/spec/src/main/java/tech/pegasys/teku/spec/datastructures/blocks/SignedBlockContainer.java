@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
@@ -38,6 +39,10 @@ public interface SignedBlockContainer extends SszData {
 
   default UInt64 getSlot() {
     return getSignedBlock().getSlot();
+  }
+
+  default Bytes32 getRoot() {
+    return getSignedBlock().getRoot();
   }
 
   default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {

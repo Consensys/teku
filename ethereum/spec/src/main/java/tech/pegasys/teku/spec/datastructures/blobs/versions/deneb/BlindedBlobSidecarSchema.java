@@ -66,8 +66,7 @@ public class BlindedBlobSidecarSchema
       final Bytes32 blobRoot,
       final Bytes48 kzgCommitment,
       final Bytes48 kzgProof) {
-    return new BlindedBlobSidecar(
-        this,
+    return create(
         blockRoot,
         index,
         slot,
@@ -76,6 +75,27 @@ public class BlindedBlobSidecarSchema
         blobRoot,
         KZGCommitment.fromBytesCompressed(kzgCommitment),
         KZGProof.fromBytesCompressed(kzgProof));
+  }
+
+  public BlindedBlobSidecar create(
+      final Bytes32 blockRoot,
+      final UInt64 index,
+      final UInt64 slot,
+      final Bytes32 blockParentRoot,
+      final UInt64 proposerIndex,
+      final Bytes32 blobRoot,
+      final KZGCommitment kzgCommitment,
+      final KZGProof kzgProof) {
+    return new BlindedBlobSidecar(
+        this,
+        blockRoot,
+        index,
+        slot,
+        blockParentRoot,
+        proposerIndex,
+        blobRoot,
+        kzgCommitment,
+        kzgProof);
   }
 
   public BlindedBlobSidecar create(final BlobSidecar blobSidecar) {

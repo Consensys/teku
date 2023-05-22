@@ -13,13 +13,19 @@
 
 package tech.pegasys.teku.spec.logic.common.util;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 
 public abstract class BlindBlockUtil {
+
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
       final SignedBeaconBlock signedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
@@ -29,12 +35,30 @@ public abstract class BlindBlockUtil {
     return beaconBlockUnblinder.unblind();
   }
 
+  public SafeFuture<List<SignedBlobSidecar>> unblindSignedBlobSidecars(
+      final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
+      final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
+    final SignedBlobSidecarsUnblinder blobSidecarsUnblinder =
+        createSignedBlobSidecarsUnblinder(blindedBlobSidecars)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Can't unblind blob sidecars before Deneb milestone is hit"));
+    blobSidecarsUnblinderConsumer.accept(blobSidecarsUnblinder);
+    return blobSidecarsUnblinder.unblind();
+  }
+
   public SignedBeaconBlock blindSignedBeaconBlock(final SignedBeaconBlock signedBeaconBlock) {
     return getSignedBeaconBlockBlinder().blind(signedBeaconBlock);
   }
 
   protected abstract SignedBeaconBlockUnblinder createSignedBeaconBlockUnblinder(
       final SignedBeaconBlock signedBeaconBlock);
+
+  protected Optional<SignedBlobSidecarsUnblinder> createSignedBlobSidecarsUnblinder(
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
+    return Optional.empty();
+  }
 
   protected abstract SignedBeaconBlockBlinder getSignedBeaconBlockBlinder();
 }

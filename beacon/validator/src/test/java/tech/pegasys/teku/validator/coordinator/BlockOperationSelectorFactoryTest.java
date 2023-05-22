@@ -419,7 +419,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.getUnblindedPayload(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
-    factory.createUnblinderSelector().accept(blockUnblinder);
+    factory.createBlockUnblinderSelector().accept(blockUnblinder);
 
     assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
   }

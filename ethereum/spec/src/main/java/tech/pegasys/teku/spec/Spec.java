@@ -48,7 +48,9 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -658,6 +660,22 @@ public class Spec {
                   "Unblinder not available for the current spec but the given block was blinded");
               return SafeFuture.completedFuture(blindedSignedBeaconBlock);
             });
+  }
+
+  public SafeFuture<List<SignedBlobSidecar>> unblindSignedBlindedBlobSidecars(
+      final UInt64 slot,
+      final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
+      final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
+    return atSlot(slot)
+        .getBlindBlockUtil()
+        .map(
+            converter ->
+                converter.unblindSignedBlobSidecars(
+                    blindedBlobSidecars, blobSidecarsUnblinderConsumer))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unblinder was not available but blob sidecars were blinded"));
   }
 
   public SignedBeaconBlock blindSignedBeaconBlock(

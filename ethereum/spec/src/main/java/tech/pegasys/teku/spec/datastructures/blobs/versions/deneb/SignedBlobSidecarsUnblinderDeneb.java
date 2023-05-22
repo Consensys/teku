@@ -1,0 +1,85 @@
+/*
+ * Copyright ConsenSys Software Inc., 2023
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
+
+import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+
+public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnblinder {
+
+  private final SchemaDefinitionsDeneb schemaDefinitions;
+  private final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars;
+
+  private volatile SafeFuture<BlobsBundle> blobsBundleFuture;
+
+  public SignedBlobSidecarsUnblinderDeneb(
+      final SchemaDefinitionsDeneb schemaDefinitions,
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
+    this.schemaDefinitions = schemaDefinitions;
+    this.signedBlindedBlobSidecars = signedBlindedBlobSidecars;
+  }
+
+  @Override
+  public void setBlobsBundleSupplier(final Supplier<SafeFuture<BlobsBundle>> blobsBundleSupplier) {
+    blobsBundleFuture = blobsBundleSupplier.get();
+  }
+
+  @Override
+  public SafeFuture<List<SignedBlobSidecar>> unblind() {
+    return blobsBundleFuture.thenApply(
+        blobsBundle ->
+            signedBlindedBlobSidecars.stream()
+                .map(
+                    signedBlindedBlobSidecar ->
+                        unblindSignedBlindedBlobSidecar(signedBlindedBlobSidecar, blobsBundle))
+                .collect(Collectors.toUnmodifiableList()));
+  }
+
+  private SignedBlobSidecar unblindSignedBlindedBlobSidecar(
+      final SignedBlindedBlobSidecar signedBlindedBlobSidecar, final BlobsBundle blobsBundle) {
+    final BlobSidecarSchema blobSidecarSchema = schemaDefinitions.getBlobSidecarSchema();
+    final SignedBlobSidecarSchema signedBlobSidecarSchema =
+        schemaDefinitions.getSignedBlobSidecarSchema();
+    final BlindedBlobSidecar blindedBlobSidecar = signedBlindedBlobSidecar.getBlindedBlobSidecar();
+    final Blob blob = findBlobWithRoot(blobsBundle, blindedBlobSidecar.getBlobRoot());
+    final BlobSidecar unblindedBlobSidecar =
+        blobSidecarSchema.create(
+            blindedBlobSidecar.getBlockRoot(),
+            blindedBlobSidecar.getIndex(),
+            blindedBlobSidecar.getSlot(),
+            blindedBlobSidecar.getBlockParentRoot(),
+            blindedBlobSidecar.getProposerIndex(),
+            blob,
+            blindedBlobSidecar.getKZGCommitment(),
+            blindedBlobSidecar.getKZGProof());
+    return signedBlobSidecarSchema.create(
+        unblindedBlobSidecar, signedBlindedBlobSidecar.getSignature());
+  }
+
+  private Blob findBlobWithRoot(final BlobsBundle blobsBundle, final Bytes32 blobRoot) {
+    return blobsBundle.getBlobs().stream()
+        .filter(blob -> blob.hashTreeRoot().equals(blobRoot))
+        .findFirst()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    String.format(
+                        "Blob with root %s was not found in the local BlobsBundle", blobRoot)));
+  }
+}

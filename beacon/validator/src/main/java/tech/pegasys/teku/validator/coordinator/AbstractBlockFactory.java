@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public abstract class AbstractBlockFactory implements BlockFactory {
 
@@ -26,15 +24,5 @@ public abstract class AbstractBlockFactory implements BlockFactory {
       final Spec spec, final BlockOperationSelectorFactory operationSelector) {
     this.spec = spec;
     this.operationSelector = operationSelector;
-  }
-
-  @Override
-  public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlockIfBlinded(
-      final SignedBeaconBlock blindedSignedBeaconBlock) {
-    if (blindedSignedBeaconBlock.isBlinded()) {
-      return spec.unblindSignedBeaconBlock(
-          blindedSignedBeaconBlock, operationSelector.createUnblinderSelector());
-    }
-    return SafeFuture.completedFuture(blindedSignedBeaconBlock);
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class BlockFactoryPhase0 extends AbstractBlockFactory {
@@ -59,5 +61,17 @@ public class BlockFactoryPhase0 extends AbstractBlockFactory {
                 parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
             blinded)
         .thenApply(BeaconBlockAndState::getBlock);
+  }
+
+  @Override
+  public SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
+      final SignedBlockContainer maybeBlindedBlockContainer) {
+    if (maybeBlindedBlockContainer.isBlinded()) {
+      return spec.unblindSignedBeaconBlock(
+              maybeBlindedBlockContainer.getSignedBlock(),
+              operationSelector.createBlockUnblinderSelector())
+          .thenApply(Function.identity());
+    }
+    return SafeFuture.completedFuture(maybeBlindedBlockContainer);
   }
 }
