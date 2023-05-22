@@ -58,7 +58,9 @@ public class BlockBlobSidecarsTracker {
   }
 
   public SafeFuture<Void> getCompletionFuture() {
-    return blobSidecarsComplete;
+    final SafeFuture<Void> newCompletionFuture = new SafeFuture<>();
+    blobSidecarsComplete.propagateTo(newCompletionFuture);
+    return newCompletionFuture;
   }
 
   public Optional<BeaconBlockBodyDeneb> getBlockBody() {
