@@ -80,12 +80,9 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final SignedBlockContainer maybeBlindedBlockContainer) {
     if (maybeBlindedBlockContainer.isBlinded()) {
       return unblindBeaconBlock(maybeBlindedBlockContainer)
-          .thenComposeCombined(
+          .thenCombine(
               unblindBlobSidecars(maybeBlindedBlockContainer),
-              (unblindedSignedBlock, unblindedBlobSidecars) ->
-                  SafeFuture.completedFuture(
-                      createUnblindedSignedBlockContents(
-                          unblindedSignedBlock, unblindedBlobSidecars)));
+              this::createUnblindedSignedBlockContents);
     }
     return SafeFuture.completedFuture(maybeBlindedBlockContainer);
   }
