@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -843,6 +845,10 @@ public class Spec {
         .getConfig()
         .toVersionDeneb()
         .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+  }
+
+  public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
+    return signedBlobSidecar.getBlobSidecar().getIndex().mod(BLOB_SIDECAR_SUBNET_COUNT);
   }
 
   // Private helpers
