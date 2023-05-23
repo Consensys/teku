@@ -19,8 +19,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarIndexTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
+import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
@@ -106,17 +107,17 @@ class Eth2GossipTopicFilterTest {
   }
 
   @Test
-  void shouldConsiderAllBlobSidecarIndexTopicsRelevant() {
+  void shouldConsiderAllBlobSidecarSubnetsRelevant() {
     for (int i = 0; i < maxBlobsPerBlock; i++) {
-      assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarIndexTopicName(i)))).isTrue();
+      assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarSubnetTopicName(i)))).isTrue();
     }
   }
 
   @Test
-  void shouldNotConsiderBlobSidecarWithIncorrectIndexTopicRelevant() {
+  void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
     assertThat(
             filter.isRelevantTopic(
-                getTopicName(getBlobSidecarIndexTopicName(maxBlobsPerBlock + 1))))
+                getTopicName(getBlobSidecarSubnetTopicName(BLOB_SIDECAR_SUBNET_COUNT + 1))))
         .isFalse();
   }
 

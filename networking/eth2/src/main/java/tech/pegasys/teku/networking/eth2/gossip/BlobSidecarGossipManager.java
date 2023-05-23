@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
+import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
+
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -29,7 +31,6 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -39,11 +40,12 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarGossipManager implements GossipManager {
 
+  private final Spec spec;
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
-  private final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler;
+  private final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> subnetIdToTopicHandler;
 
-  private final Int2ObjectMap<TopicChannel> indexToChannel = new Int2ObjectOpenHashMap<>();
+  private final Int2ObjectMap<TopicChannel> subnetIdToChannel = new Int2ObjectOpenHashMap<>();
 
   public static BlobSidecarGossipManager create(
       final RecentChainData recentChainData,
@@ -55,19 +57,17 @@ public class BlobSidecarGossipManager implements GossipManager {
       final OperationProcessor<SignedBlobSidecar> processor,
       final int maxMessageSize) {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
-    final int maxBlobsPerBlock =
-        SpecConfigDeneb.required(forkSpecVersion.getConfig()).getMaxBlobsPerBlock();
     final SignedBlobSidecarSchema gossipType =
         SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
             .getSignedBlobSidecarSchema();
-    final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler =
+    final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
-    IntStream.range(0, maxBlobsPerBlock)
+    IntStream.range(0, BLOB_SIDECAR_SUBNET_COUNT)
         .forEach(
-            index -> {
+            subnetId -> {
               final Eth2TopicHandler<SignedBlobSidecar> topicHandler =
                   createBlobSidecarTopicHandler(
-                      index,
+                      subnetId,
                       recentChainData,
                       spec,
                       asyncRunner,
@@ -76,48 +76,51 @@ public class BlobSidecarGossipManager implements GossipManager {
                       forkInfo,
                       gossipType,
                       maxMessageSize);
-              indexToTopicHandler.put(index, topicHandler);
+              subnetIdToTopicHandler.put(subnetId, topicHandler);
             });
-    return new BlobSidecarGossipManager(gossipNetwork, gossipEncoding, indexToTopicHandler);
+    return new BlobSidecarGossipManager(
+        spec, gossipNetwork, gossipEncoding, subnetIdToTopicHandler);
   }
 
   private BlobSidecarGossipManager(
+      final Spec spec,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
-      final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> indexToTopicHandler) {
+      final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> subnetIdToTopicHandler) {
+    this.spec = spec;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
-    this.indexToTopicHandler = indexToTopicHandler;
+    this.subnetIdToTopicHandler = subnetIdToTopicHandler;
   }
 
   public void publishBlobSidecar(final SignedBlobSidecar message) {
-    final int index = message.getBlobSidecar().getIndex().intValue();
-    Optional.ofNullable(indexToChannel.get(index))
+    final int subnetId = spec.computeSubnetForBlobSidecar(message).intValue();
+    Optional.ofNullable(subnetIdToChannel.get(subnetId))
         .ifPresent(channel -> channel.gossip(gossipEncoding.encode(message)));
   }
 
   @VisibleForTesting
-  Eth2TopicHandler<SignedBlobSidecar> getTopicHandler(final int index) {
-    return indexToTopicHandler.get(index);
+  Eth2TopicHandler<SignedBlobSidecar> getTopicHandler(final int subnetId) {
+    return subnetIdToTopicHandler.get(subnetId);
   }
 
   @Override
   public void subscribe() {
-    indexToTopicHandler
+    subnetIdToTopicHandler
         .int2ObjectEntrySet()
         .forEach(
             entry -> {
               final Eth2TopicHandler<SignedBlobSidecar> topicHandler = entry.getValue();
               final TopicChannel channel =
                   gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
-              indexToChannel.put(entry.getIntKey(), channel);
+              subnetIdToChannel.put(entry.getIntKey(), channel);
             });
   }
 
   @Override
   public void unsubscribe() {
-    indexToChannel.values().forEach(TopicChannel::close);
-    indexToChannel.clear();
+    subnetIdToChannel.values().forEach(TopicChannel::close);
+    subnetIdToChannel.clear();
   }
 
   @Override
@@ -126,7 +129,7 @@ public class BlobSidecarGossipManager implements GossipManager {
   }
 
   private static Eth2TopicHandler<SignedBlobSidecar> createBlobSidecarTopicHandler(
-      final int index,
+      final int subnetId,
       final RecentChainData recentChainData,
       final Spec spec,
       final AsyncRunner asyncRunner,
@@ -138,10 +141,10 @@ public class BlobSidecarGossipManager implements GossipManager {
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
-        new TopicIndexAwareOperationProcessor(index, processor),
+        new SubnetIdAwareOperationProcessor(spec, subnetId, processor),
         gossipEncoding,
         forkInfo.getForkDigest(spec),
-        GossipTopicName.getBlobSidecarIndexTopicName(index),
+        GossipTopicName.getBlobSidecarSubnetTopicName(subnetId),
         new OperationMilestoneValidator<>(
             spec,
             forkInfo.getFork(),
@@ -150,26 +153,28 @@ public class BlobSidecarGossipManager implements GossipManager {
         maxMessageSize);
   }
 
-  private static class TopicIndexAwareOperationProcessor
+  private static class SubnetIdAwareOperationProcessor
       implements OperationProcessor<SignedBlobSidecar> {
 
-    private final int topicIndex;
+    private final Spec spec;
+    private final int subnetId;
     private final OperationProcessor<SignedBlobSidecar> delegate;
 
-    private TopicIndexAwareOperationProcessor(
-        final int topicIndex, final OperationProcessor<SignedBlobSidecar> delegate) {
-      this.topicIndex = topicIndex;
+    private SubnetIdAwareOperationProcessor(
+        final Spec spec, final int subnetId, final OperationProcessor<SignedBlobSidecar> delegate) {
+      this.spec = spec;
+      this.subnetId = subnetId;
       this.delegate = delegate;
     }
 
     @Override
     public SafeFuture<InternalValidationResult> process(final SignedBlobSidecar blobSidecar) {
-      final int blobSidecarIndex = blobSidecar.getBlobSidecar().getIndex().intValue();
-      if (blobSidecarIndex != topicIndex) {
+      final int blobSidecarSubnet = spec.computeSubnetForBlobSidecar(blobSidecar).intValue();
+      if (blobSidecarSubnet != subnetId) {
         return SafeFuture.completedFuture(
             InternalValidationResult.reject(
-                "blob sidecar with index %d does not match the topic index %d",
-                blobSidecarIndex, topicIndex));
+                "blob sidecar with subnet_id %s does not match the topic subnet_id %d",
+                blobSidecarSubnet, subnetId));
       }
       return delegate.process(blobSidecar);
     }
