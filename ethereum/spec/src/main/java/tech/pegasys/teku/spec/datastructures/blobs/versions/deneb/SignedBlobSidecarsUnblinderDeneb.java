@@ -79,7 +79,7 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
             () ->
                 new IllegalArgumentException(
                     String.format(
-                        "Blob with ssz root %s was not found in the BlobsBundle: %s",
+                        "Blob with root %s was not found in the BlobsBundle: %s",
                         blobRoot, blobsBundle.toBriefString())));
   }
 }
