@@ -531,6 +531,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(
             Optional.of(
+                // only BlobsBundle is required
                 new ExecutionPayloadResult(
                     null,
                     Optional.empty(),
