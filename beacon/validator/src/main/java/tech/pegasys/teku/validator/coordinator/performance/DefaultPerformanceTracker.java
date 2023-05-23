@@ -407,7 +407,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     final UInt64 epoch = spec.computeEpochAtSlot(blockContainer.getSlot());
     final Set<SlotAndBlockRoot> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    blocksInEpoch.add(new SlotAndBlockRoot(blockContainer.getSlot(), blockContainer.getRoot()));
+    blocksInEpoch.add(blockContainer.getSlotAndBlockRoot());
   }
 
   @Override

@@ -28,13 +28,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class MilestoneBasedBlockFactory extends AbstractBlockFactory {
+public class MilestoneBasedBlockFactory implements BlockFactory {
 
   private final Map<SpecMilestone, BlockFactory> registeredFactories = new HashMap<>();
 
+  private final Spec spec;
+
   public MilestoneBasedBlockFactory(
       final Spec spec, final BlockOperationSelectorFactory operationSelector) {
-    super(spec, operationSelector);
+    this.spec = spec;
     final BlockFactoryPhase0 blockFactoryPhase0 = new BlockFactoryPhase0(spec, operationSelector);
 
     // Not needed for all milestones

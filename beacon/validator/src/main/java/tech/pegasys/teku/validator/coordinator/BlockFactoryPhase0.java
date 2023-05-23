@@ -27,11 +27,15 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class BlockFactoryPhase0 extends AbstractBlockFactory {
+public class BlockFactoryPhase0 implements BlockFactory {
+
+  protected final Spec spec;
+  protected final BlockOperationSelectorFactory operationSelector;
 
   public BlockFactoryPhase0(
       final Spec spec, final BlockOperationSelectorFactory operationSelector) {
-    super(spec, operationSelector);
+    this.spec = spec;
+    this.operationSelector = operationSelector;
   }
 
   @Override
