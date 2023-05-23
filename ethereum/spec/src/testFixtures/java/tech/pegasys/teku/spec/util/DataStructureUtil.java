@@ -2170,6 +2170,7 @@ public final class DataStructureUtil {
     for (int i = 0; i < blobsBundle.getNumberOfBlobs(); i++) {
       signedBlindedBlobSidecars.add(
           new RandomBlobSidecarBuilder()
+              .index(UInt64.valueOf(i))
               .blob(blobsBundle.getBlobs().get(i).getBytes())
               .kzgCommitment(blobsBundle.getCommitments().get(i).getBytesCompressed())
               .kzgProof(blobsBundle.getProofs().get(i).getBytesCompressed())

@@ -80,11 +80,11 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
               blobsBundle.getNumberOfBlobs(), blindedBlobSidecarIndex));
     }
     final Blob blob = blobsBundle.getBlobs().get(blindedBlobSidecarIndex);
-    if (blob.hashTreeRoot().equals(blindedBlobSidecar.getBlobRoot())) {
+    if (!blob.hashTreeRoot().equals(blindedBlobSidecar.getBlobRoot())) {
       throw new IllegalArgumentException(
           String.format(
               "The blob root in the BlobsBundle %s does not match the blob root in the blinded blob sidecar %s",
-              blob.hashTreeRoot(), blindedBlobSidecar.getBlobRoot()));
+              blob.hashTreeRoot(), blindedBlobSidecar));
     }
     return blob;
   }
