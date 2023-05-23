@@ -141,7 +141,7 @@ public class BlobSidecarGossipManager implements GossipManager {
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
-        new SubnetIdAwareOperationProcessor(spec, subnetId, processor),
+        new TopicSubnetIdAwareOperationProcessor(spec, subnetId, processor),
         gossipEncoding,
         forkInfo.getForkDigest(spec),
         GossipTopicName.getBlobSidecarSubnetTopicName(subnetId),
@@ -153,14 +153,14 @@ public class BlobSidecarGossipManager implements GossipManager {
         maxMessageSize);
   }
 
-  private static class SubnetIdAwareOperationProcessor
+  private static class TopicSubnetIdAwareOperationProcessor
       implements OperationProcessor<SignedBlobSidecar> {
 
     private final Spec spec;
     private final int subnetId;
     private final OperationProcessor<SignedBlobSidecar> delegate;
 
-    private SubnetIdAwareOperationProcessor(
+    private TopicSubnetIdAwareOperationProcessor(
         final Spec spec, final int subnetId, final OperationProcessor<SignedBlobSidecar> delegate) {
       this.spec = spec;
       this.subnetId = subnetId;
