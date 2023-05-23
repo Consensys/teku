@@ -106,7 +106,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void unblindSignedBeaconBlock_shouldThrowWhenUnblindingBlockWithInconsistentExecutionPayload() {
+  void unblindSignedBlock_shouldThrowWhenUnblindingBlockWithInconsistentExecutionPayload() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -118,35 +118,35 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void unblindSignedBeaconBlock_shouldPassthroughUnblindedBlocks() {
+  void unblindSignedBlock_shouldPassthroughUnblindedBlocks() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     final SignedBeaconBlock originalUnblindedSignedBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
 
-    final SignedBlockContainer unblindedSignedBlock =
+    final SignedBlockContainer unblindedSignedBlockContainer =
         assertBlockUnblinded(originalUnblindedSignedBlock, spec);
 
-    assertThat(unblindedSignedBlock).isEqualTo(originalUnblindedSignedBlock);
+    assertThat(unblindedSignedBlockContainer).isEqualTo(originalUnblindedSignedBlock);
   }
 
   @Test
-  void unblindSignedBeaconBlock_shouldPassthroughInNonBellatrixBlocks() {
+  void unblindSignedBlock_shouldPassthroughInNonBellatrixBlocks() {
     final Spec spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     final SignedBeaconBlock originalAltairSignedBlock =
         dataStructureUtil.randomSignedBeaconBlock(1);
 
-    final SignedBlockContainer unblindedSignedBlock =
+    final SignedBlockContainer unblindedSignedBlockContainer =
         assertBlockUnblinded(originalAltairSignedBlock, spec);
 
-    assertThat(unblindedSignedBlock).isEqualTo(originalAltairSignedBlock);
+    assertThat(unblindedSignedBlockContainer).isEqualTo(originalAltairSignedBlock);
   }
 
   @Test
-  void unblindSignedBeaconBlock_shouldUnblindingBlockWhenBellatrixIsActive() {
+  void unblindSignedBlock_shouldUnblindBlockWhenBellatrixIsActive() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

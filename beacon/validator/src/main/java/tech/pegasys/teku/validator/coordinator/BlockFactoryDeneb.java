@@ -79,7 +79,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   public SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
       final SignedBlockContainer maybeBlindedBlockContainer) {
     if (maybeBlindedBlockContainer.isBlinded()) {
-      return unblindBeaconBlock(maybeBlindedBlockContainer)
+      return unblindBlock(maybeBlindedBlockContainer)
           .thenCombine(
               unblindBlobSidecars(maybeBlindedBlockContainer),
               this::createUnblindedSignedBlockContents);
@@ -100,7 +100,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   /** use {@link BlockFactoryPhase0} unblinding of the {@link SignedBeaconBlock} */
-  private SafeFuture<SignedBeaconBlock> unblindBeaconBlock(
+  private SafeFuture<SignedBeaconBlock> unblindBlock(
       final SignedBlockContainer blindedBlockContainer) {
     return super.unblindSignedBlockIfBlinded(blindedBlockContainer)
         .thenApply(SignedBlockContainer::getSignedBlock);
