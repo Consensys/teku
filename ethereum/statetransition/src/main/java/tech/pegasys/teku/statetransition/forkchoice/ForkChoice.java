@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
@@ -46,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -64,7 +67,6 @@ import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
@@ -424,10 +426,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       throw new IllegalStateException(
           String.format(
               "Unexpected attempt to store invalid blob sidecars (%s) for block: %s",
-              blobSidecarsAndValidationResult, block));
+              blobSidecarsAndValidationResult.getBlobSidecars().size(), block.toLogString()));
     }
     final Optional<UInt64> earliestBlobSidecarsSlot =
-        computeEarliestBlobSidecarsSlot(blobSidecarsAndValidationResult, block.getMessage());
+        computeEarliestBlobSidecarsSlot(
+            recentChainData.getStore(), blobSidecarsAndValidationResult, block.getMessage());
     forkChoiceUtil.applyBlockToStore(
         transaction,
         block,
@@ -476,24 +479,56 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
+  /**
+   * In order to keep track of DataAvailability Window, we need to compute the earliest slot we can
+   * consider data available for the given block. It needs to take in account possible empty slots
+   * so the actual slot should be parent block slot + 1. Moreover, we need to manage the case in
+   * which the calculated slot is before Deneb activation, so it should never be before the first
+   * deneb slot.
+   *
+   * @param store requires for data availability window calculation
+   * @param blobSidecarsAndValidationResult If it's not required or invalid, we could skip
+   *     calculation
+   * @param block Beacon block
+   * @return the slot we could mark as earliestBlobSidecarsSlot if any, otherwise Optional.empty()
+   */
   private Optional<UInt64> computeEarliestBlobSidecarsSlot(
+      final ReadOnlyStore store,
       final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult,
       final BeaconBlock block) {
     if (!blobSidecarsAndValidationResult.isValid()) {
       return Optional.empty();
     }
-    // Earliest empty slot before this block or slot of this block if no empty (without blocks)
-    // slots before. If it's inside Deneb, it's `earliestBlobSidecarsSlot`
     final UInt64 earliestAffectedSlot =
         recentChainData
             .getSlotForBlockRoot(block.getParentRoot())
             .map(UInt64::increment)
             .orElse(block.getSlot());
-    return spec.atSlot(block.getSlot())
-        .miscHelpers()
-        .toVersionDeneb()
-        .map(MiscHelpersDeneb::computeFirstSlotWithBlobSupport)
-        .map(denebSlot -> denebSlot.max(earliestAffectedSlot));
+
+    final Optional<UInt64> maybeEarliestAvailabilityWindowSlotBeforeBlock =
+        getEarliestAvailabilityWindowSlotBeforeBlock(store, block.getSlot());
+
+    return maybeEarliestAvailabilityWindowSlotBeforeBlock.map(
+        earliestAvailabilityWindowSlotBeforeBlock ->
+            earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
+  }
+
+  private Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
+      final ReadOnlyStore store, final UInt64 slot) {
+    final UInt64 currentEpoch = spec.getCurrentEpoch(store);
+    if (!spec.getForkSchedule()
+        .getSpecMilestoneAtEpoch(currentEpoch)
+        .isGreaterThanOrEqualTo(DENEB)) {
+      return Optional.empty();
+    }
+    final UInt64 firstAvailabilityWindowSlot =
+        spec.computeStartSlotAtEpoch(
+            currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS));
+    if (firstAvailabilityWindowSlot.isLessThanOrEqualTo(slot)) {
+      return Optional.of(firstAvailabilityWindowSlot);
+    } else {
+      return Optional.empty();
+    }
   }
 
   private UInt64 getMillisIntoSlot(StoreTransaction transaction, UInt64 millisPerSlot) {
