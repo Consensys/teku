@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
@@ -55,7 +56,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
         .map(
             blindedBlockContainer -> {
               final List<BlindedBlobSidecar> blindedBlobSidecars =
-                  blindedBlockContainer.getBlindedBlobSidecars().orElseThrow();
+                  blindedBlockContainer.getBlindedBlobSidecars().orElse(Collections.emptyList());
               return signedBlock.thenCombine(
                   signBlindedBlobSidecars(blindedBlobSidecars, validator, forkInfo),
                   (signedBeaconBlock, signedBlindedBlobSidecars) ->
@@ -67,7 +68,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
         .orElseGet(
             () -> {
               final List<BlobSidecar> blobSidecars =
-                  unsignedBlockContainer.getBlobSidecars().orElseThrow();
+                  unsignedBlockContainer.getBlobSidecars().orElse(Collections.emptyList());
               return signedBlock.thenCombine(
                   signBlobSidecars(blobSidecars, validator, forkInfo),
                   (signedBeaconBlock, signedBlobSidecars) ->
