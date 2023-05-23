@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -72,14 +73,14 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
 
   private Blob findBlobWithRoot(
       final BlobsBundle blobsBundle, final BlindedBlobSidecar blindedBlobSidecar) {
-    final int blindedBlobSidecarIndex = blindedBlobSidecar.getIndex().intValue();
-    if (blobsBundle.getNumberOfBlobs() < blindedBlobSidecarIndex + 1) {
+    final UInt64 blindedBlobSidecarIndex = blindedBlobSidecar.getIndex();
+    if (blindedBlobSidecarIndex.isGreaterThanOrEqualTo(blobsBundle.getNumberOfBlobs())) {
       throw new IllegalArgumentException(
           String.format(
-              "There are %d number of blobs in the BlobsBundle but a blinded blob sidecar with index %d has been requested to be unblinded",
+              "There are %d number of blobs in the BlobsBundle but a blinded blob sidecar with index %s has been requested to be unblinded",
               blobsBundle.getNumberOfBlobs(), blindedBlobSidecarIndex));
     }
-    final Blob blob = blobsBundle.getBlobs().get(blindedBlobSidecarIndex);
+    final Blob blob = blobsBundle.getBlobs().get(blindedBlobSidecarIndex.intValue());
     if (!blob.hashTreeRoot().equals(blindedBlobSidecar.getBlobRoot())) {
       throw new IllegalArgumentException(
           String.format(
