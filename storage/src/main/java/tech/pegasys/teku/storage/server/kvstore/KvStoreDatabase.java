@@ -48,6 +48,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -506,7 +507,12 @@ public class KvStoreDatabase implements Database {
           });
 
       putFinalizedState(updater, anchorRoot, anchorState);
-      initialAnchor.getEarliestBlobSidecarSlot().ifPresent(updater::setEarliestBlobSidecarSlot);
+      if (initialAnchor.isGenesis()
+          && spec.atSlot(initialAnchor.getSlot())
+              .getMilestone()
+              .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+        updater.setEarliestBlobSidecarSlot(initialAnchor.getSlot());
+      }
 
       updater.commit();
     }
@@ -649,18 +655,8 @@ public class KvStoreDatabase implements Database {
 
     final Optional<SignedBeaconBlock> finalizedBlock =
         getFinalizedBlock(finalizedCheckpoint.getRoot());
-    final Optional<UInt64> daoEarliestBlobSidecarSlot = dao.getEarliestBlobSidecarSlot();
-    // Include earliestBlobSidecar in Anchor only if slot matches
-    final Optional<UInt64> maybeEarliestBlobSidecarSlot =
-        daoEarliestBlobSidecarSlot.filter(
-            earliestBlobSidecarSlot -> earliestBlobSidecarSlot.equals(finalizedState.getSlot()));
     final AnchorPoint latestFinalized =
-        AnchorPoint.create(
-            spec,
-            finalizedCheckpoint,
-            finalizedState,
-            finalizedBlock,
-            maybeEarliestBlobSidecarSlot);
+        AnchorPoint.create(spec, finalizedCheckpoint, finalizedState, finalizedBlock);
     final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
         dao.getOptimisticTransitionBlockSlot()
             .flatMap(this::getFinalizedBlockAtSlot)
