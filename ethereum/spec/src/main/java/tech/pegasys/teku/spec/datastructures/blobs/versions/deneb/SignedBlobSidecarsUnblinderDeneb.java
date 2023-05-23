@@ -23,7 +23,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnblinder {
 
-  private final SchemaDefinitionsDeneb schemaDefinitions;
+  private final BlobSidecarSchema blobSidecarSchema;
+  private final SignedBlobSidecarSchema signedBlobSidecarSchema;
   private final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars;
 
   private volatile SafeFuture<BlobsBundle> blobsBundleFuture;
@@ -31,7 +32,8 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
   public SignedBlobSidecarsUnblinderDeneb(
       final SchemaDefinitionsDeneb schemaDefinitions,
       final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
-    this.schemaDefinitions = schemaDefinitions;
+    this.blobSidecarSchema = schemaDefinitions.getBlobSidecarSchema();
+    this.signedBlobSidecarSchema = schemaDefinitions.getSignedBlobSidecarSchema();
     this.signedBlindedBlobSidecars = signedBlindedBlobSidecars;
   }
 
@@ -53,9 +55,6 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
 
   private SignedBlobSidecar unblindSignedBlindedBlobSidecar(
       final SignedBlindedBlobSidecar signedBlindedBlobSidecar, final BlobsBundle blobsBundle) {
-    final BlobSidecarSchema blobSidecarSchema = schemaDefinitions.getBlobSidecarSchema();
-    final SignedBlobSidecarSchema signedBlobSidecarSchema =
-        schemaDefinitions.getSignedBlobSidecarSchema();
     final BlindedBlobSidecar blindedBlobSidecar = signedBlindedBlobSidecar.getBlindedBlobSidecar();
     final Blob blob = findBlobWithRoot(blobsBundle, blindedBlobSidecar.getBlobRoot());
     final BlobSidecar unblindedBlobSidecar =
@@ -80,6 +79,7 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
             () ->
                 new IllegalArgumentException(
                     String.format(
-                        "Blob with root %s was not found in the local BlobsBundle", blobRoot)));
+                        "Blob with ssz root %s was not found in the BlobsBundle: %s",
+                        blobRoot, blobsBundle.toBriefString())));
   }
 }

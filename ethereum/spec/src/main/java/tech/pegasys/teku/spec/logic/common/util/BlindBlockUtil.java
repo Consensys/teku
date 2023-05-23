@@ -43,7 +43,7 @@ public abstract class BlindBlockUtil {
             .orElseThrow(
                 () ->
                     new IllegalStateException(
-                        "Can't unblind blob sidecars before Deneb milestone is hit"));
+                        "Unblinder was not available but blob sidecars were blinded."));
     blobSidecarsUnblinderConsumer.accept(blobSidecarsUnblinder);
     return blobSidecarsUnblinder.unblind();
   }
@@ -55,10 +55,8 @@ public abstract class BlindBlockUtil {
   protected abstract SignedBeaconBlockUnblinder createSignedBeaconBlockUnblinder(
       final SignedBeaconBlock signedBeaconBlock);
 
-  protected Optional<SignedBlobSidecarsUnblinder> createSignedBlobSidecarsUnblinder(
-      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
-    return Optional.empty();
-  }
+  protected abstract Optional<SignedBlobSidecarsUnblinder> createSignedBlobSidecarsUnblinder(
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars);
 
   protected abstract SignedBeaconBlockBlinder getSignedBeaconBlockBlinder();
 }
