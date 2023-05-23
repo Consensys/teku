@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -56,7 +55,7 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
   private SignedBlobSidecar unblindSignedBlindedBlobSidecar(
       final SignedBlindedBlobSidecar signedBlindedBlobSidecar, final BlobsBundle blobsBundle) {
     final BlindedBlobSidecar blindedBlobSidecar = signedBlindedBlobSidecar.getBlindedBlobSidecar();
-    final Blob blob = findBlobWithRoot(blobsBundle, blindedBlobSidecar.getBlobRoot());
+    final Blob blob = findBlobWithRoot(blobsBundle, blindedBlobSidecar);
     final BlobSidecar unblindedBlobSidecar =
         blobSidecarSchema.create(
             blindedBlobSidecar.getBlockRoot(),
@@ -71,15 +70,22 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
         unblindedBlobSidecar, signedBlindedBlobSidecar.getSignature());
   }
 
-  private Blob findBlobWithRoot(final BlobsBundle blobsBundle, final Bytes32 blobRoot) {
-    return blobsBundle.getBlobs().stream()
-        .filter(blob -> blob.hashTreeRoot().equals(blobRoot))
-        .findFirst()
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    String.format(
-                        "Blob with root %s was not found in the BlobsBundle: %s",
-                        blobRoot, blobsBundle.toBriefString())));
+  private Blob findBlobWithRoot(
+      final BlobsBundle blobsBundle, final BlindedBlobSidecar blindedBlobSidecar) {
+    final int blindedBlobSidecarIndex = blindedBlobSidecar.getIndex().intValue();
+    if (blobsBundle.getNumberOfBlobs() < blindedBlobSidecarIndex + 1) {
+      throw new IllegalArgumentException(
+          String.format(
+              "There are %d number of blobs in the BlobsBundle but a blinded blob sidecar with index %d has been requested to be unblinded",
+              blobsBundle.getNumberOfBlobs(), blindedBlobSidecarIndex));
+    }
+    final Blob blob = blobsBundle.getBlobs().get(blindedBlobSidecarIndex);
+    if (blob.hashTreeRoot().equals(blindedBlobSidecar.getBlobRoot())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The blob root in the BlobsBundle %s does not match the blob root in the blinded blob sidecar %s",
+              blob.hashTreeRoot(), blindedBlobSidecar.getBlobRoot()));
+    }
+    return blob;
   }
 }
