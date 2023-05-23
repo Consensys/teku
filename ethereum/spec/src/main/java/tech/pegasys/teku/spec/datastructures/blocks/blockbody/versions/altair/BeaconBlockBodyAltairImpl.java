@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -142,10 +141,5 @@ public class BeaconBlockBodyAltairImpl
   @Override
   public BeaconBlockBodySchemaAltairImpl getSchema() {
     return (BeaconBlockBodySchemaAltairImpl) super.getSchema();
-  }
-
-  @Override
-  public Optional<BeaconBlockBodyAltair> toVersionAltair() {
-    return Optional.of(this);
   }
 }
