@@ -79,13 +79,14 @@ class LocalSignerTest {
 
   @Test
   public void shouldSignBlobSidecar() {
-    final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(10);
+    final UInt64 slot = UInt64.valueOf(10);
+    final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
     final BlobSidecar blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
+        dataStructureUtilDeneb.randomBlobSidecar(slot, block.getRoot(), UInt64.valueOf(2));
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "prASoQPihthrZi42TYEP1qA1LARu5ShDGpqmAH9IggeZYTbdxyboeusgk/k/dWOfEPUKqi9/DYeVPsXlvm1Ei5rN5kcBAvPhvRxYdxrtGLkFp3w6iesEqmGdmyGijVex"));
+                "hbUfy7Aihf3mp5GjPZ7UlZ5pouL0priTz7CMx4F1NGEvK8OmqBPHe8JkmAKmX5PKFt+Mr0wons03XQkDyw49CYMijMsrOuw/Fy7lXV66d7oAuVxzP9xJdrXNPJCMT8L+"));
 
     final SafeFuture<BLSSignature> result = signer.signBlobSidecar(blobSidecar, fork);
     asyncRunner.executeQueuedActions();
