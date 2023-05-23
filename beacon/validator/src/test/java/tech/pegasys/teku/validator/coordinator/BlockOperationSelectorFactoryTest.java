@@ -36,6 +36,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -74,7 +78,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 
 class BlockOperationSelectorFactoryTest {
-  private final Spec spec = TestSpecFactory.createMinimalCapella();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
@@ -420,6 +424,103 @@ class BlockOperationSelectorFactoryTest {
     assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
   }
 
+  @Test
+  void shouldIncludeKzgCommitmentsInBlock() {
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false);
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+
+    prepareBlockAndBlobsProductionWithPayload(
+        randomExecutionPayload, executionPayloadContext, blockSlotState, blobsBundle);
+
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(false, true);
+
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+
+    assertThat(bodyBuilder.blobKzgCommitments)
+        .map(SszKZGCommitment::getKZGCommitment)
+        .hasSameElementsAs(blobsBundle.getCommitments());
+  }
+
+  @Test
+  void shouldCreateBlobSidecarsForBlockFromCachedPayloadResult() {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
+
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+
+    prepareCachedPayloadResult(
+        block.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        dataStructureUtil.randomPayloadExecutionContext(false),
+        blobsBundle);
+
+    final List<BlobSidecar> blobSidecars =
+        safeJoin(factory.createBlobSidecarsSelector().apply(block));
+
+    assertThat(blobSidecars)
+        .hasSize(blobsBundle.getNumberOfBlobs())
+        .first()
+        .satisfies(
+            // assert on one of the sidecars
+            blobSidecar -> {
+              assertThat(blobSidecar.getBlockRoot()).isEqualTo(block.getRoot());
+              assertThat(blobSidecar.getBlockParentRoot()).isEqualTo(block.getParentRoot());
+              assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
+              assertThat(blobSidecar.getSlot()).isEqualTo(block.getSlot());
+              assertThat(blobSidecar.getProposerIndex()).isEqualTo(block.getProposerIndex());
+              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(0));
+              assertThat(blobSidecar.getKZGCommitment())
+                  .isEqualTo(blobsBundle.getCommitments().get(0));
+              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(0));
+            });
+  }
+
+  @Test
+  void shouldCreateBlindedBlobSidecarsForBlindedBlockFromCachedPayloadResult() {
+    final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock();
+
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+
+    prepareCachedPayloadResult(
+        block.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        dataStructureUtil.randomPayloadExecutionContext(false),
+        blobsBundle);
+
+    final List<BlindedBlobSidecar> blindedBlobSidecars =
+        safeJoin(factory.createBlindedBlobSidecarsSelector().apply(block));
+
+    assertThat(blindedBlobSidecars)
+        .hasSize(blobsBundle.getNumberOfBlobs())
+        .first()
+        .satisfies(
+            // assert on one of the blinded sidecars
+            blindedBlobSidecar -> {
+              assertThat(blindedBlobSidecar.getBlockRoot()).isEqualTo(block.getRoot());
+              assertThat(blindedBlobSidecar.getBlockParentRoot()).isEqualTo(block.getParentRoot());
+              assertThat(blindedBlobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
+              assertThat(blindedBlobSidecar.getSlot()).isEqualTo(block.getSlot());
+              assertThat(blindedBlobSidecar.getProposerIndex()).isEqualTo(block.getProposerIndex());
+              assertThat(blindedBlobSidecar.getBlobRoot())
+                  .isEqualTo(blobsBundle.getBlobs().get(0).hashTreeRoot());
+              assertThat(blindedBlobSidecar.getKZGCommitment())
+                  .isEqualTo(blobsBundle.getCommitments().get(0));
+              assertThat(blindedBlobSidecar.getKZGProof())
+                  .isEqualTo(blobsBundle.getProofs().get(0));
+            });
+  }
+
   private void prepareBlockProductionWithPayload(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
@@ -448,8 +549,40 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty()));
   }
 
+  private void prepareBlockAndBlobsProductionWithPayload(
+      final ExecutionPayload executionPayload,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState,
+      final BlobsBundle blobsBundle) {
+    when(executionLayer.initiateBlockAndBlobsProduction(
+            executionPayloadContext, blockSlotState, false))
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
+                Optional.of(SafeFuture.completedFuture(executionPayload)),
+                Optional.empty(),
+                Optional.of(SafeFuture.completedFuture(blobsBundle))));
+  }
+
+  private void prepareCachedPayloadResult(
+      final UInt64 slot,
+      final ExecutionPayload executionPayload,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BlobsBundle blobsBundle) {
+    when(executionLayer.getCachedPayloadResult(slot))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    executionPayloadContext,
+                    Optional.of(SafeFuture.completedFuture(executionPayload)),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blobsBundle)))));
+  }
+
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
+
     private final boolean blinded;
+    private final boolean supportsKzgCommitments;
 
     protected BLSSignature randaoReveal;
     protected Bytes32 graffiti;
@@ -460,9 +593,17 @@ class BlockOperationSelectorFactoryTest {
     protected SyncAggregate syncAggregate;
     protected ExecutionPayload executionPayload;
     protected ExecutionPayloadHeader executionPayloadHeader;
+    protected SszList<SszKZGCommitment> blobKzgCommitments;
 
-    public CapturingBeaconBlockBodyBuilder(boolean blinded) {
+    public CapturingBeaconBlockBodyBuilder(final boolean blinded) {
       this.blinded = blinded;
+      this.supportsKzgCommitments = false;
+    }
+
+    public CapturingBeaconBlockBodyBuilder(
+        final boolean blinded, final boolean supportsKzgCommitments) {
+      this.blinded = blinded;
+      this.supportsKzgCommitments = supportsKzgCommitments;
     }
 
     @Override
@@ -525,21 +666,22 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload) {
+    public BeaconBlockBodyBuilder executionPayload(
+        final SafeFuture<ExecutionPayload> executionPayload) {
       this.executionPayload = safeJoin(executionPayload);
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder executionPayloadHeader(
-        SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
+        final SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
       this.executionPayloadHeader = safeJoin(executionPayloadHeader);
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder blsToExecutionChanges(
-        SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
+        final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
       this.blsToExecutionChanges = blsToExecutionChanges;
       return this;
     }
@@ -561,13 +703,13 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public Boolean supportsKzgCommitments() {
-      return false;
+      return supportsKzgCommitments;
     }
 
     @Override
     public BeaconBlockBodyBuilder blobKzgCommitments(
-        SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
-      // do nothing
+        final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      this.blobKzgCommitments = safeJoin(blobKzgCommitments);
       return this;
     }
 
@@ -581,13 +723,14 @@ class BlockOperationSelectorFactoryTest {
     protected SafeFuture<ExecutionPayload> executionPayload;
 
     public CapturingBeaconBlockUnblinder(
-        SchemaDefinitions schemaDefinitions, SignedBeaconBlock signedBlindedBeaconBlock) {
+        final SchemaDefinitions schemaDefinitions,
+        final SignedBeaconBlock signedBlindedBeaconBlock) {
       super(schemaDefinitions, signedBlindedBeaconBlock);
     }
 
     @Override
     public void setExecutionPayloadSupplier(
-        Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
+        final Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier) {
       this.executionPayload = executionPayloadSupplier.get();
     }
 

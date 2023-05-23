@@ -2144,16 +2144,23 @@ public final class DataStructureUtil {
   }
 
   public BlobsBundle randomBlobsBundle() {
+    return randomBlobsBundle(Optional.empty());
+  }
+
+  public BlobsBundle randomBlobsBundle(final int count) {
+    return randomBlobsBundle(Optional.of(count));
+  }
+
+  private BlobsBundle randomBlobsBundle(final Optional<Integer> count) {
     final BlobSchema blobSchema =
         SchemaDefinitionsDeneb.required(
                 spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
                     .getSchemaDefinitions())
             .getBlobSchema();
-    List<KZGCommitment> commitments =
-        randomSszKzgCommitmentList().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .collect(toList());
-    List<KZGProof> proofs =
+    final List<KZGCommitment> commitments =
+        (count.isPresent() ? randomSszKzgCommitmentList(count.get()) : randomSszKzgCommitmentList())
+            .stream().map(SszKZGCommitment::getKZGCommitment).collect(toList());
+    final List<KZGProof> proofs =
         IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
     return new BlobsBundle(
         commitments,

@@ -178,6 +178,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracker;
@@ -747,22 +748,21 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final ExecutionLayerBlockProductionManager executionLayerInitiator =
         ExecutionLayerBlockManagerFactory.create(executionLayer, eventChannels);
-    final BlockFactory blockFactory =
-        new BlockFactory(
+    final BlockOperationSelectorFactory operationSelector =
+        new BlockOperationSelectorFactory(
             spec,
-            new BlockOperationSelectorFactory(
-                spec,
-                attestationPool,
-                attesterSlashingPool,
-                proposerSlashingPool,
-                voluntaryExitPool,
-                blsToExecutionChangePool,
-                syncCommitteeContributionPool,
-                depositProvider,
-                eth1DataCache,
-                VersionProvider.getDefaultGraffiti(),
-                forkChoiceNotifier,
-                executionLayerInitiator));
+            attestationPool,
+            attesterSlashingPool,
+            proposerSlashingPool,
+            voluntaryExitPool,
+            blsToExecutionChangePool,
+            syncCommitteeContributionPool,
+            depositProvider,
+            eth1DataCache,
+            VersionProvider.getDefaultGraffiti(),
+            forkChoiceNotifier,
+            executionLayerInitiator);
+    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)

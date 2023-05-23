@@ -135,11 +135,6 @@ public class BeaconBlockBodyCapellaImpl
   }
 
   @Override
-  public Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges() {
-    return Optional.of(getBlsToExecutionChanges());
-  }
-
-  @Override
   public SyncAggregate getSyncAggregate() {
     return getField8();
   }

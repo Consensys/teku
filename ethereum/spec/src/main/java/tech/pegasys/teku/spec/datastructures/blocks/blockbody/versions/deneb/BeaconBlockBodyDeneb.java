@@ -32,6 +32,11 @@ public interface BeaconBlockBodyDeneb extends BeaconBlockBodyCapella {
   SszList<SszKZGCommitment> getBlobKzgCommitments();
 
   @Override
+  default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+    return Optional.of(getBlobKzgCommitments());
+  }
+
+  @Override
   BeaconBlockBodySchemaDeneb<?> getSchema();
 
   @Override
