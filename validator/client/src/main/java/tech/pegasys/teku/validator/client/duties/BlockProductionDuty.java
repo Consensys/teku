@@ -23,16 +23,11 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -45,6 +40,7 @@ public class BlockProductionDuty implements Duty {
   private final ValidatorApiChannel validatorApiChannel;
   private final boolean useBlindedBlock;
   private final Spec spec;
+  private final BlockContainerSigner blockContainerSigner;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -52,13 +48,15 @@ public class BlockProductionDuty implements Duty {
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
       final boolean useBlindedBlock,
-      final Spec spec) {
+      final Spec spec,
+      final BlockContainerSigner blockContainerSigner) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.useBlindedBlock = useBlindedBlock;
     this.spec = spec;
+    this.blockContainerSigner = blockContainerSigner;
   }
 
   @Override
@@ -70,19 +68,20 @@ public class BlockProductionDuty implements Duty {
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
         .thenCompose(this::createUnsignedBlock)
-        .thenCompose(unsignedBlock -> signBlock(forkInfo, unsignedBlock))
+        .thenCompose(unsignedBlock -> signBlockContainer(forkInfo, unsignedBlock))
         .thenCompose(this::sendBlock)
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 
-  private SafeFuture<DutyResult> sendBlock(final SignedBeaconBlock signedBlock) {
+  private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
     return validatorApiChannel
-        .sendSignedBlock(signedBlock)
+        .sendSignedBlock(signedBlockContainer)
         .thenApply(
             result -> {
               if (result.isPublished()) {
                 return DutyResult.success(
-                    signedBlock.getRoot(), getBlockSummary(signedBlock.getMessage().getBody()));
+                    signedBlockContainer.getRoot(),
+                    getBlockSummary(signedBlockContainer.getSignedBlock().getMessage().getBody()));
               }
               return DutyResult.forError(
                   validator.getPublicKey(),
@@ -101,47 +100,17 @@ public class BlockProductionDuty implements Duty {
     return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
   }
 
-  // TODO: sign blob sidecars
-  public SafeFuture<SignedBeaconBlock> signBlock(
-      final ForkInfo forkInfo, final Optional<BlockContainer> maybeBlock) {
-    final BeaconBlock unsignedBlock =
-        maybeBlock
-            .map(BlockContainer::getBlock)
-            .orElseThrow(
-                () -> new IllegalStateException("Node was not syncing but could not create block"));
+  public SafeFuture<SignedBlockContainer> signBlockContainer(
+      final ForkInfo forkInfo, final Optional<BlockContainer> maybeBlockContainer) {
+    final BlockContainer unsignedBlockContainer =
+        maybeBlockContainer.orElseThrow(
+            () -> new IllegalStateException("Node was not syncing but could not create block"));
     checkArgument(
-        unsignedBlock.getSlot().equals(slot),
-        "Unsigned block slot (%s) does not match expected slot %s",
-        unsignedBlock.getSlot(),
+        unsignedBlockContainer.getSlot().equals(slot),
+        "Unsigned block container slot (%s) does not match expected slot %s",
+        unsignedBlockContainer.getSlot(),
         slot);
-    return validator
-        .getSigner()
-        .signBlock(unsignedBlock, forkInfo)
-        .thenApply(signature -> SignedBeaconBlock.create(spec, unsignedBlock, signature));
-  }
-
-  @SuppressWarnings("unused")
-  public SafeFuture<SignedBlobSidecar> signBlobSidecar(
-      final ForkInfo forkInfo, final Optional<BlobSidecar> maybeBlobSidecar) {
-    final BlobSidecar unsignedBlobSidecar =
-        maybeBlobSidecar.orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Node was not syncing but could not create blob sidecar"));
-    checkArgument(
-        unsignedBlobSidecar.getSlot().equals(slot),
-        "Unsigned blob sidecar slot (%s) does not match expected slot %s",
-        unsignedBlobSidecar.getSlot(),
-        slot);
-
-    final SchemaDefinitions schemaDefinitions = spec.getGenesisSchemaDefinitions();
-    final SignedBlobSidecarSchema signedBlobSidecarSchema =
-        schemaDefinitions.toVersionDeneb().orElseThrow().getSignedBlobSidecarSchema();
-
-    return validator
-        .getSigner()
-        .signBlobSidecar(unsignedBlobSidecar, forkInfo)
-        .thenApply(signature -> signedBlobSidecarSchema.create(unsignedBlobSidecar, signature));
+    return blockContainerSigner.sign(validator, forkInfo, unsignedBlockContainer);
   }
 
   @Override

@@ -68,12 +68,16 @@ class BlockProductionDutyTest {
           new FileBackedGraffitiProvider(Optional.of(graffiti), Optional.empty()));
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
+  private final BlockContainerSigner blockContainerSigner =
+      new MilestoneBasedBlockContainerSigner(spec);
 
   private BlockProductionDuty duty;
 
   @BeforeEach
   public void setUp() {
-    duty = new BlockProductionDuty(validator, SLOT, forkProvider, validatorApiChannel, false, spec);
+    duty =
+        new BlockProductionDuty(
+            validator, SLOT, forkProvider, validatorApiChannel, false, spec, blockContainerSigner);
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
@@ -82,7 +86,13 @@ class BlockProductionDutyTest {
   public void shouldCreateAndPublishBlock(final boolean isBlindedBlocksEnabled) {
     duty =
         new BlockProductionDuty(
-            validator, SLOT, forkProvider, validatorApiChannel, isBlindedBlocksEnabled, spec);
+            validator,
+            SLOT,
+            forkProvider,
+            validatorApiChannel,
+            isBlindedBlocksEnabled,
+            spec,
+            blockContainerSigner);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     final BeaconBlock unsignedBlock;

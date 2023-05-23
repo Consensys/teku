@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -58,6 +59,19 @@ public class SigningRootUtil {
             forkInfo.getGenesisValidatorsRoot());
     specVersion.miscHelpers().computeSigningRoot(blobSidecar, domain);
     return spec.computeSigningRoot(blobSidecar, domain);
+  }
+
+  public Bytes signingRootForBlindedBlobSidecar(
+      final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
+    final SpecVersion specVersion = spec.atSlot(blindedBlobSidecar.getSlot());
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.DOMAIN_BLOB_SIDECAR,
+            spec.computeEpochAtSlot(blindedBlobSidecar.getSlot()),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    specVersion.miscHelpers().computeSigningRoot(blindedBlobSidecar, domain);
+    return spec.computeSigningRoot(blindedBlobSidecar, domain);
   }
 
   public Bytes signingRootForSignBlockHeader(

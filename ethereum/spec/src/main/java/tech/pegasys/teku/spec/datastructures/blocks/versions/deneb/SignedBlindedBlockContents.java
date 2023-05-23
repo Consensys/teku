@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 
 public class SignedBlindedBlockContents
     extends Container2<
@@ -55,5 +56,9 @@ public class SignedBlindedBlockContents
   @Override
   public Optional<SignedBlindedBlockContainer> toBlinded() {
     return Optional.of(this);
+  }
+
+  public SignedBlockContainer toSignedBlockContainer() {
+    return this;
   }
 }

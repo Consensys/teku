@@ -40,7 +40,13 @@ public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> 
   @Override
   public BlockProductionDuty createProductionDuty(final UInt64 slot, final Validator validator) {
     return new BlockProductionDuty(
-        validator, slot, forkProvider, validatorApiChannel, useBlindedBlock, spec);
+        validator,
+        slot,
+        forkProvider,
+        validatorApiChannel,
+        useBlindedBlock,
+        spec,
+        new MilestoneBasedBlockContainerSigner(spec));
   }
 
   @Override
