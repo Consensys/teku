@@ -45,6 +45,10 @@ public interface SignedBlockContainer extends SszData {
     return getSignedBlock().getRoot();
   }
 
+  default SlotAndBlockRoot getSlotAndBlockRoot() {
+    return getSignedBlock().getSlotAndBlockRoot();
+  }
+
   default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.empty();
   }
