@@ -56,7 +56,7 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
   private SignedBlobSidecar unblindSignedBlindedBlobSidecar(
       final SignedBlindedBlobSidecar signedBlindedBlobSidecar, final BlobsBundle blobsBundle) {
     final BlindedBlobSidecar blindedBlobSidecar = signedBlindedBlobSidecar.getBlindedBlobSidecar();
-    final Blob blob = findBlobWithRoot(blobsBundle, blindedBlobSidecar);
+    final Blob blob = findBlobByIndex(blobsBundle, blindedBlobSidecar);
     final BlobSidecar unblindedBlobSidecar =
         blobSidecarSchema.create(
             blindedBlobSidecar.getBlockRoot(),
@@ -71,7 +71,7 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
         unblindedBlobSidecar, signedBlindedBlobSidecar.getSignature());
   }
 
-  private Blob findBlobWithRoot(
+  private Blob findBlobByIndex(
       final BlobsBundle blobsBundle, final BlindedBlobSidecar blindedBlobSidecar) {
     final UInt64 blindedBlobSidecarIndex = blindedBlobSidecar.getIndex();
     if (blindedBlobSidecarIndex.isGreaterThanOrEqualTo(blobsBundle.getNumberOfBlobs())) {
