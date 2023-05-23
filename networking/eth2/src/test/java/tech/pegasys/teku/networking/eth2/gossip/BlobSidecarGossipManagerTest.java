@@ -74,7 +74,7 @@ public class BlobSidecarGossipManagerTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
-    // return TopicChannel mock for each blob_sidecar_<index> topic
+    // return TopicChannel mock for each blob_sidecar_<subnet_id> topic
     doAnswer(
             i -> {
               final String topicName = i.getArgument(0);
@@ -84,8 +84,8 @@ public class BlobSidecarGossipManagerTest {
                 Assertions.fail(
                     BLOB_SIDECAR_TOPIC_PATTERN + " regex does not match the topic: " + topicName);
               }
-              final int index = Integer.parseInt(matcher.group(1));
-              topicChannels.put(index, topicChannel);
+              final int subnetId = Integer.parseInt(matcher.group(1));
+              topicChannels.put(subnetId, topicChannel);
               return topicChannel;
             })
         .when(gossipNetwork)
@@ -106,15 +106,15 @@ public class BlobSidecarGossipManagerTest {
   }
 
   @Test
-  public void testGossipingBlobSidecarPublishesToCorrectTopic() {
+  public void testGossipingBlobSidecarPublishesToCorrectSubnet() {
     final SignedBlobSidecar blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
 
     topicChannels.forEach(
-        (index, channel) -> {
-          if (index == 1) {
+        (subnetId, channel) -> {
+          if (subnetId == 1) {
             verify(channel).gossip(serialized);
           } else {
             verifyNoInteractions(channel);
@@ -131,9 +131,9 @@ public class BlobSidecarGossipManagerTest {
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
 
     topicChannels.forEach(
-        (index, channel) -> {
+        (subnetId, channel) -> {
           // 10 % 4 = 2
-          if (index == 2) {
+          if (subnetId == 2) {
             verify(channel).gossip(serialized);
           } else {
             verifyNoInteractions(channel);
