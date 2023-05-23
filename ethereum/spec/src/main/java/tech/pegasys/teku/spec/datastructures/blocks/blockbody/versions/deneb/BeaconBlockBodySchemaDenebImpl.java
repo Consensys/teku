@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -31,7 +30,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
@@ -213,11 +211,6 @@ public class BeaconBlockBodySchemaDenebImpl
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
     return (SszListSchema<SszKZGCommitment, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
-  }
-
-  @Override
-  public Optional<BeaconBlockBodySchemaBellatrix<?>> toVersionBellatrix() {
-    return Optional.of(this);
   }
 
   @Override
