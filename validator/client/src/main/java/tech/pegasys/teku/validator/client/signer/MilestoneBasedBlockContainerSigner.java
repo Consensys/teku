@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.client.signer;
 
 import com.google.common.base.Suppliers;
 import java.util.HashMap;
@@ -34,10 +34,11 @@ public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner 
   public MilestoneBasedBlockContainerSigner(final Spec spec) {
     this.spec = spec;
 
-    final BlockContainerSigner blockContainerSignerPhase0 = new BlockContainerSignerPhase0(spec);
+    final BlockContainerSignerPhase0 blockContainerSignerPhase0 =
+        new BlockContainerSignerPhase0(spec);
 
     // Not needed for all milestones
-    final Supplier<BlockContainerSigner> blockContainerSignerDeneb =
+    final Supplier<BlockContainerSignerDeneb> blockContainerSignerDeneb =
         Suppliers.memoize(
             () -> {
               final SchemaDefinitionsDeneb schemaDefinitions =
@@ -61,10 +62,10 @@ public class MilestoneBasedBlockContainerSigner implements BlockContainerSigner 
 
   @Override
   public SafeFuture<SignedBlockContainer> sign(
+      final BlockContainer unsignedBlockContainer,
       final Validator validator,
-      final ForkInfo forkInfo,
-      final BlockContainer unsignedBlockContainer) {
+      final ForkInfo forkInfo) {
     final SpecMilestone milestone = spec.atSlot(unsignedBlockContainer.getSlot()).getMilestone();
-    return registeredSigners.get(milestone).sign(validator, forkInfo, unsignedBlockContainer);
+    return registeredSigners.get(milestone).sign(unsignedBlockContainer, validator, forkInfo);
   }
 }

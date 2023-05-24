@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.client.signer;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,40 +42,51 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
 
   @Override
   public SafeFuture<SignedBlockContainer> sign(
+      final BlockContainer unsignedBlockContainer,
       final Validator validator,
-      final ForkInfo forkInfo,
-      final BlockContainer unsignedBlockContainer) {
+      final ForkInfo forkInfo) {
     final BeaconBlock unsignedBlock = unsignedBlockContainer.getBlock();
-    final SafeFuture<SignedBeaconBlock> signedBlock =
-        validator
-            .getSigner()
-            .signBlock(unsignedBlock, forkInfo)
-            .thenApply(signature -> SignedBeaconBlock.create(spec, unsignedBlock, signature));
     return unsignedBlockContainer
         .toBlinded()
         .map(
             blindedBlockContainer -> {
               final List<BlindedBlobSidecar> blindedBlobSidecars =
                   blindedBlockContainer.getBlindedBlobSidecars().orElse(Collections.emptyList());
-              return signedBlock.thenCombine(
-                  signBlindedBlobSidecars(blindedBlobSidecars, validator, forkInfo),
-                  (signedBeaconBlock, signedBlindedBlobSidecars) ->
-                      schemaDefinitions
-                          .getSignedBlindedBlockContentsSchema()
-                          .create(signedBeaconBlock, signedBlindedBlobSidecars)
-                          .toSignedBlockContainer());
+              return signBlock(unsignedBlock, validator, forkInfo)
+                  .thenCombine(
+                      signBlindedBlobSidecars(blindedBlobSidecars, validator, forkInfo),
+                      this::createSignedBlindedBlockContents);
             })
         .orElseGet(
             () -> {
               final List<BlobSidecar> blobSidecars =
                   unsignedBlockContainer.getBlobSidecars().orElse(Collections.emptyList());
-              return signedBlock.thenCombine(
-                  signBlobSidecars(blobSidecars, validator, forkInfo),
-                  (signedBeaconBlock, signedBlobSidecars) ->
-                      schemaDefinitions
-                          .getSignedBlockContentsSchema()
-                          .create(signedBeaconBlock, signedBlobSidecars));
+              return signBlock(unsignedBlock, validator, forkInfo)
+                  .thenCombine(
+                      signBlobSidecars(blobSidecars, validator, forkInfo),
+                      this::createSignedBlockContents);
             });
+  }
+
+  private SignedBlockContainer createSignedBlockContents(
+      final SignedBeaconBlock signedBlock, final List<SignedBlobSidecar> signedBlobSidecars) {
+    return schemaDefinitions.getSignedBlockContentsSchema().create(signedBlock, signedBlobSidecars);
+  }
+
+  private SignedBlockContainer createSignedBlindedBlockContents(
+      final SignedBeaconBlock signedBlock,
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
+    return schemaDefinitions
+        .getSignedBlindedBlockContentsSchema()
+        .create(signedBlock, signedBlindedBlobSidecars);
+  }
+
+  private SafeFuture<SignedBeaconBlock> signBlock(
+      final BeaconBlock unsignedBlock, final Validator validator, final ForkInfo forkInfo) {
+    return validator
+        .getSigner()
+        .signBlock(unsignedBlock, forkInfo)
+        .thenApply(signature -> SignedBeaconBlock.create(spec, unsignedBlock, signature));
   }
 
   private SafeFuture<List<SignedBlobSidecar>> signBlobSidecars(

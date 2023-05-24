@@ -31,32 +31,35 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 
 public class BlockProductionDuty implements Duty {
+
   private static final Logger LOG = LogManager.getLogger();
+
   private final Validator validator;
   private final UInt64 slot;
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private final BlockContainerSigner blockContainerSigner;
   private final boolean useBlindedBlock;
   private final Spec spec;
-  private final BlockContainerSigner blockContainerSigner;
 
   public BlockProductionDuty(
       final Validator validator,
       final UInt64 slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
+      final BlockContainerSigner blockContainerSigner,
       final boolean useBlindedBlock,
-      final Spec spec,
-      final BlockContainerSigner blockContainerSigner) {
+      final Spec spec) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.blockContainerSigner = blockContainerSigner;
     this.useBlindedBlock = useBlindedBlock;
     this.spec = spec;
-    this.blockContainerSigner = blockContainerSigner;
   }
 
   @Override
@@ -107,10 +110,10 @@ public class BlockProductionDuty implements Duty {
             () -> new IllegalStateException("Node was not syncing but could not create block"));
     checkArgument(
         unsignedBlockContainer.getSlot().equals(slot),
-        "Unsigned block container slot (%s) does not match expected slot %s",
+        "Unsigned block slot (%s) does not match expected slot %s",
         unsignedBlockContainer.getSlot(),
         slot);
-    return blockContainerSigner.sign(validator, forkInfo, unsignedBlockContainer);
+    return blockContainerSigner.sign(unsignedBlockContainer, validator, forkInfo);
   }
 
   @Override
@@ -138,7 +141,7 @@ public class BlockProductionDuty implements Duty {
           summary.getGasLimit().isGreaterThan(0L)
               ? summary.getGasUsed().times(100).dividedBy(summary.getGasLimit())
               : ZERO;
-    } catch (ArithmeticException e) {
+    } catch (final ArithmeticException e) {
       gasPercentage = UInt64.ZERO;
       LOG.debug("Failed to compute percentage", e);
     }

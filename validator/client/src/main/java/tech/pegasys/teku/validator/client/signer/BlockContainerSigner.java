@@ -11,34 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.client.signer;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.client.Validator;
 
-public class BlockContainerSignerPhase0 implements BlockContainerSigner {
+public interface BlockContainerSigner {
 
-  private final Spec spec;
-
-  public BlockContainerSignerPhase0(final Spec spec) {
-    this.spec = spec;
-  }
-
-  @Override
-  public SafeFuture<SignedBlockContainer> sign(
-      final Validator validator,
-      final ForkInfo forkInfo,
-      final BlockContainer unsignedBlockContainer) {
-    final BeaconBlock unsignedBlock = unsignedBlockContainer.getBlock();
-    return validator
-        .getSigner()
-        .signBlock(unsignedBlock, forkInfo)
-        .thenApply(signature -> SignedBeaconBlock.create(spec, unsignedBlock, signature));
-  }
+  SafeFuture<SignedBlockContainer> sign(
+      BlockContainer unsignedBlockContainer, Validator validator, ForkInfo forkInfo);
 }
