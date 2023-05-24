@@ -118,7 +118,7 @@ public class EpochAttestationRewardsCalculator {
             rewardNumerator.dividedBy(activeIncrements).dividedBy(WEIGHT_DENOMINATOR);
 
         final boolean isInactivityLeak = specVersion.beaconStateAccessors().isInactivityLeak(state);
-        final IdealAttestationReward idealAttestationReward = idealAttestationRewards.get(0);
+        final IdealAttestationReward idealAttestationReward = idealAttestationRewards.get(effectiveBalanceEth);
         idealAttestationReward.addEffectiveBalance(effectiveBalance);
         if (!isInactivityLeak) {
           switch (flagIndex) {
