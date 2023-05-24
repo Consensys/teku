@@ -207,37 +207,37 @@ public class BlockBlobSidecarsTracker {
   private void printDebugTimings(final Map<UInt64, Long> debugTimings) {
     final long completionTime = System.currentTimeMillis();
     final long creationTime = debugTimings.getOrDefault(CREATION_TIMING_IDX, 0L);
-    final StringBuffer timingsReport = new StringBuffer(128);
+    final StringBuilder timingsReport = new StringBuilder(128);
 
     timingsReport
-            .append("Tracker ")
-            .append(slotAndBlockRoot.toLogString())
-            .append(" creation time ")
-            .append(creationTime)
-            .append(" - ");
+        .append("Tracker ")
+        .append(slotAndBlockRoot.toLogString())
+        .append(" creation time ")
+        .append(creationTime)
+        .append(" - ");
 
     timingsReport.append("Completion delay ").append(completionTime - creationTime).append("ms - ");
 
     blobSidecars
-            .keySet()
-            .forEach(
-                    blobIndex ->
-                            timingsReport
-                                    .append("[")
-                                    .append(blobIndex)
-                                    .append("] delay ")
-                                    .append(debugTimings.getOrDefault(blobIndex, 0L) - creationTime)
-                                    .append("ms - "));
+        .keySet()
+        .forEach(
+            blobIndex ->
+                timingsReport
+                    .append("[")
+                    .append(blobIndex)
+                    .append("] delay ")
+                    .append(debugTimings.getOrDefault(blobIndex, 0L) - creationTime)
+                    .append("ms - "));
     timingsReport
-            .append("Block delay ")
-            .append(debugTimings.getOrDefault(BLOCK_ARRIVAL_TIMING_IDX, 0L) - creationTime)
-            .append("ms - ");
+        .append("Block delay ")
+        .append(debugTimings.getOrDefault(BLOCK_ARRIVAL_TIMING_IDX, 0L) - creationTime)
+        .append("ms - ");
 
     if (debugTimings.containsKey(FETCH_TIMING_IDX)) {
       timingsReport
-              .append("Fetch delay ")
-              .append(debugTimings.get(FETCH_TIMING_IDX) - creationTime)
-              .append("ms");
+          .append("Fetch delay ")
+          .append(debugTimings.get(FETCH_TIMING_IDX) - creationTime)
+          .append("ms");
     } else {
       timingsReport.append("Fetch not happened");
     }
