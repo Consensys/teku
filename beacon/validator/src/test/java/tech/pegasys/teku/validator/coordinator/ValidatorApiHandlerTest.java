@@ -48,7 +48,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -81,6 +80,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -193,7 +193,7 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
-        .unblindSignedBeaconBlockIfBlinded(any());
+        .unblindSignedBlockIfBlinded(any());
     when(proposersDataManager.updateValidatorRegistrations(any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
   }
@@ -818,37 +818,43 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  @Disabled("Will enable or remove once block production for Deneb is implemented")
-  public void sendSignedBlock_shouldConvertSuccessfulResultWithBlobSidecars() {
+  public void sendSignedBlock_shouldConvertBlockContentsSuccessfulResult() {
     setupDeneb();
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    final SignedBlockContents blockContents =
+        dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
+    final SignedBeaconBlock block = blockContents.getSignedBlock();
     final List<SignedBlobSidecar> blobSidecars =
-        dataStructureUtil.randomSignedBlobSidecarsForBlock(block);
+        blockContents.getSignedBlobSidecars().orElseThrow();
+
     when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
-    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+    final SafeFuture<SendSignedBlockResult> result =
+        validatorApiHandler.sendSignedBlock(blockContents);
 
-    verify(blockGossipChannel).publishBlock(block);
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecars);
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(eq(block), any());
+    verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
+    verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test
-  @Disabled("Will enable or remove once block production for Deneb is implemented")
-  public void sendSignedBlock_shouldConvertFailedResultWithBlobSidecars() {
+  public void sendSignedBlock_shouldConvertBlockContentsFailedResult() {
     setupDeneb();
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    final SignedBlockContents blockContents =
+        dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
+    final SignedBeaconBlock block = blockContents.getSignedBlock();
     final List<SignedBlobSidecar> blobSidecars =
-        dataStructureUtil.randomSignedBlobSidecarsForBlock(block);
+        blockContents.getSignedBlobSidecars().orElseThrow();
+
     when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY));
-    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+    final SafeFuture<SendSignedBlockResult> result =
+        validatorApiHandler.sendSignedBlock(blockContents);
 
-    verify(blockGossipChannel).publishBlock(block);
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecars);
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(eq(block), any());
+    verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
+    verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block);
     assertThat(result)
         .isCompletedWithValue(
@@ -856,41 +862,41 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  @Disabled("Will enable or remove once block production for Deneb is implemented")
-  public void sendSignedBlock_shouldConvertKnownBlockResultWithBlobSidecars() {
+  public void sendSignedBlockForDeneb_shouldConvertBlockContentsKnownBlockResult() {
     setupDeneb();
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+    final SignedBlockContents blockContents =
+        dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
+    final SignedBeaconBlock block = blockContents.getSignedBlock();
     final List<SignedBlobSidecar> blobSidecars =
-        dataStructureUtil.randomSignedBlobSidecarsForBlock(block);
+        blockContents.getSignedBlobSidecars().orElseThrow();
+
     when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)));
-    final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
+    final SafeFuture<SendSignedBlockResult> result =
+        validatorApiHandler.sendSignedBlock(blockContents);
 
-    verify(blockGossipChannel).publishBlock(block);
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecars);
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(eq(block), any());
+    verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
+    verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test
-  @Disabled("Will enable or remove once block production for Deneb is implemented")
-  public void sendSignedBlock_shouldBeRejectedWhenBlobSidecarsCannotBeRetrieved() {
+  public void sendSignedBlock_shoulNotGossipAndImportBlobsWhenBlobsDoNotExist() {
     setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
+
+    when(blockImportChannel.importBlock(block))
+        .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
     result.join();
 
-    verifyNoInteractions(blockGossipChannel);
+    verifyNoInteractions(blobSidecarPool);
     verifyNoInteractions(blobSidecarGossipChannel);
-    verifyNoInteractions(blockImportChannel);
-    assertThat(result)
-        .isCompletedWithValueMatching(
-            res ->
-                !res.isPublished()
-                    && res.getRejectionReason()
-                        .orElseThrow()
-                        .contains("java.lang.IllegalArgumentException"));
+    verify(blockGossipChannel).publishBlock(block);
+    verify(blockImportChannel).importBlock(block);
+    assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test

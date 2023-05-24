@@ -27,13 +27,14 @@ public abstract class AbstractSignedBeaconBlockBlinder implements SignedBeaconBl
   }
 
   @Override
-  public SignedBeaconBlock blind(SignedBeaconBlock signedUnblindedBock) {
-    final SignedBeaconBlock blindedSignedBeaconBlock = signedUnblindedBock.blind(schemaDefinitions);
+  public SignedBeaconBlock blind(SignedBeaconBlock signedUnblindedBlock) {
+    final SignedBeaconBlock blindedSignedBeaconBlock =
+        signedUnblindedBlock.blind(schemaDefinitions);
     checkState(
         blindedSignedBeaconBlock
             .getMessage()
             .hashTreeRoot()
-            .equals(signedUnblindedBock.getMessage().hashTreeRoot()),
+            .equals(signedUnblindedBlock.getMessage().hashTreeRoot()),
         "blinded block root do not match original unblinded block root");
 
     return blindedSignedBeaconBlock;

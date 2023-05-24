@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -225,29 +226,35 @@ public abstract class AbstractBlockFactoryTest {
         .createEmpty();
   }
 
-  protected SignedBeaconBlock assertBlockUnblinded(
-      final SignedBeaconBlock beaconBlock, final Spec spec) {
+  protected SignedBlockContainer assertBlockUnblinded(
+      final SignedBlockContainer blindedBlockContainer, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
-    when(executionLayer.getUnblindedPayload(beaconBlock))
+    final SignedBeaconBlock blindedBlock = blindedBlockContainer.getSignedBlock();
+
+    when(executionLayer.getUnblindedPayload(blindedBlock))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
+    // used for unblinding the blob sidecars
+    setupCachedBlobsBundle(blindedBlock.getSlot());
 
-    final SignedBeaconBlock block =
-        blockFactory.unblindSignedBeaconBlockIfBlinded(beaconBlock).join();
+    final SignedBlockContainer unblindedBlockContainer =
+        blockFactory.unblindSignedBlockIfBlinded(blindedBlockContainer).join();
 
-    if (!beaconBlock.getMessage().getBody().isBlinded()) {
+    final SignedBeaconBlock block = unblindedBlockContainer.getSignedBlock();
+
+    if (!blindedBlock.getMessage().getBody().isBlinded()) {
       verifyNoInteractions(executionLayer);
     } else {
-      verify(executionLayer).getUnblindedPayload(beaconBlock);
+      verify(executionLayer).getUnblindedPayload(blindedBlock);
     }
 
     assertThat(block).isNotNull();
-    assertThat(block.hashTreeRoot()).isEqualTo(beaconBlock.hashTreeRoot());
+    assertThat(block.hashTreeRoot()).isEqualTo(blindedBlock.hashTreeRoot());
     assertThat(block.getMessage().getBody().isBlinded()).isFalse();
     assertThat(block.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isEqualTo(Optional.empty());
 
-    return block;
+    return unblindedBlockContainer;
   }
 
   protected SignedBeaconBlock assertBlockBlinded(
@@ -349,5 +356,17 @@ public abstract class AbstractBlockFactoryTest {
     // simulate caching of the payload result
     when(executionLayer.getCachedPayloadResult(any()))
         .thenAnswer(__ -> Optional.of(cachedExecutionPayloadResult));
+  }
+
+  private void setupCachedBlobsBundle(final UInt64 slot) {
+    // only BlobsBundle is required
+    final ExecutionPayloadResult executionPayloadResult =
+        new ExecutionPayloadResult(
+            null,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.of(SafeFuture.completedFuture(blobsBundle)));
+    when(executionLayer.getCachedPayloadResult(slot))
+        .thenReturn(Optional.of(executionPayloadResult));
   }
 }

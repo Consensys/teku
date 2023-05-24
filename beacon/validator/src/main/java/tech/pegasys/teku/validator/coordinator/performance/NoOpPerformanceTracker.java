@@ -15,23 +15,23 @@ package tech.pegasys.teku.validator.coordinator.performance;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 
 public class NoOpPerformanceTracker implements PerformanceTracker {
 
   @Override
-  public void start(UInt64 nodeStartSlot) {}
+  public void start(final UInt64 nodeStartSlot) {}
 
   @Override
-  public void saveProducedAttestation(Attestation attestation) {}
+  public void saveProducedAttestation(final Attestation attestation) {}
 
   @Override
-  public void saveProducedBlock(SignedBeaconBlock block) {}
+  public void saveProducedBlock(final SignedBlockContainer blockContainer) {}
 
   @Override
-  public void reportBlockProductionAttempt(UInt64 epoch) {}
+  public void reportBlockProductionAttempt(final UInt64 epoch) {}
 
   @Override
   public void saveExpectedSyncCommitteeParticipant(
@@ -41,5 +41,5 @@ public class NoOpPerformanceTracker implements PerformanceTracker {
   public void saveProducedSyncCommitteeMessage(final SyncCommitteeMessage message) {}
 
   @Override
-  public void onSlot(UInt64 slot) {}
+  public void onSlot(final UInt64 slot) {}
 }

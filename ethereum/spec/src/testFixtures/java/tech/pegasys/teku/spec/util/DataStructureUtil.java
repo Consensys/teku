@@ -2151,24 +2151,39 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarBuilder().buildSignedBlinded();
   }
 
-  public List<BlindedBlobSidecar> randomBlindedBlobSidecars(int count) {
-    List<BlindedBlobSidecar> blindedBlobSidecars = new ArrayList<>();
+  public List<BlindedBlobSidecar> randomBlindedBlobSidecars(final int count) {
+    final List<BlindedBlobSidecar> blindedBlobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       blindedBlobSidecars.add(new RandomBlobSidecarBuilder().buildBlinded());
     }
     return blindedBlobSidecars;
   }
 
-  public List<SignedBlobSidecar> randomSignedBlobSidecars(int count) {
-    List<SignedBlobSidecar> signedBlobSidecars = new ArrayList<>();
+  public List<SignedBlobSidecar> randomSignedBlobSidecars(final int count) {
+    final List<SignedBlobSidecar> signedBlobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       signedBlobSidecars.add(new RandomBlobSidecarBuilder().buildSigned());
     }
     return signedBlobSidecars;
   }
 
-  public List<SignedBlindedBlobSidecar> randomSignedBlindedBlobSidecars(int count) {
-    List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars = new ArrayList<>();
+  public List<SignedBlindedBlobSidecar> randomSignedBlindedBlobSidecars(
+      final BlobsBundle blobsBundle) {
+    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars = new ArrayList<>();
+    for (int i = 0; i < blobsBundle.getNumberOfBlobs(); i++) {
+      signedBlindedBlobSidecars.add(
+          new RandomBlobSidecarBuilder()
+              .index(UInt64.valueOf(i))
+              .blob(blobsBundle.getBlobs().get(i).getBytes())
+              .kzgCommitment(blobsBundle.getCommitments().get(i).getBytesCompressed())
+              .kzgProof(blobsBundle.getProofs().get(i).getBytesCompressed())
+              .buildSignedBlinded());
+    }
+    return signedBlindedBlobSidecars;
+  }
+
+  public List<SignedBlindedBlobSidecar> randomSignedBlindedBlobSidecars(final int count) {
+    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       signedBlindedBlobSidecars.add(new RandomBlobSidecarBuilder().buildSignedBlinded());
     }

@@ -23,13 +23,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SignedBeaconBlockUnblinderDeneb extends AbstractSignedBeaconBlockUnblinder {
   protected SafeFuture<ExecutionPayload> executionPayloadFuture;
 
   public SignedBeaconBlockUnblinderDeneb(
-      final SchemaDefinitionsBellatrix schemaDefinitions,
+      final SchemaDefinitionsDeneb schemaDefinitions,
       final SignedBeaconBlock signedBlindedBeaconBlock) {
     super(schemaDefinitions, signedBlindedBeaconBlock);
   }

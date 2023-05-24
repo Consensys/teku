@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -304,7 +305,7 @@ public class BlockOperationSelectorFactory {
     bodyBuilder.blobKzgCommitments(blobKzgCommitments);
   }
 
-  public Consumer<SignedBeaconBlockUnblinder> createUnblinderSelector() {
+  public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector() {
     return bodyUnblinder -> {
       final BeaconBlock block = bodyUnblinder.getSignedBlindedBeaconBlock().getMessage();
 
@@ -330,6 +331,12 @@ public class BlockOperationSelectorFactory {
     };
   }
 
+  public Consumer<SignedBlobSidecarsUnblinder> createBlobSidecarsUnblinderSelector(
+      final UInt64 slot) {
+    return blobSidecarsUnblinder ->
+        blobSidecarsUnblinder.setBlobsBundleSupplier(() -> getCachedBlobsBundle(slot));
+  }
+
   public Function<BeaconBlock, SafeFuture<List<BlobSidecar>>> createBlobSidecarsSelector() {
     return block -> {
       final BlobSidecarSchema blobSidecarSchema =
@@ -347,9 +354,9 @@ public class BlockOperationSelectorFactory {
                                   block.getSlot(),
                                   block.getParentRoot(),
                                   block.getProposerIndex(),
-                                  blobsBundle.getBlobs().get(index).getBytes(),
-                                  blobsBundle.getCommitments().get(index).getBytesCompressed(),
-                                  blobsBundle.getProofs().get(index).getBytesCompressed()))
+                                  blobsBundle.getBlobs().get(index),
+                                  blobsBundle.getCommitments().get(index),
+                                  blobsBundle.getProofs().get(index)))
                       .collect(Collectors.toUnmodifiableList()));
     };
   }
@@ -373,8 +380,8 @@ public class BlockOperationSelectorFactory {
                                   block.getParentRoot(),
                                   block.getProposerIndex(),
                                   blobsBundle.getBlobs().get(index).hashTreeRoot(),
-                                  blobsBundle.getCommitments().get(index).getBytesCompressed(),
-                                  blobsBundle.getProofs().get(index).getBytesCompressed()))
+                                  blobsBundle.getCommitments().get(index),
+                                  blobsBundle.getProofs().get(index)))
                       .collect(Collectors.toUnmodifiableList()));
     };
   }
