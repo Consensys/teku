@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container8;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -97,5 +98,13 @@ public class BlobSidecar
 
   public KZGProof getKZGProof() {
     return getField7().getKZGProof();
+  }
+
+  public String toLogString() {
+    return LogFormatter.formatBlobSidecar(
+        getIndex(),
+        getBlob().toBriefString(),
+        getKZGCommitment().toAbbreviatedString(),
+        getKZGProof().toAbbreviatedString());
   }
 }

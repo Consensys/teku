@@ -29,4 +29,10 @@ public class LogFormatter {
   public static String formatBlock(final UInt64 slot, final Bytes32 root) {
     return String.format("%s (%s)", formatHashRoot(root), slot);
   }
+
+  public static String formatBlobSidecar(
+      final UInt64 index, final String blob, final String kzgCommitment, final String kzgProof) {
+    return String.format(
+        "index %s, blob %s, commitment %s, proof %s", index, blob, kzgCommitment, kzgProof);
+  }
 }

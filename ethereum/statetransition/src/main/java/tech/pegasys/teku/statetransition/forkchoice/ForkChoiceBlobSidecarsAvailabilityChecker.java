@@ -165,6 +165,9 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       // the tracker contains all required blobs for our block: we can perform a complete validation
       kzgCommitmentsToValidate = kzgCommitmentsInBlock;
       blobSidecarsToValidate = List.copyOf(blockBlobSidecarsTracker.getBlobSidecars().values());
+      LOG.debug(
+          "The expected {} BlobSidecars have already been received. Performing full validation.",
+          blobSidecarsToValidate.size());
     } else {
       // prepare partial validation by matching the currently available blobs with the corresponding
       // commitments from the block
@@ -176,6 +179,11 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                       kzgCommitmentsToValidate.add(
                           kzgCommitmentsInBlock.get(blobSidecar.getIndex().intValue())))
               .collect(Collectors.toUnmodifiableList());
+
+      LOG.debug(
+          "{} out of {} BlobSidecars have been received so far. Performing partial validation.",
+          kzgCommitmentsInBlock.size(),
+          blobSidecarsToValidate.size());
 
       if (blobSidecarsToValidate.isEmpty()
           && kzgCommitmentsInBlock.size() > 0
@@ -280,6 +288,11 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                                 blockBlobSidecarsTracker.getSlotAndBlockRoot().toLogString()));
               }
             });
+
+    LOG.debug(
+        "Remaining {} out of {} BlobSidecars have been received. Completing validation.",
+        kzgCommitmentsInBlock.size(),
+        additionalBlobSidecarsToBeValidated.size());
 
     return validateBatch(
         additionalBlobSidecarsToBeValidated, additionalKzgCommitmentsToBeValidated);
