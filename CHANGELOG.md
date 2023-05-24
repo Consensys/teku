@@ -2,7 +2,7 @@
 
 ## Upcoming Breaking Changes
 
-- Upgrading source code to Java 17 which means users will need to upgrade their Java installation to at least 17. Docker users will not be affected, apart from the change that `jdk16` images will no longer be available for new versions.
+- Upgrading source code to Java 17 which means users will need to upgrade their Java installation to at least 17. Docker users will not be affected, apart from the change that `jdk16` images will no longer be available for new Teku versions.
 
 ## Current Releases
 
