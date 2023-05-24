@@ -90,10 +90,10 @@ public class BlockProposalTestUtil {
       throws EpochProcessingException, SlotProcessingException {
 
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
-    final BLSSignature randaoReveal =
-        signer.createRandaoReveal(newEpoch, state.getForkInfo()).join();
 
     final BeaconState blockSlotState = spec.processSlots(state, newSlot);
+    final BLSSignature randaoReveal =
+        signer.createRandaoReveal(newEpoch, blockSlotState.getForkInfo()).join();
 
     return spec.createNewUnsignedBlock(
             newSlot,
@@ -139,7 +139,8 @@ public class BlockProposalTestUtil {
             newBlockAndState -> {
               // Sign block and set block signature
               final BeaconBlock block = newBlockAndState.getBlock();
-              BLSSignature blockSignature = signer.signBlock(block, state.getForkInfo()).join();
+              BLSSignature blockSignature =
+                  signer.signBlock(block, blockSlotState.getForkInfo()).join();
 
               final SignedBeaconBlock signedBlock =
                   SignedBeaconBlock.create(spec, block, blockSignature);

@@ -266,6 +266,76 @@ public class ChainStorageTest {
 
   @ParameterizedTest(name = "{0}")
   @ArgumentsSource(StorageSystemArgumentsProvider.class)
+  public void testOverrideEarliestBlobSidecarSlot(
+      final String storageType,
+      final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
+    setup(storageSystemSupplier);
+
+    // Build small chain
+    chainBuilder.generateBlocksUpToSlot(
+        spec.slotsPerEpoch(ZERO) * 3L,
+        ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
+
+    // Retrieve anchor data
+    final Checkpoint anchorCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(3);
+    final SignedBlockAndState anchorBlockAndState =
+        chainBuilder.getBlockAndState(anchorCheckpoint.getRoot()).orElseThrow();
+
+    // Initialize from intermediate anchor point
+    final AnchorPoint anchorPoint =
+        AnchorPoint.create(
+            spec, anchorCheckpoint, anchorBlockAndState.getState(), Optional.empty());
+    storageSystem.recentChainData().initializeFromAnchorPoint(anchorPoint, ZERO);
+    final long firstMissingBlockSlot = anchorBlockAndState.getSlot().longValue();
+
+    // Now try to store missing historical blocks and blob sidecars
+    final List<SignedBeaconBlock> missingHistoricalBlocks =
+        chainBuilder
+            .streamBlocksAndStates(0, firstMissingBlockSlot)
+            .map(SignedBlockAndState::getBlock)
+            .collect(Collectors.toList());
+
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> missingHistoricalBlobSidecars =
+        chainBuilder
+            .streamBlobSidecars(0, firstMissingBlockSlot)
+            .flatMap(entry -> entry.getValue().stream())
+            .collect(Collectors.groupingBy(BlobSidecar::getSlotAndBlockRoot));
+
+    // Sanity check - blocks and blob sidecars should be unavailable initially
+    for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
+      final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
+          chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
+      assertThatSafeFuture(blockResult).isCompletedWithEmptyOptional();
+      final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> sidecarKeysResult =
+          chainStorage.getBlobSidecarKeys(
+              missingHistoricalBlock.getSlot(),
+              missingHistoricalBlock.getSlot(),
+              UInt64.valueOf(Long.MAX_VALUE));
+      assertThatSafeFuture(sidecarKeysResult).isCompletedWithValueMatching(List::isEmpty);
+    }
+
+    assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
+        .isCompletedWithValueMatching(Optional::isEmpty);
+
+    // Store in batches with incorrect earliestBlobSidecarSlot until latest
+    final int batchSize = missingHistoricalBlocks.size() / 3;
+    final List<List<SignedBeaconBlock>> batches =
+        Lists.partition(missingHistoricalBlocks, batchSize);
+    for (int i = batches.size() - 1; i >= 0; i--) {
+      final List<SignedBeaconBlock> batch = batches.get(i);
+      // earliestBlobSidecarSlot: 2, 1, 0. Correct only in the last batch
+      chainStorage
+          .onFinalizedBlocks(batch, missingHistoricalBlobSidecars, Optional.of(UInt64.valueOf(i)))
+          .ifExceptionGetsHereRaiseABug();
+    }
+
+    // The correct earliest BlobSidecar slot, no matter of order saving
+    assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
+        .isCompletedWithValue(Optional.of(ZERO));
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @ArgumentsSource(StorageSystemArgumentsProvider.class)
   public void onFinalizedBlocks_nonMatchingBlocks(
       final String storageType,
       final StorageSystemArgumentsProvider.StorageSystemSupplier storageSystemSupplier) {
