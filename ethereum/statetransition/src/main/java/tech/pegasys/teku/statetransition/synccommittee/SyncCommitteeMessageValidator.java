@@ -117,7 +117,7 @@ public class SyncCommitteeMessageValidator {
       if (maybeBestBlockRoot.isPresent()) {
         final Optional<Bytes32> bestSeenRoot =
             seenIndices.stream()
-                .filter(item -> item.equals(key))
+                .filter(item -> item.isSameIgnoringBlockRoot(key))
                 .findFirst()
                 .map(UniquenessKey::getBlockRoot);
         // I've already seen this message, can ignore it.
@@ -264,24 +264,30 @@ public class SyncCommitteeMessageValidator {
       return blockRoot;
     }
 
-    // __NOTE__ ignoring block root for equality check
+    boolean isSameIgnoringBlockRoot(final UniquenessKey candidate) {
+      return candidate.validatorIndex.equals(this.validatorIndex)
+          && candidate.subnetId == this.subnetId
+          && candidate.slot.equals(this.slot);
+    }
+
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
       if (this == o) {
         return true;
       }
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      final UniquenessKey that = (UniquenessKey) o;
+      UniquenessKey that = (UniquenessKey) o;
       return subnetId == that.subnetId
           && Objects.equals(validatorIndex, that.validatorIndex)
-          && Objects.equals(slot, that.slot);
+          && Objects.equals(slot, that.slot)
+          && Objects.equals(blockRoot, that.blockRoot);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(validatorIndex, slot, subnetId);
+      return Objects.hash(validatorIndex, slot, subnetId, blockRoot);
     }
   }
 }
