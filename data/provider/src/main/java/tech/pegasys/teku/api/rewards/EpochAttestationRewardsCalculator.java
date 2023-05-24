@@ -14,6 +14,9 @@
 package tech.pegasys.teku.api.rewards;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FLAG_INDEX;
+import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -24,18 +27,23 @@ import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.IdealAttestationReward;
 import tech.pegasys.teku.api.migrated.TotalAttestationReward;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardsAndPenaltiesCalculator;
+import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 
 public class EpochAttestationRewardsCalculator {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final SpecVersion specVersion;
   private final BeaconState state;
   private final EpochProcessor epochProcessor;
   private final ValidatorStatuses validatorStatuses;
@@ -45,6 +53,7 @@ public class EpochAttestationRewardsCalculator {
       final SpecVersion specVersion,
       final BeaconState state,
       final List<String> validatorPublicKeys) {
+    this.specVersion = specVersion;
     this.state = state;
     this.epochProcessor = specVersion.getEpochProcessor();
     this.validatorStatuses = specVersion.getValidatorStatusFactory().createValidatorStatuses(state);
@@ -76,8 +85,72 @@ public class EpochAttestationRewardsCalculator {
     }
   }
 
+  @SuppressWarnings("unused")
   public List<IdealAttestationReward> idealAttestationRewards() {
-    return List.of();
+    final List<IdealAttestationReward> idealAttestationRewards =
+        IntStream.rangeClosed(0, 32)
+            .boxed()
+            .map(i -> new IdealAttestationReward())
+            .collect(toList());
+
+    final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
+
+    for (int flagIndex = 0; flagIndex < PARTICIPATION_FLAG_WEIGHTS.size(); flagIndex++) {
+      final UInt64 weight = PARTICIPATION_FLAG_WEIGHTS.get(flagIndex);
+      final UInt64 effectiveBalanceIncrement =
+          specVersion.getConfig().getEffectiveBalanceIncrement();
+      final UInt64 unslashedParticipatingIncrements =
+          getPrevEpochTotalParticipatingBalance(flagIndex).dividedBy(effectiveBalanceIncrement);
+      final UInt64 activeIncrements =
+          totalBalances.getCurrentEpochActiveValidators().dividedBy(effectiveBalanceIncrement);
+      final UInt64 baseRewardPerIncrement =
+          ((BeaconStateAccessorsAltair) specVersion.beaconStateAccessors())
+              .getBaseRewardPerIncrement(state);
+
+      for (int effectiveBalanceEth = 0; effectiveBalanceEth <= 32; effectiveBalanceEth++) {
+        final UInt64 effectiveBalance =
+            UInt64.valueOf(effectiveBalanceEth).times(effectiveBalanceIncrement);
+        final UInt64 baseReward = UInt64.valueOf(effectiveBalanceEth).times(baseRewardPerIncrement);
+        final long penalty = -baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR).longValue();
+        final UInt64 rewardNumerator =
+            baseReward.times(weight).times(unslashedParticipatingIncrements);
+        final UInt64 idealReward =
+            rewardNumerator.dividedBy(activeIncrements).dividedBy(WEIGHT_DENOMINATOR);
+
+        final boolean isInactivityLeak = specVersion.beaconStateAccessors().isInactivityLeak(state);
+        final IdealAttestationReward idealAttestationReward = idealAttestationRewards.get(0);
+        idealAttestationReward.addEffectiveBalance(effectiveBalance);
+        if (!isInactivityLeak) {
+          switch (flagIndex) {
+            case 0:
+              idealAttestationReward.addSource(idealReward.longValue());
+              break;
+            case 1:
+              idealAttestationReward.addTarget(idealReward.longValue());
+              break;
+            case 2:
+              idealAttestationReward.addHead(idealReward.longValue());
+              break;
+          }
+        }
+      }
+    }
+
+    return idealAttestationRewards;
+  }
+
+  private UInt64 getPrevEpochTotalParticipatingBalance(final int flagIndex) {
+    final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
+    switch (flagIndex) {
+      case TIMELY_HEAD_FLAG_INDEX:
+        return totalBalances.getPreviousEpochHeadAttesters();
+      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
+        return totalBalances.getPreviousEpochTargetAttesters();
+      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
+        return totalBalances.getPreviousEpochSourceAttesters();
+      default:
+        throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);
+    }
   }
 
   private List<TotalAttestationReward> totalAttestationRewards() {
