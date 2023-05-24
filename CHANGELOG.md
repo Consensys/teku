@@ -2,7 +2,7 @@
 
 ## Upcoming Breaking Changes
 
-- Upgrading source code to Java 17 meaning users will need to upgrade their Java install to at least 17, or use the jdk17 variant of the docker image.
+- Upgrading source code to Java 17 which means users will need to upgrade their Java installation to at least 17. Docker users will not be affected, apart from the change that `jdk16` images will no longer be available for new versions.
 
 ## Current Releases
 
