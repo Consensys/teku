@@ -271,14 +271,14 @@ public class SyncCommitteeMessageValidator {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) {
         return true;
       }
       if (o == null || getClass() != o.getClass()) {
         return false;
       }
-      UniquenessKey that = (UniquenessKey) o;
+      final UniquenessKey that = (UniquenessKey) o;
       return subnetId == that.subnetId
           && Objects.equals(validatorIndex, that.validatorIndex)
           && Objects.equals(slot, that.slot)
