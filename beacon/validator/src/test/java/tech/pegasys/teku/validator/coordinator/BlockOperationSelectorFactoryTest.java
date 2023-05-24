@@ -36,9 +36,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -425,7 +427,7 @@ class BlockOperationSelectorFactoryTest {
     when(executionLayer.getUnblindedPayload(blindedSignedBlock))
         .thenReturn(SafeFuture.completedFuture(randomExecutionPayload));
 
-    factory.createUnblinderSelector().accept(blockUnblinder);
+    factory.createBlockUnblinderSelector().accept(blockUnblinder);
 
     assertThat(blockUnblinder.executionPayload).isCompletedWithValue(randomExecutionPayload);
   }
@@ -525,6 +527,29 @@ class BlockOperationSelectorFactoryTest {
               assertThat(blindedBlobSidecar.getKZGProof())
                   .isEqualTo(blobsBundle.getProofs().get(0));
             });
+  }
+
+  @Test
+  void shouldSetBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+    final UInt64 slot = dataStructureUtil.randomUInt64();
+
+    when(executionLayer.getCachedPayloadResult(slot))
+        .thenReturn(
+            Optional.of(
+                // only BlobsBundle is required
+                new ExecutionPayloadResult(
+                    null,
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blobsBundle)))));
+
+    final CapturingBlobSidecarsUnblinder blobSidecarsUnblinder =
+        new CapturingBlobSidecarsUnblinder();
+
+    factory.createBlobSidecarsUnblinderSelector(slot).accept(blobSidecarsUnblinder);
+
+    assertThat(blobSidecarsUnblinder.blobsBundle).isCompletedWithValue(blobsBundle);
   }
 
   private void prepareBlockProductionWithPayload(
@@ -721,6 +746,22 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public SafeFuture<BeaconBlockBody> build() {
+      return null;
+    }
+  }
+
+  private static class CapturingBlobSidecarsUnblinder implements SignedBlobSidecarsUnblinder {
+
+    protected SafeFuture<BlobsBundle> blobsBundle;
+
+    @Override
+    public void setBlobsBundleSupplier(
+        final Supplier<SafeFuture<BlobsBundle>> blobsBundleSupplier) {
+      this.blobsBundle = blobsBundleSupplier.get();
+    }
+
+    @Override
+    public SafeFuture<List<SignedBlobSidecar>> unblind() {
       return null;
     }
   }

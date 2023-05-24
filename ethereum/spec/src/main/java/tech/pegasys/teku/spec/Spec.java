@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -47,7 +48,11 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -642,12 +647,13 @@ public class Spec {
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
       final SignedBeaconBlock blindedSignedBeaconBlock,
-      final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
+      final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
     return atSlot(blindedSignedBeaconBlock.getSlot())
         .getBlindBlockUtil()
         .map(
             converter ->
-                converter.unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder))
+                converter.unblindSignedBeaconBlock(
+                    blindedSignedBeaconBlock, beaconBlockUnblinderConsumer))
         .orElseGet(
             () -> {
               // this shouldn't happen: BlockFactory should skip unblinding when is not needed
@@ -656,6 +662,22 @@ public class Spec {
                   "Unblinder not available for the current spec but the given block was blinded");
               return SafeFuture.completedFuture(blindedSignedBeaconBlock);
             });
+  }
+
+  public SafeFuture<List<SignedBlobSidecar>> unblindSignedBlindedBlobSidecars(
+      final UInt64 slot,
+      final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
+      final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
+    return atSlot(slot)
+        .getBlindBlockUtil()
+        .map(
+            converter ->
+                converter.unblindSignedBlobSidecars(
+                    blindedBlobSidecars, blobSidecarsUnblinderConsumer))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unblinder was not available but blob sidecars were blinded"));
   }
 
   public SignedBeaconBlock blindSignedBeaconBlock(
@@ -843,6 +865,10 @@ public class Spec {
         .getConfig()
         .toVersionDeneb()
         .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+  }
+
+  public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
+    return signedBlobSidecar.getBlobSidecar().getIndex().mod(BLOB_SIDECAR_SUBNET_COUNT);
   }
 
   // Private helpers

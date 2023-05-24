@@ -16,15 +16,18 @@ package tech.pegasys.teku.statetransition.blobs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -117,6 +120,42 @@ public class BlockBlobSidecarsTrackerTest {
 
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars()).isEmpty();
     assertThat(blockBlobSidecarsTracker.getBlobSidecars()).isEmpty();
+  }
+
+  @Test
+  void getCompletionFuture_returnsIndependentFutures() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlockWithEmptyCommitments();
+    final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
+
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
+    final SafeFuture<Void> completionFuture1 = blockBlobSidecarsTracker.getCompletionFuture();
+    final SafeFuture<Void> completionFuture2 = blockBlobSidecarsTracker.getCompletionFuture();
+    final SafeFuture<Void> completionFuture3 = blockBlobSidecarsTracker.getCompletionFuture();
+
+    SafeFutureAssert.assertThatSafeFuture(completionFuture1).isNotCompleted();
+    SafeFutureAssert.assertThatSafeFuture(completionFuture2).isNotCompleted();
+    SafeFutureAssert.assertThatSafeFuture(completionFuture3).isNotCompleted();
+
+    // future 2 timeouts
+    final SafeFuture<Void> completionFuture2Timeout = completionFuture2.orTimeout(Duration.ZERO);
+    assertThatThrownBy(() -> Waiter.waitFor(completionFuture2Timeout))
+        .hasCauseInstanceOf(TimeoutException.class);
+
+    // future2s are timed out
+    SafeFutureAssert.assertThatSafeFuture(completionFuture2Timeout).isCompletedExceptionally();
+    SafeFutureAssert.assertThatSafeFuture(completionFuture2).isCompletedExceptionally();
+
+    // while the others are not yet completed
+    SafeFutureAssert.assertThatSafeFuture(completionFuture1).isNotCompleted();
+    SafeFutureAssert.assertThatSafeFuture(completionFuture3).isNotCompleted();
+
+    // make tracker completes
+    blockBlobSidecarsTracker.setBlock(block);
+
+    // other futures are now completed
+    SafeFutureAssert.assertThatSafeFuture(completionFuture1).isCompleted();
+    SafeFutureAssert.assertThatSafeFuture(completionFuture3).isCompleted();
   }
 
   @Test
