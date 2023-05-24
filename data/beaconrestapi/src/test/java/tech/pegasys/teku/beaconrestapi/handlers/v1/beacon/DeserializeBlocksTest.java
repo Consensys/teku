@@ -33,19 +33,22 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class DeserializeBlocksTest {
 
   static Spec spec = TestSpecFactory.createMinimalDeneb();
-  DataStructureUtil denebData = new DataStructureUtil(spec);
-  public static final DeserializableOneOfTypeDefinition<SignedBlockContainer, BlockContainerBuilder>
+
+  private final DataStructureUtil denebData = new DataStructureUtil(spec);
+
+  private static final DeserializableOneOfTypeDefinition<
+          SignedBlockContainer, BlockContainerBuilder>
       DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS =
           DeserializableOneOfTypeDefinition.object(
                   SignedBlockContainer.class, BlockContainerBuilder.class)
               .withType(
-                  SignedBeaconBlock.isSignedBeaconBlockInstance,
+                  SignedBlockContainer.IS_SIGNED_BEACON_BLOCK,
                   s -> !s.contains("blob_sidecars"),
                   spec.getGenesisSchemaDefinitions()
                       .getSignedBeaconBlockSchema()
                       .getJsonTypeDefinition())
               .withType(
-                  SignedBlockContents.isSignedBlockContentsInstance,
+                  SignedBlockContainer.IS_SIGNED_BLOCK_CONTENTS,
                   s -> s.contains("blob_sidecars"),
                   SchemaDefinitionsDeneb.required(
                           spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
@@ -59,13 +62,13 @@ public class DeserializeBlocksTest {
           DeserializableOneOfTypeDefinition.object(
                   SignedBlindedBlockContainer.class, BlockContainerBuilder.class)
               .withType(
-                  SignedBeaconBlock.isSignedBlindedBeaconBlockInstance,
+                  SignedBlindedBlockContainer.IS_SIGNED_BLINDED_BEACON_BLOCK,
                   s -> !s.contains("blob_sidecars"),
                   spec.getGenesisSchemaDefinitions()
-                      .getSignedBeaconBlockSchema()
+                      .getSignedBlindedBeaconBlockSchema()
                       .getJsonTypeDefinition())
               .withType(
-                  SignedBlindedBlockContents.isSignedBlindedBlockContentsInstance,
+                  SignedBlindedBlockContainer.IS_SIGNED_BLINDED_BLOCK_CONTENTS,
                   s -> s.contains("blob_sidecars"),
                   SchemaDefinitionsDeneb.required(
                           spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
@@ -76,9 +79,9 @@ public class DeserializeBlocksTest {
   @Test
   void shouldDeserializeSignedBeaconBlock() throws JsonProcessingException {
 
-    SignedBeaconBlock randomSignedBeaconBlock = denebData.randomSignedBeaconBlock();
+    final SignedBeaconBlock randomSignedBeaconBlock = denebData.randomSignedBeaconBlock();
 
-    String serializedSignedBeaconBlock =
+    final String serializedSignedBeaconBlock =
         JsonUtil.serialize(
             randomSignedBeaconBlock,
             DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
@@ -90,16 +93,16 @@ public class DeserializeBlocksTest {
 
     assertThat(result).isInstanceOf(SignedBeaconBlock.class);
 
-    assertThat(result.getSignedBeaconBlock()).isPresent();
+    assertThat(result.getSignedBlock()).isEqualTo(randomSignedBeaconBlock);
     assertThat(result.getSignedBlobSidecars()).isEmpty();
   }
 
   @Test
   void shouldDeserializeSignedBlockContents() throws JsonProcessingException {
 
-    SignedBlockContents randomSignedBlockContents = denebData.randomSignedBlockContents();
+    final SignedBlockContents randomSignedBlockContents = denebData.randomSignedBlockContents();
 
-    String serializedSignedBlockContents =
+    final String serializedSignedBlockContents =
         JsonUtil.serialize(
             randomSignedBlockContents,
             DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
@@ -108,20 +111,20 @@ public class DeserializeBlocksTest {
         JsonUtil.parse(
             serializedSignedBlockContents,
             DESERIALIZABLE_ONE_OF_SIGNED_BEACON_BLOCK_OR_SIGNED_BLOCK_CONTENTS);
+
     assertThat(result).isInstanceOf(SignedBlockContents.class);
 
-    assertThat(result.getSignedBeaconBlock()).isPresent();
-    assertThat(result.getSignedBlobSidecars()).isPresent();
-    assertThat(result.getSignedBlobSidecars().get())
-        .hasSize(spec.getMaxBlobsPerBlock().orElseThrow());
+    assertThat(result.getSignedBlock()).isEqualTo(randomSignedBlockContents.getSignedBlock());
+    assertThat(result.getSignedBlobSidecars())
+        .isEqualTo(randomSignedBlockContents.getSignedBlobSidecars());
   }
 
   @Test
   void shouldDeserializeSignedBlindedBeaconBlock() throws JsonProcessingException {
 
-    SignedBeaconBlock randomBlindedBeaconBlock = denebData.randomSignedBeaconBlock();
+    final SignedBeaconBlock randomBlindedBeaconBlock = denebData.randomSignedBlindedBeaconBlock();
 
-    String serializedSignedBeaconBlock =
+    final String serializedSignedBeaconBlock =
         JsonUtil.serialize(
             randomBlindedBeaconBlock,
             DESERIALIZABLE_ONE_OF_SIGNED_BLINDED_BEACON_BLOCK_OR_SIGNED_BLINDED_BLOCK_CONTENTS);
@@ -133,17 +136,17 @@ public class DeserializeBlocksTest {
 
     assertThat(result).isInstanceOf(SignedBeaconBlock.class);
 
-    assertThat(result.getSignedBeaconBlock()).isPresent();
+    assertThat(result.getSignedBlock()).isEqualTo(randomBlindedBeaconBlock);
     assertThat(result.getSignedBlindedBlobSidecars()).isEmpty();
   }
 
   @Test
   void shouldDeserializeBlindedBlockContents() throws JsonProcessingException {
 
-    SignedBlindedBlockContents randomSignedBlindedBlockContents =
+    final SignedBlindedBlockContents randomSignedBlindedBlockContents =
         denebData.randomSignedBlindedBlockContents();
 
-    String serializedSignedBlindedBlockContents =
+    final String serializedSignedBlindedBlockContents =
         JsonUtil.serialize(
             randomSignedBlindedBlockContents,
             DESERIALIZABLE_ONE_OF_SIGNED_BLINDED_BEACON_BLOCK_OR_SIGNED_BLINDED_BLOCK_CONTENTS);
@@ -155,10 +158,10 @@ public class DeserializeBlocksTest {
 
     assertThat(result).isInstanceOf(SignedBlindedBlockContents.class);
 
-    assertThat(result.getSignedBeaconBlock()).isPresent();
-    assertThat(result.getSignedBlindedBlobSidecars()).isPresent();
-    assertThat(result.getSignedBlindedBlobSidecars().get())
-        .hasSize(spec.getMaxBlobsPerBlock().orElseThrow());
+    assertThat(result.getSignedBlock())
+        .isEqualTo(randomSignedBlindedBlockContents.getSignedBlock());
+    assertThat(result.getSignedBlindedBlobSidecars())
+        .isEqualTo(randomSignedBlindedBlockContents.getSignedBlindedBlobSidecars());
   }
 
   private static class BlockContainerBuilder {}

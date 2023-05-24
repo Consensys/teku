@@ -18,7 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -47,29 +47,31 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   }
 
   @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBeaconBlock maybeBlindedBlock) {
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(
+      final SignedBlockContainer maybeBlindedBlockContainer) {
     return blockFactory
-        .unblindSignedBeaconBlockIfBlinded(maybeBlindedBlock)
+        .unblindSignedBlockIfBlinded(maybeBlindedBlockContainer)
         .thenPeek(performanceTracker::saveProducedBlock)
         .thenCompose(this::gossipAndImportUnblindedSignedBlock)
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
                 LOG.trace(
-                    "Successfully imported proposed block: {}", maybeBlindedBlock::toLogString);
-                dutyMetrics.onBlockPublished(maybeBlindedBlock.getMessage().getSlot());
-                return SendSignedBlockResult.success(maybeBlindedBlock.getRoot());
+                    "Successfully imported proposed block: {}",
+                    maybeBlindedBlockContainer.getSignedBlock().toLogString());
+                dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
+                return SendSignedBlockResult.success(maybeBlindedBlockContainer.getRoot());
               } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
                 LOG.debug(
                     "Delayed processing proposed block {} because it is from the future",
-                    maybeBlindedBlock::toLogString);
-                dutyMetrics.onBlockPublished(maybeBlindedBlock.getMessage().getSlot());
+                    maybeBlindedBlockContainer.getSignedBlock().toLogString());
+                dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
               } else {
                 VALIDATOR_LOGGER.proposedBlockImportFailed(
                     result.getFailureReason().toString(),
-                    maybeBlindedBlock.getSlot(),
-                    maybeBlindedBlock.getRoot(),
+                    maybeBlindedBlockContainer.getSlot(),
+                    maybeBlindedBlockContainer.getRoot(),
                     result.getFailureCause());
 
                 return SendSignedBlockResult.notImported(result.getFailureReason().name());
@@ -78,5 +80,5 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   }
 
   abstract SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBeaconBlock block);
+      final SignedBlockContainer blockContainer);
 }

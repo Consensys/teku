@@ -47,6 +47,10 @@ public class BlobsBundle {
     return blobs;
   }
 
+  public int getNumberOfBlobs() {
+    return blobs.size();
+  }
+
   public String toBriefString() {
     return MoreObjects.toStringHelper(this)
         .add(

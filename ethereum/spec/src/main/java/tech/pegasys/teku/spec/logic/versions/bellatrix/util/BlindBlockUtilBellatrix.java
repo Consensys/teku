@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.spec.logic.versions.bellatrix.util;
 
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -34,6 +38,12 @@ public class BlindBlockUtilBellatrix extends BlindBlockUtil {
   protected SignedBeaconBlockUnblinder createSignedBeaconBlockUnblinder(
       SignedBeaconBlock signedBeaconBlock) {
     return new SignedBeaconBlockUnblinderBellatrix(schemaDefinitions, signedBeaconBlock);
+  }
+
+  @Override
+  protected Optional<SignedBlobSidecarsUnblinder> createSignedBlobSidecarsUnblinder(
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
+    return Optional.empty();
   }
 
   @Override

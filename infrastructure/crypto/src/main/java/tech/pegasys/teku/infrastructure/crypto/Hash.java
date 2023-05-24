@@ -44,13 +44,6 @@ public class Hash {
     return Bytes32.wrap(digest.digest());
   }
 
-  public static byte[] sha256Unwrapped(final Bytes a, final Bytes b) {
-    final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
-    a.update(digest);
-    b.update(digest);
-    return digest.digest();
-  }
-
   public static Bytes32 sha256(final Bytes a, final Bytes b, final Bytes c) {
     final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     a.update(digest);
@@ -59,17 +52,19 @@ public class Hash {
     return Bytes32.wrap(digest.digest());
   }
 
-  public static byte[] sha256Unwrapped(final Bytes a, final Bytes b, final Bytes c) {
-    final MessageDigest digest = SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get();
-    a.update(digest);
-    b.update(digest);
-    c.update(digest);
-    return digest.digest();
-  }
-
   public static Bytes32 keccak256(final Bytes input) {
     final MessageDigest digest = KECCAK_256_MESSAGE_DIGEST_THREAD_LOCAL.get();
     input.update(digest);
     return Bytes32.wrap(digest.digest());
+  }
+
+  /**
+   * used when we need to do several hashing in loops, so we can query the thread local once and do
+   * hashings
+   *
+   * @return Sha256
+   */
+  public static Sha256 getSha256Instance() {
+    return new Sha256(SHA256_MESSAGE_DIGEST_THREAD_LOCAL.get());
   }
 }

@@ -74,7 +74,7 @@ public class BlobSidecarGossipManagerTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
-    // return TopicChannel mock for each blob_sidecar_<index> topic
+    // return TopicChannel mock for each blob_sidecar_<subnet_id> topic
     doAnswer(
             i -> {
               final String topicName = i.getArgument(0);
@@ -84,8 +84,8 @@ public class BlobSidecarGossipManagerTest {
                 Assertions.fail(
                     BLOB_SIDECAR_TOPIC_PATTERN + " regex does not match the topic: " + topicName);
               }
-              final int index = Integer.parseInt(matcher.group(1));
-              topicChannels.put(index, topicChannel);
+              final int subnetId = Integer.parseInt(matcher.group(1));
+              topicChannels.put(subnetId, topicChannel);
               return topicChannel;
             })
         .when(gossipNetwork)
@@ -106,15 +106,15 @@ public class BlobSidecarGossipManagerTest {
   }
 
   @Test
-  public void testGossipingBlobSidecarPublishesToCorrectTopic() {
+  public void testGossipingBlobSidecarPublishesToCorrectSubnet() {
     final SignedBlobSidecar blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
 
     topicChannels.forEach(
-        (index, channel) -> {
-          if (index == 1) {
+        (subnetId, channel) -> {
+          if (subnetId == 1) {
             verify(channel).gossip(serialized);
           } else {
             verifyNoInteractions(channel);
@@ -123,13 +123,22 @@ public class BlobSidecarGossipManagerTest {
   }
 
   @Test
-  public void testGossipingBlobSidecarWithInvalidIndexDoesNotGossipAnything() {
+  public void testGossipingBlobSidecarWithLargeIndexGossipToCorrectSubnet() {
     final SignedBlobSidecar blobSidecar =
         dataStructureUtil.randomSignedBlobSidecar(UInt64.valueOf(10));
+    final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
 
-    topicChannels.forEach((__, channel) -> verifyNoInteractions(channel));
+    topicChannels.forEach(
+        (subnetId, channel) -> {
+          // 10 % 4 = 2
+          if (subnetId == 2) {
+            verify(channel).gossip(serialized);
+          } else {
+            verifyNoInteractions(channel);
+          }
+        });
   }
 
   @Test
@@ -145,12 +154,12 @@ public class BlobSidecarGossipManagerTest {
   }
 
   @Test
-  public void tesAcceptingSidecarGossipIfOnTheCorrectTopic() {
-    // topic handler for blob sidecars with index 1
+  public void testAcceptingSidecarGossipIfOnTheCorrectTopic() {
+    // topic handler for blob sidecars with subnet_id 1
     final Eth2TopicHandler<SignedBlobSidecar> topicHandler =
         blobSidecarGossipManager.getTopicHandler(1);
 
-    // processing blob sidecar with index 1 should be accepted
+    // processing blob sidecar with subnet_id 1 should be accepted
     final SignedBlobSidecar blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
     final InternalValidationResult validationResult =
         SafeFutureAssert.safeJoin(topicHandler.getProcessor().process(blobSidecar));
@@ -160,11 +169,11 @@ public class BlobSidecarGossipManagerTest {
 
   @Test
   public void testRejectingSidecarGossipIfNotOnTheCorrectTopic() {
-    // topic handler for blob sidecars with index 1
+    // topic handler for blob sidecars with subnet_id 1
     final Eth2TopicHandler<SignedBlobSidecar> topicHandler =
         blobSidecarGossipManager.getTopicHandler(1);
 
-    // processing blob sidecar with index 2 should be rejected
+    // processing blob sidecar with subnet_id 2 should be rejected
     final SignedBlobSidecar blobSidecar =
         dataStructureUtil.randomSignedBlobSidecar(UInt64.valueOf(2));
     final InternalValidationResult validationResult =
@@ -172,6 +181,6 @@ public class BlobSidecarGossipManagerTest {
 
     assertThat(validationResult.isReject()).isTrue();
     assertThat(validationResult.getDescription())
-        .hasValue("blob sidecar with index 2 does not match the topic index 1");
+        .hasValue("blob sidecar with subnet_id 2 does not match the topic subnet_id 1");
   }
 }

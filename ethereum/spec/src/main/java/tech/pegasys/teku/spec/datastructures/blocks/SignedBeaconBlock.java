@@ -19,7 +19,6 @@ import it.unimi.dsi.fastutil.longs.LongList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
@@ -63,7 +62,7 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   }
 
   public SignedBeaconBlock blind(final SchemaDefinitions schemaDefinitions) {
-    if (getMessage().getBody().isBlinded()) {
+    if (isBlinded()) {
       return this;
     }
 
@@ -87,13 +86,9 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return backingNode.updated(new TreeUpdates(updatesList));
   }
 
-  public boolean isBlinded() {
-    return getMessage().getBody().isBlinded();
-  }
-
   public SignedBeaconBlock unblind(
       final SchemaDefinitions schemaDefinitions, final ExecutionPayload payload) {
-    if (!getMessage().getBody().isBlinded()) {
+    if (!isBlinded()) {
       return this;
     }
 
@@ -187,9 +182,18 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
     return getMessage().hashTreeRoot();
   }
 
-  public static Predicate<SignedBlockContainer> isSignedBeaconBlockInstance =
-      signedBeaconBlock -> signedBeaconBlock instanceof SignedBeaconBlock;
+  @Override
+  public SignedBeaconBlock getSignedBlock() {
+    return this;
+  }
 
-  public static Predicate<SignedBlindedBlockContainer> isSignedBlindedBeaconBlockInstance =
-      signedBlindedBeaconBlock -> signedBlindedBeaconBlock instanceof SignedBeaconBlock;
+  @Override
+  public Optional<SignedBlindedBlockContainer> toBlinded() {
+    return isBlinded() ? Optional.of(this) : Optional.empty();
+  }
+
+  @Override
+  public boolean isBlinded() {
+    return getMessage().getBody().isBlinded();
+  }
 }

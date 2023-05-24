@@ -40,6 +40,7 @@ import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -86,6 +87,7 @@ class Store implements UpdatableStore {
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
   private final BlobSidecarsProvider blobSidecarsProvider;
+  private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   final ForkChoiceStrategy forkChoiceStrategy;
 
   private final Optional<Checkpoint> initialCheckpoint;
@@ -109,6 +111,7 @@ class Store implements UpdatableStore {
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final BlobSidecarsProvider blobSidecarsProvider,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -167,6 +170,7 @@ class Store implements UpdatableStore {
             fromMap(this.blocks),
             blockProvider);
     this.blobSidecarsProvider = blobSidecarsProvider;
+    this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
 
   public static UpdatableStore create(
@@ -176,6 +180,7 @@ class Store implements UpdatableStore {
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final BlobSidecarsProvider blobSidecarsProvider,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
       final UInt64 genesisTime,
@@ -218,6 +223,7 @@ class Store implements UpdatableStore {
         blockProvider,
         stateAndBlockProvider,
         blobSidecarsProvider,
+        earliestBlobSidecarSlotProvider,
         stateTaskQueue,
         initialCheckpoint,
         time,
@@ -537,9 +543,14 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> retrieveBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return blobSidecarsProvider.getBlobSidecars(slotAndBlockRoot);
+  }
+
+  @Override
+  public SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot() {
+    return earliestBlobSidecarSlotProvider.getEarliestBlobSidecarSlot();
   }
 
   UInt64 getHighestVotedValidatorIndex() {

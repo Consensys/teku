@@ -15,11 +15,45 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 
-public interface SignedBlockContainer extends BlockContainer {
+/**
+ * Interface used to represent both {@link SignedBeaconBlock} and {@link SignedBlockContents} and
+ * their blinded variants: <a
+ * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
+ */
+public interface SignedBlockContainer extends SszData {
+
+  Predicate<SignedBlockContainer> IS_SIGNED_BEACON_BLOCK =
+      blockContainer -> blockContainer instanceof SignedBeaconBlock;
+
+  Predicate<SignedBlockContainer> IS_SIGNED_BLOCK_CONTENTS =
+      blockContainer -> blockContainer instanceof SignedBlockContents;
+
+  SignedBeaconBlock getSignedBlock();
+
+  default UInt64 getSlot() {
+    return getSignedBlock().getSlot();
+  }
+
+  default Bytes32 getRoot() {
+    return getSignedBlock().getRoot();
+  }
 
   default Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
     return Optional.empty();
+  }
+
+  default Optional<SignedBlindedBlockContainer> toBlinded() {
+    return Optional.empty();
+  }
+
+  default boolean isBlinded() {
+    return toBlinded().isPresent();
   }
 }

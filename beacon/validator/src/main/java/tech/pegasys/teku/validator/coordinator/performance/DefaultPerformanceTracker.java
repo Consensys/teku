@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -98,12 +99,12 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void start(UInt64 nodeStartSlot) {
+  public void start(final UInt64 nodeStartSlot) {
     this.nodeStartEpoch = Optional.of(spec.computeEpochAtSlot(nodeStartSlot));
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     // Ensure a consistent view as the field is volatile.
     final Optional<UInt64> nodeStartEpoch = this.nodeStartEpoch;
     if (nodeStartEpoch.isEmpty() || combinedChainDataClient.getChainHead().isEmpty()) {
@@ -199,7 +200,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
             });
   }
 
-  private SafeFuture<BlockPerformance> getBlockPerformanceForEpoch(UInt64 currentEpoch) {
+  private SafeFuture<BlockPerformance> getBlockPerformanceForEpoch(final UInt64 currentEpoch) {
     return combinedChainDataClient
         .getChainHead()
         .orElseThrow()
@@ -345,7 +346,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   private SafeFuture<Set<BeaconBlock>> getBlocksInEpochs(
-      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+      final UInt64 startEpochInclusive, final UInt64 endEpochExclusive) {
     final UInt64 epochStartSlot = spec.computeStartSlotAtEpoch(startEpochInclusive);
     final UInt64 inclusiveEndEpochEndSlot =
         spec.computeStartSlotAtEpoch(endEpochExclusive).decrement();
@@ -382,7 +383,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   private SafeFuture<Map<UInt64, List<Attestation>>> getAttestationsIncludedInEpochs(
-      UInt64 startEpochInclusive, UInt64 endEpochExclusive) {
+      final UInt64 startEpochInclusive, final UInt64 endEpochExclusive) {
     return getBlocksInEpochs(startEpochInclusive, endEpochExclusive)
         .thenApply(
             beaconBlocks ->
@@ -394,24 +395,24 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void saveProducedAttestation(Attestation attestation) {
-    UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
-    Set<Attestation> attestationsInEpoch =
+  public void saveProducedAttestation(final Attestation attestation) {
+    final UInt64 epoch = spec.computeEpochAtSlot(attestation.getData().getSlot());
+    final Set<Attestation> attestationsInEpoch =
         producedAttestationsByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
     attestationsInEpoch.add(attestation);
   }
 
   @Override
-  public void saveProducedBlock(SignedBeaconBlock block) {
-    UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
-    Set<SlotAndBlockRoot> blocksInEpoch =
+  public void saveProducedBlock(final SignedBlockContainer blockContainer) {
+    final UInt64 epoch = spec.computeEpochAtSlot(blockContainer.getSlot());
+    final Set<SlotAndBlockRoot> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    blocksInEpoch.add(new SlotAndBlockRoot(block.getSlot(), block.getRoot()));
+    blocksInEpoch.add(blockContainer.getSignedBlock().getSlotAndBlockRoot());
   }
 
   @Override
   public void reportBlockProductionAttempt(UInt64 epoch) {
-    AtomicInteger numberOfBlockProductionAttempts =
+    final AtomicInteger numberOfBlockProductionAttempts =
         blockProductionAttemptsByEpoch.computeIfAbsent(epoch, __ -> new AtomicInteger(0));
     numberOfBlockProductionAttempts.incrementAndGet();
   }

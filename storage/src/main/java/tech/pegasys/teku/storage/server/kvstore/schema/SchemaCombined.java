@@ -78,6 +78,8 @@ public interface SchemaCombined extends Schema {
 
   KvStoreVariable<UInt64> getOptimisticTransitionBlockSlot();
 
+  KvStoreVariable<UInt64> getVariableEarliestBlobSidecarSlot();
+
   KvStoreVariable<DepositTreeSnapshot> getVariableFinalizedDepositSnapshot();
 
   Map<String, KvStoreColumn<?, ?>> getColumnMap();

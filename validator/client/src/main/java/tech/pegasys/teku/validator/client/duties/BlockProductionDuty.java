@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
@@ -91,7 +92,7 @@ public class BlockProductionDuty implements Duty {
             });
   }
 
-  public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(final BLSSignature randaoReveal) {
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(final BLSSignature randaoReveal) {
     return validatorApiChannel.createUnsignedBlock(
         slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
   }
@@ -100,11 +101,14 @@ public class BlockProductionDuty implements Duty {
     return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
   }
 
+  // TODO: sign blob sidecars
   public SafeFuture<SignedBeaconBlock> signBlock(
-      final ForkInfo forkInfo, final Optional<BeaconBlock> maybeBlock) {
+      final ForkInfo forkInfo, final Optional<BlockContainer> maybeBlock) {
     final BeaconBlock unsignedBlock =
-        maybeBlock.orElseThrow(
-            () -> new IllegalStateException("Node was not syncing but could not create block"));
+        maybeBlock
+            .map(BlockContainer::getBlock)
+            .orElseThrow(
+                () -> new IllegalStateException("Node was not syncing but could not create block"));
     checkArgument(
         unsignedBlock.getSlot().equals(slot),
         "Unsigned block slot (%s) does not match expected slot %s",

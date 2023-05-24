@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class ForkChoiceUtil {
 
@@ -394,12 +395,25 @@ public class ForkChoiceUtil {
     return AttestationProcessingResult.SUCCESSFUL;
   }
 
+  /**
+   * Stores block and associated blobSidecars if any into the store
+   *
+   * @param store Store to apply block to
+   * @param signedBlock Block
+   * @param postState State after applying this block
+   * @param isBlockOptimistic optimistic/non-optimistic
+   * @param blobSidecars BlobSidecars
+   * @param earliestAffectedSlot earliest empty slot before this block or slot of this block if no
+   *     empty (without blocks) slots before. Used for calculation of earliest available blobSidecar
+   *     slot
+   */
   public void applyBlockToStore(
       final MutableStore store,
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
       final boolean isBlockOptimistic,
-      final Optional<List<BlobSidecar>> maybeBlobSidecars) {
+      final List<BlobSidecar> blobSidecars,
+      final UInt64 earliestAffectedSlot) {
 
     BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
 
@@ -418,7 +432,15 @@ public class ForkChoiceUtil {
         isBlockOptimistic);
 
     // Add new block to store
-    store.putBlockAndState(signedBlock, postState, blockCheckpoints, maybeBlobSidecars);
+    store.putBlockAndState(
+        signedBlock,
+        postState,
+        blockCheckpoints,
+        blobSidecars,
+        miscHelpers
+            .toVersionDeneb()
+            .map(MiscHelpersDeneb::computeFirstSlotWithBlobSupport)
+            .map(denebSlot -> denebSlot.max(earliestAffectedSlot)));
   }
 
   private UInt64 getFinalizedCheckpointStartSlot(final ReadOnlyStore store) {

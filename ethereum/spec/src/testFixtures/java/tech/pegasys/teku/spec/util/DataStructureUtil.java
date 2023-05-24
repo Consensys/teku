@@ -2113,13 +2113,20 @@ public final class DataStructureUtil {
   }
 
   public BlobsBundle randomBlobsBundle() {
+    return randomBlobsBundle(Optional.empty());
+  }
+
+  public BlobsBundle randomBlobsBundle(final int count) {
+    return randomBlobsBundle(Optional.of(count));
+  }
+
+  private BlobsBundle randomBlobsBundle(final Optional<Integer> count) {
     final BlobSchema blobSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSchema();
-    List<KZGCommitment> commitments =
-        randomSszKzgCommitmentList().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .collect(toList());
-    List<KZGProof> proofs =
+    final List<KZGCommitment> commitments =
+        (count.isPresent() ? randomSszKzgCommitmentList(count.get()) : randomSszKzgCommitmentList())
+            .stream().map(SszKZGCommitment::getKZGCommitment).collect(toList());
+    final List<KZGProof> proofs =
         IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
     return new BlobsBundle(
         commitments,
@@ -2141,24 +2148,39 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarBuilder().buildSignedBlinded();
   }
 
-  public List<BlindedBlobSidecar> randomBlindedBlobSidecars(int count) {
-    List<BlindedBlobSidecar> blindedBlobSidecars = new ArrayList<>();
+  public List<BlindedBlobSidecar> randomBlindedBlobSidecars(final int count) {
+    final List<BlindedBlobSidecar> blindedBlobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       blindedBlobSidecars.add(new RandomBlobSidecarBuilder().buildBlinded());
     }
     return blindedBlobSidecars;
   }
 
-  public List<SignedBlobSidecar> randomSignedBlobSidecars(int count) {
-    List<SignedBlobSidecar> signedBlobSidecars = new ArrayList<>();
+  public List<SignedBlobSidecar> randomSignedBlobSidecars(final int count) {
+    final List<SignedBlobSidecar> signedBlobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       signedBlobSidecars.add(new RandomBlobSidecarBuilder().buildSigned());
     }
     return signedBlobSidecars;
   }
 
-  public List<SignedBlindedBlobSidecar> randomSignedBlindedBlobSidecars(int count) {
-    List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars = new ArrayList<>();
+  public List<SignedBlindedBlobSidecar> randomSignedBlindedBlobSidecars(
+      final BlobsBundle blobsBundle) {
+    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars = new ArrayList<>();
+    for (int i = 0; i < blobsBundle.getNumberOfBlobs(); i++) {
+      signedBlindedBlobSidecars.add(
+          new RandomBlobSidecarBuilder()
+              .index(UInt64.valueOf(i))
+              .blob(blobsBundle.getBlobs().get(i).getBytes())
+              .kzgCommitment(blobsBundle.getCommitments().get(i).getBytesCompressed())
+              .kzgProof(blobsBundle.getProofs().get(i).getBytesCompressed())
+              .buildSignedBlinded());
+    }
+    return signedBlindedBlobSidecars;
+  }
+
+  public List<SignedBlindedBlobSidecar> randomSignedBlindedBlobSidecars(final int count) {
+    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       signedBlindedBlobSidecars.add(new RandomBlobSidecarBuilder().buildSignedBlinded());
     }
@@ -2181,7 +2203,7 @@ public final class DataStructureUtil {
     return randomBlockContents(randomUInt64());
   }
 
-  public BlockContents randomBlockContents(UInt64 slot) {
+  public BlockContents randomBlockContents(final UInt64 slot) {
     final List<BlobSidecar> blobSidecarList = randomBlobSidecars(4);
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     return getSchemaDefinitionDeneb().getBlockContentsSchema().create(beaconBlock, blobSidecarList);
@@ -2191,21 +2213,21 @@ public final class DataStructureUtil {
     return randomBlindedBlockContents(randomUInt64());
   }
 
-  public BlindedBlockContents randomBlindedBlockContents(UInt64 slot) {
+  public BlindedBlockContents randomBlindedBlockContents(final UInt64 slot) {
     final List<BlindedBlobSidecar> blindedBlobSidecars = randomBlindedBlobSidecars(4);
-    final BeaconBlock beaconBlock = randomBeaconBlock(slot);
+    final BeaconBlock blindedBeaconBlock = randomBlindedBeaconBlock(slot);
     return getSchemaDefinitionDeneb()
         .getBlindedBlockContentsSchema()
-        .create(beaconBlock, blindedBlobSidecars);
+        .create(blindedBeaconBlock, blindedBlobSidecars);
   }
 
   public SignedBlindedBlockContents randomSignedBlindedBlockContents() {
     final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
         randomSignedBlindedBlobSidecars(4);
-    final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock();
+    final SignedBeaconBlock signedBlindedBeaconBlock = randomSignedBlindedBeaconBlock();
     return getSchemaDefinitionDeneb()
         .getSignedBlindedBlockContentsSchema()
-        .create(signedBeaconBlock, signedBlindedBlobSidecars);
+        .create(signedBlindedBeaconBlock, signedBlindedBlobSidecars);
   }
 
   public SignedBlobSidecar randomSignedBlobSidecar(final UInt64 index) {
