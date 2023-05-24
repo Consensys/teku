@@ -77,6 +77,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
@@ -314,12 +315,10 @@ public class ChainBuilder {
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
 
-    // add an empty list of blob sidecars to the genesis block if genesis is in the Deneb milestone
+    // Set earliest blobSidecar slot if genesis is in the Deneb milestone
     spec.getGenesisSchemaDefinitions()
         .toVersionDeneb()
-        .ifPresent(
-            schemaDefinitions ->
-                trackBlobSidecars(blockAndState.getSlotAndBlockRoot(), Collections.emptyList()));
+        .ifPresent(__ -> earliestBlobSidecarSlot = Optional.of(genesisState.getSlot()));
 
     return blockAndState;
   }
@@ -584,6 +583,27 @@ public class ChainBuilder {
       final SszList<Attestation> attestations,
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
+    final List<Blob> blobs =
+        options
+            .getBlobSidecars()
+            .map(
+                blobSidecars1 ->
+                    blobSidecars1.stream().map(BlobSidecar::getBlob).collect(Collectors.toList()))
+            .or(options::getBlobs)
+            .orElse(Collections.emptyList());
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
+    final List<KZGCommitment> kzgCommitments =
+        blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
+    if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
+      maybeGeneratedBlobTransactions =
+          Optional.of(
+              List.of(blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments)));
+    } else {
+      maybeGeneratedBlobTransactions = Optional.empty();
+    }
+
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
             blockProposalTestUtil.createBlock(
@@ -596,7 +616,7 @@ public class ChainBuilder {
                 Optional.of(attesterSlashings),
                 Optional.empty(),
                 options.getEth1Data(),
-                options.getTransactions(),
+                maybeGeneratedBlobTransactions,
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
                 options.getSyncAggregate(),
@@ -605,33 +625,28 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobSidecarSchema blobSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecar> blobSidecars =
-          options
-              .getBlobSidecars()
-              .orElseGet(
-                  () -> {
-                    if (options.getBlobs().isPresent()) {
-                      return IntStream.range(0, options.getBlobs().get().size())
-                          .mapToObj(
-                              index ->
-                                  new BlobSidecar(
-                                      blobSidecarSchema,
-                                      nextBlockAndState.getRoot(),
-                                      UInt64.valueOf(index),
-                                      slot,
-                                      parentRoot,
-                                      UInt64.ZERO,
-                                      options.getBlobs().get().get(index),
-                                      KZGCommitment.infinity(),
-                                      KZGProof.INFINITY))
-                          .collect(Collectors.toList());
-                    } else {
-                      return Collections.emptyList();
-                    }
-                  });
+          IntStream.range(0, blobs.size())
+              .mapToObj(
+                  index -> {
+                    final Blob blob = blobs.get(index);
+                    final KZGCommitment kzgCommitment = kzgCommitments.get(index);
+                    return new BlobSidecar(
+                        blobSidecarSchema,
+                        nextBlockAndState.getRoot(),
+                        UInt64.valueOf(index),
+                        slot,
+                        parentRoot,
+                        UInt64.ZERO,
+                        blob,
+                        kzgCommitment,
+                        miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
+                  })
+              .collect(Collectors.toList());
       trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
     }
 
@@ -648,6 +663,18 @@ public class ChainBuilder {
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
     final List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
+    final List<KZGCommitment> kzgCommitments =
+        randomBlobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
+    if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
+      maybeGeneratedBlobTransactions =
+          Optional.of(
+              List.of(blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments)));
+    } else {
+      maybeGeneratedBlobTransactions = Optional.empty();
+    }
 
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
@@ -661,7 +688,7 @@ public class ChainBuilder {
                 Optional.of(attesterSlashings),
                 Optional.empty(),
                 options.getEth1Data(),
-                options.getTransactions(),
+                maybeGeneratedBlobTransactions,
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
                 options.getSyncAggregate(),
@@ -670,9 +697,8 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobSidecarSchema blobSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
-    final MiscHelpersDeneb miscHelpers =
-        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecar> blobSidecars =
@@ -680,7 +706,7 @@ public class ChainBuilder {
               .mapToObj(
                   index -> {
                     final Blob blob = randomBlobs.get(index);
-                    final KZGCommitment kzgCommitment = miscHelpers.blobToKzgCommitment(blob);
+                    final KZGCommitment kzgCommitment = kzgCommitments.get(index);
                     return new BlobSidecar(
                         blobSidecarSchema,
                         nextBlockAndState.getRoot(),
@@ -688,8 +714,8 @@ public class ChainBuilder {
                         slot,
                         parentRoot,
                         UInt64.ZERO,
-                        blob,
-                        kzgCommitment,
+                        randomBlobs.get(index),
+                        kzgCommitments.get(index),
                         miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
                   })
               .collect(Collectors.toList());

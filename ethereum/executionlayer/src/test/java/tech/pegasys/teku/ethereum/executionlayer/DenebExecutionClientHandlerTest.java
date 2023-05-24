@@ -156,7 +156,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                     denebSpecStartingAtBellatrix, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtBellatrix);
 
-    final ExecutionPayload payload = data.randomExecutionPayload();
+    final ExecutionPayload payload = data.randomExecutionPayload(UInt64.ONE);
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(
@@ -183,7 +183,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                     denebSpecStartingAtCapella, executionEngineClient)));
     final DataStructureUtil data = new DataStructureUtil(denebSpecStartingAtCapella);
 
-    final ExecutionPayload payload = data.randomExecutionPayload();
+    final ExecutionPayload payload = data.randomExecutionPayload(UInt64.ONE);
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(
