@@ -84,7 +84,7 @@ import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFacto
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -96,6 +96,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -843,11 +845,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initAttestationManager() {
-    final PendingPool<ValidateableAttestation> pendingAttestations =
+    final PendingPool<ValidatableAttestation> pendingAttestations =
         poolFactory.createPendingPoolForAttestations(spec);
-    final FutureItems<ValidateableAttestation> futureAttestations =
+    final FutureItems<ValidatableAttestation> futureAttestations =
         FutureItems.create(
-            ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+            ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
             UInt64.valueOf(3),
             futureItemsMetric,
             "attestations");
@@ -860,7 +862,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             attestations.forEach(
                 attestation ->
                     aggregateValidator.addSeenAggregate(
-                        ValidateableAttestation.from(spec, attestation))));
+                        ValidatableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
             pendingAttestations,
@@ -879,6 +881,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initSyncCommitteePools() {
+    final PendingPool<ValidatableSyncCommitteeMessage> pendingSyncCommitteeMessages =
+        poolFactory.createPendingPoolForSyncCommitteeMessages(spec);
+    final PendingPool<SignedContributionAndProof> pendingContributionAndProofMessages =
+        poolFactory.createPendingPoolForContributionAndProofs(spec);
     final SyncCommitteeStateUtils syncCommitteeStateUtils =
         new SyncCommitteeStateUtils(spec, recentChainData);
     syncCommitteeContributionPool =
@@ -889,7 +895,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recentChainData,
                 syncCommitteeStateUtils,
                 timeProvider,
-                signatureVerificationService));
+                signatureVerificationService),
+            pendingContributionAndProofMessages);
 
     syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(
@@ -899,8 +906,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recentChainData,
                 syncCommitteeStateUtils,
                 signatureVerificationService,
-                timeProvider));
+                timeProvider),
+            pendingSyncCommitteeMessages);
     eventChannels
+        .subscribe(BlockImportNotifications.class, syncCommitteeContributionPool)
+        .subscribe(BlockImportNotifications.class, syncCommitteeMessagePool)
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
   }

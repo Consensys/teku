@@ -23,10 +23,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<ValidateableAttestation> {
+public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<ValidatableAttestation> {
 
   @Override
   protected Eth2TopicHandler<?> createHandler() {
@@ -44,8 +44,8 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
 
   @Test
   public void handleMessage_validAggregate() {
-    final ValidateableAttestation aggregate =
-        ValidateableAttestation.aggregateFromValidator(
+    final ValidatableAttestation aggregate =
+        ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
@@ -60,8 +60,8 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
 
   @Test
   public void handleMessage_invalidAggregate_wrongFork() {
-    final ValidateableAttestation aggregate =
-        ValidateableAttestation.aggregateFromValidator(
+    final ValidatableAttestation aggregate =
+        ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(wrongForkSlot));
 
     final SafeFuture<ValidationResult> result =
@@ -75,8 +75,8 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
 
   @Test
   public void handleMessage_savedForFuture() {
-    final ValidateableAttestation aggregate =
-        ValidateableAttestation.aggregateFromValidator(
+    final ValidatableAttestation aggregate =
+        ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
@@ -91,8 +91,8 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
 
   @Test
   public void handleMessage_ignoredAggregate() {
-    final ValidateableAttestation aggregate =
-        ValidateableAttestation.aggregateFromValidator(
+    final ValidatableAttestation aggregate =
+        ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
@@ -107,8 +107,8 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validate
 
   @Test
   public void handleMessage_invalidAggregate() {
-    final ValidateableAttestation aggregate =
-        ValidateableAttestation.aggregateFromValidator(
+    final ValidatableAttestation aggregate =
+        ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
     when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));

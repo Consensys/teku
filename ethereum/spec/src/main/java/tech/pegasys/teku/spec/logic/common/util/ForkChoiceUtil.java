@@ -25,7 +25,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -295,9 +295,9 @@ public class ForkChoiceUtil {
   public AttestationProcessingResult validate(
       final Fork fork,
       final ReadOnlyStore store,
-      final ValidateableAttestation validateableAttestation,
+      final ValidatableAttestation validatableAttestation,
       final Optional<BeaconState> maybeState) {
-    Attestation attestation = validateableAttestation.getAttestation();
+    Attestation attestation = validatableAttestation.getAttestation();
     return validateOnAttestation(store, attestation.getData())
         .ifSuccessful(
             () -> {
@@ -305,7 +305,7 @@ public class ForkChoiceUtil {
                 return AttestationProcessingResult.UNKNOWN_BLOCK;
               } else {
                 return attestationUtil.isValidIndexedAttestation(
-                    fork, maybeState.get(), validateableAttestation);
+                    fork, maybeState.get(), validatableAttestation);
               }
             })
         .ifSuccessful(() -> checkIfAttestationShouldBeSavedForFuture(store, attestation));

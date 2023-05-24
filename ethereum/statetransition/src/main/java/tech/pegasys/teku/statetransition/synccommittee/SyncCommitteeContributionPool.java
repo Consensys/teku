@@ -21,33 +21,43 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
+import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
+import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class SyncCommitteeContributionPool implements SlotEventsChannel {
-
+public class SyncCommitteeContributionPool implements SlotEventsChannel, BlockImportNotifications {
+  private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
   private final SignedContributionAndProofValidator validator;
   private final Subscribers<OperationAddedSubscriber<SignedContributionAndProof>> subscribers =
       Subscribers.create(true);
+
+  private final PendingPool<SignedContributionAndProof> pendingContributionAndProofMessages;
 
   /** contribution.slot -> contribution.block -> contribution.subcommitteeIndex -> contribution */
   private final NavigableMap<UInt64, Map<Bytes32, Map<Integer, SyncCommitteeContribution>>>
       contributionsBySlotAndBlockRoot = new TreeMap<>();
 
   public SyncCommitteeContributionPool(
-      final Spec spec, final SignedContributionAndProofValidator validator) {
+      final Spec spec,
+      final SignedContributionAndProofValidator validator,
+      final PendingPool<SignedContributionAndProof> pendingContributionAndProofMessages) {
     this.spec = spec;
     this.validator = validator;
+    this.pendingContributionAndProofMessages = pendingContributionAndProofMessages;
   }
 
   public void subscribeOperationAdded(
@@ -77,6 +87,13 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
                     subscriber ->
                         subscriber.onOperationAdded(
                             signedContributionAndProof, result, fromNetwork));
+              } else if (result.isUnknownBlock()) {
+                LOG.trace(
+                    "Deferring contribution and proof {} for slot {} as required block {} is not yet present",
+                    signedContributionAndProof.hashTreeRoot(),
+                    signedContributionAndProof.getMessage().getContribution().getSlot(),
+                    signedContributionAndProof.getMessage().getContribution().getBeaconBlockRoot());
+                pendingContributionAndProofMessages.add(signedContributionAndProof);
               }
             });
   }
@@ -135,6 +152,25 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
    */
   @Override
   public synchronized void onSlot(final UInt64 slot) {
+    pendingContributionAndProofMessages.onSlot(slot);
     contributionsBySlotAndBlockRoot.headMap(slot.minusMinZero(2), false).clear();
+  }
+
+  @Override
+  public void onBlockImported(SignedBeaconBlock block) {
+    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
+    pendingContributionAndProofMessages
+        .getItemsDependingOn(blockRoot, false)
+        .forEach(
+            signedContributionAndProof -> {
+              pendingContributionAndProofMessages.remove(signedContributionAndProof);
+              add(signedContributionAndProof, true)
+                  .finish(
+                      err ->
+                          LOG.error(
+                              "Failed to process pending contribution and proof dependent on "
+                                  + blockRoot,
+                              err));
+            });
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -62,6 +63,8 @@ public class SignedContributionAndProofValidator {
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
 
+  private final RecentChainData recentChainData;
+
   public SignedContributionAndProofValidator(
       final Spec spec,
       final RecentChainData recentChainData,
@@ -71,12 +74,19 @@ public class SignedContributionAndProofValidator {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.signatureVerifier = signatureVerifier;
+    this.recentChainData = recentChainData;
     this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
   public SafeFuture<InternalValidationResult> validate(final SignedContributionAndProof proof) {
     final ContributionAndProof contributionAndProof = proof.getMessage();
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
+
+    // [IGNORE] The block being signed (contribution_and_proof.contribution.beacon_block_root)
+    // has been seen (via both gossip and non-gossip sources)
+    if (!recentChainData.containsBlock(contribution.getBeaconBlockRoot())) {
+      return completedFuture(InternalValidationResult.UNKNOWN_BLOCK);
+    }
 
     // [IGNORE] The sync committee contribution is the first valid contribution received for the
     // aggregator with index contribution_and_proof.aggregator_index for the slot contribution.slot.

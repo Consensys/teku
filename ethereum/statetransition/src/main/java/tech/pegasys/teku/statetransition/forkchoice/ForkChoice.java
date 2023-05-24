@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
@@ -607,7 +607,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
-      final ValidateableAttestation attestation) {
+      final ValidatableAttestation attestation) {
     return attestationStateSelector
         .getStateToValidate(attestation.getData())
         .thenCompose(
@@ -642,7 +642,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public void applyIndexedAttestations(final List<ValidateableAttestation> attestations) {
+  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
     onForkChoiceThread(
             () -> {
               final VoteUpdater transaction = recentChainData.startVoteUpdate();
@@ -756,7 +756,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     "Attempting to perform fork choice operations before store has been initialized"));
   }
 
-  private IndexedAttestation getIndexedAttestation(final ValidateableAttestation attestation) {
+  private IndexedAttestation getIndexedAttestation(final ValidatableAttestation attestation) {
     return attestation
         .getIndexedAttestation()
         .orElseThrow(

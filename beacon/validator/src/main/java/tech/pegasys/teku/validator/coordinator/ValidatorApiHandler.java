@@ -52,7 +52,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscrib
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -66,7 +66,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
@@ -420,7 +420,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         attestationPool
             .createAggregateFor(attestationHashTreeRoot)
             .filter(attestation -> attestation.getData().getSlot().equals(slot))
-            .map(ValidateableAttestation::getAttestation));
+            .map(ValidatableAttestation::getAttestation));
   }
 
   @Override
@@ -494,7 +494,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     return attestationManager
-        .addAttestation(ValidateableAttestation.fromValidator(spec, attestation))
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation))
         .thenPeek(
             result -> {
               if (!result.isReject()) {
@@ -545,7 +545,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
     return attestationManager
-        .addAggregate(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof))
+        .addAggregate(ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof))
         .thenPeek(
             result -> {
               if (result.isReject()) {
@@ -570,7 +570,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     final List<SafeFuture<InternalValidationResult>> addedMessages =
         syncCommitteeMessages.stream()
-            .map(ValidateableSyncCommitteeMessage::fromValidator)
+            .map(ValidatableSyncCommitteeMessage::fromValidator)
             .map(this::processSyncCommitteeMessage)
             .collect(toList());
 
@@ -579,7 +579,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private SafeFuture<InternalValidationResult> processSyncCommitteeMessage(
-      final ValidateableSyncCommitteeMessage message) {
+      final ValidatableSyncCommitteeMessage message) {
     return syncCommitteeMessagePool
         .addLocal(message)
         .thenPeek(

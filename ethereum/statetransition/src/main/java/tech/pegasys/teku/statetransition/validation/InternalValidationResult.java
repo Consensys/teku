@@ -28,6 +28,9 @@ public class InternalValidationResult {
   public static final InternalValidationResult SAVE_FOR_FUTURE =
       InternalValidationResult.create(ValidationResultCode.SAVE_FOR_FUTURE);
 
+  public static final InternalValidationResult UNKNOWN_BLOCK =
+      InternalValidationResult.create(ValidationResultCode.UNKNOWN_BLOCK);
+
   private final ValidationResultCode validationResultCode;
   private final Optional<String> description;
 
@@ -81,6 +84,10 @@ public class InternalValidationResult {
 
   public boolean isAccept() {
     return this.validationResultCode.equals(ValidationResultCode.ACCEPT);
+  }
+
+  public boolean isUnknownBlock() {
+    return this.validationResultCode.equals(ValidationResultCode.UNKNOWN_BLOCK);
   }
 
   public boolean isNotProcessable() {

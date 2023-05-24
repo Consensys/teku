@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetSubscriptions;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
@@ -64,8 +64,8 @@ class SyncCommitteeMessageGossipManagerTest {
   @Test
   void shouldPublishToReceivedSubnetWhenPresent() {
     final int subnetId = 3;
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromNetwork(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromNetwork(
             dataStructureUtil.randomSyncCommitteeMessage(), subnetId);
 
     gossipManager.publish(message);
@@ -75,8 +75,8 @@ class SyncCommitteeMessageGossipManagerTest {
 
   @Test
   void shouldPublishToAllApplicableSubnetsWhenNoReceivedSubnetsPresent() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
 
     withApplicableSubnets(message, 1, 3, 5);
@@ -89,8 +89,8 @@ class SyncCommitteeMessageGossipManagerTest {
 
   @Test
   void shouldCalculateAndPublishToAllApplicableSubnetsWhenAlreadyNotCached() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
 
     final UInt64 dutyEpoch = UInt64.valueOf(333);
@@ -116,7 +116,7 @@ class SyncCommitteeMessageGossipManagerTest {
   }
 
   private void withApplicableSubnets(
-      final ValidateableSyncCommitteeMessage message, final int... subnetIds) {
+      final ValidatableSyncCommitteeMessage message, final int... subnetIds) {
     final SyncSubcommitteeAssignments.Builder assignmentBuilder =
         SyncSubcommitteeAssignments.builder();
     IntStream.of(subnetIds).forEach(subnetId -> assignmentBuilder.addAssignment(subnetId, 1));

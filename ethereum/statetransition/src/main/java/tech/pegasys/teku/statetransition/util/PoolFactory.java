@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
+import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -22,8 +23,10 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -32,6 +35,9 @@ public class PoolFactory {
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
   private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final int DEFAULT_MAX_BLOCKS = 5000;
+
+  private static final int DEFAULT_MAX_SYNC_COMMITTEE_MESSAGES = 512;
+  private static final int DEFAULT_MAX_CONTRIBUTION_AND_PROOFS = 256;
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blobSidecarPoolSizeGauge;
 
@@ -78,7 +84,7 @@ public class PoolFactory {
         SignedBeaconBlock::getSlot);
   }
 
-  public PendingPool<ValidateableAttestation> createPendingPoolForAttestations(final Spec spec) {
+  public PendingPool<ValidatableAttestation> createPendingPoolForAttestations(final Spec spec) {
     return new PendingPool<>(
         pendingPoolsSizeGauge,
         "attestations",
@@ -86,9 +92,37 @@ public class PoolFactory {
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         DEFAULT_MAX_ITEMS,
-        ValidateableAttestation::hashTreeRoot,
-        ValidateableAttestation::getDependentBlockRoots,
-        ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+        ValidatableAttestation::hashTreeRoot,
+        ValidatableAttestation::getDependentBlockRoots,
+        ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
+  }
+
+  public PendingPool<ValidatableSyncCommitteeMessage> createPendingPoolForSyncCommitteeMessages(
+      final Spec spec) {
+    return new PendingPool<>(
+        pendingPoolsSizeGauge,
+        "sync_committee_message",
+        spec,
+        UInt64.ONE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_SYNC_COMMITTEE_MESSAGES,
+        ValidatableSyncCommitteeMessage::hashTreeRoot,
+        ValidatableSyncCommitteeMessage::getDependentBlockRoots,
+        ValidatableSyncCommitteeMessage::getEarliestSlotForForkChoiceProcessing);
+  }
+
+  public PendingPool<SignedContributionAndProof> createPendingPoolForContributionAndProofs(
+      final Spec spec) {
+    return new PendingPool<>(
+        pendingPoolsSizeGauge,
+        "contribution_and_proofs",
+        spec,
+        UInt64.ONE,
+        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
+        DEFAULT_MAX_CONTRIBUTION_AND_PROOFS,
+        SignedContributionAndProof::hashTreeRoot,
+        proof -> List.of(proof.getMessage().getContribution().getBeaconBlockRoot()),
+        proof -> proof.getMessage().getContribution().getSlot());
   }
 
   public BlobSidecarPoolImpl createPoolForBlobSidecars(
