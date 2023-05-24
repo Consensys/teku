@@ -177,7 +177,7 @@ public class RewardCalculatorTest {
     final ObjectAndMetaData<BlockRewardData> reward =
         calculator.getBlockRewardData(blockAndMetaData, blockAndState.getState());
     assertThat(reward.getData())
-        .isEqualTo(new BlockRewardData(UInt64.valueOf(5), 0L, 35L, 62500000L, 62500000L));
+        .isEqualTo(new BlockRewardData(UInt64.valueOf(2), 0L, 35L, 62500000L, 62500000L));
   }
 
   @Test
