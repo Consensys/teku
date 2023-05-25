@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
-import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
@@ -21,9 +20,4 @@ public interface BlindedBeaconBlockBodySchemaBellatrix<T extends BlindedBeaconBl
     extends BeaconBlockBodySchemaAltair<T> {
 
   ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema();
-
-  @Override
-  default Optional<BlindedBeaconBlockBodySchemaBellatrix<?>> toBlindedVersionBellatrix() {
-    return Optional.of(this);
-  }
 }

@@ -18,29 +18,39 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 
 public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> {
 
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
+  private final BlockContainerSigner blockContainerSigner;
   private final Spec spec;
   private final boolean useBlindedBlock;
 
   public BlockDutyFactory(
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
+      final BlockContainerSigner blockContainerSigner,
       final boolean useBlindedBlock,
       final Spec spec) {
     this.forkProvider = forkProvider;
-    this.useBlindedBlock = useBlindedBlock;
     this.validatorApiChannel = validatorApiChannel;
+    this.blockContainerSigner = blockContainerSigner;
+    this.useBlindedBlock = useBlindedBlock;
     this.spec = spec;
   }
 
   @Override
   public BlockProductionDuty createProductionDuty(final UInt64 slot, final Validator validator) {
     return new BlockProductionDuty(
-        validator, slot, forkProvider, validatorApiChannel, useBlindedBlock, spec);
+        validator,
+        slot,
+        forkProvider,
+        validatorApiChannel,
+        blockContainerSigner,
+        useBlindedBlock,
+        spec);
   }
 
   @Override
