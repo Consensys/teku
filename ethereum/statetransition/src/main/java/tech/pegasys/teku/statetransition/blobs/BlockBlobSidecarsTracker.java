@@ -201,6 +201,11 @@ public class BlockBlobSidecarsTracker {
         .orElse(false);
   }
 
+  /**
+   * prints a debug line when tracker completes
+   *
+   * @param debugTimings
+   */
   private void printDebugTimings(final Map<UInt64, Long> debugTimings) {
     final long completionTime = System.currentTimeMillis();
     final long creationTime = debugTimings.getOrDefault(CREATION_TIMING_IDX, 0L);
