@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -127,6 +128,12 @@ public class LocalSigner implements Signer {
   public SafeFuture<BLSSignature> signBlobSidecar(
       final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
     return sign(signingRootUtil.signingRootForBlobSidecar(blobSidecar, forkInfo));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signBlindedBlobSidecar(
+      final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
+    return sign(signingRootUtil.signingRootForBlindedBlobSidecar(blindedBlobSidecar, forkInfo));
   }
 
   private SafeFuture<Bytes> signingRootFromSyncCommitteeUtils(

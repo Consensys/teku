@@ -36,7 +36,7 @@ public interface MutableStore extends ReadOnlyStore {
    * @param checkpoints Checkpoints
    * @param blobSidecars empty list for pre-Deneb blocks or out of availability window, otherwise
    *     actual data
-   * @param earliestBlobSidecarSlot not required even pre-Deneb, saved only if the new value is
+   * @param earliestBlobSidecarSlot not required even post-Deneb, saved only if the new value is
    *     smaller
    */
   void putBlockAndState(

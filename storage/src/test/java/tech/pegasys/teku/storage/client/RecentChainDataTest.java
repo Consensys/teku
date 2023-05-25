@@ -820,7 +820,7 @@ class RecentChainDataTest {
   }
 
   @Test
-  void getEarliestBlobSidecarSlot_shouldBeSetOnlyOnce() {
+  void saveBlock_shouldNotOverrideEarliestBlobSidecarWithGreaterValue() {
     initPostGenesis();
 
     final SignedBlockAndState block1 =
@@ -828,17 +828,9 @@ class RecentChainDataTest {
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
     final List<BlobSidecar> blobSidecars1 = chainBuilder.getBlobSidecars(block1.getRoot());
     storageSystem.chainUpdater().saveBlock(block1, blobSidecars1, UInt64.valueOf(1));
+    // 0 from genesis
     assertThat(recentChainData.retrieveEarliestBlobSidecarSlot())
-        .isCompletedWithValue(Optional.of(UInt64.valueOf(1)));
-
-    final SignedBlockAndState block2 =
-        chainBuilder.generateBlockAtSlot(
-            UInt64.valueOf(2), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars2 = chainBuilder.getBlobSidecars(block2.getRoot());
-    storageSystem.chainUpdater().saveBlock(block2, blobSidecars2, UInt64.valueOf(2));
-    // Still the same
-    assertThat(recentChainData.retrieveEarliestBlobSidecarSlot())
-        .isCompletedWithValue(Optional.of(UInt64.valueOf(1)));
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(0)));
   }
 
   @Test

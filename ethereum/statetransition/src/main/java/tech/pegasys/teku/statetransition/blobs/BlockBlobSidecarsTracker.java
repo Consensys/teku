@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.SortedMap;
@@ -35,6 +37,9 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 
 public class BlockBlobSidecarsTracker {
   private static final Logger LOG = LogManager.getLogger();
+  private static final UInt64 CREATION_TIMING_IDX = UInt64.MAX_VALUE;
+  private static final UInt64 BLOCK_ARRIVAL_TIMING_IDX = CREATION_TIMING_IDX.decrement();
+  private static final UInt64 FETCH_TIMING_IDX = BLOCK_ARRIVAL_TIMING_IDX.decrement();
 
   private final SlotAndBlockRoot slotAndBlockRoot;
   private final UInt64 maxBlobsPerBlock;
@@ -47,10 +52,21 @@ public class BlockBlobSidecarsTracker {
 
   private volatile boolean fetchTriggered = false;
 
+  private final Optional<Map<UInt64, Long>> maybeDebugTimings;
+
   public BlockBlobSidecarsTracker(
       final SlotAndBlockRoot slotAndBlockRoot, final UInt64 maxBlobsPerBlock) {
     this.slotAndBlockRoot = slotAndBlockRoot;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
+    if (LOG.isDebugEnabled()) {
+      // don't need a concurrent hashmap since we'll interact with it from synchronized BlobSidecar
+      // pool methods
+      final Map<UInt64, Long> debugTimings = new HashMap<>();
+      debugTimings.put(CREATION_TIMING_IDX, System.currentTimeMillis());
+      this.maybeDebugTimings = Optional.of(debugTimings);
+    } else {
+      this.maybeDebugTimings = Optional.empty();
+    }
   }
 
   public SortedMap<UInt64, BlobSidecar> getBlobSidecars() {
@@ -113,6 +129,9 @@ public class BlockBlobSidecarsTracker {
     boolean addedNew = blobSidecars.put(blobSidecar.getIndex(), blobSidecar) == null;
 
     if (addedNew) {
+      LOG.debug("New BlobSidecar {}", blobSidecar::toLogString);
+      maybeDebugTimings.ifPresent(
+          debugTimings -> debugTimings.put(blobSidecar.getIndex(), System.currentTimeMillis()));
       checkCompletion();
     } else {
       LOG.warn(
@@ -137,6 +156,10 @@ public class BlockBlobSidecarsTracker {
       return false;
     }
 
+    LOG.debug("Block received for {}", slotAndBlockRoot::toLogString);
+    maybeDebugTimings.ifPresent(
+        debugTimings -> debugTimings.put(BLOCK_ARRIVAL_TIMING_IDX, System.currentTimeMillis()));
+
     checkCompletion();
 
     return true;
@@ -150,9 +173,10 @@ public class BlockBlobSidecarsTracker {
     if (blobSidecarsComplete.isDone()) {
       return;
     }
-    final boolean complete = areBlobsComplete();
-    if (complete) {
+    if (areBlobsComplete()) {
+      LOG.debug("BlobSidecars for {} are completed", slotAndBlockRoot::toLogString);
       blobSidecarsComplete.complete(null);
+      maybeDebugTimings.ifPresent(this::printDebugTimings);
     }
   }
 
@@ -166,6 +190,8 @@ public class BlockBlobSidecarsTracker {
 
   public void setFetchTriggered() {
     this.fetchTriggered = true;
+    maybeDebugTimings.ifPresent(
+        debugTimings -> debugTimings.put(FETCH_TIMING_IDX, System.currentTimeMillis()));
   }
 
   private boolean areBlobsComplete() {
@@ -173,5 +199,51 @@ public class BlockBlobSidecarsTracker {
         .get()
         .map(b -> blobSidecars.size() >= b.getBlobKzgCommitments().size())
         .orElse(false);
+  }
+
+  /**
+   * prints a debug line when tracker completes
+   *
+   * @param debugTimings
+   */
+  private void printDebugTimings(final Map<UInt64, Long> debugTimings) {
+    final long completionTime = System.currentTimeMillis();
+    final long creationTime = debugTimings.getOrDefault(CREATION_TIMING_IDX, 0L);
+    final StringBuilder timingsReport = new StringBuilder(128);
+
+    timingsReport
+        .append("Tracker for ")
+        .append(slotAndBlockRoot.toLogString())
+        .append(" created at ")
+        .append(creationTime)
+        .append(" - ");
+
+    timingsReport.append("Completion time ").append(completionTime - creationTime).append("ms - ");
+
+    blobSidecars
+        .keySet()
+        .forEach(
+            blobIndex ->
+                timingsReport
+                    .append("Sidecar [")
+                    .append(blobIndex)
+                    .append("] delay ")
+                    .append(debugTimings.getOrDefault(blobIndex, 0L) - creationTime)
+                    .append("ms - "));
+    timingsReport
+        .append("Block delay ")
+        .append(debugTimings.getOrDefault(BLOCK_ARRIVAL_TIMING_IDX, 0L) - creationTime)
+        .append("ms - ");
+
+    if (debugTimings.containsKey(FETCH_TIMING_IDX)) {
+      timingsReport
+          .append("Fetch delay ")
+          .append(debugTimings.get(FETCH_TIMING_IDX) - creationTime)
+          .append("ms");
+    } else {
+      timingsReport.append("Fetch not happened");
+    }
+
+    LOG.debug(timingsReport.toString());
   }
 }

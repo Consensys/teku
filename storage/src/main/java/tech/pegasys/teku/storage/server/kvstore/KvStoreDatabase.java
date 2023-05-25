@@ -48,6 +48,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -482,15 +483,15 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeInitialAnchor(final AnchorPoint anchor) {
+  public void storeInitialAnchor(final AnchorPoint initialAnchor) {
     try (final CombinedUpdater updater = combinedUpdater()) {
       // We should only have a single block / state / checkpoint at anchorpoint initialization
-      final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
+      final Checkpoint anchorCheckpoint = initialAnchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
-      final BeaconState anchorState = anchor.getState();
-      final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
+      final BeaconState anchorState = initialAnchor.getState();
+      final Optional<SignedBeaconBlock> anchorBlock = initialAnchor.getSignedBeaconBlock();
 
-      updater.setAnchor(anchor.getCheckpoint());
+      updater.setAnchor(initialAnchor.getCheckpoint());
       updater.setGenesisTime(anchorState.getGenesisTime());
       updater.setJustifiedCheckpoint(anchorCheckpoint);
       updater.setBestJustifiedCheckpoint(anchorCheckpoint);
@@ -506,6 +507,12 @@ public class KvStoreDatabase implements Database {
           });
 
       putFinalizedState(updater, anchorRoot, anchorState);
+      if (initialAnchor.isGenesis()
+          && spec.atSlot(initialAnchor.getSlot())
+              .getMilestone()
+              .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+        updater.setEarliestBlobSidecarSlot(initialAnchor.getSlot());
+      }
 
       updater.commit();
     }

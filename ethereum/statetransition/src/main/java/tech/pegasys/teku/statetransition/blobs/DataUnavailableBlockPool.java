@@ -97,6 +97,8 @@ public class DataUnavailableBlockPool {
 
     if (maybeSelectedBlock.isPresent()) {
       final SignedBeaconBlock selectedBlock = maybeSelectedBlock.get();
+
+      LOG.debug("Retrying import of block {}", selectedBlock::toLogString);
       awaitingDataAvailabilityQueue.remove(selectedBlock);
 
       blockImportInProgress = true;
