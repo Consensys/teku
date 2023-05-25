@@ -24,6 +24,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final UInt64 denebForkEpoch;
 
   private final int fieldElementsPerBlob;
+  private final int maxBlobCommitmentsPerBlock;
   private final int maxBlobsPerBlock;
   private final Optional<String> trustedSetupPath;
   private final boolean kzgNoop;
@@ -33,6 +34,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final Bytes4 denebForkVersion,
       final UInt64 denebForkEpoch,
       final int fieldElementsPerBlob,
+      final int maxBlobCommitmentsPerBlock,
       final int maxBlobsPerBlock,
       final Optional<String> trustedSetupPath,
       final boolean kzgNoop) {
@@ -40,6 +42,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     this.denebForkVersion = denebForkVersion;
     this.denebForkEpoch = denebForkEpoch;
     this.fieldElementsPerBlob = fieldElementsPerBlob;
+    this.maxBlobCommitmentsPerBlock = maxBlobCommitmentsPerBlock;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
     this.trustedSetupPath = trustedSetupPath;
     this.kzgNoop = kzgNoop;
@@ -58,6 +61,11 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   @Override
   public int getFieldElementsPerBlob() {
     return fieldElementsPerBlob;
+  }
+
+  @Override
+  public int getMaxBlobCommitmentsPerBlock() {
+    return maxBlobCommitmentsPerBlock;
   }
 
   @Override
@@ -93,6 +101,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         && Objects.equals(denebForkVersion, that.denebForkVersion)
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
         && fieldElementsPerBlob == that.fieldElementsPerBlob
+        && maxBlobCommitmentsPerBlock == that.maxBlobCommitmentsPerBlock
         && maxBlobsPerBlock == that.maxBlobsPerBlock
         && Objects.equals(trustedSetupPath, that.trustedSetupPath)
         && kzgNoop == that.kzgNoop;
@@ -105,6 +114,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         denebForkVersion,
         denebForkEpoch,
         fieldElementsPerBlob,
+        maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
         trustedSetupPath,
         kzgNoop);

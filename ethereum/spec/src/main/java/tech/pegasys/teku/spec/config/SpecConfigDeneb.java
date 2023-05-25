@@ -41,6 +41,8 @@ public interface SpecConfigDeneb extends SpecConfigCapella {
 
   int getFieldElementsPerBlob();
 
+  int getMaxBlobCommitmentsPerBlock();
+
   int getMaxBlobsPerBlock();
 
   default UInt64 getMaxRequestBlobSidecars() {

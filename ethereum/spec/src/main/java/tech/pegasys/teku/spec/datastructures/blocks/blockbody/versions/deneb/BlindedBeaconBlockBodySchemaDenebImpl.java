@@ -134,7 +134,7 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
         namedSchema(
             BlockBodyFields.BLOB_KZG_COMMITMENTS,
             SszListSchema.create(
-                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())));
+                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
   @Override
