@@ -39,10 +39,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
+import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
-public class MiscHelpersDeneb extends MiscHelpersBellatrix {
+public class MiscHelpersDeneb extends MiscHelpersCapella {
 
   private final KZG kzg;
 
