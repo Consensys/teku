@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
-import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -23,10 +22,8 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -93,20 +90,6 @@ public class PoolFactory {
         ValidatableAttestation::hashTreeRoot,
         ValidatableAttestation::getDependentBlockRoots,
         ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
-  }
-
-  public PendingPool<SignedContributionAndProof> createPendingPoolForContributionAndProofs(
-      final Spec spec) {
-    return new PendingPool<>(
-        pendingPoolsSizeGauge,
-        "contribution_and_proofs",
-        spec,
-        UInt64.ONE,
-        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        spec.forMilestone(SpecMilestone.ALTAIR).getConfig().getTargetCommitteeSize() * 2,
-        SignedContributionAndProof::hashTreeRoot,
-        proof -> List.of(proof.getMessage().getContribution().getBeaconBlockRoot()),
-        proof -> proof.getMessage().getContribution().getSlot());
   }
 
   public BlobSidecarPoolImpl createPoolForBlobSidecars(

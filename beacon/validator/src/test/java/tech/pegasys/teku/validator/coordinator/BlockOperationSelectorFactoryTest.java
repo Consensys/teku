@@ -77,8 +77,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
-import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
 
 class BlockOperationSelectorFactoryTest {
@@ -139,11 +137,8 @@ class BlockOperationSelectorFactoryTest {
               s -> s.toVersionCapella().orElseThrow().getBlsToExecutionChangesSchema()),
           blsToExecutionChangeValidator);
 
-  private final PendingPool<SignedContributionAndProof> pendingContributionAndProofMessages =
-      new PoolFactory(metricsSystem).createPendingPoolForContributionAndProofs(spec);
   private final SyncCommitteeContributionPool contributionPool =
-      new SyncCommitteeContributionPool(
-          spec, contributionValidator, pendingContributionAndProofMessages);
+      new SyncCommitteeContributionPool(spec, contributionValidator);
 
   private final DepositProvider depositProvider = mock(DepositProvider.class);
   private final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);

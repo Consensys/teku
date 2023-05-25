@@ -17,6 +17,5 @@ public enum ValidationResultCode {
   ACCEPT,
   SAVE_FOR_FUTURE,
   IGNORE,
-  REJECT,
-  UNKNOWN_BLOCK;
+  REJECT
 }

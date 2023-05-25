@@ -100,9 +100,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
               final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
               prepareForBlockImport(blobSidecar);
               break;
-            case UNKNOWN_BLOCK:
-              // not used with blob sidecars
-              break;
           }
         });
 

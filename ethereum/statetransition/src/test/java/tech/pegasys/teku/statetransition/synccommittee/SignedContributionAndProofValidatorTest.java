@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.synccommittee;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.UNKNOWN_BLOCK;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -154,7 +153,7 @@ class SignedContributionAndProofValidatorTest {
   }
 
   @Test
-  void shouldDeferProcessingWhenBeaconBlockRootIsUnknown() {
+  void shouldAcceptWhenValidButBeaconBlockRootIsUnknown() {
     setupWithDefaultSpec();
     final SignedContributionAndProof message =
         chainBuilder
@@ -162,7 +161,7 @@ class SignedContributionAndProofValidatorTest {
                 UInt64.ZERO, dataStructureUtil.randomBytes32())
             .build();
     final SafeFuture<InternalValidationResult> result = validator.validate(message);
-    assertThat(result).isCompletedWithValue(UNKNOWN_BLOCK);
+    assertThat(result).isCompletedWithValue(ACCEPT);
   }
 
   @Test

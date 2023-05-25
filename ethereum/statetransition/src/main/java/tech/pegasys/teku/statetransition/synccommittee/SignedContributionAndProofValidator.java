@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_CONTRIBUTION_AND_PROOF_SET_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -82,12 +81,6 @@ public class SignedContributionAndProofValidator {
     final ContributionAndProof contributionAndProof = proof.getMessage();
     final SyncCommitteeContribution contribution = contributionAndProof.getContribution();
 
-    // [IGNORE] The block being signed (contribution_and_proof.contribution.beacon_block_root)
-    // has been seen (via both gossip and non-gossip sources)
-    if (!recentChainData.containsBlock(contribution.getBeaconBlockRoot())) {
-      return completedFuture(InternalValidationResult.UNKNOWN_BLOCK);
-    }
-
     // [IGNORE] The sync committee contribution is the first valid contribution received for the
     // aggregator with index contribution_and_proof.aggregator_index for the slot contribution.slot.
     // (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE` for this topic that can be
@@ -122,7 +115,13 @@ public class SignedContributionAndProofValidator {
     // [IGNORE] The contribution's slot is for the current slot (with a
     // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
     if (!slotUtil.isForCurrentSlot(contribution.getSlot())) {
-      LOG.trace("Ignoring proof because it is not from the current slot");
+      LOG.trace(
+          "Ignoring proof from aggregator {}, "
+              + "because it is not from the current slot "
+              + "(contribution slot: {}, current slot: {})",
+          contributionAndProof::getAggregatorIndex,
+          contribution::getSlot,
+          recentChainData::getCurrentSlot);
       return SafeFuture.completedFuture(ignore("Not from current slot"));
     }
 

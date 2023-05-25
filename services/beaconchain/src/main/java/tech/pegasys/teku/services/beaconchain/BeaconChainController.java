@@ -96,7 +96,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -880,8 +879,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initSyncCommitteePools() {
-    final PendingPool<SignedContributionAndProof> pendingContributionAndProofMessages =
-        poolFactory.createPendingPoolForContributionAndProofs(spec);
     final SyncCommitteeStateUtils syncCommitteeStateUtils =
         new SyncCommitteeStateUtils(spec, recentChainData);
     syncCommitteeContributionPool =
@@ -892,8 +889,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 recentChainData,
                 syncCommitteeStateUtils,
                 timeProvider,
-                signatureVerificationService),
-            pendingContributionAndProofMessages);
+                signatureVerificationService));
 
     syncCommitteeMessagePool =
         new SyncCommitteeMessagePool(
@@ -905,7 +901,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 signatureVerificationService,
                 timeProvider));
     eventChannels
-        .subscribe(BlockImportNotifications.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeContributionPool)
         .subscribe(SlotEventsChannel.class, syncCommitteeMessagePool);
   }

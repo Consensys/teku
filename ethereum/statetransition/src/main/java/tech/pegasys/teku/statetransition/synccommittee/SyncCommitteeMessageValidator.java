@@ -87,7 +87,13 @@ public class SyncCommitteeMessageValidator {
     // allowance),
     // i.e. sync_committee_message.slot == current_slot.
     if (!slotUtil.isForCurrentSlot(message.getSlot())) {
-      LOG.trace("Ignoring sync committee message because it is not from the current slot");
+      LOG.trace(
+          "Ignoring sync committee message from validator {}, "
+              + "because it is not from the current slot "
+              + "(message slot: {}, current slot: {})",
+          message::getValidatorIndex,
+          message::getSlot,
+          recentChainData::getCurrentSlot);
       return completedFuture(IGNORE);
     }
 

@@ -29,7 +29,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -40,9 +39,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
-import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.util.PoolFactory;
-import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 class SyncCommitteeContributionPoolTest {
 
@@ -53,10 +49,6 @@ class SyncCommitteeContributionPoolTest {
   private final SpecConfigAltair config = SpecConfigAltair.required(spec.getGenesisSpecConfig());
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final PendingPool<SignedContributionAndProof> pendingContributionAndProofMessages =
-      new PoolFactory(metricsSystem).createPendingPoolForContributionAndProofs(spec);
-
   @SuppressWarnings("unchecked")
   private final OperationAddedSubscriber<SignedContributionAndProof> subscriber =
       mock(OperationAddedSubscriber.class);
@@ -65,7 +57,7 @@ class SyncCommitteeContributionPoolTest {
       mock(SignedContributionAndProofValidator.class);
 
   private final SyncCommitteeContributionPool pool =
-      new SyncCommitteeContributionPool(spec, validator, pendingContributionAndProofMessages);
+      new SyncCommitteeContributionPool(spec, validator);
 
   @BeforeEach
   void setUp() {
@@ -101,22 +93,6 @@ class SyncCommitteeContributionPoolTest {
     assertThat(pool.addLocal(proof)).isCompletedWithValue(reject("Bad"));
 
     verifyNoInteractions(subscriber);
-  }
-
-  @Test
-  void shouldDeferProcessingOfContributionWithUnknownBlock() {
-    final UInt64 slot = UInt64.valueOf(10);
-    pool.subscribeOperationAdded(subscriber);
-    pool.onSlot(slot);
-
-    final SignedContributionAndProof proof =
-        dataStructureUtil.randomSignedContributionAndProof(slot.intValue());
-    when(validator.validate(proof))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.UNKNOWN_BLOCK));
-    assertThat(pool.addLocal(proof)).isCompletedWithValue(InternalValidationResult.UNKNOWN_BLOCK);
-    verifyNoInteractions(subscriber);
-
-    assertThat(pendingContributionAndProofMessages.size()).isEqualTo(1);
   }
 
   @Test
