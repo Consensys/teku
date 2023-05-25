@@ -2395,7 +2395,7 @@ public final class DataStructureUtil {
 
   private int randomNumberOfBlobsPerBlock() {
     // minimum 1 blob
-    return randomInt(1, spec.getMaxBlobsPerBlock().orElseThrow());
+    return randomInt(1, spec.getMaxBlobsPerBlock().orElseThrow() + 1);
   }
 
   private int randomInt(final int origin, final int bound) {
