@@ -212,20 +212,20 @@ public class BlockBlobSidecarsTracker {
     final StringBuilder timingsReport = new StringBuilder(128);
 
     timingsReport
-        .append("Tracker ")
+        .append("Tracker for ")
         .append(slotAndBlockRoot.toLogString())
-        .append(" creation time ")
+        .append(" created at ")
         .append(creationTime)
         .append(" - ");
 
-    timingsReport.append("Completion delay ").append(completionTime - creationTime).append("ms - ");
+    timingsReport.append("Completion time ").append(completionTime - creationTime).append("ms - ");
 
     blobSidecars
         .keySet()
         .forEach(
             blobIndex ->
                 timingsReport
-                    .append("[")
+                    .append("Sidecar [")
                     .append(blobIndex)
                     .append("] delay ")
                     .append(debugTimings.getOrDefault(blobIndex, 0L) - creationTime)
