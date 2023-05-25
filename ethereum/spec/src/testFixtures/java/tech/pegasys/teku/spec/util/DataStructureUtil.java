@@ -2399,7 +2399,7 @@ public final class DataStructureUtil {
   }
 
   private int randomInt(final int origin, final int bound) {
-    return new Random(nextSeed()).nextInt(origin, bound);
+    return new Random(nextSeed()).ints(origin, bound).findFirst().orElse(0);
   }
 
   private int randomInt(final int bound) {
