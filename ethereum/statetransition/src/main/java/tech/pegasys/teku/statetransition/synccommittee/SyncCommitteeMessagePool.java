@@ -25,8 +25,6 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -35,18 +33,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
-import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public class SyncCommitteeMessagePool implements SlotEventsChannel, BlockImportNotifications {
-
-  private static final Logger LOG = LogManager.getLogger();
+public class SyncCommitteeMessagePool implements SlotEventsChannel {
   private final Subscribers<OperationAddedSubscriber<ValidatableSyncCommitteeMessage>> subscribers =
       Subscribers.create(true);
 
@@ -59,15 +52,9 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel, BlockImportN
   private final NavigableMap<UInt64, Map<BlockRootAndCommitteeIndex, ContributionData>>
       committeeContributionData = new TreeMap<>();
 
-  private final PendingPool<ValidatableSyncCommitteeMessage> pendingSyncCommitteeMessages;
-
-  public SyncCommitteeMessagePool(
-      final Spec spec,
-      final SyncCommitteeMessageValidator validator,
-      final PendingPool<ValidatableSyncCommitteeMessage> pendingSyncCommitteeMessages) {
+  public SyncCommitteeMessagePool(final Spec spec, final SyncCommitteeMessageValidator validator) {
     this.spec = spec;
     this.validator = validator;
-    this.pendingSyncCommitteeMessages = pendingSyncCommitteeMessages;
   }
 
   public void subscribeOperationAdded(
@@ -95,11 +82,6 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel, BlockImportN
                 subscribers.forEach(
                     subscriber -> subscriber.onOperationAdded(message, result, fromNetwork));
                 doAdd(message);
-              } else if (result.isUnknownBlock()) {
-                LOG.trace(
-                    "Deferring sync committee message {} as required block is not yet present",
-                    message::hashTreeRoot);
-                pendingSyncCommitteeMessages.add(message);
               }
             });
   }
@@ -148,7 +130,6 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel, BlockImportN
    */
   @Override
   public synchronized void onSlot(final UInt64 slot) {
-    pendingSyncCommitteeMessages.onSlot(slot);
     committeeContributionData.headMap(slot.minusMinZero(1), false).clear();
   }
 
@@ -158,24 +139,6 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel, BlockImportN
         committeeContributionData
             .getOrDefault(slot, Collections.emptyMap())
             .get(new BlockRootAndCommitteeIndex(blockRoot, subcommitteeIndex)));
-  }
-
-  @Override
-  public void onBlockImported(SignedBeaconBlock block) {
-    final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
-    pendingSyncCommitteeMessages
-        .getItemsDependingOn(blockRoot, false)
-        .forEach(
-            syncCommitteeMessage -> {
-              pendingSyncCommitteeMessages.remove(syncCommitteeMessage);
-              add(syncCommitteeMessage, true)
-                  .finish(
-                      err ->
-                          LOG.error(
-                              "Failed to process pending syncCommitteeMessage dependent on "
-                                  + blockRoot,
-                              err));
-            });
   }
 
   private static class BlockRootAndCommitteeIndex {

@@ -17,13 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.UNKNOWN_BLOCK;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -38,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -48,18 +45,12 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.Validata
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
-import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.util.PoolFactory;
 
 class SyncCommitteeMessagePoolTest {
 
   private final Spec spec = TestSpecFactory.createMinimalAltair();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SyncCommitteeMessageValidator validator = mock(SyncCommitteeMessageValidator.class);
-
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final PendingPool<ValidatableSyncCommitteeMessage> syncCommitteeMessagePendingPool =
-      new PoolFactory(metricsSystem).createPendingPoolForSyncCommitteeMessages(spec);
 
   private final ValidatableSyncCommitteeMessage message =
       ValidatableSyncCommitteeMessage.fromValidator(dataStructureUtil.randomSyncCommitteeMessage());
@@ -68,8 +59,7 @@ class SyncCommitteeMessagePoolTest {
   private final OperationAddedSubscriber<ValidatableSyncCommitteeMessage> subscriber =
       mock(OperationAddedSubscriber.class);
 
-  private final SyncCommitteeMessagePool pool =
-      new SyncCommitteeMessagePool(spec, validator, syncCommitteeMessagePendingPool);
+  private final SyncCommitteeMessagePool pool = new SyncCommitteeMessagePool(spec, validator);
 
   @BeforeEach
   void setUp() {
@@ -84,37 +74,6 @@ class SyncCommitteeMessagePoolTest {
 
     assertThat(pool.addLocal(message)).isCompletedWithValue(ACCEPT);
     verify(subscriber).onOperationAdded(message, ACCEPT, false);
-  }
-
-  @Test
-  void shouldPostponeProcessingOfUnknownRoot() {
-    // set current slot
-    syncCommitteeMessagePendingPool.onSlot(message.getSlot());
-    pool.subscribeOperationAdded(subscriber);
-    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(UNKNOWN_BLOCK));
-    assertThat(pool.addRemote(message)).isCompletedWithValue(UNKNOWN_BLOCK);
-    verify(subscriber, never()).onOperationAdded(message, ACCEPT, false);
-    assertThat(syncCommitteeMessagePendingPool.size()).isEqualTo(1);
-  }
-
-  @Test
-  void shouldAcceptMessageOneSlotAheadAndPostpone() {
-    // set current slot
-    syncCommitteeMessagePendingPool.onSlot(message.getSlot().decrement());
-    pool.subscribeOperationAdded(subscriber);
-    when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(UNKNOWN_BLOCK));
-    assertThat(pool.addRemote(message)).isCompletedWithValue(UNKNOWN_BLOCK);
-    verify(subscriber, never()).onOperationAdded(message, ACCEPT, false);
-    assertThat(syncCommitteeMessagePendingPool.size()).isEqualTo(1);
-  }
-
-  @Test
-  void shouldPrunePendingPool() {
-    syncCommitteeMessagePendingPool.onSlot(message.getSlot());
-    syncCommitteeMessagePendingPool.add(message);
-    assertThat(syncCommitteeMessagePendingPool.size()).isEqualTo(1);
-    syncCommitteeMessagePendingPool.onSlot(message.getSlot().plus(2));
-    assertThat(syncCommitteeMessagePendingPool.size()).isEqualTo(0);
   }
 
   @Test

@@ -91,13 +91,6 @@ public class SyncCommitteeMessageValidator {
       return completedFuture(IGNORE);
     }
 
-    // [IGNORE] The block being signed (sync_committee_message.beacon_block_root) has been seen
-    // (via both gossip and non-gossip sources)
-    // (a client MAY queue sync committee messages for processing once block is retrieved).
-    if (!recentChainData.containsBlock(validateableMessage.getBeaconBlockRoot())) {
-      return completedFuture(InternalValidationResult.UNKNOWN_BLOCK);
-    }
-
     // [IGNORE] There has been no other valid sync committee message for the declared slot for the
     // validator referenced by sync_committee_message.validator_index, unless the
     // block being signed (beacon_block_root) matches the local head as selected by fork

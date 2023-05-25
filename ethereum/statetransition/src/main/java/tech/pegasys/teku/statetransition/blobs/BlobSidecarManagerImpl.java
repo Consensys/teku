@@ -93,13 +93,15 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
               invalidBlobSidecarRoots.put(
                   signedBlobSidecar.getBlobSidecar().hashTreeRoot(), result);
               break;
-            case UNKNOWN_BLOCK: // TODO is this ok?
             case SAVE_FOR_FUTURE:
               futureBlobSidecars.add(signedBlobSidecar);
               break;
             case ACCEPT:
               final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
               prepareForBlockImport(blobSidecar);
+              break;
+            case UNKNOWN_BLOCK:
+              // not used with blob sidecars
               break;
           }
         });

@@ -90,9 +90,13 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel, BlockIm
               } else if (result.isUnknownBlock()) {
                 LOG.trace(
                     "Deferring contribution and proof {} for slot {} as required block {} is not yet present",
-                    signedContributionAndProof.hashTreeRoot(),
-                    signedContributionAndProof.getMessage().getContribution().getSlot(),
-                    signedContributionAndProof.getMessage().getContribution().getBeaconBlockRoot());
+                    signedContributionAndProof::hashTreeRoot,
+                    () -> signedContributionAndProof.getMessage().getContribution().getSlot(),
+                    () ->
+                        signedContributionAndProof
+                            .getMessage()
+                            .getContribution()
+                            .getBeaconBlockRoot());
                 pendingContributionAndProofMessages.add(signedContributionAndProof);
               }
             });

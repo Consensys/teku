@@ -23,10 +23,10 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -36,8 +36,6 @@ public class PoolFactory {
   private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final int DEFAULT_MAX_BLOCKS = 5000;
 
-  private static final int DEFAULT_MAX_SYNC_COMMITTEE_MESSAGES = 512;
-  private static final int DEFAULT_MAX_CONTRIBUTION_AND_PROOFS = 256;
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blobSidecarPoolSizeGauge;
 
@@ -97,20 +95,6 @@ public class PoolFactory {
         ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
-  public PendingPool<ValidatableSyncCommitteeMessage> createPendingPoolForSyncCommitteeMessages(
-      final Spec spec) {
-    return new PendingPool<>(
-        pendingPoolsSizeGauge,
-        "sync_committee_message",
-        spec,
-        UInt64.ONE,
-        FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DEFAULT_MAX_SYNC_COMMITTEE_MESSAGES,
-        ValidatableSyncCommitteeMessage::hashTreeRoot,
-        ValidatableSyncCommitteeMessage::getDependentBlockRoots,
-        ValidatableSyncCommitteeMessage::getEarliestSlotForForkChoiceProcessing);
-  }
-
   public PendingPool<SignedContributionAndProof> createPendingPoolForContributionAndProofs(
       final Spec spec) {
     return new PendingPool<>(
@@ -119,7 +103,7 @@ public class PoolFactory {
         spec,
         UInt64.ONE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
-        DEFAULT_MAX_CONTRIBUTION_AND_PROOFS,
+        spec.forMilestone(SpecMilestone.ALTAIR).getConfig().getTargetCommitteeSize() * 2,
         SignedContributionAndProof::hashTreeRoot,
         proof -> List.of(proof.getMessage().getContribution().getBeaconBlockRoot()),
         proof -> proof.getMessage().getContribution().getSlot());

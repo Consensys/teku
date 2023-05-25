@@ -19,7 +19,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.UNKNOWN_BLOCK;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
@@ -253,13 +252,13 @@ class SyncCommitteeMessageValidatorTest {
   }
 
   @Test
-  void shouldNotProcessIfBlockIsUnknown() {
+  void shouldAcceptWhenValidButBeaconBlockIsUnknown() {
     setupWithDefaultSpec();
     final SyncCommitteeMessage message =
         chainBuilder.createSyncCommitteeMessage(
             chainBuilder.getLatestSlot(), dataStructureUtil.randomBytes32());
     assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
-        .isCompletedWithValue(UNKNOWN_BLOCK);
+        .isCompletedWithValue(ACCEPT);
   }
 
   @Test
