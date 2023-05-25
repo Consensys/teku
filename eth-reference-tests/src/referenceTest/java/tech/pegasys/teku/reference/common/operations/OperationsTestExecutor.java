@@ -30,6 +30,7 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -104,8 +105,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
           .put(
               "operations/execution_payload",
-              new OperationsTestExecutor<>(
-                  "execution_payload.ssz_snappy", Operation.EXECUTION_PAYLOAD))
+              new OperationsTestExecutor<>("body.ssz_snappy", Operation.EXECUTION_PAYLOAD))
           .put(
               "operations/bls_to_execution_change",
               new OperationsTestExecutor<>(
@@ -285,11 +285,13 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 .getGenesisSchemaDefinitions()
                 .toVersionBellatrix()
                 .orElseThrow();
-        final ExecutionPayload executionPayload =
+        final BeaconBlockBody beaconBlockBody =
             loadSsz(
                 testDefinition,
                 dataFileName,
-                schemaDefinitionsBellatrix.getExecutionPayloadSchema());
+                schemaDefinitionsBellatrix.getBeaconBlockBodySchema());
+        final ExecutionPayload executionPayload =
+            beaconBlockBody.getOptionalExecutionPayload().orElseThrow();
 
         final ExecutionPayloadHeader executionPayloadHeader =
             schemaDefinitionsBellatrix
