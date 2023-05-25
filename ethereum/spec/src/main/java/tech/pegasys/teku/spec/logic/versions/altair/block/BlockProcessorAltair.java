@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -305,8 +304,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      final ExecutionPayloadHeader payloadHeader,
-      final Optional<ExecutionPayload> payload,
+      final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
@@ -315,11 +313,17 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   @Override
   public void validateExecutionPayload(
       final BeaconState state,
-      final ExecutionPayloadHeader executionPayloadHeader,
-      final Optional<ExecutionPayload> executionPayload,
+      final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in Altair");
+  }
+
+  @Override
+  public void validateExecutionPayloadHeader(
+      final BeaconState state, final ExecutionPayloadHeader executionPayloadHeader)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No ExecutionPayloadHeader in Altair");
   }
 
   @Override

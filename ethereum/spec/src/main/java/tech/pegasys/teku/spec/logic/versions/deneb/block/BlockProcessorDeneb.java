@@ -15,11 +15,15 @@ package tech.pegasys.teku.spec.logic.versions.deneb.block;
 
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -84,6 +88,22 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
         kzgCommitmentsProcessor);
 
     processBlobKzgCommitments(genericState, block.getBody(), kzgCommitmentsProcessor);
+  }
+
+  @Override
+  public void validateExecutionPayload(
+      BeaconState genericState,
+      BeaconBlockBody beaconBlockBody,
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException {
+    final int maxBlobsPerBlock = SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        BeaconBlockBodyDeneb.required(beaconBlockBody).getBlobKzgCommitments();
+    if (blobKzgCommitments.size() > maxBlobsPerBlock) {
+      throw new BlockProcessingException(
+          "Number of kzg commitments in block exceeds max blobs per block");
+    }
+    super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor);
   }
 
   @Override
