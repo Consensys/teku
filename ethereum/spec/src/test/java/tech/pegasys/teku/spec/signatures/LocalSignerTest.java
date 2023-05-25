@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -82,13 +83,38 @@ class LocalSignerTest {
     final UInt64 slot = UInt64.valueOf(10);
     final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
     final BlobSidecar blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(slot, block.getRoot(), UInt64.valueOf(2));
+        dataStructureUtilDeneb
+            .createRandomBlobSidecarBuilder()
+            .forBlock(block)
+            .index(UInt64.valueOf(2))
+            .build();
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "hbUfy7Aihf3mp5GjPZ7UlZ5pouL0priTz7CMx4F1NGEvK8OmqBPHe8JkmAKmX5PKFt+Mr0wons03XQkDyw49CYMijMsrOuw/Fy7lXV66d7oAuVxzP9xJdrXNPJCMT8L+"));
+                "iKXwxiMaaQ/bRXckFkHciGnrniHMNOKqcFe6FO8PJs/34xLYyxUI2Ui6rsP7C9rHAdTiBmpDdCv+bMdirnRHDu1mt58wLlH8AnbOmvxwSIj87U8zT2J3jzKW3vpOB4T0"));
 
     final SafeFuture<BLSSignature> result = signer.signBlobSidecar(blobSidecar, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result).isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignBlindedBlobSidecar() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
+    final BlindedBlobSidecar blindedBlobSidecar =
+        dataStructureUtilDeneb
+            .createRandomBlobSidecarBuilder()
+            .forBlock(block)
+            .index(UInt64.valueOf(2))
+            .buildBlinded();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "iKXwxiMaaQ/bRXckFkHciGnrniHMNOKqcFe6FO8PJs/34xLYyxUI2Ui6rsP7C9rHAdTiBmpDdCv+bMdirnRHDu1mt58wLlH8AnbOmvxwSIj87U8zT2J3jzKW3vpOB4T0"));
+
+    final SafeFuture<BLSSignature> result = signer.signBlindedBlobSidecar(blindedBlobSidecar, fork);
     asyncRunner.executeQueuedActions();
 
     assertThat(result).isCompletedWithValue(expectedSignature);

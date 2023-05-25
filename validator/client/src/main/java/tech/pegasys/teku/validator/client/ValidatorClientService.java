@@ -61,6 +61,8 @@ import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
+import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
+import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSigner;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.sentry.SentryBeaconNodeApi;
@@ -357,10 +359,12 @@ public class ValidatorClientService extends Service {
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner) {
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
+    final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
             forkProvider,
             validatorApiChannel,
+            blockContainerSigner,
             config.getValidatorConfig().isBlindedBeaconBlocksEnabled(),
             spec);
     final AttestationDutyFactory attestationDutyFactory =
