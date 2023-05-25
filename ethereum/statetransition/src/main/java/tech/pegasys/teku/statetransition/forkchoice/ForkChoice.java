@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
@@ -40,10 +42,13 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -409,20 +414,30 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    final UInt64 earliestAffectedSlot =
-        recentChainData
-            .getSlotForBlockRoot(block.getParentRoot())
-            .map(UInt64::increment)
-            .orElse(block.getSlot());
     addParentStateRoots(spec, blockSlotState, transaction);
+
+    final List<BlobSidecar> blobSidecars;
+    if (blobSidecarsAndValidationResult.isNotRequired()) {
+      // Outside availability window or pre-Deneb
+      blobSidecars = Collections.emptyList();
+    } else if (blobSidecarsAndValidationResult.isValid()) {
+      blobSidecars = blobSidecarsAndValidationResult.getBlobSidecars();
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Unexpected attempt to store invalid blob sidecars (%s) for block: %s",
+              blobSidecarsAndValidationResult.getBlobSidecars().size(), block.toLogString()));
+    }
+    final Optional<UInt64> earliestBlobSidecarsSlot =
+        computeEarliestBlobSidecarsSlot(
+            recentChainData.getStore(), blobSidecarsAndValidationResult, block.getMessage());
     forkChoiceUtil.applyBlockToStore(
         transaction,
         block,
         postState,
         payloadResult.hasNotValidatedStatus(),
-        // TODO: replace emptyList with blobSidecars when ready
-        Collections.emptyList(),
-        earliestAffectedSlot);
+        blobSidecars,
+        earliestBlobSidecarsSlot);
 
     if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
@@ -462,6 +477,65 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
+  }
+
+  /**
+   * In order to keep track of DataAvailability Window, we need to compute the earliest slot we can
+   * consider data available for the given block. It needs to take in account possible empty slots
+   * so the actual slot should be parent block slot + 1. Moreover, we need to manage the case in
+   * which the calculated slot is before Deneb activation, so it should never be before the first
+   * deneb slot.
+   *
+   * @param store requires for data availability window calculation
+   * @param blobSidecarsAndValidationResult If it's not required or invalid, we could skip
+   *     calculation
+   * @param block Beacon block
+   * @return the slot we could mark as earliestBlobSidecarsSlot if any, otherwise Optional.empty()
+   */
+  private Optional<UInt64> computeEarliestBlobSidecarsSlot(
+      final ReadOnlyStore store,
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult,
+      final BeaconBlock block) {
+    if (!blobSidecarsAndValidationResult.isValid()) {
+      return Optional.empty();
+    }
+    final UInt64 earliestAffectedSlot =
+        recentChainData
+            .getSlotForBlockRoot(block.getParentRoot())
+            .map(UInt64::increment)
+            .orElse(block.getSlot());
+
+    final Optional<UInt64> maybeEarliestAvailabilityWindowSlotBeforeBlock =
+        getEarliestAvailabilityWindowSlotBeforeBlock(store, block.getSlot());
+
+    return maybeEarliestAvailabilityWindowSlotBeforeBlock.map(
+        earliestAvailabilityWindowSlotBeforeBlock ->
+            earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
+  }
+
+  private Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
+      final ReadOnlyStore store, final UInt64 slot) {
+    final UInt64 currentEpoch = spec.getCurrentEpoch(store);
+    if (!spec.getForkSchedule()
+        .getSpecMilestoneAtEpoch(currentEpoch)
+        .isGreaterThanOrEqualTo(DENEB)) {
+      return Optional.empty();
+    }
+    final UInt64 firstAvailabilityWindowSlot =
+        spec.computeStartSlotAtEpoch(
+                currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS))
+            .max(
+                spec.getForkSchedule()
+                    .streamMilestoneBoundarySlots()
+                    .filter(pair -> pair.getLeft().isGreaterThanOrEqualTo(DENEB))
+                    .findFirst()
+                    .orElseThrow()
+                    .getRight());
+    if (firstAvailabilityWindowSlot.isLessThanOrEqualTo(slot)) {
+      return Optional.of(firstAvailabilityWindowSlot);
+    } else {
+      return Optional.empty();
+    }
   }
 
   private UInt64 getMillisIntoSlot(StoreTransaction transaction, UInt64 millisPerSlot) {
