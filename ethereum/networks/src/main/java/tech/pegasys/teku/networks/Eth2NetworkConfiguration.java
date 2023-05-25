@@ -461,8 +461,13 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyNetworkDefaults(final String networkName) {
       Eth2Network.fromStringLenient(networkName)
-          .ifPresentOrElse(this::applyNetworkDefaults, () -> reset().constants(networkName));
+          .ifPresentOrElse(
+              this::applyNetworkDefaults, () -> resetAndApplyBasicDefaults(networkName));
       return this;
+    }
+
+    private Builder resetAndApplyBasicDefaults(final String networkName) {
+      return reset().trustedSetupFromClasspath("mainnet-trusted-setup.txt").constants(networkName);
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
@@ -488,7 +493,7 @@ public class Eth2NetworkConfiguration {
         case LESS_SWIFT:
           return applyLessSwiftNetworkDefaults();
         default:
-          return reset().constants(network.configName());
+          return resetAndApplyBasicDefaults(network.configName());
       }
     }
 
