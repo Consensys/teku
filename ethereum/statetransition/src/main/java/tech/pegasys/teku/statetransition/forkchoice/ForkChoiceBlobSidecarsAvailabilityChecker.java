@@ -182,8 +182,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
       LOG.debug(
           "{} out of {} BlobSidecars have been received so far. Performing partial validation.",
-          kzgCommitmentsInBlock.size(),
-          blobSidecarsToValidate.size());
+          blobSidecarsToValidate.size(),
+          kzgCommitmentsInBlock.size());
 
       if (blobSidecarsToValidate.isEmpty()
           && kzgCommitmentsInBlock.size() > 0
@@ -291,8 +291,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
     LOG.debug(
         "Remaining {} out of {} BlobSidecars have been received. Completing validation.",
-        kzgCommitmentsInBlock.size(),
-        additionalBlobSidecarsToBeValidated.size());
+        additionalBlobSidecarsToBeValidated.size(),
+        kzgCommitmentsInBlock.size());
 
     return validateBatch(
         additionalBlobSidecarsToBeValidated, additionalKzgCommitmentsToBeValidated);

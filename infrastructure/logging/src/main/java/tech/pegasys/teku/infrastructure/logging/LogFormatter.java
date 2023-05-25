@@ -31,8 +31,14 @@ public class LogFormatter {
   }
 
   public static String formatBlobSidecar(
-      final UInt64 index, final String blob, final String kzgCommitment, final String kzgProof) {
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final UInt64 index,
+      final String blob,
+      final String kzgCommitment,
+      final String kzgProof) {
     return String.format(
-        "index %s, blob %s, commitment %s, proof %s", index, blob, kzgCommitment, kzgProof);
+        "block %s (%s), index %s, blob %s, commitment %s, proof %s",
+        formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitment, kzgProof);
   }
 }

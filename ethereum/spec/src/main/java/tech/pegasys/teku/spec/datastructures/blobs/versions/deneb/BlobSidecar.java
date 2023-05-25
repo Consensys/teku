@@ -102,6 +102,8 @@ public class BlobSidecar
 
   public String toLogString() {
     return LogFormatter.formatBlobSidecar(
+        getSlot(),
+        getBlockRoot(),
         getIndex(),
         getBlob().toBriefString(),
         getKZGCommitment().toAbbreviatedString(),

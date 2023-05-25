@@ -129,10 +129,7 @@ public class BlockBlobSidecarsTracker {
     boolean addedNew = blobSidecars.put(blobSidecar.getIndex(), blobSidecar) == null;
 
     if (addedNew) {
-      LOG.debug(
-          "New BlobSidecar {} received for {}",
-          blobSidecar::toLogString,
-          slotAndBlockRoot::toLogString);
+      LOG.debug("New BlobSidecar {}", blobSidecar::toLogString);
       maybeDebugTimings.ifPresent(
           debugTimings -> debugTimings.put(blobSidecar.getIndex(), System.currentTimeMillis()));
       checkCompletion();
