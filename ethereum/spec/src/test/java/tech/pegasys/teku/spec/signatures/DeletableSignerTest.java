@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -91,6 +92,23 @@ public class DeletableSignerTest {
     assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);
     verify(delegate, never()).signBlobSidecar(blobSidecar, forkInfo);
+  }
+
+  @Test
+  void signBlindedBlobSidecar_shouldSignWhenActive() {
+    final BlindedBlobSidecar blindedBlobSidecar = dataStructureUtilDeneb.randomBlindedBlobSidecar();
+    when(delegate.signBlindedBlobSidecar(blindedBlobSidecar, forkInfo)).thenReturn(signatureFuture);
+    assertThatSafeFuture(signer.signBlindedBlobSidecar(blindedBlobSidecar, forkInfo))
+        .isCompletedWithValue(signature);
+  }
+
+  @Test
+  void signBlindedBlobSidecar_shouldNotSignWhenDisabled() {
+    final BlindedBlobSidecar blindedBlobSidecar = dataStructureUtilDeneb.randomBlindedBlobSidecar();
+    signer.delete();
+    assertThatSafeFuture(signer.signBlindedBlobSidecar(blindedBlobSidecar, forkInfo))
+        .isCompletedExceptionallyWith(SignerNotActiveException.class);
+    verify(delegate, never()).signBlindedBlobSidecar(blindedBlobSidecar, forkInfo);
   }
 
   @Test

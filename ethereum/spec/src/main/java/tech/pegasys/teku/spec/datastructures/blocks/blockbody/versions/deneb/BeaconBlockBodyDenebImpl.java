@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -167,11 +166,6 @@ public class BeaconBlockBodyDenebImpl
   @Override
   public SszList<SszKZGCommitment> getBlobKzgCommitments() {
     return getField11();
-  }
-
-  @Override
-  public Optional<BeaconBlockBodyDeneb> toVersionDeneb() {
-    return Optional.of(this);
   }
 
   @Override

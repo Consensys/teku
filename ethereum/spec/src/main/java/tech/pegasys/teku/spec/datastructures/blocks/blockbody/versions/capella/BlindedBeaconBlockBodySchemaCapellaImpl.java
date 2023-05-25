@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -192,11 +191,6 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
   @Override
   public SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChanges() {
     return (SszListSchema<SignedBlsToExecutionChange, ?>) getFieldSchema10();
-  }
-
-  @Override
-  public Optional<BlindedBeaconBlockBodySchemaCapella<?>> toBlindedVersionCapella() {
-    return Optional.of(this);
   }
 
   @Override

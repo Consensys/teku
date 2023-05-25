@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -177,11 +176,6 @@ public class BeaconBlockBodySchemaBellatrixImpl
   @Override
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
     return (ExecutionPayloadSchema<?>) getFieldSchema9();
-  }
-
-  @Override
-  public Optional<BeaconBlockBodySchemaBellatrix<?>> toVersionBellatrix() {
-    return Optional.of(this);
   }
 
   @Override
