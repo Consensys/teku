@@ -192,8 +192,8 @@ public class DatabaseTest {
   public void verifyBlobsLifecycle(final DatabaseContext context) throws IOException {
     initialize(context);
 
-    // no blobs, no early slot
-    assertThat(database.getEarliestBlobSidecarSlot()).isEmpty();
+    // no blobs, earliest slot 0, because of genesis Deneb
+    assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
     final BlobSidecar blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(
@@ -219,7 +219,6 @@ public class DatabaseTest {
     database.storeBlobSidecar(blobSidecar3);
 
     assertThat(database.getBlobSidecarColumnCount()).isEqualTo(5L);
-    assertThat(database.getEarliestBlobSidecarSlot()).isEmpty();
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -235,7 +234,6 @@ public class DatabaseTest {
             false,
             Optional.empty(),
             true));
-    assertThat(database.getEarliestBlobSidecarSlot()).contains(blobSidecar1.getSlot());
     database.update(
         new StorageUpdate(
             Optional.empty(),
@@ -252,7 +250,7 @@ public class DatabaseTest {
             Optional.empty(),
             true));
     // Will not be overridden from Database interface, only initial set
-    assertThat(database.getEarliestBlobSidecarSlot()).contains(blobSidecar1.getSlot());
+    assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
     // all added blobs must be there
     List.of(blobSidecar1, blobSidecar2, blobSidecar2bis, blobSidecar3, blobSidecar5)
