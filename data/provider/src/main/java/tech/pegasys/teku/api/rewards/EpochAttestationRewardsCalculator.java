@@ -14,8 +14,11 @@
 package tech.pegasys.teku.api.rewards;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.spec.constants.EthConstants.ETH_TO_GWEI;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FLAG_INDEX;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX;
+import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_TARGET_FLAG_INDEX;
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
 import java.util.List;
@@ -29,7 +32,6 @@ import tech.pegasys.teku.api.migrated.TotalAttestationReward;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.constants.ParticipationFlags;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -85,7 +87,6 @@ public class EpochAttestationRewardsCalculator {
     }
   }
 
-  @SuppressWarnings("unused")
   public List<IdealAttestationReward> idealAttestationRewards() {
     final List<IdealAttestationReward> idealAttestationRewards =
         IntStream.rangeClosed(0, 32)
@@ -94,6 +95,9 @@ public class EpochAttestationRewardsCalculator {
             .collect(toList());
 
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
+    final UInt64 baseRewardPerIncrement =
+        BeaconStateAccessorsAltair.required(specVersion.beaconStateAccessors())
+            .getBaseRewardPerIncrement(state);
 
     for (int flagIndex = 0; flagIndex < PARTICIPATION_FLAG_WEIGHTS.size(); flagIndex++) {
       final UInt64 weight = PARTICIPATION_FLAG_WEIGHTS.get(flagIndex);
@@ -103,32 +107,27 @@ public class EpochAttestationRewardsCalculator {
           getPrevEpochTotalParticipatingBalance(flagIndex).dividedBy(effectiveBalanceIncrement);
       final UInt64 activeIncrements =
           totalBalances.getCurrentEpochActiveValidators().dividedBy(effectiveBalanceIncrement);
-      final UInt64 baseRewardPerIncrement =
-          ((BeaconStateAccessorsAltair) specVersion.beaconStateAccessors())
-              .getBaseRewardPerIncrement(state);
 
       for (int effectiveBalanceEth = 0; effectiveBalanceEth <= 32; effectiveBalanceEth++) {
-        final UInt64 effectiveBalance =
-            UInt64.valueOf(effectiveBalanceEth).times(effectiveBalanceIncrement);
         final UInt64 baseReward = UInt64.valueOf(effectiveBalanceEth).times(baseRewardPerIncrement);
-        final long penalty = -baseReward.times(weight).dividedBy(WEIGHT_DENOMINATOR).longValue();
         final UInt64 rewardNumerator =
             baseReward.times(weight).times(unslashedParticipatingIncrements);
         final UInt64 idealReward =
             rewardNumerator.dividedBy(activeIncrements).dividedBy(WEIGHT_DENOMINATOR);
 
-        final boolean isInactivityLeak = specVersion.beaconStateAccessors().isInactivityLeak(state);
-        final IdealAttestationReward idealAttestationReward = idealAttestationRewards.get(effectiveBalanceEth);
-        idealAttestationReward.addEffectiveBalance(effectiveBalance);
-        if (!isInactivityLeak) {
+        final IdealAttestationReward idealAttestationReward =
+            idealAttestationRewards.get(effectiveBalanceEth);
+        idealAttestationReward.addEffectiveBalance(ETH_TO_GWEI.times(effectiveBalanceEth));
+
+        if (!isInactivityLeak()) {
           switch (flagIndex) {
-            case 0:
+            case TIMELY_SOURCE_FLAG_INDEX:
               idealAttestationReward.addSource(idealReward.longValue());
               break;
-            case 1:
+            case TIMELY_TARGET_FLAG_INDEX:
               idealAttestationReward.addTarget(idealReward.longValue());
               break;
-            case 2:
+            case TIMELY_HEAD_FLAG_INDEX:
               idealAttestationReward.addHead(idealReward.longValue());
               break;
           }
@@ -139,14 +138,18 @@ public class EpochAttestationRewardsCalculator {
     return idealAttestationRewards;
   }
 
+  private boolean isInactivityLeak() {
+    return specVersion.beaconStateAccessors().isInactivityLeak(state);
+  }
+
   private UInt64 getPrevEpochTotalParticipatingBalance(final int flagIndex) {
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
     switch (flagIndex) {
       case TIMELY_HEAD_FLAG_INDEX:
         return totalBalances.getPreviousEpochHeadAttesters();
-      case ParticipationFlags.TIMELY_TARGET_FLAG_INDEX:
+      case TIMELY_TARGET_FLAG_INDEX:
         return totalBalances.getPreviousEpochTargetAttesters();
-      case ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX:
+      case TIMELY_SOURCE_FLAG_INDEX:
         return totalBalances.getPreviousEpochSourceAttesters();
       default:
         throw new IllegalArgumentException("Unable to process unknown flag index:" + flagIndex);

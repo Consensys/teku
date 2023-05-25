@@ -18,25 +18,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class IdealAttestationReward {
 
-  private UInt64 effectiveBalance;
-  private long head;
-  private long target;
-  private long source;
-
-  public IdealAttestationReward() {
-    this.effectiveBalance = UInt64.ZERO;
-    this.head = 0;
-    this.target = 0;
-    this.source = 0;
-  }
+  private UInt64 effectiveBalance = UInt64.ZERO;
+  private long head = 0L;
+  private long target = 0L;
+  private long source = 0L;
 
   public UInt64 getEffectiveBalance() {
     return effectiveBalance;
-  }
-
-  public IdealAttestationReward addEffectiveBalance(final UInt64 balance) {
-    effectiveBalance = effectiveBalance.plus(balance);
-    return this;
   }
 
   public long getHead() {
@@ -51,19 +39,20 @@ public class IdealAttestationReward {
     return source;
   }
 
-  public IdealAttestationReward addHead(final long head) {
+  public void addEffectiveBalance(final UInt64 balance) {
+    effectiveBalance = effectiveBalance.plus(balance);
+  }
+
+  public void addHead(final long head) {
     this.head += head;
-    return this;
   }
 
-  public IdealAttestationReward addTarget(final long target) {
+  public void addTarget(final long target) {
     this.target += target;
-    return this;
   }
 
-  public IdealAttestationReward addSource(final long source) {
+  public void addSource(final long source) {
     this.source += source;
-    return this;
   }
 
   @Override
