@@ -83,11 +83,15 @@ class LocalSignerTest {
     final UInt64 slot = UInt64.valueOf(10);
     final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
     final BlobSidecar blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(slot, block.getRoot(), UInt64.valueOf(2));
+        dataStructureUtilDeneb
+            .createRandomBlobSidecarBuilder()
+            .forBlock(block)
+            .index(UInt64.valueOf(2))
+            .build();
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "hbUfy7Aihf3mp5GjPZ7UlZ5pouL0priTz7CMx4F1NGEvK8OmqBPHe8JkmAKmX5PKFt+Mr0wons03XQkDyw49CYMijMsrOuw/Fy7lXV66d7oAuVxzP9xJdrXNPJCMT8L+"));
+                "iKXwxiMaaQ/bRXckFkHciGnrniHMNOKqcFe6FO8PJs/34xLYyxUI2Ui6rsP7C9rHAdTiBmpDdCv+bMdirnRHDu1mt58wLlH8AnbOmvxwSIj87U8zT2J3jzKW3vpOB4T0"));
 
     final SafeFuture<BLSSignature> result = signer.signBlobSidecar(blobSidecar, fork);
     asyncRunner.executeQueuedActions();
@@ -102,14 +106,13 @@ class LocalSignerTest {
     final BlindedBlobSidecar blindedBlobSidecar =
         dataStructureUtilDeneb
             .createRandomBlobSidecarBuilder()
-            .slot(slot)
-            .blockRoot(block.getRoot())
+            .forBlock(block)
             .index(UInt64.valueOf(2))
             .buildBlinded();
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "hbUfy7Aihf3mp5GjPZ7UlZ5pouL0priTz7CMx4F1NGEvK8OmqBPHe8JkmAKmX5PKFt+Mr0wons03XQkDyw49CYMijMsrOuw/Fy7lXV66d7oAuVxzP9xJdrXNPJCMT8L+"));
+                "iKXwxiMaaQ/bRXckFkHciGnrniHMNOKqcFe6FO8PJs/34xLYyxUI2Ui6rsP7C9rHAdTiBmpDdCv+bMdirnRHDu1mt58wLlH8AnbOmvxwSIj87U8zT2J3jzKW3vpOB4T0"));
 
     final SafeFuture<BLSSignature> result = signer.signBlindedBlobSidecar(blindedBlobSidecar, fork);
     asyncRunner.executeQueuedActions();

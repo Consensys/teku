@@ -50,27 +50,23 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForBlobSidecar(final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
-    final SpecVersion specVersion = spec.atSlot(blobSidecar.getSlot());
     final Bytes32 domain =
         spec.getDomain(
             Domain.DOMAIN_BLOB_SIDECAR,
             spec.computeEpochAtSlot(blobSidecar.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    specVersion.miscHelpers().computeSigningRoot(blobSidecar, domain);
     return spec.computeSigningRoot(blobSidecar, domain);
   }
 
   public Bytes signingRootForBlindedBlobSidecar(
       final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
-    final SpecVersion specVersion = spec.atSlot(blindedBlobSidecar.getSlot());
     final Bytes32 domain =
         spec.getDomain(
             Domain.DOMAIN_BLOB_SIDECAR,
             spec.computeEpochAtSlot(blindedBlobSidecar.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    specVersion.miscHelpers().computeSigningRoot(blindedBlobSidecar, domain);
     return spec.computeSigningRoot(blindedBlobSidecar, domain);
   }
 
@@ -81,13 +77,11 @@ public class SigningRootUtil {
   }
 
   private Bytes32 getDomainForSignBlock(UInt64 slot, ForkInfo forkInfo) {
-    final Bytes32 domain =
-        spec.getDomain(
-            Domain.BEACON_PROPOSER,
-            spec.computeEpochAtSlot(slot),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    return domain;
+    return spec.getDomain(
+        Domain.BEACON_PROPOSER,
+        spec.computeEpochAtSlot(slot),
+        forkInfo.getFork(),
+        forkInfo.getGenesisValidatorsRoot());
   }
 
   public Bytes signingRootForSignAttestationData(

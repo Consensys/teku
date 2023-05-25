@@ -2294,6 +2294,14 @@ public final class DataStructureUtil {
       return this;
     }
 
+    public RandomBlobSidecarBuilder forBlock(final BeaconBlock block) {
+      this.slot = Optional.of(block.getSlot());
+      this.blockRoot = Optional.of(block.getRoot());
+      this.blockParentRoot = Optional.of(block.getParentRoot());
+      this.proposerIndex = Optional.of(block.getProposerIndex());
+      return this;
+    }
+
     public BlobSidecar build() {
       final BlobSidecarSchema blobSidecarSchema =
           getDenebSchemaDefinitions(slot.orElse(randomUInt64())).getBlobSidecarSchema();

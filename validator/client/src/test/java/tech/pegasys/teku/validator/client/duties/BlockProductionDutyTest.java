@@ -72,7 +72,7 @@ import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSig
 
 class BlockProductionDutyTest {
   private static final String TYPE = "block";
-  private static final UInt64 SLOT = UInt64.valueOf(498294);
+  private static final UInt64 CAPELLA_SLOT = UInt64.valueOf(498294);
   private static final UInt64 DENEB_FORK_EPOCH = UInt64.valueOf(500000);
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(DENEB_FORK_EPOCH);
   private final UInt64 denebSlot = DENEB_FORK_EPOCH.times(spec.getSlotsPerEpoch(ZERO)).plus(42);
@@ -97,7 +97,13 @@ class BlockProductionDutyTest {
   public void setUp() {
     duty =
         new BlockProductionDuty(
-            validator, SLOT, forkProvider, validatorApiChannel, blockContainerSigner, false, spec);
+            validator,
+            CAPELLA_SLOT,
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            false,
+            spec);
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
@@ -107,7 +113,7 @@ class BlockProductionDutyTest {
     duty =
         new BlockProductionDuty(
             validator,
-            SLOT,
+            CAPELLA_SLOT,
             forkProvider,
             validatorApiChannel,
             blockContainerSigner,
@@ -118,15 +124,15 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock;
 
     if (isBlindedBlocksEnabled) {
-      unsignedBlock = dataStructureUtil.randomBlindedBeaconBlock(SLOT);
+      unsignedBlock = dataStructureUtil.randomBlindedBeaconBlock(CAPELLA_SLOT);
     } else {
-      unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT);
+      unsignedBlock = dataStructureUtil.randomBeaconBlock(CAPELLA_SLOT);
     }
 
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(validatorApiChannel.createUnsignedBlock(
-            SLOT, randaoReveal, Optional.of(graffiti), isBlindedBlocksEnabled))
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), isBlindedBlocksEnabled))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
@@ -140,7 +146,7 @@ class BlockProductionDutyTest {
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
-            eq(SLOT),
+            eq(CAPELLA_SLOT),
             eq(1),
             eq(Set.of(unsignedBlock.hashTreeRoot())),
             ArgumentMatchers.argThat(Optional::isPresent));
@@ -148,7 +154,7 @@ class BlockProductionDutyTest {
   }
 
   @Test
-  public void onDeneb_shouldCreateAndPublishBlockContents() {
+  public void forDeneb_shouldCreateAndPublishBlockContents() {
     duty =
         new BlockProductionDuty(
             validator,
@@ -161,6 +167,7 @@ class BlockProductionDutyTest {
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+    // can create BlockContents only post-Deneb
     final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
     final List<BlobSidecar> unsignedBlobSidecars =
@@ -227,7 +234,7 @@ class BlockProductionDutyTest {
   }
 
   @Test
-  public void onDeneb_shouldCreateAndPublishBlindedBlockContents() {
+  public void forDeneb_shouldCreateAndPublishBlindedBlockContents() {
     duty =
         new BlockProductionDuty(
             validator,
@@ -240,6 +247,7 @@ class BlockProductionDutyTest {
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+    // can create BlindedBlockContents only post-Deneb fork
     final BlindedBlockContents unsignedBlindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(denebSlot);
     final BeaconBlock unsignedBlindedBlock = unsignedBlindedBlockContents.getBlock();
@@ -315,7 +323,7 @@ class BlockProductionDutyTest {
   @Test
   public void shouldFailWhenCreateRandaoFails() {
     final RuntimeException error = new RuntimeException("Sorry!");
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
@@ -341,9 +349,10 @@ class BlockProductionDutyTest {
   public void shouldFailWhenCreateUnsignedBlockFails() {
     final RuntimeException error = new RuntimeException("Sorry!");
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
+    when(validatorApiChannel.createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
@@ -352,9 +361,10 @@ class BlockProductionDutyTest {
   @Test
   public void shouldFailWhenCreateUnsignedBlockReturnsEmpty() {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
+    when(validatorApiChannel.createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.empty()));
 
     performAndReportDuty();
@@ -362,7 +372,7 @@ class BlockProductionDutyTest {
     verify(validatorLogger)
         .dutyFailed(
             eq(TYPE),
-            eq(SLOT),
+            eq(CAPELLA_SLOT),
             eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
@@ -372,10 +382,11 @@ class BlockProductionDutyTest {
   public void shouldFailWhenSigningBlockFails() {
     final RuntimeException error = new RuntimeException("Sorry!");
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(SLOT.longValue());
-    when(signer.createRandaoReveal(spec.computeEpochAtSlot(SLOT), fork))
+    final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(CAPELLA_SLOT.longValue());
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(SLOT, randaoReveal, Optional.of(graffiti), false))
+    when(validatorApiChannel.createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(failedFuture(error));
 
@@ -385,12 +396,13 @@ class BlockProductionDutyTest {
   public void assertDutyFails(final RuntimeException error) {
     performAndReportDuty();
     verify(validatorLogger)
-        .dutyFailed(TYPE, SLOT, Set.of(validator.getPublicKey().toAbbreviatedString()), error);
+        .dutyFailed(
+            TYPE, CAPELLA_SLOT, Set.of(validator.getPublicKey().toAbbreviatedString()), error);
     verifyNoMoreInteractions(validatorLogger);
   }
 
   private void performAndReportDuty() {
-    performAndReportDuty(SLOT);
+    performAndReportDuty(CAPELLA_SLOT);
   }
 
   private void performAndReportDuty(final UInt64 slot) {

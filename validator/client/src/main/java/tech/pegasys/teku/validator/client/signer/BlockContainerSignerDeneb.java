@@ -49,6 +49,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
     return unsignedBlockContainer
         .toBlinded()
         .map(
+            // Blinded flow
             blindedBlockContainer -> {
               final List<BlindedBlobSidecar> blindedBlobSidecars =
                   blindedBlockContainer.getBlindedBlobSidecars().orElse(Collections.emptyList());
@@ -58,6 +59,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
                       this::createSignedBlindedBlockContents);
             })
         .orElseGet(
+            // Unblinded flow
             () -> {
               final List<BlobSidecar> blobSidecars =
                   unsignedBlockContainer.getBlobSidecars().orElse(Collections.emptyList());
