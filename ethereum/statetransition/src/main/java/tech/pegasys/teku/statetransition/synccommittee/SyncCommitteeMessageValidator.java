@@ -114,23 +114,28 @@ public class SyncCommitteeMessageValidator {
       final Optional<Bytes32> maybeBestBlockRoot = recentChainData.getBestBlockRoot();
 
       if (maybeBestBlockRoot.isPresent()) {
-        final Optional<Bytes32> bestSeenRoot =
-            seenIndices.stream()
-                .filter(item -> item.isSameIgnoringBlockRoot(key))
-                .findFirst()
-                .map(UniquenessKey::getBlockRoot);
+        final Optional<Bytes32> bestSeenRoot;
+        synchronized (this) {
+          bestSeenRoot =
+              seenIndices.stream()
+                  .filter(item -> item.isSameIgnoringBlockRoot(key))
+                  .findFirst()
+                  .map(UniquenessKey::getBlockRoot);
+        }
         // I've already seen this message, can ignore it.
         if (bestSeenRoot.isPresent() && maybeBestBlockRoot.get().equals(bestSeenRoot.get())) {
           return completedFuture(IGNORE);
         } else {
-          if (seenIndices.remove(key)) {
-            // I've seen a message for this slot already, and its block root didn't match current
-            // head
-            LOG.trace(
-                "Removed already seen sync committee message from cache "
-                    + "to accept a better one for validator index {}, slot {}",
-                message.getValidatorIndex(),
-                message.getSlot());
+          synchronized (this) {
+            if (seenIndices.remove(key)) {
+              // I've seen a message for this slot already, and its block root didn't match current
+              // head
+              LOG.trace(
+                  "Removed already seen sync committee message from cache "
+                      + "to accept a better one for validator index {}, slot {}",
+                  message.getValidatorIndex(),
+                  message.getSlot());
+            }
           }
         }
       }
@@ -193,8 +198,10 @@ public class SyncCommitteeMessageValidator {
 
     // [IGNORE] There has been no other valid sync committee message for the declared slot for the
     // validator referenced by sync_committee_message.validator_index.
-    if (seenIndices.containsAll(uniquenessKeys)) {
-      return completedFuture(IGNORE);
+    synchronized (this) {
+      if (seenIndices.containsAll(uniquenessKeys)) {
+        return completedFuture(IGNORE);
+      }
     }
 
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
@@ -228,9 +235,11 @@ public class SyncCommitteeMessageValidator {
               if (!signatureValid) {
                 return reject("Rejecting sync committee message because the signature is invalid");
               }
-              if (!seenIndices.addAll(uniquenessKeys)) {
-                return ignore(
-                    "Ignoring sync committee message as a duplicate was processed during validation");
+              synchronized (this) {
+                if (!seenIndices.addAll(uniquenessKeys)) {
+                  return ignore(
+                      "Ignoring sync committee message as a duplicate was processed during validation");
+                }
               }
               return ACCEPT;
             });
