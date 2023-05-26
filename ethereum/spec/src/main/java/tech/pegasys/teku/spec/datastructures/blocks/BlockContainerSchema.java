@@ -14,7 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 
+/**
+ * Interface used to represent both {@link BeaconBlockSchema} and {@link BlockContentsSchema} and
+ * their blinded variants
+ */
 public interface BlockContainerSchema<T extends BlockContainer> extends SszContainerSchema<T> {
 
   @SuppressWarnings("unchecked")

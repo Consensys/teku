@@ -14,7 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 
+/**
+ * Interface used to represent both {@link SignedBeaconBlockSchema} and {@link
+ * SignedBlockContentsSchema} and their blinded variants
+ */
 public interface SignedBlockContainerSchema<T extends SignedBlockContainer>
     extends SszContainerSchema<T> {
 
