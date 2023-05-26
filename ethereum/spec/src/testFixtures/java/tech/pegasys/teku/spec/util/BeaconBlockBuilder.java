@@ -14,19 +14,30 @@
 package tech.pegasys.teku.spec.util;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 
 public class BeaconBlockBuilder {
 
   private final SpecVersion spec;
   private final DataStructureUtil dataStructureUtil;
 
+  private SszList<ProposerSlashing> proposerSlashings;
   private SyncAggregate syncAggregate;
   private ExecutionPayload executionPayload;
+
+  private SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
+  private SszList<AttesterSlashing> attesterSlashings;
+
+  private SszList<Attestation> attestations;
 
   public BeaconBlockBuilder(final SpecVersion spec, final DataStructureUtil dataStructureUtil) {
     this.spec = spec;
@@ -39,8 +50,29 @@ public class BeaconBlockBuilder {
     return this;
   }
 
+  public BeaconBlockBuilder blsToExecutionChanges(
+      SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
+    this.blsToExecutionChanges = blsToExecutionChanges;
+    return this;
+  }
+
   public BeaconBlockBuilder executionPayload(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
+    return this;
+  }
+
+  public BeaconBlockBuilder proposerSlashings(SszList<ProposerSlashing> proposerSlashings) {
+    this.proposerSlashings = proposerSlashings;
+    return this;
+  }
+
+  public BeaconBlockBuilder attesterSlashings(SszList<AttesterSlashing> attesterSlashings) {
+    this.attesterSlashings = attesterSlashings;
+    return this;
+  }
+
+  public BeaconBlockBuilder attestations(SszList<Attestation> attestations) {
+    this.attestations = attestations;
     return this;
   }
 
@@ -58,6 +90,22 @@ public class BeaconBlockBuilder {
               .map(definitions -> definitions.getExecutionPayloadSchema().getDefault())
               .orElse(null);
     }
+    if (blsToExecutionChanges == null) {
+      blsToExecutionChanges =
+          bodySchema
+              .toVersionCapella()
+              .map(schema -> schema.getBlsToExecutionChangesSchema().getDefault())
+              .orElse(null);
+    }
+    if (proposerSlashings == null) {
+      proposerSlashings = bodySchema.getProposerSlashingsSchema().getDefault();
+    }
+    if (attesterSlashings == null) {
+      attesterSlashings = bodySchema.getAttesterSlashingsSchema().getDefault();
+    }
+    if (attestations == null) {
+      attestations = bodySchema.getAttestationsSchema().getDefault();
+    }
     return bodySchema
         .createBlockBody(
             builder -> {
@@ -65,9 +113,9 @@ public class BeaconBlockBuilder {
                   .randaoReveal(dataStructureUtil.randomSignature())
                   .eth1Data(dataStructureUtil.randomEth1Data())
                   .graffiti(dataStructureUtil.randomBytes32())
-                  .attestations(bodySchema.getAttestationsSchema().getDefault())
-                  .proposerSlashings(bodySchema.getProposerSlashingsSchema().getDefault())
-                  .attesterSlashings(bodySchema.getAttesterSlashingsSchema().getDefault())
+                  .attestations(attestations)
+                  .proposerSlashings(proposerSlashings)
+                  .attesterSlashings(attesterSlashings)
                   .deposits(bodySchema.getDepositsSchema().getDefault())
                   .voluntaryExits(bodySchema.getVoluntaryExitsSchema().getDefault());
               if (builder.supportsSyncAggregate()) {
@@ -75,6 +123,9 @@ public class BeaconBlockBuilder {
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(SafeFuture.completedFuture(executionPayload));
+              }
+              if (builder.supportsBlsToExecutionChanges()) {
+                builder.blsToExecutionChanges(blsToExecutionChanges);
               }
             })
         .thenApply(

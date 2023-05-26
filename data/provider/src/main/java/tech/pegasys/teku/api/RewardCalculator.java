@@ -77,10 +77,16 @@ public class RewardCalculator {
               + " is pre altair, and no sync committee information is available");
     }
 
-    final long proposerReward = getProposerReward(parentState);
-    return blockAndMetaData.map(__ -> calculateBlockRewards(proposerReward, block, parentState));
+    final BeaconState preState = getPreState(block.getSlot(), parentState);
+
+    final SpecVersion specVersion = spec.atSlot(preState.getSlot());
+    return blockAndMetaData.map(
+        __ ->
+            calculateBlockRewards(
+                block, BlockProcessorAltair.required(specVersion.getBlockProcessor()), preState));
   }
 
+  @VisibleForTesting
   long getProposerReward(final BeaconState state) {
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
     return participantReward
@@ -89,6 +95,7 @@ public class RewardCalculator {
         .longValue();
   }
 
+  @VisibleForTesting
   Map<Integer, Integer> getCommitteeIndices(
       final List<BLSPublicKey> committeeKeys,
       final Set<String> validators,
@@ -120,6 +127,7 @@ public class RewardCalculator {
     return output;
   }
 
+  @VisibleForTesting
   SyncCommitteeRewardData getSyncCommitteeRewardData(
       Set<String> validators, BlockAndMetaData blockAndMetadata, BeaconState state) {
     final BeaconBlock block = blockAndMetadata.getData().getMessage();
@@ -149,22 +157,16 @@ public class RewardCalculator {
         rewardData);
   }
 
-  private BlockRewardData calculateBlockRewards(
-      final long proposerReward, final BeaconBlock block, final BeaconState parentState) {
-    final BeaconState preState;
-    try {
-      preState = spec.processSlots(parentState, block.getSlot());
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      LOG.debug("Failed to fetch preState for slot {}", block.getSlot(), e);
-      throw new IllegalArgumentException(
-          "Failed to calculate block rewards, as could not generate the pre-state of the block at slot "
-              + block.getSlot(),
-          e);
-    }
+  @VisibleForTesting
+  BlockRewardData calculateBlockRewards(
+      final BeaconBlock block,
+      final BlockProcessorAltair blockProcessorAltair,
+      final BeaconState preState) {
+    final long proposerReward = getProposerReward(preState);
     final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
-
     final UInt64 proposerIndex = block.getProposerIndex();
-    final long attestationsBlockRewards = calculateAttestationRewards(block, preState);
+    final long attestationsBlockRewards =
+        calculateAttestationRewards(block, blockProcessorAltair, preState);
     final long syncAggregateBlockRewards =
         calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
     final long proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, preState);
@@ -176,33 +178,6 @@ public class RewardCalculator {
         syncAggregateBlockRewards,
         proposerSlashingsBlockRewards,
         attesterSlashingsBlockRewards);
-  }
-
-  @VisibleForTesting
-  long calculateAttestationRewards(final BeaconBlock block, final BeaconState preState) {
-    final SpecVersion specVersion = spec.atSlot(preState.getSlot());
-    final BlockProcessorAltair blockProcessor =
-        BlockProcessorAltair.required(specVersion.getBlockProcessor());
-    final List<Optional<UInt64>> rewards = new ArrayList<>();
-    final MutableBeaconStateAltair mutableBeaconStateAltair =
-        BeaconStateAltair.required(preState).createWritableCopy();
-    final AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider =
-        blockProcessor.createIndexedAttestationProvider(
-            mutableBeaconStateAltair, IndexedAttestationCache.capturing());
-    block
-        .getBody()
-        .getAttestations()
-        .forEach(
-            attestation ->
-                rewards.add(
-                    blockProcessor.processAttestationProposerReward(
-                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)));
-
-    return rewards.stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .map(UInt64::longValue)
-        .reduce(0L, Long::sum);
   }
 
   @VisibleForTesting
@@ -249,20 +224,6 @@ public class RewardCalculator {
     }
 
     return attesterSlashingsRewards;
-  }
-
-  private long calculateSlashingRewards(
-      final SpecConfig specConfig,
-      final BeaconState state,
-      final int slashedIndex,
-      final long currentRewards) {
-    final Validator validator = state.getValidators().get(slashedIndex);
-    final UInt64 whistleblowerReward =
-        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
-    final UInt64 proposerReward =
-        whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
-    final UInt64 rewardsAdditions = proposerReward.plus(whistleblowerReward.minus(proposerReward));
-    return currentRewards + rewardsAdditions.longValue();
   }
 
   @VisibleForTesting
@@ -314,5 +275,59 @@ public class RewardCalculator {
         }
       }
     }
+  }
+
+  private long calculateAttestationRewards(
+      final BeaconBlock block,
+      final BlockProcessorAltair blockProcessor,
+      final BeaconState preState) {
+    final List<Optional<UInt64>> rewards = new ArrayList<>();
+    final MutableBeaconStateAltair mutableBeaconStateAltair =
+        BeaconStateAltair.required(preState).createWritableCopy();
+    final AbstractBlockProcessor.IndexedAttestationProvider indexedAttestationProvider =
+        blockProcessor.createIndexedAttestationProvider(
+            mutableBeaconStateAltair, IndexedAttestationCache.capturing());
+    block
+        .getBody()
+        .getAttestations()
+        .forEach(
+            attestation ->
+                rewards.add(
+                    blockProcessor.processAttestationProposerReward(
+                        mutableBeaconStateAltair, attestation, indexedAttestationProvider)));
+
+    return rewards.stream()
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(UInt64::longValue)
+        .reduce(0L, Long::sum);
+  }
+
+  private long calculateSlashingRewards(
+      final SpecConfig specConfig,
+      final BeaconState state,
+      final int slashedIndex,
+      final long currentRewards) {
+    final Validator validator = state.getValidators().get(slashedIndex);
+    final UInt64 whistleblowerReward =
+        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
+    final UInt64 proposerReward =
+        whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
+    final UInt64 rewardsAdditions = proposerReward.plus(whistleblowerReward.minus(proposerReward));
+    return currentRewards + rewardsAdditions.longValue();
+  }
+
+  private BeaconState getPreState(final UInt64 slot, final BeaconState parentState) {
+    final BeaconState preState;
+    try {
+      preState = spec.processSlots(parentState, slot);
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      LOG.debug("Failed to fetch preState for slot {}", slot, e);
+      throw new IllegalArgumentException(
+          "Failed to calculate block rewards, as could not generate the pre-state of the block at slot "
+              + slot,
+          e);
+    }
+    return preState;
   }
 }
