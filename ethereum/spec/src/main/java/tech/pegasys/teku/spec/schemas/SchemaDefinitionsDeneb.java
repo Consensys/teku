@@ -23,8 +23,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSch
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDenebImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BlindedBeaconBlockBodySchemaDeneb;
@@ -168,6 +170,26 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   @Override
   public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
     return signedBlindedBeaconBlockSchema;
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
+    return getBlockContentsSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlindedBlockContainerSchema() {
+    return getBlindedBlockContentsSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
+    return getSignedBlockContentsSchema().castTypeToSignedBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
+    return getSignedBlindedBlockContentsSchema().castTypeToSignedBlockContainer();
   }
 
   @Override
