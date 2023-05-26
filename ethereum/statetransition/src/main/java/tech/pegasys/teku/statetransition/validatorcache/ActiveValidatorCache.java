@@ -25,7 +25,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ActiveValidatorCache implements ActiveValidatorChannel {
@@ -111,8 +111,8 @@ public class ActiveValidatorCache implements ActiveValidatorChannel {
   }
 
   @Override
-  public void onAttestation(final ValidateableAttestation validateableAttestation) {
-    validateableAttestation
+  public void onAttestation(final ValidatableAttestation validatableAttestation) {
+    validatableAttestation
         .getIndexedAttestation()
         .ifPresent(
             attestation -> {

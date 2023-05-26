@@ -795,6 +795,11 @@ public class ChainBuilder {
     return createSyncCommitteeMessage(target.getSlot(), target.getRoot());
   }
 
+  public SyncCommitteeMessage createValidSyncCommitteeMessageAtParentBlockRoot() {
+    final SignedBlockAndState target = getLatestBlockAndState();
+    return createSyncCommitteeMessage(target.getSlot(), target.getParentRoot());
+  }
+
   public SyncCommitteeMessage createSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 blockRoot) {
     final BeaconStateAltair state =

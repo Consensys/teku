@@ -78,7 +78,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -86,7 +86,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -126,13 +126,13 @@ public class Eth2P2PNetworkFactory {
     protected RecentChainData recentChainData;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
-    protected OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor;
-    protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
+    protected OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor;
+    protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
     protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
     protected OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
     protected OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
     protected OperationProcessor<SignedContributionAndProof> signedContributionAndProofProcessor;
-    protected OperationProcessor<ValidateableSyncCommitteeMessage> syncCommitteeMessageProcessor;
+    protected OperationProcessor<ValidatableSyncCommitteeMessage> syncCommitteeMessageProcessor;
     protected OperationProcessor<SignedBlsToExecutionChange> signedBlsToExecutionChangeProcessor;
     protected ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider;
     protected VerifiedBlockAttestationsSubscriptionProvider
@@ -498,14 +498,14 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedAggregateProcessor(
-        final OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor) {
+        final OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor) {
       checkNotNull(gossipedAggregateProcessor);
       this.gossipedAggregateProcessor = gossipedAggregateProcessor;
       return this;
     }
 
     public Eth2P2PNetworkBuilder gossipedAttestationProcessor(
-        final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor) {
+        final OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor) {
       checkNotNull(gossipedAttestationProcessor);
       this.gossipedAttestationProcessor = gossipedAttestationProcessor;
       return this;
@@ -541,7 +541,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedSyncCommitteeMessageProcessor(
-        final OperationProcessor<ValidateableSyncCommitteeMessage> gossipedSyncCommitteeProcessor) {
+        final OperationProcessor<ValidatableSyncCommitteeMessage> gossipedSyncCommitteeProcessor) {
       checkNotNull(gossipedSyncCommitteeProcessor);
       this.syncCommitteeMessageProcessor = gossipedSyncCommitteeProcessor;
       return this;

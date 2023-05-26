@@ -21,7 +21,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -51,14 +51,14 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
       final GossipEncoding gossipEncoding,
       final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<SignedBlobSidecar> blobSidecarProcessor,
-      final OperationProcessor<ValidateableAttestation> attestationProcessor,
-      final OperationProcessor<ValidateableAttestation> aggregateProcessor,
+      final OperationProcessor<ValidatableAttestation> attestationProcessor,
+      final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
       final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
-      final OperationProcessor<ValidateableSyncCommitteeMessage>
+      final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
           signedBlsToExecutionChangeOperationProcessor) {

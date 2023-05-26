@@ -32,7 +32,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -52,7 +52,7 @@ public class AggregateGossipManagerTest {
       new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<ValidateableAttestation> processor =
+  private final OperationProcessor<ValidatableAttestation> processor =
       mock(OperationProcessor.class);
 
   private AggregateGossipManager gossipManager;
@@ -80,7 +80,7 @@ public class AggregateGossipManagerTest {
   public void onNewAggregate() {
     final SignedAggregateAndProof aggregate = dataStructureUtil.randomSignedAggregateAndProof();
     final Bytes serialized = gossipEncoding.encode(aggregate);
-    gossipManager.onNewAggregate(ValidateableAttestation.aggregateFromValidator(spec, aggregate));
+    gossipManager.onNewAggregate(ValidatableAttestation.aggregateFromValidator(spec, aggregate));
 
     verify(topicChannel).gossip(serialized);
   }

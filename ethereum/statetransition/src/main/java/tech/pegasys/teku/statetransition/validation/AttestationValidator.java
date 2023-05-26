@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -54,25 +54,23 @@ public class AttestationValidator {
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final ValidateableAttestation validateableAttestation) {
-    if (validateableAttestation.isAcceptedAsGossip()) {
+      final ValidatableAttestation validatableAttestation) {
+    if (validatableAttestation.isAcceptedAsGossip()) {
       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
     }
-    Attestation attestation = validateableAttestation.getAttestation();
+    Attestation attestation = validatableAttestation.getAttestation();
     final InternalValidationResult internalValidationResult = singleAttestationChecks(attestation);
     if (internalValidationResult.code() != ACCEPT) {
       return completedFuture(internalValidationResult);
     }
 
     return singleOrAggregateAttestationChecks(
-            signatureVerifier,
-            validateableAttestation,
-            validateableAttestation.getReceivedSubnetId())
+            signatureVerifier, validatableAttestation, validatableAttestation.getReceivedSubnetId())
         .thenApply(InternalValidationResultWithState::getResult)
         .thenPeek(
             result -> {
               if (result.isAccept()) {
-                validateableAttestation.setAcceptedAsGossip();
+                validatableAttestation.setAcceptedAsGossip();
               }
             });
   }
@@ -89,10 +87,10 @@ public class AttestationValidator {
 
   SafeFuture<InternalValidationResultWithState> singleOrAggregateAttestationChecks(
       final AsyncBLSSignatureVerifier signatureVerifier,
-      final ValidateableAttestation validateableAttestation,
+      final ValidatableAttestation validatableAttestation,
       final OptionalInt receivedOnSubnetId) {
 
-    Attestation attestation = validateableAttestation.getAttestation();
+    Attestation attestation = validatableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
     // The attestation's epoch matches its target
     if (!data.getTarget().getEpoch().equals(spec.computeEpochAtSlot(data.getSlot()))) {
@@ -165,7 +163,7 @@ public class AttestationValidator {
               }
 
               return spec.isValidIndexedAttestation(
-                      state, validateableAttestation, signatureVerifier)
+                      state, validatableAttestation, signatureVerifier)
                   .thenApply(
                       signatureResult -> {
                         if (!signatureResult.isSuccessful()) {
@@ -195,7 +193,7 @@ public class AttestationValidator {
 
                         // Save committee shuffling seed since the state is available and
                         // attestation is valid
-                        validateableAttestation.saveCommitteeShufflingSeed(state);
+                        validatableAttestation.saveCommitteeShufflingSeed(state);
                         return InternalValidationResultWithState.accept(state);
                       });
             });

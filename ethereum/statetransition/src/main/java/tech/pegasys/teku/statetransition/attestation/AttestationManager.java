@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
@@ -47,8 +47,8 @@ public class AttestationManager extends Service
 
   private final ForkChoice attestationProcessor;
 
-  private final PendingPool<ValidateableAttestation> pendingAttestations;
-  private final FutureItems<ValidateableAttestation> futureAttestations;
+  private final PendingPool<ValidatableAttestation> pendingAttestations;
+  private final FutureItems<ValidatableAttestation> futureAttestations;
   private final AggregatingAttestationPool aggregatingAttestationPool;
 
   private final Subscribers<ProcessedAttestationListener> attestationsToSendSubscribers =
@@ -64,8 +64,8 @@ public class AttestationManager extends Service
 
   AttestationManager(
       final ForkChoice attestationProcessor,
-      final PendingPool<ValidateableAttestation> pendingAttestations,
-      final FutureItems<ValidateableAttestation> futureAttestations,
+      final PendingPool<ValidatableAttestation> pendingAttestations,
+      final FutureItems<ValidatableAttestation> futureAttestations,
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
       final AggregateAttestationValidator aggregateValidator,
@@ -82,8 +82,8 @@ public class AttestationManager extends Service
   }
 
   public static AttestationManager create(
-      final PendingPool<ValidateableAttestation> pendingAttestations,
-      final FutureItems<ValidateableAttestation> futureAttestations,
+      final PendingPool<ValidatableAttestation> pendingAttestations,
+      final FutureItems<ValidatableAttestation> futureAttestations,
       final ForkChoice attestationProcessor,
       final AggregatingAttestationPool aggregatingAttestationPool,
       final AttestationValidator attestationValidator,
@@ -105,7 +105,7 @@ public class AttestationManager extends Service
     allValidAttestationsSubscribers.subscribe(listener);
   }
 
-  private void notifyAllValidAttestationsSubscribers(ValidateableAttestation attestation) {
+  private void notifyAllValidAttestationsSubscribers(ValidatableAttestation attestation) {
     allValidAttestationsSubscribers.forEach(s -> s.accept(attestation));
   }
 
@@ -114,7 +114,7 @@ public class AttestationManager extends Service
     attestationsToSendSubscribers.subscribe(attestationsToSendListener);
   }
 
-  private void validateForGossipAndNotifySendSubscribers(ValidateableAttestation attestation) {
+  private void validateForGossipAndNotifySendSubscribers(ValidatableAttestation attestation) {
     if (attestation.isAggregate() && !attestation.isAcceptedAsGossip()) {
       // We know the Attestation is valid, but need to validate the SignedAggregateAndProof wrapper
       aggregateValidator
@@ -137,14 +137,14 @@ public class AttestationManager extends Service
     }
   }
 
-  public SafeFuture<InternalValidationResult> addAttestation(ValidateableAttestation attestation) {
+  public SafeFuture<InternalValidationResult> addAttestation(ValidatableAttestation attestation) {
     SafeFuture<InternalValidationResult> validationResult =
         attestationValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
     return validationResult;
   }
 
-  public SafeFuture<InternalValidationResult> addAggregate(ValidateableAttestation attestation) {
+  public SafeFuture<InternalValidationResult> addAggregate(ValidatableAttestation attestation) {
     SafeFuture<InternalValidationResult> validationResult =
         aggregateValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
@@ -153,7 +153,7 @@ public class AttestationManager extends Service
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private void processInternallyValidatedAttestation(
-      SafeFuture<InternalValidationResult> validationResult, ValidateableAttestation attestation) {
+      SafeFuture<InternalValidationResult> validationResult, ValidatableAttestation attestation) {
     validationResult.thenAccept(
         internalValidationResult -> {
           if (internalValidationResult.code().equals(ValidationResultCode.ACCEPT)
@@ -177,13 +177,13 @@ public class AttestationManager extends Service
 
   private void applyFutureAttestations(final UInt64 slot) {
     futureAttestations.onSlot(slot);
-    List<ValidateableAttestation> attestations = futureAttestations.prune(slot);
+    List<ValidatableAttestation> attestations = futureAttestations.prune(slot);
     if (attestations.isEmpty()) {
       return;
     }
     attestationProcessor.applyIndexedAttestations(attestations);
     attestations.stream()
-        .filter(ValidateableAttestation::isProducedLocally)
+        .filter(ValidatableAttestation::isProducedLocally)
         .filter(a -> !a.isGossiped())
         .forEach(
             a -> {
@@ -211,7 +211,7 @@ public class AttestationManager extends Service
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
-      final ValidateableAttestation attestation) {
+      final ValidatableAttestation attestation) {
     if (pendingAttestations.contains(attestation)) {
       return ATTESTATION_SAVED_FOR_FUTURE_RESULT;
     }
@@ -256,7 +256,7 @@ public class AttestationManager extends Service
             });
   }
 
-  private void sendToSubscribersIfProducedLocally(ValidateableAttestation attestation) {
+  private void sendToSubscribersIfProducedLocally(ValidatableAttestation attestation) {
     if (!attestation.isProducedLocally()) {
       return;
     }

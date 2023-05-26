@@ -62,6 +62,8 @@ public class SignedContributionAndProofValidator {
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
 
+  private final RecentChainData recentChainData;
+
   public SignedContributionAndProofValidator(
       final Spec spec,
       final RecentChainData recentChainData,
@@ -71,6 +73,7 @@ public class SignedContributionAndProofValidator {
     this.spec = spec;
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.signatureVerifier = signatureVerifier;
+    this.recentChainData = recentChainData;
     this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
   }
 
@@ -112,7 +115,13 @@ public class SignedContributionAndProofValidator {
     // [IGNORE] The contribution's slot is for the current slot (with a
     // `MAXIMUM_GOSSIP_CLOCK_DISPARITY` allowance), i.e. `contribution.slot == current_slot`.
     if (!slotUtil.isForCurrentSlot(contribution.getSlot())) {
-      LOG.trace("Ignoring proof because it is not from the current slot");
+      LOG.trace(
+          "Ignoring proof from aggregator {}, "
+              + "because it is not from the current slot "
+              + "(contribution slot: {}, current slot: {})",
+          contributionAndProof::getAggregatorIndex,
+          contribution::getSlot,
+          recentChainData::getCurrentSlot);
       return SafeFuture.completedFuture(ignore("Not from current slot"));
     }
 

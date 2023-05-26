@@ -24,7 +24,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -35,7 +35,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   private final RecentChainData recentChainData;
   private final SchemaDefinitionsAltair schemaDefinitions;
   private final AsyncRunner asyncRunner;
-  private final OperationProcessor<ValidateableSyncCommitteeMessage> processor;
+  private final OperationProcessor<ValidatableSyncCommitteeMessage> processor;
   private final ForkInfo forkInfo;
   private final int maxMessageSize;
 
@@ -46,7 +46,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
       final GossipEncoding gossipEncoding,
       final SchemaDefinitionsAltair schemaDefinitions,
       final AsyncRunner asyncRunner,
-      final OperationProcessor<ValidateableSyncCommitteeMessage> processor,
+      final OperationProcessor<ValidatableSyncCommitteeMessage> processor,
       final ForkInfo forkInfo,
       final int maxMessageSize) {
     super(gossipNetwork, gossipEncoding);
@@ -70,7 +70,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final OperationProcessor<SyncCommitteeMessage> convertingProcessor =
         message ->
-            processor.process(ValidateableSyncCommitteeMessage.fromNetwork(message, subnetId));
+            processor.process(ValidatableSyncCommitteeMessage.fromNetwork(message, subnetId));
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,

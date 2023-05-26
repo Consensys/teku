@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
@@ -52,12 +52,11 @@ class SyncCommitteeMessagePoolTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SyncCommitteeMessageValidator validator = mock(SyncCommitteeMessageValidator.class);
 
-  private final ValidateableSyncCommitteeMessage message =
-      ValidateableSyncCommitteeMessage.fromValidator(
-          dataStructureUtil.randomSyncCommitteeMessage());
+  private final ValidatableSyncCommitteeMessage message =
+      ValidatableSyncCommitteeMessage.fromValidator(dataStructureUtil.randomSyncCommitteeMessage());
 
   @SuppressWarnings("unchecked")
-  private final OperationAddedSubscriber<ValidateableSyncCommitteeMessage> subscriber =
+  private final OperationAddedSubscriber<ValidatableSyncCommitteeMessage> subscriber =
       mock(OperationAddedSubscriber.class);
 
   private final SyncCommitteeMessagePool pool = new SyncCommitteeMessagePool(spec, validator);
@@ -116,8 +115,8 @@ class SyncCommitteeMessagePoolTest {
 
   @Test
   void shouldCreateContributionFromSingleMatchingMessage() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
     message.setSubcommitteeAssignments(
@@ -137,8 +136,8 @@ class SyncCommitteeMessagePoolTest {
   @Test
   void shouldCreateContributionAggregatingMultipleMatchingMessages() {
     final int subcommitteeIndex = 3;
-    final ValidateableSyncCommitteeMessage message1 =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message1 =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
     message1.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
@@ -146,8 +145,8 @@ class SyncCommitteeMessagePoolTest {
             .addAssignment(subcommitteeIndex, 3)
             .build());
     addValidLocal(message1);
-    final ValidateableSyncCommitteeMessage message2 =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message2 =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage(
                 message1.getSlot(), message1.getBeaconBlockRoot()));
     message2.setSubcommitteeAssignments(
@@ -171,8 +170,8 @@ class SyncCommitteeMessagePoolTest {
     final int subcommitteeIndex2 = 2;
     final SyncCommitteeMessage syncCommitteeMessage =
         dataStructureUtil.randomSyncCommitteeMessage();
-    final ValidateableSyncCommitteeMessage message1 =
-        ValidateableSyncCommitteeMessage.fromNetwork(syncCommitteeMessage, subcommitteeIndex1);
+    final ValidatableSyncCommitteeMessage message1 =
+        ValidatableSyncCommitteeMessage.fromNetwork(syncCommitteeMessage, subcommitteeIndex1);
 
     SyncSubcommitteeAssignments assignments =
         SyncSubcommitteeAssignments.builder()
@@ -187,8 +186,8 @@ class SyncCommitteeMessagePoolTest {
             message1.getSlot(), message1.getBeaconBlockRoot(), subcommitteeIndex1);
     assertThat(contribution1).contains(createContributionFrom(subcommitteeIndex1, message1));
 
-    final ValidateableSyncCommitteeMessage message2 =
-        ValidateableSyncCommitteeMessage.fromNetwork(syncCommitteeMessage, subcommitteeIndex2);
+    final ValidatableSyncCommitteeMessage message2 =
+        ValidatableSyncCommitteeMessage.fromNetwork(syncCommitteeMessage, subcommitteeIndex2);
     message2.setSubcommitteeAssignments(assignments);
     addValidRemote(message2);
 
@@ -200,8 +199,8 @@ class SyncCommitteeMessagePoolTest {
 
   @Test
   void shouldIncludeLocalMessageInContributionForAllApplicableSubnets() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
     message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
@@ -226,8 +225,8 @@ class SyncCommitteeMessagePoolTest {
 
   @Test
   void shouldIncludeRemoteMessageInContributionOnlyOnReceivedSubnet() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromNetwork(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromNetwork(
             dataStructureUtil.randomSyncCommitteeMessage(), 1);
     message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
@@ -249,8 +248,8 @@ class SyncCommitteeMessagePoolTest {
 
   @Test
   void shouldAggregateSignatureMultipleTimesWhenValidatorInSameSubcommitteeMultipleTimes() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
     message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder()
@@ -276,8 +275,8 @@ class SyncCommitteeMessagePoolTest {
 
   @Test
   void shouldExcludeMessagesWhereSlotDoesNotMatch() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
     message.setSubcommitteeAssignments(
@@ -292,8 +291,8 @@ class SyncCommitteeMessagePoolTest {
 
   @Test
   void shouldExcludeMessagesWhereBlockRootDoesNotMatch() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
     message.setSubcommitteeAssignments(
@@ -309,8 +308,8 @@ class SyncCommitteeMessagePoolTest {
 
   @Test
   void shouldExcludeMessagesWhereSubcommitteeIndexDoesNotMatch() {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage());
     final int subcommitteeIndex = 3;
     message.setSubcommitteeAssignments(
@@ -327,11 +326,11 @@ class SyncCommitteeMessagePoolTest {
   void shouldPruneMessagesFromOlderSlots() {
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     final int subcommitteeIndex = 2;
-    final ValidateableSyncCommitteeMessage message0 =
+    final ValidatableSyncCommitteeMessage message0 =
         createMessageInSlot(blockRoot, subcommitteeIndex, 0);
-    final ValidateableSyncCommitteeMessage message1 =
+    final ValidatableSyncCommitteeMessage message1 =
         createMessageInSlot(blockRoot, subcommitteeIndex, 1);
-    final ValidateableSyncCommitteeMessage message2 =
+    final ValidatableSyncCommitteeMessage message2 =
         createMessageInSlot(blockRoot, subcommitteeIndex, 2);
 
     addValidLocal(message0);
@@ -351,11 +350,11 @@ class SyncCommitteeMessagePoolTest {
     assertMessagesAbsentForSlots(blockRoot, subcommitteeIndex, 0, 1, 2);
   }
 
-  private void addValidLocal(final ValidateableSyncCommitteeMessage message0) {
+  private void addValidLocal(final ValidatableSyncCommitteeMessage message0) {
     assertThat(pool.addLocal(message0)).isCompletedWithValue(ACCEPT);
   }
 
-  private void addValidRemote(final ValidateableSyncCommitteeMessage message0) {
+  private void addValidRemote(final ValidatableSyncCommitteeMessage message0) {
     assertThat(pool.addRemote(message0)).isCompletedWithValue(ACCEPT);
   }
 
@@ -383,10 +382,10 @@ class SyncCommitteeMessagePoolTest {
                     .isEmpty());
   }
 
-  private ValidateableSyncCommitteeMessage createMessageInSlot(
+  private ValidatableSyncCommitteeMessage createMessageInSlot(
       final Bytes32 blockRoot, final int subcommitteeIndex, final int slot) {
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage(UInt64.valueOf(slot), blockRoot));
     message.setSubcommitteeAssignments(
         SyncSubcommitteeAssignments.builder().addAssignment(subcommitteeIndex, 1).build());
@@ -394,12 +393,12 @@ class SyncCommitteeMessagePoolTest {
   }
 
   private SyncCommitteeContribution createContributionFrom(
-      final int subnetId, final ValidateableSyncCommitteeMessage... messages) {
+      final int subnetId, final ValidatableSyncCommitteeMessage... messages) {
     checkArgument(messages.length > 0, "Must specify at least one message");
-    final ValidateableSyncCommitteeMessage template = messages[0];
+    final ValidatableSyncCommitteeMessage template = messages[0];
     final IntSet participantIds = new IntOpenHashSet();
     final List<BLSSignature> blsSignatures = new ArrayList<>();
-    for (ValidateableSyncCommitteeMessage message : messages) {
+    for (ValidatableSyncCommitteeMessage message : messages) {
       participantIds.addAll(
           message.getSubcommitteeAssignments().orElseThrow().getParticipationBitIndices(subnetId));
       blsSignatures.add(message.getMessage().getSignature());

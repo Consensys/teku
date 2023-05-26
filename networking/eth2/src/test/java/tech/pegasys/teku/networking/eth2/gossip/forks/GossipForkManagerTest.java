@@ -33,10 +33,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -213,15 +213,15 @@ class GossipForkManagerTest {
     final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    final ValidateableAttestation firstForkAttestation =
-        ValidateableAttestation.fromValidator(spec, dataStructureUtil.randomAttestation(0));
-    final ValidateableAttestation secondForkAttestation =
-        ValidateableAttestation.fromValidator(
+    final ValidatableAttestation firstForkAttestation =
+        ValidatableAttestation.fromValidator(spec, dataStructureUtil.randomAttestation(0));
+    final ValidatableAttestation secondForkAttestation =
+        ValidatableAttestation.fromValidator(
             spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(UInt64.ONE).longValue()));
-    final ValidateableAttestation thirdForkAttestation =
-        ValidateableAttestation.fromValidator(
+    final ValidatableAttestation thirdForkAttestation =
+        ValidatableAttestation.fromValidator(
             spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(UInt64.valueOf(2)).longValue()));
@@ -250,8 +250,8 @@ class GossipForkManagerTest {
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    final ValidateableAttestation attestation =
-        ValidateableAttestation.fromValidator(
+    final ValidatableAttestation attestation =
+        ValidatableAttestation.fromValidator(
             spec,
             dataStructureUtil.randomAttestation(
                 spec.computeStartSlotAtEpoch(secondFork.getActivationEpoch()).longValue()));
@@ -302,14 +302,14 @@ class GossipForkManagerTest {
     final GossipForkManager manager = managerForForks(firstFork, secondFork, thirdFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    final ValidateableSyncCommitteeMessage firstForkMessage =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage firstForkMessage =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage(0));
-    final ValidateableSyncCommitteeMessage secondForkMessage =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage secondForkMessage =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage(spec.computeStartSlotAtEpoch(UInt64.ONE)));
-    final ValidateableSyncCommitteeMessage thirdForkMessage =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage thirdForkMessage =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage(
                 spec.computeStartSlotAtEpoch(UInt64.valueOf(2))));
 
@@ -337,8 +337,8 @@ class GossipForkManagerTest {
     final GossipForkManager manager = managerForForks(firstFork, secondFork);
     manager.configureGossipForEpoch(UInt64.ZERO);
 
-    final ValidateableSyncCommitteeMessage message =
-        ValidateableSyncCommitteeMessage.fromValidator(
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromValidator(
             dataStructureUtil.randomSyncCommitteeMessage(
                 spec.computeStartSlotAtEpoch(secondFork.getActivationEpoch())));
 
