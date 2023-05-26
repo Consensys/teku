@@ -23,7 +23,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -59,9 +59,9 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void aggregate_shouldTrackIncludedAggregations() {
-    final ValidateableAttestation attestation1 = createAttestation(1);
-    final ValidateableAttestation attestation2 = createAttestation(2);
-    final ValidateableAttestation attestation3 = createAttestation(3);
+    final ValidatableAttestation attestation1 = createAttestation(1);
+    final ValidatableAttestation attestation2 = createAttestation(2);
+    final ValidatableAttestation attestation3 = createAttestation(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -72,9 +72,9 @@ class AggregateAttestationBuilderTest {
 
   @Test
   public void aggregate_shouldCombineBitsetsAndSignatures() {
-    final ValidateableAttestation attestation1 = createAttestation(1);
-    final ValidateableAttestation attestation2 = createAttestation(2);
-    final ValidateableAttestation attestation3 = createAttestation(3);
+    final ValidatableAttestation attestation1 = createAttestation(1);
+    final ValidatableAttestation attestation2 = createAttestation(2);
+    final ValidatableAttestation attestation3 = createAttestation(3);
     builder.aggregate(attestation1);
     builder.aggregate(attestation2);
     builder.aggregate(attestation3);
@@ -91,7 +91,7 @@ class AggregateAttestationBuilderTest {
 
     assertThat(builder.buildAggregate())
         .isEqualTo(
-            ValidateableAttestation.from(
+            ValidatableAttestation.from(
                 spec,
                 attestationSchema.create(
                     expectedAggregationBits, attestationData, expectedSignature)));
@@ -102,10 +102,10 @@ class AggregateAttestationBuilderTest {
     assertThatThrownBy(builder::buildAggregate).isInstanceOf(IllegalStateException.class);
   }
 
-  private ValidateableAttestation createAttestation(final int... validators) {
+  private ValidatableAttestation createAttestation(final int... validators) {
     final SszBitlist aggregationBits =
         attestationSchema.getAggregationBitsSchema().ofBits(BITLIST_SIZE, validators);
-    return ValidateableAttestation.from(
+    return ValidatableAttestation.from(
         spec,
         attestationSchema.create(
             aggregationBits, attestationData, dataStructureUtil.randomSignature()));

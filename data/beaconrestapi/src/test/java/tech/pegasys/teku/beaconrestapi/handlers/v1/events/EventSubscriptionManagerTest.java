@@ -43,7 +43,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -306,7 +306,7 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerAttestationEvent() {
-    manager.onNewAttestation(ValidateableAttestation.from(spec, sampleAttestation));
+    manager.onNewAttestation(ValidatableAttestation.from(spec, sampleAttestation));
     asyncRunner.executeQueuedActions();
   }
 

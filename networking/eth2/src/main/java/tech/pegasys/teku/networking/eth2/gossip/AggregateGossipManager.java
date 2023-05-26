@@ -19,7 +19,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -33,7 +33,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ValidateableAttestation> processor,
+      final OperationProcessor<ValidatableAttestation> processor,
       final int maxMessageSize) {
     super(
         recentChainData,
@@ -44,7 +44,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         forkInfo,
         proofMessage ->
             processor.process(
-                ValidateableAttestation.aggregateFromNetwork(
+                ValidatableAttestation.aggregateFromNetwork(
                     recentChainData.getSpec(), proofMessage)),
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
@@ -53,10 +53,10 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         maxMessageSize);
   }
 
-  public void onNewAggregate(final ValidateableAttestation validateableAttestation) {
-    if (!validateableAttestation.isAggregate() || !validateableAttestation.markGossiped()) {
+  public void onNewAggregate(final ValidatableAttestation validatableAttestation) {
+    if (!validatableAttestation.isAggregate() || !validatableAttestation.markGossiped()) {
       return;
     }
-    publishMessage(validateableAttestation.getSignedAggregateAndProof());
+    publishMessage(validatableAttestation.getSignedAggregateAndProof());
   }
 }

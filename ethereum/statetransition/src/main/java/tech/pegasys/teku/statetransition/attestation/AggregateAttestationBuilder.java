@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
  */
 class AggregateAttestationBuilder {
   private final Spec spec;
-  private final Set<ValidateableAttestation> includedAttestations = new HashSet<>();
+  private final Set<ValidatableAttestation> includedAttestations = new HashSet<>();
   private final AttestationData attestationData;
   private SszBitlist currentAggregateBits;
 
@@ -41,17 +41,17 @@ class AggregateAttestationBuilder {
     this.attestationData = attestationData;
   }
 
-  public boolean canAggregate(final ValidateableAttestation candidate) {
+  public boolean canAggregate(final ValidatableAttestation candidate) {
     return currentAggregateBits == null
         || !currentAggregateBits.intersects(candidate.getAttestation().getAggregationBits());
   }
 
-  public boolean isFullyIncluded(final ValidateableAttestation candidate) {
+  public boolean isFullyIncluded(final ValidatableAttestation candidate) {
     return currentAggregateBits != null
         && currentAggregateBits.isSuperSetOf(candidate.getAttestation().getAggregationBits());
   }
 
-  public void aggregate(final ValidateableAttestation attestation) {
+  public void aggregate(final ValidatableAttestation attestation) {
     includedAttestations.add(attestation);
     if (currentAggregateBits == null) {
       currentAggregateBits = attestation.getAttestation().getAggregationBits();
@@ -61,9 +61,9 @@ class AggregateAttestationBuilder {
     }
   }
 
-  public ValidateableAttestation buildAggregate() {
+  public ValidatableAttestation buildAggregate() {
     checkState(currentAggregateBits != null, "Must aggregate at least one attestation");
-    return ValidateableAttestation.from(
+    return ValidatableAttestation.from(
         spec,
         spec.atSlot(attestationData.getSlot())
             .getSchemaDefinitions()
@@ -73,12 +73,12 @@ class AggregateAttestationBuilder {
                 attestationData,
                 BLS.aggregate(
                     includedAttestations.stream()
-                        .map(ValidateableAttestation::getAttestation)
+                        .map(ValidatableAttestation::getAttestation)
                         .map(Attestation::getAggregateSignature)
                         .collect(Collectors.toList()))));
   }
 
-  public Collection<ValidateableAttestation> getIncludedAttestations() {
+  public Collection<ValidatableAttestation> getIncludedAttestations() {
     return includedAttestations;
   }
 }

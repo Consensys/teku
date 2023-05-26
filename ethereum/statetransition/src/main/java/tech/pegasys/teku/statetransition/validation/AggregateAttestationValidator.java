@@ -38,7 +38,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -67,12 +67,12 @@ public class AggregateAttestationValidator {
     this.signatureVerifier = signatureVerifier;
   }
 
-  public void addSeenAggregate(final ValidateableAttestation attestation) {
+  public void addSeenAggregate(final ValidatableAttestation attestation) {
     seenAggregationBits.add(
         attestation.getData().hashTreeRoot(), attestation.getAttestation().getAggregationBits());
   }
 
-  public SafeFuture<InternalValidationResult> validate(final ValidateableAttestation attestation) {
+  public SafeFuture<InternalValidationResult> validate(final ValidatableAttestation attestation) {
     final SignedAggregateAndProof signedAggregate = attestation.getSignedAggregateAndProof();
     final AggregateAndProof aggregateAndProof = signedAggregate.getMessage();
     final Attestation aggregate = aggregateAndProof.getAggregate();
@@ -114,7 +114,7 @@ public class AggregateAttestationValidator {
   }
 
   private SafeFuture<InternalValidationResult> verifyAggregate(
-      final ValidateableAttestation attestation,
+      final ValidatableAttestation attestation,
       final SignedAggregateAndProof signedAggregate,
       final AggregateAndProof aggregateAndProof,
       final Attestation aggregate,
@@ -201,7 +201,7 @@ public class AggregateAttestationValidator {
   }
 
   private InternalValidationResult checkAndAddToSeenAggregates(
-      final ValidateableAttestation attestation,
+      final ValidatableAttestation attestation,
       final AggregatorIndexAndEpoch aggregatorIndexAndEpoch,
       final InternalValidationResult result) {
     if (!receivedAggregatorIndexAndEpochs.add(aggregatorIndexAndEpoch)) {
@@ -257,11 +257,11 @@ public class AggregateAttestationValidator {
 
   SafeFuture<InternalValidationResultWithState> singleOrAggregateAttestationChecks(
       final AsyncBatchBLSSignatureVerifier signatureVerifier,
-      final ValidateableAttestation validateableAttestation,
+      final ValidatableAttestation validatableAttestation,
       final OptionalInt receivedOnSubnetId) {
     return attestationValidator.singleOrAggregateAttestationChecks(
         AsyncBLSSignatureVerifier.wrap(signatureVerifier),
-        validateableAttestation,
+        validatableAttestation,
         receivedOnSubnetId);
   }
 

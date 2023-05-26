@@ -22,13 +22,13 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetSubsc
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -39,7 +39,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
 
   private final OperationProcessor<SignedContributionAndProof>
       signedContributionAndProofOperationProcessor;
-  private final OperationProcessor<ValidateableSyncCommitteeMessage>
+  private final OperationProcessor<ValidatableSyncCommitteeMessage>
       syncCommitteeMessageOperationProcessor;
   private SyncCommitteeMessageGossipManager syncCommitteeMessageGossipManager;
   private SignedContributionAndProofGossipManager syncCommitteeContributionGossipManager;
@@ -53,14 +53,14 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
       final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<ValidateableAttestation> attestationProcessor,
-      final OperationProcessor<ValidateableAttestation> aggregateProcessor,
+      final OperationProcessor<ValidatableAttestation> attestationProcessor,
+      final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
       final OperationProcessor<SignedContributionAndProof>
           signedContributionAndProofOperationProcessor,
-      final OperationProcessor<ValidateableSyncCommitteeMessage>
+      final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor) {
     super(
         fork,
@@ -128,7 +128,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
   }
 
   @Override
-  public void publishSyncCommitteeMessage(final ValidateableSyncCommitteeMessage message) {
+  public void publishSyncCommitteeMessage(final ValidatableSyncCommitteeMessage message) {
     syncCommitteeMessageGossipManager.publish(message);
   }
 

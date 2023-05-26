@@ -34,7 +34,6 @@ import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SyncCommitteeContributionPool implements SlotEventsChannel {
-
   private final Spec spec;
   private final SignedContributionAndProofValidator validator;
   private final Subscribers<OperationAddedSubscriber<SignedContributionAndProof>> subscribers =
