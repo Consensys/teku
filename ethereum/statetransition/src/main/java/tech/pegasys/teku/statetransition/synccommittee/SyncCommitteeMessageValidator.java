@@ -47,7 +47,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class SyncCommitteeMessageValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<UniquenessKey> seenIndices =
-      LimitedSet.createSynchronized(VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE * 2);
+      LimitedSet.createIterable(VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE * 2);
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
