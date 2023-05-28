@@ -39,23 +39,24 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   public void shouldCreateBlockAfterNormalSlot() {
-    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false, false);
+    assertBlockCreated(1, TestSpecFactory.createMinimalPhase0(), false, state -> {}, false);
   }
 
   @Test
   public void shouldCreateBlockAfterSkippedSlot() {
-    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false, false);
+    assertBlockCreated(2, TestSpecFactory.createMinimalPhase0(), false, state -> {}, false);
   }
 
   @Test
   public void shouldCreateBlockAfterMultipleSkippedSlot() {
-    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false, false);
+    assertBlockCreated(5, TestSpecFactory.createMinimalPhase0(), false, state -> {}, false);
   }
 
   @Test
   void shouldIncludeSyncAggregateWhenAltairIsActive() {
     final BeaconBlock block =
-        assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false, false).getBlock();
+        assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false, state -> {}, false)
+            .getBlock();
     final SyncAggregate result = getSyncAggregate(block);
     assertThatSyncAggregate(result).isNotNull();
     verify(syncCommitteeContributionPool)
@@ -65,10 +66,8 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   @Test
   void shouldIncludeExecutionPayloadWhenBellatrixIsActive() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
-
-    prepareDefaultPayload(spec);
-
-    final BeaconBlock block = assertBlockCreated(1, spec, false, false).getBlock();
+    final BeaconBlock block =
+        assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), false).getBlock();
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
   }
@@ -76,9 +75,9 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateCapellaBlock() {
     final Spec spec = TestSpecFactory.createMinimalCapella();
-    prepareDefaultPayload(spec);
-
-    final BeaconBlock block = assertBlockCreated(1, spec, false, false).getBlock();
+    final BeaconBlock block =
+        assertBlockCreated(1, spec, true, state -> prepareValidPayload(spec, state), false)
+            .getBlock();
     final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
         BeaconBlockBodyCapella.required(block.getBody()).getBlsToExecutionChanges();
     assertThat(blsToExecutionChanges).isNotNull();
@@ -87,10 +86,8 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   @Test
   void shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndBlindedBlockRequested() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
-
-    prepareDefaultPayload(spec);
-
-    final BeaconBlock block = assertBlockCreated(1, spec, false, true).getBlock();
+    final BeaconBlock block =
+        assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), true).getBlock();
     final ExecutionPayloadHeader result = getExecutionPayloadHeader(block);
     assertThat(result).isEqualTo(executionPayloadHeader);
   }
@@ -98,10 +95,8 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   @Test
   void shouldThrowPostMergeWithWrongPayload() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
-
-    prepareDefaultPayload(spec);
-
-    assertThatThrownBy(() -> assertBlockCreated(1, spec, true, false))
+    assertThatThrownBy(
+            () -> assertBlockCreated(1, spec, true, state -> prepareDefaultPayload(spec), false))
         .hasCauseInstanceOf(StateTransitionException.class);
   }
 
