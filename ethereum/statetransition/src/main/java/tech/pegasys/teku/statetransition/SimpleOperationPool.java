@@ -101,7 +101,7 @@ public class SimpleOperationPool<T extends SszData> implements OperationPool<T> 
       final OperationValidator<T> operationValidator,
       final Optional<Comparator<T>> priorityOrderComparator,
       final int operationPoolSize) {
-    this.operations = LimitedSet.createIterable(operationPoolSize);
+    this.operations = LimitedSet.createSynchronizedIterable(operationPoolSize);
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
     this.operationValidator = operationValidator;
     this.priorityOrderComparator = priorityOrderComparator;
