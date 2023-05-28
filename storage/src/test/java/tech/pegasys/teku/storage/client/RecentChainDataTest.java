@@ -227,7 +227,7 @@ class RecentChainDataTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getRoot(),
                 true,
-                false, // Default execution payload so not optimistic
+                true,
                 spec.getBeaconStateUtil(bestBlock.getSlot())
                     .getPreviousDutyDependentRoot(bestBlock.getState()),
                 spec.getBeaconStateUtil(bestBlock.getSlot())

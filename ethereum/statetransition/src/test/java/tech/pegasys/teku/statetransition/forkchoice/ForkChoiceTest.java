@@ -98,47 +98,61 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
       mock(BlobSidecarsAvailabilityChecker.class);
-  private final AttestationSchema attestationSchema =
-      spec.getGenesisSchemaDefinitions().getAttestationSchema();
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.create()
-          .storageMode(StateStorageMode.PRUNE)
-          .specProvider(spec)
-          .numberOfValidators(16)
-          .build();
-  private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
-  private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-  private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private AttestationSchema attestationSchema;
+  private StorageSystem storageSystem;
+  private ChainBuilder chainBuilder;
+  private SignedBlockAndState genesis;
+  private RecentChainData recentChainData;
 
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
-  private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false, Optional.empty());
+  private ExecutionLayerChannelStub executionLayer;
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 
-  private ForkChoice forkChoice =
-      new ForkChoice(
-          spec,
-          eventThread,
-          recentChainData,
-          blobSidecarManager,
-          forkChoiceNotifier,
-          new ForkChoiceStateProvider(eventThread, recentChainData),
-          new TickProcessor(spec, recentChainData),
-          transitionBlockValidator,
-          DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+  private ForkChoice forkChoice;
 
   @BeforeEach
   public void setup() {
+    setupWithSpec(TestSpecFactory.createMinimalBellatrix());
+  }
+
+  private void setupWithSpec(final Spec spec) {
+    // Setting up spec and all dependants
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    this.storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .storageMode(StateStorageMode.PRUNE)
+            .specProvider(spec)
+            .numberOfValidators(16)
+            .build();
+    this.chainBuilder = storageSystem.chainBuilder();
+    this.genesis = chainBuilder.generateGenesis();
+    this.recentChainData = storageSystem.recentChainData();
+    this.executionLayer = new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    this.forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            blobSidecarManager,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+
+    // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
@@ -163,6 +177,9 @@ class ForkChoiceTest {
           .thenReturn(
               SafeFuture.completedFuture(
                   BlobSidecarsAndValidationResult.validResult(blobSidecars)));
+    } else {
+      when(blobSidecarManager.createAvailabilityChecker(any()))
+          .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
     }
   }
 
@@ -183,6 +200,7 @@ class ForkChoiceTest {
 
   @Test
   void onBlock_shouldCheckBlobsAvailability() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
@@ -195,6 +213,7 @@ class ForkChoiceTest {
 
   @Test
   void onBlock_shouldFailIfBlobsAreNotAvailable() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
@@ -210,6 +229,7 @@ class ForkChoiceTest {
 
   @Test
   void onBlock_shouldImportIfBlobsAreNotRequired() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
