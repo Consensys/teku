@@ -20,7 +20,7 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 
 public class AttestationGossipManager implements GossipManager {
@@ -47,11 +47,11 @@ public class AttestationGossipManager implements GossipManager {
     attestationPublishFailureCounter = publishedAttestationCounter.labels("failure");
   }
 
-  public void onNewAttestation(final ValidateableAttestation validateableAttestation) {
-    if (validateableAttestation.isAggregate() || !validateableAttestation.markGossiped()) {
+  public void onNewAttestation(final ValidatableAttestation validatableAttestation) {
+    if (validatableAttestation.isAggregate() || !validatableAttestation.markGossiped()) {
       return;
     }
-    final Attestation attestation = validateableAttestation.getAttestation();
+    final Attestation attestation = validatableAttestation.getAttestation();
     subnetSubscriptions
         .gossip(attestation)
         .finish(

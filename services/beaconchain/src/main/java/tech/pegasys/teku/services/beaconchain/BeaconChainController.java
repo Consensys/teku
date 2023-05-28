@@ -84,7 +84,7 @@ import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFacto
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -843,11 +843,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void initAttestationManager() {
-    final PendingPool<ValidateableAttestation> pendingAttestations =
+    final PendingPool<ValidatableAttestation> pendingAttestations =
         poolFactory.createPendingPoolForAttestations(spec);
-    final FutureItems<ValidateableAttestation> futureAttestations =
+    final FutureItems<ValidatableAttestation> futureAttestations =
         FutureItems.create(
-            ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+            ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
             UInt64.valueOf(3),
             futureItemsMetric,
             "attestations");
@@ -860,7 +860,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             attestations.forEach(
                 attestation ->
                     aggregateValidator.addSeenAggregate(
-                        ValidateableAttestation.from(spec, attestation))));
+                        ValidatableAttestation.from(spec, attestation))));
     attestationManager =
         AttestationManager.create(
             pendingAttestations,

@@ -27,7 +27,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
@@ -43,9 +43,9 @@ import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
  * <p>Note that the resulting aggregate will be invalid if attestations with different
  * AttestationData are added.
  */
-class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> {
+class MatchingDataAttestationGroup implements Iterable<ValidatableAttestation> {
 
-  private final NavigableMap<Integer, Set<ValidateableAttestation>> attestationsByValidatorCount =
+  private final NavigableMap<Integer, Set<ValidatableAttestation>> attestationsByValidatorCount =
       new TreeMap<>(Comparator.reverseOrder()); // Most validators first
 
   private final Spec spec;
@@ -93,7 +93,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @param attestation the attestation to add
    * @return True if the attestation was added, false otherwise
    */
-  public boolean add(final ValidateableAttestation attestation) {
+  public boolean add(final ValidatableAttestation attestation) {
     if (includedValidators.isSuperSetOf(attestation.getAttestation().getAggregationBits())) {
       // All attestation bits have already been included on chain
       return false;
@@ -119,11 +119,11 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
    * @return an iterator including attestations for every validator included in this group.
    */
   @Override
-  public Iterator<ValidateableAttestation> iterator() {
+  public Iterator<ValidatableAttestation> iterator() {
     return new AggregatingIterator();
   }
 
-  public Stream<ValidateableAttestation> stream() {
+  public Stream<ValidatableAttestation> stream() {
     return StreamSupport.stream(spliterator(), false);
   }
 
@@ -159,14 +159,14 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     }
     includedValidators = includedValidators.or(attestation.getAggregationBits());
 
-    final Collection<Set<ValidateableAttestation>> attestationSets =
+    final Collection<Set<ValidatableAttestation>> attestationSets =
         attestationsByValidatorCount.values();
     int numRemoved = 0;
-    for (Iterator<Set<ValidateableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
-      final Set<ValidateableAttestation> candidates = i.next();
-      for (Iterator<ValidateableAttestation> iterator = candidates.iterator();
+    for (Iterator<Set<ValidatableAttestation>> i = attestationSets.iterator(); i.hasNext(); ) {
+      final Set<ValidatableAttestation> candidates = i.next();
+      for (Iterator<ValidatableAttestation> iterator = candidates.iterator();
           iterator.hasNext(); ) {
-        ValidateableAttestation candidate = iterator.next();
+        ValidatableAttestation candidate = iterator.next();
         if (includedValidators.isSuperSetOf(candidate.getAttestation().getAggregationBits())) {
           iterator.remove();
           numRemoved++;
@@ -198,7 +198,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     return committeeShufflingSeed.map(validSeeds::contains).orElse(false);
   }
 
-  private class AggregatingIterator implements Iterator<ValidateableAttestation> {
+  private class AggregatingIterator implements Iterator<ValidatableAttestation> {
     private SszBitlist includedValidators = MatchingDataAttestationGroup.this.includedValidators;
 
     @Override
@@ -207,7 +207,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
     }
 
     @Override
-    public ValidateableAttestation next() {
+    public ValidatableAttestation next() {
       final AggregateAttestationBuilder builder =
           new AggregateAttestationBuilder(spec, attestationData);
       streamRemainingAttestations()
@@ -223,7 +223,7 @@ class MatchingDataAttestationGroup implements Iterable<ValidateableAttestation> 
       return builder.buildAggregate();
     }
 
-    public Stream<ValidateableAttestation> streamRemainingAttestations() {
+    public Stream<ValidatableAttestation> streamRemainingAttestations() {
       return attestationsByValidatorCount.values().stream()
           .flatMap(Set::stream)
           .filter(

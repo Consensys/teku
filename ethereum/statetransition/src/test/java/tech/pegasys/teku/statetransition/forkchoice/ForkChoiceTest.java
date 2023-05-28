@@ -58,7 +58,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -1094,7 +1094,7 @@ class ForkChoiceTest {
                 targetCheckpoint),
             BLSSignature.empty());
     final SafeFuture<AttestationProcessingResult> result =
-        forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation));
+        forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation));
     assertThat(result)
         .isCompletedWithValue(
             AttestationProcessingResult.invalid(
@@ -1111,7 +1111,7 @@ class ForkChoiceTest {
     final Attestation attestation =
         chainBuilder.streamValidAttestationsWithTargetBlock(targetBlock).findFirst().orElseThrow();
     final SafeFuture<AttestationProcessingResult> result =
-        forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation));
+        forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation));
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.DEFER_FOR_FORK_CHOICE);
 
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
@@ -1133,8 +1133,8 @@ class ForkChoiceTest {
     // Note this attestation is wildly invalid but we're going to shove it straight into fork choice
     // as pre-validated.
     final UInt64 updatedAttestationSlot = UInt64.valueOf(20);
-    final ValidateableAttestation updatedVote =
-        ValidateableAttestation.from(
+    final ValidatableAttestation updatedVote =
+        ValidatableAttestation.from(
             spec,
             attestationSchema.create(
                 attestationSchema.getAggregationBitsSchema().ofBits(16),

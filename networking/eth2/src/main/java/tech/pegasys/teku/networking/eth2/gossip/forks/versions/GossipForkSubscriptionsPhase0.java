@@ -34,7 +34,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscri
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -55,8 +55,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
 
   // Upstream consumers
   private final OperationProcessor<SignedBeaconBlock> blockProcessor;
-  private final OperationProcessor<ValidateableAttestation> attestationProcessor;
-  private final OperationProcessor<ValidateableAttestation> aggregateProcessor;
+  private final OperationProcessor<ValidatableAttestation> attestationProcessor;
+  private final OperationProcessor<ValidatableAttestation> aggregateProcessor;
   private final OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
   private final OperationProcessor<ProposerSlashing> proposerSlashingProcessor;
   private final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor;
@@ -77,8 +77,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
       final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<ValidateableAttestation> attestationProcessor,
-      final OperationProcessor<ValidateableAttestation> aggregateProcessor,
+      final OperationProcessor<ValidatableAttestation> attestationProcessor,
+      final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
       final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor) {
@@ -225,7 +225,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   @Override
-  public void publishAttestation(final ValidateableAttestation attestation) {
+  public void publishAttestation(final ValidatableAttestation attestation) {
     attestationGossipManager.onNewAttestation(attestation);
     aggregateGossipManager.onNewAggregate(attestation);
   }

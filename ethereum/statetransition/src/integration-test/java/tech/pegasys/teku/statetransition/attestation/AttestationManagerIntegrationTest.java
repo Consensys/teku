@@ -31,7 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
@@ -86,11 +86,11 @@ class AttestationManagerIntegrationTest {
           new StubForkChoiceNotifier(),
           transitionBlockValidator);
 
-  private final PendingPool<ValidateableAttestation> pendingAttestations =
+  private final PendingPool<ValidatableAttestation> pendingAttestations =
       new PoolFactory(storageSystem.getMetricsSystem()).createPendingPoolForAttestations(spec);
-  private final FutureItems<ValidateableAttestation> futureAttestations =
+  private final FutureItems<ValidatableAttestation> futureAttestations =
       FutureItems.create(
-          ValidateableAttestation::getEarliestSlotForForkChoiceProcessing,
+          ValidatableAttestation::getEarliestSlotForForkChoiceProcessing,
           mock(SettableLabelledGauge.class),
           "attestations");
   private final SignatureVerificationService signatureVerificationService =
@@ -140,7 +140,7 @@ class AttestationManagerIntegrationTest {
 
     final SignedBlockAndState targetBlockAndState =
         storageSystem.chainBuilder().getLatestBlockAndStateAtSlot(attestationSlot);
-    final ValidateableAttestation attestation =
+    final ValidatableAttestation attestation =
         createAttestation(attestationSlot, targetBlockAndState, phase0Fork);
 
     final SafeFuture<InternalValidationResult> result =
@@ -157,7 +157,7 @@ class AttestationManagerIntegrationTest {
 
     final SignedBlockAndState targetBlockAndState =
         storageSystem.chainBuilder().getLatestBlockAndStateAtSlot(attestationSlot);
-    final ValidateableAttestation attestation =
+    final ValidatableAttestation attestation =
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
@@ -175,7 +175,7 @@ class AttestationManagerIntegrationTest {
 
     final SignedBlockAndState targetBlockAndState =
         storageSystem.chainBuilder().getLatestBlockAndStateAtSlot(attestationSlot);
-    final ValidateableAttestation attestation =
+    final ValidatableAttestation attestation =
         createAttestation(attestationSlot, targetBlockAndState, phase0Fork);
 
     final SafeFuture<InternalValidationResult> result =
@@ -193,7 +193,7 @@ class AttestationManagerIntegrationTest {
 
     final SignedBlockAndState targetBlockAndState =
         storageSystem.chainBuilder().getLatestBlockAndStateAtSlot(attestationSlot);
-    final ValidateableAttestation attestation =
+    final ValidatableAttestation attestation =
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
@@ -210,8 +210,8 @@ class AttestationManagerIntegrationTest {
 
     final SignedAggregateAndProof aggregate =
         generator.validAggregateAndProof(storageSystem.getChainHead(), attestationSlot);
-    ValidateableAttestation attestation =
-        ValidateableAttestation.aggregateFromValidator(spec, aggregate);
+    ValidatableAttestation attestation =
+        ValidatableAttestation.aggregateFromValidator(spec, aggregate);
 
     final SafeFuture<InternalValidationResult> result =
         attestationManager.addAggregate(attestation);
@@ -231,7 +231,7 @@ class AttestationManagerIntegrationTest {
 
     final SignedBlockAndState targetBlockAndState =
         storageSystem.chainBuilder().getLatestBlockAndStateAtSlot(attestationSlot);
-    final ValidateableAttestation attestation =
+    final ValidatableAttestation attestation =
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
@@ -239,7 +239,7 @@ class AttestationManagerIntegrationTest {
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
-  private ValidateableAttestation createAttestation(
+  private ValidatableAttestation createAttestation(
       final UInt64 attestationSlot,
       final SignedBlockAndState targetBlockAndState,
       final Fork fork) {
@@ -267,7 +267,7 @@ class AttestationManagerIntegrationTest {
             .ofBits(committee.size(), validatorCommitteePosition);
     final Attestation attestation =
         attestationSchema.create(aggregationBits, attestationData, signature);
-    return ValidateableAttestation.fromNetwork(
+    return ValidatableAttestation.fromNetwork(
         spec,
         attestation,
         spec.computeSubnetForAttestation(targetBlockAndState.getState(), attestation));

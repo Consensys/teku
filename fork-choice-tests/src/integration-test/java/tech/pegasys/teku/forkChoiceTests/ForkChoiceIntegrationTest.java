@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -276,7 +276,7 @@ public class ForkChoiceIntegrationTest {
 
   private boolean processAttestation(ForkChoice fc, Attestation step) {
     AttestationProcessingResult attestationProcessingResult =
-        fc.onAttestation(ValidateableAttestation.from(SPEC, step)).join();
+        fc.onAttestation(ValidatableAttestation.from(SPEC, step)).join();
     return attestationProcessingResult.isSuccessful();
   }
 
