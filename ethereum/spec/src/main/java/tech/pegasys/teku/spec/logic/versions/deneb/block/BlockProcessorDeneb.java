@@ -19,6 +19,7 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -84,6 +85,22 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
         kzgCommitmentsProcessor);
 
     processBlobKzgCommitments(genericState, block.getBody(), kzgCommitmentsProcessor);
+  }
+
+  @Override
+  public void validateExecutionPayload(
+      BeaconState genericState,
+      BeaconBlockBody beaconBlockBody,
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException {
+    final int maxBlobsPerBlock = SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow();
+    if (blobKzgCommitments.size() > maxBlobsPerBlock) {
+      throw new BlockProcessingException(
+          "Number of kzg commitments in block exceeds max blobs per block");
+    }
+    super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor);
   }
 
   @Override

@@ -23,7 +23,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import java.util.Collections;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -57,10 +59,13 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
@@ -122,7 +127,11 @@ public abstract class AbstractBlockFactoryTest {
   }
 
   protected BlockContainer assertBlockCreated(
-      final int blockSlot, final Spec spec, final boolean postMerge, final boolean blinded) {
+      final int blockSlot,
+      final Spec spec,
+      final boolean postMerge,
+      final Consumer<BeaconState> executionPayloadBuilder,
+      final boolean blinded) {
     final UInt64 newSlot = UInt64.valueOf(blockSlot);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
@@ -179,6 +188,7 @@ public abstract class AbstractBlockFactoryTest {
 
     when(syncCommitteeContributionPool.createSyncAggregateForBlock(newSlot, bestBlockRoot))
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
+    executionPayloadBuilder.accept(blockSlotState);
 
     final BlockContainer blockContainer =
         safeJoin(
@@ -289,6 +299,30 @@ public abstract class AbstractBlockFactoryTest {
         SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
             .getExecutionPayloadHeaderSchema()
             .getHeaderOfDefaultPayload();
+  }
+
+  protected void prepareValidPayload(final Spec spec, final BeaconState genericState) {
+    final BeaconStateBellatrix state = BeaconStateBellatrix.required(genericState);
+    final MiscHelpers miscHelpers = spec.atSlot(state.getSlot()).miscHelpers();
+    final BeaconStateAccessors beaconStateAccessors =
+        spec.atSlot(state.getSlot()).beaconStateAccessors();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    executionPayload =
+        dataStructureUtil.randomExecutionPayload(
+            genericState.getSlot(),
+            builder -> {
+              builder
+                  .parentHash(state.getLatestExecutionPayloadHeader().getBlockHash())
+                  .prevRandao(
+                      beaconStateAccessors.getRandaoMix(
+                          state, beaconStateAccessors.getCurrentEpoch(state)))
+                  .timestamp(miscHelpers.computeTimeAtSlot(state, state.getSlot()))
+                  .withdrawals(Collections::emptyList);
+            });
+    executionPayloadHeader =
+        SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(executionPayload);
   }
 
   protected BlobsBundle prepareBlobsBundle(final Spec spec, final int count) {
