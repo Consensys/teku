@@ -453,7 +453,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
     }
 
-    if (configTerminalBlockHash.isZero()) {
+    // Genesis is post-Bellatrix
+    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      LOG.info("Transitioning immediately, post-Bellatrix");
+      transitionTime = bellatrixActivationTime;
+      terminalBlockHash = Bytes32.fromHexStringLenient("0x00");
+    } else if (configTerminalBlockHash.isZero()) {
       // TTD emulation
       LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
 

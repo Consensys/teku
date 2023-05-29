@@ -88,5 +88,6 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     c.withAltairEpoch(UInt64.ZERO);
     c.withBellatrixEpoch(UInt64.ZERO);
     c.withCapellaEpoch(UInt64.ONE);
+    c.withTotalTerminalDifficulty(0);
   }
 }
