@@ -266,7 +266,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 .orElse(emptyList()));
   }
 
-  // TODO: create BlockContents for Deneb in typeDefClient
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
@@ -277,11 +276,10 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
   }
 
-  // TODO: pass SignedBlockContainer to typeDefClient
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer) {
-    return sendRequest(() -> typeDefClient.sendSignedBlock(blockContainer.getSignedBlock()));
+    return sendRequest(() -> typeDefClient.sendSignedBlock(blockContainer));
   }
 
   @Override

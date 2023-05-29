@@ -24,9 +24,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 
 public class BlockContentsSchema
-    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecar>> {
+    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecar>>
+    implements BlockContainerSchema<BlockContents> {
 
   static final SszFieldName FIELD_BLOB_SIDECARS = () -> "blob_sidecars";
 
