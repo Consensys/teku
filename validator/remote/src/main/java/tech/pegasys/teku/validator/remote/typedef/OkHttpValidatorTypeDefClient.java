@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -64,7 +64,7 @@ public class OkHttpValidatorTypeDefClient {
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.sendSignedBlockRequest =
-        new SendSignedBlockRequest(baseEndpoint, okHttpClient, preferSszBlockEncoding);
+        new SendSignedBlockRequest(spec, baseEndpoint, okHttpClient, preferSszBlockEncoding);
     this.registerValidatorsRequest =
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
     this.createAttestationDataRequest =
@@ -83,8 +83,8 @@ public class OkHttpValidatorTypeDefClient {
                 new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 
-  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    return sendSignedBlockRequest.sendSignedBlock(beaconBlock);
+  public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
+    return sendSignedBlockRequest.sendSignedBlock(blockContainer);
   }
 
   public Optional<BlockContainer> createUnsignedBlock(

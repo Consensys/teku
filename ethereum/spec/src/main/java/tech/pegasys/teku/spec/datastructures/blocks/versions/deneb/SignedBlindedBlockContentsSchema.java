@@ -24,10 +24,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedB
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 
 public class SignedBlindedBlockContentsSchema
     extends ContainerSchema2<
-        SignedBlindedBlockContents, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>> {
+        SignedBlindedBlockContents, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>>
+    implements SignedBlockContainerSchema<SignedBlindedBlockContents> {
 
   static final SszFieldName FIELD_BLOB_SIDECARS = () -> "signed_blinded_blob_sidecars";
 
