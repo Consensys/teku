@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
@@ -33,8 +32,4 @@ public interface BlindedBeaconBlockBodySchemaDeneb<T extends BlindedBeaconBlockB
   }
 
   SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema();
-
-  default Optional<BlindedBeaconBlockBodySchemaDeneb<?>> toBlindedVersionDeneb() {
-    return Optional.of(this);
-  }
 }

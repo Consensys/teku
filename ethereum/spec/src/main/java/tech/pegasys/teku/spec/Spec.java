@@ -47,8 +47,9 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
@@ -381,6 +382,12 @@ public class Spec {
     return atSlot(blobSidecar.getSlot()).miscHelpers().computeSigningRoot(blobSidecar, domain);
   }
 
+  public Bytes computeSigningRoot(BlindedBlobSidecar blindedBlobSidecar, Bytes32 domain) {
+    return atSlot(blindedBlobSidecar.getSlot())
+        .miscHelpers()
+        .computeSigningRoot(blindedBlobSidecar, domain);
+  }
+
   public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {
     return atSlot(blockHeader.getSlot()).miscHelpers().computeSigningRoot(blockHeader, domain);
   }
@@ -558,13 +565,13 @@ public class Spec {
 
   public AttestationProcessingResult validateAttestation(
       final ReadOnlyStore store,
-      final ValidateableAttestation validateableAttestation,
+      final ValidatableAttestation validatableAttestation,
       final Optional<BeaconState> maybeState) {
-    final UInt64 slot = validateableAttestation.getAttestation().getData().getSlot();
+    final UInt64 slot = validatableAttestation.getAttestation().getData().getSlot();
     final Fork fork = forkSchedule.getFork(computeEpochAtSlot(slot));
     return atSlot(slot)
         .getForkChoiceUtil()
-        .validate(fork, store, validateableAttestation, maybeState);
+        .validate(fork, store, validatableAttestation, maybeState);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
@@ -826,7 +833,7 @@ public class Spec {
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
       BeaconState state,
-      ValidateableAttestation attestation,
+      ValidatableAttestation attestation,
       AsyncBLSSignatureVerifier blsSignatureVerifier) {
     final UInt64 slot = attestation.getData().getSlot();
     return atSlot(slot)

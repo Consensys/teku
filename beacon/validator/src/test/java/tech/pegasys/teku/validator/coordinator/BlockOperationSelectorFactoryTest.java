@@ -136,6 +136,7 @@ class BlockOperationSelectorFactoryTest {
           beaconBlockSchemaSupplier.andThen(
               s -> s.toVersionCapella().orElseThrow().getBlsToExecutionChangesSchema()),
           blsToExecutionChangeValidator);
+
   private final SyncCommitteeContributionPool contributionPool =
       new SyncCommitteeContributionPool(spec, contributionValidator);
 

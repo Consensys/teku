@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -80,7 +80,7 @@ class AggregatingAttestationPoolTest {
 
   @Test
   public void createAggregateFor_shouldReturnEmptyWhenNoAttestationsMatchGivenData() {
-    final Optional<ValidateableAttestation> result =
+    final Optional<ValidatableAttestation> result =
         aggregatingPool.createAggregateFor(
             dataStructureUtil.randomAttestationData().hashTreeRoot());
     assertThat(result).isEmpty();
@@ -92,9 +92,9 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation1 = addAttestationFromValidators(attestationData, 1, 3, 5);
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6);
 
-    final Optional<ValidateableAttestation> result =
+    final Optional<ValidatableAttestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
-    assertThat(result.map(ValidateableAttestation::getAttestation))
+    assertThat(result.map(ValidatableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
 
@@ -105,9 +105,9 @@ class AggregatingAttestationPoolTest {
     final Attestation attestation2 = addAttestationFromValidators(attestationData, 2, 4, 6, 8);
     addAttestationFromValidators(attestationData, 2, 3, 9);
 
-    final Optional<ValidateableAttestation> result =
+    final Optional<ValidatableAttestation> result =
         aggregatingPool.createAggregateFor(attestationData.hashTreeRoot());
-    assertThat(result.map(ValidateableAttestation::getAttestation))
+    assertThat(result.map(ValidatableAttestation::getAttestation))
         .contains(aggregateAttestations(attestation1, attestation2));
   }
 
@@ -146,7 +146,7 @@ class AggregatingAttestationPoolTest {
     // Receive the attestation from a block, prior to receiving it via gossip
     aggregatingPool.onAttestationsIncludedInBlock(ONE, List.of(attestation));
     // Attestation isn't added because it's already redundant
-    aggregatingPool.add(ValidateableAttestation.fromValidator(spec, attestation));
+    aggregatingPool.add(ValidatableAttestation.fromValidator(spec, attestation));
     assertThat(aggregatingPool.getSize()).isZero();
 
     // But we now have a MatchingDataAttestationGroup with unknown shuffling seed present
@@ -330,7 +330,7 @@ class AggregatingAttestationPoolTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
 
     final Attestation attestation = addAttestationFromValidators(attestationData, 1, 2, 3, 4);
-    aggregatingPool.add(ValidateableAttestation.from(spec, attestation));
+    aggregatingPool.add(ValidatableAttestation.from(spec, attestation));
     assertThat(aggregatingPool.getSize()).isEqualTo(1);
   }
 
@@ -545,11 +545,9 @@ class AggregatingAttestationPoolTest {
   private Attestation addAttestationFromValidators(
       final AttestationData data, final int... validators) {
     final Attestation attestation = createAttestation(data, validators);
-    ValidateableAttestation validateableAttestation =
-        ValidateableAttestation.from(spec, attestation);
-    validateableAttestation.saveCommitteeShufflingSeed(
-        dataStructureUtil.randomBeaconState(100, 15));
-    aggregatingPool.add(validateableAttestation);
+    ValidatableAttestation validatableAttestation = ValidatableAttestation.from(spec, attestation);
+    validatableAttestation.saveCommitteeShufflingSeed(dataStructureUtil.randomBeaconState(100, 15));
+    aggregatingPool.add(validatableAttestation);
     return attestation;
   }
 

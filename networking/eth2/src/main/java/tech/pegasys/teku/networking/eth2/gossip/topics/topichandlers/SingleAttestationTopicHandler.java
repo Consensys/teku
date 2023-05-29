@@ -18,7 +18,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -29,7 +29,7 @@ public class SingleAttestationTopicHandler {
   public static Eth2TopicHandler<?> createHandler(
       final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
-      final OperationProcessor<ValidateableAttestation> operationProcessor,
+      final OperationProcessor<ValidatableAttestation> operationProcessor,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final String topicName,
@@ -41,7 +41,7 @@ public class SingleAttestationTopicHandler {
     OperationProcessor<Attestation> convertingProcessor =
         attMessage ->
             operationProcessor.process(
-                ValidateableAttestation.fromNetwork(spec, attMessage, subnetId));
+                ValidatableAttestation.fromNetwork(spec, attMessage, subnetId));
 
     return new Eth2TopicHandler<>(
         recentChainData,

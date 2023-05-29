@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -214,11 +213,6 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
     return (SszListSchema<SszKZGCommitment, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
-  }
-
-  @Override
-  public Optional<BlindedBeaconBlockBodySchemaDeneb<?>> toBlindedVersionDeneb() {
-    return Optional.of(this);
   }
 
   @Override

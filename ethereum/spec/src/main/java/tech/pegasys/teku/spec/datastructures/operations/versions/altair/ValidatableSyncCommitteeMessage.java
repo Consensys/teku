@@ -14,8 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.operations.versions.altair;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Suppliers;
+import com.google.common.collect.Sets;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -23,24 +27,27 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 
-public class ValidateableSyncCommitteeMessage {
+public class ValidatableSyncCommitteeMessage {
   private final SyncCommitteeMessage message;
   private final OptionalInt receivedSubnetId;
+  private final Supplier<Bytes32> hashTreeRoot;
+
   private volatile Optional<SyncSubcommitteeAssignments> subcommitteeAssignments = Optional.empty();
 
-  private ValidateableSyncCommitteeMessage(
+  private ValidatableSyncCommitteeMessage(
       final SyncCommitteeMessage message, final OptionalInt receivedSubnetId) {
     this.message = message;
     this.receivedSubnetId = receivedSubnetId;
+    this.hashTreeRoot = Suppliers.memoize(message::hashTreeRoot);
   }
 
-  public static ValidateableSyncCommitteeMessage fromValidator(final SyncCommitteeMessage message) {
-    return new ValidateableSyncCommitteeMessage(message, OptionalInt.empty());
+  public static ValidatableSyncCommitteeMessage fromValidator(final SyncCommitteeMessage message) {
+    return new ValidatableSyncCommitteeMessage(message, OptionalInt.empty());
   }
 
-  public static ValidateableSyncCommitteeMessage fromNetwork(
+  public static ValidatableSyncCommitteeMessage fromNetwork(
       final SyncCommitteeMessage message, final int receivedSubnetId) {
-    return new ValidateableSyncCommitteeMessage(message, OptionalInt.of(receivedSubnetId));
+    return new ValidatableSyncCommitteeMessage(message, OptionalInt.of(receivedSubnetId));
   }
 
   public SyncCommitteeMessage getMessage() {
@@ -71,6 +78,18 @@ public class ValidateableSyncCommitteeMessage {
 
     this.subcommitteeAssignments = Optional.of(assignments);
     return assignments;
+  }
+
+  public Bytes32 hashTreeRoot() {
+    return hashTreeRoot.get();
+  }
+
+  public UInt64 getEarliestSlotForForkChoiceProcessing() {
+    return message.getSlot();
+  }
+
+  public Collection<Bytes32> getDependentBlockRoots() {
+    return Sets.newHashSet(message.getBeaconBlockRoot());
   }
 
   @VisibleForTesting

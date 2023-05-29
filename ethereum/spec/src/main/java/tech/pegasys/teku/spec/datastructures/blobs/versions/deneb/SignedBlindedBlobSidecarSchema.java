@@ -44,8 +44,4 @@ public class SignedBlindedBlobSidecarSchema
   public SignedBlindedBlobSidecar createFromBackingNode(final TreeNode node) {
     return new SignedBlindedBlobSidecar(this, node);
   }
-
-  public BlindedBlobSidecarSchema getBlindedBlobSidecarSchema() {
-    return (BlindedBlobSidecarSchema) getFieldSchema0();
-  }
 }

@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class ValidateableAttestation {
+public class ValidatableAttestation {
   private final Spec spec;
   private final Attestation attestation;
   private final Optional<SignedAggregateAndProof> maybeAggregate;
@@ -46,38 +46,37 @@ public class ValidateableAttestation {
   private volatile Optional<IndexedAttestation> indexedAttestation = Optional.empty();
   private volatile Optional<Bytes32> committeeShufflingSeed = Optional.empty();
 
-  public static ValidateableAttestation from(final Spec spec, final Attestation attestation) {
-    return new ValidateableAttestation(
+  public static ValidatableAttestation from(final Spec spec, final Attestation attestation) {
+    return new ValidatableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), false);
   }
 
-  public static ValidateableAttestation fromValidator(
+  public static ValidatableAttestation fromValidator(
       final Spec spec, final Attestation attestation) {
-    return new ValidateableAttestation(
+    return new ValidatableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.empty(), true);
   }
 
-  public static ValidateableAttestation fromNetwork(
+  public static ValidatableAttestation fromNetwork(
       final Spec spec, final Attestation attestation, final int receivedSubnetId) {
-    return new ValidateableAttestation(
+    return new ValidatableAttestation(
         spec, attestation, Optional.empty(), OptionalInt.of(receivedSubnetId), false);
   }
 
-  public static ValidateableAttestation fromReorgedBlock(
+  public static ValidatableAttestation fromReorgedBlock(
       final Spec spec, final Attestation attestation) {
-    final ValidateableAttestation validateableAttestation =
-        new ValidateableAttestation(
-            spec, attestation, Optional.empty(), OptionalInt.empty(), false);
+    final ValidatableAttestation validatableAttestation =
+        new ValidatableAttestation(spec, attestation, Optional.empty(), OptionalInt.empty(), false);
     // An indexed attestation from a reorged block is valid because it already
     // has been validated when the block was part of the canonical chain
-    validateableAttestation.setValidIndexedAttestation();
-    validateableAttestation.setAcceptedAsGossip();
-    return validateableAttestation;
+    validatableAttestation.setValidIndexedAttestation();
+    validatableAttestation.setAcceptedAsGossip();
+    return validatableAttestation;
   }
 
-  public static ValidateableAttestation aggregateFromValidator(
+  public static ValidatableAttestation aggregateFromValidator(
       final Spec spec, final SignedAggregateAndProof attestation) {
-    return new ValidateableAttestation(
+    return new ValidatableAttestation(
         spec,
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
@@ -85,9 +84,9 @@ public class ValidateableAttestation {
         true);
   }
 
-  public static ValidateableAttestation aggregateFromNetwork(
+  public static ValidatableAttestation aggregateFromNetwork(
       final Spec spec, final SignedAggregateAndProof attestation) {
-    return new ValidateableAttestation(
+    return new ValidatableAttestation(
         spec,
         attestation.getMessage().getAggregate(),
         Optional.of(attestation),
@@ -95,7 +94,7 @@ public class ValidateableAttestation {
         false);
   }
 
-  private ValidateableAttestation(
+  private ValidatableAttestation(
       final Spec spec,
       final Attestation attestation,
       final Optional<SignedAggregateAndProof> aggregateAndProof,
@@ -200,10 +199,10 @@ public class ValidateableAttestation {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof ValidateableAttestation)) {
+    if (!(o instanceof ValidatableAttestation)) {
       return false;
     }
-    ValidateableAttestation that = (ValidateableAttestation) o;
+    ValidatableAttestation that = (ValidatableAttestation) o;
     return Objects.equal(getAttestation(), that.getAttestation())
         && Objects.equal(maybeAggregate, that.maybeAggregate);
   }

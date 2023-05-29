@@ -34,7 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -140,22 +140,22 @@ public class OperationsReOrgManagerTest {
     verify(blsToExecutionOperationPool)
         .addAll(fork1Block2.getBody().getOptionalBlsToExecutionChanges().orElseThrow());
 
-    ArgumentCaptor<ValidateableAttestation> argument =
-        ArgumentCaptor.forClass(ValidateableAttestation.class);
+    ArgumentCaptor<ValidatableAttestation> argument =
+        ArgumentCaptor.forClass(ValidatableAttestation.class);
     verify(attestationManager, atLeastOnce()).onAttestation(argument.capture());
 
-    List<ValidateableAttestation> attestationList = new ArrayList<>();
+    List<ValidatableAttestation> attestationList = new ArrayList<>();
     attestationList.addAll(
         fork1Block1.getBody().getAttestations().stream()
-            .map(attestation -> ValidateableAttestation.from(spec, attestation))
+            .map(attestation -> ValidatableAttestation.from(spec, attestation))
             .collect(Collectors.toList()));
     attestationList.addAll(
         fork1Block2.getBody().getAttestations().stream()
-            .map(attestation -> ValidateableAttestation.from(spec, attestation))
+            .map(attestation -> ValidatableAttestation.from(spec, attestation))
             .collect(Collectors.toList()));
     assertThat(argument.getAllValues())
         .containsExactlyInAnyOrderElementsOf(attestationList)
-        .allMatch(ValidateableAttestation::isValidIndexedAttestation);
+        .allMatch(ValidatableAttestation::isValidIndexedAttestation);
 
     verify(proposerSlashingOperationPool).removeAll(fork2Block1.getBody().getProposerSlashings());
     verify(attesterSlashingOperationPool).removeAll(fork2Block1.getBody().getAttesterSlashings());

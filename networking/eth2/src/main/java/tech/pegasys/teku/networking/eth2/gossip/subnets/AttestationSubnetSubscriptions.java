@@ -26,7 +26,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttes
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -37,7 +37,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
-  private final OperationProcessor<ValidateableAttestation> processor;
+  private final OperationProcessor<ValidatableAttestation> processor;
   private final ForkInfo forkInfo;
   private final int maxMessageSize;
   private final AttestationSchema attestationSchema;
@@ -48,7 +48,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
-      final OperationProcessor<ValidateableAttestation> processor,
+      final OperationProcessor<ValidatableAttestation> processor,
       final ForkInfo forkInfo,
       final int maxMessageSize) {
     super(gossipNetwork, gossipEncoding);

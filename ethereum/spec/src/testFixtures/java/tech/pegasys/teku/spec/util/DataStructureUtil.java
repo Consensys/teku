@@ -2195,7 +2195,8 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
-    final List<SignedBlobSidecar> signedBlobSidecars = randomSignedBlobSidecars(4);
+    final List<SignedBlobSidecar> signedBlobSidecars =
+        randomSignedBlobSidecars(randomNumberOfBlobsPerBlock());
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
@@ -2207,7 +2208,7 @@ public final class DataStructureUtil {
   }
 
   public BlockContents randomBlockContents(final UInt64 slot) {
-    final List<BlobSidecar> blobSidecarList = randomBlobSidecars(4);
+    final List<BlobSidecar> blobSidecarList = randomBlobSidecars(randomNumberOfBlobsPerBlock());
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
@@ -2219,7 +2220,8 @@ public final class DataStructureUtil {
   }
 
   public BlindedBlockContents randomBlindedBlockContents(final UInt64 slot) {
-    final List<BlindedBlobSidecar> blindedBlobSidecars = randomBlindedBlobSidecars(4);
+    final List<BlindedBlobSidecar> blindedBlobSidecars =
+        randomBlindedBlobSidecars(randomNumberOfBlobsPerBlock());
     final BeaconBlock blindedBeaconBlock = randomBlindedBeaconBlock(slot);
     return getDenebSchemaDefinitions(slot)
         .getBlindedBlockContentsSchema()
@@ -2229,7 +2231,7 @@ public final class DataStructureUtil {
   public SignedBlindedBlockContents randomSignedBlindedBlockContents() {
     final UInt64 slot = randomSlot();
     final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
-        randomSignedBlindedBlobSidecars(4);
+        randomSignedBlindedBlobSidecars(randomNumberOfBlobsPerBlock());
     final SignedBeaconBlock signedBlindedBeaconBlock = randomSignedBlindedBeaconBlock(slot);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlindedBlockContentsSchema()
@@ -2291,6 +2293,14 @@ public final class DataStructureUtil {
 
     public RandomBlobSidecarBuilder kzgProof(final Bytes48 kzgProof) {
       this.kzgProof = Optional.of(kzgProof);
+      return this;
+    }
+
+    public RandomBlobSidecarBuilder forBlock(final BeaconBlock block) {
+      this.slot = Optional.of(block.getSlot());
+      this.blockRoot = Optional.of(block.getRoot());
+      this.blockParentRoot = Optional.of(block.getParentRoot());
+      this.proposerIndex = Optional.of(block.getProposerIndex());
       return this;
     }
 
@@ -2381,6 +2391,15 @@ public final class DataStructureUtil {
     }
 
     return rewardAndPenaltyDeltas;
+  }
+
+  private int randomNumberOfBlobsPerBlock() {
+    // minimum 1 blob
+    return randomInt(1, spec.getMaxBlobsPerBlock().orElseThrow() + 1);
+  }
+
+  private int randomInt(final int origin, final int bound) {
+    return new Random(nextSeed()).ints(origin, bound).findFirst().orElse(0);
   }
 
   private int randomInt(final int bound) {

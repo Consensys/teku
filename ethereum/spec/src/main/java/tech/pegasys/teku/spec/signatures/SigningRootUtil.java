@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -49,15 +50,24 @@ public class SigningRootUtil {
   }
 
   public Bytes signingRootForBlobSidecar(final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
-    final SpecVersion specVersion = spec.atSlot(blobSidecar.getSlot());
     final Bytes32 domain =
         spec.getDomain(
             Domain.DOMAIN_BLOB_SIDECAR,
             spec.computeEpochAtSlot(blobSidecar.getSlot()),
             forkInfo.getFork(),
             forkInfo.getGenesisValidatorsRoot());
-    specVersion.miscHelpers().computeSigningRoot(blobSidecar, domain);
     return spec.computeSigningRoot(blobSidecar, domain);
+  }
+
+  public Bytes signingRootForBlindedBlobSidecar(
+      final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
+    final Bytes32 domain =
+        spec.getDomain(
+            Domain.DOMAIN_BLOB_SIDECAR,
+            spec.computeEpochAtSlot(blindedBlobSidecar.getSlot()),
+            forkInfo.getFork(),
+            forkInfo.getGenesisValidatorsRoot());
+    return spec.computeSigningRoot(blindedBlobSidecar, domain);
   }
 
   public Bytes signingRootForSignBlockHeader(
@@ -67,13 +77,11 @@ public class SigningRootUtil {
   }
 
   private Bytes32 getDomainForSignBlock(UInt64 slot, ForkInfo forkInfo) {
-    final Bytes32 domain =
-        spec.getDomain(
-            Domain.BEACON_PROPOSER,
-            spec.computeEpochAtSlot(slot),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
-    return domain;
+    return spec.getDomain(
+        Domain.BEACON_PROPOSER,
+        spec.computeEpochAtSlot(slot),
+        forkInfo.getFork(),
+        forkInfo.getGenesisValidatorsRoot());
   }
 
   public Bytes signingRootForSignAttestationData(

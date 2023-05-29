@@ -34,15 +34,14 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SyncCommitteeMessagePool implements SlotEventsChannel {
-
-  private final Subscribers<OperationAddedSubscriber<ValidateableSyncCommitteeMessage>>
-      subscribers = Subscribers.create(true);
+  private final Subscribers<OperationAddedSubscriber<ValidatableSyncCommitteeMessage>> subscribers =
+      Subscribers.create(true);
 
   private final Spec spec;
   private final SyncCommitteeMessageValidator validator;
@@ -59,22 +58,22 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
   }
 
   public void subscribeOperationAdded(
-      OperationAddedSubscriber<ValidateableSyncCommitteeMessage> subscriber) {
+      OperationAddedSubscriber<ValidatableSyncCommitteeMessage> subscriber) {
     subscribers.subscribe(subscriber);
   }
 
   public SafeFuture<InternalValidationResult> addLocal(
-      final ValidateableSyncCommitteeMessage message) {
+      final ValidatableSyncCommitteeMessage message) {
     return add(message, false);
   }
 
   public SafeFuture<InternalValidationResult> addRemote(
-      final ValidateableSyncCommitteeMessage message) {
+      final ValidatableSyncCommitteeMessage message) {
     return add(message, true);
   }
 
   private SafeFuture<InternalValidationResult> add(
-      final ValidateableSyncCommitteeMessage message, final boolean fromNetwork) {
+      final ValidatableSyncCommitteeMessage message, final boolean fromNetwork) {
     return validator
         .validate(message)
         .thenPeek(
@@ -87,7 +86,7 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
             });
   }
 
-  private synchronized void doAdd(final ValidateableSyncCommitteeMessage message) {
+  private synchronized void doAdd(final ValidatableSyncCommitteeMessage message) {
     final SyncSubcommitteeAssignments assignments =
         message.getSubcommitteeAssignments().orElseThrow();
     final Map<BlockRootAndCommitteeIndex, ContributionData> blockRootAndCommitteeIndexToMessages =

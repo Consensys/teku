@@ -36,7 +36,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -178,7 +178,7 @@ public class GossipMessageHandlerIntegrationTest {
   @Test
   public void shouldNotGossipAttestationsAcrossPeersThatAreNotOnTheSameSubnet() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    List<ValidateableAttestation> node2attestations = new ArrayList<>();
+    List<ValidatableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
 
@@ -220,7 +220,7 @@ public class GossipMessageHandlerIntegrationTest {
     final StateAndBlockSummary bestBlockAndState = getChainHead(node1);
     Attestation validAttestation = attestationGenerator.validAttestation(bestBlockAndState);
     processedAttestationSubscribers.forEach(
-        s -> s.accept(ValidateableAttestation.from(spec, validAttestation)));
+        s -> s.accept(ValidatableAttestation.from(spec, validAttestation)));
 
     ensureConditionRemainsMet(() -> assertThat(node2attestations).isEmpty());
   }
@@ -228,7 +228,7 @@ public class GossipMessageHandlerIntegrationTest {
   @Test
   public void shouldGossipAttestationsAcrossPeersThatAreOnTheSameSubnet() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    List<ValidateableAttestation> node2attestations = new ArrayList<>();
+    List<ValidatableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
 
@@ -268,9 +268,8 @@ public class GossipMessageHandlerIntegrationTest {
     // Propagate attestation from network 1
     AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary bestBlockAndState = getChainHead(node1);
-    ValidateableAttestation validAttestation =
-        ValidateableAttestation.from(
-            spec, attestationGenerator.validAttestation(bestBlockAndState));
+    ValidatableAttestation validAttestation =
+        ValidatableAttestation.from(spec, attestationGenerator.validAttestation(bestBlockAndState));
 
     final int subnetId =
         spec.computeSubnetForAttestation(
@@ -292,7 +291,7 @@ public class GossipMessageHandlerIntegrationTest {
   @Test
   public void shouldNotGossipAttestationsWhenPeerDeregistersFromTopic() throws Exception {
     final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
-    List<ValidateableAttestation> node2attestations = new ArrayList<>();
+    List<ValidatableAttestation> node2attestations = new ArrayList<>();
     Subscribers<ProcessedAttestationListener> processedAttestationSubscribers =
         Subscribers.create(false);
 
@@ -339,8 +338,8 @@ public class GossipMessageHandlerIntegrationTest {
     final int subnetId =
         spec.computeSubnetForAttestation(bestBlockAndState.getState(), attestation);
 
-    ValidateableAttestation validAttestation =
-        ValidateableAttestation.fromNetwork(spec, attestation, subnetId);
+    ValidatableAttestation validAttestation =
+        ValidatableAttestation.fromNetwork(spec, attestation, subnetId);
 
     node1.network().subscribeToAttestationSubnetId(subnetId);
     node2.network().subscribeToAttestationSubnetId(subnetId);

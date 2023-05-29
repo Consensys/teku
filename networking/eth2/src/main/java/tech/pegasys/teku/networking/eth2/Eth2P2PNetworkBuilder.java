@@ -67,7 +67,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -75,7 +75,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
@@ -97,8 +97,8 @@ public class Eth2P2PNetworkBuilder {
   protected CombinedChainDataClient combinedChainDataClient;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
-  protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
-  protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
+  protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
+  protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
   protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
   protected OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
@@ -118,7 +118,7 @@ public class Eth2P2PNetworkBuilder {
   protected Spec spec;
   protected OperationProcessor<SignedContributionAndProof>
       gossipedSignedContributionAndProofProcessor;
-  protected OperationProcessor<ValidateableSyncCommitteeMessage>
+  protected OperationProcessor<ValidatableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected StatusMessageFactory statusMessageFactory;
 
@@ -453,14 +453,14 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedAttestationProcessor(
-      final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor) {
+      final OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor) {
     checkNotNull(gossipedAttestationProcessor);
     this.gossipedAttestationConsumer = gossipedAttestationProcessor;
     return this;
   }
 
   public Eth2P2PNetworkBuilder gossipedAggregateProcessor(
-      final OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor) {
+      final OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor) {
     checkNotNull(gossipedAggregateProcessor);
     this.gossipedAggregateProcessor = gossipedAggregateProcessor;
     return this;
@@ -496,7 +496,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedSyncCommitteeMessageProcessor(
-      final OperationProcessor<ValidateableSyncCommitteeMessage>
+      final OperationProcessor<ValidatableSyncCommitteeMessage>
           gossipedSyncCommitteeMessageProcessor) {
     checkNotNull(gossipedSyncCommitteeMessageProcessor);
     this.gossipedSyncCommitteeMessageProcessor = gossipedSyncCommitteeMessageProcessor;

@@ -71,6 +71,26 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void shouldUseTrustedSetupIfSpecified() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xtrusted-setup", "/test.txt");
+    final Optional<String> trustedSetup = config.eth2NetworkConfiguration().getTrustedSetup();
+    assertThat(trustedSetup).isEqualTo(Optional.of("/test.txt"));
+    assertThat(createConfigBuilder().eth2NetworkConfig(b -> b.trustedSetup("/test.txt")).build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
+  }
+
+  @Test
+  void shouldUseDefaultTrustedSetupIfUnspecified() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    final Optional<String> trustedSetup = config.eth2NetworkConfiguration().getTrustedSetup();
+    assertThat(trustedSetup)
+        .matches(ts -> ts.map(path -> path.endsWith("mainnet-trusted-setup.txt")).orElse(false));
+    assertThat(createConfigBuilder().build()).usingRecursiveComparison().isEqualTo(config);
+  }
+
+  @Test
   void shouldUseBellatrixForkEpochIfSpecified() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
