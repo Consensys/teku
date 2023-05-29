@@ -26,8 +26,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -36,7 +34,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
@@ -53,7 +51,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
   @BeforeEach
   @Override
-  public void beforeEach(SpecContext specContext) throws Exception {
+  public void beforeEach(final SpecContext specContext) throws Exception {
     super.beforeEach(specContext);
     okHttpValidatorTypeDefClient =
         new OkHttpValidatorTypeDefClient(
@@ -69,19 +67,25 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   void blockProductionFallbacksToNonBlindedFlowIfBlindedEndpointIsNotAvailable()
       throws JsonProcessingException, InterruptedException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX);
+    // simulating blinded endpoint returning 404 Not Found
     mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final BeaconBlock blockResponse =
-        tech.pegasys.teku.api.schema.SignedBeaconBlock.create(signedBeaconBlock).getMessage();
-    final GetNewBlockResponseV2 beaconNodeResponse =
-        new GetNewBlockResponseV2(specMilestone, blockResponse);
+    final BlockContainer blockContainer;
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      blockContainer = dataStructureUtil.randomBlockContents(UInt64.ONE);
+    } else {
+      blockContainer = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    }
 
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(200)
-            .setBody(JSON_PROVIDER.objectToJSON(beaconNodeResponse)));
+            .setBody(
+                "{\"data\": "
+                    + serializeBlockContainer(blockContainer)
+                    + ", \"version\": \""
+                    + specMilestone
+                    + "\"}"));
 
     final Optional<BlockContainer> producedBlock =
         okHttpValidatorTypeDefClient.createUnsignedBlock(
@@ -90,7 +94,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             Optional.empty(),
             true);
 
-    assertThat(producedBlock).hasValue(signedBeaconBlock.getMessage());
+    assertThat(producedBlock).hasValue(blockContainer);
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
 
@@ -104,27 +108,36 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   void publishesBlindedBlockSszEncoded() throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
+    final SignedBlockContainer signedBlockContainer;
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      signedBlockContainer = dataStructureUtil.randomSignedBlindedBlockContents();
+    } else {
+      signedBlockContainer = dataStructureUtil.randomSignedBlindedBeaconBlock();
+    }
 
     final SendSignedBlockResult result =
-        okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(signedBeaconBlock);
+        okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(signedBlockContainer);
 
     assertThat(result.isPublished()).isTrue();
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getBody().readByteArray())
-        .isEqualTo(signedBeaconBlock.sszSerialize().toArrayUnsafe());
+        .isEqualTo(signedBlockContainer.sszSerialize().toArrayUnsafe());
   }
 
   @TestTemplate
   void publishesBlindedBlockJsonEncoded() throws InterruptedException, JsonProcessingException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SignedBeaconBlock signedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(UInt64.ONE);
+    final SignedBlockContainer signedBlockContainer;
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      signedBlockContainer = dataStructureUtil.randomSignedBlindedBlockContents();
+    } else {
+      signedBlockContainer = dataStructureUtil.randomSignedBlindedBeaconBlock();
+    }
 
     final SendSignedBlockResult result =
-        okHttpValidatorTypeDefClient.sendSignedBlock(signedBeaconBlock);
+        okHttpValidatorTypeDefClient.sendSignedBlock(signedBlockContainer);
 
     assertThat(result.isPublished()).isTrue();
 
@@ -132,13 +145,13 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final String expectedRequest =
         JsonUtil.serialize(
-            signedBeaconBlock,
+            signedBlockContainer,
             spec.atSlot(UInt64.ONE)
                 .getSchemaDefinitions()
-                .getSignedBlindedBeaconBlockSchema()
+                .getSignedBlindedBlockContainerSchema()
                 .getJsonTypeDefinition());
 
-    String actualRequest = recordedRequest.getBody().readUtf8();
+    final String actualRequest = recordedRequest.getBody().readUtf8();
 
     assertJsonEquals(actualRequest, expectedRequest);
   }
@@ -184,21 +197,21 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    SszList<SignedValidatorRegistration> validatorRegistrations =
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
-    String expectedRequest =
+    final String expectedRequest =
         JsonUtil.serialize(
             validatorRegistrations,
             ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition());
 
     okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations);
 
-    RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
     verifyRegisterValidatorsPostRequest(recordedRequest, JSON_CONTENT_TYPE);
 
-    String actualRequest = recordedRequest.getBody().readUtf8();
+    final String actualRequest = recordedRequest.getBody().readUtf8();
 
     assertJsonEquals(actualRequest, expectedRequest);
   }
@@ -208,10 +221,10 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(400).setBody("{\"code\":400,\"message\":\"oopsy\"}"));
 
-    SszList<SignedValidatorRegistration> validatorRegistrations =
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
-    IllegalArgumentException badRequestException =
+    final IllegalArgumentException badRequestException =
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations));
@@ -225,7 +238,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             .setResponseCode(500)
             .setBody("{\"code\":500,\"message\":\"Internal server error\"}"));
 
-    RemoteServiceNotAvailableException serverException =
+    final RemoteServiceNotAvailableException serverException =
         Assertions.assertThrows(
             RemoteServiceNotAvailableException.class,
             () -> okHttpValidatorTypeDefClient.registerValidators(validatorRegistrations));
@@ -240,18 +253,18 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    SszList<SignedValidatorRegistration> validatorRegistrations =
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     sszRegisterValidatorsRequest.registerValidators(validatorRegistrations);
 
-    RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
     verifyRegisterValidatorsPostRequest(recordedRequest, OCTET_STREAM_CONTENT_TYPE);
 
     byte[] sszBytes = recordedRequest.getBody().readByteArray();
 
-    SszList<SignedValidatorRegistration> deserializedSszBytes =
+    final SszList<SignedValidatorRegistration> deserializedSszBytes =
         ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.sszDeserialize(Bytes.of(sszBytes));
 
     SszDataAssert.assertThatSszData(deserializedSszBytes)
@@ -284,18 +297,24 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   private void verifyRegisterValidatorsPostRequest(
-      RecordedRequest recordedRequest, String expectedContentType) {
+      final RecordedRequest recordedRequest, final String expectedContentType) {
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/register_validator");
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(expectedContentType);
   }
 
-  private void assertJsonEquals(String actual, String expected) {
+  private void assertJsonEquals(final String actual, final String expected) {
     try {
       final ObjectMapper objectMapper = JSON_PROVIDER.getObjectMapper();
       assertThat(objectMapper.readTree(actual)).isEqualTo(objectMapper.readTree(expected));
     } catch (JsonProcessingException ex) {
       Assertions.fail(ex);
     }
+  }
+
+  private String serializeBlockContainer(final BlockContainer blockContainer)
+      throws JsonProcessingException {
+    return JsonUtil.serialize(
+        blockContainer, schemaDefinitions.getBlockContainerSchema().getJsonTypeDefinition());
   }
 }
