@@ -39,6 +39,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -46,15 +47,19 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class RewardCalculatorTest {
+  private static final long SINGLE_SLASHING_REWARD = 62500000L;
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil data = new DataStructureUtil(spec);
 
   private final RewardCalculator calculator = new RewardCalculator(spec);
 
   private final BLSPublicKey publicKey = data.randomPublicKey();
+
+  private final BlockProcessorAltair blockProcessorAltair = mock(BlockProcessorAltair.class);
 
   @Test
   void getCommitteeIndices_withSpecifiedValidators() {
@@ -177,7 +182,48 @@ public class RewardCalculatorTest {
     final ObjectAndMetaData<BlockRewardData> reward =
         calculator.getBlockRewardData(blockAndMetaData, blockAndState.getState());
     assertThat(reward.getData())
-        .isEqualTo(new BlockRewardData(UInt64.valueOf(2), 0L, 35L, 62500000L, 62500000L));
+        .isEqualTo(
+            new BlockRewardData(
+                UInt64.valueOf(2), 0L, 35L, SINGLE_SLASHING_REWARD, SINGLE_SLASHING_REWARD));
+  }
+
+  @Test
+  void getBlockRewardData_shouldOutputAttesterSlashings() {
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .attesterSlashings(data.randomAttesterSlashings(1, 100))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward.getAttesterSlashings()).isEqualTo(SINGLE_SLASHING_REWARD);
+  }
+
+  @Test
+  void getBlockRewardData_shouldOutputProposerSlashings() {
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .proposerSlashings(data.randomProposerSlashings(1, 100))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward.getProposerSlashings()).isEqualTo(SINGLE_SLASHING_REWARD);
+  }
+
+  @Test
+  void getBlockRewardData_shouldOutputSyncAggregate() {
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .syncAggregate(data.randomSyncAggregate(1, 2, 3, 4))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward.getSyncAggregate()).isEqualTo(140L);
   }
 
   @Test
@@ -197,7 +243,7 @@ public class RewardCalculatorTest {
     final long result =
         calculator.calculateProposerSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
+    assertThat(result).isEqualTo(SINGLE_SLASHING_REWARD);
   }
 
   @Test
@@ -206,7 +252,7 @@ public class RewardCalculatorTest {
     final long result =
         calculator.calculateAttesterSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
+    assertThat(result).isEqualTo(SINGLE_SLASHING_REWARD);
   }
 
   @Test

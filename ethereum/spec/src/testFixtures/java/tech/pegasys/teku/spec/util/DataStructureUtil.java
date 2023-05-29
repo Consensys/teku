@@ -1410,6 +1410,14 @@ public final class DataStructureUtil {
         randomSignedBeaconBlockHeader(slot, proposerIndex));
   }
 
+  public ProposerSlashing randomProposerSlashing(int validatorLimit) {
+    return randomProposerSlashing(randomUInt64(), randomUInt64(validatorLimit));
+  }
+
+  public AttesterSlashing randomAttesterSlashing(int validatorLimit) {
+    return randomAttesterSlashing(randomUInt64(validatorLimit));
+  }
+
   public IndexedAttestation randomIndexedAttestation() {
     return randomIndexedAttestation(randomUInt64(), randomUInt64(), randomUInt64());
   }
@@ -2071,6 +2079,29 @@ public final class DataStructureUtil {
                     .index(UInt64.valueOf(index))
                     .buildSigned())
         .collect(toList());
+  }
+
+  public SszList<ProposerSlashing> randomProposerSlashings(
+      final int count, final int validatorIndexLimit) {
+    return randomSszList(
+        spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getProposerSlashingsSchema(),
+        () -> randomProposerSlashing(validatorIndexLimit),
+        count);
+  }
+
+  public SszList<AttesterSlashing> randomAttesterSlashings(
+      final int count, final int validatorIndexLimit) {
+    return randomSszList(
+        spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttesterSlashingsSchema(),
+        () -> randomAttesterSlashing(validatorIndexLimit),
+        count);
+  }
+
+  public SszList<Attestation> randomAttestations(final int count, final UInt64 slot) {
+    return randomSszList(
+        spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
+        () -> randomAttestation(slot),
+        count);
   }
 
   public BlobSidecar randomBlobSidecar() {

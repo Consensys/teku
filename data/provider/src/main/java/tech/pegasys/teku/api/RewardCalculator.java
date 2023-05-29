@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 
 public class RewardCalculator {
   private final Spec spec;
@@ -64,9 +66,11 @@ public class RewardCalculator {
               + block.getSlot()
               + " is pre altair, and no sync committee information is available");
     }
+    final SpecVersion specVersion = spec.atSlot(state.getSlot());
+    final BlockProcessorAltair blockProcessorAltair =
+        BlockProcessorAltair.required(specVersion.getBlockProcessor());
 
-    final long proposerReward = getProposerReward(state);
-    return blockAndMetaData.map(__ -> calculateBlockRewards(proposerReward, block, state));
+    return blockAndMetaData.map(__ -> calculateBlockRewards(block, blockProcessorAltair, state));
   }
 
   long getProposerReward(final BeaconState state) {
@@ -137,8 +141,12 @@ public class RewardCalculator {
         rewardData);
   }
 
-  private BlockRewardData calculateBlockRewards(
-      final long proposerReward, final BeaconBlock block, final BeaconState state) {
+  @VisibleForTesting
+  BlockRewardData calculateBlockRewards(
+      final BeaconBlock block,
+      final BlockProcessorAltair blockProcessorAltair,
+      final BeaconState state) {
+    final long proposerReward = getProposerReward(state);
     final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
 
     final UInt64 proposerIndex = block.getProposerIndex();
