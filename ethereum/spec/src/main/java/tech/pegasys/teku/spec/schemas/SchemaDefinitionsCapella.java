@@ -18,7 +18,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
@@ -143,6 +147,26 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   @Override
   public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
     return signedBlindedBeaconBlockSchema;
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
+    return getBeaconBlockSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlindedBlockContainerSchema() {
+    return getBlindedBeaconBlockSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
+    return getSignedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
+    return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
   }
 
   @Override
