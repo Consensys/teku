@@ -114,11 +114,12 @@ public class SyncCommitteeMessageValidator {
       final Optional<Bytes32> maybeBestBlockRoot = recentChainData.getBestBlockRoot();
 
       if (maybeBestBlockRoot.isPresent()) {
-        final Optional<Bytes32> bestSeenRoot =
+        final List<UniquenessKey> candidates =
             seenIndices.stream()
                 .filter(item -> item.isSameIgnoringBlockRoot(key))
-                .findFirst()
-                .map(UniquenessKey::getBlockRoot);
+                .collect(toList());
+        final Optional<Bytes32> bestSeenRoot =
+            candidates.stream().map(UniquenessKey::getBlockRoot).findFirst();
         // I've already seen this message, can ignore it.
         if (bestSeenRoot.isPresent() && maybeBestBlockRoot.get().equals(bestSeenRoot.get())) {
           return completedFuture(IGNORE);
