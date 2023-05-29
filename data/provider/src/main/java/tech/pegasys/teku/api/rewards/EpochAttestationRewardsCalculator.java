@@ -21,6 +21,7 @@ import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_SOURCE_
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_TARGET_FLAG_INDEX;
 import static tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair.PARTICIPATION_FLAG_WEIGHTS;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -87,11 +88,12 @@ public class EpochAttestationRewardsCalculator {
     }
   }
 
-  public List<IdealAttestationReward> idealAttestationRewards() {
+  @VisibleForTesting
+  List<IdealAttestationReward> idealAttestationRewards() {
     final List<IdealAttestationReward> idealAttestationRewards =
         IntStream.rangeClosed(0, 32)
             .boxed()
-            .map(i -> new IdealAttestationReward())
+            .map(i -> new IdealAttestationReward(ETH_TO_GWEI.times(i)))
             .collect(toList());
 
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
@@ -117,8 +119,6 @@ public class EpochAttestationRewardsCalculator {
 
         final IdealAttestationReward idealAttestationReward =
             idealAttestationRewards.get(effectiveBalanceEth);
-        idealAttestationReward.addEffectiveBalance(ETH_TO_GWEI.times(effectiveBalanceEth));
-
         if (!isInactivityLeak()) {
           switch (flagIndex) {
             case TIMELY_SOURCE_FLAG_INDEX:
@@ -156,7 +156,8 @@ public class EpochAttestationRewardsCalculator {
     }
   }
 
-  private List<TotalAttestationReward> totalAttestationRewards() {
+  @VisibleForTesting
+  List<TotalAttestationReward> totalAttestationRewards() {
     final RewardAndPenaltyDeltas totalRewardAndPenaltyDeltas =
         epochProcessor.getRewardAndPenaltyDeltas(
             state, validatorStatuses, RewardsAndPenaltiesCalculator::getDetailedDeltas);
