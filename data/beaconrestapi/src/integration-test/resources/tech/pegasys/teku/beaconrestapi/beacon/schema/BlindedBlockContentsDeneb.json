@@ -1,5 +1,5 @@
 {
-  "title" : "BlindedBlockContents",
+  "title" : "BlindedBlockContentsDeneb",
   "type" : "object",
   "required" : [ "blinded_block", "blinded_blob_sidecars" ],
   "properties" : {

@@ -70,8 +70,9 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
   @Test
   void shouldReturnBlindedBlockContentsPostDeneb() throws Exception {
     spec = TestSpecFactory.createMinimalDeneb();
-    DataStructureUtil denebData = new DataStructureUtil(spec);
-    final BlindedBlockContents blindedBlockContents = denebData.randomBlindedBlockContents(ONE);
+    dataStructureUtil = new DataStructureUtil(spec);
+    final BlindedBlockContents blindedBlockContents =
+        dataStructureUtil.randomBlindedBlockContents(ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)))
         .when(validatorDataProvider)
         .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
@@ -84,8 +85,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
   @Test
   void shouldReturnBlockContentsPostDeneb() throws Exception {
     spec = TestSpecFactory.createMinimalDeneb();
-    DataStructureUtil denebData = new DataStructureUtil(spec);
-    final BlockContents blockContents = denebData.randomBlockContents(ONE);
+    dataStructureUtil = new DataStructureUtil(spec);
+    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContents)))
         .when(validatorDataProvider)
         .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());

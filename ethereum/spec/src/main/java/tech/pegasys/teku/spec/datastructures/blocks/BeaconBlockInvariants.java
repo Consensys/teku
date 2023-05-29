@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class BeaconBlockInvariants {
 
   /**
-   * Extract the slot value from any SignedBeaconBlock.
+   * Extract the slot value from any {@link BeaconBlock}.
    *
    * <p>Slot is the first field and recorded directly because it's fixed length. So just read the
    * first UInt64 worth of bytes.
@@ -36,7 +36,7 @@ public class BeaconBlockInvariants {
   }
 
   /**
-   * Extract the slot value from any BeaconBlock.
+   * Extract the slot value from any {@link SignedBeaconBlock}.
    *
    * <p>The slot is the first field but is inside the variable length beacon block so a 4 byte
    * offset to the start of the beacon block data is recorded. Use that prefix to get the beacon
