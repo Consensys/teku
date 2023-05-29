@@ -24,9 +24,11 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSid
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 
 public class BlindedBlockContentsSchema
-    extends ContainerSchema2<BlindedBlockContents, BeaconBlock, SszList<BlindedBlobSidecar>> {
+    extends ContainerSchema2<BlindedBlockContents, BeaconBlock, SszList<BlindedBlobSidecar>>
+    implements BlockContainerSchema<BlindedBlockContents> {
 
   static final SszFieldName FIELD_BLINDED_BLOB_SIDECARS = () -> "blinded_blob_sidecars";
 

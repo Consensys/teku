@@ -30,6 +30,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class AbstractTypeDefRequestTestBase {
@@ -40,6 +41,7 @@ public class AbstractTypeDefRequestTestBase {
   protected static final JsonProvider JSON_PROVIDER = new JsonProvider();
 
   protected DataStructureUtil dataStructureUtil;
+  protected SchemaDefinitions schemaDefinitions;
   protected Spec spec;
   protected SpecMilestone specMilestone;
 
@@ -47,9 +49,10 @@ public class AbstractTypeDefRequestTestBase {
   protected final OkHttpClient okHttpClient = new OkHttpClient.Builder().build();
 
   @BeforeEach
-  public void beforeEach(SpecContext specContext) throws Exception {
+  public void beforeEach(final SpecContext specContext) throws Exception {
     mockWebServer.start();
     dataStructureUtil = specContext.getDataStructureUtil();
+    schemaDefinitions = specContext.getSchemaDefinitions();
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
   }
