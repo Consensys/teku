@@ -110,11 +110,12 @@ public class GetAttestationRewards extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
-    final List<String> validatorsPubKeys = request.getRequestBody();
+    // Validator identifier might be the validator's public key or index
+    final List<String> validatorsIds = request.getRequestBody();
 
     request.respondAsync(
         chainDataProvider
-            .calculateAttestationRewardsAtEpoch(epoch, validatorsPubKeys)
+            .calculateAttestationRewardsAtEpoch(epoch, validatorsIds)
             .thenApply(
                 result ->
                     result
