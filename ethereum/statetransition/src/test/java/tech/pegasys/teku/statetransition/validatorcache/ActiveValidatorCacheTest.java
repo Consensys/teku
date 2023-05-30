@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszUInt64ListSche
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -123,9 +123,9 @@ public class ActiveValidatorCacheTest {
     final Attestation attestation = mock(Attestation.class);
     final AttestationData attestationData = mock(AttestationData.class);
     final IndexedAttestation indexedAttestation = mock(IndexedAttestation.class);
-    final ValidateableAttestation validateableAttestation =
-        ValidateableAttestation.from(spec, attestation);
-    validateableAttestation.setIndexedAttestation(indexedAttestation);
+    final ValidatableAttestation validatableAttestation =
+        ValidatableAttestation.from(spec, attestation);
+    validatableAttestation.setIndexedAttestation(indexedAttestation);
 
     when(indexedAttestation.getData()).thenReturn(attestationData);
     when(attestationData.getSlot())
@@ -137,9 +137,9 @@ public class ActiveValidatorCacheTest {
 
     // each attestation will have 2 validators.
     // getSlot will return 8, then 16, then 24; and each validator will be processed
-    cache.onAttestation(validateableAttestation);
-    cache.onAttestation(validateableAttestation);
-    cache.onAttestation(validateableAttestation);
+    cache.onAttestation(validatableAttestation);
+    cache.onAttestation(validatableAttestation);
+    cache.onAttestation(validatableAttestation);
 
     assertThat(cache.getValidatorEpochs(UInt64.valueOf(11))).containsExactly(THREE, ONE, TWO);
     assertThat(cache.getValidatorEpochs(UInt64.valueOf(21))).containsExactly(THREE, ONE, TWO);

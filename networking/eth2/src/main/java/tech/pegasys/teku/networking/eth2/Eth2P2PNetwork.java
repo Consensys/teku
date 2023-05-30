@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 
 public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
 
@@ -42,7 +42,7 @@ public interface Eth2P2PNetwork extends P2PNetwork<Eth2Peer> {
 
   MetadataMessage getMetadata();
 
-  void publishSyncCommitteeMessage(ValidateableSyncCommitteeMessage message);
+  void publishSyncCommitteeMessage(ValidatableSyncCommitteeMessage message);
 
   void publishSyncCommitteeContribution(SignedContributionAndProof signedContributionAndProof);
 

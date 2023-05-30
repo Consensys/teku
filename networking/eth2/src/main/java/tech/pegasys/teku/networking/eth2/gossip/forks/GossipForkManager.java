@@ -31,7 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 /**
@@ -151,7 +151,7 @@ public class GossipForkManager {
     }
   }
 
-  public synchronized void publishAttestation(final ValidateableAttestation attestation) {
+  public synchronized void publishAttestation(final ValidatableAttestation attestation) {
     publishMessage(
         attestation.getData().getSlot(),
         attestation,
@@ -172,7 +172,7 @@ public class GossipForkManager {
   }
 
   public synchronized void publishSyncCommitteeMessage(
-      final ValidateableSyncCommitteeMessage message) {
+      final ValidatableSyncCommitteeMessage message) {
     publishMessage(
         message.getSlot(),
         message,

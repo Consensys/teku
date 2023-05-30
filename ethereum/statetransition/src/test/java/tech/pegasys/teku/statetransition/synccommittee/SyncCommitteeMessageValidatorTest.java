@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -93,8 +93,8 @@ class SyncCommitteeMessageValidatorTest {
                 chainBuilder.getLatestEpoch(),
                 message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidateableSyncCommitteeMessage validateableMessage =
-        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
+    final ValidatableSyncCommitteeMessage validateableMessage =
+        ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
 
     assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
     // Should store the computed subcommittee assignments for the validator.
@@ -128,8 +128,8 @@ class SyncCommitteeMessageValidatorTest {
             syncCommitteeUtil.getEpochForDutiesAtSlot(lastSlotOfPeriod),
             message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidateableSyncCommitteeMessage validateableMessage =
-        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
+    final ValidatableSyncCommitteeMessage validateableMessage =
+        ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
     timeProvider.advanceTimeByMillis(
         spec.getSlotStartTime(lastSlotOfPeriod, recentChainData.getGenesisTime())
             .times(1000)
@@ -153,7 +153,7 @@ class SyncCommitteeMessageValidatorTest {
             timeProvider);
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -165,7 +165,7 @@ class SyncCommitteeMessageValidatorTest {
         chainBuilder.createSyncCommitteeMessage(
             latestBlockAndState.getSlot().plus(1), latestBlockAndState.getRoot());
 
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(IGNORE);
   }
 
@@ -174,9 +174,9 @@ class SyncCommitteeMessageValidatorTest {
     setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
 
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(ACCEPT);
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(IGNORE);
   }
 
@@ -194,7 +194,11 @@ class SyncCommitteeMessageValidatorTest {
   @Test
   void shouldIgnoreDuplicateMessagesForSameSubnet() {
     setupWithDefaultSpec();
-    final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
+
+    final SyncCommitteeMessage message =
+        chainBuilder.createSyncCommitteeMessage(
+            storageSystem.recentChainData().getHeadSlot(),
+            storageSystem.recentChainData().getBestBlockRoot().get());
 
     assertThat(validator.validate(fromNetworkSpy(message, 1, IntSet.of(1, 2))))
         .isCompletedWithValue(ACCEPT);
@@ -227,12 +231,33 @@ class SyncCommitteeMessageValidatorTest {
   }
 
   @Test
+  void shouldAcceptBetterMessageIfNotTheFirst() {
+    setupWithDefaultSpec();
+    // slot 2
+    storageSystem.chainUpdater().setCurrentSlot(UInt64.valueOf(2));
+    timeProvider.advanceTimeBySeconds(spec.getSecondsPerSlot(UInt64.ONE) * 2L);
+
+    storageSystem.chainUpdater().advanceChain();
+    storageSystem.chainUpdater().advanceChain();
+
+    final SyncCommitteeMessage message =
+        chainBuilder.createValidSyncCommitteeMessageAtParentBlockRoot();
+
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromNetwork(message, 0)))
+        .isCompletedWithValue(ACCEPT);
+
+    final SyncCommitteeMessage message2 = chainBuilder.createValidSyncCommitteeMessage();
+    assertThat(validator.validate(fromValidatorSpy(message2, IntSet.of(1, 2))))
+        .isCompletedWithValue(ACCEPT);
+  }
+
+  @Test
   void shouldAcceptWhenValidButBeaconBlockIsUnknown() {
     setupWithDefaultSpec();
     final SyncCommitteeMessage message =
         chainBuilder.createSyncCommitteeMessage(
             chainBuilder.getLatestSlot(), dataStructureUtil.randomBytes32());
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValue(ACCEPT);
   }
 
@@ -262,7 +287,7 @@ class SyncCommitteeMessageValidatorTest {
         chainBuilder.createSyncCommitteeMessage(
             target.getSlot(), target.getRoot(), state, validatorPublicKey);
 
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -271,7 +296,7 @@ class SyncCommitteeMessageValidatorTest {
     setupWithDefaultSpec();
     final SyncCommitteeMessage message = chainBuilder.createValidSyncCommitteeMessage();
     // 9 is never a valid subnet
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromNetwork(message, 9)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromNetwork(message, 9)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -288,7 +313,7 @@ class SyncCommitteeMessageValidatorTest {
                 // There's only 16 validators
                 UInt64.valueOf(25),
                 template.getSignature());
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -304,7 +329,7 @@ class SyncCommitteeMessageValidatorTest {
                 template.getBeaconBlockRoot(),
                 template.getValidatorIndex(),
                 dataStructureUtil.randomSignature());
-    assertThat(validator.validate(ValidateableSyncCommitteeMessage.fromValidator(message)))
+    assertThat(validator.validate(ValidatableSyncCommitteeMessage.fromValidator(message)))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -329,8 +354,8 @@ class SyncCommitteeMessageValidatorTest {
                 chainBuilder.getLatestEpoch(),
                 message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidateableSyncCommitteeMessage validateableMessage =
-        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
+    final ValidatableSyncCommitteeMessage validateableMessage =
+        ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
     assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
   }
 
@@ -355,29 +380,29 @@ class SyncCommitteeMessageValidatorTest {
                 chainBuilder.getLatestEpoch(),
                 message.getValidatorIndex());
     final int validSubnetId = assignments.getAssignedSubcommittees().iterator().nextInt();
-    final ValidateableSyncCommitteeMessage validateableMessage =
-        ValidateableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
+    final ValidatableSyncCommitteeMessage validateableMessage =
+        ValidatableSyncCommitteeMessage.fromNetwork(message, validSubnetId);
     assertThat(validator.validate(validateableMessage)).isCompletedWithValue(ACCEPT);
   }
 
-  private ValidateableSyncCommitteeMessage fromValidatorSpy(
+  private ValidatableSyncCommitteeMessage fromValidatorSpy(
       SyncCommitteeMessage message, final IntSet subcommitteeIds) {
-    final ValidateableSyncCommitteeMessage validateableMessage =
-        ValidateableSyncCommitteeMessage.fromValidator(message);
+    final ValidatableSyncCommitteeMessage validateableMessage =
+        ValidatableSyncCommitteeMessage.fromValidator(message);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
-  private ValidateableSyncCommitteeMessage fromNetworkSpy(
+  private ValidatableSyncCommitteeMessage fromNetworkSpy(
       SyncCommitteeMessage message, final int receivedSubnetId, final IntSet subcommitteeIds) {
-    final ValidateableSyncCommitteeMessage validateableMessage =
-        ValidateableSyncCommitteeMessage.fromNetwork(message, receivedSubnetId);
+    final ValidatableSyncCommitteeMessage validateableMessage =
+        ValidatableSyncCommitteeMessage.fromNetwork(message, receivedSubnetId);
     return createSpy(validateableMessage, subcommitteeIds);
   }
 
-  private ValidateableSyncCommitteeMessage createSpy(
-      ValidateableSyncCommitteeMessage validateableMessage, final IntSet subcommitteeIds) {
+  private ValidatableSyncCommitteeMessage createSpy(
+      ValidatableSyncCommitteeMessage validateableMessage, final IntSet subcommitteeIds) {
     // Create spies
-    final ValidateableSyncCommitteeMessage validateableMessageSpy = spy(validateableMessage);
+    final ValidatableSyncCommitteeMessage validateableMessageSpy = spy(validateableMessage);
     validateableMessage.calculateAssignments(
         spec, chainBuilder.getLatestBlockAndState().getState());
     SyncSubcommitteeAssignments assignments =

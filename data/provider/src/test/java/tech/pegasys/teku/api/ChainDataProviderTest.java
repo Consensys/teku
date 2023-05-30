@@ -380,7 +380,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   public void getBlockRewardsFromBlockId_shouldCheckStateAndBlockAreHandled()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+    when(mockCombinedChainDataClient.getStateAtSlotExact(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
@@ -389,7 +389,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final Optional<BlockAndMetaData> blockAndMetadata = provider.getBlockAndMetaData("head").get();
     assertThat(blockAndMetadata).isNotEmpty();
     verify(mockCombinedChainDataClient, times(1))
-        .getStateByBlockRoot(blockAndMetadata.get().getData().getRoot());
+        .getStateAtSlotExact(blockAndMetadata.get().getData().getSlot().decrement());
     SafeFutureAssert.assertThatSafeFuture(future).isCompletedWithEmptyOptional();
     verifyNoMoreInteractions(rewardCalculator);
   }
@@ -398,7 +398,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   public void getBlockRewardsFromBlockId_shouldCallThrough()
       throws ExecutionException, InterruptedException {
     final ChainDataProvider provider = setupBySpec(spec, data, 16);
-    when(mockCombinedChainDataClient.getStateByBlockRoot(any()))
+    when(mockCombinedChainDataClient.getStateAtSlotExact(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateInternal)));
 
     final SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> future =
@@ -407,7 +407,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final Optional<BlockAndMetaData> blockAndMetadata = provider.getBlockAndMetaData("head").get();
     assertThat(blockAndMetadata).isNotEmpty();
     verify(mockCombinedChainDataClient, times(1))
-        .getStateByBlockRoot(blockAndMetadata.get().getData().getRoot());
+        .getStateAtSlotExact(blockAndMetadata.get().getData().getSlot().decrement());
     verify(rewardCalculator, times(1)).getBlockRewardData(eq(blockAndMetadata.get()), any());
     assertThat(future).isCompleted();
   }

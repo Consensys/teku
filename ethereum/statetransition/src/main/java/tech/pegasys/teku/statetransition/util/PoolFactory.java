@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -32,6 +32,7 @@ public class PoolFactory {
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
   private static final int DEFAULT_MAX_ITEMS = 5000;
   private static final int DEFAULT_MAX_BLOCKS = 5000;
+
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blobSidecarPoolSizeGauge;
 
@@ -78,7 +79,7 @@ public class PoolFactory {
         SignedBeaconBlock::getSlot);
   }
 
-  public PendingPool<ValidateableAttestation> createPendingPoolForAttestations(final Spec spec) {
+  public PendingPool<ValidatableAttestation> createPendingPoolForAttestations(final Spec spec) {
     return new PendingPool<>(
         pendingPoolsSizeGauge,
         "attestations",
@@ -86,9 +87,9 @@ public class PoolFactory {
         DEFAULT_HISTORICAL_SLOT_TOLERANCE,
         FutureItems.DEFAULT_FUTURE_SLOT_TOLERANCE,
         DEFAULT_MAX_ITEMS,
-        ValidateableAttestation::hashTreeRoot,
-        ValidateableAttestation::getDependentBlockRoots,
-        ValidateableAttestation::getEarliestSlotForForkChoiceProcessing);
+        ValidatableAttestation::hashTreeRoot,
+        ValidatableAttestation::getDependentBlockRoots,
+        ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
   public BlobSidecarPoolImpl createPoolForBlobSidecars(

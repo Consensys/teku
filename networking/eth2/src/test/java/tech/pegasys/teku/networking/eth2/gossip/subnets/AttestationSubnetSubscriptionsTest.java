@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
@@ -51,7 +51,7 @@ public class AttestationSubnetSubscriptionsTest {
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<ValidateableAttestation> processor =
+  private final OperationProcessor<ValidatableAttestation> processor =
       mock(OperationProcessor.class);
 
   private AttestationSubnetSubscriptions subnetSubscriptions;
