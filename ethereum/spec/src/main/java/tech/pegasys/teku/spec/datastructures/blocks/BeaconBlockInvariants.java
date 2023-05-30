@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
+/** Utility functions to extract data from the ssz bytes of block variants */
 public class BeaconBlockInvariants {
 
   private static final int BYTES_PER_LENGTH_OFFSET = 4;
@@ -29,7 +30,7 @@ public class BeaconBlockInvariants {
    * {@link SignedBeaconBlockSchema} 4 (MESSAGE variable length offset) + 96 (SIGNATURE fixed-size
    * length)
    */
-  private static final int SIGNED_BEACON_BLOCK_SLOT_DATA_POSITION =
+  private static final int BEACON_BLOCK_OFFSET_IN_SIGNED_BEACON_BLOCK =
       BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getSszFixedPartSize();
 
   /**
@@ -58,10 +59,13 @@ public class BeaconBlockInvariants {
    */
   public static UInt64 extractSignedBlockContainerSlot(final Bytes bytes) {
     final int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
-    if (blockDataOffset == SIGNED_BEACON_BLOCK_SLOT_DATA_POSITION) {
+    if (blockDataOffset == BEACON_BLOCK_OFFSET_IN_SIGNED_BEACON_BLOCK) {
       return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
     }
     // first field in SignedBlockContents points to the SignedBeaconBlock data
-    return extractSignedBlockContainerSlot(bytes.slice(blockDataOffset));
+    return extractBeaconBlockSlot(
+        bytes.slice(
+            blockDataOffset
+                + SszType.sszBytesToLength(bytes.slice(blockDataOffset, BYTES_PER_LENGTH_OFFSET))));
   }
 }

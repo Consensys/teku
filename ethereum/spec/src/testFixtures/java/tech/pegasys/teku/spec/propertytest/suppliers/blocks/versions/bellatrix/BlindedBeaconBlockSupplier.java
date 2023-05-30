@@ -11,14 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blocks;
+package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix;
 
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlindedBeaconBlockSupplier extends DataStructureUtilSupplier<BeaconBlock> {
+
   public BlindedBeaconBlockSupplier() {
-    super(DataStructureUtil::randomBlindedBeaconBlock);
+    super(DataStructureUtil::randomBlindedBeaconBlock, SpecMilestone.BELLATRIX);
   }
 }

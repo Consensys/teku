@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.bellatrix;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,23 +19,20 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.BlindedBeaconBlockBodySupplier;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix.BlindedBeaconBlockSupplier;
 
-public class BlindedBeaconBlockBodyPropertyTest {
+public class BlindedBeaconBlockPropertyTest {
   @Property
-  void roundTrip(
-      @ForAll(supplier = BlindedBeaconBlockBodySupplier.class)
-          final BeaconBlockBody beaconBlockBody)
+  void roundTrip(@ForAll(supplier = BlindedBeaconBlockSupplier.class) final BeaconBlock beaconBlock)
       throws JsonProcessingException {
-    assertRoundTrip(beaconBlockBody);
+    assertRoundTrip(beaconBlock);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlindedBeaconBlockBodySupplier.class)
-          final BeaconBlockBody beaconBlockBody,
+      @ForAll(supplier = BlindedBeaconBlockSupplier.class) final BeaconBlock beaconBlock,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(beaconBlockBody, seed);
+    assertDeserializeMutatedThrowsExpected(beaconBlock, seed);
   }
 }
