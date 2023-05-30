@@ -120,10 +120,10 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     } else {
-      String stuff =
-          JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition());
-      System.out.println(stuff);
-      try (final Response response = post(route, stuff)) {
+      try (final Response response =
+          post(
+              route,
+              JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition()))) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     }
