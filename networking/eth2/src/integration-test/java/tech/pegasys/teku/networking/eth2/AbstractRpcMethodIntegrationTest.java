@@ -37,14 +37,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
   private Optional<Spec> nextSpec;
 
   protected final UInt64 nextSpecEpoch = UInt64.valueOf(2);
-
-  protected UInt64 nextSpecSlot;
-
-  private final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
-  protected final UInt64 altairEpoch = UInt64.valueOf(2);
-  private final Spec altairEnabledSpec =
-      TestSpecFactory.createMinimalWithAltairForkEpoch(altairEpoch);
-  protected final UInt64 altairSlot = altairEnabledSpec.computeStartSlotAtEpoch(altairEpoch);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
