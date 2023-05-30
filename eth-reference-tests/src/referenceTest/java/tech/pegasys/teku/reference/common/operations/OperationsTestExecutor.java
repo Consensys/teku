@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -290,18 +289,10 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 testDefinition,
                 dataFileName,
                 schemaDefinitionsBellatrix.getBeaconBlockBodySchema());
-        final ExecutionPayload executionPayload =
-            beaconBlockBody.getOptionalExecutionPayload().orElseThrow();
-
-        final ExecutionPayloadHeader executionPayloadHeader =
-            schemaDefinitionsBellatrix
-                .getExecutionPayloadHeaderSchema()
-                .createFromExecutionPayload(executionPayload);
 
         processor.processExecutionPayload(
             state,
-            executionPayloadHeader,
-            Optional.of(executionPayload),
+            beaconBlockBody,
             Optional.of(
                 (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
         break;
