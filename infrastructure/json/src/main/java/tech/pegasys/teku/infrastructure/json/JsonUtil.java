@@ -126,8 +126,17 @@ public class JsonUtil {
   public static <T> Optional<T> getAttribute(
       final String json, final DeserializableTypeDefinition<T> type, final String... path)
       throws JsonProcessingException {
+    return getAttribute(json, type, false, path);
+  }
+
+  public static <T> Optional<T> getAttribute(
+      final String json,
+      final DeserializableTypeDefinition<T> type,
+      final boolean nestedSearch,
+      final String... path)
+      throws JsonProcessingException {
     try (final JsonParser parser = FACTORY.createParser(json)) {
-      return getAttributeFromParser(parser, type, 0, path);
+      return getAttributeFromParser(parser, type, 0, nestedSearch, path);
     } catch (final JsonProcessingException e) {
       throw e;
     } catch (final IOException e) {
@@ -136,9 +145,13 @@ public class JsonUtil {
   }
 
   private static <T> Optional<T> getAttributeFromParser(
-      JsonParser parser, final DeserializableTypeDefinition<T> type, int i, final String... path)
+      final JsonParser parser,
+      final DeserializableTypeDefinition<T> type,
+      final int i,
+      final boolean nestedSearch,
+      final String... path)
       throws IOException {
-    if (!JsonToken.START_OBJECT.equals(parser.nextToken())) {
+    if (!JsonToken.START_OBJECT.equals(parser.nextToken()) && !nestedSearch) {
       throw new IllegalStateException("getAttribute was not passed an object");
     }
     final String fieldName = path[i];
@@ -151,11 +164,16 @@ public class JsonUtil {
             parser.nextToken();
             return Optional.of(type.deserialize(parser));
           } else {
-            return getAttributeFromParser(parser, type, i + 1, path);
+            return getAttributeFromParser(parser, type, i + 1, nestedSearch, path);
+          }
+        } else {
+          if (nestedSearch) {
+            return getAttributeFromParser(parser, type, i, true, path);
           }
         }
-      } else if (JsonToken.START_ARRAY.equals(jsonToken)
-          || JsonToken.START_OBJECT.equals(jsonToken)) {
+      } else if ((JsonToken.START_ARRAY.equals(jsonToken)
+              || JsonToken.START_OBJECT.equals(jsonToken))
+          & !nestedSearch) {
         parser.skipChildren();
       }
     }

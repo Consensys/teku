@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -99,22 +100,25 @@ public class PostBlindedBlock extends RestApiEndpoint {
         .operationId("publishBlindedBlock")
         .summary("Publish a signed blinded block")
         .description(
-            "Submit a signed blinded beacon block to the beacon node to be imported."
+            "Submit a signed blinded beacon block to the beacon node to be broadcast and imported."
+                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given signed blinded blobs."
                 + " The beacon node performs the required validation.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             getSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
                 "SignedBlindedBlock",
-                SchemaDefinitions::getSignedBlindedBeaconBlockSchema,
-                (block, milestone) ->
-                    schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone)),
-            (json) ->
-                MilestoneDependentTypesUtil.slotBasedSelector(
+                SchemaDefinitions::getSignedBlindedBlockContainerSchema,
+                (blockContainer, milestone) ->
+                    schemaDefinitionCache
+                        .milestoneAtSlot(blockContainer.getSlot())
+                        .equals(milestone)),
+            json ->
+                slotBasedSelector(
                     json,
                     schemaDefinitionCache,
-                    SchemaDefinitions::getSignedBlindedBeaconBlockSchema),
-            spec::deserializeSignedBlindedBeaconBlock)
+                    SchemaDefinitions::getSignedBlindedBlockContainerSchema),
+            spec::deserializeSignedBlindedBlockContainer)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,

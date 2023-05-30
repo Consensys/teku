@@ -62,7 +62,7 @@ public class MilestoneDependentTypesUtil {
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
     try {
       final Optional<UInt64> slot =
-          JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "message", "slot");
+          JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, true, "message", "slot");
       final SpecMilestone milestone =
           schemaDefinitionCache.milestoneAtSlot(
               slot.orElseThrow(

@@ -41,16 +41,24 @@ class JsonUtilTest {
   }
 
   @Test
-  void getAttribute_missing() throws Exception {
+  void getAttribute_emptyJson() throws Exception {
     final Optional<String> result = JsonUtil.getAttribute("{}", CoreTypes.STRING_TYPE, "slot");
     assertThat(result).isEmpty();
   }
 
   @Test
-  void getAttribute_missingOnlyInChildObject() throws Exception {
+  void getAttribute_missing() throws Exception {
     final Optional<String> result =
         JsonUtil.getAttribute("{\"data\": { \"slot\": \"1\"}}", CoreTypes.STRING_TYPE, "slot");
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  void getAttribute_foundNested() throws Exception {
+    final Optional<String> result =
+        JsonUtil.getAttribute(
+            "{\"data\": { \"slot\": \"1\"}}", CoreTypes.STRING_TYPE, true, "slot");
+    assertThat(result).contains("1");
   }
 
   @Test
@@ -59,6 +67,54 @@ class JsonUtilTest {
         JsonUtil.getAttribute(
             "{\"data\": { \"slot\": \"1\"}}", CoreTypes.STRING_TYPE, "data", "slot");
     assertThat(result).contains("1");
+  }
+
+  @Test
+  void getAttribute_deepSearch_missing() throws Exception {
+    final Optional<String> result =
+        JsonUtil.getAttribute(
+            "{\"signed_block\": {\"message\": { \"slot\": \"1\"}}}",
+            CoreTypes.STRING_TYPE,
+            "message",
+            "slot");
+    assertThat(result).isEmpty();
+  }
+
+  @Test
+  void getAttribute_deepSearch_foundNested() throws Exception {
+    final Optional<String> result =
+        JsonUtil.getAttribute(
+            "{\"signed_block\": {\"message\": { \"slot\": \"1\"}}}",
+            CoreTypes.STRING_TYPE,
+            true,
+            "message",
+            "slot");
+    assertThat(result).contains("1");
+  }
+
+  @Test
+  void getAttribute_deepSearch_foundNested_notFirstField() throws Exception {
+    final Optional<String> result =
+        JsonUtil.getAttribute(
+            "{\"signed_blob_sidecars\":[{\"message\":{\"block_root\":\"0xf\",\"index\":\"123\"}}],\"signed_block\": {\"message\": { \"slot\": \"1\"}}}",
+            CoreTypes.STRING_TYPE,
+            true,
+            "message",
+            "slot");
+    assertThat(result).contains("1");
+  }
+
+  @Test
+  void getAttribute_path_notFoundNested() throws Exception {
+    final Optional<UInt64> result =
+        JsonUtil.getAttribute(
+            "{\"slot\":\"3\",\"proposer_index\":\"4666673844721362956\"}",
+            CoreTypes.UINT64_TYPE,
+            true,
+            "message",
+            "slot");
+
+    assertThat(result).isEmpty();
   }
 
   @Test
@@ -71,6 +127,19 @@ class JsonUtilTest {
             CoreTypes.UINT64_TYPE,
             "slot");
     assertThat(result).contains(UInt64.valueOf(1234));
+  }
+
+  @Test
+  void getAttribute_getsAttributeAtChild_nestedSearch() throws Exception {
+    final Optional<UInt64> result =
+        JsonUtil.getAttribute(
+            "{\"data\": { \"slot\": \"1\"},"
+                + "\"meta\": [ {\"slot\": \"2\"}, {\"slot\": \"3\"}],"
+                + " \"slot\":\"1234\"}",
+            CoreTypes.UINT64_TYPE,
+            true,
+            "slot");
+    assertThat(result).contains(UInt64.valueOf(1));
   }
 
   @Test

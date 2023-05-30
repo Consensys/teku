@@ -37,7 +37,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractMigratedBeaconHandlerTest {
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
-  protected Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected UInt64 denebForkEpoch = UInt64.valueOf(12345);
+  protected Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+  protected UInt64 denebSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
 
   protected final JsonProvider jsonProvider = new JsonProvider();
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);

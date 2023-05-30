@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import java.io.IOException;
 import java.util.stream.Stream;
 import okhttp3.Response;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,10 +33,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
-public class PostBlindedAndUnblindedBlock extends AbstractDataBackedRestAPIIntegrationTest {
+public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPIIntegrationTest {
   private DataStructureUtil dataStructureUtil;
 
   public static Stream<Arguments> postBlockCases() {
@@ -48,16 +49,13 @@ public class PostBlindedAndUnblindedBlock extends AbstractDataBackedRestAPIInteg
         Arguments.of(PostBlindedBlock.ROUTE, true, true));
   }
 
-  @BeforeEach
-  void setup() {
-    startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
-    dataStructureUtil = new DataStructureUtil(spec);
-  }
-
   @ParameterizedTest(name = "blinded:{1}_ssz:{2}")
   @MethodSource("postBlockCases")
   void shouldReturnOk(final String route, final boolean isBlindedBlock, final boolean useSsz)
       throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
+    dataStructureUtil = new DataStructureUtil(spec);
+
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
     final SignedBeaconBlockSchema signedBeaconBlockSchema;
@@ -77,15 +75,55 @@ public class PostBlindedAndUnblindedBlock extends AbstractDataBackedRestAPIInteg
         .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
 
     if (useSsz) {
-      try (Response response =
+      try (final Response response =
           postSsz(route, signedBeaconBlockSchema.sszSerialize(request).toArrayUnsafe())) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     } else {
-      try (Response response =
+      try (final Response response =
           post(
               route,
               JsonUtil.serialize(request, signedBeaconBlockSchema.getJsonTypeDefinition()))) {
+        assertThat(response.code()).isEqualTo(SC_OK);
+      }
+    }
+  }
+
+  @ParameterizedTest(name = "blinded:{1}_ssz:{2}")
+  @MethodSource("postBlockCases")
+  void shouldReturnOkPostDeneb(
+      final String route, final boolean isBlindedBlock, final boolean useSsz) throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.DENEB);
+    dataStructureUtil = new DataStructureUtil(spec);
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+
+    final SignedBlockContainerSchema<SignedBlockContainer> signedBlockContainerSchema;
+    final SignedBlockContainer request;
+
+    if (isBlindedBlock) {
+      request = dataStructureUtil.randomSignedBlindedBlockContents(UInt64.ONE);
+      signedBlockContainerSchema =
+          spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlindedBlockContainerSchema();
+    } else {
+      request = dataStructureUtil.randomSignedBlockContents(UInt64.ONE);
+      signedBlockContainerSchema =
+          spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlockContainerSchema();
+    }
+
+    when(validatorApiChannel.sendSignedBlock(request))
+        .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
+
+    if (useSsz) {
+      try (final Response response =
+          postSsz(route, signedBlockContainerSchema.sszSerialize(request).toArrayUnsafe())) {
+        assertThat(response.code()).isEqualTo(SC_OK);
+      }
+    } else {
+      String stuff =
+          JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition());
+      System.out.println(stuff);
+      try (final Response response = post(route, stuff)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     }

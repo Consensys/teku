@@ -30,7 +30,6 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -95,18 +94,6 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
     assertThat(request.getResponseBody()).isNull();
-  }
-
-  @Test
-  void shouldAcceptBlockAsSsz() throws Exception {
-    final SignedBeaconBlock data = dataStructureUtil.randomSignedBeaconBlock(3);
-    final SignedBeaconBlock result =
-        handler
-            .getMetadata()
-            .getRequestBody(
-                new ByteArrayInputStream(data.sszSerialize().toArrayUnsafe()),
-                Optional.of(ContentTypes.OCTET_STREAM));
-    assertThat(result).isEqualTo(data);
   }
 
   private void setupValidatorDataProviderSubmit(final SafeFuture<SendSignedBlockResult> future) {
