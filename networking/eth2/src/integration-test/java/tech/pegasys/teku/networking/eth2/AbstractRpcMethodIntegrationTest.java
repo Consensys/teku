@@ -36,6 +36,8 @@ public abstract class AbstractRpcMethodIntegrationTest {
   private Spec baseSpec;
   private Optional<Spec> nextSpec;
 
+  protected UInt64 nextSpecSlot;
+
   protected final UInt64 nextSpecEpoch = UInt64.valueOf(2);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
@@ -72,6 +74,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       case DENEB:
         throw new RuntimeException("Base spec is already latest supported milestone");
     }
+    nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
 
   @AfterEach

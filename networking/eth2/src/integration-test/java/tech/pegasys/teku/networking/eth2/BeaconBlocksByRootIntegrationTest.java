@@ -205,7 +205,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
 
     // Setup chain
-    peerStorage.chainUpdater().advanceChain(altairSlot.minus(1));
+    peerStorage.chainUpdater().advanceChain(nextSpecSlot.minus(1));
     // Create altair blocks
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
     final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
