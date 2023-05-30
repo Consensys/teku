@@ -19,15 +19,18 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class BeaconBlockInvariants {
 
-  private static final int SSZ_OFFSET_SIZE = 4;
+  private static final int BYTES_PER_LENGTH_OFFSET = 4;
 
   /**
-   * {@link SignedBeaconBlockSchema} 4 (MESSAGE variable length) + 96 (SIGNATURE fixed-size length)
+   * {@link SignedBeaconBlockSchema} 4 (MESSAGE variable length offset) + 96 (SIGNATURE fixed-size
+   * length)
    */
-  private static final int BLOCK_DATA_OFFSET_SUGGESTS_TYPE_IS_SIGNED_BEACON_BLOCK = 100;
+  private static final int SIGNED_BEACON_BLOCK_SLOT_DATA_POSITION =
+      BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getLength();
 
   /**
    * Extract the slot value from any {@link BeaconBlock}.
@@ -48,18 +51,19 @@ public class BeaconBlockInvariants {
    *
    * <p>The slot is the first field but is inside the variable length beacon block so a 4 byte
    * offset to the start of the beacon block data is recorded. Use that prefix to get the beacon
-   * block data and then find the slot as for an unsigned block
+   * block data and then find the slot as for an unsigned block.
    *
    * @param bytes the SSZ bytes to extract a slot from
    */
   public static UInt64 extractSignedBeaconBlockSlot(final Bytes bytes) {
-    int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, SSZ_OFFSET_SIZE));
-    if (blockDataOffset == BLOCK_DATA_OFFSET_SUGGESTS_TYPE_IS_SIGNED_BEACON_BLOCK) {
+    int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
+    if (blockDataOffset == SIGNED_BEACON_BLOCK_SLOT_DATA_POSITION) {
       return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
     }
-    // extract blockDataOffset for SignedBlockContents
+    // blockDataOffset for SignedBlockContents
     blockDataOffset =
-        blockDataOffset + SszType.sszBytesToLength(bytes.slice(blockDataOffset, SSZ_OFFSET_SIZE));
+        blockDataOffset
+            + SszType.sszBytesToLength(bytes.slice(blockDataOffset, BYTES_PER_LENGTH_OFFSET));
     return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
   }
 }
