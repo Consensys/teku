@@ -40,13 +40,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "description" : "Request successful",
-              "type" : "object",
-              "oneOf" : [ {
-                "$ref" : "#/components/schemas/GetNewBlindedBlockResponse"
-              }, {
-                "$ref" : "#/components/schemas/GetNewBlindedBlockContentsResponse"
-              } ]
+              "$ref" : "#/components/schemas/GetNewBlindedBlockResponse"
             }
           },
           "application/octet-stream" : {

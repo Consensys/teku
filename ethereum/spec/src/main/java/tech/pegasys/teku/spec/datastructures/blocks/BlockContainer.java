@@ -45,13 +45,4 @@ public interface BlockContainer extends SszData, SszContainer {
   default boolean isBlinded() {
     return toBlinded().isPresent();
   }
-
-  static BlockContainer fromSszData(final SszData sszData) {
-    if (sszData instanceof BlockContainer) {
-      return (BlockContainer) sszData;
-    }
-    throw new IllegalArgumentException(
-        "SszData instance should be of type BlockContainer but it was "
-            + sszData.getClass().getCanonicalName());
-  }
 }
