@@ -27,11 +27,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.xerial.snappy.Snappy;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
+import tech.pegasys.teku.fuzz.input.BeaconBlockBodyFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlsToExecutionChangeFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
-import tech.pegasys.teku.fuzz.input.ExecutionPayloadFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
@@ -45,11 +45,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -277,17 +276,14 @@ class FuzzUtilTest {
 
     final Path testCaseDir =
         Path.of("minimal/operations/execution_payload/pyspec_tests/success_regular_payload");
-    final ExecutionPayload data =
-        loadSsz(
-            testCaseDir.resolve("execution_payload.ssz_snappy"),
-            beaconBlockBodySchema.getExecutionPayloadSchema());
+    final BeaconBlockBody data =
+        loadSsz(testCaseDir.resolve("body.ssz_snappy"), beaconBlockBodySchema);
     final BeaconState preState = loadSsz(testCaseDir.resolve("pre.ssz_snappy"), beaconStateSchema);
     final BeaconState postState =
         loadSsz(testCaseDir.resolve("post.ssz_snappy"), beaconStateSchema);
 
-    ExecutionPayloadFuzzInput input =
-        new ExecutionPayloadFuzzInput(
-            spec, preState, (ExecutionPayloadCapellaImpl) data.toVersionCapella().orElseThrow());
+    BeaconBlockBodyFuzzInput input =
+        new BeaconBlockBodyFuzzInput(spec, preState, data.toVersionCapella().orElseThrow());
     byte[] rawInput = input.sszSerialize().toArrayUnsafe();
     Optional<Bytes> result = fuzzUtil.fuzzExecutionPayload(rawInput).map(Bytes::wrap);
 

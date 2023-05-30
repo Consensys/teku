@@ -66,8 +66,7 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
     try {
       spec.atSlot(state.getSlot())
           .getBlockProcessor()
-          .validateExecutionPayload(
-              state, executionPayloadHeader, Optional.empty(), Optional.empty());
+          .validateExecutionPayloadHeader(state, executionPayloadHeader);
     } catch (final BlockProcessingException e) {
       throw new BuilderBidValidationException(
           "Invalid proposed payload with respect to consensus.", e);

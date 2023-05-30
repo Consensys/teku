@@ -11,15 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix;
 
-import java.util.List;
-import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public interface SignedBlindedBlockContainer extends SignedBlockContainer {
+public class SignedBlindedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
 
-  default Optional<List<SignedBlindedBlobSidecar>> getSignedBlindedBlobSidecars() {
-    return Optional.empty();
+  public SignedBlindedBeaconBlockSupplier() {
+    super(DataStructureUtil::randomSignedBlindedBeaconBlock, SpecMilestone.BELLATRIX);
   }
 }

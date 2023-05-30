@@ -18,8 +18,20 @@ import static tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas.UI
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszType;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
+/** Utility functions to extract data from the ssz bytes of block variants */
 public class BeaconBlockInvariants {
+
+  private static final int BYTES_PER_LENGTH_OFFSET = 4;
+
+  /**
+   * {@link SignedBeaconBlockSchema} 4 (MESSAGE variable length offset) + 96 (SIGNATURE fixed-size
+   * length)
+   */
+  private static final int BEACON_BLOCK_OFFSET_IN_SIGNED_BEACON_BLOCK =
+      BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getSszFixedPartSize();
 
   /**
    * Extract the slot value from any {@link BeaconBlock}.
@@ -27,7 +39,7 @@ public class BeaconBlockInvariants {
    * <p>Slot is the first field and recorded directly because it's fixed length. So just read the
    * first UInt64 worth of bytes.
    *
-   * @param bytes the beacon block SSZ to extract a slot from
+   * @param bytes the SSZ bytes to extract a slot from
    */
   public static UInt64 extractBeaconBlockSlot(final Bytes bytes) {
     final int size = UINT64_SCHEMA.getSszFixedPartSize();
@@ -36,16 +48,23 @@ public class BeaconBlockInvariants {
   }
 
   /**
-   * Extract the slot value from any {@link SignedBeaconBlock}.
+   * Extract the slot value from any {@link SignedBlockContainer}.
    *
    * <p>The slot is the first field but is inside the variable length beacon block so a 4 byte
-   * offset to the start of the beacon block data is recorded. Use that prefix to get the beacon
-   * block data and then find the slot as for an unsigned block
+   * offset to the start of the beacon block data is recorded. Use that prefix to get the {@link
+   * BeaconBlock} data or in case of {@link SignedBlockContents} the {@link SignedBeaconBlock} data
+   * and then find the slot as for an unsigned block.
    *
-   * @param bytes the signed beacon block slot to extract a slot from
+   * @param bytes the SSZ bytes to extract a slot from
    */
-  public static UInt64 extractSignedBeaconBlockSlot(final Bytes bytes) {
-    final int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, 4));
+  public static UInt64 extractSignedBlockContainerSlot(final Bytes bytes) {
+    int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
+    if (blockDataOffset == BEACON_BLOCK_OFFSET_IN_SIGNED_BEACON_BLOCK) {
+      return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
+    }
+    // first field in SignedBlockContents points to the SignedBeaconBlock data
+    blockDataOffset +=
+        SszType.sszBytesToLength(bytes.slice(blockDataOffset, BYTES_PER_LENGTH_OFFSET));
     return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
   }
 }

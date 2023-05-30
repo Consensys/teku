@@ -84,7 +84,7 @@ public class BuilderBidValidatorTest {
         .thenReturn(dataStructureUtil.randomBytes32());
     when(specMock.atSlot(any())).thenReturn(specVersionMock);
     when(specVersionMock.getBlockProcessor()).thenReturn(blockProcessor);
-    doNothing().when(blockProcessor).validateExecutionPayload(any(), any(), any(), any());
+    doNothing().when(blockProcessor).validateExecutionPayloadHeader(any(), any());
   }
 
   @AfterEach

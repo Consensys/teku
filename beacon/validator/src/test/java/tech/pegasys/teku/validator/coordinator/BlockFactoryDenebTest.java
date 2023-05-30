@@ -49,10 +49,10 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlockContents() {
 
-    prepareDefaultPayload(spec);
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
-    final BlockContainer blockContainer = assertBlockCreated(1, spec, false, false);
+    final BlockContainer blockContainer =
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
 
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlobSidecars())
@@ -67,10 +67,10 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlindedBlockContentsWhenBlindedBlockRequested() {
 
-    prepareDefaultPayload(spec);
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
-    final BlockContainer blockContainer = assertBlockCreated(1, spec, false, true);
+    final BlockContainer blockContainer =
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
 
     assertThat(blockContainer).isInstanceOf(BlindedBlockContents.class);
     final BlindedBlockContainer blindedBlockContainer = blockContainer.toBlinded().orElseThrow();
