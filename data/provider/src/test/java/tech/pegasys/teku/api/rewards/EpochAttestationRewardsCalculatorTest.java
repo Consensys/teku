@@ -18,17 +18,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.constants.EthConstants.ETH_TO_GWEI;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.migrated.AttestationRewardsData;
+import tech.pegasys.teku.api.migrated.IdealAttestationReward;
 import tech.pegasys.teku.api.migrated.TotalAttestationReward;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.EpochProcessor;
@@ -38,6 +40,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBal
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatusFactory;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
+import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EpochAttestationRewardsCalculatorTest {
@@ -46,6 +49,9 @@ class EpochAttestationRewardsCalculatorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SpecVersion specVersion = mock(SpecVersion.class);
   private final EpochProcessor epochProcessor = mock(EpochProcessor.class);
+  private final BeaconStateAccessorsAltair beaconStateAccessorsAltair =
+      mock(BeaconStateAccessorsAltair.class);
+  private final SpecConfig specConfig = mock(SpecConfig.class);
   private final ValidatorStatusFactory validatorStatusFactory = mock(ValidatorStatusFactory.class);
   private EpochAttestationRewardsCalculator calculator;
 
@@ -53,6 +59,51 @@ class EpochAttestationRewardsCalculatorTest {
   public void setUp() {
     when(specVersion.getEpochProcessor()).thenReturn(epochProcessor);
     when(specVersion.getValidatorStatusFactory()).thenReturn(validatorStatusFactory);
+    when(specVersion.beaconStateAccessors()).thenReturn(beaconStateAccessorsAltair);
+    when(specVersion.getConfig()).thenReturn(specConfig);
+  }
+
+  /*
+   In this test we are creating a scenario where only one active and eligible validator is attesting.
+   In this hypothetical scenario, the maximum reward for 32 effective balance should be:
+   - 40.6% of 32 for Timely Target = 12.992 ~ 13
+   - 21.9% of 32 for Timely Source = 7.008 ~ 7
+   - 21.9% of 32 for Timely Head = 7.008 ~ 7
+
+   More details at https://eth2book.info/capella/part2/incentives/rewards/#rewards
+  */
+  @Test
+  public void
+      idealAttestationRewardsCalculationForMaximumEffectiveBalanceShouldMatchExpectedResult() {
+    final IdealAttestationReward expectedMaximumReward =
+        new IdealAttestationReward(ETH_TO_GWEI.times(UInt64.valueOf(32)));
+    expectedMaximumReward.addTarget(13);
+    expectedMaximumReward.addSource(7);
+    expectedMaximumReward.addHead(7);
+
+    when(beaconStateAccessorsAltair.getBaseRewardPerIncrement(any())).thenReturn(UInt64.ONE);
+    when(specConfig.getEffectiveBalanceIncrement()).thenReturn(UInt64.ONE);
+
+    final BeaconState beaconState = dataStructureUtil.randomBeaconState();
+    final SszList<Validator> validators = beaconState.getValidators();
+    final List<String> validatorPubKeys = List.of(validators.get(0).getPublicKey().toHexString());
+
+    final ValidatorStatus validatorStatus = mock(ValidatorStatus.class);
+    when(validatorStatus.isEligibleValidator()).thenReturn(true);
+
+    final TotalBalances totalBalances = mock(TotalBalances.class);
+    when(totalBalances.getPreviousEpochHeadAttesters()).thenReturn(UInt64.ONE);
+    when(totalBalances.getPreviousEpochSourceAttesters()).thenReturn(UInt64.ONE);
+    when(totalBalances.getPreviousEpochTargetAttesters()).thenReturn(UInt64.ONE);
+    when(totalBalances.getCurrentEpochActiveValidators()).thenReturn(UInt64.ONE);
+
+    final ValidatorStatuses validatorStatuses =
+        new ValidatorStatuses(List.of(validatorStatus), totalBalances);
+    when(validatorStatusFactory.createValidatorStatuses(any())).thenReturn(validatorStatuses);
+
+    calculator = new EpochAttestationRewardsCalculator(specVersion, beaconState, validatorPubKeys);
+
+    assertThat(calculator.idealAttestationRewards().get(32)).isEqualTo(expectedMaximumReward);
   }
 
   @Test
@@ -82,10 +133,9 @@ class EpochAttestationRewardsCalculatorTest {
         .thenReturn(expectedTotalRewards);
 
     calculator = new EpochAttestationRewardsCalculator(specVersion, beaconState, validatorPubKeys);
-    final AttestationRewardsData rewards = calculator.calculate();
 
     final List<TotalAttestationReward> totalAttestationRewards =
-        rewards.getTotalAttestationRewards();
+        calculator.totalAttestationRewards();
     assertThat(totalAttestationRewards).hasSize(validatorPubKeys.size());
 
     for (int i = 0; i < validatorPubKeys.size(); i++) {
