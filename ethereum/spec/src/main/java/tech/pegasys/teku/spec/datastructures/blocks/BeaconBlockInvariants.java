@@ -57,7 +57,7 @@ public class BeaconBlockInvariants {
    * @param bytes the SSZ bytes to extract a slot from
    */
   public static UInt64 extractSignedBlockContainerSlot(final Bytes bytes) {
-    int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
+    final int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
     if (blockDataOffset == SIGNED_BEACON_BLOCK_SLOT_DATA_POSITION) {
       return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
     }
