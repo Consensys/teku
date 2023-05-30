@@ -129,9 +129,6 @@ public class JsonUtil {
     return getAttribute(json, type, false, path);
   }
 
-  /**
-   * @param nestedSearch enable searching for paths deeper nested in the json
-   */
   public static <T> Optional<T> getAttribute(
       final String json,
       final DeserializableTypeDefinition<T> type,
