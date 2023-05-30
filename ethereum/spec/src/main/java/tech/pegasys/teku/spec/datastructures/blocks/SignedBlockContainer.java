@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -29,12 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockCo
  * href="https://github.com/ethereum/beacon-APIs/tree/master/types/deneb">beacon-APIs/types/deneb</a>
  */
 public interface SignedBlockContainer extends SszData, SszContainer {
-
-  Predicate<SignedBlockContainer> IS_SIGNED_BEACON_BLOCK =
-      blockContainer -> blockContainer instanceof SignedBeaconBlock;
-
-  Predicate<SignedBlockContainer> IS_SIGNED_BLOCK_CONTENTS =
-      blockContainer -> blockContainer instanceof SignedBlockContents;
 
   SignedBeaconBlock getSignedBlock();
 

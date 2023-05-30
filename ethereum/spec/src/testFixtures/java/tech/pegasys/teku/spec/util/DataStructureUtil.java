@@ -2199,7 +2199,7 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockContents randomSignedBlockContents() {
-    return randomSignedBlockContents(randomUInt64());
+    return randomSignedBlockContents(randomSlot());
   }
 
   public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
@@ -2212,7 +2212,7 @@ public final class DataStructureUtil {
   }
 
   public BlockContents randomBlockContents() {
-    return randomBlockContents(randomUInt64());
+    return randomBlockContents(randomSlot());
   }
 
   public BlockContents randomBlockContents(final UInt64 slot) {
@@ -2224,7 +2224,7 @@ public final class DataStructureUtil {
   }
 
   public BlindedBlockContents randomBlindedBlockContents() {
-    return randomBlindedBlockContents(randomUInt64());
+    return randomBlindedBlockContents(randomSlot());
   }
 
   public BlindedBlockContents randomBlindedBlockContents(final UInt64 slot) {
@@ -2237,7 +2237,10 @@ public final class DataStructureUtil {
   }
 
   public SignedBlindedBlockContents randomSignedBlindedBlockContents() {
-    final UInt64 slot = randomSlot();
+    return randomSignedBlindedBlockContents(randomSlot());
+  }
+
+  public SignedBlindedBlockContents randomSignedBlindedBlockContents(final UInt64 slot) {
     final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
         randomSignedBlindedBlobSidecars(randomNumberOfBlobsPerBlock());
     final SignedBeaconBlock signedBlindedBeaconBlock = randomSignedBlindedBeaconBlock(slot);
