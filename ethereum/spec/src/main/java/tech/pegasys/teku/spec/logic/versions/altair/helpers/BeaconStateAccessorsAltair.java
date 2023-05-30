@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
@@ -203,5 +204,15 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
     }
     return participationFlagIndices;
+  }
+
+  public static BeaconStateAccessorsAltair required(
+      final BeaconStateAccessors beaconStateAccessors) {
+    checkArgument(
+        beaconStateAccessors.getClass().isAssignableFrom(BeaconStateAccessorsAltair.class),
+        "Expected %s but it was %s",
+        BeaconStateAccessorsAltair.class,
+        beaconStateAccessors.getClass());
+    return (BeaconStateAccessorsAltair) beaconStateAccessors;
   }
 }

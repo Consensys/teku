@@ -1,5 +1,5 @@
 {
-  "title" : "BlockContents",
+  "title" : "BlockContentsDeneb",
   "type" : "object",
   "required" : [ "block", "blob_sidecars" ],
   "properties" : {
