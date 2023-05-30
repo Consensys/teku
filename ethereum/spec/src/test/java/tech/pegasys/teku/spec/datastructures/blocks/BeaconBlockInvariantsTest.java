@@ -41,7 +41,7 @@ class BeaconBlockInvariantsTest {
   @MethodSource("slotNumbers")
   void shouldExtractSlotFromSignedBeaconBlock(final UInt64 slot) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-    assertThat(BeaconBlockInvariants.extractSignedBeaconBlockSlot(block.sszSerialize()))
+    assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(block.sszSerialize()))
         .isEqualTo(slot);
   }
 
@@ -49,7 +49,7 @@ class BeaconBlockInvariantsTest {
   @MethodSource("slotNumbers")
   void shouldExtractSlotFromSignedBlindedBeaconBlock(final UInt64 slot) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
-    assertThat(BeaconBlockInvariants.extractSignedBeaconBlockSlot(block.sszSerialize()))
+    assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(block.sszSerialize()))
         .isEqualTo(slot);
   }
 
@@ -57,7 +57,7 @@ class BeaconBlockInvariantsTest {
   @MethodSource("slotNumbers")
   void shouldExtractSlotFromSignedBlockContents(final UInt64 slot) {
     final SignedBlockContents blockContents = dataStructureUtil.randomSignedBlockContents(slot);
-    assertThat(BeaconBlockInvariants.extractSignedBeaconBlockSlot(blockContents.sszSerialize()))
+    assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(blockContents.sszSerialize()))
         .isEqualTo(slot);
   }
 
@@ -67,7 +67,8 @@ class BeaconBlockInvariantsTest {
     final SignedBlindedBlockContents blindedBlockContents =
         dataStructureUtil.randomSignedBlindedBlockContents(slot);
     assertThat(
-            BeaconBlockInvariants.extractSignedBeaconBlockSlot(blindedBlockContents.sszSerialize()))
+            BeaconBlockInvariants.extractSignedBlockContainerSlot(
+                blindedBlockContents.sszSerialize()))
         .isEqualTo(slot);
   }
 

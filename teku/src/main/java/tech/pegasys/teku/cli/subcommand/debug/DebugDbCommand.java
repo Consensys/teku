@@ -466,7 +466,7 @@ public class DebugDbCommand implements Runnable {
             iterator.hasNext(); ) {
           final Map.Entry<Bytes, Bytes> rootAndBlock = iterator.next();
           final Bytes blockData = rootAndBlock.getValue();
-          final UInt64 blockSlot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(blockData);
+          final UInt64 blockSlot = BeaconBlockInvariants.extractSignedBlockContainerSlot(blockData);
           final boolean shouldDelete;
           final boolean isJustifiedBlock = blockSlot.isLessThanOrEqualTo(justifiedSlot);
           if (deleteAll) {

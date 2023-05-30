@@ -47,23 +47,21 @@ public class BeaconBlockInvariants {
   }
 
   /**
-   * Extract the slot value from any {@link SignedBeaconBlock} or {@link SignedBlockContents}.
+   * Extract the slot value from any {@link SignedBlockContainer}.
    *
    * <p>The slot is the first field but is inside the variable length beacon block so a 4 byte
-   * offset to the start of the beacon block data is recorded. Use that prefix to get the beacon
-   * block data and then find the slot as for an unsigned block.
+   * offset to the start of the beacon block data is recorded. Use that prefix to get the {@link
+   * BeaconBlock} data or in case of {@link SignedBlockContents} the {@link SignedBeaconBlock} data
+   * and then find the slot as for an unsigned block.
    *
    * @param bytes the SSZ bytes to extract a slot from
    */
-  public static UInt64 extractSignedBeaconBlockSlot(final Bytes bytes) {
+  public static UInt64 extractSignedBlockContainerSlot(final Bytes bytes) {
     int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
     if (blockDataOffset == SIGNED_BEACON_BLOCK_SLOT_DATA_POSITION) {
       return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
     }
-    // blockDataOffset for SignedBlockContents
-    blockDataOffset =
-        blockDataOffset
-            + SszType.sszBytesToLength(bytes.slice(blockDataOffset, BYTES_PER_LENGTH_OFFSET));
-    return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
+    // first field in SignedBlockContents points to the SignedBeaconBlock data
+    return extractSignedBlockContainerSlot(bytes.slice(blockDataOffset));
   }
 }

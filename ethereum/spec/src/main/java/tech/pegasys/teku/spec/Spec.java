@@ -291,7 +291,8 @@ public class Spec {
   }
 
   public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedSignedBlock) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedSignedBlock);
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
@@ -299,7 +300,7 @@ public class Spec {
   }
 
   public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(final Bytes serializedState) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+    final UInt64 slot = BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedState);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBlindedBeaconBlockSchema()
