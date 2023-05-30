@@ -21,19 +21,14 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BeaconBlockInvariantsTest {
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
 
-  @ParameterizedTest
-  @MethodSource("slotNumbers")
-  void shouldExtractSlotFromSignedBeaconBlock(final UInt64 slot) {
-    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-    assertThat(BeaconBlockInvariants.extractSignedBeaconBlockSlot(block.sszSerialize()))
-        .isEqualTo(slot);
-  }
+  private final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
 
   @ParameterizedTest
   @MethodSource("slotNumbers")
@@ -42,11 +37,54 @@ class BeaconBlockInvariantsTest {
     assertThat(BeaconBlockInvariants.extractBeaconBlockSlot(block.sszSerialize())).isEqualTo(slot);
   }
 
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
+  void shouldExtractSlotFromBlindedBeaconBlock(final UInt64 slot) {
+    final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock(slot);
+    assertThat(BeaconBlockInvariants.extractBeaconBlockSlot(block.sszSerialize())).isEqualTo(slot);
+  }
+
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
+  void shouldExtractSlotFromSignedBeaconBlock(final UInt64 slot) {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
+    assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(block.sszSerialize()))
+        .isEqualTo(slot);
+  }
+
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
+  void shouldExtractSlotFromSignedBlindedBeaconBlock(final UInt64 slot) {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+    assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(block.sszSerialize()))
+        .isEqualTo(slot);
+  }
+
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
+  void shouldExtractSlotFromSignedBlockContents(final UInt64 slot) {
+    final SignedBlockContents blockContents = dataStructureUtil.randomSignedBlockContents(slot);
+    assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(blockContents.sszSerialize()))
+        .isEqualTo(slot);
+  }
+
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
+  void shouldExtractSlotFromSignedBlindedBlockContents(final UInt64 slot) {
+    final SignedBlindedBlockContents blindedBlockContents =
+        dataStructureUtil.randomSignedBlindedBlockContents(slot);
+    assertThat(
+            BeaconBlockInvariants.extractSignedBlockContainerSlot(
+                blindedBlockContents.sszSerialize()))
+        .isEqualTo(slot);
+  }
+
   static List<Arguments> slotNumbers() {
     return List.of(
         Arguments.of(UInt64.ZERO),
         Arguments.of(UInt64.ONE),
         Arguments.of(UInt64.MAX_VALUE),
-        Arguments.of(UInt64.valueOf(1234582)));
+        Arguments.of(UInt64.valueOf(1234582)),
+        Arguments.of(UInt64.valueOf(42)));
   }
 }
