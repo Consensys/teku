@@ -173,7 +173,7 @@ public class JsonUtil {
         }
       } else if ((JsonToken.START_ARRAY.equals(jsonToken)
               || JsonToken.START_OBJECT.equals(jsonToken))
-          & !nestedSearch) {
+          && !nestedSearch) {
         parser.skipChildren();
       }
     }
