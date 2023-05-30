@@ -33,11 +33,12 @@ public class BlockContentsSchema
   static final SszFieldName FIELD_BLOB_SIDECARS = () -> "blob_sidecars";
 
   BlockContentsSchema(
+      final String containerName,
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
       final BlobSidecarSchema blobSidecarSchema) {
     super(
-        "BlockContents",
+        containerName,
         namedSchema("block", beaconBlockSchema),
         namedSchema(
             FIELD_BLOB_SIDECARS,
@@ -47,8 +48,9 @@ public class BlockContentsSchema
   public static BlockContentsSchema create(
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlobSidecarSchema blobSidecarSchema) {
-    return new BlockContentsSchema(specConfig, beaconBlockSchema, blobSidecarSchema);
+      final BlobSidecarSchema blobSidecarSchema,
+      final String containerName) {
+    return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSidecarSchema);
   }
 
   public BlockContents create(final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {

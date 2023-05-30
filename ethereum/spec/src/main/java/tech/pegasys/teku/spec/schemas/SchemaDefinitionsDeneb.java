@@ -117,13 +117,17 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.signedBlindedBlobSidecarSchema =
         SignedBlindedBlobSidecarSchema.create(blindedBlobSidecarSchema);
     this.blockContentsSchema =
-        BlockContentsSchema.create(specConfig, beaconBlockSchema, blobSidecarSchema);
+        BlockContentsSchema.create(
+            specConfig, beaconBlockSchema, blobSidecarSchema, "BlockContentsDeneb");
     this.signedBlockContentsSchema =
         SignedBlockContentsSchema.create(
             specConfig, signedBlobSidecarSchema, signedBeaconBlockSchema);
     this.blindedBlockContentsSchema =
         BlindedBlockContentsSchema.create(
-            specConfig, blindedBlobSidecarSchema, blindedBeaconBlockSchema);
+            specConfig,
+            blindedBlobSidecarSchema,
+            blindedBeaconBlockSchema,
+            "BlindedBlockContentsDeneb");
     this.signedBlindedBlockContentsSchema =
         SignedBlindedBlockContentsSchema.create(
             specConfig, signedBlindedBlobSidecarSchema, signedBlindedBeaconBlockSchema);

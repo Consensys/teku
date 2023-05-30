@@ -53,28 +53,32 @@ public class EpochAttestationRewardsCalculator {
   private final List<Integer> validatorIndexes;
 
   public EpochAttestationRewardsCalculator(
-      final SpecVersion specVersion,
-      final BeaconState state,
-      final List<String> validatorPublicKeys) {
+      final SpecVersion specVersion, final BeaconState state, final List<String> validatorIds) {
     this.specVersion = specVersion;
     this.state = state;
     this.epochProcessor = specVersion.getEpochProcessor();
     this.validatorStatuses = specVersion.getValidatorStatusFactory().createValidatorStatuses(state);
-    this.validatorIndexes = getValidatorIndexes(state, validatorPublicKeys);
+    this.validatorIndexes = mapValidatorIndexes(state, validatorIds);
   }
 
-  private List<Integer> getValidatorIndexes(
-      final BeaconState state, final List<String> validatorPublicKeys) {
+  private List<Integer> mapValidatorIndexes(
+      final BeaconState state, final List<String> validatorIds) {
     final SszList<Validator> allValidators = state.getValidators();
     return IntStream.range(0, allValidators.size())
         .filter(
             i ->
-                validatorPublicKeys.isEmpty()
-                    || validatorPublicKeys.contains(
-                        allValidators.get(i).getPublicKey().toHexString()))
+                validatorIds.isEmpty()
+                    || validatorIds.contains(allValidators.get(i).getPublicKey().toHexString())
+                    || validatorIds.contains(String.valueOf(i)))
         .filter(i -> validatorStatuses.getStatuses().get(i).isEligibleValidator())
+        .distinct()
         .boxed()
         .collect(toList());
+  }
+
+  @VisibleForTesting
+  List<Integer> getValidatorIndexes() {
+    return validatorIndexes;
   }
 
   public AttestationRewardsData calculate() {

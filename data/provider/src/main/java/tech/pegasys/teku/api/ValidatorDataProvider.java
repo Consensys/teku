@@ -40,12 +40,12 @@ import tech.pegasys.teku.api.schema.deneb.SignedBlindedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -98,7 +98,7 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  public SafeFuture<? extends Optional<? extends SszData>> getUnsignedBeaconBlockAtSlot(
+  public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
       final UInt64 slot,
       final BLSSignature randao,
       final Optional<Bytes32> graffiti,
@@ -121,7 +121,7 @@ public class ValidatorDataProvider {
     return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
   }
 
-  public SafeFuture<? extends Optional<? extends SszData>> getUnsignedBeaconBlockAtSlot(
+  public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
       UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
     if (randao == null) {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
