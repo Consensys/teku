@@ -69,7 +69,7 @@ public class GetBlockRewards extends RestApiEndpoint {
             .operationId("getBlockRewards")
             .summary("Get Block Rewards")
             .description("Retrieve block reward info for a single block.")
-            .tags(TAG_BEACON, TAG_REWARDS, TAG_EXPERIMENTAL)
+            .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(PARAMETER_BLOCK_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
