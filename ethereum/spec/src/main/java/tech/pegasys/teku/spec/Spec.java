@@ -299,12 +299,14 @@ public class Spec {
         .sszDeserialize(serializedSignedBlock);
   }
 
-  public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(final Bytes serializedState) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedState);
+  public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(
+      final Bytes serializedSignedBlindedBlock) {
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlindedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBlindedBeaconBlockSchema()
-        .sszDeserialize(serializedState);
+        .sszDeserialize(serializedSignedBlindedBlock);
   }
 
   public BeaconBlock deserializeBeaconBlock(final Bytes serializedBlock) {
