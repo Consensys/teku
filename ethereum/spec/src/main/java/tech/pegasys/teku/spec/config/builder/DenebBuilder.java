@@ -30,6 +30,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private UInt64 denebForkEpoch;
 
   private int fieldElementsPerBlob;
+  private int maxBlobCommitmentsPerBlock;
   private int maxBlobsPerBlock;
 
   private Optional<String> trustedSetupPath = Optional.empty();
@@ -44,6 +45,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         denebForkVersion,
         denebForkEpoch,
         fieldElementsPerBlob,
+        maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
         trustedSetupPath,
         kzgNoop);
@@ -63,6 +65,11 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
 
   public DenebBuilder fieldElementsPerBlob(final int fieldElementsPerBlob) {
     this.fieldElementsPerBlob = fieldElementsPerBlob;
+    return this;
+  }
+
+  public DenebBuilder maxBlobCommitmentsPerBlock(final int maxBlobCommitmentsPerBlock) {
+    this.maxBlobCommitmentsPerBlock = maxBlobCommitmentsPerBlock;
     return this;
   }
 
@@ -90,6 +97,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     SpecBuilderUtil.validateConstant("denebForkEpoch", denebForkEpoch);
     SpecBuilderUtil.validateConstant("denebForkVersion", denebForkVersion);
     SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
+    SpecBuilderUtil.validateConstant("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
     SpecBuilderUtil.validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);

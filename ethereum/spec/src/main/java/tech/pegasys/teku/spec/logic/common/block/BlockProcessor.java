@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -144,16 +143,18 @@ public interface BlockProcessor {
 
   void processExecutionPayload(
       MutableBeaconState state,
-      ExecutionPayloadHeader executionPayloadHeader,
-      Optional<ExecutionPayload> executionPayload,
+      BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
   void validateExecutionPayload(
       BeaconState state,
-      ExecutionPayloadHeader executionPayloadHeader,
-      Optional<ExecutionPayload> executionPayload,
+      BeaconBlockBody beaconBlockBody,
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      throws BlockProcessingException;
+
+  void validateExecutionPayloadHeader(
+      BeaconState state, ExecutionPayloadHeader executionPayloadHeader)
       throws BlockProcessingException;
 
   boolean isOptimistic();

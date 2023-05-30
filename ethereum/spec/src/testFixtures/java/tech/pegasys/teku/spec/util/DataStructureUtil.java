@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -118,6 +119,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
@@ -623,29 +625,37 @@ public final class DataStructureUtil {
   }
 
   public ExecutionPayload randomExecutionPayload(final UInt64 slot) {
+    return randomExecutionPayload(slot, executionPayloadBuilder -> {});
+  }
+
+  public ExecutionPayload randomExecutionPayload(
+      final UInt64 slot, final Consumer<ExecutionPayloadBuilder> postRandomModifications) {
     final SpecConfigBellatrix specConfigBellatrix =
         SpecConfigBellatrix.required(spec.atSlot(slot).getConfig());
     return getBellatrixSchemaDefinitions(slot)
         .getExecutionPayloadSchema()
         .createExecutionPayload(
-            builder ->
-                builder
-                    .parentHash(randomBytes32())
-                    .feeRecipient(randomBytes20())
-                    .stateRoot(randomBytes32())
-                    .receiptsRoot(randomBytes32())
-                    .logsBloom(randomBytes(specConfigBellatrix.getBytesPerLogsBloom()))
-                    .prevRandao(randomBytes32())
-                    .blockNumber(randomUInt64())
-                    .gasLimit(randomUInt64())
-                    .gasUsed(randomUInt64())
-                    .timestamp(randomUInt64())
-                    .extraData(randomBytes(specConfigBellatrix.getMaxExtraDataBytes()))
-                    .baseFeePerGas(randomUInt256())
-                    .blockHash(randomBytes32())
-                    .transactions(randomExecutionPayloadTransactions())
-                    .withdrawals(this::randomExecutionPayloadWithdrawals)
-                    .excessDataGas(this::randomUInt256));
+            builder -> {
+              final ExecutionPayloadBuilder executionPayloadBuilder =
+                  builder
+                      .parentHash(randomBytes32())
+                      .feeRecipient(randomBytes20())
+                      .stateRoot(randomBytes32())
+                      .receiptsRoot(randomBytes32())
+                      .logsBloom(randomBytes(specConfigBellatrix.getBytesPerLogsBloom()))
+                      .prevRandao(randomBytes32())
+                      .blockNumber(randomUInt64())
+                      .gasLimit(randomUInt64())
+                      .gasUsed(randomUInt64())
+                      .timestamp(randomUInt64())
+                      .extraData(randomBytes(specConfigBellatrix.getMaxExtraDataBytes()))
+                      .baseFeePerGas(randomUInt256())
+                      .blockHash(randomBytes32())
+                      .transactions(randomExecutionPayloadTransactions())
+                      .withdrawals(this::randomExecutionPayloadWithdrawals)
+                      .excessDataGas(this::randomUInt256);
+              postRandomModifications.accept(executionPayloadBuilder);
+            });
   }
 
   public Transaction randomExecutionPayloadTransaction() {
