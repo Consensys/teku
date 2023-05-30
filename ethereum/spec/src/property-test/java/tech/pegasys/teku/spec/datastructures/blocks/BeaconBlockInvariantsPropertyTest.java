@@ -33,7 +33,7 @@ public class BeaconBlockInvariantsPropertyTest {
   void extractSlotFromSignedBeaconBlock(
       @ForAll(supplier = SignedBeaconBlockSupplier.class)
           final SignedBeaconBlock signedBeaconBlock) {
-    assertThat(BeaconBlockInvariants.extractBeaconBlockSlot(signedBeaconBlock.sszSerialize()))
+    assertThat(BeaconBlockInvariants.extractSignedBeaconBlockSlot(signedBeaconBlock.sszSerialize()))
         .isEqualTo(signedBeaconBlock.getSlot());
   }
 
@@ -42,7 +42,8 @@ public class BeaconBlockInvariantsPropertyTest {
       @ForAll(supplier = SignedBlindedBeaconBlockSupplier.class)
           final SignedBeaconBlock signedBlindedBeaconBlock) {
     assertThat(
-            BeaconBlockInvariants.extractBeaconBlockSlot(signedBlindedBeaconBlock.sszSerialize()))
+            BeaconBlockInvariants.extractSignedBeaconBlockSlot(
+                signedBlindedBeaconBlock.sszSerialize()))
         .isEqualTo(signedBlindedBeaconBlock.getSlot());
   }
 
