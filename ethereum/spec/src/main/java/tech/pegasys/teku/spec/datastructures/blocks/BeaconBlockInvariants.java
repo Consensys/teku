@@ -30,7 +30,7 @@ public class BeaconBlockInvariants {
    * length)
    */
   private static final int SIGNED_BEACON_BLOCK_SLOT_DATA_POSITION =
-      BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getLength();
+      BYTES_PER_LENGTH_OFFSET + SszSignatureSchema.INSTANCE.getSszFixedPartSize();
 
   /**
    * Extract the slot value from any {@link BeaconBlock}.

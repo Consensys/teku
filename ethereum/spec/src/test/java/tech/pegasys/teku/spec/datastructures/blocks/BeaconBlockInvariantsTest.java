@@ -39,6 +39,13 @@ class BeaconBlockInvariantsTest {
 
   @ParameterizedTest
   @MethodSource("slotNumbers")
+  void shouldExtractSlotFromBlindedBeaconBlock(final UInt64 slot) {
+    final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock(slot);
+    assertThat(BeaconBlockInvariants.extractBeaconBlockSlot(block.sszSerialize())).isEqualTo(slot);
+  }
+
+  @ParameterizedTest
+  @MethodSource("slotNumbers")
   void shouldExtractSlotFromSignedBeaconBlock(final UInt64 slot) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
     assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(block.sszSerialize()))
