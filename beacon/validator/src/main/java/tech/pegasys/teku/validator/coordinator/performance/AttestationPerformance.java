@@ -90,22 +90,31 @@ public class AttestationPerformance {
 
   @Override
   public String toString() {
-    return String.format(
-        "Attestation performance: "
-            + "epoch %s, expected %s, produced %s, included %s (%s%%), "
-            + "distance %s / %.2f / %s, "
-            + "correct target %s (%s%%), correct head %s (%s%%)",
-        epoch,
-        numberOfExpectedAttestations,
-        numberOfProducedAttestations,
-        numberOfIncludedAttestations,
-        getPercentage(numberOfIncludedAttestations, numberOfProducedAttestations),
-        inclusionDistanceMin,
-        inclusionDistanceAverage,
-        inclusionDistanceMax,
-        correctTargetCount,
-        getPercentage(correctTargetCount, numberOfProducedAttestations),
-        correctHeadBlockCount,
-        getPercentage(correctHeadBlockCount, numberOfProducedAttestations));
+    StringBuilder sb = new StringBuilder("Attestation performance: ");
+    sb.append(
+        String.format(
+            "epoch %s, expected %s, produced %s, included %s (%s%%), ",
+            epoch,
+            numberOfExpectedAttestations,
+            numberOfProducedAttestations,
+            numberOfIncludedAttestations,
+            getPercentage(numberOfIncludedAttestations, numberOfProducedAttestations)));
+
+    if (numberOfIncludedAttestations != 0) {
+      sb.append(
+          String.format(
+              "distance %s / %.2f / %s, ",
+              inclusionDistanceMin, inclusionDistanceAverage, inclusionDistanceMax));
+    }
+
+    sb.append(
+        String.format(
+            "correct target %s (%s%%), correct head %s (%s%%)",
+            correctTargetCount,
+            getPercentage(correctTargetCount, numberOfProducedAttestations),
+            correctHeadBlockCount,
+            getPercentage(correctHeadBlockCount, numberOfProducedAttestations)));
+
+    return sb.toString();
   }
 }

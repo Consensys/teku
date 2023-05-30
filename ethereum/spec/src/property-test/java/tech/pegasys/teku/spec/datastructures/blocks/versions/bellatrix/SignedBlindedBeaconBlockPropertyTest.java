@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.spec.datastructures.blocks.versions.bellatrix;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,23 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.BlindedBeaconBlockBodySupplier;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix.SignedBlindedBeaconBlockSupplier;
 
-public class BlindedBeaconBlockBodyPropertyTest {
+public class SignedBlindedBeaconBlockPropertyTest {
   @Property
   void roundTrip(
-      @ForAll(supplier = BlindedBeaconBlockBodySupplier.class)
-          final BeaconBlockBody beaconBlockBody)
+      @ForAll(supplier = SignedBlindedBeaconBlockSupplier.class)
+          final SignedBeaconBlock signedBeaconBlock)
       throws JsonProcessingException {
-    assertRoundTrip(beaconBlockBody);
+    assertRoundTrip(signedBeaconBlock);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlindedBeaconBlockBodySupplier.class)
-          final BeaconBlockBody beaconBlockBody,
+      @ForAll(supplier = SignedBlindedBeaconBlockSupplier.class)
+          final SignedBeaconBlock signedBeaconBlock,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(beaconBlockBody, seed);
+    assertDeserializeMutatedThrowsExpected(signedBeaconBlock, seed);
   }
 }

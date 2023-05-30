@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 /** Base class of {@link SszSchema} with SSZ serialization related methods */
 public interface SszType {
 
-  // the size of SSZ UIn32 lengths and offsets
+  // the size of SSZ UInt32 lengths and offsets
   int SSZ_LENGTH_SIZE = 4;
 
   // serializes int length to SSZ 4 bytes

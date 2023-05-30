@@ -28,7 +28,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 
 public class BeaconBlockSchema
     extends ContainerSchema5<
-        BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody> {
+        BeaconBlock, SszUInt64, SszUInt64, SszBytes32, SszBytes32, BeaconBlockBody>
+    implements BlockContainerSchema<BeaconBlock> {
 
   public BeaconBlockSchema(
       final BeaconBlockBodySchema<?> blockBodySchema, final String containerName) {

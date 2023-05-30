@@ -13,13 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import java.util.List;
-import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 
-public interface SignedBlindedBlockContainer extends SignedBlockContainer {
+/**
+ * Interface used to represent both {@link SignedBeaconBlockSchema} and {@link
+ * SignedBlockContentsSchema} and their blinded variants
+ */
+public interface SignedBlockContainerSchema<T extends SignedBlockContainer>
+    extends SszContainerSchema<T> {
 
-  default Optional<List<SignedBlindedBlobSidecar>> getSignedBlindedBlobSidecars() {
-    return Optional.empty();
+  @SuppressWarnings("unchecked")
+  default SignedBlockContainerSchema<SignedBlockContainer> castTypeToSignedBlockContainer() {
+    return (SignedBlockContainerSchema<SignedBlockContainer>) this;
   }
 }

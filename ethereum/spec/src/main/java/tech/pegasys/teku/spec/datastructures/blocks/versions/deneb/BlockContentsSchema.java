@@ -24,18 +24,21 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 
 public class BlockContentsSchema
-    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecar>> {
+    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecar>>
+    implements BlockContainerSchema<BlockContents> {
 
   static final SszFieldName FIELD_BLOB_SIDECARS = () -> "blob_sidecars";
 
   BlockContentsSchema(
+      final String containerName,
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
       final BlobSidecarSchema blobSidecarSchema) {
     super(
-        "BlockContents",
+        containerName,
         namedSchema("block", beaconBlockSchema),
         namedSchema(
             FIELD_BLOB_SIDECARS,
@@ -45,8 +48,9 @@ public class BlockContentsSchema
   public static BlockContentsSchema create(
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlobSidecarSchema blobSidecarSchema) {
-    return new BlockContentsSchema(specConfig, beaconBlockSchema, blobSidecarSchema);
+      final BlobSidecarSchema blobSidecarSchema,
+      final String containerName) {
+    return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSidecarSchema);
   }
 
   public BlockContents create(final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {

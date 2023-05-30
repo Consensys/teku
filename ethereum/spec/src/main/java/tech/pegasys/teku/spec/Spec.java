@@ -63,7 +63,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -292,19 +291,22 @@ public class Spec {
   }
 
   public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedSignedBlock) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedSignedBlock);
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
         .sszDeserialize(serializedSignedBlock);
   }
 
-  public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(final Bytes serializedState) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+  public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(
+      final Bytes serializedSignedBlindedBlock) {
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlindedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBlindedBeaconBlockSchema()
-        .sszDeserialize(serializedState);
+        .sszDeserialize(serializedSignedBlindedBlock);
   }
 
   public BeaconBlock deserializeBeaconBlock(final Bytes serializedBlock) {
@@ -313,17 +315,6 @@ public class Spec {
         .getSchemaDefinitions()
         .getBeaconBlockSchema()
         .sszDeserialize(serializedBlock);
-  }
-
-  public ExecutionPayload deserializeExecutionPayload(
-      final Bytes serializedPayload, final UInt64 slot) {
-    return atSlot(slot)
-        .getSchemaDefinitions()
-        .toVersionBellatrix()
-        .orElseThrow(
-            () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
-        .getExecutionPayloadSchema()
-        .sszDeserialize(serializedPayload);
   }
 
   public BlobSidecar deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
