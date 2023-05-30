@@ -12,7 +12,7 @@ dependencies {
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
     implementation 'org.hyperledger.besu.internal:metrics-core'
     implementation 'com.squareup.okhttp3:okhttp'
-    implementation 'com.github.oshi:oshi-core-java11'
+    compileOnly 'com.github.oshi:oshi-core-java11'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.assertj:assertj-core'
@@ -21,6 +21,7 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:metrics'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:time'))
+    testImplementation 'com.github.oshi:oshi-core-java11'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 
     testFixturesImplementation 'com.fasterxml.jackson.core:jackson-databind'
