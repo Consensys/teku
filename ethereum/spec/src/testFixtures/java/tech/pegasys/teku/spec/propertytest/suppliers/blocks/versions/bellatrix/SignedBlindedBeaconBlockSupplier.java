@@ -11,16 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
+package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SignedBlockContentsSupplier extends DataStructureUtilSupplier<SignedBlockContents> {
+public class SignedBlindedBeaconBlockSupplier extends DataStructureUtilSupplier<SignedBeaconBlock> {
 
-  public SignedBlockContentsSupplier() {
-    super(DataStructureUtil::randomSignedBlockContents, SpecMilestone.DENEB);
+  public SignedBlindedBeaconBlockSupplier() {
+    super(DataStructureUtil::randomSignedBlindedBeaconBlock, SpecMilestone.BELLATRIX);
   }
 }
