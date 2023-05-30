@@ -46,15 +46,13 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    setUp(SpecMilestone.PHASE0, Optional.of(SpecMilestone.ALTAIR));
+    setUp(SpecMilestone.PHASE0, Optional.empty());
   }
 
   @Test
@@ -186,30 +184,43 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     assertThat(result).isEmpty();
   }
 
-  @ParameterizedTest(name = "enableAltairLocally={0}, enableAltairRemotely={1}")
-  @MethodSource("altairVersioningOptions")
+  @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
+  @MethodSource("generateSpecTransitionWithCombinationParams")
   public void requestBlockByRoot_withDisparateVersionsEnabled_requestPhase0Blocks(
-      final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
-    final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
+      final SpecMilestone baseMilestone,
+      final SpecMilestone nextMilestone,
+      final boolean nextSpecEnabledLocally,
+      final boolean nextSpecEnabledRemotely)
+      throws Exception {
+    setUp(baseMilestone, Optional.of(nextMilestone));
+    final Eth2Peer peer = createPeer(nextSpecEnabledLocally, nextSpecEnabledRemotely);
 
     // Setup chain
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
     final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
     peerStorage.chainUpdater().updateBestBlock(block2);
-    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyPhase0.class);
-    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyPhase0.class);
+
+    final Class<?> expectedBody = milestoneToBeaconBlockBodyClass(baseMilestone);
+
+    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
+    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
 
     final List<SignedBeaconBlock> response =
         requestBlocks(peer, List.of(block1.getRoot(), block2.getRoot()));
     assertThat(response).containsExactly(block1.getBlock(), block2.getBlock());
   }
 
-  @ParameterizedTest(name = "enableAltairLocally={0}, enableAltairRemotely={1}")
-  @MethodSource("altairVersioningOptions")
-  public void requestBlockBySlot_withDisparateVersionsEnabled_requestAltairBlocks(
-      final boolean enableAltairLocally, final boolean enableAltairRemotely) throws Exception {
+  @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
+  @MethodSource("generateSpecTransitionWithCombinationParams")
+  public void requestBlockBySlot_withDisparateVersionsEnabled_requestNextSpecBlocks(
+      final SpecMilestone baseMilestone,
+      final SpecMilestone nextMilestone,
+      final boolean nextSpecEnabledLocally,
+      final boolean nextSpecEnabledRemotely)
+      throws Exception {
+    setUp(baseMilestone, Optional.of(nextMilestone));
     setupPeerStorage(true);
-    final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
+    final Eth2Peer peer = createPeer(nextSpecEnabledLocally, nextSpecEnabledRemotely);
 
     // Setup chain
     peerStorage.chainUpdater().advanceChain(nextSpecSlot.minus(1));
@@ -217,8 +228,11 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     final SignedBlockAndState block1 = peerStorage.chainUpdater().advanceChain();
     final SignedBlockAndState block2 = peerStorage.chainUpdater().advanceChain();
     peerStorage.chainUpdater().updateBestBlock(block2);
-    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyAltair.class);
-    assertThat(block2.getBlock().getMessage().getBody()).isInstanceOf(BeaconBlockBodyAltair.class);
+
+    final Class<?> expectedBody = milestoneToBeaconBlockBodyClass(nextMilestone);
+
+    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
+    assertThat(block2.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
 
     peerStorage.chainUpdater().updateBestBlock(block2);
 
@@ -229,11 +243,11 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
 
     waitFor(() -> assertThat(res).isDone());
 
-    if (enableAltairLocally && enableAltairRemotely) {
+    if (nextSpecEnabledLocally && nextSpecEnabledRemotely) {
       // We should receive a successful response
       assertThat(res).isCompleted();
       assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
-    } else if (!enableAltairLocally && enableAltairRemotely) {
+    } else if (!nextSpecEnabledLocally && nextSpecEnabledRemotely) {
       // The peer should refuse to return any results because we're asking for altair blocks using
       // a v1 request
       assertThat(res).isCompletedExceptionally();

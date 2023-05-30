@@ -27,6 +27,11 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
@@ -233,5 +238,22 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpec() {
     return Arrays.stream(SpecMilestone.values()).map(Arguments::of);
+  }
+
+  protected static Class<?> milestoneToBeaconBlockBodyClass(final SpecMilestone milestone) {
+    switch (milestone) {
+      case PHASE0:
+        return BeaconBlockBodyPhase0.class;
+      case ALTAIR:
+        return BeaconBlockBodyAltair.class;
+      case BELLATRIX:
+        return BeaconBlockBodyBellatrix.class;
+      case CAPELLA:
+        return BeaconBlockBodyCapella.class;
+      case DENEB:
+        return BeaconBlockBodyDeneb.class;
+      default:
+        throw new UnsupportedOperationException("unsupported milestone: " + milestone);
+    }
   }
 }
