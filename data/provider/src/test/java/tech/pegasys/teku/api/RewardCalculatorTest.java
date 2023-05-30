@@ -16,7 +16,10 @@ package tech.pegasys.teku.api;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
@@ -39,22 +42,28 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class RewardCalculatorTest {
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil data = new DataStructureUtil(spec);
 
-  private final RewardCalculator calculator = new RewardCalculator(spec);
+  private RewardCalculator calculator = new RewardCalculator(spec);
 
   private final BLSPublicKey publicKey = data.randomPublicKey();
+
+  private final BlockProcessorAltair blockProcessorAltair = mock(BlockProcessorAltair.class);
+
+  private static final long SINGLE_SLASHING_REWARD = 62500000L;
 
   @Test
   void getCommitteeIndices_withSpecifiedValidators() {
@@ -128,12 +137,6 @@ public class RewardCalculatorTest {
   }
 
   @Test
-  void calculateAttestationRewards_shouldCalculateRewards() {
-    final long result = calculator.calculateAttestationRewards();
-    assertThat(result).isEqualTo(0L);
-  }
-
-  @Test
   void getBlockRewardData_shouldRejectPreAltair() {
     final RewardCalculator rewardCalculator =
         new RewardCalculator(TestSpecFactory.createMinimalPhase0());
@@ -169,15 +172,91 @@ public class RewardCalculatorTest {
   }
 
   @Test
+  void getBlockRewardData_shouldOutputAttesterSlashings() {
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .attesterSlashings(data.randomAttesterSlashings(1, 100))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward.getAttesterSlashings()).isEqualTo(SINGLE_SLASHING_REWARD);
+  }
+
+  @Test
+  void getBlockRewardData_shouldOutputProposerSlashings() {
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .proposerSlashings(data.randomProposerSlashings(1, 100))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward.getProposerSlashings()).isEqualTo(SINGLE_SLASHING_REWARD);
+  }
+
+  @Test
+  void getBlockRewardData_shouldOutputSyncAggregate() {
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .syncAggregate(data.randomSyncAggregate(1, 2, 3, 4))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward.getSyncAggregate()).isEqualTo(140L);
+  }
+
+  @Test
+  void getBlockRewardData_shouldOutputAttestations() {
+    // these values are invalid, but basically count each attestation as 1, so the attestation
+    // reward equals the number of attestations
+    when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
+        .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
+    when(blockProcessorAltair.processAttestationProposerReward(any(), any(), any()))
+        .thenReturn(Optional.of(UInt64.ONE));
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .attestations(data.randomAttestations(10, preState.getSlot().decrement()))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward.getAttestations()).isEqualTo(10L);
+    verify(blockProcessorAltair, times(10)).processAttestationProposerReward(any(), any(), any());
+  }
+
+  @Test
   void getBlockRewardData_shouldOutputRewardData() {
-    final SignedBlockAndState blockAndState = data.randomSignedBlockAndStateWithValidatorLogic(16);
-    final BlockAndMetaData blockAndMetaData =
-        new BlockAndMetaData(
-            blockAndState.getBlock(), spec.getGenesisSpec().getMilestone(), false, true, false);
-    final ObjectAndMetaData<BlockRewardData> reward =
-        calculator.getBlockRewardData(blockAndMetaData, blockAndState.getState());
-    assertThat(reward.getData())
-        .isEqualTo(new BlockRewardData(UInt64.valueOf(2), 0L, 35L, 62500000L, 62500000L));
+    when(blockProcessorAltair.createIndexedAttestationProvider(any(), any()))
+        .thenReturn(mock(AbstractBlockProcessor.IndexedAttestationProvider.class));
+    when(blockProcessorAltair.processAttestationProposerReward(any(), any(), any()))
+        .thenReturn(Optional.of(UInt64.ONE));
+    final BeaconState preState = data.randomBeaconState();
+    final BeaconBlock block =
+        data.blockBuilder(preState.getSlot().increment().longValue())
+            .executionPayload(data.randomExecutionPayload())
+            .proposerSlashings(data.randomProposerSlashings(3, 100))
+            .attesterSlashings(data.randomAttesterSlashings(2, 100))
+            .attestations(data.randomAttestations(10, preState.getSlot().decrement()))
+            .syncAggregate(data.randomSyncAggregate(1, 2, 3, 4))
+            .build()
+            .getImmediately();
+    final BlockRewardData reward =
+        calculator.calculateBlockRewards(block, blockProcessorAltair, preState);
+    assertThat(reward)
+        .isEqualTo(
+            new BlockRewardData(
+                block.getProposerIndex(),
+                10L,
+                140L,
+                3 * SINGLE_SLASHING_REWARD,
+                2 * SINGLE_SLASHING_REWARD));
+    verify(blockProcessorAltair, times(10)).processAttestationProposerReward(any(), any(), any());
   }
 
   @Test
@@ -197,7 +276,7 @@ public class RewardCalculatorTest {
     final long result =
         calculator.calculateProposerSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
+    assertThat(result).isEqualTo(SINGLE_SLASHING_REWARD);
   }
 
   @Test
@@ -206,7 +285,7 @@ public class RewardCalculatorTest {
     final long result =
         calculator.calculateAttesterSlashingsRewards(
             blockAndState.getBlock(), blockAndState.getState());
-    assertThat(result).isEqualTo(62500000L);
+    assertThat(result).isEqualTo(SINGLE_SLASHING_REWARD);
   }
 
   @Test
