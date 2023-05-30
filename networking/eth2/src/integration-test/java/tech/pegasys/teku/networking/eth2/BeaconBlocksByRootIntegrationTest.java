@@ -31,7 +31,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -260,14 +259,6 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get).hasCauseInstanceOf(DeserializationFailedException.class);
     }
-  }
-
-  public static Stream<Arguments> altairVersioningOptions() {
-    return Stream.of(
-        Arguments.of(true, true),
-        Arguments.of(false, true),
-        Arguments.of(true, false),
-        Arguments.of(false, false));
   }
 
   private SignedBeaconBlock addBlock() {
