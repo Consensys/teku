@@ -98,8 +98,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
 
     processBlockHeader(state, block);
     if (miscHelpersBellatrix.isExecutionEnabled(genericState, block)) {
-      final BeaconBlockBody blockBody1 = block.getBody();
-      executionProcessing(genericState, blockBody1, payloadExecutor);
+      executionProcessing(genericState, block.getBody(), payloadExecutor);
     }
     processRandaoNoValidation(state, block.getBody());
     processEth1Data(state, block.getBody());
