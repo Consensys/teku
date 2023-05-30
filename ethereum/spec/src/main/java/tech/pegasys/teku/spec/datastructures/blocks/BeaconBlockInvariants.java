@@ -58,14 +58,13 @@ public class BeaconBlockInvariants {
    * @param bytes the SSZ bytes to extract a slot from
    */
   public static UInt64 extractSignedBlockContainerSlot(final Bytes bytes) {
-    final int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
+    int blockDataOffset = SszType.sszBytesToLength(bytes.slice(0, BYTES_PER_LENGTH_OFFSET));
     if (blockDataOffset == BEACON_BLOCK_OFFSET_IN_SIGNED_BEACON_BLOCK) {
       return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
     }
     // first field in SignedBlockContents points to the SignedBeaconBlock data
-    return extractBeaconBlockSlot(
-        bytes.slice(
-            blockDataOffset
-                + SszType.sszBytesToLength(bytes.slice(blockDataOffset, BYTES_PER_LENGTH_OFFSET))));
+    blockDataOffset +=
+        SszType.sszBytesToLength(bytes.slice(blockDataOffset, BYTES_PER_LENGTH_OFFSET));
+    return extractBeaconBlockSlot(bytes.slice(blockDataOffset));
   }
 }
