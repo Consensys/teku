@@ -24,11 +24,11 @@ import tech.pegasys.teku.bls.BLSConstants;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.fuzz.input.AttestationFuzzInput;
 import tech.pegasys.teku.fuzz.input.AttesterSlashingFuzzInput;
+import tech.pegasys.teku.fuzz.input.BeaconBlockBodyFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlockHeaderFuzzInput;
 import tech.pegasys.teku.fuzz.input.BlsToExecutionChangeFuzzInput;
 import tech.pegasys.teku.fuzz.input.DepositFuzzInput;
-import tech.pegasys.teku.fuzz.input.ExecutionPayloadFuzzInput;
 import tech.pegasys.teku.fuzz.input.ProposerSlashingFuzzInput;
 import tech.pegasys.teku.fuzz.input.SyncAggregateFuzzInput;
 import tech.pegasys.teku.fuzz.input.VoluntaryExitFuzzInput;
@@ -41,9 +41,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -293,18 +292,10 @@ public class FuzzUtil {
   }
 
   public Optional<byte[]> fuzzExecutionPayload(final byte[] input) {
-    ExecutionPayloadFuzzInput structuredPayloadInput =
-        deserialize(input, ExecutionPayloadFuzzInput.createSchema(specVersion));
+    BeaconBlockBodyFuzzInput structuredPayloadInput =
+        deserialize(input, BeaconBlockBodyFuzzInput.createSchema(specVersion));
 
-    ExecutionPayload executionPayload = structuredPayloadInput.getExecutionPayload();
-    ExecutionPayloadHeader executionPayloadHeader =
-        specVersion
-            .getSchemaDefinitions()
-            .toVersionCapella()
-            .orElseThrow()
-            .getExecutionPayloadHeaderSchema()
-            .createFromExecutionPayload(executionPayload);
-
+    final BeaconBlockBodyCapella beaconBlockBody = structuredPayloadInput.getBeaconBlockBody();
     try {
       BeaconState postState =
           structuredPayloadInput
@@ -312,11 +303,7 @@ public class FuzzUtil {
               .updated(
                   state ->
                       spec.getBlockProcessor(state.getSlot())
-                          .processExecutionPayload(
-                              state,
-                              executionPayloadHeader,
-                              Optional.of(executionPayload),
-                              Optional.empty()));
+                          .processExecutionPayload(state, beaconBlockBody, Optional.empty()));
       Bytes output = postState.sszSerialize();
       return Optional.of(output.toArrayUnsafe());
     } catch (BlockProcessingException e) {
