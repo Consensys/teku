@@ -20,6 +20,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.constants.EthConstants.ETH_TO_GWEI;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -145,5 +146,27 @@ class EpochAttestationRewardsCalculatorTest {
       assertThat(totalAttestationReward.getSource()).isEqualTo(1);
       assertThat(totalAttestationReward.getTarget()).isEqualTo(1);
     }
+  }
+
+  @Test
+  public void shouldHandleValidatorPublicKeysAndIndexesAsId() {
+    final ValidatorStatus validatorStatus = mock(ValidatorStatus.class);
+    when(validatorStatus.isEligibleValidator()).thenReturn(true);
+    final ValidatorStatuses validatorStatuses =
+        new ValidatorStatuses(List.of(validatorStatus, validatorStatus), mock(TotalBalances.class));
+    when(validatorStatusFactory.createValidatorStatuses(any())).thenReturn(validatorStatuses);
+
+    final BeaconState beaconState = dataStructureUtil.randomBeaconState();
+    final SszList<Validator> validators = beaconState.getValidators();
+    final List<String> validatorIds = new ArrayList<>();
+    // Validator 0 pubkey
+    validatorIds.add(validators.get(0).getPublicKey().toHexString());
+    // Validator 1 index
+    validatorIds.add(String.valueOf(1));
+
+    calculator = new EpochAttestationRewardsCalculator(specVersion, beaconState, validatorIds);
+
+    final List<Integer> validatorIndexes = calculator.getValidatorIndexes();
+    assertThat(validatorIndexes).contains(0, 1);
   }
 }
