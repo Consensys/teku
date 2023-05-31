@@ -29,7 +29,7 @@ public class BlobSidecarsByRangeRequestMessageTest {
   @Test
   public void shouldRoundTripViaSsz() {
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(2), UInt64.valueOf(3));
+        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(2), UInt64.valueOf(3), 4);
     final Bytes data = request.sszSerialize();
     final BlobSidecarsByRangeRequestMessage result =
         BlobSidecarsByRangeRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
@@ -41,9 +41,17 @@ public class BlobSidecarsByRangeRequestMessageTest {
   @MethodSource("getMaxSlotParams")
   public void getMaxSlot(final long startSlot, final long count, final long expected) {
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(startSlot), UInt64.valueOf(count));
+        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(startSlot), UInt64.valueOf(count), 4);
 
     assertThat(request.getMaxSlot()).isEqualTo(UInt64.valueOf(expected));
+  }
+
+  @Test
+  public void getMaximumResponseChunks() {
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(19), UInt64.valueOf(23), 4);
+
+    assertThat(request.getMaximumResponseChunks()).isEqualTo(23 * 4);
   }
 
   public static Stream<Arguments> getMaxSlotParams() {

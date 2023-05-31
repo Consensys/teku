@@ -28,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -46,7 +45,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
   @Test
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
-      throws RpcException, ExecutionException, InterruptedException, TimeoutException {
+      throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
     final List<BlobSidecar> blobSidecars = requestBlobSidecars(peer);
     assertThat(blobSidecars).isEmpty();

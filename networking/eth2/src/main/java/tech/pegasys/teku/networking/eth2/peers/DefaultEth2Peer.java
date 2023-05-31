@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final BeaconChainMethods rpcMethods;
   private final StatusMessageFactory statusMessageFactory;
   private final MetadataMessagesFactory metadataMessagesFactory;
@@ -92,6 +93,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker blobSidecarsRequestTracker,
       final RateTracker requestTracker) {
     super(peer);
+    this.spec = spec;
     this.rpcMethods = rpcMethods;
     this.statusMessageFactory = statusMessageFactory;
     this.metadataMessagesFactory = metadataMessagesFactory;
@@ -280,6 +282,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
             method -> {
               final UInt64 firstSupportedSlot = firstSlotSupportingBlobSidecarsByRange.get();
               final BlobSidecarsByRangeRequestMessage request;
+
               if (startSlot.isLessThan(firstSupportedSlot)) {
                 LOG.debug(
                     "Requesting blob sidecars from slot {} instead of slot {} because the request is spanning the Deneb fork transition",
@@ -290,9 +293,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 if (updatedCount.isZero()) {
                   return SafeFuture.COMPLETE;
                 }
-                request = new BlobSidecarsByRangeRequestMessage(firstSupportedSlot, updatedCount);
+
+                request =
+                    new BlobSidecarsByRangeRequestMessage(
+                        firstSupportedSlot,
+                        updatedCount,
+                        spec.getMaxBlobsPerBlock(firstSupportedSlot.plus(updatedCount))
+                            .orElseThrow());
               } else {
-                request = new BlobSidecarsByRangeRequestMessage(startSlot, count);
+                request =
+                    new BlobSidecarsByRangeRequestMessage(
+                        startSlot,
+                        count,
+                        spec.getMaxBlobsPerBlock(firstSupportedSlot.plus(count)).orElseThrow());
               }
               return requestStream(method, request, listener);
             })
