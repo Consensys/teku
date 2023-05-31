@@ -662,7 +662,9 @@ public class ChainBuilder {
       final SszList<Attestation> attestations,
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
-    final List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
+    final List<Blob> randomBlobs =
+        blobsUtil.generateBlobs(
+            slot, options.getGenerateRandomBlobsCount().orElse(RANDOM_BLOBS_COUNT));
     final MiscHelpersDeneb miscHelpers =
         spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
     final List<KZGCommitment> kzgCommitments =
@@ -852,6 +854,7 @@ public class ChainBuilder {
     private Optional<KZGProof> kzgProof = Optional.empty();
     private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
     private boolean generateRandomBlobs = false;
+    private Optional<Integer> generateRandomBlobsCount = Optional.empty();
     private boolean storeBlobSidecars = true;
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
@@ -915,6 +918,12 @@ public class ChainBuilder {
 
     public BlockOptions setGenerateRandomBlobs(final boolean generateRandomBlobs) {
       this.generateRandomBlobs = generateRandomBlobs;
+      return this;
+    }
+
+    public BlockOptions setGenerateRandomBlobsCount(
+        final Optional<Integer> generateRandomBlobsCount) {
+      this.generateRandomBlobsCount = generateRandomBlobsCount;
       return this;
     }
 
@@ -997,6 +1006,10 @@ public class ChainBuilder {
 
     public boolean getGenerateRandomBlobs() {
       return generateRandomBlobs;
+    }
+
+    public Optional<Integer> getGenerateRandomBlobsCount() {
+      return generateRandomBlobsCount;
     }
 
     public boolean getWrongProposer() {
