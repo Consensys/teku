@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Beacon", "Rewards", "Experimental" ],
+    "tags" : [ "Beacon", "Rewards"],
     "operationId" : "getBlockRewards",
     "summary" : "Get Block Rewards",
     "description" : "Retrieve block reward info for a single block.",
