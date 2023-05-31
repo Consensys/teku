@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -46,6 +47,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.api.blockselector.BlockSelector;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
@@ -436,19 +438,25 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
   }
 
   @Test
-  public void getAttestationRewardsAtEpoch_shouldReturnEmptyIfStateNotFound() {
+  public void getAttestationRewardsAtEpoch_shouldThrowBadRequestException() {
     final ChainDataProvider provider = setupBySpec(spec, data);
+    mockBlockSelectorFactory();
 
     when(mockCombinedChainDataClient.getStateAtSlotExact(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     assertThat(provider.calculateAttestationRewardsAtEpoch(ONE, List.of()))
-        .isCompletedWithValue(Optional.empty());
+        .isCompletedExceptionally()
+        .isNotCancelled()
+        .failsWithin(1, TimeUnit.SECONDS)
+        .withThrowableOfType(ExecutionException.class)
+        .withCauseInstanceOf(BadRequestException.class);
   }
 
   @Test
   public void getAttestationRewardsAtEpoch_shouldUseStateFromSlotAtEndOfNextEpoch() {
     final ChainDataProvider provider = setupBySpec(spec, data);
+    mockBlockSelectorFactory();
 
     when(mockCombinedChainDataClient.getStateAtSlotExact(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(data.randomBeaconState())));
@@ -471,6 +479,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     doReturn(spySpecVersion).when(spySpec).atSlot(eq(expectedSlot));
     doReturn(spyEpochProcessor).when(spySpecVersion).getEpochProcessor();
     final ChainDataProvider provider = setupBySpec(spySpec, data);
+    mockBlockSelectorFactory();
 
     when(mockCombinedChainDataClient.getStateAtSlotExact(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(data.randomBeaconState())));
@@ -484,6 +493,17 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     EpochProcessor#getRewardAndPenaltyDeltas()
      */
     verify(spyEpochProcessor).getRewardAndPenaltyDeltas(any(), any(), any());
+  }
+
+  private void mockBlockSelectorFactory() {
+    final BlockAndMetaData blockAndMetaData = mock(BlockAndMetaData.class);
+    when(blockAndMetaData.isExecutionOptimistic()).thenReturn(false);
+    when(blockAndMetaData.isFinalized()).thenReturn(true);
+    when(blockAndMetaData.getData()).thenReturn(data.randomSignedBeaconBlock());
+    final BlockSelector blockSelector = mock(BlockSelector.class);
+    when(blockSelector.getBlock())
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndMetaData)));
+    doReturn(blockSelector).when(blockSelectorFactory).defaultBlockSelector(any());
   }
 
   @Test

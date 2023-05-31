@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.util.ArrayList;
@@ -58,5 +59,9 @@ public class JsonTestUtil {
             TypeFactory.defaultInstance()
                 .constructCollectionLikeType(ArrayList.class, Object.class))
         .readValue(json);
+  }
+
+  public static JsonNode parseAsJsonNode(final String json) throws Exception {
+    return new ObjectMapper().readTree(json);
   }
 }
