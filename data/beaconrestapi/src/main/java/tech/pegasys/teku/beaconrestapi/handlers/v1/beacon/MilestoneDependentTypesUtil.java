@@ -60,16 +60,24 @@ public class MilestoneDependentTypesUtil {
       final String json,
       final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    final Optional<UInt64> slot =
+        // SignedBeaconBlock
+        getSlot(json, "message", "slot")
+            // SignedBlockContents
+            .or(() -> getSlot(json, "signed_block", "message", "slot"))
+            // SignedBlindedBlockContents
+            .or(() -> getSlot(json, "signed_blinded_block", "message", "slot"));
+    final SpecMilestone milestone =
+        schemaDefinitionCache.milestoneAtSlot(
+            slot.orElseThrow(() -> new BadRequestException("Could not locate slot in JSON data")));
+    return getSchema
+        .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+        .getJsonTypeDefinition();
+  }
+
+  private static Optional<UInt64> getSlot(final String json, final String... path) {
     try {
-      final Optional<UInt64> slot =
-          JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, true, "message", "slot");
-      final SpecMilestone milestone =
-          schemaDefinitionCache.milestoneAtSlot(
-              slot.orElseThrow(
-                  () -> new BadRequestException("Could not locate slot in JSON data")));
-      return getSchema
-          .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
-          .getJsonTypeDefinition();
+      return JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, path);
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());
     }

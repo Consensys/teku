@@ -31,7 +31,10 @@ import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandlerTest {
@@ -39,6 +42,13 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
   public abstract RestApiEndpoint getHandler();
 
   public abstract boolean isBlinded();
+
+  protected void setupDeneb() {
+    spec = TestSpecFactory.createMinimalDeneb();
+    schemaDefinitionCache = new SchemaDefinitionCache(spec);
+    dataStructureUtil = new DataStructureUtil(spec);
+    setup();
+  }
 
   @BeforeEach
   public void setup() {
@@ -87,12 +97,29 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
         SendSignedBlockResult.success(dataStructureUtil.randomBytes32());
 
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    request.setRequestBody(dataStructureUtil.randomSignedBeaconBlock(3));
+    request.setRequestBody(getRandomSignedBeaconBlock());
     setupValidatorDataProviderSubmit(SafeFuture.completedFuture(successResult));
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  void shouldReturnAcceptedIfBlockFailsValidation() throws Exception {
+    final SendSignedBlockResult failResult = SendSignedBlockResult.notImported("Invalid block");
+    final SafeFuture<SendSignedBlockResult> validatorBlockResultSafeFuture =
+        SafeFuture.completedFuture(failResult);
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    request.setRequestBody(getRandomSignedBeaconBlock());
+
+    setupValidatorDataProviderSubmit(validatorBlockResultSafeFuture);
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
     assertThat(request.getResponseBody()).isNull();
   }
 
@@ -104,20 +131,11 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
     }
   }
 
-  @Test
-  void shouldReturnAcceptedIfBlockFailsValidation() throws Exception {
-    final SendSignedBlockResult failResult = SendSignedBlockResult.notImported("Invalid block");
-    final SafeFuture<SendSignedBlockResult> validatorBlockResultSafeFuture =
-        SafeFuture.completedFuture(failResult);
-
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    request.setRequestBody(dataStructureUtil.randomSignedBeaconBlock(3));
-
-    setupValidatorDataProviderSubmit(validatorBlockResultSafeFuture);
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
-    assertThat(request.getResponseBody()).isNull();
+  private SignedBeaconBlock getRandomSignedBeaconBlock() {
+    if (isBlinded()) {
+      return dataStructureUtil.randomSignedBlindedBeaconBlock(3);
+    } else {
+      return dataStructureUtil.randomSignedBeaconBlock(3);
+    }
   }
 }
