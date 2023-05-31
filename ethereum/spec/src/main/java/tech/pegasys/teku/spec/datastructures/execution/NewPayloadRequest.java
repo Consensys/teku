@@ -45,8 +45,12 @@ public class NewPayloadRequest {
 
   @Override
   public boolean equals(final Object o) {
-    if (this == o) return true;
-    if (!(o instanceof NewPayloadRequest)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof NewPayloadRequest)) {
+      return false;
+    }
     final NewPayloadRequest that = (NewPayloadRequest) o;
     return Objects.equals(executionPayload, that.executionPayload)
         && Objects.equals(versionedHashes, that.versionedHashes);
