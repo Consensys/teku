@@ -310,15 +310,14 @@ public abstract class AbstractBlockFactoryTest {
     executionPayload =
         dataStructureUtil.randomExecutionPayload(
             genericState.getSlot(),
-            builder -> {
-              builder
-                  .parentHash(state.getLatestExecutionPayloadHeader().getBlockHash())
-                  .prevRandao(
-                      beaconStateAccessors.getRandaoMix(
-                          state, beaconStateAccessors.getCurrentEpoch(state)))
-                  .timestamp(miscHelpers.computeTimeAtSlot(state, state.getSlot()))
-                  .withdrawals(Collections::emptyList);
-            });
+            builder ->
+                builder
+                    .parentHash(state.getLatestExecutionPayloadHeader().getBlockHash())
+                    .prevRandao(
+                        beaconStateAccessors.getRandaoMix(
+                            state, beaconStateAccessors.getCurrentEpoch(state)))
+                    .timestamp(miscHelpers.computeTimeAtSlot(state, state.getSlot()))
+                    .withdrawals(Collections::emptyList));
     executionPayloadHeader =
         SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
             .getExecutionPayloadHeaderSchema()

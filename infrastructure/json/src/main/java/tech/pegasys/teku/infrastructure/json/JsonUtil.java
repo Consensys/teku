@@ -136,7 +136,10 @@ public class JsonUtil {
   }
 
   private static <T> Optional<T> getAttributeFromParser(
-      JsonParser parser, final DeserializableTypeDefinition<T> type, int i, final String... path)
+      final JsonParser parser,
+      final DeserializableTypeDefinition<T> type,
+      final int i,
+      final String... path)
       throws IOException {
     if (!JsonToken.START_OBJECT.equals(parser.nextToken())) {
       throw new IllegalStateException("getAttribute was not passed an object");

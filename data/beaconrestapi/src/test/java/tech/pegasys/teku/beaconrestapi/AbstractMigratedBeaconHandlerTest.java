@@ -47,7 +47,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final IntSupplier rejectedExecutionSupplier = () -> rejectedExecutionCount;
   protected final SyncDataProvider syncDataProvider =
       new SyncDataProvider(syncService, rejectedExecutionSupplier);
-  protected final SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
+  protected SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
   protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   protected ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
