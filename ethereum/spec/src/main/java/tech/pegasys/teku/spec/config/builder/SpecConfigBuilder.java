@@ -104,6 +104,8 @@ public class SpecConfigBuilder {
 
   private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.FULL;
 
+  private int gossipMaxSize;
+
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
@@ -170,7 +172,8 @@ public class SpecConfigBuilder {
             depositChainId,
             depositNetworkId,
             depositContractAddress,
-            progressiveBalancesMode);
+            progressiveBalancesMode,
+            gossipMaxSize);
 
     return builderChain.build(config);
   }
@@ -539,6 +542,11 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder progressiveBalancesMode(
       final ProgressiveBalancesMode progressiveBalancesMode) {
     this.progressiveBalancesMode = progressiveBalancesMode;
+    return this;
+  }
+
+  public SpecConfigBuilder gossipMaxSize(final int gossipMaxSize) {
+    this.gossipMaxSize = gossipMaxSize;
     return this;
   }
 

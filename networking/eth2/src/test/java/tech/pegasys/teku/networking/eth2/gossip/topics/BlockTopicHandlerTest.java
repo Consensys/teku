@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import org.apache.tuweni.bytes.Bytes;
@@ -41,7 +40,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
             gossipEncoding,
             forkInfo,
             processor,
-            GOSSIP_MAX_SIZE)
+            gossipMaxSize)
         .getTopicHandler();
   }
 

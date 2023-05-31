@@ -19,8 +19,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class Constants {
 
   // Networking
-  public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
-  public static final int GOSSIP_MAX_SIZE_BELLATRIX = 10485760; // bytes
   public static final UInt64 MAX_REQUEST_BLOCKS = UInt64.valueOf(1024);
   public static final int MAX_CHUNK_SIZE = 1048576; // bytes
   public static final int MAX_CHUNK_SIZE_BELLATRIX = 10485760; // bytes

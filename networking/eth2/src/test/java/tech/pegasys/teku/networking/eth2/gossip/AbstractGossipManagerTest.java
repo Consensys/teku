@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +46,8 @@ class AbstractGossipManagerTest {
   private static final GossipTopicName TOPIC_NAME = GossipTopicName.VOLUNTARY_EXIT;
 
   private final Spec spec = TestSpecFactory.createDefault();
+
+  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -77,7 +78,7 @@ class AbstractGossipManagerTest {
             forkInfo,
             processor,
             SszPrimitiveSchemas.UINT64_SCHEMA,
-            GOSSIP_MAX_SIZE);
+            gossipMaxSize);
   }
 
   @Test

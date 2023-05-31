@@ -102,6 +102,8 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final ProgressiveBalancesMode progressiveBalancesMode;
 
+  private final int gossipMaxSize;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -153,7 +155,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositChainId,
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
-      final ProgressiveBalancesMode progressiveBalancesMode) {
+      final ProgressiveBalancesMode progressiveBalancesMode,
+      final int gossipMaxSize) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -206,6 +209,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
     this.progressiveBalancesMode = progressiveBalancesMode;
+    this.gossipMaxSize = gossipMaxSize;
   }
 
   @Override
@@ -486,6 +490,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public ProgressiveBalancesMode getProgressiveBalancesMode() {
     return progressiveBalancesMode;
+  }
+
+  @Override
+  public int getGossipMaxSize() {
+    return gossipMaxSize;
   }
 
   @Override
