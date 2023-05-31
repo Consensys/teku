@@ -95,7 +95,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .description(
                 "Retrieve attestation reward info for validators specified by array of public keys or validator index"
                     + ". If no array is provided, return reward info for every validator.")
-            .tags(TAG_BEACON, TAG_REWARDS, TAG_EXPERIMENTAL)
+            .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(EPOCH_PARAMETER)
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
