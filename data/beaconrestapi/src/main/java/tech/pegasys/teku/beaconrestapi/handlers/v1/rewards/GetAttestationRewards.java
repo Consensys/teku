@@ -119,7 +119,6 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .thenApply(
                 result ->
                     result
-                        .map(data -> new GetAttestationRewardsResponse(false, true, data))
                         .map(AsyncApiResponse::respondOk)
                         .orElse(AsyncApiResponse.respondNotFound())));
   }
