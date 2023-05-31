@@ -15,66 +15,87 @@ package tech.pegasys.teku.test.acceptance;
 
 import com.google.common.io.Resources;
 import java.net.URL;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
+import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 
+/**
+ * The test is based on `shanghaiTime` in Besu EL genesis config as the only option to start
+ * Shanghai on Besu. There is a bit of magic on assumption of node starting time, which should be
+ * eliminated when there will be an option `shanghaiBlock`. When it's available, please, upgrade the
+ * test to use it instead of time.
+ */
 public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
+  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
 
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
   void shouldUpgradeToCapella() throws Exception {
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    final int genesisTime = currentTime.plus(15).intValue(); // magic node startup time
+    final int shanghaiTime = genesisTime + 4 * 2; // 4 slots, 2 seconds each
+
     BesuNode primaryEL =
         createBesuNode(
-            c -> {
-              c.withMergeSupport(true);
-              c.withGenesisFile("besu/mergedGenesis.json");
-              c.withP2pEnabled(true);
-              c.withJwtTokenAuthorization(JWT_FILE);
-            });
+            BesuDockerVersion.STABLE,
+            config ->
+                config
+                    .withMergeSupport(true)
+                    .withGenesisFile("besu/mergedGenesis.json")
+                    .withP2pEnabled(true)
+                    .withJwtTokenAuthorization(JWT_FILE),
+            Map.of("shanghaiTime", String.valueOf(shanghaiTime)));
     primaryEL.start();
 
     BesuNode secondaryEL =
         createBesuNode(
-            c -> {
-              c.withMergeSupport(true);
-              c.withGenesisFile("besu/mergedGenesis.json");
-              c.withP2pEnabled(true);
-              c.withJwtTokenAuthorization(JWT_FILE);
-            });
+            BesuDockerVersion.STABLE,
+            config ->
+                config
+                    .withMergeSupport(true)
+                    .withGenesisFile("besu/mergedGenesis.json")
+                    .withP2pEnabled(true)
+                    .withJwtTokenAuthorization(JWT_FILE),
+            Map.of("shanghaiTime", String.valueOf(shanghaiTime)));
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
 
     TekuNode primaryNode =
         createTekuNode(
-            c -> {
-              c.withRealNetwork().withStartupTargetPeerCount(0);
-              c.withExecutionEngine(primaryEL);
-              c.withJwtSecretFile(JWT_FILE);
-              c.withEngineApiMethodNegotiation();
-              applyMilestoneConfig(c);
+            config -> {
+              config
+                  .withGenesisTime(genesisTime)
+                  .withRealNetwork()
+                  .withStartupTargetPeerCount(0)
+                  .withExecutionEngine(primaryEL)
+                  .withJwtSecretFile(JWT_FILE)
+                  .withEngineApiMethodNegotiation();
+              applyMilestoneConfig(config);
             });
 
     primaryNode.start();
     primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
 
-    UInt64 genesisTime = primaryNode.getGenesisTime();
+    final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 
     TekuNode lateJoiningNode =
         createTekuNode(
             c -> {
-              c.withGenesisTime(genesisTime.intValue());
-              c.withRealNetwork();
-              c.withPeers(primaryNode);
-              c.withInteropValidators(0, 0);
-              c.withExecutionEngine(primaryEL);
-              c.withJwtSecretFile(JWT_FILE);
-              c.withEngineApiMethodNegotiation();
+              c.withGenesisTime(primaryNodeGenesisTime)
+                  .withRealNetwork()
+                  .withPeers(primaryNode)
+                  .withInteropValidators(0, 0)
+                  .withExecutionEngine(secondaryEL)
+                  .withJwtSecretFile(JWT_FILE)
+                  .withEngineApiMethodNegotiation();
               applyMilestoneConfig(c);
             });
 
@@ -84,10 +105,11 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     primaryNode.waitForNewBlock();
   }
 
-  private static void applyMilestoneConfig(final Config c) {
-    c.withAltairEpoch(UInt64.ZERO);
-    c.withBellatrixEpoch(UInt64.ZERO);
-    c.withCapellaEpoch(UInt64.ONE);
-    c.withTotalTerminalDifficulty(0);
+  private static void applyMilestoneConfig(final Config config) {
+    config
+        .withAltairEpoch(UInt64.ZERO)
+        .withBellatrixEpoch(UInt64.ZERO)
+        .withCapellaEpoch(UInt64.ONE)
+        .withTotalTerminalDifficulty(0);
   }
 }
