@@ -664,13 +664,13 @@ public class ChainDataProvider {
   }
 
   private Optional<UInt64> findLatestAvailableEpochForRewardCalculation() {
-    final int minNumOfSlots = 2;
+    final int minEpochInterval = 2;
     return recentChainData
         .getCurrentEpoch()
         .flatMap(
             epoch -> {
-              if (epoch.isGreaterThanOrEqualTo(minNumOfSlots)) {
-                return Optional.of(epoch.minus(minNumOfSlots));
+              if (epoch.isGreaterThanOrEqualTo(minEpochInterval)) {
+                return Optional.of(epoch.minus(minEpochInterval));
               } else {
                 return Optional.empty();
               }
