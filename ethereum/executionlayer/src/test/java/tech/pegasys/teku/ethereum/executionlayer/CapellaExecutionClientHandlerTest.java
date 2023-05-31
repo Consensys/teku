@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
@@ -121,6 +122,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
   void engineNewPayload_capellaFork() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+    final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload);
     final ExecutionPayloadV2 payloadV2 = ExecutionPayloadV2.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(
@@ -128,7 +130,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
     when(executionEngineClient.newPayloadV2(payloadV2)).thenReturn(dummyResponse);
-    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(payload);
+    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
     verify(executionEngineClient).newPayloadV2(payloadV2);
     assertThat(future).isCompleted();
   }
@@ -139,13 +141,14 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
     DataStructureUtil data = new DataStructureUtil(bellatrixSpec);
     final ExecutionPayload payload = data.randomExecutionPayload();
+    final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload);
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(
                 new PayloadStatusV1(ExecutionPayloadStatus.ACCEPTED, data.randomBytes32(), null)));
     when(executionEngineClient.newPayloadV2(payloadV1)).thenReturn(dummyResponse);
-    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(payload);
+    final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
     verify(executionEngineClient).newPayloadV2(payloadV1);
     verify(executionEngineClient, never()).newPayloadV1(payloadV1);
     assertThat(future).isCompleted();

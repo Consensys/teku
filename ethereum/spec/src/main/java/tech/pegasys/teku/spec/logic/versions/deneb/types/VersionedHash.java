@@ -45,6 +45,10 @@ public class VersionedHash {
     return this.version.equals(version);
   }
 
+  public String toHexString() {
+    return Bytes.wrap(version, value).toHexString();
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {

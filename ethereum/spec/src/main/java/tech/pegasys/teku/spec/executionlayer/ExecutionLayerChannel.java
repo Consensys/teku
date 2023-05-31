@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
@@ -60,7 +61,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
+        public SafeFuture<PayloadStatus> engineNewPayload(
+            final NewPayloadRequest newPayloadRequest) {
           return SafeFuture.completedFuture(PayloadStatus.SYNCING);
         }
 
@@ -101,7 +103,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
-  SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);
+  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
 
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration);

@@ -182,6 +182,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenalty.RewardComponent;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.RewardAndPenaltyDeltas;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -2058,6 +2059,12 @@ public final class DataStructureUtil {
         Bytes.concatenate(
             Bytes.fromHexString("0x010000000000000000000000"),
             randomEth1Address().getWrappedBytes()));
+  }
+
+  public List<VersionedHash> randomVersionedHashes(final int count) {
+    return IntStream.range(0, count)
+        .mapToObj(__ -> new VersionedHash(randomBytes32()))
+        .collect(toList());
   }
 
   public Blob randomBlob() {

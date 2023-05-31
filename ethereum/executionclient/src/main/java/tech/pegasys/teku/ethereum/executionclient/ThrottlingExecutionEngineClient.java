@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
   private final ExecutionEngineClient delegate;
@@ -88,8 +89,8 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV1 executionPayload) {
-    return taskQueue.queueTask(() -> delegate.newPayloadV3(executionPayload));
+      final ExecutionPayloadV1 executionPayload, final List<VersionedHash> blobVersionedHashes) {
+    return taskQueue.queueTask(() -> delegate.newPayloadV3(executionPayload, blobVersionedHashes));
   }
 
   @Override
