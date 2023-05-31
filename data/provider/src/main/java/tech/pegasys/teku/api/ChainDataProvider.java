@@ -40,6 +40,7 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
+import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
@@ -591,25 +592,64 @@ public class ChainDataProvider {
             });
   }
 
-  public SafeFuture<Optional<AttestationRewardsData>> calculateAttestationRewardsAtEpoch(
+  public SafeFuture<Optional<GetAttestationRewardsResponse>> calculateAttestationRewardsAtEpoch(
       final UInt64 epoch, final List<String> validatorsPubKeys) {
-    final UInt64 slot = findSlotAtEndOfNextEpoch(epoch);
+    final UInt64 slot;
+    try {
+      slot = findSlotAtEndOfNextEpoch(epoch);
+    } catch (final ArithmeticException e) {
+      final UInt64 availableEpoch = findLatestAvailableEpochForRewardCalculation().orElseThrow();
+      throw new BadRequestException(
+          "Invalid epoch range. Latest available epoch for reward calculation is "
+              + availableEpoch);
+    }
 
     if (!spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       throw new BadRequestException(
           "Can't calculate attestation rewards for for epoch " + epoch + " pre Altair");
     }
 
-    return defaultStateSelectorFactory
-        .forSlot(slot)
-        .getState()
-        .thenApply(
-            maybeState ->
-                maybeState.map(
-                    stateAndMetaData ->
-                        new EpochAttestationRewardsCalculator(
-                                spec.atSlot(slot), maybeState.get().getData(), validatorsPubKeys)
-                            .calculate()));
+    return getBlockAndMetaData(slot.toString())
+        .thenCompose(
+            maybeBlockAndMetadata -> {
+              if (maybeBlockAndMetadata.isEmpty()
+                  || maybeBlockAndMetadata.get().getData().getBeaconBlock().isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+
+              final BlockAndMetaData blockAndMetaData = maybeBlockAndMetadata.get();
+
+              return defaultStateSelectorFactory
+                  .forSlot(slot)
+                  .getState()
+                  .thenApply(
+                      maybeState -> {
+                        final StateAndMetaData stateAndMetadata =
+                            maybeState.orElseThrow(
+                                () -> {
+                                  final String availableEpochString =
+                                      findLatestAvailableEpochForRewardCalculation()
+                                          .map(UInt64::toString)
+                                          .orElse("<unknown>");
+                                  return new BadRequestException(
+                                      "Invalid epoch range. Latest available epoch for reward calculation is "
+                                          + availableEpochString);
+                                });
+
+                        final AttestationRewardsData attestationRewardsData =
+                            new EpochAttestationRewardsCalculator(
+                                    spec.atSlot(slot),
+                                    stateAndMetadata.getData(),
+                                    validatorsPubKeys)
+                                .calculate();
+
+                        return Optional.of(
+                            new GetAttestationRewardsResponse(
+                                blockAndMetaData.isExecutionOptimistic(),
+                                blockAndMetaData.isFinalized(),
+                                attestationRewardsData));
+                      });
+            });
   }
 
   private UInt64 findSlotAtEndOfNextEpoch(final UInt64 epoch) {
@@ -621,6 +661,20 @@ public class ChainDataProvider {
      subtract 1 to get the end slot of epoch 11.
     */
     return spec.computeStartSlotAtEpoch(epoch.plus(2)).minus(1);
+  }
+
+  private Optional<UInt64> findLatestAvailableEpochForRewardCalculation() {
+    final int minEpochInterval = 2;
+    return recentChainData
+        .getCurrentEpoch()
+        .flatMap(
+            epoch -> {
+              if (epoch.isGreaterThanOrEqualTo(minEpochInterval)) {
+                return Optional.of(epoch.minus(minEpochInterval));
+              } else {
+                return Optional.empty();
+              }
+            });
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

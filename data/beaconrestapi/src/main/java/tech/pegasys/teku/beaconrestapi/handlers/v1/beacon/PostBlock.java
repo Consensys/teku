@@ -70,20 +70,23 @@ public class PostBlock extends RestApiEndpoint {
         .operationId("publishBlock")
         .summary("Publish a signed block")
         .description(
-            "Submit a signed beacon block to the beacon node to be imported."
+            "Submit a signed beacon block to the beacon node to be broadcast and imported."
+                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given signed blobs."
                 + " The beacon node performs the required validation.")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             getSchemaDefinitionForAllMilestones(
                 schemaDefinitionCache,
-                "SignedBeaconBlock",
-                SchemaDefinitions::getSignedBeaconBlockSchema,
-                (block, milestone) ->
-                    schemaDefinitionCache.milestoneAtSlot(block.getSlot()).equals(milestone)),
+                "SignedBlock",
+                SchemaDefinitions::getSignedBlockContainerSchema,
+                (blockContainer, milestone) ->
+                    schemaDefinitionCache
+                        .milestoneAtSlot(blockContainer.getSlot())
+                        .equals(milestone)),
             json ->
                 slotBasedSelector(
-                    json, schemaDefinitionCache, SchemaDefinitions::getSignedBeaconBlockSchema),
-            spec::deserializeSignedBeaconBlock)
+                    json, schemaDefinitionCache, SchemaDefinitions::getSignedBlockContainerSchema),
+            spec::deserializeSignedBlockContainer)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,

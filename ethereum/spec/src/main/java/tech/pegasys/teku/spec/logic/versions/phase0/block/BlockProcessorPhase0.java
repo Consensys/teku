@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -115,8 +114,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   @Override
   public void processExecutionPayload(
       final MutableBeaconState state,
-      final ExecutionPayloadHeader payloadHeader,
-      final Optional<ExecutionPayload> payload,
+      final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
@@ -124,12 +122,18 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
   @Override
   public void validateExecutionPayload(
-      BeaconState state,
-      ExecutionPayloadHeader executionPayloadHeader,
-      Optional<ExecutionPayload> executionPayload,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
+      final BeaconState state,
+      final BeaconBlockBody beaconBlockBody,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No ExecutionPayload in phase0");
+  }
+
+  @Override
+  public void validateExecutionPayloadHeader(
+      final BeaconState state, final ExecutionPayloadHeader executionPayloadHeader)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No ExecutionPayloadHeader in phase0");
   }
 
   @Override

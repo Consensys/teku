@@ -30,10 +30,10 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -104,8 +104,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
               new OperationsTestExecutor<>("sync_aggregate.ssz_snappy", Operation.SYNC_AGGREGATE))
           .put(
               "operations/execution_payload",
-              new OperationsTestExecutor<>(
-                  "execution_payload.ssz_snappy", Operation.EXECUTION_PAYLOAD))
+              new OperationsTestExecutor<>("body.ssz_snappy", Operation.EXECUTION_PAYLOAD))
           .put(
               "operations/bls_to_execution_change",
               new OperationsTestExecutor<>(
@@ -285,21 +284,15 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                 .getGenesisSchemaDefinitions()
                 .toVersionBellatrix()
                 .orElseThrow();
-        final ExecutionPayload executionPayload =
+        final BeaconBlockBody beaconBlockBody =
             loadSsz(
                 testDefinition,
                 dataFileName,
-                schemaDefinitionsBellatrix.getExecutionPayloadSchema());
-
-        final ExecutionPayloadHeader executionPayloadHeader =
-            schemaDefinitionsBellatrix
-                .getExecutionPayloadHeaderSchema()
-                .createFromExecutionPayload(executionPayload);
+                schemaDefinitionsBellatrix.getBeaconBlockBodySchema());
 
         processor.processExecutionPayload(
             state,
-            executionPayloadHeader,
-            Optional.of(executionPayload),
+            beaconBlockBody,
             Optional.of(
                 (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
         break;
