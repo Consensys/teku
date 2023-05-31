@@ -203,7 +203,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     final Class<?> expectedBody = milestoneToBeaconBlockBodyClass(baseMilestone);
 
     assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
-    assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
+    assertThat(block2.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
 
     final List<SignedBeaconBlock> response =
         requestBlocksByRoot(peer, List.of(block1.getRoot(), block2.getRoot()));
