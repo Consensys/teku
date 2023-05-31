@@ -37,6 +37,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DeserializationFailedException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.UnrecognizedContextBytesException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
@@ -57,7 +58,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
   @Test
   public void shouldSendEmptyResponseWhenNoBlocksAreAvailable() throws Exception {
     final Eth2Peer peer = createPeer();
-    final List<SignedBeaconBlock> response = requestBlocks(peer, singletonList(Bytes32.ZERO));
+    final List<SignedBeaconBlock> response = requestBlocksByRoot(peer, singletonList(Bytes32.ZERO));
     assertThat(response).isEmpty();
   }
 
@@ -67,7 +68,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     final SignedBeaconBlock block = addBlock();
 
     final List<SignedBeaconBlock> response =
-        requestBlocks(peer, singletonList(block.getMessage().hashTreeRoot()));
+        requestBlocksByRoot(peer, singletonList(block.getMessage().hashTreeRoot()));
     assertThat(response).containsExactly(block);
   }
 
@@ -144,7 +145,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
             .map(SignedBeaconBlock::getMessage)
             .map(BeaconBlock::hashTreeRoot)
             .collect(toList());
-    final List<SignedBeaconBlock> response = requestBlocks(peer, blockRoots);
+    final List<SignedBeaconBlock> response = requestBlocksByRoot(peer, blockRoots);
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
@@ -154,7 +155,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     final List<SignedBeaconBlock> blocks = largeBlockSequence(3);
     final List<Bytes32> blockRoots =
         blocks.stream().map(SignedBeaconBlock::getRoot).collect(toList());
-    final List<SignedBeaconBlock> response = requestBlocks(peer, blockRoots);
+    final List<SignedBeaconBlock> response = requestBlocksByRoot(peer, blockRoots);
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
@@ -171,7 +172,7 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
             .flatMap(hash -> Stream.of(Bytes32.fromHexStringLenient("0x123456789"), hash))
             .collect(toList());
 
-    final List<SignedBeaconBlock> response = requestBlocks(peer, blockRoots);
+    final List<SignedBeaconBlock> response = requestBlocksByRoot(peer, blockRoots);
     assertThat(response).containsExactlyElementsOf(blocks);
   }
 
@@ -205,13 +206,13 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     assertThat(block1.getBlock().getMessage().getBody()).isInstanceOf(expectedBody);
 
     final List<SignedBeaconBlock> response =
-        requestBlocks(peer, List.of(block1.getRoot(), block2.getRoot()));
+        requestBlocksByRoot(peer, List.of(block1.getRoot(), block2.getRoot()));
     assertThat(response).containsExactly(block1.getBlock(), block2.getBlock());
   }
 
   @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
   @MethodSource("generateSpecTransitionWithCombinationParams")
-  public void requestBlockBySlot_withDisparateVersionsEnabled_requestNextSpecBlocks(
+  public void requestBlockByRoot_withDisparateVersionsEnabled_requestNextSpecBlocks(
       final SpecMilestone baseMilestone,
       final SpecMilestone nextMilestone,
       final boolean nextSpecEnabledLocally,
@@ -247,17 +248,17 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
       assertThat(res).isCompleted();
       assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
     } else if (!nextSpecEnabledLocally && nextSpecEnabledRemotely) {
-      // The peer should refuse to return any results because we're asking for altair blocks using
-      // a v1 request
       assertThat(res).isCompletedExceptionally();
       assertThatThrownBy(res::get)
           .hasCauseInstanceOf(RpcException.class)
+          .hasRootCauseInstanceOf(UnrecognizedContextBytesException.class)
           .hasMessageContaining("Must request blocks with compatible fork.");
     } else {
-      // Remote only supports v1, we should get a v1 response back and error out trying to
-      // decode these blocks with a phase0 decoder
       assertThat(res).isCompletedExceptionally();
-      assertThatThrownBy(res::get).hasCauseInstanceOf(DeserializationFailedException.class);
+      assertThatThrownBy(res::get)
+          .hasCauseInstanceOf(RpcException.class)
+          .hasRootCauseInstanceOf(DeserializationFailedException.class)
+          .hasMessageContaining("Failed to deserialize payload");
     }
   }
 
@@ -275,7 +276,8 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
     return newBlocks.stream().map(SignedBlockAndState::getBlock).collect(Collectors.toList());
   }
 
-  private List<SignedBeaconBlock> requestBlocks(final Eth2Peer peer, final List<Bytes32> blockRoots)
+  private List<SignedBeaconBlock> requestBlocksByRoot(
+      final Eth2Peer peer, final List<Bytes32> blockRoots)
       throws InterruptedException, ExecutionException, TimeoutException, RpcException {
     final List<SignedBeaconBlock> blocks = new ArrayList<>();
     waitFor(peer.requestBlocksByRoot(blockRoots, RpcResponseListener.from(blocks::add)));

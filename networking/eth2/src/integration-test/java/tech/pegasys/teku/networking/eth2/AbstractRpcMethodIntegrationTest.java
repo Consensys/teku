@@ -143,7 +143,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
    * @return An Eth2Peer to which we can send requests along with its corresponding Eth2P2PNetwork
    */
   protected PeerAndNetwork createRemotePeerAndNetwork(
-      final boolean enableNextSpecLocally, final boolean enableNextSpecRemotely) {
+      final boolean enableNextSpecLocally, final boolean enableNextSpecRemotely) throws Exception {
     return createRemotePeerAndNetwork(
         getSpec(enableNextSpecLocally), getSpec(enableNextSpecRemotely));
   }
@@ -163,11 +163,10 @@ public abstract class AbstractRpcMethodIntegrationTest {
       peerStorage.chainUpdater().initializeGenesis();
     }
     // Set up local storage
-    final StorageSystem localStorage =
-        InMemoryStorageSystemBuilder.create().specProvider(localSpec).build();
-    localStorage.chainUpdater().initializeGenesis();
+    try (final StorageSystem localStorage =
+        InMemoryStorageSystemBuilder.create().specProvider(localSpec).build()) {
+      localStorage.chainUpdater().initializeGenesis();
 
-    try {
       final Eth2P2PNetwork remotePeerNetwork =
           networkFactory
               .builder()
