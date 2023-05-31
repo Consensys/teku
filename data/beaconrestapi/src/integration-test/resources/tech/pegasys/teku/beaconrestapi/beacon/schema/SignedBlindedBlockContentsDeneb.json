@@ -1,0 +1,16 @@
+{
+  "title" : "SignedBlindedBlockContentsDeneb",
+  "type" : "object",
+  "required" : [ "signed_blinded_block", "signed_blinded_blob_sidecars" ],
+  "properties" : {
+    "signed_blinded_block" : {
+      "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
+    },
+    "signed_blinded_blob_sidecars" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/SignedBlindedBlobSidecar"
+      }
+    }
+  }
+}
