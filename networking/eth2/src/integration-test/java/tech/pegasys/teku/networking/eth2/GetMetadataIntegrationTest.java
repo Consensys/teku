@@ -17,23 +17,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageAltair;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessagePhase0;
 
 public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
-  @Test
-  public void requestMetadata_shouldSendLatestAttnets() throws Exception {
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("generateSpec")
+  public void requestMetadata_shouldSendLatestAttnets(final SpecMilestone baseMilestone)
+      throws Exception {
+    setUp(baseMilestone, Optional.empty());
     final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork();
     final Eth2Peer peer = peerAndNetwork.getPeer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
@@ -51,8 +53,11 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(md3.getAttnets().getBit(8)).isTrue();
   }
 
-  @Test
-  public void requestMetadata_shouldSendLatestSyncnets() throws Exception {
+  @ParameterizedTest(name = "{0}->{1}")
+  @MethodSource("generateSpecTransition")
+  public void requestMetadata_shouldSendLatestSyncnets(
+      final SpecMilestone baseMilestone, final SpecMilestone nextMilestone) throws Exception {
+    setUp(baseMilestone, Optional.of(nextMilestone));
     final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
     final Eth2Peer peer = peerAndNetwork.getPeer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
@@ -86,8 +91,11 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(altairMetadata2.getSyncnets().getBit(1)).isTrue();
   }
 
-  @Test
-  public void requestMetadata_shouldSendLatestAttnetsAndSyncnets() throws Exception {
+  @ParameterizedTest(name = "{0}->{1}")
+  @MethodSource("generateSpecTransition")
+  public void requestMetadata_shouldSendLatestAttnetsAndSyncnets(
+      final SpecMilestone baseMilestone, final SpecMilestone nextMilestone) throws Exception {
+    setUp(baseMilestone, Optional.of(nextMilestone));
     final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
     final Eth2Peer peer = peerAndNetwork.getPeer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
@@ -112,15 +120,19 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(altairMetadata.getAttnets().getBit(8)).isTrue();
   }
 
-  @ParameterizedTest(name = "enableAltairLocally={0}, enableAltairRemotely={1}")
-  @MethodSource("altairVersioningOptions")
+  @ParameterizedTest(name = "{0} => {1}, nextSpecEnabledLocally={2}, nextSpecEnabledRemotely={3}")
+  @MethodSource("generateSpecTransitionWithCombinationParams")
   public void requestMetadata_withDisparateVersionsEnabled(
-      final boolean enableAltairLocally, final boolean enableAltairRemotely) {
-    final Eth2Peer peer = createPeer(enableAltairLocally, enableAltairRemotely);
+      final SpecMilestone baseMilestone,
+      final SpecMilestone nextMilestone,
+      final boolean nextSpecEnabledLocally,
+      final boolean nextSpecEnabledRemotely) {
+    setUp(baseMilestone, Optional.of(nextMilestone));
+    final Eth2Peer peer = createPeer(nextSpecEnabledLocally, nextSpecEnabledRemotely);
     final Class<?> expectedType =
-        enableAltairLocally && enableAltairRemotely
-            ? MetadataMessageAltair.class
-            : MetadataMessagePhase0.class;
+        nextSpecEnabledLocally && nextSpecEnabledRemotely
+            ? milestoneToMetadataClass(nextMilestone)
+            : milestoneToMetadataClass(baseMilestone);
 
     final SafeFuture<MetadataMessage> res = peer.requestMetadata();
     waitFor(() -> assertThat(res).isDone());
@@ -131,11 +143,17 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
   }
 
-  public static Stream<Arguments> altairVersioningOptions() {
-    return Stream.of(
-        Arguments.of(true, true),
-        Arguments.of(false, true),
-        Arguments.of(true, false),
-        Arguments.of(false, false));
+  private static Class<?> milestoneToMetadataClass(final SpecMilestone milestone) {
+    switch (milestone) {
+      case PHASE0:
+        return MetadataMessagePhase0.class;
+      case ALTAIR:
+      case BELLATRIX:
+      case CAPELLA:
+      case DENEB:
+        return MetadataMessageAltair.class;
+      default:
+        throw new UnsupportedOperationException("unsupported milestone: " + milestone);
+    }
   }
 }
