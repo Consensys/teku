@@ -101,7 +101,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "rE+3KMDLVkhKKv7fBCXCaSUDAAYbXlu8mLnjy0mdxXNIF48/6u7zN6MbrO/GDl2ODWkFCTAn3hxZrttEUTPaUhXjf89OuEiT0Q9QuM7v8fTklPNm3oW816rZsaawJu8U"));
+                "oc3Y2lRDSc9UhBt+Wcd3gkbMB9EFAga6xzZuy/shW4vxbJ/lTUbXhz2IlkZ9lpc4AIyraWxkt5l4Zr1DluCwUVUP3gDdnTTbG45Xw1CBpfhG9oRbo1o4fkdC+HNA7ekl"));
 
     final SafeFuture<BLSSignature> result = signer.signBlobSidecar(blobSidecar, fork);
     asyncRunner.executeQueuedActions();
@@ -127,7 +127,7 @@ class LocalSignerTest {
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "rE+3KMDLVkhKKv7fBCXCaSUDAAYbXlu8mLnjy0mdxXNIF48/6u7zN6MbrO/GDl2ODWkFCTAn3hxZrttEUTPaUhXjf89OuEiT0Q9QuM7v8fTklPNm3oW816rZsaawJu8U"));
+                "oc3Y2lRDSc9UhBt+Wcd3gkbMB9EFAga6xzZuy/shW4vxbJ/lTUbXhz2IlkZ9lpc4AIyraWxkt5l4Zr1DluCwUVUP3gDdnTTbG45Xw1CBpfhG9oRbo1o4fkdC+HNA7ekl"));
 
     final SafeFuture<BLSSignature> result = signer.signBlindedBlobSidecar(blindedBlobSidecar, fork);
     asyncRunner.executeQueuedActions();
