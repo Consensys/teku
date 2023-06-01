@@ -25,7 +25,6 @@ import java.util.OptionalInt;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -35,8 +34,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationValidator {
   private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
-  private static final UInt64 MAXIMUM_GOSSIP_CLOCK_DISPARITY =
-      UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
+  //  private static final UInt64 MAXIMUM_GOSSIP_CLOCK_DISPARITY =
+  //      UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
   private final Spec spec;
   private final RecentChainData recentChainData;
@@ -233,8 +232,10 @@ public class AttestationValidator {
             .getGenesisTime()
             .plus(attestationSlot.times(secondsPerSlot(attestationSlot)));
     final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
-    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
-        ? lastAllowedTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
+    final int maximumGossipClockDisparity =
+        spec.atSlot(attestationSlot).getConfig().getMaximumGossipClockDisparity();
+    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(maximumGossipClockDisparity)
+        ? lastAllowedTimeMillis.minus(maximumGossipClockDisparity)
         : ZERO;
   }
 
@@ -247,7 +248,8 @@ public class AttestationValidator {
             .plus(lastAllowedSlot.plus(ONE).times(secondsPerSlot(attestationSlot)));
 
     // Add allowed clock disparity
-    return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
+    return secondsToMillis(lastAllowedTime)
+        .plus(spec.atSlot(attestationSlot).getConfig().getMaximumGossipClockDisparity());
   }
 
   private int secondsPerSlot(final UInt64 slot) {

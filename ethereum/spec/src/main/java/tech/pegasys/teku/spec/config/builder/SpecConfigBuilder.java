@@ -106,6 +106,7 @@ public class SpecConfigBuilder {
 
   private int gossipMaxSize;
 
+  private int maximumGossipClockDisparity;
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
@@ -173,7 +174,8 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress,
             progressiveBalancesMode,
-            gossipMaxSize);
+            gossipMaxSize,
+            maximumGossipClockDisparity);
 
     return builderChain.build(config);
   }
@@ -231,6 +233,7 @@ public class SpecConfigBuilder {
     SpecBuilderUtil.validateConstant("depositChainId", depositChainId);
     SpecBuilderUtil.validateConstant("depositNetworkId", depositNetworkId);
     SpecBuilderUtil.validateConstant("depositContractAddress", depositContractAddress);
+    SpecBuilderUtil.validateConstant("maximumGossipClockDisparity", maximumGossipClockDisparity);
 
     builderChain.validate();
   }
@@ -547,6 +550,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder gossipMaxSize(final int gossipMaxSize) {
     this.gossipMaxSize = gossipMaxSize;
+    return this;
+  }
+
+  public SpecConfigBuilder maximumGossipClockDisparity(final int maximumGossipClockDisparity) {
+    this.maximumGossipClockDisparity = maximumGossipClockDisparity;
     return this;
   }
 

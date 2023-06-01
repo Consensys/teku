@@ -307,6 +307,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getMaximumGossipClockDisparity() {
+    return specConfig.getMaximumGossipClockDisparity();
+  }
+
+  @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }

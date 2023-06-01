@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
-
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,8 +27,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
-  public static final UInt64 MAX_OFFSET_TIME_IN_SECONDS =
-      UInt64.valueOf(Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0));
 
   private final Spec spec;
   private final RecentChainData recentChainData;
@@ -48,7 +44,9 @@ public class GossipValidationHelper {
 
   public boolean isSlotFromFuture(final UInt64 slot) {
     final ReadOnlyStore store = recentChainData.getStore();
-    final UInt64 maxTime = store.getTimeSeconds().plus(MAX_OFFSET_TIME_IN_SECONDS);
+    final long maximumGossipClockDisparity =
+        Math.round((float) spec.atSlot(slot).getConfig().getMaximumGossipClockDisparity() / 1000.0);
+    final UInt64 maxTime = store.getTimeSeconds().plus(maximumGossipClockDisparity);
     final UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
     return slot.isGreaterThan(maxCurrSlot);
   }

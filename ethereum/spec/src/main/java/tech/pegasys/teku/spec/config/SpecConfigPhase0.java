@@ -104,6 +104,8 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final int gossipMaxSize;
 
+  private final int maximumGossipClockDisparity;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -156,7 +158,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
       final ProgressiveBalancesMode progressiveBalancesMode,
-      final int gossipMaxSize) {
+      final int gossipMaxSize,
+      final int maximumGossipClockDisparity) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -210,6 +213,8 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
     this.progressiveBalancesMode = progressiveBalancesMode;
     this.gossipMaxSize = gossipMaxSize;
+
+    this.maximumGossipClockDisparity = maximumGossipClockDisparity;
   }
 
   @Override
@@ -495,6 +500,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getGossipMaxSize() {
     return gossipMaxSize;
+  }
+
+  @Override
+  public int getMaximumGossipClockDisparity() {
+    return maximumGossipClockDisparity;
   }
 
   @Override
