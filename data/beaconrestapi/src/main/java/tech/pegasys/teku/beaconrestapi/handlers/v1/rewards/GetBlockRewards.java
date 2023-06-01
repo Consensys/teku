@@ -48,13 +48,15 @@ public class GetBlockRewards extends RestApiEndpoint {
           .withField("attester_slashings", LONG_TYPE, BlockRewardData::getAttesterSlashings)
           .build();
 
-  private static final SerializableTypeDefinition<ObjectAndMetaData<BlockRewardData>> RESPONSE_TYPE =
-      SerializableTypeDefinition.<ObjectAndMetaData<BlockRewardData>>object()
-          .name("GetBlockRewards")
-          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-          .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-          .withField("data", DATA_TYPE, ObjectAndMetaData::getData)
-          .build();
+  private static final SerializableTypeDefinition<ObjectAndMetaData<BlockRewardData>>
+      RESPONSE_TYPE =
+          SerializableTypeDefinition.<ObjectAndMetaData<BlockRewardData>>object()
+              .name("GetBlockRewards")
+              .withField(
+                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
+              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
+              .withField("data", DATA_TYPE, ObjectAndMetaData::getData)
+              .build();
 
   public GetBlockRewards(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());

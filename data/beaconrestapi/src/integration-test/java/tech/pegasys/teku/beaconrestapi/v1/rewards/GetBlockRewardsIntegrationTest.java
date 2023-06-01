@@ -15,22 +15,20 @@ package tech.pegasys.teku.beaconrestapi.v1.rewards;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
-import static tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.get;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetBlockRewards;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -60,17 +58,21 @@ public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIInt
   }
 
   @Test
-  public void shouldReturnBlockRewards() throws IOException {
+  public void shouldReturnBlockRewards() throws Exception {
     Response response = get("head");
-
-    final BlockRewardData data = new BlockRewardData(UInt64.ONE, 0L, 11970L, 0L, 0L);
-    final ObjectAndMetaData<BlockRewardData> object =
-        new ObjectAndMetaData<>(data, SpecMilestone.ALTAIR, false, true, false);
-
-    final String expectedResponse = serialize(object, GetBlockRewards.RESPONSE_TYPE);
-
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.body().string()).isEqualTo(expectedResponse);
+
+    final JsonNode jsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
+    assertThat(jsonNode.get("execution_optimistic").asText()).isEqualTo("false");
+    assertThat(jsonNode.get("finalized").asText()).isEqualTo("false");
+
+    final JsonNode data = jsonNode.get("data");
+    assertThat(data.get("proposer_index").asText()).isEqualTo("1");
+    assertThat(data.get("total").asText()).isEqualTo("11970");
+    assertThat(data.get("attestations").asText()).isEqualTo("0");
+    assertThat(data.get("sync_aggregate").asText()).isEqualTo("11970");
+    assertThat(data.get("proposer_slashings").asText()).isEqualTo("0");
+    assertThat(data.get("attester_slashings").asText()).isEqualTo("0");
   }
 
   private Response get(final String blockId) throws IOException {
