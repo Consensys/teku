@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +43,8 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationSubnetSubscriptionsTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+
+  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
@@ -68,7 +69,7 @@ public class AttestationSubnetSubscriptionsTest {
             recentChainData,
             processor,
             recentChainData.getCurrentForkInfo().orElseThrow(),
-            GOSSIP_MAX_SIZE);
+            gossipMaxSize);
     subnetSubscriptions.subscribe();
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));

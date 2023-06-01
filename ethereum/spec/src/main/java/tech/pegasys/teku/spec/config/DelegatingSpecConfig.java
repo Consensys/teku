@@ -302,6 +302,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getGossipMaxSize() {
+    return specConfig.getGossipMaxSize();
+  }
+
+  @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }
