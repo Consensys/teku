@@ -53,5 +53,7 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder excessDataGas(Supplier<UInt64> excessDataGasSupplier);
 
+  ExecutionPayloadHeaderBuilder dataGasUsed(Supplier<UInt256> dataGasUsedSupplier);
+
   ExecutionPayloadHeader build();
 }

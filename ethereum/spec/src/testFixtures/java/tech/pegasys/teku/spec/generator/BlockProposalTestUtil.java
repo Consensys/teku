@@ -271,7 +271,8 @@ public class BlockProposalTestUtil {
                 .blockHash(dataStructureUtil.randomBytes32())
                 .transactions(transactions.orElse(Collections.emptyList()))
                 .withdrawals(List::of)
-                .excessDataGas(() -> UInt256.ZERO));
+                .excessDataGas(() -> UInt64.ZERO)
+                .dataGasUsed(() -> UInt256.ZERO));
   }
 
   private Boolean isMergeTransitionComplete(final BeaconState state) {

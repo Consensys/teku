@@ -147,6 +147,11 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
     return this;
   }
 
+  @Override
+  public ExecutionPayloadBuilder dataGasUsed(final Supplier<UInt256> dataGasUsedSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }

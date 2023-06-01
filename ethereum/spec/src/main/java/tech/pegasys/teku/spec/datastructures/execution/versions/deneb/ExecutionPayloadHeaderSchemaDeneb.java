@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DATA_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_DATA_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
@@ -35,7 +36,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -50,7 +51,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBui
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderSchemaDeneb
-    extends ContainerSchema16<
+    extends ContainerSchema17<
         ExecutionPayloadHeaderDenebImpl,
         SszBytes32,
         SszByteVector,
@@ -67,7 +68,8 @@ public class ExecutionPayloadHeaderSchemaDeneb
         SszBytes32,
         SszBytes32,
         SszBytes32,
-        SszUInt64>
+        SszUInt64,
+        SszUInt256>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderDenebImpl> {
 
   private final ExecutionPayloadHeaderDenebImpl defaultExecutionPayloadHeader;
@@ -91,7 +93,8 @@ public class ExecutionPayloadHeaderSchemaDeneb
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(DATA_GAS_USED, SszPrimitiveSchemas.UINT256_SCHEMA));
 
     final ExecutionPayloadDenebImpl defaultExecutionPayload =
         new ExecutionPayloadSchemaDeneb(specConfig).getDefault();
@@ -158,6 +161,7 @@ public class ExecutionPayloadHeaderSchemaDeneb
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
-        SszUInt64.of(executionPayload.getExcessDataGas()));
+        SszUInt64.of(executionPayload.getExcessDataGas()),
+        SszUInt256.of(executionPayload.getDataGasUsed()));
   }
 }

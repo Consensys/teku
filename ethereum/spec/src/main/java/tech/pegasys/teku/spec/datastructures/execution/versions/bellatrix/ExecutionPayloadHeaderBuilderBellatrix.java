@@ -147,6 +147,11 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
     return this;
   }
 
+  @Override
+  public ExecutionPayloadHeaderBuilder dataGasUsed(final Supplier<UInt256> dataGasUsedSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }

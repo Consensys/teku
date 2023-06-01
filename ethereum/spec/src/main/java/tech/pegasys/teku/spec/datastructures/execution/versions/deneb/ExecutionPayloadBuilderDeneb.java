@@ -16,18 +16,21 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadBuilderCapella;
 
 public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella {
   private ExecutionPayloadSchemaDeneb schema;
 
   protected UInt64 excessDataGas;
+  protected UInt256 dataGasUsed;
 
   public ExecutionPayloadBuilderDeneb schema(final ExecutionPayloadSchemaDeneb schema) {
     this.schema = schema;
@@ -41,6 +44,12 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
   }
 
   @Override
+  public ExecutionPayloadBuilder dataGasUsed(final Supplier<UInt256> dataGasUsedSupplier) {
+    this.dataGasUsed = dataGasUsedSupplier.get();
+    return this;
+  }
+
+  @Override
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }
@@ -49,6 +58,7 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
   protected void validate() {
     super.validate();
     checkNotNull(excessDataGas, "excessDataGas must be specified");
+    checkNotNull(dataGasUsed, "dataGasUsed must be specified");
   }
 
   @Override
@@ -73,6 +83,7 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
             .map(schema.getTransactionSchema()::fromBytes)
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
-        SszUInt64.of(excessDataGas));
+        SszUInt64.of(excessDataGas),
+        SszUInt256.of(dataGasUsed));
   }
 }
