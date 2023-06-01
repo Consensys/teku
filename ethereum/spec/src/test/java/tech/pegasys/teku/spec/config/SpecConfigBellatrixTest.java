@@ -38,7 +38,6 @@ public class SpecConfigBellatrixTest {
   public void equals_sameRandomValues() {
     SpecConfigAltair altair =
         SpecConfigLoader.loadConfig("mainnet").toVersionAltair().orElseThrow();
-    ;
     SpecConfigBellatrix configA = createRandomBellatrixConfig(altair, 1);
     SpecConfigBellatrix configB = createRandomBellatrixConfig(altair, 1);
 
@@ -94,6 +93,8 @@ public class SpecConfigBellatrixTest {
         dataStructureUtil.randomUInt256(),
         dataStructureUtil.randomBytes32(),
         dataStructureUtil.randomUInt64(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt());
   }
 }
