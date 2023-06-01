@@ -48,7 +48,7 @@ public class GetBlockRewards extends RestApiEndpoint {
           .withField("attester_slashings", LONG_TYPE, BlockRewardData::getAttesterSlashings)
           .build();
 
-  public static final SerializableTypeDefinition<ObjectAndMetaData<BlockRewardData>> RESPONSE_TYPE =
+  private static final SerializableTypeDefinition<ObjectAndMetaData<BlockRewardData>> RESPONSE_TYPE =
       SerializableTypeDefinition.<ObjectAndMetaData<BlockRewardData>>object()
           .name("GetBlockRewards")
           .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
