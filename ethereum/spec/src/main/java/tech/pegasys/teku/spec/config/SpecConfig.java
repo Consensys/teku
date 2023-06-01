@@ -146,6 +146,8 @@ public interface SpecConfig {
 
   int getGossipMaxSize();
 
+  int getMaxChunkSize();
+
   int getMaximumGossipClockDisparity();
 
   default int getMinEpochsForBlockRequests() {

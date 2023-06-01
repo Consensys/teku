@@ -312,6 +312,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getMaxChunkSize() {
+    return specConfig.getMaxChunkSize();
+  }
+
+  @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }

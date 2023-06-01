@@ -106,6 +106,8 @@ public class SpecConfigBuilder {
 
   private int gossipMaxSize;
 
+  private int maxChunkSize;
+
   private int maximumGossipClockDisparity;
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -175,6 +177,7 @@ public class SpecConfigBuilder {
             depositContractAddress,
             progressiveBalancesMode,
             gossipMaxSize,
+            maxChunkSize,
             maximumGossipClockDisparity);
 
     return builderChain.build(config);
@@ -234,6 +237,9 @@ public class SpecConfigBuilder {
     SpecBuilderUtil.validateConstant("depositNetworkId", depositNetworkId);
     SpecBuilderUtil.validateConstant("depositContractAddress", depositContractAddress);
     SpecBuilderUtil.validateConstant("maximumGossipClockDisparity", maximumGossipClockDisparity);
+
+    SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
+    SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
 
     builderChain.validate();
   }
@@ -555,6 +561,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder maximumGossipClockDisparity(final int maximumGossipClockDisparity) {
     this.maximumGossipClockDisparity = maximumGossipClockDisparity;
+    return this;
+  }
+
+  public SpecConfigBuilder maxChunkSize(final int maxChunkSize) {
+    this.maxChunkSize = maxChunkSize;
     return this;
   }
 

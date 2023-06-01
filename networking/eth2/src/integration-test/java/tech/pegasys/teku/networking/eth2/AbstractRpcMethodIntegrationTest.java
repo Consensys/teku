@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.util.Preconditions.checkState;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -45,7 +44,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected final UInt64 nextSpecEpoch = UInt64.valueOf(2);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
   protected void setUp(
       final SpecMilestone baseMilestone, final Optional<SpecMilestone> nextMilestone) {
@@ -162,6 +160,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       peerStorage = InMemoryStorageSystemBuilder.create().specProvider(remoteSpec).build();
       peerStorage.chainUpdater().initializeGenesis();
     }
+
     // Set up local storage
     try (final StorageSystem localStorage =
         InMemoryStorageSystemBuilder.create().specProvider(localSpec).build()) {
@@ -170,7 +169,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
       final Eth2P2PNetwork remotePeerNetwork =
           networkFactory
               .builder()
-              .rpcEncoding(rpcEncoding)
+              .rpcEncoding(
+                  RpcEncoding.createSszSnappyEncoding(
+                      remoteSpec.getGenesisSpecConfig().getMaxChunkSize()))
               .recentChainData(peerStorage.recentChainData())
               .historicalChainData(peerStorage.chainStorage())
               .spec(remoteSpec)
@@ -179,7 +180,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
       final Eth2P2PNetwork localNetwork =
           networkFactory
               .builder()
-              .rpcEncoding(rpcEncoding)
+              .rpcEncoding(
+                  RpcEncoding.createSszSnappyEncoding(
+                      localSpec.getGenesisSpecConfig().getMaxChunkSize()))
               .peer(remotePeerNetwork)
               .recentChainData(localStorage.recentChainData())
               .historicalChainData(localStorage.chainStorage())
