@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -23,6 +24,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class BlobSidecarsByRangeRequestMessage
     extends Container2<BlobSidecarsByRangeRequestMessage, SszUInt64, SszUInt64>
     implements RpcRequest {
+
+  private final Optional<Integer> maxBlobsPerBlock;
 
   public static class BlobSidecarsByRangeRequestMessageSchema
       extends ContainerSchema2<BlobSidecarsByRangeRequestMessage, SszUInt64, SszUInt64> {
@@ -47,10 +50,13 @@ public class BlobSidecarsByRangeRequestMessage
       final BlobSidecarsByRangeRequestMessage.BlobSidecarsByRangeRequestMessageSchema type,
       final TreeNode backingNode) {
     super(type, backingNode);
+    this.maxBlobsPerBlock = Optional.empty();
   }
 
-  public BlobSidecarsByRangeRequestMessage(final UInt64 startSlot, final UInt64 count) {
+  public BlobSidecarsByRangeRequestMessage(
+      final UInt64 startSlot, final UInt64 count, final int maxBlobsPerBlock) {
     super(SSZ_SCHEMA, SszUInt64.of(startSlot), SszUInt64.of(count));
+    this.maxBlobsPerBlock = Optional.of(maxBlobsPerBlock);
   }
 
   public UInt64 getStartSlot() {
@@ -67,6 +73,7 @@ public class BlobSidecarsByRangeRequestMessage
 
   @Override
   public int getMaximumResponseChunks() {
-    return getCount().intValue();
+    return getCount().intValue()
+        * maxBlobsPerBlock.orElseThrow(() -> new IllegalStateException("Unexpected method usage"));
   }
 }
