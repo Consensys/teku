@@ -26,7 +26,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -37,23 +36,32 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
   @Test
   public void requestBlobSidecars_shouldFailBeforeDenebMilestone() {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
-    assertThatThrownBy(() -> requestBlobSidecars(peer, List.of()))
+    assertThatThrownBy(() -> requestBlobSidecarsByRoot(peer, List.of()))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
         .hasMessageContaining("BlobSidecarsByRoot method is not supported");
+  }
+
+  @Test
+  public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
+    final Optional<BlobSidecar> blobSidecar =
+        requestBlobSidecarByRoot(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO));
+    assertThat(blobSidecar).isEmpty();
   }
 
   @Test
   public void requestBlobSidecar_shouldFailBeforeDenebMilestone() {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
     assertThatThrownBy(
-            () -> requestBlobSidecar(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)))
+            () -> requestBlobSidecarByRoot(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
         .hasMessageContaining("BlobSidecarsByRoot method is not supported");
   }
 
-  private List<BlobSidecar> requestBlobSidecars(
+  private List<BlobSidecar> requestBlobSidecarsByRoot(
       final Eth2Peer peer, final List<BlobIdentifier> blobIdentifiers)
-      throws InterruptedException, ExecutionException, TimeoutException, RpcException {
+      throws InterruptedException, ExecutionException, TimeoutException {
     final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
         peer.requestBlobSidecarsByRoot(
@@ -62,7 +70,7 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
     return blobSidecars;
   }
 
-  private Optional<BlobSidecar> requestBlobSidecar(
+  private Optional<BlobSidecar> requestBlobSidecarByRoot(
       final Eth2Peer peer, final BlobIdentifier blobIdentifier)
       throws ExecutionException, InterruptedException, TimeoutException {
     final Optional<BlobSidecar> blobSidecar =

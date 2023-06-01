@@ -32,7 +32,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -128,15 +127,7 @@ public class BlobSidecarsByRootMessageHandler
               .thenCompose(__ -> validateRequestedBlockRoot(blockRoot, finalizedEpoch))
               .thenCompose(__ -> retrieveBlobSidecar(identifier))
               .thenComposeChecked(
-                  maybeSidecar -> {
-                    if (maybeSidecar.isEmpty()) {
-                      throw new ResourceUnavailableException(
-                          String.format(
-                              "Blob sidecar for blob identifier (%s) was not available",
-                              identifier));
-                    }
-                    return callback.respond(maybeSidecar.get());
-                  });
+                  maybeSidecar -> maybeSidecar.map(callback::respond).orElse(SafeFuture.COMPLETE));
     }
 
     future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
@@ -171,8 +162,7 @@ public class BlobSidecarsByRootMessageHandler
         .thenAcceptChecked(
             maybeBlock -> {
               if (maybeBlock.isEmpty()) {
-                throw new ResourceUnavailableException(
-                    String.format("Block for block root (%s) couldn't be retrieved", blockRoot));
+                return;
               }
               final SignedBeaconBlock block = maybeBlock.get();
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(block.getSlot());

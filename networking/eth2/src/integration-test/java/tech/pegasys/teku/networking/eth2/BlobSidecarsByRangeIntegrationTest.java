@@ -38,7 +38,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
   @Test
   public void requestBlobSidecars_shouldFailBeforeDenebMilestone() {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
-    assertThatThrownBy(() -> requestBlobSidecars(peer))
+    assertThatThrownBy(() -> requestBlobSidecarsByRange(peer))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
         .hasMessageContaining("BlobSidecarsByRange method is not supported");
   }
@@ -47,7 +47,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
-    final List<BlobSidecar> blobSidecars = requestBlobSidecars(peer);
+    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer);
     assertThat(blobSidecars).isEmpty();
   }
 
@@ -56,17 +56,20 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
 
+    // generate 4 blobs per block
     peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
     peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
 
+    // up to slot 3
     final UInt64 targetSlot = UInt64.valueOf(3);
-
     peerStorage.chainUpdater().advanceChainUntil(targetSlot);
 
+    // grab expected blobs from storage
     final List<BlobSidecar> expectedBlobSidecars =
         retrieveCanonicalBlobSidecarsFromPeerStorage(UInt64.ONE, targetSlot);
 
-    final List<BlobSidecar> blobSidecars = requestBlobSidecars(peer);
+    // call and check
+    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer);
     assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedBlobSidecars);
   }
 
@@ -95,7 +98,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     }
   }
 
-  private List<BlobSidecar> requestBlobSidecars(final Eth2Peer peer)
+  private List<BlobSidecar> requestBlobSidecarsByRange(final Eth2Peer peer)
       throws InterruptedException, ExecutionException, TimeoutException {
     final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
