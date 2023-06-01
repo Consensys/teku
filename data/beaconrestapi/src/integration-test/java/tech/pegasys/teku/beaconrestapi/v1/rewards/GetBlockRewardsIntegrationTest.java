@@ -28,10 +28,10 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetBlockRewards;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -41,11 +41,20 @@ public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIInt
     spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
-    final SyncAggregate syncAggregate =
-        dataStructureUtil.randomSyncAggregate(0, 3, 4, 7, 8, 9, 10, 16, 17, 20, 23, 25, 26, 29, 30);
-    final ChainBuilder.BlockOptions blockOptions =
-        ChainBuilder.BlockOptions.create().setSyncAggregate(syncAggregate);
-    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(3, blockOptions);
+
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(5));
+    final BeaconBlock block =
+        dataStructureUtil
+            .blockBuilder(state.getSlot().increment().longValue())
+            .proposerSlashings(dataStructureUtil.randomProposerSlashings(3, 100))
+            .attesterSlashings(dataStructureUtil.randomAttesterSlashings(2, 100))
+            .attestations(dataStructureUtil.randomAttestations(10, state.getSlot().decrement()))
+            .syncAggregate(dataStructureUtil.randomSyncAggregate(1, 2, 3, 4))
+            .build()
+            .getImmediately();
+
+    final SignedBlockAndState blockAndState = dataStructureUtil.randomSignedBlockAndState(block);
+
     chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
   }

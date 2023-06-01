@@ -941,7 +941,7 @@ public final class DataStructureUtil {
 
   public BeaconBlockBuilder blockBuilder(final long slot) {
     final SpecVersion specVersion = spec.atSlot(UInt64.valueOf(slot));
-    return new BeaconBlockBuilder(specVersion, this);
+    return new BeaconBlockBuilder(specVersion, UInt64.valueOf(slot), this);
   }
 
   public BeaconBlock randomBeaconBlock() {
@@ -1012,6 +1012,13 @@ public final class DataStructureUtil {
     return toSigned(blockAndState);
   }
 
+  public SignedBlockAndState randomSignedBlockAndState(final BeaconBlock block) {
+    final BeaconState state = randomBeaconState(block.getSlot());
+    final BeaconBlockAndState blockAndState = randomBlockAndState(block, state);
+
+    return toSigned(blockAndState);
+  }
+
   public SignedBlockAndState randomSignedBlockAndStateWithValidatorLogic(final int validatorCount) {
     final BeaconBlockAndState blockAndState = randomBlockAndStateWithValidatorLogic(validatorCount);
     return toSigned(blockAndState);
@@ -1053,6 +1060,31 @@ public final class DataStructureUtil {
             body);
 
     return new BeaconBlockAndState(block, matchingState);
+  }
+
+  private BeaconBlockAndState randomBlockAndState(
+      final BeaconBlock block, final BeaconState state) {
+    final UInt64 slot = block.getSlot();
+
+    final BeaconBlockHeader latestHeader =
+        new BeaconBlockHeader(
+            slot,
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            Bytes32.ZERO,
+            block.getBodyRoot());
+    final BeaconState matchingState = state.updated(s -> s.setLatestBlockHeader(latestHeader));
+
+    final BeaconBlock matchingBlock =
+        new BeaconBlock(
+            spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema(),
+            slot,
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            matchingState.hashTreeRoot(),
+            block.getBody());
+
+    return new BeaconBlockAndState(matchingBlock, matchingState);
   }
 
   public BeaconBlockAndState randomBlockAndStateWithValidatorLogic(final int validatorCount) {
