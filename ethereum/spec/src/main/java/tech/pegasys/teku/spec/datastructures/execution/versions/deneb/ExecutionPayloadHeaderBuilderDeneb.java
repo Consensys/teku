@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
@@ -29,11 +28,17 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBuilderCapella {
   private ExecutionPayloadHeaderSchemaDeneb schema;
 
+  protected UInt64 dataGasUsed;
   protected UInt64 excessDataGas;
-  protected UInt256 dataGasUsed;
 
   public ExecutionPayloadHeaderBuilderDeneb schema(final ExecutionPayloadHeaderSchemaDeneb schema) {
     this.schema = schema;
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder dataGasUsed(final Supplier<UInt64> dataGasUsedSupplier) {
+    this.dataGasUsed = dataGasUsedSupplier.get();
     return this;
   }
 
@@ -45,12 +50,6 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder dataGasUsed(final Supplier<UInt256> dataGasUsedSupplier) {
-    this.dataGasUsed = dataGasUsedSupplier.get();
-    return this;
-  }
-
-  @Override
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }
@@ -58,8 +57,8 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(excessDataGas, "excessDataGas must be specified");
     checkNotNull(dataGasUsed, "dataGasUsed must be specified");
+    checkNotNull(excessDataGas, "excessDataGas must be specified");
   }
 
   @Override
@@ -82,7 +81,7 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot),
         SszBytes32.of(withdrawalsRoot),
-        SszUInt64.of(excessDataGas),
-        SszUInt256.of(dataGasUsed));
+        SszUInt64.of(dataGasUsed),
+        SszUInt64.of(excessDataGas));
   }
 }

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.forktransition;
 
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -91,8 +90,8 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                                   .blockHash(capellaHeader.getBlockHash())
                                   .transactionsRoot(capellaHeader.getTransactionsRoot())
                                   .withdrawalsRoot(capellaHeader::getWithdrawalsRoot)
-                                  .excessDataGas(() -> UInt64.ZERO)
-                                  .dataGasUsed(() -> UInt256.ZERO));
+                                  .dataGasUsed(() -> UInt64.ZERO)
+                                  .excessDataGas(() -> UInt64.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 

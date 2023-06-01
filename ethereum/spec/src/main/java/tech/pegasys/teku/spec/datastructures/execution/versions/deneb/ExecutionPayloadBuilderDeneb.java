@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
@@ -29,8 +28,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella {
   private ExecutionPayloadSchemaDeneb schema;
 
+  protected UInt64 dataGasUsed;
   protected UInt64 excessDataGas;
-  protected UInt256 dataGasUsed;
 
   public ExecutionPayloadBuilderDeneb schema(final ExecutionPayloadSchemaDeneb schema) {
     this.schema = schema;
@@ -38,14 +37,14 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
   }
 
   @Override
-  public ExecutionPayloadBuilderDeneb excessDataGas(final Supplier<UInt64> excessDataGasSupplier) {
-    this.excessDataGas = excessDataGasSupplier.get();
+  public ExecutionPayloadBuilder dataGasUsed(final Supplier<UInt64> dataGasUsedSupplier) {
+    this.dataGasUsed = dataGasUsedSupplier.get();
     return this;
   }
 
   @Override
-  public ExecutionPayloadBuilder dataGasUsed(final Supplier<UInt256> dataGasUsedSupplier) {
-    this.dataGasUsed = dataGasUsedSupplier.get();
+  public ExecutionPayloadBuilderDeneb excessDataGas(final Supplier<UInt64> excessDataGasSupplier) {
+    this.excessDataGas = excessDataGasSupplier.get();
     return this;
   }
 
@@ -57,8 +56,8 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(excessDataGas, "excessDataGas must be specified");
     checkNotNull(dataGasUsed, "dataGasUsed must be specified");
+    checkNotNull(excessDataGas, "excessDataGas must be specified");
   }
 
   @Override
@@ -83,7 +82,7 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
             .map(schema.getTransactionSchema()::fromBytes)
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
-        SszUInt64.of(excessDataGas),
-        SszUInt256.of(dataGasUsed));
+        SszUInt64.of(dataGasUsed),
+        SszUInt64.of(excessDataGas));
   }
 }

@@ -51,7 +51,7 @@ public class ExecutionPayloadDenebImpl
         SszList<Transaction>,
         SszList<Withdrawal>,
         SszUInt64,
-        SszUInt256>
+        SszUInt64>
     implements ExecutionPayloadDeneb {
 
   public ExecutionPayloadDenebImpl(
@@ -73,7 +73,7 @@ public class ExecutionPayloadDenebImpl
               SszList<Transaction>,
               SszList<Withdrawal>,
               SszUInt64,
-              SszUInt256>
+              SszUInt64>
           schema,
       TreeNode backingNode) {
     super(schema, backingNode);
@@ -96,8 +96,8 @@ public class ExecutionPayloadDenebImpl
       SszBytes32 blockHash,
       SszList<Transaction> transactions,
       SszList<Withdrawal> withdrawals,
-      SszUInt64 excessDataGas,
-      SszUInt256 dataGasUsed) {
+      SszUInt64 dataGasUsed,
+      SszUInt64 excessDataGas) {
     super(
         schema,
         parentHash,
@@ -115,8 +115,8 @@ public class ExecutionPayloadDenebImpl
         blockHash,
         transactions,
         withdrawals,
-        excessDataGas,
-        dataGasUsed);
+        dataGasUsed,
+        excessDataGas);
   }
 
   @Override
@@ -215,12 +215,12 @@ public class ExecutionPayloadDenebImpl
   }
 
   @Override
-  public UInt64 getExcessDataGas() {
+  public UInt64 getDataGasUsed() {
     return getField15().get();
   }
 
   @Override
-  public UInt256 getDataGasUsed() {
+  public UInt64 getExcessDataGas() {
     return getField16().get();
   }
 

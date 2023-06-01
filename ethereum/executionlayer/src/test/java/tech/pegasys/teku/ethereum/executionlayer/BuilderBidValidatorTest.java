@@ -298,7 +298,7 @@ public class BuilderBidValidatorTest {
                     .blockHash(Bytes32.random())
                     .transactionsRoot(Bytes32.ZERO)
                     .withdrawalsRoot(() -> Bytes32.ZERO)
-                    .excessDataGas(() -> UInt64.ONE)
-                    .dataGasUsed(() -> UInt256.ONE));
+                    .dataGasUsed(() -> UInt64.ONE)
+                    .excessDataGas(() -> UInt64.ONE));
   }
 }
