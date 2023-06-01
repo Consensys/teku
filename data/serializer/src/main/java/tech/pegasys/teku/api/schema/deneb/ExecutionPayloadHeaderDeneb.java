@@ -30,7 +30,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
 
   @JsonProperty("excess_data_gas")
-  public final UInt256 excessDataGas;
+  public final UInt64 excessDataGas;
 
   @JsonCreator
   public ExecutionPayloadHeaderDeneb(
@@ -49,7 +49,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions_root") final Bytes32 transactionsRoot,
       @JsonProperty("withdrawals_root") final Bytes32 withdrawalsRoot,
-      @JsonProperty("excess_data_gas") final UInt256 excessDataGas) {
+      @JsonProperty("excess_data_gas") final UInt64 excessDataGas) {
     super(
         parentHash,
         feeRecipient,

@@ -45,7 +45,7 @@ public class ExecutionPayloadHeaderDenebImpl
         SszBytes32,
         SszBytes32,
         SszBytes32,
-        SszUInt256>
+        SszUInt64>
     implements ExecutionPayloadHeaderDeneb {
 
   protected ExecutionPayloadHeaderDenebImpl(
@@ -66,7 +66,7 @@ public class ExecutionPayloadHeaderDenebImpl
               SszBytes32,
               SszBytes32,
               SszBytes32,
-              SszUInt256>
+              SszUInt64>
           schema,
       TreeNode backingTree) {
     super(schema, backingTree);
@@ -89,7 +89,7 @@ public class ExecutionPayloadHeaderDenebImpl
       SszBytes32 blockHash,
       SszBytes32 transactionsRoot,
       SszBytes32 withdrawalsRoot,
-      SszUInt256 excessDataGas) {
+      SszUInt64 excessDataGas) {
     super(
         schema,
         parentHash,
@@ -206,7 +206,7 @@ public class ExecutionPayloadHeaderDenebImpl
   }
 
   @Override
-  public UInt256 getExcessDataGas() {
+  public UInt64 getExcessDataGas() {
     return getField15().get();
   }
 }

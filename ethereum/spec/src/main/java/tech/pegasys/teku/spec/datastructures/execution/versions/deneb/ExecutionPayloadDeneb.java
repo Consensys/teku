@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 
 import java.util.Optional;
-import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 
@@ -30,7 +30,7 @@ public interface ExecutionPayloadDeneb extends ExecutionPayload, ExecutionPayloa
                         + payload.getClass().getSimpleName()));
   }
 
-  UInt256 getExcessDataGas();
+  UInt64 getExcessDataGas();
 
   @Override
   default Optional<ExecutionPayloadDeneb> toVersionDeneb() {

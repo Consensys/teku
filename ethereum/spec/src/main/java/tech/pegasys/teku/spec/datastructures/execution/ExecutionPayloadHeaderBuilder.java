@@ -51,7 +51,7 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder withdrawalsRoot(Supplier<Bytes32> withdrawalsRootSupplier);
 
-  ExecutionPayloadHeaderBuilder excessDataGas(Supplier<UInt256> excessDataGasSupplier);
+  ExecutionPayloadHeaderBuilder excessDataGas(Supplier<UInt64> excessDataGasSupplier);
 
   ExecutionPayloadHeader build();
 }

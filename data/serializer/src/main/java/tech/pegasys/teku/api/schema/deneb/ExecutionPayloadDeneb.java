@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements ExecutionPayload {
 
   @JsonProperty("excess_data_gas")
-  public final UInt256 excessDataGas;
+  public final UInt64 excessDataGas;
 
   @JsonCreator
   public ExecutionPayloadDeneb(
@@ -52,7 +52,7 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions") final List<Bytes> transactions,
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals,
-      @JsonProperty("excess_data_gas") final UInt256 excessDataGas) {
+      @JsonProperty("excess_data_gas") final UInt64 excessDataGas) {
     super(
         parentHash,
         feeRecipient,

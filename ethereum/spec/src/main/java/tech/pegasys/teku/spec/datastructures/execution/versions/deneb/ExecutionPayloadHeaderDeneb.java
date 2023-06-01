@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 
 import java.util.Optional;
-import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
 
 public interface ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
 
-  UInt256 getExcessDataGas();
+  UInt64 getExcessDataGas();
 
   @Override
   default Optional<ExecutionPayloadHeaderDeneb> toVersionDeneb() {

@@ -16,18 +16,18 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.function.Supplier;
-import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadBuilderCapella;
 
 public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella {
   private ExecutionPayloadSchemaDeneb schema;
 
-  protected UInt256 excessDataGas;
+  protected UInt64 excessDataGas;
 
   public ExecutionPayloadBuilderDeneb schema(final ExecutionPayloadSchemaDeneb schema) {
     this.schema = schema;
@@ -35,7 +35,7 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
   }
 
   @Override
-  public ExecutionPayloadBuilderDeneb excessDataGas(final Supplier<UInt256> excessDataGasSupplier) {
+  public ExecutionPayloadBuilderDeneb excessDataGas(final Supplier<UInt64> excessDataGasSupplier) {
     this.excessDataGas = excessDataGasSupplier.get();
     return this;
   }
@@ -73,6 +73,6 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
             .map(schema.getTransactionSchema()::fromBytes)
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
-        SszUInt256.of(excessDataGas));
+        SszUInt64.of(excessDataGas));
   }
 }

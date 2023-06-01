@@ -67,7 +67,7 @@ public class ExecutionPayloadHeaderSchemaDeneb
         SszBytes32,
         SszBytes32,
         SszBytes32,
-        SszUInt256>
+        SszUInt64>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderDenebImpl> {
 
   private final ExecutionPayloadHeaderDenebImpl defaultExecutionPayloadHeader;
@@ -91,7 +91,7 @@ public class ExecutionPayloadHeaderSchemaDeneb
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT256_SCHEMA));
+        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
 
     final ExecutionPayloadDenebImpl defaultExecutionPayload =
         new ExecutionPayloadSchemaDeneb(specConfig).getDefault();
@@ -158,6 +158,6 @@ public class ExecutionPayloadHeaderSchemaDeneb
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
-        SszUInt256.of(executionPayload.getExcessDataGas()));
+        SszUInt64.of(executionPayload.getExcessDataGas()));
   }
 }

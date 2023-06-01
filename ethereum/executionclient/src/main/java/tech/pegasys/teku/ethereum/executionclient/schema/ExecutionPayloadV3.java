@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
   @JsonSerialize(using = UInt256AsHexSerializer.class)
   @JsonDeserialize(using = UInt256AsHexDeserializer.class)
-  public final UInt256 excessDataGas;
+  public final UInt64 excessDataGas;
 
   public ExecutionPayloadV3(
       @JsonProperty("parentHash") Bytes32 parentHash,
@@ -54,7 +54,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
       @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
-      @JsonProperty("excessDataGas") UInt256 excessDataGas) {
+      @JsonProperty("excessDataGas") UInt64 excessDataGas) {
     super(
         parentHash,
         feeRecipient,
