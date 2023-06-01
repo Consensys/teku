@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,6 +44,15 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
   }
 
   @Test
+  public void requestBlobSidecar_shouldFailBeforeDenebMilestone() {
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
+    assertThatThrownBy(
+            () -> requestBlobSidecarByRoot(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)))
+        .hasRootCauseInstanceOf(UnsupportedOperationException.class)
+        .hasMessageContaining("BlobSidecarsByRoot method is not supported");
+  }
+
+  @Test
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
@@ -51,12 +62,33 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
   }
 
   @Test
-  public void requestBlobSidecar_shouldFailBeforeDenebMilestone() {
-    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
-    assertThatThrownBy(
-            () -> requestBlobSidecarByRoot(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)))
-        .hasRootCauseInstanceOf(UnsupportedOperationException.class)
-        .hasMessageContaining("BlobSidecarsByRoot method is not supported");
+  public void requestBlobSidecars_shouldReturnBlobSidecarsOnDenebMilestone()
+      throws ExecutionException, InterruptedException, TimeoutException {
+    final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
+
+    // generate 4 blobs per block
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
+
+    // up to slot 3
+    final UInt64 targetSlot = UInt64.valueOf(3);
+    peerStorage.chainUpdater().advanceChainUntil(targetSlot);
+
+    // grab expected blobs from storage
+    final List<BlobSidecar> expectedBlobSidecars =
+        retrieveCanonicalBlobSidecarsFromPeerStorage(Stream.of(UInt64.ONE, UInt64.valueOf(3)));
+
+    // request all expected plus a non existing
+    List<BlobIdentifier> requestedBlobIds =
+        Stream.concat(
+                Stream.of(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)),
+                expectedBlobSidecars.stream()
+                    .map(sidecar -> new BlobIdentifier(sidecar.getBlockRoot(), sidecar.getIndex())))
+            .collect(Collectors.toUnmodifiableList());
+
+    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRoot(peer, requestedBlobIds);
+
+    assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedBlobSidecars);
   }
 
   private List<BlobSidecar> requestBlobSidecarsByRoot(

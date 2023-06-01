@@ -18,20 +18,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
@@ -66,36 +62,11 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
     // grab expected blobs from storage
     final List<BlobSidecar> expectedBlobSidecars =
-        retrieveCanonicalBlobSidecarsFromPeerStorage(UInt64.ONE, targetSlot);
+        retrieveCanonicalBlobSidecarsFromPeerStorage(UInt64.rangeClosed(UInt64.ONE, targetSlot));
 
     // call and check
     final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer);
     assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedBlobSidecars);
-  }
-
-  private List<BlobSidecar> retrieveCanonicalBlobSidecarsFromPeerStorage(
-      final UInt64 fromSlot, final UInt64 toSlot) {
-
-    return UInt64.rangeClosed(fromSlot, toSlot)
-        .map(
-            slot ->
-                peerStorage
-                    .recentChainData()
-                    .getBlockRootBySlot(slot)
-                    .map(root -> new SlotAndBlockRoot(slot, root)))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .map(this::safeRetrieveBlobSidecars)
-        .flatMap(Collection::stream)
-        .collect(Collectors.toUnmodifiableList());
-  }
-
-  private List<BlobSidecar> safeRetrieveBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
-    try {
-      return Waiter.waitFor(peerStorage.recentChainData().retrieveBlobSidecars(slotAndBlockRoot));
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private List<BlobSidecar> requestBlobSidecarsByRange(final Eth2Peer peer)
