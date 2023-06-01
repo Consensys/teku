@@ -152,7 +152,6 @@ public class BlobSidecarsByRootMessageHandler
    * Validations:
    *
    * <ul>
-   *   <li>A block for the block root is available
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
    * </ul>
    */

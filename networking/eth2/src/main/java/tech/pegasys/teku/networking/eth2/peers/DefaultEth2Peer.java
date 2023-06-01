@@ -298,14 +298,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new BlobSidecarsByRangeRequestMessage(
                         firstSupportedSlot,
                         updatedCount,
-                        spec.getMaxBlobsPerBlock(firstSupportedSlot.plus(updatedCount))
+                        spec.getMaxBlobsPerBlock(
+                                firstSupportedSlot.plus(updatedCount).minusMinZero(1))
                             .orElseThrow());
               } else {
                 request =
                     new BlobSidecarsByRangeRequestMessage(
                         startSlot,
                         count,
-                        spec.getMaxBlobsPerBlock(firstSupportedSlot.plus(count)).orElseThrow());
+                        spec.getMaxBlobsPerBlock(firstSupportedSlot.plus(count).minusMinZero(1))
+                            .orElseThrow());
               }
               return requestStream(method, request, listener);
             })
