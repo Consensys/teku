@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.util;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -30,7 +29,6 @@ public class BeaconBlockBuilder {
 
   private final SpecVersion spec;
   private final DataStructureUtil dataStructureUtil;
-  private final UInt64 slot;
 
   private SszList<ProposerSlashing> proposerSlashings;
   private SyncAggregate syncAggregate;
@@ -41,11 +39,9 @@ public class BeaconBlockBuilder {
 
   private SszList<Attestation> attestations;
 
-  public BeaconBlockBuilder(
-      final SpecVersion spec, final UInt64 slot, final DataStructureUtil dataStructureUtil) {
+  public BeaconBlockBuilder(final SpecVersion spec, final DataStructureUtil dataStructureUtil) {
     this.spec = spec;
     this.dataStructureUtil = dataStructureUtil;
-    this.slot = slot;
     this.syncAggregate = dataStructureUtil.randomSyncAggregate();
   }
 
@@ -137,7 +133,7 @@ public class BeaconBlockBuilder {
                 spec.getSchemaDefinitions()
                     .getBeaconBlockSchema()
                     .create(
-                        slot,
+                        dataStructureUtil.randomUInt64(),
                         dataStructureUtil.randomUInt64(),
                         dataStructureUtil.randomBytes32(),
                         dataStructureUtil.randomBytes32(),
