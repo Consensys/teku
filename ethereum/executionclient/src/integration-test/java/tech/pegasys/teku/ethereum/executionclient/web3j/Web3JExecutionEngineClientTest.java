@@ -237,6 +237,15 @@ public class Web3JExecutionEngineClientTest {
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_newPayloadV3");
 
+    final Map<String, Object> executionPayloadParameter =
+        (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
+    // 16 fields in ExecutionPayloadV3
+    assertThat(executionPayloadParameter).hasSize(16);
+    // sanity check
+    assertThat(executionPayloadParameter.get("parentHash"))
+        .isEqualTo(executionPayloadV3.parentHash.toHexString());
+    assertThat(executionPayloadParameter.get("excessDataGas"))
+        .isEqualTo(executionPayloadV3.excessDataGas.toHexString());
     assertThat(((List<Object>) requestData.get("params")).get(1))
         .asInstanceOf(LIST)
         .containsExactlyElementsOf(
