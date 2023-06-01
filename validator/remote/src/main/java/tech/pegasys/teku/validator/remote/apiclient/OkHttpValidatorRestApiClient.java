@@ -61,7 +61,6 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.migrated.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
@@ -330,12 +329,10 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public Optional<PostValidatorLivenessResponse> sendValidatorsLiveness(
       UInt64 epoch, List<UInt64> validatorsIndices) {
-    ValidatorLivenessRequest validatorLivenessRequest =
-        new ValidatorLivenessRequest(validatorsIndices);
     return post(
         SEND_VALIDATOR_LIVENESS,
         Map.of("epoch", epoch.toString()),
-        validatorLivenessRequest,
+        validatorsIndices,
         createHandler(PostValidatorLivenessResponse.class));
   }
 
