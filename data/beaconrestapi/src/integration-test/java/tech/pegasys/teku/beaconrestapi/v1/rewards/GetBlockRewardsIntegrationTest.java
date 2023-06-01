@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -38,12 +39,18 @@ public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIInt
     spec = TestSpecFactory.createMinimalAltair();
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    chainBuilder.generateBlocksUpToSlot(10);
 
     final SyncAggregate syncAggregate =
         dataStructureUtil.randomSyncAggregate(0, 3, 4, 7, 8, 9, 10, 16, 17, 20, 23, 25, 26, 29, 30);
+    final Attestation attestation =
+        chainBuilder.streamValidAttestationsForBlockAtSlot(12).findFirst().orElseThrow();
+
     final ChainBuilder.BlockOptions blockOptions =
-        ChainBuilder.BlockOptions.create().setSyncAggregate(syncAggregate);
-    SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(3, blockOptions);
+        ChainBuilder.BlockOptions.create()
+            .addAttestation(attestation)
+            .setSyncAggregate(syncAggregate);
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(12, blockOptions);
 
     chainUpdater.saveBlock(blockAndState);
     chainUpdater.updateBestBlock(blockAndState);
@@ -59,9 +66,9 @@ public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIInt
     assertThat(jsonNode.get("finalized").asText()).isEqualTo("false");
 
     final JsonNode data = jsonNode.get("data");
-    assertThat(data.get("proposer_index").asText()).isEqualTo("1");
-    assertThat(data.get("total").asText()).isEqualTo("11970");
-    assertThat(data.get("attestations").asText()).isEqualTo("0");
+    assertThat(data.get("proposer_index").asText()).isEqualTo("6");
+    assertThat(data.get("total").asText()).isEqualTo("178076");
+    assertThat(data.get("attestations").asText()).isEqualTo("166106");
     assertThat(data.get("sync_aggregate").asText()).isEqualTo("11970");
     assertThat(data.get("proposer_slashings").asText()).isEqualTo("0");
     assertThat(data.get("attester_slashings").asText()).isEqualTo("0");
