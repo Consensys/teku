@@ -270,7 +270,7 @@ public class Web3JExecutionEngineClientTest {
     assertThat(data.get("jsonrpc")).asInstanceOf(STRING).isEqualTo("2.0");
   }
 
-  private static class JsonRpcResponse {
+  public static class JsonRpcResponse {
 
     private final String jsonrpc = "2.0";
     private final String id = "0";
