@@ -128,12 +128,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       final Spec spec, final SlotAndBlockRoot slotAndBlockRoot) {
     return new BlockBlobSidecarsTracker(
         slotAndBlockRoot,
-        UInt64.valueOf(
-            spec.atSlot(slotAndBlockRoot.getSlot())
-                .getConfig()
-                .toVersionDeneb()
-                .orElseThrow()
-                .getMaxBlobsPerBlock()));
+        UInt64.valueOf(spec.getMaxBlobsPerBlock(slotAndBlockRoot.getSlot()).orElseThrow()));
   }
 
   @Override

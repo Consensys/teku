@@ -24,11 +24,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,15 +53,14 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlobSidecarsByRootMessageHandlerTest {
 
-  private static final RpcEncoding RPC_ENCODING =
-      RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE_BELLATRIX);
-
-  private final String protocolId =
-      BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, RPC_ENCODING);
-
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
 
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+  private final RpcEncoding rpcEncoding =
+      RpcEncoding.createSszSnappyEncoding(spec.getGenesisSpecConfig().getMaxChunkSize());
+
+  private final String protocolId =
+      BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, rpcEncoding);
 
   private final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
 
@@ -161,7 +159,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   }
 
   @Test
-  public void shouldSendResourceUnavailableIfBlockForBlockRootIsNotAvailable() {
+  public void shouldSendAvailableOnlyResources() {
     final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(4);
 
     // the second block root can't be found in the database
@@ -169,27 +167,40 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getBlockByBlockRoot(secondBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.get(1).getBlockRoot(), blobIdentifiers.get(1).getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
     handler.onIncomingMessage(
         protocolId, peer, new BlobSidecarsByRootRequestMessage(blobIdentifiers), callback);
 
-    verify(callback, times(1)).respond(blobSidecarCaptor.capture());
-    verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
+    verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(secondBlockRoot);
+    verify(callback, times(3)).respond(blobSidecarCaptor.capture());
+    verify(callback).completeSuccessfully();
 
-    // verify we responded with the first sidecar
-    assertThat(blobSidecarCaptor.getValue().getBlockRoot())
-        .isEqualTo(blobIdentifiers.get(0).getBlockRoot());
+    final List<Bytes32> respondedBlobSidecarBlockRoots =
+        blobSidecarCaptor.getAllValues().stream()
+            .map(BlobSidecar::getBlockRoot)
+            .collect(Collectors.toUnmodifiableList());
+    final List<Bytes32> blobIdentifiersBlockRoots =
+        List.of(
+            blobIdentifiers.get(0).getBlockRoot(),
+            blobIdentifiers.get(2).getBlockRoot(),
+            blobIdentifiers.get(3).getBlockRoot());
 
-    final RpcException rpcException = rpcExceptionCaptor.getValue();
-
-    assertThat(rpcException.getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
-    assertThat(rpcException.getErrorMessageString())
-        .isEqualTo("Block for block root (%s) couldn't be retrieved", secondBlockRoot);
+    assertThat(respondedBlobSidecarBlockRoots)
+        .containsExactlyInAnyOrderElementsOf(blobIdentifiersBlockRoots);
   }
 
   @Test
   public void
       shouldSendResourceUnavailableIfBlockRootReferencesBlockEarlierThanTheMinimumRequestEpoch() {
     final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(3);
+
+    // let blobSidecar being not there so block lookup fallback kicks in
+    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+            blobIdentifiers.get(0).getBlockRoot(), blobIdentifiers.get(0).getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     // first slot will be earlier than the minimum_request_epoch (for this test it is
     // denebForkEpoch)
@@ -214,31 +225,31 @@ public class BlobSidecarsByRootMessageHandlerTest {
   }
 
   @Test
-  public void shouldSendResourceUnavailableIfBlobSidecarIsNotAvailable() {
+  public void
+      shouldSendResourceUnavailableIfBlobSidecarBlockRootReferencesBlockEarlierThanTheMinimumRequestEpoch() {
     final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(3);
 
-    final BlobIdentifier secondBlobIdentifier = blobIdentifiers.get(1);
-
-    // the second blob sidecar can't be found in the database
+    // let first blobSidecar slot will be earlier than the minimum_request_epoch (for this test it
+    // is denebForkEpoch)
+    final BlobSidecar blobSidecar = mock(BlobSidecar.class);
+    when(blobSidecar.getSlot()).thenReturn(UInt64.ONE);
     when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
-            secondBlobIdentifier.getBlockRoot(), secondBlobIdentifier.getIndex()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+            blobIdentifiers.get(0).getBlockRoot(), blobIdentifiers.get(0).getIndex()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
 
     handler.onIncomingMessage(
         protocolId, peer, new BlobSidecarsByRootRequestMessage(blobIdentifiers), callback);
 
-    verify(callback, times(1)).respond(blobSidecarCaptor.capture());
+    verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
-
-    // verify we responded with the first sidecar
-    assertThat(blobSidecarCaptor.getValue().getBlockRoot())
-        .isEqualTo(blobIdentifiers.get(0).getBlockRoot());
 
     final RpcException rpcException = rpcExceptionCaptor.getValue();
 
-    assertThat(rpcException.getResponseCode()).isEqualTo(RESOURCE_UNAVAILABLE);
+    assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
-        .isEqualTo("Blob sidecar for blob identifier (%s) was not available", secondBlobIdentifier);
+        .isEqualTo(
+            "Block root (%s) references a block earlier than the minimum_request_epoch (%s)",
+            blobIdentifiers.get(0).getBlockRoot(), denebForkEpoch);
   }
 
   @Test

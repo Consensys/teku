@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.concurrent.CompletionException;
@@ -306,7 +305,7 @@ public class Eth2TopicHandlerTest {
           new OperationMilestoneValidator<>(
               spec, spec.getForkSchedule().getFork(UInt64.ZERO), message -> UInt64.ZERO),
           spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
-          GOSSIP_MAX_SIZE);
+          spec.getGenesisSpecConfig().getGossipMaxSize());
       this.forkDigest =
           recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
       deserializer =

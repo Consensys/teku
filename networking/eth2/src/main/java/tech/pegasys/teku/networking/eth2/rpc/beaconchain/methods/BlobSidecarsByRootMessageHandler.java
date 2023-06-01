@@ -21,7 +21,6 @@ import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -32,7 +31,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -122,21 +120,15 @@ public class BlobSidecarsByRootMessageHandler
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
     for (final BlobIdentifier identifier : message) {
-      final Bytes32 blockRoot = identifier.getBlockRoot();
       future =
           future
-              .thenCompose(__ -> validateRequestedBlockRoot(blockRoot, finalizedEpoch))
               .thenCompose(__ -> retrieveBlobSidecar(identifier))
+              .thenCompose(
+                  maybeSidecar ->
+                      validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
+                          .thenApply(__ -> maybeSidecar))
               .thenComposeChecked(
-                  maybeSidecar -> {
-                    if (maybeSidecar.isEmpty()) {
-                      throw new ResourceUnavailableException(
-                          String.format(
-                              "Blob sidecar for blob identifier (%s) was not available",
-                              identifier));
-                    }
-                    return callback.respond(maybeSidecar.get());
-                  });
+                  maybeSidecar -> maybeSidecar.map(callback::respond).orElse(SafeFuture.COMPLETE));
     }
 
     future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
@@ -160,29 +152,32 @@ public class BlobSidecarsByRootMessageHandler
    * Validations:
    *
    * <ul>
-   *   <li>A block for the block root is available
    *   <li>The block root references a block greater than or equal to the minimum_request_epoch
    * </ul>
    */
-  private SafeFuture<Void> validateRequestedBlockRoot(
-      final Bytes32 blockRoot, final UInt64 finalizedEpoch) {
-    return combinedChainDataClient
-        .getBlockByBlockRoot(blockRoot)
+  private SafeFuture<Void> validateMinimumRequestEpoch(
+      final BlobIdentifier identifier,
+      final Optional<BlobSidecar> maybeSidecar,
+      final UInt64 finalizedEpoch) {
+    return maybeSidecar
+        .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
+        .orElse(
+            combinedChainDataClient
+                .getBlockByBlockRoot(identifier.getBlockRoot())
+                .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getSlot)))
         .thenAcceptChecked(
-            maybeBlock -> {
-              if (maybeBlock.isEmpty()) {
-                throw new ResourceUnavailableException(
-                    String.format("Block for block root (%s) couldn't be retrieved", blockRoot));
+            maybeSlot -> {
+              if (maybeSlot.isEmpty()) {
+                return;
               }
-              final SignedBeaconBlock block = maybeBlock.get();
-              final UInt64 requestedEpoch = spec.computeEpochAtSlot(block.getSlot());
+              final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
               final UInt64 minimumRequestEpoch = computeMinimumRequestEpoch(finalizedEpoch);
               if (requestedEpoch.isLessThan(minimumRequestEpoch)) {
                 throw new RpcException(
                     INVALID_REQUEST_CODE,
                     String.format(
                         "Block root (%s) references a block earlier than the minimum_request_epoch (%s)",
-                        blockRoot, minimumRequestEpoch));
+                        identifier.getBlockRoot(), minimumRequestEpoch));
               }
             });
   }

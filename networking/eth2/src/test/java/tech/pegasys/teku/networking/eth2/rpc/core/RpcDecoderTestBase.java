@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;
@@ -33,13 +32,16 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.S
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.SingleProtocolEth2RpcMethod;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 
 public class RpcDecoderTestBase {
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  protected static final RpcEncoding ENCODING = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
+  protected static final RpcEncoding ENCODING =
+      RpcEncoding.createSszSnappyEncoding(
+          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
   protected static final Compressor COMPRESSOR = new SnappyFramedCompressor();
   protected static final Bytes MESSAGE_PLAIN_DATA = MESSAGE.sszSerialize();
   protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);

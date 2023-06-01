@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -22,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 
 public class RpcRequestEncoderTest {
@@ -38,7 +38,9 @@ public class RpcRequestEncoderTest {
           UInt64.ZERO);
 
   private final RpcRequestEncoder requestEncoder =
-      new RpcRequestEncoder(RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE));
+      new RpcRequestEncoder(
+          RpcEncoding.createSszSnappyEncoding(
+              TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize()));
 
   @Test
   public void shouldEncodeStatusRequest() {

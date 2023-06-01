@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,9 +61,11 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RpcEncoding RPC_ENCODING =
-      RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
+      RpcEncoding.createSszSnappyEncoding(
+          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -114,7 +115,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void validateRequest_validRequest() {
     final Optional<RpcException> result =
-        handler.validateRequest(protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ONE));
+        handler.validateRequest(
+            protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ONE, maxBlobsPerBlock));
     assertThat(result).isEmpty();
   }
 
@@ -122,7 +124,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, maxRequestBlobSidecars.increment());
+        new BlobSidecarsByRangeRequestMessage(
+            startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -148,7 +151,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(peer.popBlobSidecarRequests(listener, 20)).thenReturn(false);
 
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, count);
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -176,7 +179,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     // start slot in epoch 5000 within MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS range
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(5000).times(slotsPerEpoch), count);
+        new BlobSidecarsByRangeRequestMessage(
+            UInt64.valueOf(5000).times(slotsPerEpoch), count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -193,7 +197,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(ZERO, count);
+        new BlobSidecarsByRangeRequestMessage(ZERO, count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -208,7 +212,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void shouldSendToPeerRequestedNumberOfBlobSidecars() {
 
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, count);
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
     final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
 
@@ -229,7 +233,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void shouldIgnoreRequestWhenCountIsZero() {
 
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, ZERO);
+        new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
     when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(true);
 
