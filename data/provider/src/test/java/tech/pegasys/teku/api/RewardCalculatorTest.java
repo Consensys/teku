@@ -316,16 +316,20 @@ public class RewardCalculatorTest {
   @ParameterizedTest
   @MethodSource("validatorsListTestCases")
   void checkValidatorsList_shouldAcceptValidInput(
-      final String validatorString, final Optional<String> maybeErrorContains) {
+      final String validatorString,
+      final int validatorSetSize,
+      final Optional<String> maybeErrorContains) {
     List<BLSPublicKey> committeeKeys =
         List.of(data.randomPublicKey(), data.randomPublicKey(), publicKey);
     if (maybeErrorContains.isPresent()) {
       assertThatThrownBy(
-              () -> calculator.checkValidatorsList(committeeKeys, Set.of(validatorString)))
+              () ->
+                  calculator.checkValidatorsList(
+                      committeeKeys, validatorSetSize, Set.of(validatorString)))
           .isInstanceOf(BadRequestException.class)
           .hasMessageContaining(maybeErrorContains.get());
     } else {
-      calculator.checkValidatorsList(committeeKeys, Set.of(validatorString));
+      calculator.checkValidatorsList(committeeKeys, validatorSetSize, Set.of(validatorString));
     }
   }
 
@@ -350,20 +354,22 @@ public class RewardCalculatorTest {
   }
 
   static Stream<Arguments> validatorsListTestCases() {
+    final int defaultSize = 10;
     final String missingKey =
         "0x8f9335f7d6b19469d5c8880df50bf41c01f476411d5b69a8b121255347f1c0b8400ba31a63010b229080240589ad2421";
     ArrayList<Arguments> args = new ArrayList<>();
-    args.add(Arguments.of("0", Optional.empty()));
-    args.add(Arguments.of("1", Optional.empty()));
-    args.add(Arguments.of("2", Optional.empty()));
+    args.add(Arguments.of("0", defaultSize, Optional.empty()));
+    args.add(Arguments.of("1", defaultSize, Optional.empty()));
+    args.add(Arguments.of("2", defaultSize, Optional.empty()));
     args.add(
         Arguments.of(
             "0xa4654ac3105a58c7634031b5718c4880c87300f72091cfbc69fe490b71d93a671e00e80a388e1ceb8ea1de112003e976",
+            defaultSize,
             Optional.empty()));
-    args.add(Arguments.of("a1", Optional.of("could not be read as a number")));
-    args.add(Arguments.of("-1", Optional.of("range 0 - 3")));
-    args.add(Arguments.of("4", Optional.of("range 0 - 3")));
-    args.add(Arguments.of(missingKey, Optional.of(" was not found in the committee")));
+    args.add(Arguments.of("a1", 3, Optional.of("could not be read as a number")));
+    args.add(Arguments.of("-1", 3, Optional.of("range 0 - 3")));
+    args.add(Arguments.of("4", 3, Optional.of("range 0 - 3")));
+    args.add(Arguments.of(missingKey, defaultSize, Optional.of(" was not found in the committee")));
 
     return args.stream();
   }

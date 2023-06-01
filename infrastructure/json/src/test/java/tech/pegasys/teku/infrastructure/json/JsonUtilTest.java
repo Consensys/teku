@@ -62,6 +62,18 @@ class JsonUtilTest {
   }
 
   @Test
+  void getAttribute_deeperSearch() throws Exception {
+    final Optional<String> result =
+        JsonUtil.getAttribute(
+            "{\"message\": {\"data\": { \"slot\": \"1\"}}}",
+            CoreTypes.STRING_TYPE,
+            "message",
+            "data",
+            "slot");
+    assertThat(result).contains("1");
+  }
+
+  @Test
   void getAttribute_getsAttributeAtParent() throws Exception {
     final Optional<UInt64> result =
         JsonUtil.getAttribute(

@@ -34,11 +34,12 @@ public class SignedBlindedBlockContentsSchema
   static final SszFieldName FIELD_BLOB_SIDECARS = () -> "signed_blinded_blob_sidecars";
 
   SignedBlindedBlockContentsSchema(
+      final String containerName,
       final SpecConfigDeneb specConfig,
       final SignedBeaconBlockSchema signedBeaconBlockSchema,
       final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema) {
     super(
-        "SignedBlindedBlockContents",
+        containerName,
         namedSchema("signed_blinded_block", signedBeaconBlockSchema),
         namedSchema(
             FIELD_BLOB_SIDECARS,
@@ -49,9 +50,10 @@ public class SignedBlindedBlockContentsSchema
   public static SignedBlindedBlockContentsSchema create(
       final SpecConfigDeneb specConfig,
       final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema,
-      final SignedBeaconBlockSchema signedBeaconBlockSchema) {
+      final SignedBeaconBlockSchema signedBeaconBlockSchema,
+      final String containerName) {
     return new SignedBlindedBlockContentsSchema(
-        specConfig, signedBeaconBlockSchema, signedBlindedBlobSidecarSchema);
+        containerName, specConfig, signedBeaconBlockSchema, signedBlindedBlobSidecarSchema);
   }
 
   public SignedBlindedBlockContents create(

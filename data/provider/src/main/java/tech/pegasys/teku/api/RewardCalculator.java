@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DEN
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -111,7 +110,7 @@ public class RewardCalculator {
           .collect(Collectors.<Integer, Integer, Integer>toMap(Function.identity(), result::get));
     }
 
-    checkValidatorsList(committeeKeys, validators);
+    checkValidatorsList(committeeKeys, state.getValidators().size(), validators);
 
     final Map<Integer, Integer> output = new HashMap<>();
     for (int i = 0; i < committeeKeys.size(); i++) {
@@ -251,21 +250,21 @@ public class RewardCalculator {
   }
 
   @VisibleForTesting
-  void checkValidatorsList(List<BLSPublicKey> committeeKeys, Set<String> validators) {
-    final Set<BLSPublicKey> keysSet = new HashSet<>(committeeKeys);
+  void checkValidatorsList(
+      List<BLSPublicKey> committeeKeys, int validatorSetSize, Set<String> validators) {
     for (String v : validators) {
       if (v.startsWith("0x")) {
-        if (!keysSet.contains(BLSPublicKey.fromHexString(v))) {
+        if (!committeeKeys.contains(BLSPublicKey.fromHexString(v))) {
           throw new BadRequestException(String.format("'%s' was not found in the committee", v));
         }
       } else {
         try {
           final int index = Integer.parseInt(v);
-          if (index < 0 || index >= committeeKeys.size()) {
+          if (index < 0 || index >= validatorSetSize) {
             throw new BadRequestException(
                 String.format(
-                    "index '%s' is not in the expected committee range 0 - %d",
-                    v, committeeKeys.size()));
+                    "index '%s' is not in the expected validator index range 0 - %d",
+                    v, validatorSetSize));
           }
         } catch (NumberFormatException e) {
           throw new BadRequestException(

@@ -13,27 +13,74 @@
 
 package tech.pegasys.teku.networking.eth2;
 
+import static org.assertj.core.util.Preconditions.checkState;
 import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
+import java.util.Arrays;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.params.provider.Arguments;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyPhase0;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public abstract class AbstractRpcMethodIntegrationTest {
   protected StorageSystem peerStorage;
 
-  private final Spec phase0Spec = TestSpecFactory.createMinimalPhase0();
-  protected final UInt64 altairEpoch = UInt64.valueOf(2);
-  private final Spec altairEnabledSpec =
-      TestSpecFactory.createMinimalWithAltairForkEpoch(altairEpoch);
-  protected final UInt64 altairSlot = altairEnabledSpec.computeStartSlotAtEpoch(altairEpoch);
+  private Spec baseSpec;
+  private Optional<Spec> nextSpec;
+
+  protected UInt64 nextSpecSlot;
+
+  protected final UInt64 nextSpecEpoch = UInt64.valueOf(2);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
+
+  protected void setUp(
+      final SpecMilestone baseMilestone, final Optional<SpecMilestone> nextMilestone) {
+    setUpBaseSpec(baseMilestone);
+    nextMilestone.ifPresent(this::setUpNextSpec);
+  }
+
+  private void setUpBaseSpec(final SpecMilestone specMilestone) {
+    baseSpec = TestSpecFactory.createMinimal(specMilestone);
+  }
+
+  private void setUpNextSpec(final SpecMilestone nextSpecMilestone) {
+    switch (baseSpec.getGenesisSpec().getMilestone()) {
+      case PHASE0:
+        checkState(nextSpecMilestone.equals(SpecMilestone.ALTAIR), "next spec should be altair");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithAltairForkEpoch(nextSpecEpoch));
+        break;
+      case ALTAIR:
+        checkState(
+            nextSpecMilestone.equals(SpecMilestone.BELLATRIX), "next spec should be bellatrix");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithBellatrixForkEpoch(nextSpecEpoch));
+        break;
+      case BELLATRIX:
+        checkState(nextSpecMilestone.equals(SpecMilestone.CAPELLA), "next spec should be capella");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithCapellaForkEpoch(nextSpecEpoch));
+        break;
+      case CAPELLA:
+        checkState(nextSpecMilestone.equals(SpecMilestone.DENEB), "next spec should be deneb");
+        nextSpec = Optional.of(TestSpecFactory.createMinimalWithDenebForkEpoch(nextSpecEpoch));
+        break;
+      case DENEB:
+        throw new RuntimeException("Base spec is already latest supported milestone");
+    }
+    nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
+  }
 
   @AfterEach
   public void tearDown() throws Exception {
@@ -44,8 +91,12 @@ public abstract class AbstractRpcMethodIntegrationTest {
     return createRemotePeerAndNetwork().getPeer();
   }
 
-  protected void setupPeerStorage(final boolean enableAltair) {
-    final Spec remoteSpec = enableAltair ? altairEnabledSpec : phase0Spec;
+  private Spec getSpec(final boolean nextSpecEnabled) {
+    return nextSpecEnabled ? nextSpec.orElseThrow() : baseSpec;
+  }
+
+  protected void setupPeerStorage(final boolean enableNextSpec) {
+    final Spec remoteSpec = getSpec(enableNextSpec);
     peerStorage = InMemoryStorageSystemBuilder.create().specProvider(remoteSpec).build();
     peerStorage.chainUpdater().initializeGenesis();
   }
@@ -54,13 +105,17 @@ public abstract class AbstractRpcMethodIntegrationTest {
    * Create and connect 2 networks, return an Eth2Peer representing the remote network to which we
    * can send requests.
    *
-   * @param enableAltairLocally Whether the "local" node supports altair
-   * @param enableAltairRemotely Whether the remote peer receiving requests supports altair
+   * @param enableNextSpecLocally Whether the "local" node supports next scheduled spec
+   * @param enableNextSpecRemotely Whether the remote peer receiving requests supports next
+   *     scheduled spec
    * @return An Eth2Peer to which we can send requests
    */
   protected Eth2Peer createPeer(
-      final boolean enableAltairLocally, final boolean enableAltairRemotely) {
-    return createRemotePeerAndNetwork(enableAltairLocally, enableAltairRemotely).getPeer();
+      final boolean enableNextSpecLocally, final boolean enableNextSpecRemotely) {
+
+    return createRemotePeerAndNetwork(
+            getSpec(enableNextSpecLocally), getSpec(enableNextSpecRemotely))
+        .getPeer();
   }
 
   /**
@@ -75,22 +130,22 @@ public abstract class AbstractRpcMethodIntegrationTest {
   }
 
   protected PeerAndNetwork createRemotePeerAndNetwork() {
-    return createRemotePeerAndNetwork(false, false);
+    return createRemotePeerAndNetwork(getSpec(false), getSpec(false));
   }
 
   /**
    * Create and connect 2 networks, return an Eth2Peer representing the remote network to which we
    * can send requests along with the corresponding remote Eth2P2PNetwork.
    *
-   * @param enableAltairLocally Whether the "local" node supports altair
-   * @param enableAltairRemotely Whether the remote peer receiving requests supports altair
+   * @param enableNextSpecLocally Whether the "local" node supports next scheduled spec
+   * @param enableNextSpecRemotely Whether the remote peer receiving requests supports next
+   *     scheduled spec
    * @return An Eth2Peer to which we can send requests along with its corresponding Eth2P2PNetwork
    */
   protected PeerAndNetwork createRemotePeerAndNetwork(
-      final boolean enableAltairLocally, final boolean enableAltairRemotely) {
-    final Spec localSpec = enableAltairLocally ? altairEnabledSpec : phase0Spec;
-    final Spec remoteSpec = enableAltairRemotely ? altairEnabledSpec : phase0Spec;
-    return createRemotePeerAndNetwork(localSpec, remoteSpec);
+      final boolean enableNextSpecLocally, final boolean enableNextSpecRemotely) throws Exception {
+    return createRemotePeerAndNetwork(
+        getSpec(enableNextSpecLocally), getSpec(enableNextSpecRemotely));
   }
 
   /**
@@ -108,11 +163,10 @@ public abstract class AbstractRpcMethodIntegrationTest {
       peerStorage.chainUpdater().initializeGenesis();
     }
     // Set up local storage
-    final StorageSystem localStorage =
-        InMemoryStorageSystemBuilder.create().specProvider(localSpec).build();
-    localStorage.chainUpdater().initializeGenesis();
+    try (final StorageSystem localStorage =
+        InMemoryStorageSystemBuilder.create().specProvider(localSpec).build()) {
+      localStorage.chainUpdater().initializeGenesis();
 
-    try {
       final Eth2P2PNetwork remotePeerNetwork =
           networkFactory
               .builder()
@@ -154,6 +208,51 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
     public Eth2P2PNetwork getNetwork() {
       return network;
+    }
+  }
+
+  protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
+    return Arrays.stream(SpecMilestone.values())
+        .filter(milestone -> milestone.ordinal() < SpecMilestone.values().length - 1)
+        .flatMap(
+            milestone -> {
+              final SpecMilestone nextMilestone = SpecMilestone.values()[milestone.ordinal() + 1];
+              return Stream.of(
+                  Arguments.of(milestone, nextMilestone, true, true),
+                  Arguments.of(milestone, nextMilestone, false, true),
+                  Arguments.of(milestone, nextMilestone, true, false),
+                  Arguments.of(milestone, nextMilestone, false, false));
+            });
+  }
+
+  protected static Stream<Arguments> generateSpecTransition() {
+    return Arrays.stream(SpecMilestone.values())
+        .filter(milestone -> milestone.ordinal() < SpecMilestone.values().length - 1)
+        .map(
+            milestone -> {
+              final SpecMilestone nextMilestone = SpecMilestone.values()[milestone.ordinal() + 1];
+              return Arguments.of(milestone, nextMilestone);
+            });
+  }
+
+  protected static Stream<Arguments> generateSpec() {
+    return Arrays.stream(SpecMilestone.values()).map(Arguments::of);
+  }
+
+  protected static Class<?> milestoneToBeaconBlockBodyClass(final SpecMilestone milestone) {
+    switch (milestone) {
+      case PHASE0:
+        return BeaconBlockBodyPhase0.class;
+      case ALTAIR:
+        return BeaconBlockBodyAltair.class;
+      case BELLATRIX:
+        return BeaconBlockBodyBellatrix.class;
+      case CAPELLA:
+        return BeaconBlockBodyCapella.class;
+      case DENEB:
+        return BeaconBlockBodyDeneb.class;
+      default:
+        throw new UnsupportedOperationException("unsupported milestone: " + milestone);
     }
   }
 }

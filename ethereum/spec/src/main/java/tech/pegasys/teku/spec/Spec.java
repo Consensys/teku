@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -299,14 +300,25 @@ public class Spec {
         .sszDeserialize(serializedSignedBlock);
   }
 
-  public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(
-      final Bytes serializedSignedBlindedBlock) {
+  public SignedBlockContainer deserializeSignedBlockContainer(
+      final Bytes serializedSignedBlockContainer) {
     final UInt64 slot =
-        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlindedBlock);
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlockContainer);
     return atSlot(slot)
         .getSchemaDefinitions()
-        .getSignedBlindedBeaconBlockSchema()
-        .sszDeserialize(serializedSignedBlindedBlock);
+        .getSignedBlockContainerSchema()
+        .sszDeserialize(serializedSignedBlockContainer);
+  }
+
+  public SignedBlockContainer deserializeSignedBlindedBlockContainer(
+      final Bytes serializedSignedBlindedBlockContainer) {
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(
+            serializedSignedBlindedBlockContainer);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .getSignedBlindedBlockContainerSchema()
+        .sszDeserialize(serializedSignedBlindedBlockContainer);
   }
 
   public BeaconBlock deserializeBeaconBlock(final Bytes serializedBlock) {

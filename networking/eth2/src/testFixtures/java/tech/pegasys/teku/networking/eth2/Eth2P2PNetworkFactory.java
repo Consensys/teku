@@ -45,12 +45,15 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -74,11 +77,11 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -88,6 +91,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.block.VerifiedBlockOperationsListener;
@@ -126,6 +130,7 @@ public class Eth2P2PNetworkFactory {
     protected RecentChainData recentChainData;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+    protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
     protected OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor;
     protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
     protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
@@ -292,43 +297,13 @@ public class Eth2P2PNetworkFactory {
         final GossipForkManager.Builder gossipForkManagerBuilder =
             GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
 
-        if (spec.getForkSchedule().getHighestSupportedMilestone().equals(SpecMilestone.CAPELLA)) {
-          gossipForkManagerBuilder.fork(
-              new GossipForkSubscriptionsCapella(
-                  spec.getForkSchedule().getFork(UInt64.ZERO),
-                  spec,
-                  config,
-                  asyncRunner,
-                  metricsSystem,
-                  network,
-                  recentChainData,
-                  gossipEncoding,
-                  gossipedBlockProcessor,
-                  gossipedAttestationProcessor,
-                  gossipedAggregateProcessor,
-                  attesterSlashingProcessor,
-                  proposerSlashingProcessor,
-                  voluntaryExitProcessor,
-                  signedContributionAndProofProcessor,
-                  syncCommitteeMessageProcessor,
-                  signedBlsToExecutionChangeProcessor));
-        } else {
-          gossipForkManagerBuilder.fork(
-              new GossipForkSubscriptionsPhase0(
-                  spec.getForkSchedule().getFork(UInt64.ZERO),
-                  spec,
-                  asyncRunner,
-                  metricsSystem,
-                  network,
-                  recentChainData,
-                  gossipEncoding,
-                  gossipedBlockProcessor,
-                  gossipedAttestationProcessor,
-                  gossipedAggregateProcessor,
-                  attesterSlashingProcessor,
-                  proposerSlashingProcessor,
-                  voluntaryExitProcessor));
-        }
+        spec.getEnabledMilestones().stream()
+            .map(
+                forkAndSpecMilestone ->
+                    createSubscriptions(
+                        forkAndSpecMilestone, metricsSystem, config, network, gossipEncoding))
+            .forEach(gossipForkManagerBuilder::fork);
+
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
 
         return new ActiveEth2P2PNetwork(
@@ -344,6 +319,107 @@ public class Eth2P2PNetworkFactory {
             gossipEncoding,
             GossipConfigurator.NOOP,
             processedAttestationSubscriptionProvider);
+      }
+    }
+
+    private GossipForkSubscriptions createSubscriptions(
+        final ForkAndSpecMilestone forkAndSpecMilestone,
+        final NoOpMetricsSystem metricsSystem,
+        final P2PConfig config,
+        final DiscoveryNetwork<?> network,
+        final GossipEncoding gossipEncoding) {
+      switch (forkAndSpecMilestone.getSpecMilestone()) {
+        case PHASE0:
+          return new GossipForkSubscriptionsPhase0(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              recentChainData,
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationProcessor,
+              gossipedAggregateProcessor,
+              attesterSlashingProcessor,
+              proposerSlashingProcessor,
+              voluntaryExitProcessor);
+        case ALTAIR:
+          return new GossipForkSubscriptionsAltair(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              recentChainData,
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationProcessor,
+              gossipedAggregateProcessor,
+              attesterSlashingProcessor,
+              proposerSlashingProcessor,
+              voluntaryExitProcessor,
+              signedContributionAndProofProcessor,
+              syncCommitteeMessageProcessor);
+        case BELLATRIX:
+          return new GossipForkSubscriptionsBellatrix(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              asyncRunner,
+              metricsSystem,
+              network,
+              recentChainData,
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationProcessor,
+              gossipedAggregateProcessor,
+              attesterSlashingProcessor,
+              proposerSlashingProcessor,
+              voluntaryExitProcessor,
+              signedContributionAndProofProcessor,
+              syncCommitteeMessageProcessor);
+        case CAPELLA:
+          return new GossipForkSubscriptionsCapella(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              config,
+              asyncRunner,
+              metricsSystem,
+              network,
+              recentChainData,
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedAttestationProcessor,
+              gossipedAggregateProcessor,
+              attesterSlashingProcessor,
+              proposerSlashingProcessor,
+              voluntaryExitProcessor,
+              signedContributionAndProofProcessor,
+              syncCommitteeMessageProcessor,
+              signedBlsToExecutionChangeProcessor);
+        case DENEB:
+          return new GossipForkSubscriptionsDeneb(
+              forkAndSpecMilestone.getFork(),
+              spec,
+              config,
+              asyncRunner,
+              metricsSystem,
+              network,
+              recentChainData,
+              gossipEncoding,
+              gossipedBlockProcessor,
+              gossipedBlobSidecarProcessor,
+              gossipedAttestationProcessor,
+              gossipedAggregateProcessor,
+              attesterSlashingProcessor,
+              proposerSlashingProcessor,
+              voluntaryExitProcessor,
+              signedContributionAndProofProcessor,
+              syncCommitteeMessageProcessor,
+              signedBlsToExecutionChangeProcessor);
+        default:
+          throw new UnsupportedOperationException(
+              "Gossip not supported for fork " + forkAndSpecMilestone.getSpecMilestone());
       }
     }
 
@@ -409,6 +485,9 @@ public class Eth2P2PNetworkFactory {
       }
       if (gossipedBlockProcessor == null) {
         gossipedBlockProcessor = OperationProcessor.noop();
+      }
+      if (gossipedBlobSidecarProcessor == null) {
+        gossipedBlobSidecarProcessor = OperationProcessor.noop();
       }
       if (gossipedAttestationProcessor == null) {
         gossipedAttestationProcessor = OperationProcessor.noop();
@@ -494,6 +573,13 @@ public class Eth2P2PNetworkFactory {
         final OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor) {
       checkNotNull(gossipedBlockProcessor);
       this.gossipedBlockProcessor = gossipedBlockProcessor;
+      return this;
+    }
+
+    public Eth2P2PNetworkBuilder gossipedBlobSidecarProcessor(
+        final OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor) {
+      checkNotNull(gossipedBlobSidecarProcessor);
+      this.gossipedBlobSidecarProcessor = gossipedBlobSidecarProcessor;
       return this;
     }
 

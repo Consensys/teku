@@ -1,0 +1,16 @@
+{
+  "title" : "SignedBlindedBlobSidecar",
+  "type" : "object",
+  "required" : [ "message", "signature" ],
+  "properties" : {
+    "message" : {
+      "$ref" : "#/components/schemas/BlindedBlobSidecar"
+    },
+    "signature" : {
+      "type" : "string",
+      "pattern" : "^0x[a-fA-F0-9]{2,}$",
+      "description" : "SSZ hexadecimal",
+      "format" : "bytes"
+    }
+  }
+}
