@@ -221,7 +221,6 @@ public class Web3JExecutionEngineClientTest {
     mockSuccessfulResponse(bodyResponse);
 
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
@@ -246,7 +245,7 @@ public class Web3JExecutionEngineClientTest {
                 .collect(Collectors.toList()));
   }
 
-  private void mockSuccessfulResponse(String responseBody) {
+  private void mockSuccessfulResponse(final String responseBody) {
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(200)
@@ -264,7 +263,7 @@ public class Web3JExecutionEngineClientTest {
     }
   }
 
-  private void verifyJsonRpcMethodCall(Map<String, Object> data, final String method) {
+  private void verifyJsonRpcMethodCall(final Map<String, Object> data, final String method) {
     assertThat(data.get("method")).asInstanceOf(STRING).isEqualTo(method);
     assertThat(data.get("id")).asInstanceOf(INTEGER).isGreaterThanOrEqualTo(0);
     assertThat(data.get("jsonrpc")).asInstanceOf(STRING).isEqualTo("2.0");
