@@ -18,7 +18,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageHandler.NODE_NOT_READY;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -32,6 +31,7 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 
 class StatusMessageHandlerTest {
@@ -60,7 +60,9 @@ class StatusMessageHandlerTest {
 
   private final String protocolId =
       BeaconChainMethodIds.getStatusMethodId(
-          1, RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE));
+          1,
+          RpcEncoding.createSszSnappyEncoding(
+              TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize()));
   private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @BeforeEach

@@ -146,6 +146,8 @@ public interface SpecConfig {
 
   int getGossipMaxSize();
 
+  int getMaxChunkSize();
+
   default int getMinEpochsForBlockRequests() {
     return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
   }

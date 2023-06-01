@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.rpc.core.encodings;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -43,11 +42,13 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage
 
 class LengthPrefixedEncodingTest {
   private static final Bytes TWO_BYTE_LENGTH_PREFIX = Bytes.fromHexString("0x8002");
-  private static final Bytes LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH =
-      ProtobufEncoder.encodeVarInt(MAX_CHUNK_SIZE + 1);
 
   private final Spec spec = TestSpecFactory.createDefault();
-  private final RpcEncoding encoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
+  private final Bytes prefixExceedingMaxLength =
+      ProtobufEncoder.encodeVarInt(spec.getGenesisSpecConfig().getMaxChunkSize() + 1);
+  private final RpcEncoding encoding =
+      RpcEncoding.createSszSnappyEncoding(
+          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
 
   @Test
   public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {
@@ -186,8 +187,7 @@ class LengthPrefixedEncodingTest {
   @Test
   public void decodePayload_shouldRejectMessagesThatAreTooLong() {
     // We should reject the message based on the length prefix and skip reading the data entirely
-    List<List<ByteBuf>> testByteBufSlices =
-        Utils.generateTestSlices(LENGTH_PREFIX_EXCEEDING_MAXIMUM_LENGTH);
+    List<List<ByteBuf>> testByteBufSlices = Utils.generateTestSlices(prefixExceedingMaxLength);
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
       RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);

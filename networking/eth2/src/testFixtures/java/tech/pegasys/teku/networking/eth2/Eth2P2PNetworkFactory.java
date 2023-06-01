@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.net.BindException;
 import java.time.Duration;
@@ -77,6 +76,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -145,7 +145,7 @@ public class Eth2P2PNetworkFactory {
     protected Function<RpcMethod<?, ?, ?>, Stream<RpcMethod<?, ?, ?>>> rpcMethodsModifier =
         Stream::of;
     protected List<PeerHandler> peerHandlers = new ArrayList<>();
-    protected RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
+    protected RpcEncoding rpcEncoding;
     protected GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
     private Optional<Checkpoint> requiredCheckpoint = Optional.empty();
     protected Duration eth2RpcPingInterval;
@@ -202,6 +202,13 @@ public class Eth2P2PNetworkFactory {
             new CombinedChainDataClient(
                 recentChainData, historicalChainData, spec, earliestAvailableBlockSlot);
 
+        if (rpcEncoding == null) {
+          rpcEncoding =
+              RpcEncoding.createSszSnappyEncoding(
+                  spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
+                      ? spec.forMilestone(SpecMilestone.BELLATRIX).getConfig().getMaxChunkSize()
+                      : spec.forMilestone(SpecMilestone.PHASE0).getConfig().getMaxChunkSize());
+        }
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
                 asyncRunner,
