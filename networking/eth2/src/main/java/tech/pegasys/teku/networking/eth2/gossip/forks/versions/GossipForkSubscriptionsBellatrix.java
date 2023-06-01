@@ -20,6 +20,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -70,6 +71,7 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
 
   @Override
   protected int getMessageMaxSize() {
-    return spec.forMilestone(SpecMilestone.BELLATRIX).getConfig().getGossipMaxSize();
+    return SpecConfigBellatrix.required(spec.forMilestone(SpecMilestone.BELLATRIX).getConfig())
+        .getGossipMaxSizeBellatrix();
   }
 }
