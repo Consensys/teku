@@ -100,7 +100,7 @@ public class BlobsUtil {
     final Bytes rawBlob =
         IntStream.range(0, fieldElementsPerBlob)
             .mapToObj(__ -> randomBLSFieldElement())
-            .map(fieldElement -> Bytes.wrap(fieldElement.toArray(ByteOrder.LITTLE_ENDIAN)))
+            .map(fieldElement -> Bytes.wrap(fieldElement.toArray(ByteOrder.BIG_ENDIAN)))
             .reduce(Bytes::wrap)
             .orElse(Bytes.EMPTY);
 
