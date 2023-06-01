@@ -106,6 +106,8 @@ public class SpecConfigBuilder {
 
   private int gossipMaxSize;
 
+  private int maxChunkSize;
+
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
@@ -173,7 +175,8 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress,
             progressiveBalancesMode,
-            gossipMaxSize);
+            gossipMaxSize,
+            maxChunkSize);
 
     return builderChain.build(config);
   }
@@ -231,6 +234,9 @@ public class SpecConfigBuilder {
     SpecBuilderUtil.validateConstant("depositChainId", depositChainId);
     SpecBuilderUtil.validateConstant("depositNetworkId", depositNetworkId);
     SpecBuilderUtil.validateConstant("depositContractAddress", depositContractAddress);
+
+    SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
+    SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
 
     builderChain.validate();
   }
@@ -547,6 +553,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder gossipMaxSize(final int gossipMaxSize) {
     this.gossipMaxSize = gossipMaxSize;
+    return this;
+  }
+
+  public SpecConfigBuilder maxChunkSize(final int maxChunkSize) {
+    this.maxChunkSize = maxChunkSize;
     return this;
   }
 

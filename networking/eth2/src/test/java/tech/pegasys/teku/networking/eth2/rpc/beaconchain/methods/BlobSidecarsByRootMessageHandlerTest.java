@@ -25,7 +25,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.RESOURCE_UNAVAILABLE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 
 import java.util.List;
 import java.util.Optional;
@@ -54,15 +53,14 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlobSidecarsByRootMessageHandlerTest {
 
-  private static final RpcEncoding RPC_ENCODING =
-      RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE_BELLATRIX);
-
-  private final String protocolId =
-      BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, RPC_ENCODING);
-
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
 
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+  private final RpcEncoding rpcEncoding =
+      RpcEncoding.createSszSnappyEncoding(spec.getGenesisSpecConfig().getMaxChunkSize());
+
+  private final String protocolId =
+      BeaconChainMethodIds.getBlobSidecarsByRootMethodId(1, rpcEncoding);
 
   private final UInt64 denebFirstSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
 
