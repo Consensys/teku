@@ -65,6 +65,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -135,7 +136,9 @@ public class Eth2P2PNetworkBuilder {
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(
             spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
-                ? spec.forMilestone(SpecMilestone.BELLATRIX).getConfig().getMaxChunkSize()
+                ? SpecConfigBellatrix.required(
+                        spec.forMilestone(SpecMilestone.BELLATRIX).getConfig())
+                    .getMaxChunkSizeBellatrix()
                 : spec.forMilestone(SpecMilestone.PHASE0).getConfig().getMaxChunkSize());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());

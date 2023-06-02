@@ -23,7 +23,6 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -93,7 +92,6 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
       final SchemaDefinitionsCapella schemaDefinitions =
           SchemaDefinitionsCapella.required(
               spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
-      final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
 
       final SignedBlsToExecutionChangeGossipManager gossipManager =
           new SignedBlsToExecutionChangeGossipManager(
@@ -104,7 +102,7 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
               gossipEncoding,
               forkInfo,
               signedBlsToExecutionChangeOperationProcessor,
-              specConfig.getGossipMaxSize());
+              getMessageMaxSize());
 
       addGossipManager(gossipManager);
       this.signedBlsToExecutionChangeGossipManager = Optional.of(gossipManager);
