@@ -70,10 +70,7 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
   @Override
   public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
-    final ExecutionPayload executionPayload =
-        beaconBlockBody
-            .getOptionalExecutionPayload()
-            .orElseThrow(() -> new BlockProcessingException("Execution payload expected"));
+    final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     final SszList<SszKZGCommitment> blobKzgCommitments =
         beaconBlockBody
             .getOptionalBlobKzgCommitments()

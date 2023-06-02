@@ -129,17 +129,23 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     state.setLatestExecutionPayloadHeader(executionPayloadHeader);
   }
 
-  public ExecutionPayloadHeader extractExecutionPayloadHeader(
-      final BeaconBlockBody beaconBlockBody) {
+  public ExecutionPayloadHeader extractExecutionPayloadHeader(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
     if (beaconBlockBody.isBlinded()) {
       return beaconBlockBody.getOptionalExecutionPayloadHeader().orElseThrow();
     } else {
-      final ExecutionPayload executionPayload =
-          beaconBlockBody.getOptionalExecutionPayload().orElseThrow();
+      final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
       return schemaDefinitions
           .getExecutionPayloadHeaderSchema()
           .createFromExecutionPayload(executionPayload);
     }
+  }
+
+  public ExecutionPayload extractExecutionPayload(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    return beaconBlockBody
+        .getOptionalExecutionPayload()
+        .orElseThrow(() -> new BlockProcessingException("Execution payload expected"));
   }
 
   @Override
@@ -196,10 +202,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   @Override
   public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
-    final ExecutionPayload executionPayload =
-        beaconBlockBody
-            .getOptionalExecutionPayload()
-            .orElseThrow(() -> new BlockProcessingException("Execution payload expected"));
+    final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     return new NewPayloadRequest(executionPayload);
   }
 
