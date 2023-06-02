@@ -45,7 +45,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 @Command(
     name = "transition",
@@ -91,12 +90,7 @@ public class TransitionCommand implements Runnable {
             blocks.sort(SLOT_COMPARATOR);
             for (SignedBeaconBlock block : blocks) {
               state =
-                  spec.processBlock(
-                      state,
-                      block,
-                      BLSSignatureVerifier.SIMPLE,
-                      Optional.empty(),
-                      KzgCommitmentsProcessor.create(spec.atSlot(block.getSlot()).miscHelpers()));
+                  spec.processBlock(state, block, BLSSignatureVerifier.SIMPLE, Optional.empty());
             }
           }
           return state;

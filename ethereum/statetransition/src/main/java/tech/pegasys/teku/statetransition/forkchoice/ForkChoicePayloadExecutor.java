@@ -63,7 +63,8 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   @Override
   public boolean optimisticallyExecute(
       final ExecutionPayloadHeader latestExecutionPayloadHeader,
-      final ExecutionPayload executionPayload) {
+      final NewPayloadRequest payloadToExecute) {
+    final ExecutionPayload executionPayload = payloadToExecute.getExecutionPayload();
     if (executionPayload.isDefault()) {
       // We're still pre-merge so no payload to execute
       // Note that the BlockProcessor will have already failed if this is default and shouldn't be
@@ -74,8 +75,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     result =
         Optional.of(
             executionLayer
-                // TODO: pass versioned_hashes
-                .engineNewPayload(new NewPayloadRequest(executionPayload))
+                .engineNewPayload(payloadToExecute)
                 .thenCompose(
                     result -> {
                       if (result.hasValidStatus()) {

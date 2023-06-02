@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.statetransition.blockvalidator.BlockValidationResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrixTest;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -53,24 +52,17 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
   @Test
   void shouldRejectBellatrixBlock() {
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalBellatrix());
     BeaconState preState = createBeaconState();
-    final SignedBeaconBlock block = data.randomSignedBeaconBlock(preState.getSlot().increment());
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(preState.getSlot().increment());
     assertThatThrownBy(
-            () ->
-                spec.processBlock(
-                    preState,
-                    block,
-                    BLSSignatureVerifier.SIMPLE,
-                    Optional.empty(),
-                    KzgCommitmentsProcessor.NOOP))
+            () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
         .isInstanceOf(StateTransitionException.class);
   }
 
   @Test
   void shouldCreateExpectedWithdrawalAddress() {
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
-    Bytes20 eth1Address = data.randomBytes20();
+    Bytes20 eth1Address = dataStructureUtil.randomBytes20();
 
     Bytes32 bytes32 = BlockProcessorCapella.getWithdrawalAddressFromEth1Address(eth1Address);
     // ends with eth1 address
@@ -120,9 +112,10 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
   @Test
   public void shouldFindPartialWithdrawals() {
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
     Validator validator =
-        makeValidator(data.randomPublicKey(), data.randomEth1WithdrawalCredentials());
+        makeValidator(
+            dataStructureUtil.randomPublicKey(),
+            dataStructureUtil.randomEth1WithdrawalCredentials());
     BeaconState preState =
         createBeaconState(
             true, spec.getGenesisSpecConfig().getMaxEffectiveBalance().plus(1024000), validator);
@@ -133,11 +126,10 @@ public class BlockProcessorCapellaTest extends BlockProcessorBellatrixTest {
 
   @Test
   public void shouldFindFullWithdrawals() {
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
     Validator validator =
         makeValidator(
-            data.randomPublicKey(),
-            data.randomEth1WithdrawalCredentials(),
+            dataStructureUtil.randomPublicKey(),
+            dataStructureUtil.randomEth1WithdrawalCredentials(),
             UInt64.ZERO,
             UInt64.ZERO);
     final UInt64 balance = spec.getGenesisSpecConfig().getMaxEffectiveBalance().plus(1024000);

@@ -77,7 +77,6 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public abstract class AbstractBlockProcessor implements BlockProcessor {
 
@@ -133,8 +132,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final SignedBeaconBlock signedBlock,
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     final BatchSignatureVerifier signatureVerifier = new BatchSignatureVerifier();
     final BeaconState result =
@@ -143,8 +141,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             blockSlotState,
             indexedAttestationCache,
             signatureVerifier,
-            payloadExecutor,
-            kzgCommitmentsProcessor);
+            payloadExecutor);
     if (!signatureVerifier.batchVerify()) {
       throw new StateTransitionException(
           "Batch signature verification failed for block " + signedBlock.toLogString());
@@ -158,8 +155,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconState blockSlotState,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     try {
       final BlockValidationResult preValidationResult =
@@ -175,8 +171,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
               signedBlock.getMessage(),
               indexedAttestationCache,
               signatureVerifier,
-              payloadExecutor,
-              kzgCommitmentsProcessor);
+              payloadExecutor);
 
       BlockValidationResult blockValidationResult =
           validateBlockPostProcessing(
@@ -320,18 +315,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     return preState.updated(
         state ->
             processBlock(
-                state,
-                block,
-                indexedAttestationCache,
-                signatureVerifier,
-                payloadExecutor,
-                kzgCommitmentsProcessor));
+                state, block, indexedAttestationCache, signatureVerifier, payloadExecutor));
   }
 
   protected void processBlock(
@@ -339,8 +328,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     processBlockHeader(state, block);
     processRandaoNoValidation(state, block.getBody());

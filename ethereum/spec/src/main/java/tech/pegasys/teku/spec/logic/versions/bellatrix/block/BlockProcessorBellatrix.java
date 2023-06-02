@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -42,7 +43,6 @@ import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
 public class BlockProcessorBellatrix extends BlockProcessorAltair {
@@ -84,8 +84,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateBellatrix state = MutableBeaconStateBellatrix.required(genericState);
     final BeaconBlockBody blockBody = block.getBody();
@@ -130,17 +129,23 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     state.setLatestExecutionPayloadHeader(executionPayloadHeader);
   }
 
-  public ExecutionPayloadHeader extractExecutionPayloadHeader(
-      final BeaconBlockBody beaconBlockBody) {
+  public ExecutionPayloadHeader extractExecutionPayloadHeader(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
     if (beaconBlockBody.isBlinded()) {
       return beaconBlockBody.getOptionalExecutionPayloadHeader().orElseThrow();
     } else {
-      final ExecutionPayload executionPayload =
-          beaconBlockBody.getOptionalExecutionPayload().orElseThrow();
+      final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
       return schemaDefinitions
           .getExecutionPayloadHeaderSchema()
           .createFromExecutionPayload(executionPayload);
     }
+  }
+
+  public ExecutionPayload extractExecutionPayload(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    return beaconBlockBody
+        .getOptionalExecutionPayload()
+        .orElseThrow(() -> new BlockProcessingException("Execution payload expected"));
   }
 
   @Override
@@ -155,14 +160,11 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     validateExecutionPayloadHeader(state, executionPayloadHeader);
 
     if (payloadExecutor.isPresent()) {
-      final ExecutionPayload executionPayload =
-          beaconBlockBody
-              .getOptionalExecutionPayload()
-              .orElseThrow(() -> new BlockProcessingException("Execution payload expected"));
+      final NewPayloadRequest payloadToExecute = computeNewPayloadRequest(beaconBlockBody);
       final boolean optimisticallyAccept =
           payloadExecutor
               .get()
-              .optimisticallyExecute(state.getLatestExecutionPayloadHeader(), executionPayload);
+              .optimisticallyExecute(state.getLatestExecutionPayloadHeader(), payloadToExecute);
       if (!optimisticallyAccept) {
         throw new BlockProcessingException("Execution payload was not optimistically accepted");
       }
@@ -198,6 +200,13 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   }
 
   @Override
+  public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
+    return new NewPayloadRequest(executionPayload);
+  }
+
+  @Override
   public boolean isOptimistic() {
     return true;
   }
@@ -215,14 +224,5 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
       final MutableBeaconState state, final ExecutionPayloadSummary payloadSummary)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No withdrawals in Bellatrix");
-  }
-
-  @Override
-  public void processBlobKzgCommitments(
-      final MutableBeaconState state,
-      final BeaconBlockBody body,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
-      throws BlockProcessingException {
-    throw new UnsupportedOperationException("No blob Kzg commitments in Bellatrix");
   }
 }

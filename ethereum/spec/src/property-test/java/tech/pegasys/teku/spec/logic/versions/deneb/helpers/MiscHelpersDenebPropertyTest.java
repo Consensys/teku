@@ -25,10 +25,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.execution.TransactionSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.Bytes32Supplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.UInt64Supplier;
@@ -59,34 +57,5 @@ public class MiscHelpersDenebPropertyTest {
   void fuzzKzgCommitmentToVersionedHash(
       @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment) {
     miscHelpers.kzgCommitmentToVersionedHash(commitment);
-  }
-
-  @Property(tries = 100)
-  void fuzzTxPeekBlobVersionedHashes(
-      @ForAll(supplier = TransactionSupplier.class) final Transaction transaction) {
-    try {
-      miscHelpers.txPeekBlobVersionedHashes(transaction);
-    } catch (Exception e) {
-      assertThat(e)
-          .isInstanceOfAny(
-              ArithmeticException.class,
-              IllegalArgumentException.class,
-              IndexOutOfBoundsException.class);
-    }
-  }
-
-  @Property(tries = 100)
-  void fuzzVerifyKZGCommitmentsAgainstTransactions(
-      @ForAll final List<@From(supplier = TransactionSupplier.class) Transaction> transactions,
-      @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments) {
-    try {
-      miscHelpers.verifyKZGCommitmentsAgainstTransactions(transactions, commitments);
-    } catch (Exception e) {
-      assertThat(e)
-          .isInstanceOfAny(
-              ArithmeticException.class,
-              IllegalArgumentException.class,
-              IndexOutOfBoundsException.class);
-    }
   }
 }

@@ -13,18 +13,28 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.block;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapellaTest;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   @Override
@@ -34,17 +44,52 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
 
   @Test
   void shouldRejectCapellaBlock() {
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
     BeaconState preState = createBeaconState();
-    final SignedBeaconBlock block = data.randomSignedBeaconBlock(preState.getSlot().increment());
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(preState.getSlot().increment());
+    assertThatThrownBy(
+            () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
+        .isInstanceOf(StateTransitionException.class);
+  }
+
+  @Test
+  void shouldFailProcessingIfCommitmentsInBlockAreMoreThanMaxBlobsPerBlock() {
+    final BeaconState preState = createBeaconState();
+    final UInt64 slot = preState.getSlot().increment();
+    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock(slot).orElseThrow();
+    final BeaconBlockBody blockBody =
+        dataStructureUtil.randomBeaconBlockBodyWithCommitments(maxBlobsPerBlock + 1);
     assertThatThrownBy(
             () ->
-                spec.processBlock(
-                    preState,
-                    block,
-                    BLSSignatureVerifier.SIMPLE,
-                    Optional.empty(),
-                    KzgCommitmentsProcessor.NOOP))
-        .isInstanceOf(StateTransitionException.class);
+                spec.getBlockProcessor(slot)
+                    .validateExecutionPayload(preState, blockBody, Optional.empty()))
+        .isInstanceOf(BlockProcessingException.class)
+        .hasMessage("Number of kzg commitments in block exceeds max blobs per block");
+  }
+
+  @Test
+  @Override
+  public void shouldCreateNewPayloadRequest() throws BlockProcessingException {
+    final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBodyWithCommitments(3);
+    final MiscHelpers miscHelpers = spec.atSlot(UInt64.ONE).miscHelpers();
+    final List<VersionedHash> expectedVersionedHashes =
+        blockBody.getOptionalBlobKzgCommitments().orElseThrow().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(miscHelpers::kzgCommitmentToVersionedHash)
+            .collect(Collectors.toList());
+
+    final NewPayloadRequest newPayloadRequest =
+        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(blockBody);
+
+    assertThat(newPayloadRequest.getExecutionPayload())
+        .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());
+    assertThat(newPayloadRequest.getVersionedHashes()).isPresent();
+    assertThat(newPayloadRequest.getVersionedHashes().get())
+        .hasSize(3)
+        .allSatisfy(
+            versionedHash ->
+                assertThat(versionedHash.getVersion())
+                    .isEqualTo(SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG))
+        .hasSameElementsAs(expectedVersionedHashes);
   }
 }
