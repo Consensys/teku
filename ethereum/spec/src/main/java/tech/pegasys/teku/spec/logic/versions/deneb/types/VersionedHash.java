@@ -41,12 +41,16 @@ public class VersionedHash {
     return new VersionedHash(version, hash.slice(1));
   }
 
-  public String toHexString() {
-    return Bytes.wrap(version, value).toHexString();
+  public Bytes getVersion() {
+    return version;
   }
 
-  public boolean isVersion(final Bytes version) {
-    return this.version.equals(version);
+  public Bytes getValue() {
+    return value;
+  }
+
+  public String toHexString() {
+    return Bytes.wrap(version, value).toHexString();
   }
 
   @Override

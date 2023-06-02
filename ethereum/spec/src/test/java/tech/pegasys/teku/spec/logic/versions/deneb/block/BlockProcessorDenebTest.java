@@ -16,7 +16,9 @@ package tech.pegasys.teku.spec.logic.versions.deneb.block;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -27,9 +29,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapellaTest;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   @Override
@@ -66,6 +71,12 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   @Override
   public void shouldCreateNewPayloadRequest() throws BlockProcessingException {
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBodyWithCommitments(3);
+    final MiscHelpers miscHelpers = spec.atSlot(UInt64.ONE).miscHelpers();
+    final List<VersionedHash> expectedVersionedHashes =
+        blockBody.getOptionalBlobKzgCommitments().orElseThrow().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .map(miscHelpers::kzgCommitmentToVersionedHash)
+            .collect(Collectors.toList());
 
     final NewPayloadRequest newPayloadRequest =
         spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(blockBody);
@@ -75,7 +86,10 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
     assertThat(newPayloadRequest.getVersionedHashes()).isPresent();
     assertThat(newPayloadRequest.getVersionedHashes().get())
         .hasSize(3)
-        .allMatch(
-            versionedHash -> versionedHash.isVersion(SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG));
+        .allSatisfy(
+            versionedHash ->
+                assertThat(versionedHash.getVersion())
+                    .isEqualTo(SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG))
+        .hasSameElementsAs(expectedVersionedHashes);
   }
 }
