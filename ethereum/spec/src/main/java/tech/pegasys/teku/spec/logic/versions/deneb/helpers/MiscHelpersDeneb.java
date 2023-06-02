@@ -100,16 +100,6 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
             .collect(Collectors.toList());
     final List<KZGProof> proofs =
         blobSidecars.stream().map(BlobSidecar::getKZGProof).collect(Collectors.toList());
-    checkArgument(
-        kzgCommitments.size() == blobs.size(),
-        "Number of KZG commitments (%s) does not match number of blobs (%s)",
-        kzgCommitments.size(),
-        blobSidecars.size());
-    checkArgument(
-        blobs.size() == proofs.size(),
-        "Number of blobs (%s) does not match number of proofs (%s)",
-        blobs.size(),
-        proofs.size());
     checkState(
         kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs),
         "The blobs and KZG proofs do not correspond to the KZG commitments for slot %s and block root %s",
