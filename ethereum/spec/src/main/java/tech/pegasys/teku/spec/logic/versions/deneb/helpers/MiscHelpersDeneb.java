@@ -73,42 +73,6 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
 
   /**
    * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#kzg_commitment_to_versioned_hash">kzg_commitment_to_versioned_hash</a>
-   */
-  @Override
-  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    return VersionedHash.create(
-        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
-  }
-
-  @Override
-  public Optional<MiscHelpersDeneb> toVersionDeneb() {
-    return Optional.of(this);
-  }
-
-  public KZGCommitment blobToKzgCommitment(final Blob blob) {
-    return kzg.blobToKzgCommitment(blob.getBytes());
-  }
-
-  public KZGProof computeBlobKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
-    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
-  }
-
-  public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
-    return signedBeaconBlock
-        .flatMap(SignedBeaconBlock::getBeaconBlock)
-        .flatMap(beaconBlock -> beaconBlock.getBody().toVersionDeneb())
-        .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
-        .orElse(0);
-  }
-
-  public UInt64 computeFirstSlotWithBlobSupport() {
-    final UInt64 denebForkEpoch = specConfig.toVersionDeneb().orElseThrow().getDenebForkEpoch();
-    return denebForkEpoch.times(specConfig.getSlotsPerEpoch());
-  }
-
-  /**
-   * <a
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#validate_blobs">validate_blobs</a>
    */
   private void validateBlobs(
@@ -151,5 +115,41 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
         "The blobs and KZG proofs do not correspond to the KZG commitments for slot %s and block root %s",
         slot,
         beaconBlockRoot);
+  }
+
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#kzg_commitment_to_versioned_hash">kzg_commitment_to_versioned_hash</a>
+   */
+  @Override
+  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+    return VersionedHash.create(
+        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
+  }
+
+  @Override
+  public Optional<MiscHelpersDeneb> toVersionDeneb() {
+    return Optional.of(this);
+  }
+
+  public KZGCommitment blobToKzgCommitment(final Blob blob) {
+    return kzg.blobToKzgCommitment(blob.getBytes());
+  }
+
+  public KZGProof computeBlobKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
+    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
+  }
+
+  public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
+    return signedBeaconBlock
+        .flatMap(SignedBeaconBlock::getBeaconBlock)
+        .flatMap(beaconBlock -> beaconBlock.getBody().toVersionDeneb())
+        .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
+        .orElse(0);
+  }
+
+  public UInt64 computeFirstSlotWithBlobSupport() {
+    final UInt64 denebForkEpoch = specConfig.toVersionDeneb().orElseThrow().getDenebForkEpoch();
+    return denebForkEpoch.times(specConfig.getSlotsPerEpoch());
   }
 }

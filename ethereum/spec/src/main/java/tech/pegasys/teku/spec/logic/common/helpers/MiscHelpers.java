@@ -275,7 +275,7 @@ public class MiscHelpers {
   }
 
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    throw new UnsupportedOperationException("No KZGCommitment before Deneb");
+    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
