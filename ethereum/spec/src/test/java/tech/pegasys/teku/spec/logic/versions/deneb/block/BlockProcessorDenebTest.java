@@ -48,6 +48,21 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   }
 
   @Test
+  void shouldFailProcessingIfCommitmentsInBlockAreMoreThanMaxBlobsPerBlock() {
+    final BeaconState preState = createBeaconState();
+    final UInt64 slot = preState.getSlot().increment();
+    final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock(slot).orElseThrow();
+    final BeaconBlockBody blockBody =
+        dataStructureUtil.randomBeaconBlockBodyWithCommitments(maxBlobsPerBlock + 1);
+    assertThatThrownBy(
+            () ->
+                spec.getBlockProcessor(slot)
+                    .validateExecutionPayload(preState, blockBody, Optional.empty()))
+        .isInstanceOf(BlockProcessingException.class)
+        .hasMessage("Number of kzg commitments in block exceeds max blobs per block");
+  }
+
+  @Test
   void shouldCreateNewPayloadRequest() throws BlockProcessingException {
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBodyWithCommitments(3);
 
