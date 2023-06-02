@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -47,7 +48,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.altair.block.BlockProcessorAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public interface BlockProcessor {
   Optional<OperationInvalidReason> validateAttestation(
@@ -57,8 +57,7 @@ public interface BlockProcessor {
       SignedBeaconBlock signedBlock,
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException;
 
   /**
@@ -78,8 +77,7 @@ public interface BlockProcessor {
       BeaconState blockSlotState,
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException;
 
   BeaconState processUnsignedBlock(
@@ -87,8 +85,7 @@ public interface BlockProcessor {
       BeaconBlock block,
       IndexedAttestationCache indexedAttestationCache,
       BLSSignatureVerifier signatureVerifier,
-      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
   void processBlockHeader(MutableBeaconState state, BeaconBlockSummary blockHeader)
@@ -153,6 +150,9 @@ public interface BlockProcessor {
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
+  NewPayloadRequest computeNewPayloadRequest(BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException;
+
   void validateExecutionPayloadHeader(
       BeaconState state, ExecutionPayloadHeader executionPayloadHeader)
       throws BlockProcessingException;
@@ -167,12 +167,6 @@ public interface BlockProcessor {
       throws BlockProcessingException;
 
   Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
-
-  void processBlobKzgCommitments(
-      MutableBeaconState state,
-      BeaconBlockBody body,
-      KzgCommitmentsProcessor kzgCommitmentsProcessor)
-      throws BlockProcessingException;
 
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();

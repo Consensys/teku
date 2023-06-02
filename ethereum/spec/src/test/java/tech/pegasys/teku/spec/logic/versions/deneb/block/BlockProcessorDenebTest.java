@@ -13,18 +13,23 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.block;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapellaTest;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   @Override
@@ -34,17 +39,28 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
 
   @Test
   void shouldRejectCapellaBlock() {
-    final DataStructureUtil data = new DataStructureUtil(TestSpecFactory.createMinimalCapella());
     BeaconState preState = createBeaconState();
-    final SignedBeaconBlock block = data.randomSignedBeaconBlock(preState.getSlot().increment());
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(preState.getSlot().increment());
     assertThatThrownBy(
-            () ->
-                spec.processBlock(
-                    preState,
-                    block,
-                    BLSSignatureVerifier.SIMPLE,
-                    Optional.empty(),
-                    KzgCommitmentsProcessor.NOOP))
+            () -> spec.processBlock(preState, block, BLSSignatureVerifier.SIMPLE, Optional.empty()))
         .isInstanceOf(StateTransitionException.class);
+  }
+
+  @Test
+  void shouldCreateNewPayloadRequest() throws BlockProcessingException {
+    final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBodyWithCommitments(3);
+
+    final NewPayloadRequest newPayloadRequest =
+        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(blockBody);
+
+    assertThat(newPayloadRequest.getExecutionPayload())
+        .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());
+    assertThat(newPayloadRequest.getVersionedHashes()).isPresent();
+
+    assertThat(newPayloadRequest.getVersionedHashes().get())
+        .hasSize(3)
+        .allMatch(
+            versionedHash -> versionedHash.isVersion(SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG));
   }
 }

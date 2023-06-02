@@ -23,6 +23,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -44,7 +45,6 @@ import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 
 public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
 
@@ -130,6 +130,12 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   }
 
   @Override
+  public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
+      throws BlockProcessingException {
+    throw new UnsupportedOperationException("No NewPayloadRequest in phase0");
+  }
+
+  @Override
   public void validateExecutionPayloadHeader(
       final BeaconState state, final ExecutionPayloadHeader executionPayloadHeader)
       throws BlockProcessingException {
@@ -158,14 +164,5 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
   @Override
   public Optional<List<Withdrawal>> getExpectedWithdrawals(final BeaconState preState) {
     return Optional.empty();
-  }
-
-  @Override
-  public void processBlobKzgCommitments(
-      final MutableBeaconState state,
-      final BeaconBlockBody body,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
-      throws BlockProcessingException {
-    throw new UnsupportedOperationException("No blob Kzg commitments in phase0");
   }
 }
