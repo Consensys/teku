@@ -549,6 +549,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
+        && gossipMaxSize == that.gossipMaxSize
+        && maxChunkSize == that.maxChunkSize
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -621,6 +623,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        progressiveBalancesMode);
+        progressiveBalancesMode,
+        gossipMaxSize,
+        maxChunkSize);
   }
 }
