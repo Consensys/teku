@@ -63,7 +63,8 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   }
 
   @Test
-  void shouldCreateNewPayloadRequest() throws BlockProcessingException {
+  @Override
+  public void shouldCreateNewPayloadRequest() throws BlockProcessingException {
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBodyWithCommitments(3);
 
     final NewPayloadRequest newPayloadRequest =

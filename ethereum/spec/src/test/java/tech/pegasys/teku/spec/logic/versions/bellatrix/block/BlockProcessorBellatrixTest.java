@@ -47,7 +47,7 @@ public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
   }
 
   @Test
-  void shouldCreateNewPayloadRequest() throws BlockProcessingException {
+  public void shouldCreateNewPayloadRequest() throws BlockProcessingException {
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBody();
 
     final NewPayloadRequest newPayloadRequest =
