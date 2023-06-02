@@ -48,6 +48,9 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
   // Optimistic Sync
   private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
+  private int gossipMaxSizeBellatrix;
+  private int maxChunkSizeBellatrix;
+
   BellatrixBuilder() {}
 
   @Override
@@ -66,7 +69,9 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
         terminalTotalDifficulty,
         terminalBlockHash,
         terminalBlockHashActivationEpoch,
-        safeSlotsToImportOptimistically);
+        safeSlotsToImportOptimistically,
+        gossipMaxSizeBellatrix,
+        maxChunkSizeBellatrix);
   }
 
   @Override
@@ -87,6 +92,8 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     SpecBuilderUtil.validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
     SpecBuilderUtil.validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
     SpecBuilderUtil.validateConstant("maxExtraDataBytes", maxExtraDataBytes);
+    SpecBuilderUtil.validateConstant("gossipMaxSizeBellatrix", gossipMaxSizeBellatrix);
+    SpecBuilderUtil.validateConstant("maxChunkSizeBellatrix", maxChunkSizeBellatrix);
 
     // temporary, provide default values for backward compatibility
     if (terminalTotalDifficulty == null) {
@@ -180,6 +187,16 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
   public BellatrixBuilder safeSlotsToImportOptimistically(
       final int safeSlotsToImportOptimistically) {
     this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
+    return this;
+  }
+
+  public BellatrixBuilder gossipMaxSizeBellatrix(final int gossipMaxSizeBellatrix) {
+    this.gossipMaxSizeBellatrix = gossipMaxSizeBellatrix;
+    return this;
+  }
+
+  public BellatrixBuilder maxChunkSizeBellatrix(final int maxChunkSizeBellatrix) {
+    this.maxChunkSizeBellatrix = maxChunkSizeBellatrix;
     return this;
   }
 }
