@@ -67,19 +67,6 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
       final Bytes32 beaconBlockRoot,
       final List<KZGCommitment> kzgCommitments,
       final List<BlobSidecar> blobSidecars) {
-    validateBlobs(slot, beaconBlockRoot, kzgCommitments, blobSidecars);
-    return true;
-  }
-
-  /**
-   * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#validate_blobs">validate_blobs</a>
-   */
-  private void validateBlobs(
-      final UInt64 slot,
-      final Bytes32 beaconBlockRoot,
-      final List<KZGCommitment> kzgCommitments,
-      final List<BlobSidecar> blobSidecars) {
     blobSidecars.forEach(
         blobSidecar -> {
           checkArgument(
@@ -100,11 +87,14 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
             .collect(Collectors.toList());
     final List<KZGProof> proofs =
         blobSidecars.stream().map(BlobSidecar::getKZGProof).collect(Collectors.toList());
+
     checkState(
         kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs),
         "The blobs and KZG proofs do not correspond to the KZG commitments for slot %s and block root %s",
         slot,
         beaconBlockRoot);
+
+    return true;
   }
 
   /**

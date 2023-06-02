@@ -132,13 +132,6 @@ public final class CKZG4844 implements KZG {
       final List<KZGCommitment> kzgCommitments,
       final List<KZGProof> kzgProofs)
       throws KZGException {
-    if (blobs.size() != kzgCommitments.size() || blobs.size() != kzgProofs.size()) {
-      throw new KZGException(
-          String.format(
-              "Expecting equal number of blobs, commitments and proofs for verification, "
-                  + "provided instead: blobs=%s, commitments=%s, proofs=%s",
-              blobs.size(), kzgCommitments.size(), kzgProofs.size()));
-    }
     try {
       final byte[] blobsBytes = CKZG4844Utils.flattenBytes(blobs);
       final byte[] commitmentsBytes = CKZG4844Utils.flattenCommitments(kzgCommitments);
