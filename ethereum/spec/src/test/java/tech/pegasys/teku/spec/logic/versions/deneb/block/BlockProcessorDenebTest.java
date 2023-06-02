@@ -73,7 +73,6 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());
     assertThat(newPayloadRequest.getVersionedHashes()).isPresent();
-
     assertThat(newPayloadRequest.getVersionedHashes().get())
         .hasSize(3)
         .allMatch(
