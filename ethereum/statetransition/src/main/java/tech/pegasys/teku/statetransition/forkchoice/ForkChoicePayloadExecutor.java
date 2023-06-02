@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -73,7 +74,8 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     result =
         Optional.of(
             executionLayer
-                .engineNewPayload(executionPayload)
+                // TODO: pass versioned_hashes
+                .engineNewPayload(new NewPayloadRequest(executionPayload))
                 .thenCompose(
                     result -> {
                       if (result.hasValidStatus()) {

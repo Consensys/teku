@@ -19,9 +19,9 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -82,9 +82,12 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
+  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+        new JsonRpcRequestParams.Builder()
+            .add(newPayloadRequest.getExecutionPayload())
+            .addOptional(newPayloadRequest.getVersionedHashes())
+            .build();
 
     return methodsResolver
         .getMethod(EngineApiMethods.ENGINE_NEW_PAYLOAD, PayloadStatus.class)

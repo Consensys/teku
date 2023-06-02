@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfiguration
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public interface ExecutionEngineClient {
   // eth namespace
@@ -46,7 +47,8 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<PayloadStatusV1>> newPayloadV2(ExecutionPayloadV1 executionPayload);
 
-  SafeFuture<Response<PayloadStatusV1>> newPayloadV3(ExecutionPayloadV1 executionPayload);
+  SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
+      ExecutionPayloadV1 executionPayload, List<VersionedHash> blobVersionedHashes);
 
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
