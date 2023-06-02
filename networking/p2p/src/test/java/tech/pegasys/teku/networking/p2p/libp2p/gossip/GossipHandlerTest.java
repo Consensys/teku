@@ -20,7 +20,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.PubsubPublisherApi;
 import io.libp2p.core.pubsub.Topic;
@@ -34,8 +33,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.MockMessageApi;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 public class GossipHandlerTest {
+
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final Topic topic = new Topic("Testing");
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final TopicHandler topicHandler = mock(TopicHandler.class);
@@ -46,7 +50,7 @@ public class GossipHandlerTest {
   public void setup() {
     when(topicHandler.handleMessage(any()))
         .thenReturn(SafeFuture.completedFuture(ValidationResult.Valid));
-    when(topicHandler.getMaxMessageSize()).thenReturn(GOSSIP_MAX_SIZE);
+    when(topicHandler.getMaxMessageSize()).thenReturn(gossipMaxSize);
     when(publisher.publish(any(), any())).thenReturn(SafeFuture.completedFuture(null));
   }
 
@@ -72,7 +76,7 @@ public class GossipHandlerTest {
 
   @Test
   public void apply_exceedsMaxSize() {
-    final Bytes data = Bytes.wrap(new byte[GOSSIP_MAX_SIZE + 1]);
+    final Bytes data = Bytes.wrap(new byte[gossipMaxSize + 1]);
     final MockMessageApi message = new MockMessageApi(data, topic);
     final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
 
@@ -82,7 +86,7 @@ public class GossipHandlerTest {
 
   @Test
   public void apply_bufferCapacityExceedsMaxSize() {
-    ByteBuf data = Unpooled.buffer(GOSSIP_MAX_SIZE + 1).writeBytes(new byte[GOSSIP_MAX_SIZE]);
+    ByteBuf data = Unpooled.buffer(gossipMaxSize + 1).writeBytes(new byte[gossipMaxSize]);
     final MockMessageApi message = new MockMessageApi(data, topic);
     final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
 

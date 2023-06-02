@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscri
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -115,6 +114,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   void addAttestationGossipManager(final ForkInfo forkInfo) {
+    final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
     AttestationSubnetSubscriptions attestationSubnetSubscriptions =
         new AttestationSubnetSubscriptions(
             spec,
@@ -124,7 +124,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             recentChainData,
             attestationProcessor,
             forkInfo,
-            getMessageMaxSize());
+            specConfig.getGossipMaxSize());
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
@@ -132,6 +132,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   void addBlockGossipManager(final ForkInfo forkInfo) {
+    final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
     blockGossipManager =
         new BlockGossipManager(
             recentChainData,
@@ -141,11 +142,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             blockProcessor,
-            getMessageMaxSize());
+            specConfig.getGossipMaxSize());
     addGossipManager(blockGossipManager);
   }
 
   void addAggregateGossipManager(final ForkInfo forkInfo) {
+    final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
     aggregateGossipManager =
         new AggregateGossipManager(
             spec,
@@ -155,11 +157,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             aggregateProcessor,
-            getMessageMaxSize());
+            specConfig.getGossipMaxSize());
     addGossipManager(aggregateGossipManager);
   }
 
   void addVoluntaryExitGossipManager(final ForkInfo forkInfo) {
+    final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
     voluntaryExitGossipManager =
         new VoluntaryExitGossipManager(
             recentChainData,
@@ -168,11 +171,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             voluntaryExitProcessor,
-            getMessageMaxSize());
+            specConfig.getGossipMaxSize());
     addGossipManager(voluntaryExitGossipManager);
   }
 
   void addProposerSlashingGossipManager(final ForkInfo forkInfo) {
+    final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
     proposerSlashingGossipManager =
         new ProposerSlashingGossipManager(
             recentChainData,
@@ -181,11 +185,12 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             proposerSlashingProcessor,
-            getMessageMaxSize());
+            specConfig.getGossipMaxSize());
     addGossipManager(proposerSlashingGossipManager);
   }
 
   void addAttesterSlashingGossipManager(final ForkInfo forkInfo) {
+    final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
     attesterSlashingGossipManager =
         new AttesterSlashingGossipManager(
             spec,
@@ -195,7 +200,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             attesterSlashingProcessor,
-            getMessageMaxSize());
+            specConfig.getGossipMaxSize());
     addGossipManager(attesterSlashingGossipManager);
   }
 
@@ -258,9 +263,5 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
     attestationGossipManager.unsubscribeFromSubnetId(subnetId);
-  }
-
-  protected int getMessageMaxSize() {
-    return GOSSIP_MAX_SIZE;
   }
 }

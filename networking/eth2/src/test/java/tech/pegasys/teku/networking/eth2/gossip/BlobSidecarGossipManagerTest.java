@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,6 +52,8 @@ public class BlobSidecarGossipManagerTest {
   private static final Pattern BLOB_SIDECAR_TOPIC_PATTERN = Pattern.compile("blob_sidecar_(\\d+)");
 
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
+
+  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -101,7 +102,7 @@ public class BlobSidecarGossipManagerTest {
             gossipEncoding,
             forkInfo,
             processor,
-            GOSSIP_MAX_SIZE);
+            gossipMaxSize);
     blobSidecarGossipManager.subscribe();
   }
 

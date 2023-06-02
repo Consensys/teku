@@ -876,6 +876,10 @@ public class Spec {
         .map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
+  public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {
+    return atSlot(slot).getConfig().toVersionDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
+  }
+
   public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
     return signedBlobSidecar.getBlobSidecar().getIndex().mod(BLOB_SIDECAR_SUBNET_COUNT);
   }
