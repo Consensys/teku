@@ -531,7 +531,7 @@ public class ForkChoiceUtil {
     // or if it is at least `SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY` before the current slot.
     // This is to avoid the merge block referencing a non-existent eth1 parent block and causing
     // all nodes to switch to optimistic sync mode.
-    if (isExecutionBlock(store, block.getParentRoot())) {
+    if (isExecutionBlock(store, block.getSlot(), block.getParentRoot())) {
       return true;
     }
     return isBellatrixBlockOld(store, block.getSlot());
@@ -547,9 +547,17 @@ public class ForkChoiceUtil {
         .isLessThanOrEqualTo(getCurrentSlot(store));
   }
 
-  private boolean isExecutionBlock(final ReadOnlyStore store, final Bytes32 blockRoot) {
+  private boolean isExecutionBlock(
+      final ReadOnlyStore store, final UInt64 blockSlot, final Bytes32 parentBlockRoot) {
+    // post-Bellatrix: always true
+    if (specConfig.toVersionCapella().isPresent()) {
+      final UInt64 capellaForkEpoch = specConfig.toVersionCapella().get().getCapellaForkEpoch();
+      if (miscHelpers.computeEpochAtSlot(blockSlot).isGreaterThanOrEqualTo(capellaForkEpoch)) {
+        return true;
+      }
+    }
     final Optional<Bytes32> parentExecutionRoot =
-        store.getForkChoiceStrategy().executionBlockHash(blockRoot);
+        store.getForkChoiceStrategy().executionBlockHash(parentBlockRoot);
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 }

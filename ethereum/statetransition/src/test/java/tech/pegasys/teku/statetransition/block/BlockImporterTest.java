@@ -30,7 +30,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -649,7 +648,6 @@ public class BlockImporterTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  @Disabled("FIXME on resolution of issue https://github.com/ethereum/consensus-specs/issues/3390")
   public void importBlock_validBlsToExecutionChanges() throws Exception {
     final int numOfValidators = 3;
     // Using same keys used on InMemoryStorageSystemBuilder
