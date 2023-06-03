@@ -74,7 +74,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private int blobsToGenerate = 2;
 
   // transition emulation
-  private static final int TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION = 10;
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
   private final boolean transitionEmulationEnabled;
   private final Bytes32 terminalBlockHashInTTDMode;
@@ -453,16 +452,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
     }
 
-    // Genesis is post-Bellatrix
-    if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
-      LOG.info("Transitioning immediately, post-Bellatrix");
-      transitionTime = bellatrixActivationTime;
-      terminalBlockHash = Bytes32.fromHexStringLenient("0x00");
-    } else if (configTerminalBlockHash.isZero()) {
+    if (configTerminalBlockHash.isZero()) {
       // TTD emulation
       LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
 
-      transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
+      transitionTime = bellatrixActivationTime.plus(specConfigBellatrix.getSecondsPerSlot() - 1);
 
       terminalBlockHash = terminalBlockHashInTTDMode;
 

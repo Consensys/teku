@@ -37,10 +37,11 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
     final BLSKeyPair validatorKeyPair = blsKeyPairs.get(validatorIndex);
     final Eth1Address executionAddress =
         Eth1Address.fromHexString("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
-    final UInt64 capellaActivationEpoch = UInt64.ZERO;
+    final UInt64 capellaActivationEpoch = UInt64.ONE;
 
     final TekuNode primaryNode = createPrimaryNode(executionAddress, capellaActivationEpoch);
     primaryNode.start();
+    primaryNode.waitForNextEpoch();
     primaryNode.startEventListener(EventType.bls_to_execution_change);
 
     final TekuNode lateJoiningNode =
@@ -85,6 +86,7 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
     c.withAltairEpoch(UInt64.ZERO);
     c.withBellatrixEpoch(UInt64.ZERO);
     c.withCapellaEpoch(capellaForkEpoch);
-    c.withStubExecutionEngine();
+    c.withTotalTerminalDifficulty(0);
+    c.withStubExecutionEngine("0x14e88057b0b7538a8205cb07726a0de03dd69d9a70e88bcffae15ca3fc6b5215");
   }
 }

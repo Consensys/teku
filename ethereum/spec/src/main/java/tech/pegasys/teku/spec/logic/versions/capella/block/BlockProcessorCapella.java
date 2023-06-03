@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
+import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
@@ -96,6 +98,25 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
         SchemaDefinitionsBellatrix.required(schemaDefinitions));
     schemaDefinitionsCapella = schemaDefinitions;
     this.specConfigCapella = specConfig;
+  }
+
+  @Override
+  public void processBlock(
+      final MutableBeaconState genericState,
+      final BeaconBlock block,
+      final IndexedAttestationCache indexedAttestationCache,
+      final BLSSignatureVerifier signatureVerifier,
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
+      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      throws BlockProcessingException {
+    final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
+    processBlockHeader(state, block);
+    executionProcessing(genericState, block.getBody(), payloadExecutor);
+    processRandaoNoValidation(state, block.getBody());
+    processEth1Data(state, block.getBody());
+    processOperationsNoValidation(state, block.getBody(), indexedAttestationCache);
+    processSyncAggregate(
+        state, block.getBody().getOptionalSyncAggregate().orElseThrow(), signatureVerifier);
   }
 
   @Override

@@ -971,6 +971,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withStubExecutionEngine(final String terminalBlockHash) {
+      configMap.put("ee-endpoint", "unsafe-test-stub:" + terminalBlockHash);
+      return this;
+    }
+
     public Config withEngineApiMethodNegotiation() {
       configMap.put("exchange-capabilities-enabled", "true");
       return this;
