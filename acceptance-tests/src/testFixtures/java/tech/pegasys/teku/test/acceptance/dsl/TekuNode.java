@@ -62,7 +62,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
@@ -257,10 +256,11 @@ public class TekuNode extends Node {
   private Object2BooleanMap<UInt64> getValidatorLivenessAtEpoch(
       final UInt64 epoch, List<UInt64> validators) throws IOException {
 
-    final ValidatorLivenessRequest request = new ValidatorLivenessRequest(validators);
     final String response =
         httpClient.post(
-            getRestApiUrl(), getValidatorLivenessUrl(epoch), JSON_PROVIDER.objectToJSON(request));
+            getRestApiUrl(),
+            getValidatorLivenessUrl(epoch),
+            JSON_PROVIDER.objectToJSON(validators));
     final PostValidatorLivenessResponse livenessResponse =
         JSON_PROVIDER.jsonToObject(response, PostValidatorLivenessResponse.class);
     final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();

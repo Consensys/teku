@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -67,6 +65,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -137,8 +136,10 @@ public class Eth2P2PNetworkBuilder {
     final RpcEncoding rpcEncoding =
         RpcEncoding.createSszSnappyEncoding(
             spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
-                ? MAX_CHUNK_SIZE_BELLATRIX
-                : MAX_CHUNK_SIZE);
+                ? SpecConfigBellatrix.required(
+                        spec.forMilestone(SpecMilestone.BELLATRIX).getConfig())
+                    .getMaxChunkSizeBellatrix()
+                : spec.forMilestone(SpecMilestone.PHASE0).getConfig().getMaxChunkSize());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }

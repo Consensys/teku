@@ -21,10 +21,8 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
 import java.io.IOException;
-import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.request.v1.validator.ValidatorLivenessRequest;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
@@ -61,8 +59,8 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     setCurrentSlot(12);
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
 
-    final ValidatorLivenessRequest request = new ValidatorLivenessRequest(List.of(validatorIndex));
-    Response response = post(getValidatorLivenessUrl(epoch), jsonProvider.objectToJSON(request));
+    Response response =
+        post(getValidatorLivenessUrl(epoch), String.format("[\"%s\"]", validatorIndex));
     assertThat(response.code()).isEqualTo(SC_OK);
     final PostValidatorLivenessResponse result =
         jsonProvider.jsonToObject(response.body().string(), PostValidatorLivenessResponse.class);

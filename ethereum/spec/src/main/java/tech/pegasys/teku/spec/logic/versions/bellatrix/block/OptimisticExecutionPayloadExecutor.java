@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.versions.bellatrix.block;
 
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 
 public interface OptimisticExecutionPayloadExecutor {
 
@@ -24,10 +24,10 @@ public interface OptimisticExecutionPayloadExecutor {
    * immediately found to be invalid and can be optimistically accepted.
    *
    * @param latestExecutionPayloadHeader the latest execution payload header from the pre-state
-   * @param executionPayload the payload to execute
+   * @param payloadToExecute the {@link NewPayloadRequest} to execute
    * @return true if the payload should be optimistically accepted or false to * immediately
    *     invalidate the payload
    */
   boolean optimisticallyExecute(
-      ExecutionPayloadHeader latestExecutionPayloadHeader, ExecutionPayload executionPayload);
+      ExecutionPayloadHeader latestExecutionPayloadHeader, NewPayloadRequest payloadToExecute);
 }

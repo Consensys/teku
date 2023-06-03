@@ -15,7 +15,8 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,8 +29,8 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.migrated.ValidatorLivenessRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
@@ -73,9 +74,9 @@ public class PostValidatorLiveness extends RestApiEndpoint {
                     + " from its API or from any other source. It is important to note that the"
                     + " values returned by the beacon node are not canonical; they are best-effort"
                     + " and based upon a subjective view of the network.")
-            .tags(TAG_EXPERIMENTAL)
+            .tags(TAG_VALIDATOR)
             .pathParam(EPOCH_PARAMETER)
-            .requestBodyType(ValidatorLivenessRequest.getJsonTypeDefinition())
+            .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE))
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)
             .withServiceUnavailableResponse()
             .build());
@@ -91,10 +92,10 @@ public class PostValidatorLiveness extends RestApiEndpoint {
     }
 
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
-    final ValidatorLivenessRequest requestBody = request.getRequestBody();
+    final List<UInt64> validatorIndices = request.getRequestBody();
     SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> future =
         nodeDataProvider.getValidatorLiveness(
-            requestBody.getIndices(), epoch, chainDataProvider.getCurrentEpoch());
+            validatorIndices, epoch, chainDataProvider.getCurrentEpoch());
 
     request.respondAsync(
         future.thenApply(

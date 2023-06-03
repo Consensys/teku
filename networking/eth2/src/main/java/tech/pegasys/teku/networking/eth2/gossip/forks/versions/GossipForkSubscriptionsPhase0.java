@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
-
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
@@ -34,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscri
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -261,6 +260,6 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   }
 
   protected int getMessageMaxSize() {
-    return GOSSIP_MAX_SIZE;
+    return spec.forMilestone(SpecMilestone.PHASE0).getConfig().getGossipMaxSize();
   }
 }

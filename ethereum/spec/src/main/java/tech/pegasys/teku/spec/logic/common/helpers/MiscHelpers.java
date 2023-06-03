@@ -34,12 +34,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class MiscHelpers {
 
@@ -274,9 +274,8 @@ public class MiscHelpers {
     return false;
   }
 
-  public boolean verifyKZGCommitmentsAgainstTransactions(
-      final List<Transaction> transactions, final List<KZGCommitment> kzgCommitments) {
-    return false;
+  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {

@@ -102,6 +102,10 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final ProgressiveBalancesMode progressiveBalancesMode;
 
+  private final int gossipMaxSize;
+
+  private final int maxChunkSize;
+
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -153,7 +157,9 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositChainId,
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
-      final ProgressiveBalancesMode progressiveBalancesMode) {
+      final ProgressiveBalancesMode progressiveBalancesMode,
+      final int gossipMaxSize,
+      final int maxChunkSize) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -206,6 +212,8 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
     this.progressiveBalancesMode = progressiveBalancesMode;
+    this.gossipMaxSize = gossipMaxSize;
+    this.maxChunkSize = maxChunkSize;
   }
 
   @Override
@@ -489,6 +497,16 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public int getGossipMaxSize() {
+    return gossipMaxSize;
+  }
+
+  @Override
+  public int getMaxChunkSize() {
+    return maxChunkSize;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -531,6 +549,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
+        && gossipMaxSize == that.gossipMaxSize
+        && maxChunkSize == that.maxChunkSize
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -603,6 +623,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        progressiveBalancesMode);
+        progressiveBalancesMode,
+        gossipMaxSize,
+        maxChunkSize);
   }
 }

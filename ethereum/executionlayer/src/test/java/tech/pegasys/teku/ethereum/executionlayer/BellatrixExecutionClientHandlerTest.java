@@ -30,6 +30,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
@@ -69,6 +70,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
   void engineNewPayload_shouldCallNewPayloadV1() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+    final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload);
     final ExecutionPayloadV1 payloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(
@@ -76,7 +78,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
     when(executionEngineClient.newPayloadV1(payloadV1)).thenReturn(dummyResponse);
-    handler.engineNewPayload(payload);
+    handler.engineNewPayload(newPayloadRequest);
     verify(executionEngineClient).newPayloadV1(payloadV1);
   }
 

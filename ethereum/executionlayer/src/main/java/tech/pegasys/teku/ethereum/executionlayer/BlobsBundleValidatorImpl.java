@@ -31,18 +31,6 @@ public class BlobsBundleValidatorImpl implements BlobsBundleValidator {
       final BlobsBundle blobsBundle, final Optional<ExecutionPayload> executionPayloadOptional)
       throws BlobsBundleValidationException {
 
-    // Optionally sanity-check that the KZG commitments match the versioned hashes in the
-    // transactions
-    if (!executionPayloadOptional
-        .map(
-            executionPayload ->
-                miscHelpers.verifyKZGCommitmentsAgainstTransactions(
-                    executionPayload.getTransactions().asList(), blobsBundle.getCommitments()))
-        .orElse(true)) {
-      throw new BlobsBundleValidationException(
-          "KZG commitments doesn't match the versioned hashes in the transactions");
-    }
-
     // Optionally sanity-check that the KZG commitments match the blobs (as produced by the
     // execution engine
     if (blobsBundle.getCommitments().size() != blobsBundle.getBlobs().size()) {

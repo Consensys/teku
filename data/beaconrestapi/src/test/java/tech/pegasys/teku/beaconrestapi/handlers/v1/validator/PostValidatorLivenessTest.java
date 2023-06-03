@@ -31,7 +31,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
-import tech.pegasys.teku.api.migrated.ValidatorLivenessRequest;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -47,9 +46,7 @@ public class PostValidatorLivenessTest extends AbstractMigratedBeaconHandlerTest
   @Test
   void shouldReadRequestBody() throws IOException {
     final List<UInt64> indices = List.of(UInt64.ZERO, UInt64.ONE);
-    final ValidatorLivenessRequest requestBody = new ValidatorLivenessRequest(indices);
-    final String data = String.format("{\"indices\":%s}", indices);
-    assertThat(getRequestBodyFromMetadata(handler, data)).isEqualTo(requestBody);
+    assertThat(getRequestBodyFromMetadata(handler, "[\"0\", \"1\"]")).isEqualTo(indices);
   }
 
   @Test

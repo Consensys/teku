@@ -14,19 +14,24 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.util.Preconditions.checkState;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.provider.Arguments;
+import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
@@ -45,7 +50,6 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected final UInt64 nextSpecEpoch = UInt64.valueOf(2);
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
-  private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
 
   protected void setUp(
       final SpecMilestone baseMilestone, final Optional<SpecMilestone> nextMilestone) {
@@ -162,6 +166,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
       peerStorage = InMemoryStorageSystemBuilder.create().specProvider(remoteSpec).build();
       peerStorage.chainUpdater().initializeGenesis();
     }
+
     // Set up local storage
     try (final StorageSystem localStorage =
         InMemoryStorageSystemBuilder.create().specProvider(localSpec).build()) {
@@ -170,7 +175,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
       final Eth2P2PNetwork remotePeerNetwork =
           networkFactory
               .builder()
-              .rpcEncoding(rpcEncoding)
+              .rpcEncoding(
+                  RpcEncoding.createSszSnappyEncoding(
+                      remoteSpec.getGenesisSpecConfig().getMaxChunkSize()))
               .recentChainData(peerStorage.recentChainData())
               .historicalChainData(peerStorage.chainStorage())
               .spec(remoteSpec)
@@ -179,7 +186,9 @@ public abstract class AbstractRpcMethodIntegrationTest {
       final Eth2P2PNetwork localNetwork =
           networkFactory
               .builder()
-              .rpcEncoding(rpcEncoding)
+              .rpcEncoding(
+                  RpcEncoding.createSszSnappyEncoding(
+                      localSpec.getGenesisSpecConfig().getMaxChunkSize()))
               .peer(remotePeerNetwork)
               .recentChainData(localStorage.recentChainData())
               .historicalChainData(localStorage.chainStorage())
@@ -237,6 +246,31 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   protected static Stream<Arguments> generateSpec() {
     return Arrays.stream(SpecMilestone.values()).map(Arguments::of);
+  }
+
+  protected List<BlobSidecar> retrieveCanonicalBlobSidecarsFromPeerStorage(
+      final Stream<UInt64> slots) {
+
+    return slots
+        .map(
+            slot ->
+                peerStorage
+                    .recentChainData()
+                    .getBlockRootBySlot(slot)
+                    .map(root -> new SlotAndBlockRoot(slot, root)))
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .map(this::safeRetrieveBlobSidecars)
+        .flatMap(Collection::stream)
+        .collect(Collectors.toUnmodifiableList());
+  }
+
+  private List<BlobSidecar> safeRetrieveBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    try {
+      return Waiter.waitFor(peerStorage.recentChainData().retrieveBlobSidecars(slotAndBlockRoot));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   protected static Class<?> milestoneToBeaconBlockBodyClass(final SpecMilestone milestone) {

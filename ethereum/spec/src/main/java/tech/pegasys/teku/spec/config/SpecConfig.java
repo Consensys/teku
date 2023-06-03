@@ -144,6 +144,10 @@ public interface SpecConfig {
 
   ProgressiveBalancesMode getProgressiveBalancesMode();
 
+  int getGossipMaxSize();
+
+  int getMaxChunkSize();
+
   default int getMinEpochsForBlockRequests() {
     return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
   }

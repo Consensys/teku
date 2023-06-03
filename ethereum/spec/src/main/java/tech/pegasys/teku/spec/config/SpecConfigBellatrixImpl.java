@@ -42,6 +42,10 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   // Optimistic Sync
   private final int safeSlotsToImportOptimistically;
 
+  // network
+  private final int gossipMaxSizeBellatrix;
+  private final int maxChunkSizeBellatrix;
+
   public SpecConfigBellatrixImpl(
       final SpecConfigAltair specConfig,
       final Bytes4 bellatrixForkVersion,
@@ -56,7 +60,9 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
       final UInt256 terminalTotalDifficulty,
       final Bytes32 terminalBlockHash,
       final UInt64 terminalBlockHashActivationEpoch,
-      final int safeSlotsToImportOptimistically) {
+      final int safeSlotsToImportOptimistically,
+      final int gossipMaxSizeBellatrix,
+      final int maxChunkSizeBellatrix) {
     super(specConfig);
     this.bellatrixForkVersion = bellatrixForkVersion;
     this.bellatrixForkEpoch = bellatrixForkEpoch;
@@ -71,6 +77,8 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
     this.terminalBlockHash = terminalBlockHash;
     this.terminalBlockHashActivationEpoch = terminalBlockHashActivationEpoch;
     this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
+    this.gossipMaxSizeBellatrix = gossipMaxSizeBellatrix;
+    this.maxChunkSizeBellatrix = maxChunkSizeBellatrix;
   }
 
   public static SpecConfigBellatrix required(final SpecConfig specConfig) {
@@ -149,6 +157,16 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   }
 
   @Override
+  public int getGossipMaxSizeBellatrix() {
+    return gossipMaxSizeBellatrix;
+  }
+
+  @Override
+  public int getMaxChunkSizeBellatrix() {
+    return maxChunkSizeBellatrix;
+  }
+
+  @Override
   public Optional<SpecConfigBellatrix> toVersionBellatrix() {
     return Optional.of(this);
   }
@@ -169,6 +187,8 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
         && maxTransactionsPerPayload == that.maxTransactionsPerPayload
         && bytesPerLogsBloom == that.bytesPerLogsBloom
         && maxExtraDataBytes == that.maxExtraDataBytes
+        && gossipMaxSizeBellatrix == that.gossipMaxSizeBellatrix
+        && maxChunkSizeBellatrix == that.maxChunkSizeBellatrix
         && Objects.equals(bellatrixForkVersion, that.bellatrixForkVersion)
         && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
         && Objects.equals(
@@ -193,6 +213,8 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
         maxExtraDataBytes,
         terminalTotalDifficulty,
         terminalBlockHash,
-        terminalBlockHashActivationEpoch);
+        terminalBlockHashActivationEpoch,
+        gossipMaxSizeBellatrix,
+        maxChunkSizeBellatrix);
   }
 }

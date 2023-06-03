@@ -19,7 +19,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +47,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttestationGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
@@ -71,7 +71,7 @@ public class AttestationGossipManagerTest {
           recentChainData,
           gossipedAttestationProcessor,
           forkInfo,
-          GOSSIP_MAX_SIZE);
+          gossipMaxSize);
 
   @BeforeEach
   public void setup() {

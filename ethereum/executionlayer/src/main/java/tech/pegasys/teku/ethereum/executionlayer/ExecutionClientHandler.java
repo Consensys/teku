@@ -17,9 +17,9 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -40,7 +40,7 @@ public interface ExecutionClientHandler {
   SafeFuture<GetPayloadResponse> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
-  SafeFuture<PayloadStatus> engineNewPayload(ExecutionPayload executionPayload);
+  SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
 
   SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
       TransitionConfiguration transitionConfiguration);

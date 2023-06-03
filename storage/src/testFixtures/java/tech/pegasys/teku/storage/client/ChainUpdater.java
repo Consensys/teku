@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -39,6 +40,7 @@ public class ChainUpdater {
   public final ChainBuilder chainBuilder;
   public final BlobSidecarManager blobSidecarManager;
   public final Spec spec;
+  public final BlockOptions blockOptions = BlockOptions.create();
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
@@ -234,7 +236,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
-    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot, blockOptions);
     final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     if (blobSidecars.isEmpty()) {
       saveBlock(block);
