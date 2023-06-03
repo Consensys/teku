@@ -60,7 +60,6 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.BlockProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
@@ -106,8 +105,7 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       final BeaconBlock block,
       final IndexedAttestationCache indexedAttestationCache,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     final MutableBeaconStateCapella state = MutableBeaconStateCapella.required(genericState);
     processBlockHeader(state, block);
