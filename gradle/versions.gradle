@@ -30,7 +30,7 @@ dependencyManagement {
 
     dependency 'commons-cli:commons-cli:1.4'
 
-    dependency 'info.picocli:picocli:4.7.3'
+    dependency 'info.picocli:picocli:4.7.4'
 
     dependencySet(group: 'io.javalin', version: '5.5.0') {
       entry 'javalin'
@@ -58,7 +58,7 @@ dependencyManagement {
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:4.18.2'
+    dependency 'org.webjars:swagger-ui:4.19.0'
     dependency 'org.thymeleaf:thymeleaf:3.1.1.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.160'
     dependency 'com.github.oshi:oshi-core-java11:6.4.2'
