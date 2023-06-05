@@ -100,6 +100,7 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class Spec {
@@ -878,6 +879,19 @@ public class Spec {
 
   public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
     return signedBlobSidecar.getBlobSidecar().getIndex().mod(BLOB_SIDECAR_SUBNET_COUNT);
+  }
+
+  public Optional<UInt64> computeFirstSlotWithBlobSupport() {
+    return forkSchedule.getActiveMilestones().stream()
+        .map(
+            forkAndSpecMilestone ->
+                forMilestone(forkAndSpecMilestone.getSpecMilestone())
+                    .miscHelpers()
+                    .toVersionDeneb())
+        .filter(Optional::isPresent)
+        .map(Optional::get)
+        .findFirst()
+        .map(MiscHelpersDeneb::computeFirstSlotWithBlobSupport);
   }
 
   // Private helpers
