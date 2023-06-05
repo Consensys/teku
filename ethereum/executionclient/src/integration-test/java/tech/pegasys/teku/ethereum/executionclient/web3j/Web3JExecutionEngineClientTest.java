@@ -245,6 +245,9 @@ public class Web3JExecutionEngineClientTest {
     // sanity check
     assertThat(executionPayloadV3Parameter.get("parentHash"))
         .isEqualTo(executionPayloadV3.parentHash.toHexString());
+    assertThat(executionPayloadV3Parameter.get("dataGasUsed"))
+        .isEqualTo(
+            Bytes.ofUnsignedLong(executionPayloadV3.dataGasUsed.longValue()).toQuantityHexString());
     assertThat(executionPayloadV3Parameter.get("excessDataGas"))
         .isEqualTo(
             Bytes.ofUnsignedLong(executionPayloadV3.excessDataGas.longValue())
