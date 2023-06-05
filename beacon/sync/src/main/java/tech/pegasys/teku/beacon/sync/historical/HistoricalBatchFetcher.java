@@ -229,12 +229,7 @@ public class HistoricalBatchFetcher {
           Optional.of(
               requestParams
                   .getStartSlot()
-                  .max(
-                      spec.getGenesisSpec()
-                          .miscHelpers()
-                          .toVersionDeneb()
-                          .orElseThrow()
-                          .computeFirstSlotWithBlobSupport()));
+                  .max(spec.computeFirstSlotWithBlobSupport().orElseThrow()));
       LOG.trace(
           "Request {} blob sidecars from {} to {}",
           requestParams.getCount(),
@@ -380,6 +375,10 @@ public class HistoricalBatchFetcher {
             proposerPublicKeys.add(List.of(proposerPublicKey));
           }
         });
+
+    if (signatures.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
 
     return signatureVerificationService
         .verify(proposerPublicKeys, signingRoots, signatures)
