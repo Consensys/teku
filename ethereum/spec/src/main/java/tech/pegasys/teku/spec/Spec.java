@@ -881,9 +881,9 @@ public class Spec {
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
-    return forkSchedule.getSupportedMilestones().stream()
-        .flatMap(milestone -> forMilestone(milestone).getConfig().toVersionDeneb().stream())
-        .findFirst()
+    return forMilestone(forkSchedule.getHighestSupportedMilestone())
+        .getConfig()
+        .toVersionDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
         .map(this::computeStartSlotAtEpoch);
   }
