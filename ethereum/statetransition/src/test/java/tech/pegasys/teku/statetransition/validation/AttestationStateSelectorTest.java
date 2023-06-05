@@ -19,12 +19,14 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -48,8 +50,10 @@ class AttestationStateSelectorTest {
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+
   private final AttestationStateSelector selector =
-      new AttestationStateSelector(spec, storageSystem.recentChainData());
+      new AttestationStateSelector(spec, storageSystem.recentChainData(), metricsSystem);
 
   @BeforeAll
   public static void initSession() {
