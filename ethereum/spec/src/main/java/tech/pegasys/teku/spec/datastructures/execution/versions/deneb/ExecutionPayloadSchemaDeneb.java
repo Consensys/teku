@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DATA_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_DATA_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
@@ -36,7 +37,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -55,7 +56,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaDeneb
-    extends ContainerSchema16<
+    extends ContainerSchema17<
         ExecutionPayloadDenebImpl,
         SszBytes32,
         SszByteVector,
@@ -72,7 +73,8 @@ public class ExecutionPayloadSchemaDeneb
         SszBytes32,
         SszList<Transaction>,
         SszList<Withdrawal>,
-        SszUInt256>
+        SszUInt64,
+        SszUInt64>
     implements ExecutionPayloadSchema<ExecutionPayloadDenebImpl> {
 
   private final ExecutionPayloadDenebImpl defaultExecutionPayload;
@@ -100,7 +102,8 @@ public class ExecutionPayloadSchemaDeneb
         namedSchema(
             WITHDRAWALS,
             SszListSchema.create(new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())),
-        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT256_SCHEMA));
+        namedSchema(DATA_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 

@@ -19,8 +19,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container16;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container17;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionPayloadHeaderDenebImpl
-    extends Container16<
+    extends Container17<
         ExecutionPayloadHeaderDenebImpl,
         SszBytes32,
         SszByteVector,
@@ -45,11 +45,12 @@ public class ExecutionPayloadHeaderDenebImpl
         SszBytes32,
         SszBytes32,
         SszBytes32,
-        SszUInt256>
+        SszUInt64,
+        SszUInt64>
     implements ExecutionPayloadHeaderDeneb {
 
   protected ExecutionPayloadHeaderDenebImpl(
-      ContainerSchema16<
+      ContainerSchema17<
               ExecutionPayloadHeaderDenebImpl,
               SszBytes32,
               SszByteVector,
@@ -66,7 +67,8 @@ public class ExecutionPayloadHeaderDenebImpl
               SszBytes32,
               SszBytes32,
               SszBytes32,
-              SszUInt256>
+              SszUInt64,
+              SszUInt64>
           schema,
       TreeNode backingTree) {
     super(schema, backingTree);
@@ -89,7 +91,8 @@ public class ExecutionPayloadHeaderDenebImpl
       SszBytes32 blockHash,
       SszBytes32 transactionsRoot,
       SszBytes32 withdrawalsRoot,
-      SszUInt256 excessDataGas) {
+      SszUInt64 dataGasUsed,
+      SszUInt64 excessDataGas) {
     super(
         schema,
         parentHash,
@@ -107,6 +110,7 @@ public class ExecutionPayloadHeaderDenebImpl
         blockHash,
         transactionsRoot,
         withdrawalsRoot,
+        dataGasUsed,
         excessDataGas);
   }
 
@@ -206,7 +210,12 @@ public class ExecutionPayloadHeaderDenebImpl
   }
 
   @Override
-  public UInt256 getExcessDataGas() {
+  public UInt64 getDataGasUsed() {
     return getField15().get();
+  }
+
+  @Override
+  public UInt64 getExcessDataGas() {
+    return getField16().get();
   }
 }
