@@ -86,15 +86,16 @@ public class AttestationStateSelector {
       final Optional<BeaconState> maybeChainHeadData =
           recentChainData.getChainHeads().stream()
               .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot))
-              .map(ProtoNodeData::getStateRoot)
               .findFirst()
               .flatMap(
-                  root -> {
+                  protoNodeData -> {
                     LOG.debug(
                         "Found chain for target {}, chain head {}",
                         () -> attestationData.getTarget().getRoot(),
-                        () -> root);
-                    return recentChainData.getStore().getBlockStateIfAvailable(root);
+                        protoNodeData::getStateRoot);
+                    return recentChainData
+                        .getStore()
+                        .getBlockStateIfAvailable(protoNodeData.getRoot());
                   });
       if (maybeChainHeadData.isPresent()) {
         appliedSelectorRule.labels("ancestor_of_fork").inc();
