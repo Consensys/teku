@@ -73,14 +73,25 @@ public class AttestationStateSelector {
           .thenCompose(state -> resolveStateForAttestation(attestationData, state));
     }
 
-    // If it's an ancestor of head and within historic slots, use the chain head
     final UInt64 headEpoch = spec.computeEpochAtSlot(chainHead.getSlot());
     if (attestationEpoch
         .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
         .isGreaterThan(headEpoch)) {
+      // If it's an ancestor of head and within historic slots, use the chain head
       if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
         appliedSelectorRule.labels("ancestor_of_head").inc();
         return chainHead.getState().thenApply(Optional::of);
+      }
+      // if it's an ancestor of any chain head within historic slots, use that chain head.
+      final Optional<BeaconState> maybeChainHeadData =
+          recentChainData.getChainHeads().stream()
+              .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot))
+              .map(ProtoNodeData::getStateRoot)
+              .findFirst()
+              .flatMap(root -> recentChainData.getStore().getBlockStateIfAvailable(root));
+      if (maybeChainHeadData.isPresent()) {
+        appliedSelectorRule.labels("ancestor_of_fork").inc();
+        return completedFuture(maybeChainHeadData);
       }
     }
 
@@ -110,6 +121,12 @@ public class AttestationStateSelector {
       final Optional<BeaconState> maybeState =
           recentChainData.getStore().getBlockStateIfAvailable(targetBlockRoot);
       if (maybeState.isPresent()) {
+        LOG.debug(
+            "Found state in cache for attestationData target {}, source {}, head {} , slot {}",
+            attestationData.getTarget().getRoot(),
+            attestationData.getSource().getRoot(),
+            attestationData.getBeaconBlockRoot(),
+            attestationData.getSlot());
         appliedSelectorRule.labels("state_in_cache").inc();
         return SafeFuture.completedFuture(maybeState);
       }
