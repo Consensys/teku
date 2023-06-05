@@ -48,7 +48,7 @@ public class AttestationStateSelector {
 
     appliedSelectorRule =
         metricsSystem.createLabelledCounter(
-            TekuMetricCategory.BEACON,
+            TekuMetricCategory.NETWORK,
             "attestation_state_selector_total",
             "Counter of the rules applied successfully to find a state against which to validate a gossipped attestation",
             "rule_applied");
@@ -63,7 +63,6 @@ public class AttestationStateSelector {
     final ChainHead chainHead = maybeChainHead.get();
 
     final Bytes32 targetBlockRoot = attestationData.getBeaconBlockRoot();
-    final UInt64 attestationSlot = attestationData.getSlot();
     final UInt64 attestationEpoch = attestationData.getTarget().getEpoch();
 
     // If targetBlockRoot is the current chain head, use the chain head
@@ -74,16 +73,13 @@ public class AttestationStateSelector {
           .thenCompose(state -> resolveStateForAttestation(attestationData, state));
     }
 
-    // If it's a descendant of head and within historic slots, use the chain head
+    // If it's an ancestor of head and within historic slots, use the chain head
     final UInt64 headEpoch = spec.computeEpochAtSlot(chainHead.getSlot());
     if (attestationEpoch
         .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
         .isGreaterThan(headEpoch)) {
-      if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot, attestationSlot)) {
-        appliedSelectorRule.labels("descendent_of_head").inc();
-        return chainHead.getState().thenApply(Optional::of);
-      } else if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
-        appliedSelectorRule.labels("descendent_of_head_new").inc();
+      if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
+        appliedSelectorRule.labels("ancestor_of_head").inc();
         return chainHead.getState().thenApply(Optional::of);
       }
     }
