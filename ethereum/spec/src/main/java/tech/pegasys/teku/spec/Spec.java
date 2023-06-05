@@ -100,7 +100,6 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class Spec {
@@ -882,16 +881,12 @@ public class Spec {
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
-    return forkSchedule.getActiveMilestones().stream()
-        .map(
-            forkAndSpecMilestone ->
-                forMilestone(forkAndSpecMilestone.getSpecMilestone())
-                    .miscHelpers()
-                    .toVersionDeneb())
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+    return forkSchedule.getSupportedMilestones().stream()
+        .flatMap(milestone -> forMilestone(milestone).getConfig().toVersionDeneb().stream())
         .findFirst()
-        .map(MiscHelpersDeneb::computeFirstSlotWithBlobSupport);
+        .map(
+            specConfigDeneb ->
+                specConfigDeneb.getDenebForkEpoch().times(specConfigDeneb.getSlotsPerEpoch()));
   }
 
   // Private helpers
