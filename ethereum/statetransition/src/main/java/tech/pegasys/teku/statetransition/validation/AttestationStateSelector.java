@@ -49,7 +49,7 @@ public class AttestationStateSelector {
     appliedSelectorRule =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            "attestation_state_selector",
+            "attestation_state_selector_total",
             "Counter of the rules applied successfully to find a state against which to validate a gossipped attestation",
             "rule_applied");
   }
