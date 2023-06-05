@@ -68,6 +68,7 @@ public class AttestationStateSelector {
 
     // If targetBlockRoot is the current chain head, use the chain head
     if (chainHead.getRoot().equals(targetBlockRoot)) {
+      appliedSelectorRule.labels("chain_head_is_target").inc();
       return chainHead
           .getState()
           .thenCompose(state -> resolveStateForAttestation(attestationData, state));
@@ -80,6 +81,9 @@ public class AttestationStateSelector {
         .isGreaterThan(headEpoch)) {
       if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot, attestationSlot)) {
         appliedSelectorRule.labels("descendent_of_head").inc();
+        return chainHead.getState().thenApply(Optional::of);
+      } else if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
+        appliedSelectorRule.labels("descendent_of_head_new").inc();
         return chainHead.getState().thenApply(Optional::of);
       }
     }
@@ -154,6 +158,13 @@ public class AttestationStateSelector {
         requiredCheckpoint.getRoot());
     appliedSelectorRule.labels("retrieve_checkpoint_state").inc();
     return recentChainData.retrieveCheckpointState(requiredCheckpoint);
+  }
+
+  private Boolean isAncestorOfChainHead(final Bytes32 headRoot, final Bytes32 blockRoot) {
+    return recentChainData
+        .getSlotForBlockRoot(blockRoot)
+        .map(blockSlot -> isAncestorOfChainHead(headRoot, blockRoot, blockSlot))
+        .orElse(false);
   }
 
   private Boolean isAncestorOfChainHead(
