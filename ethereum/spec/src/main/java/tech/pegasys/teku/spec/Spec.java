@@ -884,9 +884,8 @@ public class Spec {
     return forkSchedule.getSupportedMilestones().stream()
         .flatMap(milestone -> forMilestone(milestone).getConfig().toVersionDeneb().stream())
         .findFirst()
-        .map(
-            specConfigDeneb ->
-                specConfigDeneb.getDenebForkEpoch().times(specConfigDeneb.getSlotsPerEpoch()));
+        .map(SpecConfigDeneb::getDenebForkEpoch)
+        .map(this::computeStartSlotAtEpoch);
   }
 
   // Private helpers
