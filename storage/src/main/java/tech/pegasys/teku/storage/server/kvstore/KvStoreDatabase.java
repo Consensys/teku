@@ -844,6 +844,13 @@ public class KvStoreDatabase implements Database {
     return dao.streamBlobSidecarKeys(startSlot, endSlot);
   }
 
+  @MustBeClosed
+  @Override
+  public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return dao.streamBlobSidecars(slotAndBlockRoot)
+        .map(payload -> spec.deserializeBlobSidecar(payload, slotAndBlockRoot.getSlot()));
+  }
+
   @Override
   public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {

@@ -134,6 +134,17 @@ public class V4FinalizedKvStoreDao {
         new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
+  @MustBeClosed
+  public Stream<Bytes> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return db.stream(
+            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))
+        .map(ColumnEntry::getValue);
+  }
+
   public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
     try (final Stream<SlotAndBlockRootAndBlobIndex> streamKeys =

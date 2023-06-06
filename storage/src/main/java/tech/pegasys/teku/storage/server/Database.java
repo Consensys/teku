@@ -83,6 +83,9 @@ public interface Database extends AutoCloseable {
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
 
+  @MustBeClosed
+  Stream<BlobSidecar> streamBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+
   List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<UInt64> getEarliestBlobSidecarSlot();

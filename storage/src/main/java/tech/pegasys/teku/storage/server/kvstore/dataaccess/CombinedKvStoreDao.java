@@ -346,6 +346,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
+  @MustBeClosed
+  @Override
+  public Stream<Bytes> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return db.stream(
+            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))
+        .map(ColumnEntry::getValue);
+  }
+
   @Override
   public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {

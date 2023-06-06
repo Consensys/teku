@@ -219,14 +219,7 @@ public class ChainStorage
   public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(
-        () -> {
-          final List<SlotAndBlockRootAndBlobIndex> blobSidecarKeys =
-              database.getBlobSidecarKeys(slotAndBlockRoot);
-          return blobSidecarKeys.stream()
-              .map(database::getBlobSidecar)
-              .flatMap(Optional::stream)
-              .collect(Collectors.toList());
-        });
+        () -> database.streamBlobSidecars(slotAndBlockRoot).collect(Collectors.toList()));
   }
 
   @Override

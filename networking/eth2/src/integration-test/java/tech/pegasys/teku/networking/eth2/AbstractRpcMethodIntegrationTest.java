@@ -258,8 +258,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
                     .recentChainData()
                     .getBlockRootBySlot(slot)
                     .map(root -> new SlotAndBlockRoot(slot, root)))
-        .filter(Optional::isPresent)
-        .map(Optional::get)
+        .flatMap(Optional::stream)
         .map(this::safeRetrieveBlobSidecars)
         .flatMap(Collection::stream)
         .collect(Collectors.toUnmodifiableList());

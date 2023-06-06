@@ -286,6 +286,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return Stream.empty();
+  }
+
+  @Override
   public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return Collections.emptyList();
