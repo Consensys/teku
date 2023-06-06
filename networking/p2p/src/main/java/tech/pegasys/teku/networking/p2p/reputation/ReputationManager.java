@@ -18,6 +18,29 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
 public interface ReputationManager {
+  ReputationManager NOOP =
+      new ReputationManager() {
+        @Override
+        public void reportInitiatedConnectionFailed(PeerAddress peerAddress) {}
+
+        @Override
+        public boolean isConnectionInitiationAllowed(PeerAddress peerAddress) {
+          return false;
+        }
+
+        @Override
+        public void reportInitiatedConnectionSuccessful(PeerAddress peerAddress) {}
+
+        @Override
+        public void reportDisconnection(
+            PeerAddress peerAddress, Optional<DisconnectReason> reason, boolean locallyInitiated) {}
+
+        @Override
+        public boolean adjustReputation(
+            PeerAddress peerAddress, DefaultReputationAdjustment effect) {
+          return false;
+        }
+      };
 
   void reportInitiatedConnectionFailed(final PeerAddress peerAddress);
 
