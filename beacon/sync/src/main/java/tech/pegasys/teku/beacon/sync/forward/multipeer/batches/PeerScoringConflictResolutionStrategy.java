@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.batches;
 
-import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
-import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_PENALTY;
-import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_REWARD;
+import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.LARGE_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.SMALL_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.SMALL_REWARD;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
-import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
@@ -400,7 +400,7 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public void adjustReputation(final ReputationAdjustment adjustment) {}
+  public void adjustReputation(final DefaultReputationAdjustment adjustment) {}
 
   private <T> Optional<T> findObjectByRoot(
       final Bytes32 root, final BiFunction<ChainBuilder, Bytes32, Optional<T>> findMethod) {

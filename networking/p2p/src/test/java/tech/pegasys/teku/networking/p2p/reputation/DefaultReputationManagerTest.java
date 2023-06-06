@@ -14,9 +14,9 @@
 package tech.pegasys.teku.networking.p2p.reputation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
-import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_REWARD;
-import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.LARGE_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.LARGE_REWARD;
+import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.SMALL_PENALTY;
 
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -31,16 +31,17 @@ import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 
-class ReputationManagerTest {
+class DefaultReputationManagerTest {
 
   private static final int MORE_THAN_COOLDOWN_PERIOD =
-      ReputationManager.COOLDOWN_PERIOD.intValue() + 1;
-  private static final int MORE_THAN_BAN_PERIOD = ReputationManager.BAN_PERIOD.intValue() + 1;
+      DefaultReputationManager.COOLDOWN_PERIOD.intValue() + 1;
+  private static final int MORE_THAN_BAN_PERIOD =
+      DefaultReputationManager.BAN_PERIOD.intValue() + 1;
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final PeerAddress peerAddress = new PeerAddress(new MockNodeId(1));
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final DefaultReputationManager reputationManager =
+  private final ReputationManager reputationManager =
       new DefaultReputationManager(metricsSystem, timeProvider, 5);
 
   @Test

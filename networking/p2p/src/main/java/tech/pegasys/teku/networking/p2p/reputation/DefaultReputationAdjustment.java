@@ -13,15 +13,15 @@
 
 package tech.pegasys.teku.networking.p2p.reputation;
 
-public enum ReputationAdjustment {
-  LARGE_PENALTY(-ReputationManager.LARGE_CHANGE),
-  SMALL_PENALTY(-ReputationManager.SMALL_CHANGE),
-  SMALL_REWARD(ReputationManager.SMALL_CHANGE),
-  LARGE_REWARD(ReputationManager.LARGE_CHANGE);
+public enum DefaultReputationAdjustment {
+  LARGE_PENALTY(-DefaultReputationManager.LARGE_CHANGE),
+  SMALL_PENALTY(-DefaultReputationManager.SMALL_CHANGE),
+  SMALL_REWARD(DefaultReputationManager.SMALL_CHANGE),
+  LARGE_REWARD(DefaultReputationManager.LARGE_CHANGE);
 
   private final int scoreChange;
 
-  ReputationAdjustment(final int scoreChange) {
+  DefaultReputationAdjustment(final int scoreChange) {
     this.scoreChange = scoreChange;
   }
 

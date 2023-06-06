@@ -23,7 +23,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
-import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
@@ -118,7 +118,7 @@ public class StubPeer implements Peer {
   }
 
   @Override
-  public void adjustReputation(final ReputationAdjustment adjustment) {}
+  public void adjustReputation(final DefaultReputationAdjustment adjustment) {}
 
   @Override
   public String toString() {

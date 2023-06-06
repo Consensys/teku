@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.p2p.reputation;
 import com.google.common.base.MoreObjects;
 import java.util.EnumSet;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
@@ -28,6 +29,14 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class DefaultReputationManager implements ReputationManager {
+  // This is not a big ban, we expect the peer could be usable very soon
+  public static final UInt64 COOLDOWN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
+  // It's a big ban, we expect that the peer is not useful until major changes, for example,
+  // software update
+  public static final UInt64 BAN_PERIOD = UInt64.valueOf(TimeUnit.HOURS.toSeconds(12));
+
+  public static final int LARGE_CHANGE = 10;
+  public static final int SMALL_CHANGE = 3;
   private static final int DISCONNECT_THRESHOLD = -LARGE_CHANGE;
   private static final int MAX_REPUTATION_SCORE = 2 * LARGE_CHANGE;
 
@@ -82,7 +91,7 @@ public class DefaultReputationManager implements ReputationManager {
    */
   @Override
   public boolean adjustReputation(
-      final PeerAddress peerAddress, final ReputationAdjustment effect) {
+      final PeerAddress peerAddress, final DefaultReputationAdjustment effect) {
     return getOrCreateReputation(peerAddress)
         .adjustReputation(effect, timeProvider.getTimeInSeconds());
   }
@@ -136,7 +145,8 @@ public class DefaultReputationManager implements ReputationManager {
       return locallyInitiated && reason.map(BAN_REASONS::contains).orElse(false);
     }
 
-    public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
+    public boolean adjustReputation(
+        final DefaultReputationAdjustment effect, final UInt64 currentTime) {
       // No extra penalizing if already not suitable
       if (!isSuitableAt(currentTime)) {
         return score.get() <= DISCONNECT_THRESHOLD;
