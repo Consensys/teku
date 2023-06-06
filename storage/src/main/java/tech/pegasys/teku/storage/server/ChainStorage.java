@@ -223,8 +223,13 @@ public class ChainStorage
     return SafeFuture.of(
         () -> {
           try (final Stream<SlotAndBlockRootAndBlobIndex> keyStream =
-              database.streamBlobSidecarKeys(
-                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())) {
+              database
+                  .streamBlobSidecarKeys(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())
+                  .filter(
+                      slotAndBlockRootAndBlobIndex ->
+                          slotAndBlockRootAndBlobIndex
+                              .getBlockRoot()
+                              .equals(slotAndBlockRoot.getBlockRoot()))) {
             final List<BlobSidecar> blobSidecars = new ArrayList<>();
             for (Iterator<SlotAndBlockRootAndBlobIndex> iterator = keyStream.iterator();
                 iterator.hasNext(); ) {
