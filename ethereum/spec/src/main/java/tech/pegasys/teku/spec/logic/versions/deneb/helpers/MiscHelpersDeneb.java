@@ -127,9 +127,4 @@ public class MiscHelpersDeneb extends MiscHelpersBellatrix {
         .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
         .orElse(0);
   }
-
-  public UInt64 computeFirstSlotWithBlobSupport() {
-    final UInt64 denebForkEpoch = specConfig.toVersionDeneb().orElseThrow().getDenebForkEpoch();
-    return denebForkEpoch.times(specConfig.getSlotsPerEpoch());
-  }
 }

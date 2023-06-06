@@ -32,8 +32,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements ExecutionPayload {
 
+  @JsonProperty("data_gas_used")
+  public final UInt64 dataGasUsed;
+
   @JsonProperty("excess_data_gas")
-  public final UInt256 excessDataGas;
+  public final UInt64 excessDataGas;
 
   @JsonCreator
   public ExecutionPayloadDeneb(
@@ -52,7 +55,8 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions") final List<Bytes> transactions,
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals,
-      @JsonProperty("excess_data_gas") final UInt256 excessDataGas) {
+      @JsonProperty("data_gas_used") final UInt64 dataGasUsed,
+      @JsonProperty("excess_data_gas") final UInt64 excessDataGas) {
     super(
         parentHash,
         feeRecipient,
@@ -69,12 +73,14 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
         blockHash,
         transactions,
         withdrawals);
+    this.dataGasUsed = dataGasUsed;
     this.excessDataGas = excessDataGas;
   }
 
   public ExecutionPayloadDeneb(
       final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
     super(executionPayload);
+    this.dataGasUsed = executionPayload.toVersionDeneb().orElseThrow().getDataGasUsed();
     this.excessDataGas = executionPayload.toVersionDeneb().orElseThrow().getExcessDataGas();
   }
 
@@ -82,7 +88,9 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
   protected ExecutionPayloadBuilder applyToBuilder(
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final ExecutionPayloadBuilder builder) {
-    return super.applyToBuilder(executionPayloadSchema, builder).excessDataGas(() -> excessDataGas);
+    return super.applyToBuilder(executionPayloadSchema, builder)
+        .dataGasUsed(() -> dataGasUsed)
+        .excessDataGas(() -> excessDataGas);
   }
 
   @Override
@@ -95,19 +103,20 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof ExecutionPayloadDeneb)) {
       return false;
     }
     if (!super.equals(o)) {
       return false;
     }
     final ExecutionPayloadDeneb that = (ExecutionPayloadDeneb) o;
-    return Objects.equals(excessDataGas, that.excessDataGas);
+    return Objects.equals(dataGasUsed, that.dataGasUsed)
+        && Objects.equals(excessDataGas, that.excessDataGas);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), excessDataGas);
+    return Objects.hash(super.hashCode(), dataGasUsed, excessDataGas);
   }
 
   @Override
@@ -128,6 +137,7 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
         .add("blockHash", blockHash)
         .add("transactions", transactions)
         .add("withdrawals", withdrawals)
+        .add("dataGasUsed", dataGasUsed)
         .add("excessDataGas", excessDataGas)
         .toString();
   }

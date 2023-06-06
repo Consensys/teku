@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexDeserializer;
-import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSerializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -34,9 +34,13 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 
 public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
-  @JsonSerialize(using = UInt256AsHexSerializer.class)
-  @JsonDeserialize(using = UInt256AsHexDeserializer.class)
-  public final UInt256 excessDataGas;
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
+  public final UInt64 dataGasUsed;
+
+  @JsonSerialize(using = UInt64AsHexSerializer.class)
+  @JsonDeserialize(using = UInt64AsHexDeserializer.class)
+  public final UInt64 excessDataGas;
 
   public ExecutionPayloadV3(
       @JsonProperty("parentHash") Bytes32 parentHash,
@@ -54,7 +58,8 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
       @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
-      @JsonProperty("excessDataGas") UInt256 excessDataGas) {
+      @JsonProperty("dataGasUsed") UInt64 dataGasUsed,
+      @JsonProperty("excessDataGas") UInt64 excessDataGas) {
     super(
         parentHash,
         feeRecipient,
@@ -71,6 +76,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
         blockHash,
         transactions,
         withdrawals);
+    this.dataGasUsed = dataGasUsed;
     this.excessDataGas = excessDataGas;
   }
 
@@ -96,6 +102,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
             .map(SszByteListImpl::getBytes)
             .collect(Collectors.toList()),
         withdrawalsList,
+        executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getDataGasUsed).orElse(null),
         executionPayload
             .toVersionDeneb()
             .map(ExecutionPayloadDeneb::getExcessDataGas)
@@ -107,7 +114,8 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final ExecutionPayloadBuilder builder) {
     return super.applyToBuilder(executionPayloadSchema, builder)
+        .dataGasUsed(() -> checkNotNull(dataGasUsed, "dataGasUsed not provided when required"))
         .excessDataGas(
-            () -> checkNotNull(excessDataGas, "Excess data gas not provided when required"));
+            () -> checkNotNull(excessDataGas, "excessDataGas not provided when required"));
   }
 }
