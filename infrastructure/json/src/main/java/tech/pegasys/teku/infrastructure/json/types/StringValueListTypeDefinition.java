@@ -14,17 +14,12 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import java.util.List;
+import java.util.function.Function;
 
-public interface StringValueTypeDefinition<T> extends DeserializableTypeDefinition<T> {
-  String serializeToString(T value);
+public class StringValueListTypeDefinition<T>
+    extends StringValueArrayTypeDefinition<T, List<T>> {
 
-  T deserializeFromString(String value);
-
-  @Override
-  StringValueTypeDefinition<T> withDescription(final String description);
-
-  static <TObject> StringValueTypeDefinition<List<TObject>> stringListOf(
-      final StringValueTypeDefinition<TObject> itemType) {
-    return new StringValueListTypeDefinition<>(itemType);
+  public StringValueListTypeDefinition(final StringValueTypeDefinition<T> itemType) {
+    super(itemType, Function.identity());
   }
 }
