@@ -23,4 +23,9 @@ public interface BuilderBidSchema<T extends BuilderBid> extends SszContainerSche
   T createFromBackingNode(TreeNode node);
 
   BuilderBid createBuilderBid(Consumer<BuilderBidBuilder> builderConsumer);
+
+  @SuppressWarnings("unchecked")
+  default BuilderBidSchema<BuilderBid> castTypeToBuilderBid() {
+    return (BuilderBidSchema<BuilderBid>) this;
+  }
 }

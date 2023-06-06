@@ -115,7 +115,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.builderBidSchemaDeneb =
         new BuilderBidSchemaDeneb(executionPayloadHeaderSchemaDeneb, blindedBlobsBundleSchema);
     this.signedBuilderBidSchemaDeneb =
-        new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
+        new SignedBuilderBidSchema(
+            "SignedBuilderBidDeneb", builderBidSchemaDeneb.castTypeToBuilderBid());
 
     this.blobSchema = new BlobSchema(specConfig);
     this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);

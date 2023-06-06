@@ -24,7 +24,8 @@ public class SignedBuilderBidSchema
     extends ContainerSchema2<SignedBuilderBid, BuilderBid, SszSignature>
     implements SszContainerSchema<SignedBuilderBid> {
 
-  public SignedBuilderBidSchema(final String schemaName, final BuilderBidSchema builderBidSchema) {
+  public SignedBuilderBidSchema(
+      final String schemaName, final BuilderBidSchema<BuilderBid> builderBidSchema) {
     super(
         schemaName,
         namedSchema("message", builderBidSchema),
