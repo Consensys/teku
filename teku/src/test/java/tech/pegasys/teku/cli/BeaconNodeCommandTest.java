@@ -471,7 +471,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .storageConfiguration(
             b -> b.eth1DepositContract(networkConfig.getEth1DepositContractAddress()))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
-        .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
+        .restApi(
+            b ->
+                b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress())
+                    .restApiEnabled(false))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
         .discovery(
             d ->
