@@ -540,7 +540,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.restApiPort(5051)
                     .restApiDocsEnabled(false)
-                    .restApiEnabled(false)
+                    .restApiEnabled(true)
                     .restApiLightClientEnabled(false)
                     .restApiInterface("127.0.0.1")
                     .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
