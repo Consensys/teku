@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -222,22 +220,12 @@ public class ChainStorage
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(
         () -> {
-          try (final Stream<SlotAndBlockRootAndBlobIndex> keyStream =
-              database
-                  .streamBlobSidecarKeys(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())
-                  .filter(
-                      slotAndBlockRootAndBlobIndex ->
-                          slotAndBlockRootAndBlobIndex
-                              .getBlockRoot()
-                              .equals(slotAndBlockRoot.getBlockRoot()))) {
-            final List<BlobSidecar> blobSidecars = new ArrayList<>();
-            for (Iterator<SlotAndBlockRootAndBlobIndex> iterator = keyStream.iterator();
-                iterator.hasNext(); ) {
-              final SlotAndBlockRootAndBlobIndex key = iterator.next();
-              blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
-            }
-            return blobSidecars;
-          }
+          final List<SlotAndBlockRootAndBlobIndex> blobSidecarKeys =
+              database.getBlobSidecarKeys(slotAndBlockRoot);
+          return blobSidecarKeys.stream()
+              .map(database::getBlobSidecar)
+              .flatMap(Optional::stream)
+              .collect(Collectors.toList());
         });
   }
 

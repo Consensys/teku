@@ -802,13 +802,8 @@ public class KvStoreDatabase implements Database {
 
   @Override
   public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final FinalizedUpdater updater = finalizedUpdater();
-        final Stream<SlotAndBlockRootAndBlobIndex> keyStream =
-            streamBlobSidecarKeys(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())
-                .filter(
-                    blobSidecar ->
-                        blobSidecar.getBlockRoot().equals(slotAndBlockRoot.getBlockRoot()))) {
-      keyStream.forEach(updater::removeBlobSidecar);
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      getBlobSidecarKeys(slotAndBlockRoot).forEach(updater::removeBlobSidecar);
       updater.commit();
     }
   }
@@ -847,6 +842,12 @@ public class KvStoreDatabase implements Database {
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobSidecarKeys(startSlot, endSlot);
+  }
+
+  @Override
+  public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return dao.getBlobSidecarKeys(slotAndBlockRoot);
   }
 
   @Override
@@ -1001,32 +1002,21 @@ public class KvStoreDatabase implements Database {
 
   private void removeNonCanonicalBlobSidecars(
       final Map<Bytes32, UInt64> deletedHotBlocks,
-      Map<Bytes32, Bytes32> finalizedChildToParentMap) {
-    if (storeNonCanonicalBlocks) {
-      return;
-    }
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       LOG.trace("Removing blob sidecars for non-canonical blocks");
-      final Set<SignedBeaconBlock> nonCanonicalBlocks =
-          deletedHotBlocks.keySet().stream()
-              .filter(root -> !finalizedChildToParentMap.containsKey(root))
-              .flatMap(root -> getHotBlock(root).stream())
+      final Set<SlotAndBlockRoot> nonCanonicalBlocks =
+          deletedHotBlocks.entrySet().stream()
+              .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
+              .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
               .collect(Collectors.toSet());
-      for (final SignedBeaconBlock block : nonCanonicalBlocks) {
-        try (final Stream<SlotAndBlockRootAndBlobIndex> slotAndBlockRootAndBlobIndexStream =
-            dao.streamBlobSidecarKeys(block.getSlot(), block.getSlot())
-                .filter(
-                    blobSidecar ->
-                        block
-                            .getSlotAndBlockRoot()
-                            .getBlockRoot()
-                            .equals(blobSidecar.getBlockRoot()))) {
-          slotAndBlockRootAndBlobIndexStream.forEach(
-              key -> {
-                LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
-                updater.removeBlobSidecar(key);
-              });
-        }
+      for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+        dao.getBlobSidecarKeys(slotAndBlockRoot)
+            .forEach(
+                key -> {
+                  LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
+                  updater.removeBlobSidecar(key);
+                });
       }
       updater.commit();
     }

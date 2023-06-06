@@ -286,6 +286,12 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return Collections.emptyList();
+  }
+
+  @Override
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
     return Optional.empty();
   }
