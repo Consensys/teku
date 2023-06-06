@@ -25,6 +25,8 @@ For information on changes in released versions of Teku, see the [releases page]
 - Add support for Chiado (Gnosis testnet): `--network=chiado`
 - Added beacon-apis rewards endpoints.
 - Removed the experimental flag from `/eth/v1/validator/liveness/:epoch` rest-api endpoint.
+- Following on from the non finality issue, improved state selection during attestation validation, 
+  where we failed to correctly identify that we could use the head state for validation of canonical attestation gossip.
 
 ### Bug Fixes
 
