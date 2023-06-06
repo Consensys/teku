@@ -471,10 +471,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
         .storageConfiguration(
             b -> b.eth1DepositContract(networkConfig.getEth1DepositContractAddress()))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
-        .restApi(
-            b ->
-                b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress())
-                    .restApiEnabled(false))
+        .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))
         .discovery(
             d ->
@@ -543,7 +540,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             b ->
                 b.restApiPort(5051)
                     .restApiDocsEnabled(false)
-                    .restApiEnabled(true)
+                    .restApiEnabled(false)
                     .restApiLightClientEnabled(false)
                     .restApiInterface("127.0.0.1")
                     .restApiHostAllowlist(List.of("127.0.0.1", "localhost"))
