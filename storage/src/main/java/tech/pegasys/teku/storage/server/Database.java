@@ -65,7 +65,7 @@ public interface Database extends AutoCloseable {
 
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
-  void removeBlobSidecars(UInt64 slot);
+  void removeBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   /**
    * This prune method will delete BlobSidecars starting from the oldest BlobSidecars (by slot) up

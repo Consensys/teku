@@ -801,9 +801,13 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void removeBlobSidecars(final UInt64 slot) {
+  public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     try (final FinalizedUpdater updater = finalizedUpdater();
-        final Stream<SlotAndBlockRootAndBlobIndex> keyStream = streamBlobSidecarKeys(slot, slot)) {
+        final Stream<SlotAndBlockRootAndBlobIndex> keyStream =
+            streamBlobSidecarKeys(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())
+                .filter(
+                    blobSidecar ->
+                        blobSidecar.getBlockRoot().equals(slotAndBlockRoot.getBlockRoot()))) {
       keyStream.forEach(updater::removeBlobSidecar);
       updater.commit();
     }
@@ -899,7 +903,8 @@ public class KvStoreDatabase implements Database {
             update.getOptimisticTransitionBlockRoot());
 
     if (update.isBlobSidecarsEnabled()) {
-      updateBlobSidecars(update.getFinalizedBlocks(), update.getDeletedHotBlocks());
+      removeNonCanonicalBlobSidecars(
+          update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
     }
 
     LOG.trace("Applying hot updates");
@@ -994,24 +999,35 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  private void updateBlobSidecars(
-      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, UInt64> deletedHotBlocks) {
+  private void removeNonCanonicalBlobSidecars(
+      final Map<Bytes32, UInt64> deletedHotBlocks,
+      Map<Bytes32, Bytes32> finalizedChildToParentMap) {
+    if (storeNonCanonicalBlocks) {
+      return;
+    }
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      final Set<Bytes32> finalizedBlockRoots = finalizedBlocks.keySet();
-      LOG.trace("Removing blob sidecars for deleted hot blocks");
-      List<UInt64> dropSlots =
-          deletedHotBlocks.entrySet().stream()
-              .filter(entry -> !finalizedBlockRoots.contains(entry.getKey()))
-              .map(Map.Entry::getValue)
-              .collect(Collectors.toList());
-      for (final UInt64 slot : dropSlots) {
+      LOG.trace("Removing blob sidecars for non-canonical blocks");
+      final Set<SignedBeaconBlock> nonCanonicalBlocks =
+          deletedHotBlocks.keySet().stream()
+              .filter(root -> !finalizedChildToParentMap.containsKey(root))
+              .flatMap(root -> getHotBlock(root).stream())
+              .collect(Collectors.toSet());
+      for (final SignedBeaconBlock block : nonCanonicalBlocks) {
         try (final Stream<SlotAndBlockRootAndBlobIndex> slotAndBlockRootAndBlobIndexStream =
-            dao.streamBlobSidecarKeys(slot, slot)) {
-          slotAndBlockRootAndBlobIndexStream.forEach(updater::removeBlobSidecar);
+            dao.streamBlobSidecarKeys(block.getSlot(), block.getSlot())
+                .filter(
+                    blobSidecar ->
+                        block
+                            .getSlotAndBlockRoot()
+                            .getBlockRoot()
+                            .equals(blobSidecar.getBlockRoot()))) {
+          slotAndBlockRootAndBlobIndexStream.forEach(
+              key -> {
+                LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
+                updater.removeBlobSidecar(key);
+              });
         }
       }
-
       updater.commit();
     }
   }

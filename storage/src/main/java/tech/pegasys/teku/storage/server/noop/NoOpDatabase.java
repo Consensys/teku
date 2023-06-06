@@ -277,7 +277,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void removeBlobSidecars(final UInt64 slot) {}
+  public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(

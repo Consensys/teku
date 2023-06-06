@@ -168,8 +168,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
-    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slot));
+  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slotAndBlockRoot));
   }
 
   @Override
