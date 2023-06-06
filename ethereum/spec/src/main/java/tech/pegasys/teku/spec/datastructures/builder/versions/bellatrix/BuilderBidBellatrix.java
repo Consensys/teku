@@ -40,6 +40,7 @@ public class BuilderBidBellatrix
     super(schema, header, value, publicKey);
   }
 
+  @Override
   public ExecutionPayloadHeader getHeader() {
     return getField0();
   }
@@ -49,10 +50,12 @@ public class BuilderBidBellatrix
     return Optional.empty();
   }
 
+  @Override
   public UInt256 getValue() {
     return getField1().get();
   }
 
+  @Override
   public BLSPublicKey getPublicKey() {
     return getField2().getBLSPublicKey();
   }
