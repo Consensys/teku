@@ -349,13 +349,15 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   @Override
   public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return db.streamKeys(
+    try (final Stream<SlotAndBlockRootAndBlobIndex> streamKeys =
+        db.streamKeys(
             schema.getColumnBlobSidecarBySlotRootBlobIndex(),
             new SlotAndBlockRootAndBlobIndex(
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
             new SlotAndBlockRootAndBlobIndex(
-                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))
-        .collect(Collectors.toList());
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
+      return streamKeys.collect(Collectors.toList());
+    }
   }
 
   @Override
