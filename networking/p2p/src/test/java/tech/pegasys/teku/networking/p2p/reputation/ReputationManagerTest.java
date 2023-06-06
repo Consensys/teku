@@ -40,8 +40,8 @@ class ReputationManagerTest {
   private final PeerAddress peerAddress = new PeerAddress(new MockNodeId(1));
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
-  private final ReputationManager reputationManager =
-      new ReputationManager(metricsSystem, timeProvider, 5);
+  private final DefaultReputationManager reputationManager =
+      new DefaultReputationManager(metricsSystem, timeProvider, 5);
 
   @Test
   public void shouldDisallowConnectionInitiationWhenConnectionHasFailedRecently() {
