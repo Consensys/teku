@@ -277,12 +277,23 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public void removeBlobSidecars(final UInt64 slot) {}
+  public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
+  }
+
+  @Override
+  public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return Collections.emptyList();
   }
 
   @Override
