@@ -227,7 +227,7 @@ public class Web3JExecutionEngineClientTest {
     final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
 
     final SafeFuture<Response<PayloadStatusV1>> futureResponse =
-        eeClient.newPayloadV3(executionPayloadV3, blobVersionedHashes);
+        eeClient.newPayloadV3(executionPayloadV3, Optional.of(blobVersionedHashes));
 
     assertThat(futureResponse)
         .succeedsWithin(1, TimeUnit.SECONDS)

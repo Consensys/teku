@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -21,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -167,9 +167,9 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         SafeFuture.completedFuture(
             new Response<>(
                 new PayloadStatusV1(ExecutionPayloadStatus.ACCEPTED, data.randomBytes32(), null)));
-    when(executionEngineClient.newPayloadV3(payloadV1, emptyList())).thenReturn(dummyResponse);
+    when(executionEngineClient.newPayloadV3(payloadV1, Optional.empty())).thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
-    verify(executionEngineClient).newPayloadV3(payloadV1, emptyList());
+    verify(executionEngineClient).newPayloadV3(payloadV1, Optional.empty());
     verify(executionEngineClient, never()).newPayloadV2(payloadV1);
     verify(executionEngineClient, never()).newPayloadV1(payloadV1);
     assertThat(future).isCompleted();
@@ -195,9 +195,9 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
         SafeFuture.completedFuture(
             new Response<>(
                 new PayloadStatusV1(ExecutionPayloadStatus.ACCEPTED, data.randomBytes32(), null)));
-    when(executionEngineClient.newPayloadV3(payloadV2, emptyList())).thenReturn(dummyResponse);
+    when(executionEngineClient.newPayloadV3(payloadV2, Optional.empty())).thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
-    verify(executionEngineClient).newPayloadV3(payloadV2, emptyList());
+    verify(executionEngineClient).newPayloadV3(payloadV2, Optional.empty());
     verify(executionEngineClient, never()).newPayloadV2(payloadV2);
     verify(executionEngineClient, never()).newPayloadV1(payloadV2);
     assertThat(future).isCompleted();
@@ -207,8 +207,10 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
   void engineNewPayload_denebFork() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-    final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(3);
-    final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload, versionedHashes);
+    final Optional<List<VersionedHash>> versionedHashes =
+        Optional.of(dataStructureUtil.randomVersionedHashes(3));
+    final NewPayloadRequest newPayloadRequest =
+        new NewPayloadRequest(payload, versionedHashes.get());
     final ExecutionPayloadV3 payloadV3 = ExecutionPayloadV3.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(

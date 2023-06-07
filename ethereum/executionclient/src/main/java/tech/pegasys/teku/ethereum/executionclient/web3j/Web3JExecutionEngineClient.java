@@ -142,13 +142,15 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV1 executionPayload, final List<VersionedHash> blobVersionedHashes) {
-    final List<String> blobVersionedHashesData =
-        blobVersionedHashes.stream().map(VersionedHash::toHexString).collect(Collectors.toList());
+      final ExecutionPayloadV1 executionPayload,
+      final Optional<List<VersionedHash>> blobVersionedHashes) {
+    final Optional<List<String>> blobVersionedHashesData =
+        blobVersionedHashes.map(
+            hashes -> hashes.stream().map(VersionedHash::toHexString).collect(Collectors.toList()));
     final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV3",
-            List.of(executionPayload, blobVersionedHashesData),
+            list(executionPayload, blobVersionedHashesData.orElse(null)),
             web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
