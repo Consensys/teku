@@ -42,6 +42,7 @@ import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -104,7 +105,7 @@ class AttestationValidatorTest {
       AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
 
   private final AttestationValidator validator =
-      new AttestationValidator(spec, recentChainData, signatureVerifier);
+      new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
 
   @BeforeAll
   public static void init() {
@@ -359,7 +360,7 @@ class AttestationValidatorTest {
     final Attestation attestation = attestationGenerator.validAttestation(blockAndState);
     final AsyncBLSSignatureVerifier signatureVerifier = mock(AsyncBLSSignatureVerifier.class);
     final AttestationValidator validator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier);
+        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
     final AttestationData data = attestation.getData();
     final Checkpoint checkpoint =
         new Checkpoint(
