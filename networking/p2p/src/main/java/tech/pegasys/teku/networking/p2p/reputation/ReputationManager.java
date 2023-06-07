@@ -25,7 +25,7 @@ public interface ReputationManager {
 
         @Override
         public boolean isConnectionInitiationAllowed(PeerAddress peerAddress) {
-          return false;
+          return true;
         }
 
         @Override
@@ -37,7 +37,7 @@ public interface ReputationManager {
 
         @Override
         public boolean adjustReputation(PeerAddress peerAddress, ReputationAdjustment effect) {
-          return false;
+          return true;
         }
       };
 
