@@ -17,7 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -63,6 +67,33 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
     assertThat(createConfigBuilder().restApi(b -> b.restApiEnabled(true)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getRestApiOptionParams")
+  public void restApiEnabledAndPortOptions_shouldProvideExpectedOutcome(
+      final String[] options, final boolean expectedRestApiEnabled, final int expectedRestApiPort) {
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(options);
+    final BeaconRestApiConfig config = getConfig(tekuConfiguration);
+    assertThat(config.isRestApiEnabled()).isEqualTo(expectedRestApiEnabled);
+    assertThat(config.getRestApiPort()).isEqualTo(expectedRestApiPort);
+    assertThat(
+            createConfigBuilder()
+                .restApi(
+                    b -> b.restApiEnabled(expectedRestApiEnabled).restApiPort(expectedRestApiPort))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  public static Stream<Arguments> getRestApiOptionParams() {
+    return Stream.of(
+        Arguments.of(new String[] {}, false, 5051),
+        Arguments.of(new String[] {"--rest-api-port=5058"}, true, 5058),
+        Arguments.of(new String[] {"--rest-api-enabled=true"}, true, 5051),
+        Arguments.of(new String[] {"--rest-api-enabled=true", "--rest-api-port=5058"}, true, 5058),
+        Arguments.of(
+            new String[] {"--rest-api-enabled=false", "--rest-api-port=5058"}, false, 5058));
   }
 
   @Test
