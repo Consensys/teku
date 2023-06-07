@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.reputation;
 
-public enum DefaultReputationAdjustment {
+public enum ReputationAdjustment {
   LARGE_PENALTY(-DefaultReputationManager.LARGE_CHANGE),
   SMALL_PENALTY(-DefaultReputationManager.SMALL_CHANGE),
   SMALL_REWARD(DefaultReputationManager.SMALL_CHANGE),
@@ -21,7 +21,7 @@ public enum DefaultReputationAdjustment {
 
   private final int scoreChange;
 
-  DefaultReputationAdjustment(final int scoreChange) {
+  ReputationAdjustment(final int scoreChange) {
     this.scoreChange = scoreChange;
   }
 

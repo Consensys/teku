@@ -14,9 +14,9 @@
 package tech.pegasys.teku.networking.p2p.reputation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.LARGE_PENALTY;
-import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.LARGE_REWARD;
-import static tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment.SMALL_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_PENALTY;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_REWARD;
+import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_PENALTY;
 
 import java.util.Optional;
 import java.util.stream.Stream;

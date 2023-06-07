@@ -34,7 +34,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectRequestHandler;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedSubscriber;
-import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
@@ -227,7 +227,7 @@ public class LibP2PPeer implements Peer {
   }
 
   @Override
-  public void adjustReputation(final DefaultReputationAdjustment adjustment) {
+  public void adjustReputation(final ReputationAdjustment adjustment) {
     final boolean shouldDisconnect = reputationManager.adjustReputation(getAddress(), adjustment);
     if (shouldDisconnect) {
       disconnectCleanly(DisconnectReason.REMOTE_FAULT).ifExceptionGetsHereRaiseABug();

@@ -18,7 +18,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.libp2p.PeerClientType;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
-import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseHandler;
@@ -64,5 +64,5 @@ public interface Peer {
     return other != null && Objects.equals(getId(), other.getId());
   }
 
-  void adjustReputation(final DefaultReputationAdjustment adjustment);
+  void adjustReputation(final ReputationAdjustment adjustment);
 }

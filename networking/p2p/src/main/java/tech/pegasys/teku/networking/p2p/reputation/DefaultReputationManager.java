@@ -91,7 +91,7 @@ public class DefaultReputationManager implements ReputationManager {
    */
   @Override
   public boolean adjustReputation(
-      final PeerAddress peerAddress, final DefaultReputationAdjustment effect) {
+      final PeerAddress peerAddress, final ReputationAdjustment effect) {
     return getOrCreateReputation(peerAddress)
         .adjustReputation(effect, timeProvider.getTimeInSeconds());
   }
@@ -146,7 +146,7 @@ public class DefaultReputationManager implements ReputationManager {
     }
 
     public boolean adjustReputation(
-        final DefaultReputationAdjustment effect, final UInt64 currentTime) {
+            final ReputationAdjustment effect, final UInt64 currentTime) {
       // No extra penalizing if already not suitable
       if (!isSuitableAt(currentTime)) {
         return score.get() <= DISCONNECT_THRESHOLD;

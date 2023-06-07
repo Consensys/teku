@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -97,7 +97,7 @@ public class StubSyncSource implements SyncSource {
   }
 
   @Override
-  public void adjustReputation(final DefaultReputationAdjustment adjustment) {}
+  public void adjustReputation(final ReputationAdjustment adjustment) {}
 
   private static final class Request {
     private final UInt64 start;

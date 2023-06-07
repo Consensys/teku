@@ -37,7 +37,7 @@ public interface ReputationManager {
 
         @Override
         public boolean adjustReputation(
-            PeerAddress peerAddress, DefaultReputationAdjustment effect) {
+            PeerAddress peerAddress, ReputationAdjustment effect) {
           return false;
         }
       };
@@ -53,5 +53,5 @@ public interface ReputationManager {
       final Optional<DisconnectReason> reason,
       final boolean locallyInitiated);
 
-  boolean adjustReputation(final PeerAddress peerAddress, final DefaultReputationAdjustment effect);
+  boolean adjustReputation(final PeerAddress peerAddress, final ReputationAdjustment effect);
 }
