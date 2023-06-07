@@ -278,17 +278,21 @@ public class TerminalPowBlockMonitor {
   }
 
   private SafeFuture<Boolean> validateTerminalBlockParentByTTD(final PowBlock terminalBlock) {
+    // if it's genesis validate fast way
+    if (terminalBlock.getParentHash().isZero()) {
+      return SafeFuture.completedFuture(true);
+    }
     return executionLayer
         .eth1GetPowBlock(terminalBlock.getParentHash())
         .thenApply(
             powBlock -> {
-              UInt256 totalDifficulty =
+              UInt256 parentTotalDifficulty =
                   powBlock
                       .orElseThrow(
                           () -> new IllegalStateException("Terminal Block Parent not found!"))
                       .getTotalDifficulty();
-              return totalDifficulty.compareTo(specConfigBellatrix.getTerminalTotalDifficulty())
-                  < 0;
+              return parentTotalDifficulty.lessThan(
+                  specConfigBellatrix.getTerminalTotalDifficulty());
             });
   }
 
