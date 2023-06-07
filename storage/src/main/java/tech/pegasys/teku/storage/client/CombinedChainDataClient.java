@@ -512,6 +512,11 @@ public class CombinedChainDataClient {
     return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
   }
 
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return historicalChainData.getBlobSidecarKeys(slotAndBlockRoot);
+  }
+
   private boolean isRecentData(final UInt64 slot) {
     checkNotNull(slot);
     if (recentChainData.isPreGenesis()) {

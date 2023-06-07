@@ -13,28 +13,24 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOB_INDICES_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
-import static tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition.stringListOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,16 +45,12 @@ public class GetBlobSidecars extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/blob_sidecars/{block_id}";
   private final ChainDataProvider chainDataProvider;
 
-  private static final ParameterMetadata<List<UInt64>> INDICES_QUERY_PARAMETER =
-      new ParameterMetadata<>(
-          "indices",
-          stringListOf(CoreTypes.UINT64_TYPE)).withDescription("Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not speicfied.");
-
   public GetBlobSidecars(final DataProvider dataProvider, final SchemaDefinitionCache schemaCache) {
     this(dataProvider.getChainDataProvider(), schemaCache);
   }
 
-  public GetBlobSidecars(final ChainDataProvider chainDataProvider, final SchemaDefinitionCache schemaCache) {
+  public GetBlobSidecars(
+      final ChainDataProvider chainDataProvider, final SchemaDefinitionCache schemaCache) {
     super(createEndpointMetadata(schemaCache));
     this.chainDataProvider = chainDataProvider;
   }
@@ -67,49 +59,53 @@ public class GetBlobSidecars extends RestApiEndpoint {
     return EndpointMetadata.get(ROUTE)
         .operationId("getBlobSidecars")
         .summary("Get blob sidecars")
-        .description("Retrieves blob sidecars for a given block id.\n"
-            + "    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\n"
-            + "    If the `indices` paramneter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees\n"
-            + "    for the returned blob sidecars in terms of ordering.")
+        .description(
+            "Retrieves blob sidecars for a given block id.\n"
+                + "    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\n"
+                + "    If the `indices` paramneter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees\n"
+                + "    for the returned blob sidecars in terms of ordering.")
         .tags(TAG_BEACON)
         .pathParam(PARAMETER_BLOCK_ID)
-        .queryParam(INDICES_QUERY_PARAMETER)
-        .response(
-            SC_OK,
-            "Request successful",
-            getResponseType(schemaCache),
-            sszResponseType())
+        .queryListParam(BLOB_INDICES_PARAMETER)
+        .response(SC_OK, "Request successful", getResponseType(schemaCache), sszResponseType())
         .withNotFoundResponse()
         .build();
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> future =
-        chainDataProvider.getBlockRoot(request.getPathParameter(PARAMETER_BLOCK_ID));
+    final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> blockFuture =
+        chainDataProvider.getBlock(request.getPathParameter(PARAMETER_BLOCK_ID));
+    final List<UInt64> indices = request.getQueryParameterList(BLOB_INDICES_PARAMETER);
+    final SafeFuture<Optional<List<BlobSidecar>>> resultFuture =
+        blockFuture.thenCompose(
+            maybeSignedBlock ->
+                maybeSignedBlock
+                    .map(
+                        signedBlock ->
+                            chainDataProvider
+                                .getBlobSidecars(
+                                    signedBlock.getData().getSlotAndBlockRoot(), indices)
+                                .thenApply(Optional::of))
+                    .orElse(SafeFuture.completedFuture(Optional.empty())));
 
     request.respondAsync(
-        future.thenApply(
-            maybeRootAndMetaData ->
-                maybeRootAndMetaData
+        resultFuture.thenApply(
+            blobSidecarList ->
+                blobSidecarList
                     .map(AsyncApiResponse::respondOk)
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
-
   private static SerializableTypeDefinition<List<BlobSidecar>> getResponseType(
       final SchemaDefinitionCache schemaCache) {
-    final DeserializableTypeDefinition<BlobSidecar> blobSidecarType = SchemaDefinitionsDeneb.required(
-            schemaCache
-                .getSchemaDefinition(SpecMilestone.DENEB)).getBlobSidecarSchema()
-        .getJsonTypeDefinition();
-    return
-        SerializableTypeDefinition.<List<BlobSidecar>>object()
-            .name("GetBlobsResponse")
-            .withField(
-                "data",
-                listOf(blobSidecarType),
-                Function.identity())
-            .build();
+    final DeserializableTypeDefinition<BlobSidecar> blobSidecarType =
+        SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
+            .getBlobSidecarSchema()
+            .getJsonTypeDefinition();
+    return SerializableTypeDefinition.<List<BlobSidecar>>object()
+        .name("GetBlobsResponse")
+        .withField("data", listOf(blobSidecarType), Function.identity())
+        .build();
   }
 }

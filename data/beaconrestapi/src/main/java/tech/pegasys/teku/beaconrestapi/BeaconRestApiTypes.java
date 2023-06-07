@@ -203,4 +203,10 @@ public class BeaconRestApiTypes {
               SignedBeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition(),
               data -> data.getData().asHeader())
           .build();
+
+  public static final ParameterMetadata<UInt64> BLOB_INDICES_PARAMETER =
+      new ParameterMetadata<>(
+          "indices",
+          CoreTypes.UINT64_TYPE.withDescription(
+              "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not speicfied."));
 }

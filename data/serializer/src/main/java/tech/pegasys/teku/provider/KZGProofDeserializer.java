@@ -11,15 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.json.types;
+package tech.pegasys.teku.provider;
 
-import java.util.List;
-import java.util.function.Function;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.api.schema.KZGProof;
 
-public class StringValueListTypeDefinition<T>
-    extends StringValueArrayTypeDefinition<T, List<T>> {
-
-  public StringValueListTypeDefinition(final StringValueTypeDefinition<T> itemType) {
-    super(itemType, Function.identity());
+public class KZGProofDeserializer extends JsonDeserializer<KZGProof> {
+  @Override
+  public KZGProof deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
+    return new KZGProof(Bytes.fromHexString(p.getValueAsString()));
   }
 }

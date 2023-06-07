@@ -11,13 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.json.types;
+package tech.pegasys.teku.provider;
 
-public interface StringValueTypeDefinition<T> extends DeserializableTypeDefinition<T> {
-  String serializeToString(T value);
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import tech.pegasys.teku.api.schema.KZGProof;
 
-  T deserializeFromString(String value);
-
+public class KZGProofSerializer extends JsonSerializer<KZGProof> {
   @Override
-  StringValueTypeDefinition<T> withDescription(final String description);
+  public void serialize(
+      final KZGProof value, final JsonGenerator gen, final SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toHexString().toLowerCase());
+  }
 }
