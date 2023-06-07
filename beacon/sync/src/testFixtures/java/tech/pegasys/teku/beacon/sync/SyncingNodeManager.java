@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -120,7 +121,8 @@ public class SyncingNodeManager {
             recentChainData,
             BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
-            transitionBlockValidator);
+            transitionBlockValidator,
+            new StubMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,

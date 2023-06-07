@@ -195,7 +195,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 BlobSidecarManager.NOOP,
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
-                    spec, recentChainData, ExecutionLayerChannel.NOOP));
+                    spec, recentChainData, ExecutionLayerChannel.NOOP),
+                storageSystem.getMetricsSystem());
     final Function<UInt64, BeaconBlockBodySchema<?>> beaconBlockSchemaSupplier =
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
 

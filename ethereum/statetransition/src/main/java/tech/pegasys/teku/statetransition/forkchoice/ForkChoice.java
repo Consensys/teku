@@ -29,6 +29,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -110,7 +111,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
+      final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.blobSidecarManager = blobSidecarManager;
@@ -118,7 +120,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
-    this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
+    this.attestationStateSelector =
+        new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
@@ -136,7 +139,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final BlobSidecarManager blobSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final MergeTransitionBlockValidator transitionBlockValidator) {
+      final MergeTransitionBlockValidator transitionBlockValidator,
+      final MetricsSystem metricsSystem) {
     this(
         spec,
         forkChoiceExecutor,
@@ -146,7 +150,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
-        true);
+        true,
+        metricsSystem);
   }
 
   @Override
