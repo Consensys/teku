@@ -53,7 +53,11 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
     final Optional<List<VersionedHash>> blobVersionedHashes =
         params.getOptionalListParameter(1, VersionedHash.class);
 
-    LOG.trace("Calling {}(executionPayload={})", getVersionedName(), executionPayload);
+    LOG.trace(
+        "Calling {}(executionPayload={}, blobVersionedHashes={})",
+        getVersionedName(),
+        executionPayload,
+        blobVersionedHashes);
     final ExecutionPayloadV1 executionPayloadV1;
     if (executionPayload.toVersionDeneb().isPresent()) {
       executionPayloadV1 = ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
