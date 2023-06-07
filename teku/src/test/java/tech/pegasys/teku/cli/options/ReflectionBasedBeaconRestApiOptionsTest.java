@@ -79,11 +79,11 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
 
   @Test
   public void restApiEnabledNullAndPortSpecified_shouldEnable() {
-    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--rest-api-port=5051");
+    TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments("--rest-api-port=5058");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isRestApiEnabled()).isTrue();
-    assertThat(config.getRestApiPort()).isEqualTo(5051);
-    assertThat(createConfigBuilder().restApi(b -> b.restApiEnabled(true).restApiPort(5051)).build())
+    assertThat(config.getRestApiPort()).isEqualTo(5058);
+    assertThat(createConfigBuilder().restApi(b -> b.restApiEnabled(true).restApiPort(5058)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -103,11 +103,11 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   @Test
   public void restApiEnabledAndPortSpecified_shouldHaveSpecifiedValues() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-enabled=true", "--rest-api-port=5051");
+        getTekuConfigurationFromArguments("--rest-api-enabled=true", "--rest-api-port=5058");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isRestApiEnabled()).isTrue();
-    assertThat(config.getRestApiPort()).isEqualTo(5051);
-    assertThat(createConfigBuilder().restApi(b -> b.restApiEnabled(true).restApiPort(5051)).build())
+    assertThat(config.getRestApiPort()).isEqualTo(5058);
+    assertThat(createConfigBuilder().restApi(b -> b.restApiEnabled(true).restApiPort(5058)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
@@ -115,12 +115,12 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   @Test
   public void restApiNotEnabledAndPortSpecified_shouldNotOverrideEnabledDefinition() {
     TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--rest-api-enabled=false", "--rest-api-port=5051");
+        getTekuConfigurationFromArguments("--rest-api-enabled=false", "--rest-api-port=5058");
     final BeaconRestApiConfig config = getConfig(tekuConfiguration);
     assertThat(config.isRestApiEnabled()).isFalse();
-    assertThat(config.getRestApiPort()).isEqualTo(5051);
+    assertThat(config.getRestApiPort()).isEqualTo(5058);
     assertThat(
-            createConfigBuilder().restApi(b -> b.restApiEnabled(false).restApiPort(5051)).build())
+            createConfigBuilder().restApi(b -> b.restApiEnabled(false).restApiPort(5058)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
