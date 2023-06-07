@@ -36,8 +36,7 @@ public interface ReputationManager {
             PeerAddress peerAddress, Optional<DisconnectReason> reason, boolean locallyInitiated) {}
 
         @Override
-        public boolean adjustReputation(
-            PeerAddress peerAddress, ReputationAdjustment effect) {
+        public boolean adjustReputation(PeerAddress peerAddress, ReputationAdjustment effect) {
           return false;
         }
       };

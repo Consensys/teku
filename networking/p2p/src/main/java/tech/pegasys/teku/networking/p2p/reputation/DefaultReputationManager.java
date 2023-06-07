@@ -145,8 +145,7 @@ public class DefaultReputationManager implements ReputationManager {
       return locallyInitiated && reason.map(BAN_REASONS::contains).orElse(false);
     }
 
-    public boolean adjustReputation(
-            final ReputationAdjustment effect, final UInt64 currentTime) {
+    public boolean adjustReputation(final ReputationAdjustment effect, final UInt64 currentTime) {
       // No extra penalizing if already not suitable
       if (!isSuitableAt(currentTime)) {
         return score.get() <= DISCONNECT_THRESHOLD;
