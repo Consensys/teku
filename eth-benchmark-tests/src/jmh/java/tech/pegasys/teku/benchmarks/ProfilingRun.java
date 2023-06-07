@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -59,6 +61,8 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class ProfilingRun {
   public static Consumer<Object> blackHole = o -> {};
   private Spec spec = TestSpecFactory.createMainnetPhase0();
+
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
 
   @Disabled
   @Test
@@ -104,7 +108,8 @@ public class ProfilingRun {
               recentChainData,
               BlobSidecarManager.NOOP,
               new StubForkChoiceNotifier(),
-              transitionBlockValidator);
+              transitionBlockValidator,
+              metricsSystem);
       BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       BlockImporter blockImporter =
@@ -199,7 +204,8 @@ public class ProfilingRun {
               recentChainData,
               BlobSidecarManager.NOOP,
               new StubForkChoiceNotifier(),
-              transitionBlockValidator);
+              transitionBlockValidator,
+              metricsSystem);
       BlockImporter blockImporter =
           new BlockImporter(
               spec,

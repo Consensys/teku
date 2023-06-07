@@ -48,6 +48,7 @@ dependencies {
   testFixturesImplementation testFixtures(project(':infrastructure:subscribers'))
   testFixturesImplementation project(':infrastructure:time')
   testFixturesImplementation testFixtures(project(':ethereum:spec'))
+  testFixturesImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:logging'))
 
   jmhImplementation testFixtures(project(':infrastructure:bls'))
