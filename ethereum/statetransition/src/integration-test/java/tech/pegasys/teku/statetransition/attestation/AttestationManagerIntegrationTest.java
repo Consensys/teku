@@ -84,7 +84,8 @@ class AttestationManagerIntegrationTest {
           recentChainData,
           BlobSidecarManager.NOOP,
           new StubForkChoiceNotifier(),
-          transitionBlockValidator);
+          transitionBlockValidator,
+          storageSystem.getMetricsSystem());
 
   private final PendingPool<ValidatableAttestation> pendingAttestations =
       new PoolFactory(storageSystem.getMetricsSystem()).createPendingPoolForAttestations(spec);
@@ -96,7 +97,8 @@ class AttestationManagerIntegrationTest {
   private final SignatureVerificationService signatureVerificationService =
       new SimpleSignatureVerificationService();
   private final AttestationValidator attestationValidator =
-      new AttestationValidator(spec, recentChainData, signatureVerificationService);
+      new AttestationValidator(
+          spec, recentChainData, signatureVerificationService, storageSystem.getMetricsSystem());
   private final ActiveValidatorChannel activeValidatorChannel = mock(ActiveValidatorChannel.class);
 
   private final AttestationManager attestationManager =

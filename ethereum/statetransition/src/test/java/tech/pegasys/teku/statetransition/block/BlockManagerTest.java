@@ -163,7 +163,8 @@ public class BlockManagerTest {
             localRecentChainData,
             blobSidecarManager,
             forkChoiceNotifier,
-            transitionBlockValidator);
+            transitionBlockValidator,
+            metricsSystem);
     this.executionLayer = new ExecutionLayerChannelStub(spec, false, Optional.empty());
     this.blockImporter =
         new BlockImporter(

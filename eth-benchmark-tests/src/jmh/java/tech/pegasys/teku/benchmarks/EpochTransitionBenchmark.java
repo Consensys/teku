@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -84,6 +86,8 @@ public class EpochTransitionBenchmark {
   ValidatorStatuses validatorStatuses;
   RewardAndPenaltyDeltas attestationDeltas;
 
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+
   @Param({"400000"})
   int validatorsCount = 400000;
 
@@ -118,7 +122,8 @@ public class EpochTransitionBenchmark {
             recentChainData,
             BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
-            transitionBlockValidator);
+            transitionBlockValidator,
+            metricsSystem);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 
