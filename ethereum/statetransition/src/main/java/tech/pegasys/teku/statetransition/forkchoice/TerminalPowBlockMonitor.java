@@ -286,12 +286,13 @@ public class TerminalPowBlockMonitor {
         .eth1GetPowBlock(terminalBlock.getParentHash())
         .thenApply(
             powBlock -> {
-              UInt256 parentDifficulty =
+              UInt256 parentTotalDifficulty =
                   powBlock
                       .orElseThrow(
                           () -> new IllegalStateException("Terminal Block Parent not found!"))
                       .getTotalDifficulty();
-              return parentDifficulty.lessThan(specConfigBellatrix.getTerminalTotalDifficulty());
+              return parentTotalDifficulty.lessThan(
+                  specConfigBellatrix.getTerminalTotalDifficulty());
             });
   }
 
