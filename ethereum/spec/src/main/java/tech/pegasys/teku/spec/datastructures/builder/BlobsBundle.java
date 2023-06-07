@@ -47,8 +47,4 @@ public class BlobsBundle
   public SszList<Blob> getBlobs() {
     return getField2();
   }
-
-  public int getNumberOfBlobs() {
-    return getBlobs().size();
-  }
 }
