@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -531,7 +532,7 @@ public class ForkChoiceUtil {
     // or if it is at least `SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY` before the current slot.
     // This is to avoid the merge block referencing a non-existent eth1 parent block and causing
     // all nodes to switch to optimistic sync mode.
-    if (isExecutionBlock(store, block.getSlot(), block.getParentRoot())) {
+    if (isExecutionBlock(store, block)) {
       return true;
     }
     return isBellatrixBlockOld(store, block.getSlot());
@@ -547,17 +548,14 @@ public class ForkChoiceUtil {
         .isLessThanOrEqualTo(getCurrentSlot(store));
   }
 
-  private boolean isExecutionBlock(
-      final ReadOnlyStore store, final UInt64 blockSlot, final Bytes32 parentBlockRoot) {
+  private boolean isExecutionBlock(final ReadOnlyStore store, final SignedBeaconBlock block) {
     // post-Bellatrix: always true
-    if (specConfig.toVersionCapella().isPresent()) {
-      final UInt64 capellaForkEpoch = specConfig.toVersionCapella().get().getCapellaForkEpoch();
-      if (miscHelpers.computeEpochAtSlot(blockSlot).isGreaterThanOrEqualTo(capellaForkEpoch)) {
-        return true;
-      }
+    final BeaconBlockBody body = block.getMessage().getBody();
+    if (body.toVersionCapella().isPresent() || body.toBlindedVersionCapella().isPresent()) {
+      return true;
     }
     final Optional<Bytes32> parentExecutionRoot =
-        store.getForkChoiceStrategy().executionBlockHash(parentBlockRoot);
+        store.getForkChoiceStrategy().executionBlockHash(block.getParentRoot());
     return parentExecutionRoot.isPresent() && !parentExecutionRoot.get().isZero();
   }
 }
