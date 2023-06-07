@@ -17,14 +17,15 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.web3j.utils.Convert;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
@@ -425,23 +426,7 @@ public class ExecutionBuilderModule {
     }
   }
 
-  private String weiToEth(final UInt256 wei) {
-    final String weiString = wei.toDecimalString();
-    final StringBuilder stringBuilder = new StringBuilder(20);
-
-    if (weiString.length() > 18) {
-      final int pointPosition = weiString.length() - 18;
-      final String ethInteger = weiString.substring(0, pointPosition);
-      final String ethDecimals = weiString.substring(pointPosition);
-
-      stringBuilder.append(ethInteger).append(".").append(ethDecimals);
-    } else {
-      final int paddingZeros = 18 - weiString.length();
-      stringBuilder.append("0.");
-      IntStream.range(0, paddingZeros).forEach(__ -> stringBuilder.append("0"));
-      stringBuilder.append(weiString);
-    }
-
-    return stringBuilder.toString();
+  private BigDecimal weiToEth(final UInt256 wei) {
+    return Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
   }
 }
