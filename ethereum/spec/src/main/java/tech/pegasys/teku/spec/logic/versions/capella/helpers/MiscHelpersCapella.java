@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.capella.helpers;
 
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 
@@ -25,6 +26,11 @@ public class MiscHelpersCapella extends MiscHelpersBellatrix {
 
   @Override
   public boolean isMergeTransitionComplete(BeaconState genericState) {
+    return true;
+  }
+
+  @Override
+  public boolean isExecutionEnabled(BeaconState genericState, BeaconBlock block) {
     return true;
   }
 }
