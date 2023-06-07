@@ -90,24 +90,12 @@ public class BeaconChainUtil {
     return new Builder();
   }
 
-  //  @Deprecated
-  //  public static BeaconChainUtil create(
-  //      final int validatorCount, final RecentChainData storageClient) {
-  //    return create(DEFAULT_SPEC_PROVIDER, validatorCount, storageClient);
-  //  }
-
   public static BeaconChainUtil create(
       final Spec spec, final int validatorCount, final RecentChainData storageClient) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
     return create(spec, storageClient, validatorKeys);
   }
-
-  //  @Deprecated
-  //  public static BeaconChainUtil create(
-  //      final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-  //    return create(DEFAULT_SPEC_PROVIDER, storageClient, validatorKeys);
-  //  }
 
   public static BeaconChainUtil create(
       final Spec spec, final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
