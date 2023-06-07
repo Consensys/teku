@@ -262,7 +262,7 @@ public class Web3JExecutionEngineClientTest {
                   .map(VersionedHash::toHexString)
                   .collect(Collectors.toList()));
     } else {
-      // pre-deneb param must be null
+      // pre-deneb versionedHashes param must be null
       assertThat(((List<Object>) requestData.get("params")).get(1)).isNull();
     }
   }
