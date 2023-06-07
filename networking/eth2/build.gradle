@@ -1,3 +1,7 @@
+integrationTest {
+  maxParallelForks = 1
+}
+
 dependencies {
   api project(':networking:p2p')
   implementation project(':ethereum:events')

@@ -103,10 +103,10 @@ public class DatabaseTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
 
-  protected final Spec spec = TestSpecFactory.createMinimalDeneb();
-  final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
-  private final ChainProperties chainProperties = new ChainProperties(spec);
+  protected Spec spec;
+  DataStructureUtil dataStructureUtil;
+  private ChainBuilder chainBuilder;
+  private ChainProperties chainProperties;
   private final List<File> tmpDirectories = new ArrayList<>();
   private final UInt64 genesisTime = UInt64.valueOf(100);
   private AnchorPoint genesisAnchor;
@@ -127,6 +127,14 @@ public class DatabaseTest {
 
   @BeforeEach
   public void setup() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+  }
+
+  private void setupWithSpec(final Spec spec) {
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
+    this.chainProperties = new ChainProperties(spec);
     genesisBlockAndState = chainBuilder.generateGenesis(genesisTime, true);
     genesisCheckpoint = getCheckpointForBlock(genesisBlockAndState.getBlock());
     genesisAnchor = AnchorPoint.fromGenesisState(spec, genesisBlockAndState.getState());
@@ -146,7 +154,7 @@ public class DatabaseTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  public void reset() throws Exception {
     for (StorageSystem storageSystem : storageSystems) {
       storageSystem.close();
     }
@@ -797,7 +805,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_singleTransaction(
-      final DatabaseContext context) throws IOException {
+      final DatabaseContext context) throws Exception {
     final SignedBlockAndState transitionBlock =
         generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
@@ -824,7 +832,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void shouldNotRecordTransitionExecutionPayloadWhenNotOptimistic(
-      final DatabaseContext context) throws IOException {
+      final DatabaseContext context) throws Exception {
     final SignedBlockAndState transitionBlock =
         generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
@@ -855,7 +863,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void shouldRecordOptimisticTransitionExecutionPayloadWhenFinalized_multiTransaction(
-      final DatabaseContext context) throws IOException {
+      final DatabaseContext context) throws Exception {
     final SignedBlockAndState transitionBlock =
         generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
@@ -885,7 +893,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void shouldPersistOptimisticTransitionExecutionPayload(final DatabaseContext context)
-      throws IOException {
+      throws Exception {
     final SignedBlockAndState transitionBlock =
         generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
@@ -914,7 +922,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void shouldClearOptimisticTransitionExecutionPayload(final DatabaseContext context)
-      throws IOException {
+      throws Exception {
     // Record optimistic transition execution payload.
     final SignedBlockAndState transitionBlock =
         generateChainWithFinalizableTransitionBlock(context);
@@ -947,7 +955,7 @@ public class DatabaseTest {
 
   @TestTemplate
   public void shouldNotRemoveOptimisticFinalizedExceptionPayloadWhenFinalizedNextUpdated(
-      final DatabaseContext context) throws IOException {
+      final DatabaseContext context) throws Exception {
     final SignedBlockAndState transitionBlock =
         generateChainWithFinalizableTransitionBlock(context);
     final List<SignedBlockAndState> newBlocks =
@@ -990,7 +998,9 @@ public class DatabaseTest {
    * @return the merge transition block
    */
   private SignedBlockAndState generateChainWithFinalizableTransitionBlock(
-      final DatabaseContext context) throws IOException {
+      final DatabaseContext context) throws Exception {
+    reset();
+    setupWithSpec(TestSpecFactory.createMinimalBellatrix());
     initialize(context, StateStorageMode.PRUNE);
 
     final int startSlot = genesisBlockAndState.getSlot().intValue();
