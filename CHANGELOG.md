@@ -19,6 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - The `/eth/v1/beacon/blocks/:block_id` endpoint has been removed in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`.
 - The `/eth/v1/debug/beacon/states/:state_id` endpoint has been removed in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
 - The `/eth/v1/validator/liveness/:epoch` endpoint was requiring the wrong body input and now conforms to the beacon-api spec.
+- When `--rest-api-enabled` option is not specified where `--rest-api-port` is, `--rest-api-enabled` will be set as true.
 
 ### Additions and Improvements
 
