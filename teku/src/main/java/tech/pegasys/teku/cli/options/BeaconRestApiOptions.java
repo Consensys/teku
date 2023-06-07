@@ -31,7 +31,7 @@ public class BeaconRestApiOptions {
       paramLabel = "<INTEGER>",
       description = "Port number of Beacon Rest API",
       arity = "1")
-  private int restApiPort = BeaconRestApiConfig.DEFAULT_REST_API_PORT;
+  private Integer restApiPort;
 
   @Option(
       names = {"--rest-api-docs-enabled"},
@@ -49,7 +49,7 @@ public class BeaconRestApiOptions {
       description = "Enables Beacon Rest API",
       fallbackValue = "true",
       arity = "0..1")
-  private boolean restApiEnabled = false;
+  private Boolean restApiEnabled;
 
   @Option(
       names = {"--rest-api-interface"},
@@ -130,6 +130,16 @@ public class BeaconRestApiOptions {
   private int validatorThreads = BeaconRestApiConfig.DEFAULT_SUBSCRIBE_THREADS_COUNT;
 
   public void configure(final TekuConfiguration.Builder builder) {
+    // Set defaults
+    if (restApiEnabled == null && restApiPort == null) {
+      restApiEnabled = false;
+      restApiPort = BeaconRestApiConfig.DEFAULT_REST_API_PORT;
+    } else if (restApiEnabled == null) {
+      restApiEnabled = true;
+    } else if (restApiPort == null) {
+      restApiPort = BeaconRestApiConfig.DEFAULT_REST_API_PORT;
+    }
+
     builder.restApi(
         restApiBuilder ->
             restApiBuilder

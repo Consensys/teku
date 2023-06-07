@@ -34,6 +34,7 @@ import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -99,7 +100,8 @@ public abstract class TransitionBenchmark {
             recentChainData,
             BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
-            transitionBlockValidator);
+            transitionBlockValidator,
+            new StubMetricsSystem());
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
     localChain.initializeStorage();
 

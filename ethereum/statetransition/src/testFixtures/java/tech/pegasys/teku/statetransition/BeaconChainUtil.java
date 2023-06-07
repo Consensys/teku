@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -89,23 +90,11 @@ public class BeaconChainUtil {
     return new Builder();
   }
 
-  @Deprecated
-  public static BeaconChainUtil create(
-      final int validatorCount, final RecentChainData storageClient) {
-    return create(DEFAULT_SPEC_PROVIDER, validatorCount, storageClient);
-  }
-
   public static BeaconChainUtil create(
       final Spec spec, final int validatorCount, final RecentChainData storageClient) {
     final List<BLSKeyPair> validatorKeys =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
     return create(spec, storageClient, validatorKeys);
-  }
-
-  @Deprecated
-  public static BeaconChainUtil create(
-      final RecentChainData storageClient, final List<BLSKeyPair> validatorKeys) {
-    return create(DEFAULT_SPEC_PROVIDER, storageClient, validatorKeys);
   }
 
   public static BeaconChainUtil create(
@@ -120,7 +109,8 @@ public class BeaconChainUtil {
             storageClient,
             BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
-            new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP)),
+            new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
+            new StubMetricsSystem()),
         true);
   }
 
@@ -147,7 +137,8 @@ public class BeaconChainUtil {
             storageClient,
             BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
-            new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP)),
+            new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
+            new StubMetricsSystem()),
         signDeposits);
   }
 
@@ -394,7 +385,8 @@ public class BeaconChainUtil {
                 BlobSidecarManager.NOOP,
                 new StubForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
-                    spec, recentChainData, ExecutionLayerChannel.NOOP));
+                    spec, recentChainData, ExecutionLayerChannel.NOOP),
+                new StubMetricsSystem());
       }
       if (validatorKeys == null) {
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorCount);
