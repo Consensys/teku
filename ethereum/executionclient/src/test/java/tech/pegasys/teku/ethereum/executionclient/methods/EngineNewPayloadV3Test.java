@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,6 +24,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -101,7 +101,7 @@ class EngineNewPayloadV3Test {
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV1, emptyList()))
+    when(executionEngineClient.newPayloadV3(executionPayloadV1, Optional.empty()))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -109,7 +109,7 @@ class EngineNewPayloadV3Test {
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV1), eq(emptyList()));
+    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV1), eq(Optional.empty()));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
@@ -125,7 +125,7 @@ class EngineNewPayloadV3Test {
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV2, emptyList()))
+    when(executionEngineClient.newPayloadV3(executionPayloadV2, Optional.empty()))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -133,7 +133,7 @@ class EngineNewPayloadV3Test {
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV2), eq(emptyList()));
+    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV2), eq(Optional.empty()));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
@@ -150,7 +150,7 @@ class EngineNewPayloadV3Test {
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV3, blobVersionedHashes))
+    when(executionEngineClient.newPayloadV3(executionPayloadV3, Optional.of(blobVersionedHashes)))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -158,7 +158,8 @@ class EngineNewPayloadV3Test {
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV3), eq(blobVersionedHashes));
+    verify(executionEngineClient)
+        .newPayloadV3(eq(executionPayloadV3), eq(Optional.of(blobVersionedHashes)));
     verifyNoMoreInteractions(executionEngineClient);
   }
 

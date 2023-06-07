@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -48,6 +50,12 @@ public interface BlobSidecarManager {
             final SignedBeaconBlock block) {
           return BlobSidecarsAvailabilityChecker.NOOP;
         }
+
+        @Override
+        public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+        }
       };
 
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
@@ -60,6 +68,9 @@ public interface BlobSidecarManager {
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
+
+  BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+      SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
   interface ReceivedBlobSidecarListener {
     void onBlobSidecarReceived(BlobSidecar blobSidecar);

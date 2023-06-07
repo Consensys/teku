@@ -14,7 +14,6 @@
 package tech.pegasys.teku.reference;
 
 import com.google.common.collect.ImmutableMap;
-import java.util.Set;
 import org.junit.jupiter.api.Assertions;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
@@ -34,10 +33,6 @@ import tech.pegasys.teku.reference.phase0.ssz_generic.SszGenericTests;
 import tech.pegasys.teku.reference.phase0.ssz_static.SszTestExecutor;
 
 public abstract class Eth2ReferenceTestCase {
-
-  // TODO: FIX AND REMOVE ME
-  public static final Set<String> DISABLED_TESTS =
-      Set.of("invalid_bad_parent_hash_first_payload", "invalid_is_execution_enabled_false");
 
   private static final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
@@ -89,9 +84,6 @@ public abstract class Eth2ReferenceTestCase {
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
-    if (DISABLED_TESTS.contains(testDefinition.getTestName())) {
-      return;
-    }
     getExecutorFor(testDefinition).runTest(testDefinition);
   }
 

@@ -158,6 +158,30 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
+  public void onNewBlobSidecar_shouldIgnoreBlobsForAlreadyImportedBlocks() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+    final BlobSidecar blobSidecar =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .slot(currentSlot)
+            .blockRoot(block.getRoot())
+            .build();
+
+    when(recentChainData.containsBlock(blobSidecar.getBlockRoot())).thenReturn(true);
+
+    blobSidecarPool.onNewBlobSidecar(blobSidecar);
+
+    assertThat(blobSidecarPool.containsBlock(block.getRoot())).isFalse();
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+
+    assertBlobSidecarsCount(0);
+    assertBlobSidecarsTrackersCount(0);
+  }
+
+  @Test
   public void onNewBlobSidecarOnNewBlock_addTrackerWithBothBlockAndBlobSidecar() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
@@ -279,7 +303,7 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  public void onBlobSidecarsFromSync_shouldNotTriggerFetch() {
+  public void onCompletedBlockAndBlobSidecars_shouldNotTriggerFetch() {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 

@@ -69,4 +69,9 @@ public class VersionedHash {
   public int hashCode() {
     return Objects.hash(version, value);
   }
+
+  @Override
+  public String toString() {
+    return toHexString();
+  }
 }
