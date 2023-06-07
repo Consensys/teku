@@ -229,12 +229,7 @@ public class HistoricalBatchFetcher {
           Optional.of(
               requestParams
                   .getStartSlot()
-                  .max(
-                      spec.getGenesisSpec()
-                          .miscHelpers()
-                          .toVersionDeneb()
-                          .orElseThrow()
-                          .computeFirstSlotWithBlobSupport()));
+                  .max(spec.computeFirstSlotWithBlobSupport().orElseThrow()));
       LOG.trace(
           "Request {} blob sidecars from {} to {}",
           requestParams.getCount(),
@@ -381,6 +376,10 @@ public class HistoricalBatchFetcher {
           }
         });
 
+    if (signatures.isEmpty()) {
+      return SafeFuture.COMPLETE;
+    }
+
     return signatureVerificationService
         .verify(proposerPublicKeys, signingRoots, signatures)
         .thenAccept(
@@ -406,7 +405,7 @@ public class HistoricalBatchFetcher {
             block.getSlotAndBlockRoot(), Collections.emptyList());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     final BlobSidecarsAndValidationResult validationResult =
-        blobSidecarManager.createAvailabilityChecker(block).validateImmediately(blobSidecars);
+        blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
 
     if (validationResult.isFailure()) {
       final String causeMessage =

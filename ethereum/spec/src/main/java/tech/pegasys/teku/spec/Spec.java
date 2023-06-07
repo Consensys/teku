@@ -880,6 +880,14 @@ public class Spec {
     return signedBlobSidecar.getBlobSidecar().getIndex().mod(BLOB_SIDECAR_SUBNET_COUNT);
   }
 
+  public Optional<UInt64> computeFirstSlotWithBlobSupport() {
+    return forMilestone(forkSchedule.getHighestSupportedMilestone())
+        .getConfig()
+        .toVersionDeneb()
+        .map(SpecConfigDeneb::getDenebForkEpoch)
+        .map(this::computeStartSlotAtEpoch);
+  }
+
   // Private helpers
   private SpecVersion atState(final BeaconState state) {
     return atSlot(state.getSlot());

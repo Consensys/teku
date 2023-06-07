@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,6 +55,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -98,6 +100,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
 
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
@@ -150,7 +153,8 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
+            metricsSystem);
 
     // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
@@ -298,7 +302,8 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
+            metricsSystem);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);

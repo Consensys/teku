@@ -65,7 +65,7 @@ public interface Database extends AutoCloseable {
 
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
-  void removeBlobSidecars(UInt64 slot);
+  void removeBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   /**
    * This prune method will delete BlobSidecars starting from the oldest BlobSidecars (by slot) up
@@ -82,6 +82,11 @@ public interface Database extends AutoCloseable {
 
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<BlobSidecar> streamBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+
+  List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<UInt64> getEarliestBlobSidecarSlot();
 

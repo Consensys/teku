@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -239,13 +240,18 @@ public class Web3JExecutionEngineClientTest {
 
     final Map<String, Object> executionPayloadV3Parameter =
         (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
-    // 16 fields in ExecutionPayloadV3
-    assertThat(executionPayloadV3Parameter).hasSize(16);
+    // 17 fields in ExecutionPayloadV3
+    assertThat(executionPayloadV3Parameter).hasSize(17);
     // sanity check
     assertThat(executionPayloadV3Parameter.get("parentHash"))
         .isEqualTo(executionPayloadV3.parentHash.toHexString());
+    assertThat(executionPayloadV3Parameter.get("dataGasUsed"))
+        .isEqualTo(
+            Bytes.ofUnsignedLong(executionPayloadV3.dataGasUsed.longValue()).toQuantityHexString());
     assertThat(executionPayloadV3Parameter.get("excessDataGas"))
-        .isEqualTo(executionPayloadV3.excessDataGas.toHexString());
+        .isEqualTo(
+            Bytes.ofUnsignedLong(executionPayloadV3.excessDataGas.longValue())
+                .toQuantityHexString());
     assertThat(((List<Object>) requestData.get("params")).get(1))
         .asInstanceOf(LIST)
         .containsExactlyElementsOf(

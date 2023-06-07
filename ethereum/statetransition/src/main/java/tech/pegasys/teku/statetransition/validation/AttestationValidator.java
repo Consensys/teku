@@ -22,6 +22,7 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.OptionalInt;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -46,11 +47,12 @@ public class AttestationValidator {
   public AttestationValidator(
       final Spec spec,
       RecentChainData recentChainData,
-      AsyncBLSSignatureVerifier signatureVerifier) {
+      AsyncBLSSignatureVerifier signatureVerifier,
+      MetricsSystem metricsSystem) {
     this.recentChainData = recentChainData;
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
-    this.stateSelector = new AttestationStateSelector(spec, recentChainData);
+    this.stateSelector = new AttestationStateSelector(spec, recentChainData, metricsSystem);
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -92,7 +94,7 @@ public class AttestationValidator {
 
     Attestation attestation = validatableAttestation.getAttestation();
     final AttestationData data = attestation.getData();
-    // The attestation's epoch matches its target
+    // [REJECT] 4 - The attestation's epoch matches its target
     if (!data.getTarget().getEpoch().equals(spec.computeEpochAtSlot(data.getSlot()))) {
       return completedFuture(
           InternalValidationResultWithState.reject(
@@ -100,8 +102,8 @@ public class AttestationValidator {
               data.getSlot(), data.getTarget().getEpoch()));
     }
 
-    // attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
-    // MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
+    // [IGNORE] 3 - attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE
+    // slots (within a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
     // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
     // queue future attestations for processing at the appropriate slot).
     final UInt64 currentTimeMillis = recentChainData.getStore().getTimeMillis();

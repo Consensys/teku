@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -168,8 +166,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
-    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slot));
+  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slotAndBlockRoot));
   }
 
   @Override
@@ -222,16 +220,9 @@ public class ChainStorage
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(
         () -> {
-          try (final Stream<SlotAndBlockRootAndBlobIndex> keyStream =
-              database.streamBlobSidecarKeys(
-                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())) {
-            final List<BlobSidecar> blobSidecars = new ArrayList<>();
-            for (Iterator<SlotAndBlockRootAndBlobIndex> iterator = keyStream.iterator();
-                iterator.hasNext(); ) {
-              final SlotAndBlockRootAndBlobIndex key = iterator.next();
-              blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
-            }
-            return blobSidecars;
+          try (final Stream<BlobSidecar> blobSidecarStream =
+              database.streamBlobSidecars(slotAndBlockRoot)) {
+            return blobSidecarStream.collect(Collectors.toList());
           }
         });
   }

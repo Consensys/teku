@@ -18,13 +18,16 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -48,8 +51,10 @@ class AttestationStateSelectorTest {
   private final ChainUpdater chainUpdater = storageSystem.chainUpdater();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
 
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+
   private final AttestationStateSelector selector =
-      new AttestationStateSelector(spec, storageSystem.recentChainData());
+      new AttestationStateSelector(spec, storageSystem.recentChainData(), metricsSystem);
 
   @BeforeAll
   public static void initSession() {
@@ -138,34 +143,8 @@ class AttestationStateSelectorTest {
   }
 
   @Test
-  void shouldIgnoreAttestationsWithTargetWhichIsAlreadyJustified() {
-    chainUpdater.updateBestBlock(
-        chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.ONE)));
-
-    final ChainBuilder forkBuilder = chainBuilder.fork();
-
-    final SignedBlockAndState forkBlock =
-        forkBuilder.generateBlockAtSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
-
-    chainUpdater.saveBlock(forkBlock);
-
-    // advance chain head to epoch 3 and justify epoch 2
-    chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.valueOf(3)));
-    chainUpdater.justifyEpoch(2);
-
-    // Attestation slot of the fork block is before an already justified checkpoint
-    final UInt64 attestationSlot = spec.computeStartSlotAtEpoch(forkBlock.getSlot());
-    final Bytes32 blockRoot = forkBlock.getRoot();
-
-    final SafeFuture<Optional<BeaconState>> result = selectStateFor(attestationSlot, blockRoot);
-
-    final Optional<BeaconState> selectedState = safeJoin(result);
-
-    assertThat(selectedState).isEmpty();
-  }
-
-  @Test
-  void shouldNotRegenerateStateForAttestationsWithTargetWhichIsAlreadyJustified() {
+  void shouldNotRegenerateStateForAttestationsWithTargetWhichIsAlreadyJustified()
+      throws ExecutionException, InterruptedException {
     // Advance the chain far enough that the finalized checkpoint isn't usable
     chainUpdater.updateBestBlock(
         chainUpdater.advanceChainUntil(spec.computeStartSlotAtEpoch(UInt64.valueOf(3))));
@@ -187,7 +166,10 @@ class AttestationStateSelectorTest {
 
     final SafeFuture<Optional<BeaconState>> resultWithCache =
         selectStateFor(attestationSlot, blockRoot);
-    assertThatSafeFuture(resultWithCache).isCompletedWithOptionalContaining(forkBlock.getState());
+    assertThatSafeFuture(resultWithCache).isCompleted();
+    assertThat(resultWithCache.get().map(BeaconState::getSlot)).contains(UInt64.valueOf(40));
+    assertThat(resultWithCache.get().map(BeaconState::hashTreeRoot))
+        .isNotEqualTo(recentChainData.getBestState().get().get().hashTreeRoot());
 
     recentChainData.getStore().clearCaches();
 
