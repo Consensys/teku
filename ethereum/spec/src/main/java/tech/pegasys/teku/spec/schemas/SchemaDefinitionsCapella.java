@@ -101,8 +101,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.builderBidSchemaCapella =
         new BuilderBidSchemaBellatrix(executionPayloadHeaderSchemaCapella);
     this.signedBuilderBidSchemaCapella =
-        new SignedBuilderBidSchema(
-            "SignedBuilderBidCapella", builderBidSchemaCapella.castTypeToBuilderBid());
+        new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
     this.historicalSummarySchema = new HistoricalSummary.HistoricalSummarySchema();
   }
 

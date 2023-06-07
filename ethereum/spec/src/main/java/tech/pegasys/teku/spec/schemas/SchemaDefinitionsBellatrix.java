@@ -73,8 +73,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockBellatrix");
     this.builderBidSchema = new BuilderBidSchemaBellatrix(executionPayloadHeaderSchema);
     this.signedBuilderBidSchema =
-        new SignedBuilderBidSchema(
-            "SignedBuilderBidBellatrix", builderBidSchema.castTypeToBuilderBid());
+        new SignedBuilderBidSchema("SignedBuilderBidBellatrix", builderBidSchema);
   }
 
   public static SchemaDefinitionsBellatrix required(final SchemaDefinitions schemaDefinitions) {

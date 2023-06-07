@@ -402,10 +402,6 @@ public final class DataStructureUtil {
     return new SszPublicKey(randomPublicKey());
   }
 
-  public List<KZGCommitment> randomKZGCommitments(final int size) {
-    return IntStream.range(0, size).mapToObj(__ -> randomKZGCommitment()).collect(toList());
-  }
-
   public KZGCommitment randomKZGCommitment() {
     return KZGCommitment.fromBytesCompressed(randomBytes48());
   }
@@ -611,7 +607,6 @@ public final class DataStructureUtil {
                   // computation
                   .value(randomUInt256().divide(1000))
                   .publicKey(builderPublicKey);
-              // if milestone is Deneb, also add the blinded blobs bundle
               schemaDefinitions
                   .toVersionDeneb()
                   .ifPresent(__ -> builder.blindedBlobsBundle(randomBlindedBlobsBundle()));
@@ -2168,8 +2163,8 @@ public final class DataStructureUtil {
     return IntStream.range(0, count).mapToObj(__ -> randomBlobIdentifier()).collect(toList());
   }
 
-  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
-      final UInt64 slot) {
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
+    final UInt64 slot = randomSlot();
     final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
     final BlobsBundleSchema schema = schemaDefinitions.getBlobsBundleSchema();
 
