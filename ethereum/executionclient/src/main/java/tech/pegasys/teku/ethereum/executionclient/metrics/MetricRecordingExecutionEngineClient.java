@@ -111,7 +111,8 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV1 executionPayload, final List<VersionedHash> blobVersionedHashes) {
+      final ExecutionPayloadV1 executionPayload,
+      final Optional<List<VersionedHash>> blobVersionedHashes) {
     return countRequest(
         () -> delegate.newPayloadV3(executionPayload, blobVersionedHashes), NEW_PAYLOAD_V3_METHOD);
   }
