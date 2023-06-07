@@ -117,6 +117,8 @@ import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -699,6 +701,18 @@ public final class DataStructureUtil {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWALS))
         .mapToObj(__ -> randomWithdrawal())
         .collect(toList());
+  }
+
+  public ExecutionPayloadAndBlobsBundle randomExecutionPayloadAndBlobsBundle() {
+    final SchemaDefinitionsDeneb schemaDefinitionsDeneb = getDenebSchemaDefinitions(randomSlot());
+    final ExecutionPayload executionPayload = randomExecutionPayload();
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        randomBuilderBlobsBundle();
+
+    final ExecutionPayloadAndBlobsBundleSchema schema =
+        schemaDefinitionsDeneb.getExecutionPayloadAndBlobsBundleSchema();
+
+    return new ExecutionPayloadAndBlobsBundle(schema, executionPayload, blobsBundle);
   }
 
   private BLSPublicKey randomValidatorKey(final SszList<Validator> validators) {

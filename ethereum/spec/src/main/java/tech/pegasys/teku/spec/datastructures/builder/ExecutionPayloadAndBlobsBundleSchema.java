@@ -23,11 +23,10 @@ public class ExecutionPayloadAndBlobsBundleSchema
     extends ContainerSchema2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle> {
 
   public ExecutionPayloadAndBlobsBundleSchema(
-      final String containerName,
       final ExecutionPayloadSchema<? extends ExecutionPayload> executionPayloadSchema,
       final BlobsBundleSchema blobsBundleSchema) {
     super(
-        containerName,
+        "ExecutionPayloadAndBlobsBundle",
         namedSchema(
             "execution_payload", SszSchema.as(ExecutionPayload.class, executionPayloadSchema)),
         namedSchema("blobs_bundle", blobsBundleSchema));

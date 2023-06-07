@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockCo
 import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -81,6 +82,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SignedBlindedBlockContentsSchema signedBlindedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
   private final BlindedBlobsBundleSchema blindedBlobsBundleSchema;
+  private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig.toVersionDeneb().orElseThrow());
@@ -146,6 +148,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             "SignedBlindedBlockContentsDeneb");
     this.blobsBundleSchema =
         new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, specConfig.getMaxBlobsPerBlock());
+    this.executionPayloadAndBlobsBundleSchema =
+        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
   }
 
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {
@@ -275,6 +279,10 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public BlindedBlobsBundleSchema getBlindedBlobsBundleSchema() {
     return blindedBlobsBundleSchema;
+  }
+
+  public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
+    return executionPayloadAndBlobsBundleSchema;
   }
 
   @Override
