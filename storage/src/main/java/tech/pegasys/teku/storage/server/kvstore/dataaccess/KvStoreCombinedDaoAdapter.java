@@ -246,6 +246,7 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  @MustBeClosed
   public Stream<Bytes> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return finalizedDao.streamBlobSidecars(slotAndBlockRoot);
   }
