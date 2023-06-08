@@ -292,7 +292,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     LOG.info(
         "newPayload: executionPayload blockHash: {}  versionedHashes: {} -> {}",
         executionPayload.getBlockHash(),
-        newPayloadRequest.getVersionedHashes().map(List::size),
+        newPayloadRequest.getVersionedHashes(),
         returnedStatus);
     return SafeFuture.completedFuture(returnedStatus);
   }
