@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.execution;
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
@@ -19,6 +19,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 
 public class BlobsBundle {
 

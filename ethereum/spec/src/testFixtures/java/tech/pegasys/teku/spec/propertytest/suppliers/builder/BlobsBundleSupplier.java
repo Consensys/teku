@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionlayer;
+package tech.pegasys.teku.spec.propertytest.suppliers.builder;
 
-import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public interface BlobsBundleValidator {
-  BlobsBundleValidator NOOP = (blobsBundle, executionPayloadOptional) -> {};
-
-  void validate(BlobsBundle blobsBundle, Optional<ExecutionPayload> executionPayloadOptional)
-      throws BlobsBundleValidationException;
+public class BlobsBundleSupplier extends DataStructureUtilSupplier<BlobsBundle> {
+  public BlobsBundleSupplier() {
+    super(DataStructureUtil::randomBuilderBlobsBundle, SpecMilestone.DENEB);
+  }
 }

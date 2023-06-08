@@ -402,7 +402,7 @@ public class ExecutionBuilderModule {
   }
 
   private void logReceivedBuilderBid(final BuilderBid builderBid) {
-    final ExecutionPayloadHeader payloadHeader = builderBid.getExecutionPayloadHeader();
+    final ExecutionPayloadHeader payloadHeader = builderBid.getHeader();
     LOG.info(
         "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (wei) = {}, Gas Limit = {}, Gas Used = {})",
         payloadHeader.getBlockNumber(),
