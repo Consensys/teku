@@ -49,7 +49,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -380,13 +379,14 @@ public class DatabaseTest {
   }
 
   @TestTemplate
-  @Disabled("TODO: pruning for BlobSidecar and uncomment")
-  public void shouldPruneHotBlocksAddedOverMultipleSessions(final DatabaseContext context)
+  public void shouldPruneHotBlocksAndBlobsAddedOverMultipleSessions(final DatabaseContext context)
       throws IOException {
     initialize(context);
+    final BlockOptions randomBlobsOptions = BlockOptions.create().setGenerateRandomBlobs(true);
     final UInt64 targetSlot = UInt64.valueOf(10);
 
-    chainBuilder.generateBlocksUpToSlot(targetSlot.minus(UInt64.ONE));
+    chainBuilder.generateBlocksUpToSlot(
+        targetSlot.minus(UInt64.ONE).longValue(), randomBlobsOptions);
     final ChainBuilder forkA = chainBuilder.fork();
     final ChainBuilder forkB = chainBuilder.fork();
 
@@ -406,9 +406,11 @@ public class DatabaseTest {
             .collect(toList());
 
     // Create several different blocks at the same slot
-    final SignedBlockAndState blockA = forkA.generateBlockAtSlot(targetSlot, blockOptions.get(0));
-    final SignedBlockAndState blockB = forkB.generateBlockAtSlot(targetSlot, blockOptions.get(1));
-    final SignedBlockAndState blockC = chainBuilder.generateBlockAtSlot(10);
+    final SignedBlockAndState blockA =
+        forkA.generateBlockAtSlot(targetSlot, blockOptions.get(0).setGenerateRandomBlobs(true));
+    final SignedBlockAndState blockB =
+        forkB.generateBlockAtSlot(targetSlot, blockOptions.get(1).setGenerateRandomBlobs(true));
+    final SignedBlockAndState blockC = chainBuilder.generateBlockAtSlot(10, randomBlobsOptions);
     final Set<Bytes32> block10Roots = Set.of(blockA.getRoot(), blockB.getRoot(), blockC.getRoot());
     // Sanity check
     assertThat(block10Roots.size()).isEqualTo(3);
@@ -444,7 +446,7 @@ public class DatabaseTest {
     assertBlobSidecarsAvailabilityExceptPruned(blocksWithAvailableSidecars, List.of());
 
     // Finalize subsequent block to prune blocks a, b, and c
-    final SignedBlockAndState finalBlock = chainBuilder.generateNextBlock();
+    final SignedBlockAndState finalBlock = chainBuilder.generateBlockAtSlot(11, randomBlobsOptions);
     add(List.of(finalBlock));
     addBlobSidecars(chainBuilder.getBlobSidecars(finalBlock.getRoot()));
 
@@ -2213,17 +2215,11 @@ public class DatabaseTest {
       final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
     availableBlocksSidecars.forEach(
         block -> {
-          try (final Stream<SlotAndBlockRootAndBlobIndex> keys =
-              database.streamBlobSidecarKeys(block.getSlot(), block.getSlot())) {
-            assertThat(keys.collect(toList())).isNotEmpty();
-          }
+          assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isNotEmpty();
         });
     prunedBlocksSidecars.forEach(
         block -> {
-          assertThat(
-                  database.getBlobSidecar(
-                      new SlotAndBlockRootAndBlobIndex(block.getSlot(), block.getRoot(), ZERO)))
-              .isEmpty();
+          assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isEmpty();
         });
   }
 
