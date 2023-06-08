@@ -15,18 +15,19 @@ package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.type.CollectionType;
 import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlobSidecars;
+import tech.pegasys.teku.ethereum.json.types.SharedApiTypes;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -71,23 +72,14 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
   }
 
   private List<BlobSidecar> parseBlobSidecars(final Response response) throws IOException {
-    final JsonNode body = jsonProvider.jsonToObject(response.body().string(), JsonNode.class);
-    final CollectionType collectionType =
-        jsonProvider
-            .getObjectMapper()
-            .getTypeFactory()
-            .constructCollectionType(
-                List.class, tech.pegasys.teku.api.schema.deneb.BlobSidecar.class);
+    final DeserializableTypeDefinition<BlobSidecar> blobSidecarTypeDefinition =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+            .getBlobSidecarSchema()
+            .getJsonTypeDefinition();
+    final DeserializableTypeDefinition<List<BlobSidecar>> jsonTypeDefinition =
+        SharedApiTypes.withDataWrapper("blobSidecars", listOf(blobSidecarTypeDefinition));
 
-    final List<tech.pegasys.teku.api.schema.deneb.BlobSidecar> data =
-        jsonProvider.getObjectMapper().treeToValue(body.get("data"), collectionType);
-
-    return data.stream()
-        .map(
-            op ->
-                op.asInternalBlobSidecar(
-                    SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-                        .getBlobSidecarSchema()))
-        .collect(Collectors.toList());
+    final List<BlobSidecar> result = JsonUtil.parse(response.body().string(), jsonTypeDefinition);
+    return result;
   }
 }
