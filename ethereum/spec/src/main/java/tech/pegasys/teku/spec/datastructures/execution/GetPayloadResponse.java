@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
@@ -73,5 +74,14 @@ public class GetPayloadResponse {
   @Override
   public int hashCode() {
     return Objects.hash(executionPayload, blockValue, blobsBundle);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("executionPayload", executionPayload)
+        .add("blockValue", blockValue)
+        .add("blobsBundle", blobsBundle)
+        .toString();
   }
 }
