@@ -37,7 +37,7 @@ public interface ReputationManager {
 
         @Override
         public boolean adjustReputation(PeerAddress peerAddress, ReputationAdjustment effect) {
-          return true;
+          return false;
         }
       };
 
