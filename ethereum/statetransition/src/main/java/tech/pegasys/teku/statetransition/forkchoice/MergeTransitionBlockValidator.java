@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
@@ -139,6 +140,9 @@ public class MergeTransitionBlockValidator {
 
   private SafeFuture<PayloadStatus> verifyTransitionPayload(
       final UInt64 slot, final ExecutionPayloadSummary executionPayload) {
+    if (spec.atSlot(slot).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)) {
+      return SafeFuture.completedFuture(PayloadStatus.VALID);
+    }
     final BellatrixTransitionHelpers bellatrixTransitionHelpers =
         spec.atSlot(slot)
             .getBellatrixTransitionHelpers()

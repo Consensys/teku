@@ -11,7 +11,7 @@
     "istanbulBlock": 0,
     "berlinBlock": 0,
     "londonBlock": 0,
-    "preMergeForkBlock": 0,
+    "parisBlock": 0,
     "terminalTotalDifficulty": 0,
     "contractSizeLimit": 2147483647,
     "ethash": {

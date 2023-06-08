@@ -77,7 +77,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private Optional<Integer> blobsToGenerate = Optional.empty();
 
   // transition emulation
-  private static final int TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION = 10;
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
   private final boolean transitionEmulationEnabled;
   private final Bytes32 terminalBlockHashInTTDMode;
@@ -468,7 +467,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       // TTD emulation
       LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
 
-      transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
+      transitionTime = bellatrixActivationTime.plus(specConfigBellatrix.getSecondsPerSlot() - 1);
 
       terminalBlockHash = terminalBlockHashInTTDMode;
 

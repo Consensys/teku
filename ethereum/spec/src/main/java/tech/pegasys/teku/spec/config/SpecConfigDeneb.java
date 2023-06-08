@@ -41,6 +41,12 @@ public interface SpecConfigDeneb extends SpecConfigCapella {
 
   int getFieldElementsPerBlob();
 
+  /**
+   * This is set to a higher number than `maxBlobsPerBlock` to use only for ssz list limit. The
+   * purpose is to make merkle proofs constructed today valid in the future when `maxBlobsPerBlock`
+   * is increased. The limit of the number of blobs and so on commitments is still {@link
+   * #getMaxBlobsPerBlock()}
+   */
   int getMaxBlobCommitmentsPerBlock();
 
   int getMaxBlobsPerBlock();
