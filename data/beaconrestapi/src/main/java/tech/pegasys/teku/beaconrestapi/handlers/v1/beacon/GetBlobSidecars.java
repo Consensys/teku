@@ -112,8 +112,10 @@ public class GetBlobSidecars extends RestApiEndpoint {
   }
 
   private static ResponseContentTypeDefinition<List<BlobSidecar>> getSszResponseType() {
-    OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<List<BlobSidecar>> serializer =
-        (data, out) -> data.stream().forEachOrdered(blobSidecar -> blobSidecar.sszSerialize(out));
+    final OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<List<BlobSidecar>>
+        serializer =
+            (data, out) ->
+                data.stream().forEachOrdered(blobSidecar -> blobSidecar.sszSerialize(out));
 
     return new OctetStreamResponseContentTypeDefinition<>(serializer, __ -> Collections.emptyMap());
   }
