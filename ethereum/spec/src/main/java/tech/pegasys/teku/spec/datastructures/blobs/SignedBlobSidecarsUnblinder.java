@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.datastructures.blobs;
 import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 
 /**
  * Classes implementing this interface MUST:

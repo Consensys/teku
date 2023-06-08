@@ -25,7 +25,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 public interface BuilderBidValidator {
   BuilderBidValidator NOOP =
       (spec, signedBuilderBid, signedValidatorRegistration, state, localExecutionPayload) ->
-          signedBuilderBid.getMessage().getExecutionPayloadHeader();
+          signedBuilderBid.getMessage().getHeader();
 
   ExecutionPayloadHeader validateAndGetPayloadHeader(
       final Spec spec,

@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 
 public class ExecutionPayloadResult {
   private final ExecutionPayloadContext executionPayloadContext;

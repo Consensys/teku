@@ -128,7 +128,7 @@ public class BuilderBidValidatorTest {
             state,
             Optional.of(localExecutionPayload));
 
-    assertThat(result).isEqualTo(signedBuilderBid.getMessage().getExecutionPayloadHeader());
+    assertThat(result).isEqualTo(signedBuilderBid.getMessage().getHeader());
   }
 
   @Test
@@ -149,7 +149,7 @@ public class BuilderBidValidatorTest {
             localExecutionPayload.getOptionalWithdrawalsRoot().orElseThrow(),
             dodgySignedBuilderBid
                 .getMessage()
-                .getExecutionPayloadHeader()
+                .getHeader()
                 .getOptionalWithdrawalsRoot()
                 .orElseThrow());
   }
@@ -258,11 +258,14 @@ public class BuilderBidValidatorTest {
             .create(
                 schemaDefinitions
                     .getBuilderBidSchema()
-                    .create(
-                        createExecutionPayloadHeaderWithGasLimit(
-                            schemaDefinitions, proposedGasLimit),
-                        dataStructureUtil.randomUInt256(),
-                        dataStructureUtil.randomPublicKey()),
+                    .createBuilderBid(
+                        builder ->
+                            builder
+                                .header(
+                                    createExecutionPayloadHeaderWithGasLimit(
+                                        schemaDefinitions, proposedGasLimit))
+                                .value(dataStructureUtil.randomUInt256())
+                                .publicKey(dataStructureUtil.randomPublicKey())),
                 dataStructureUtil.randomSignature());
 
     // create validator registration with preferred gasLimit

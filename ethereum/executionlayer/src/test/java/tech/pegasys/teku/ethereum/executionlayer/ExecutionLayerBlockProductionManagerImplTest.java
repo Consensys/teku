@@ -40,9 +40,9 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -377,7 +377,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
                 .orElseThrow(),
             executionPayloadContext.getParentHash());
 
-    return signedBuilderBid.getMessage().getExecutionPayloadHeader();
+    return signedBuilderBid.getMessage().getHeader();
   }
 
   private void verifyFallbackToLocalEL(

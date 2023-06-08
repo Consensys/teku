@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.B
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
@@ -63,7 +64,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final BlsToExecutionChangeSchema blsToExecutionChangeSchema;
 
   private final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema;
-  private final BuilderBidSchema builderBidSchemaCapella;
+  private final BuilderBidSchema<?> builderBidSchemaCapella;
   private final SignedBuilderBidSchema signedBuilderBidSchemaCapella;
 
   private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
@@ -98,7 +99,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockCapella");
     this.builderBidSchemaCapella =
-        new BuilderBidSchema("BuilderBidCapella", executionPayloadHeaderSchemaCapella);
+        new BuilderBidSchemaBellatrix(executionPayloadHeaderSchemaCapella);
     this.signedBuilderBidSchemaCapella =
         new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
     this.historicalSummarySchema = new HistoricalSummary.HistoricalSummarySchema();
@@ -196,7 +197,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   }
 
   @Override
-  public BuilderBidSchema getBuilderBidSchema() {
+  public BuilderBidSchema<?> getBuilderBidSchema() {
     return builderBidSchemaCapella;
   }
 

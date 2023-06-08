@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,19 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
-public interface BuilderBid extends SszContainer {
+public interface BuilderBidBuilder {
 
-  ExecutionPayloadHeader getHeader();
+  BuilderBidBuilder header(ExecutionPayloadHeader header);
 
-  Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle();
+  BuilderBidBuilder blindedBlobsBundle(BlindedBlobsBundle blindedBlobsBundle);
 
-  UInt256 getValue();
+  BuilderBidBuilder value(UInt256 value);
 
-  BLSPublicKey getPublicKey();
+  BuilderBidBuilder publicKey(BLSPublicKey publicKey);
+
+  BuilderBid build();
 }

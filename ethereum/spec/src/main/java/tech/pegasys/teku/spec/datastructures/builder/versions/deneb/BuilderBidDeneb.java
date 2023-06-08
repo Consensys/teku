@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder;
+package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
 
 import java.util.Optional;
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 
-public interface BuilderBid extends SszContainer {
+public interface BuilderBidDeneb extends BuilderBid {
 
-  ExecutionPayloadHeader getHeader();
+  BlindedBlobsBundle getBlindedBlobsBundle();
 
-  Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle();
-
-  UInt256 getValue();
-
-  BLSPublicKey getPublicKey();
+  @Override
+  default Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle() {
+    return Optional.of(getBlindedBlobsBundle());
+  }
 }
