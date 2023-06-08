@@ -193,7 +193,8 @@ public class RestBuilderClient implements BuilderClient {
     return builderApiResponse.getData();
   }
 
-  private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(SpecMilestone specMilestone) {
+  private SchemaDefinitionsBellatrix getSchemaDefinitionsBellatrix(
+      final SpecMilestone specMilestone) {
     return schemaDefinitionCache
         .getSchemaDefinition(specMilestone)
         .toVersionBellatrix()

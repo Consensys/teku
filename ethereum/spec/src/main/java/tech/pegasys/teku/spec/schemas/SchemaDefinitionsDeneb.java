@@ -37,8 +37,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
@@ -64,7 +68,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
 
-  private final BuilderBidSchema builderBidSchemaDeneb;
+  private final BuilderBidSchema<?> builderBidSchemaDeneb;
   private final SignedBuilderBidSchema signedBuilderBidSchemaDeneb;
 
   private final BlobSchema blobSchema;
@@ -76,6 +80,9 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final BlindedBlockContentsSchema blindedBlockContentsSchema;
   private final SignedBlindedBlockContentsSchema signedBlindedBlockContentsSchema;
+  private final BlobsBundleSchema blobsBundleSchema;
+  private final BlindedBlobsBundleSchema blindedBlobsBundleSchema;
+  private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig.toVersionDeneb().orElseThrow());
@@ -105,8 +112,10 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockDeneb");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockDeneb");
+    this.blindedBlobsBundleSchema =
+        new BlindedBlobsBundleSchema("BlindedBlobsBundleDeneb", specConfig);
     this.builderBidSchemaDeneb =
-        new BuilderBidSchema("BuilderBidDeneb", executionPayloadHeaderSchemaDeneb);
+        new BuilderBidSchemaDeneb(executionPayloadHeaderSchemaDeneb, blindedBlobsBundleSchema);
     this.signedBuilderBidSchemaDeneb =
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
@@ -137,6 +146,9 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             signedBlindedBlobSidecarSchema,
             signedBlindedBeaconBlockSchema,
             "SignedBlindedBlockContentsDeneb");
+    this.blobsBundleSchema = new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, specConfig);
+    this.executionPayloadAndBlobsBundleSchema =
+        new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
   }
 
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {
@@ -215,7 +227,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   }
 
   @Override
-  public BuilderBidSchema getBuilderBidSchema() {
+  public BuilderBidSchema<?> getBuilderBidSchema() {
     return builderBidSchemaDeneb;
   }
 
@@ -258,6 +270,18 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public SignedBlindedBlockContentsSchema getSignedBlindedBlockContentsSchema() {
     return signedBlindedBlockContentsSchema;
+  }
+
+  public BlobsBundleSchema getBlobsBundleSchema() {
+    return blobsBundleSchema;
+  }
+
+  public BlindedBlobsBundleSchema getBlindedBlobsBundleSchema() {
+    return blindedBlobsBundleSchema;
+  }
+
+  public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
+    return executionPayloadAndBlobsBundleSchema;
   }
 
   @Override

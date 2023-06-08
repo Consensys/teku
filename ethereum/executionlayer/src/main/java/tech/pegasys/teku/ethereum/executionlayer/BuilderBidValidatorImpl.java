@@ -59,8 +59,7 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
       throw new BuilderBidValidationException("Invalid Bid Signature");
     }
 
-    final ExecutionPayloadHeader executionPayloadHeader =
-        signedBuilderBid.getMessage().getExecutionPayloadHeader();
+    final ExecutionPayloadHeader executionPayloadHeader = signedBuilderBid.getMessage().getHeader();
 
     // validating payload wrt consensus
     try {

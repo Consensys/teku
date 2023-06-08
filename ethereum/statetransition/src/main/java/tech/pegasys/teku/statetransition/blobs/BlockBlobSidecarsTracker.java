@@ -136,8 +136,8 @@ public class BlockBlobSidecarsTracker {
     } else {
       LOG.warn(
           "Multiple BlobSidecars with index {} for {} detected.",
-          slotAndBlockRoot.toLogString(),
-          blobSidecar.getIndex());
+          blobSidecar.getIndex(),
+          slotAndBlockRoot.toLogString());
     }
 
     return addedNew;
@@ -241,7 +241,7 @@ public class BlockBlobSidecarsTracker {
           .append(debugTimings.get(FETCH_TIMING_IDX) - creationTime)
           .append("ms");
     } else {
-      timingsReport.append("Fetch not happened");
+      timingsReport.append("Fetch wasn't required");
     }
 
     LOG.debug(timingsReport.toString());

@@ -30,6 +30,7 @@ import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -58,8 +59,10 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -70,6 +73,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -752,6 +756,35 @@ public class ChainDataProvider {
 
   public SpecMilestone getMilestoneAtHead() {
     return spec.atSlot(recentChainData.getHeadSlot()).getMilestone();
+  }
+
+  public SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> blobSidecarKeys =
+        combinedChainDataClient.getBlobSidecarKeys(slotAndBlockRoot);
+    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> filteredKeysFuture =
+        blobSidecarKeys.thenApply(
+            blobKeys ->
+                blobKeys.stream()
+                    .filter(
+                        blobKey -> {
+                          if (indices.isEmpty()) {
+                            return true;
+                          } else {
+                            return indices.contains(blobKey.getBlobIndex());
+                          }
+                        })
+                    .collect(toList()));
+    return filteredKeysFuture
+        .thenCompose(
+            keys -> {
+              final Stream<SafeFuture<Optional<BlobSidecar>>> maybeBlobSidecarsFutures =
+                  keys.stream().map(combinedChainDataClient::getBlobSidecarByKey);
+              return SafeFuture.collectAll(maybeBlobSidecarsFutures);
+            })
+        .thenApply(
+            maybeBlobSidecarsList ->
+                maybeBlobSidecarsList.stream().flatMap(Optional::stream).collect(toList()));
   }
 
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(

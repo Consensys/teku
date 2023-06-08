@@ -1,0 +1,79 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getBlobSidecars",
+    "summary" : "Get blob sidecars",
+    "description" : "Retrieves blob sidecars for a given block id.\n    Depending on `Accept` header it can be returned either as json or as bytes serialized by SSZ.\n    If the `indices` parameter is specified, only the blob sidecars with the specified indices will be returned. There are no guarantees\n    for the returned blob sidecars in terms of ordering.",
+    "parameters" : [ {
+      "name" : "block_id",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "Block identifier. Can be one of: \"head\" (canonical head in node's view), \"genesis\", \"finalized\", &lt;slot&gt;, &lt;hex encoded blockRoot with 0x prefix&gt;.",
+        "example" : "head"
+      }
+    }, {
+      "name" : "indices",
+      "in" : "query",
+      "schema" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string",
+          "description" : "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified.",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "minItems" : "1"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetBlobsResponse"
+            }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
