@@ -14,12 +14,14 @@
 package tech.pegasys.teku.infrastructure.logging;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.utils.Convert;
 
 public class Converter {
 
-  public static BigDecimal weiToEth(final UInt256 wei) {
-    return Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
+  public static String weiToEth(final UInt256 wei) {
+    final BigDecimal result = Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
+    return result.setScale(6, RoundingMode.HALF_UP).toString();
   }
 }
