@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
+import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,7 +52,6 @@ public class ExecutionBuilderModule {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final int HUNDRED_PERCENT = 100;
-  private static final UInt256 WEI_TO_GWEI = UInt256.valueOf(10).pow(9);
 
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
@@ -404,10 +404,10 @@ public class ExecutionBuilderModule {
   private void logReceivedBuilderBid(final BuilderBid builderBid) {
     final ExecutionPayloadHeader payloadHeader = builderBid.getHeader();
     LOG.info(
-        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (wei) = {}, Gas Limit = {}, Gas Used = {})",
+        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (ETH) = {}, Gas Limit = {}, Gas Used = {})",
         payloadHeader.getBlockNumber(),
         payloadHeader.getBlockHash(),
-        builderBid.getValue().toDecimalString(),
+        weiToEth(builderBid.getValue()),
         payloadHeader.getGasLimit(),
         payloadHeader.getGasUsed());
   }
@@ -415,15 +415,13 @@ public class ExecutionBuilderModule {
   private void logLocalPayloadWin(final UInt256 builderBidValue, final UInt256 localPayloadValue) {
     if (builderBidCompareFactor.isEmpty() || builderBidCompareFactor.get() == HUNDRED_PERCENT) {
       LOG.info(
-          "Local execution payload ({} Gwei) is chosen over builder bid ({} Gwei).",
-          localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
-          builderBidValue.divide(WEI_TO_GWEI).toDecimalString());
+          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH).",
+          weiToEth(localPayloadValue),
+          weiToEth(builderBidValue));
     } else {
       LOG.info(
-          "Local execution payload ({} Gwei) is chosen over builder bid ({} Gwei, compare factor {}%).",
-          localPayloadValue.divide(WEI_TO_GWEI).toDecimalString(),
-          builderBidValue.divide(WEI_TO_GWEI).toDecimalString(),
-          builderBidCompareFactor.get());
+          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor {}%).",
+          weiToEth(localPayloadValue), weiToEth(builderBidValue), builderBidCompareFactor.get());
     }
   }
 }
