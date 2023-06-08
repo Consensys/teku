@@ -136,8 +136,8 @@ public class BlockBlobSidecarsTracker {
     } else {
       LOG.warn(
           "Multiple BlobSidecars with index {} for {} detected.",
-          slotAndBlockRoot.toLogString(),
-          blobSidecar.getIndex());
+          blobSidecar.getIndex(),
+          slotAndBlockRoot.toLogString());
     }
 
     return addedNew;

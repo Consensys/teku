@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -70,9 +71,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
   private final BlobsUtil blobsUtil;
+  private final Random random = new Random();
 
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
-  private int blobsToGenerate = 2;
+  private Optional<Integer> blobsToGenerate = Optional.empty();
 
   // transition emulation
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
@@ -287,8 +289,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         Optional.ofNullable(knownPosBlocks.get(executionPayload.getBlockHash()))
             .orElse(payloadStatus);
     LOG.info(
-        "newPayload: executionPayload blockHash: {} -> {}",
+        "newPayload: executionPayload blockHash: {}  versionedHashes: {} -> {}",
         executionPayload.getBlockHash(),
+        newPayloadRequest.getVersionedHashes(),
         returnedStatus);
     return SafeFuture.completedFuture(returnedStatus);
   }
@@ -404,7 +407,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.payloadStatus = payloadStatus;
   }
 
-  public void setBlobsToGenerate(final int blobsToGenerate) {
+  /**
+   * set to empty to restore random number of blobs for each block
+   *
+   * @param blobsToGenerate
+   */
+  public void setBlobsToGenerate(final Optional<Integer> blobsToGenerate) {
     this.blobsToGenerate = blobsToGenerate;
   }
 
@@ -496,7 +504,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private Bytes generateBlobsAndTransaction(
       final UInt64 slot, final HeadAndAttributes headAndAttrs) {
 
-    final List<Blob> blobs = blobsUtil.generateBlobs(slot, blobsToGenerate);
+    final List<Blob> blobs =
+        blobsUtil.generateBlobs(
+            slot,
+            blobsToGenerate.orElseGet(
+                () -> random.nextInt(spec.getMaxBlobsPerBlock().orElseThrow() + 1)));
     final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
     final List<KZGProof> proofs = blobsUtil.computeKzgProofs(slot, blobs, commitments);
 
