@@ -34,6 +34,7 @@ public class ExecutionPayloadAndBlobsBundle
     super(schema, executionPayload, blobsBundle);
   }
 
+  @Override
   public ExecutionPayload getExecutionPayload() {
     return getField0();
   }
