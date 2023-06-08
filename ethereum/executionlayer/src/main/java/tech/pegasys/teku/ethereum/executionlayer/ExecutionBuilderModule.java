@@ -16,8 +16,8 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
+import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.web3j.utils.Convert;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
@@ -424,9 +423,5 @@ public class ExecutionBuilderModule {
           "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor {}%).",
           weiToEth(localPayloadValue), weiToEth(builderBidValue), builderBidCompareFactor.get());
     }
-  }
-
-  private BigDecimal weiToEth(final UInt256 wei) {
-    return Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
   }
 }
