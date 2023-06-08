@@ -20,7 +20,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
 public class ExecutionPayloadAndBlobsBundleSchema
-    extends ContainerSchema2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle> {
+    extends ContainerSchema2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle>
+    implements BuilderPayloadSchema<ExecutionPayloadAndBlobsBundle> {
 
   public ExecutionPayloadAndBlobsBundleSchema(
       final ExecutionPayloadSchema<? extends ExecutionPayload> executionPayloadSchema,

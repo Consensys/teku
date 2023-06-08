@@ -29,6 +29,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
@@ -155,6 +156,10 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
 
   public SignedBuilderBidSchema getSignedBuilderBidSchema() {
     return signedBuilderBidSchema;
+  }
+
+  public BuilderPayloadSchema<?> getBuilderPayloadSchema() {
+    return getExecutionPayloadSchema();
   }
 
   @Override

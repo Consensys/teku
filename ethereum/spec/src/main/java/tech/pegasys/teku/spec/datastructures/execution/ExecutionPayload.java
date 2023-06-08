@@ -18,12 +18,14 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
 
-public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer {
+public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer, BuilderPayload {
 
   @Override
   ExecutionPayloadSchema<?> getSchema();
@@ -50,6 +52,16 @@ public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer 
   }
 
   default Optional<ExecutionPayloadDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  @Override
+  default ExecutionPayload getExecutionPayload() {
+    return this;
+  }
+
+  @Override
+  default Optional<BlobsBundle> getOptionalBlobsBundle() {
     return Optional.empty();
   }
 }

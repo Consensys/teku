@@ -46,6 +46,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -226,9 +227,8 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
-      final SignedBlockContainer signedBlockContainer) {
-    LOG.debug("parsed block is from slot: {}", signedBlockContainer.getSlot());
-    return validatorApiChannel.sendSignedBlock(signedBlockContainer);
+      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+    return validatorApiChannel.sendSignedBlock(signedBlindedBlockContainer);
   }
 
   public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(

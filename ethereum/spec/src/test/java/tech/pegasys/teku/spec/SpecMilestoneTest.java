@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -50,6 +51,15 @@ public class SpecMilestoneTest {
     assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)).isTrue();
     assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)).isTrue();
     assertThat(SpecMilestone.CAPELLA.isGreaterThanOrEqualTo(SpecMilestone.DENEB)).isFalse();
+  }
+
+  @Test
+  public void getPreviousMilestone() {
+    assertThrows(IllegalArgumentException.class, SpecMilestone.PHASE0::getPreviousMilestone);
+    assertThat(SpecMilestone.ALTAIR.getPreviousMilestone()).isEqualTo(SpecMilestone.PHASE0);
+    assertThat(SpecMilestone.BELLATRIX.getPreviousMilestone()).isEqualTo(SpecMilestone.ALTAIR);
+    assertThat(SpecMilestone.CAPELLA.getPreviousMilestone()).isEqualTo(SpecMilestone.BELLATRIX);
+    assertThat(SpecMilestone.DENEB.getPreviousMilestone()).isEqualTo(SpecMilestone.CAPELLA);
   }
 
   @Test
