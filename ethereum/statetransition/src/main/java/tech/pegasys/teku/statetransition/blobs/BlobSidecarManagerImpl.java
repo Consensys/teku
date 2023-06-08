@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.blobs;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -135,6 +137,25 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
         spec, asyncRunner, recentChainData, blockBlobSidecarsTracker);
+  }
+
+  @Override
+  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    // Block is pre-Deneb, blobs are not supported yet
+    if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
+      return BlobSidecarsAndValidationResult.NOT_REQUIRED;
+    }
+
+    // we don't care to set maxBlobsPerBlock since it isn't used with this immediate validation flow
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(block.getSlotAndBlockRoot(), UInt64.ZERO);
+
+    blockBlobSidecarsTracker.setBlock(block);
+
+    return new ForkChoiceBlobSidecarsAvailabilityChecker(
+            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker)
+        .validateImmediately(blobSidecars);
   }
 
   @Override

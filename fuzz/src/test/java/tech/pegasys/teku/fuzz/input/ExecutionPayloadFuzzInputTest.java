@@ -14,25 +14,21 @@
 package tech.pegasys.teku.fuzz.input;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public class ExecutionPayloadFuzzInputTest
-    extends AbstractFuzzInputTest<ExecutionPayloadFuzzInput> {
+public class ExecutionPayloadFuzzInputTest extends AbstractFuzzInputTest<BeaconBlockBodyFuzzInput> {
 
   @Override
-  protected SszSchema<ExecutionPayloadFuzzInput> getInputType() {
-    return ExecutionPayloadFuzzInput.createSchema(spec.getGenesisSpec());
+  protected SszSchema<BeaconBlockBodyFuzzInput> getInputType() {
+    return BeaconBlockBodyFuzzInput.createSchema(spec.getGenesisSpec());
   }
 
   @Override
-  protected ExecutionPayloadFuzzInput createInput() {
+  protected BeaconBlockBodyFuzzInput createInput() {
     final BeaconState state = dataStructureUtil.randomBeaconState();
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    return new ExecutionPayloadFuzzInput(
-        spec,
-        state,
-        (ExecutionPayloadCapellaImpl) executionPayload.toVersionCapella().orElseThrow());
+    final BeaconBlockBodyCapella beaconBlockBody =
+        BeaconBlockBodyCapella.required(dataStructureUtil.randomBeaconBlockBody());
+    return new BeaconBlockBodyFuzzInput(spec, state, beaconBlockBody);
   }
 }

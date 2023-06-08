@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -259,6 +260,10 @@ public class MiscHelpers {
   }
 
   public boolean isMergeTransitionComplete(final BeaconState state) {
+    return false;
+  }
+
+  public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
     return false;
   }
 

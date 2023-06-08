@@ -112,8 +112,8 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
-    return updateDelegate.onBlobSidecarsRemoval(slot);
+  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
+    return updateDelegate.onBlobSidecarsRemoval(slotAndBlockRoot);
   }
 
   @Override

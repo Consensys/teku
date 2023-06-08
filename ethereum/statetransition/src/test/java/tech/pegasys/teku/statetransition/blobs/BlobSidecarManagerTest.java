@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BlobSidecarManagerTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
@@ -195,6 +198,17 @@ public class BlobSidecarManagerTest {
   }
 
   @Test
+  void
+      createAvailabilityCheckerAndValidateImmediately_shouldReturnANotRequiredAvailabilityCheckerWhenBlockIsPreDeneb() {
+    final Spec spec = TestSpecFactory.createMainnetCapella();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
+        .isEqualTo(BlobSidecarsAndValidationResult.NOT_REQUIRED);
+  }
+
+  @Test
   void createAvailabilityChecker_shouldReturnAnAvailabilityChecker() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
 
@@ -206,5 +220,21 @@ public class BlobSidecarManagerTest {
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
         .isInstanceOf(ForkChoiceBlobSidecarsAvailabilityChecker.class);
+  }
+
+  @Test
+  void
+      createAvailabilityCheckerAndValidateImmediately_shouldReturnABlobSidecarsAndValidationResult() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+
+    final UpdatableStore store = mock(UpdatableStore.class);
+    when(recentChainData.getStore()).thenReturn(store);
+    when(store.getTimeSeconds()).thenReturn(UInt64.ONE);
+    when(store.getGenesisTime()).thenReturn(UInt64.ZERO);
+
+    assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
+        .isInstanceOf(BlobSidecarsAndValidationResult.class);
+
+    verifyNoInteractions(blobSidecarPool);
   }
 }

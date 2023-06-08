@@ -133,6 +133,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   @Override
   public synchronized void onNewBlobSidecar(final BlobSidecar blobSidecar) {
+    if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
+      return;
+    }
     if (shouldIgnoreItemAtSlot(blobSidecar.getSlot())) {
       return;
     }
