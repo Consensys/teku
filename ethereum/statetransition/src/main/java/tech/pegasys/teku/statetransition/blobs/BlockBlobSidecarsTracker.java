@@ -241,7 +241,7 @@ public class BlockBlobSidecarsTracker {
           .append(debugTimings.get(FETCH_TIMING_IDX) - creationTime)
           .append("ms");
     } else {
-      timingsReport.append("Fetch not happened");
+      timingsReport.append("Fetch wasn't required");
     }
 
     LOG.debug(timingsReport.toString());
