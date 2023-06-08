@@ -208,5 +208,5 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(
           "indices",
           CoreTypes.UINT64_TYPE.withDescription(
-              "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not speicfied."));
+              "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."));
 }
