@@ -308,4 +308,10 @@ public class ChainStorage
           return result;
         });
   }
+
+  @Override
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.of(() -> database.getBlobSidecarKeys(slotAndBlockRoot));
+  }
 }
