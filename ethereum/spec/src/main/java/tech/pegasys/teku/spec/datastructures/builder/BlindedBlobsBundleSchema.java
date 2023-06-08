@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -28,15 +29,20 @@ public class BlindedBlobsBundleSchema
     extends ContainerSchema3<
         BlindedBlobsBundle, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<SszBytes32>> {
 
-  public BlindedBlobsBundleSchema(final String containerName, final int maxBlobsPerBlock) {
+  public BlindedBlobsBundleSchema(final String containerName, final SpecConfigDeneb specConfig) {
     super(
         containerName,
         namedSchema(
-            "commitments", SszListSchema.create(SszKZGCommitmentSchema.INSTANCE, maxBlobsPerBlock)),
-        namedSchema("proofs", SszListSchema.create(SszKZGProofSchema.INSTANCE, maxBlobsPerBlock)),
+            "commitments",
+            SszListSchema.create(
+                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+        namedSchema(
+            "proofs",
+            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
             "blob_roots",
-            SszListSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA, maxBlobsPerBlock)));
+            SszListSchema.create(
+                SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxBlobsPerBlock())));
   }
 
   @SuppressWarnings("unchecked")

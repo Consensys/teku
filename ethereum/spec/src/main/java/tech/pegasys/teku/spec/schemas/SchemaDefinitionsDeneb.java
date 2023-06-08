@@ -113,7 +113,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockDeneb");
     this.blindedBlobsBundleSchema =
-        new BlindedBlobsBundleSchema("BlindedBlobsBundleDeneb", specConfig.getMaxBlobsPerBlock());
+        new BlindedBlobsBundleSchema("BlindedBlobsBundleDeneb", specConfig);
     this.builderBidSchemaDeneb =
         new BuilderBidSchemaDeneb(executionPayloadHeaderSchemaDeneb, blindedBlobsBundleSchema);
     this.signedBuilderBidSchemaDeneb =
@@ -146,8 +146,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             signedBlindedBlobSidecarSchema,
             signedBlindedBeaconBlockSchema,
             "SignedBlindedBlockContentsDeneb");
-    this.blobsBundleSchema =
-        new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, specConfig.getMaxBlobsPerBlock());
+    this.blobsBundleSchema = new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, specConfig);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
   }
