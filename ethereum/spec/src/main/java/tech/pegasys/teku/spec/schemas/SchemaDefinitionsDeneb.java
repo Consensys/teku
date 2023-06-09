@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockCo
 import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.deneb.BuilderBidSchemaDeneb;
@@ -234,6 +235,11 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   @Override
   public SignedBuilderBidSchema getSignedBuilderBidSchema() {
     return signedBuilderBidSchemaDeneb;
+  }
+
+  @Override
+  public BuilderPayloadSchema<?> getBuilderPayloadSchema() {
+    return getExecutionPayloadAndBlobsBundleSchema();
   }
 
   public BlobSchema getBlobSchema() {

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
@@ -34,8 +33,10 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -248,14 +249,15 @@ public class ExecutionBuilderModule {
   }
 
   public SafeFuture<ExecutionPayload> builderGetPayload(
-      final SignedBeaconBlock signedBlindedBeaconBlock,
+      final SignedBlockContainer signedBlockContainer,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
 
-    checkArgument(
-        signedBlindedBeaconBlock.getMessage().getBody().isBlinded(),
-        "SignedBeaconBlock must be blind");
+    final SignedBlindedBlockContainer signedBlindedBlockContainer =
+        signedBlockContainer
+            .toBlinded()
+            .orElseThrow(() -> new IllegalArgumentException("SignedBlockContainer must be blind"));
 
-    final UInt64 slot = signedBlindedBeaconBlock.getSlot();
+    final UInt64 slot = signedBlindedBlockContainer.getSlot();
 
     final Optional<SafeFuture<HeaderWithFallbackData>> maybeProcessedSlot =
         getPayloadResultFunction
@@ -265,13 +267,13 @@ public class ExecutionBuilderModule {
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
           "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBlindedBeaconBlock);
+      return getPayloadFromBuilder(signedBlindedBlockContainer);
     }
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         maybeProcessedSlot.get();
 
-    return getPayloadFromFallbackData(signedBlindedBeaconBlock, headerWithFallbackDataFuture);
+    return getPayloadFromFallbackData(signedBlindedBlockContainer, headerWithFallbackDataFuture);
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
@@ -314,37 +316,39 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
+      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+    LOG.trace(
+        "calling builderGetPayload(signedBlindedBlockContainer={})", signedBlindedBlockContainer);
 
     return builderClient
         .orElseThrow(
             () ->
                 new RuntimeException(
                     "Unable to get payload from builder: builder endpoint not available"))
-        .getPayload(signedBlindedBeaconBlock)
+        .getPayload(signedBlindedBlockContainer)
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
+        .thenApply(BuilderPayload::getExecutionPayload)
         .thenPeek(
             executionPayload -> {
               logReceivedBuilderExecutionPayload(executionPayload);
               executionLayerManager.recordExecutionPayloadFallbackSource(
                   Source.BUILDER, FallbackReason.NONE);
               LOG.trace(
-                  "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
-                  signedBlindedBeaconBlock,
+                  "builderGetPayload(signedBlindedBlockContainer={}) -> {}",
+                  signedBlindedBlockContainer,
                   executionPayload);
             });
   }
 
   private SafeFuture<ExecutionPayload> getPayloadFromFallbackData(
-      final SignedBeaconBlock signedBlindedBeaconBlock,
+      final SignedBlindedBlockContainer signedBlindedBlockContainer,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackDataOptional().isEmpty()) {
-            return getPayloadFromBuilder(signedBlindedBeaconBlock);
+            return getPayloadFromBuilder(signedBlindedBlockContainer);
           } else {
             final FallbackData fallbackData =
                 headerWithFallbackData.getFallbackDataOptional().get();

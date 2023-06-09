@@ -24,8 +24,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -46,6 +44,7 @@ import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -69,7 +68,6 @@ import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
-  private static final Logger LOG = LogManager.getLogger();
 
   public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
       "Cannot produce a block for a historic slot.";
@@ -226,9 +224,8 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
-      final SignedBlockContainer signedBlockContainer) {
-    LOG.debug("parsed block is from slot: {}", signedBlockContainer.getSlot());
-    return validatorApiChannel.sendSignedBlock(signedBlockContainer);
+      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+    return validatorApiChannel.sendSignedBlock(signedBlindedBlockContainer);
   }
 
   public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(

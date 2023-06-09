@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public class ExecutionPayloadAndBlobsBundle
-    extends Container2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle> {
+    extends Container2<ExecutionPayloadAndBlobsBundle, ExecutionPayload, BlobsBundle>
+    implements BuilderPayload {
 
   ExecutionPayloadAndBlobsBundle(
       final ExecutionPayloadAndBlobsBundleSchema type, final TreeNode backingTreeNode) {
@@ -32,11 +34,17 @@ public class ExecutionPayloadAndBlobsBundle
     super(schema, executionPayload, blobsBundle);
   }
 
+  @Override
   public ExecutionPayload getExecutionPayload() {
     return getField0();
   }
 
   public BlobsBundle getBlobsBundle() {
     return getField1();
+  }
+
+  @Override
+  public Optional<BlobsBundle> getOptionalBlobsBundle() {
+    return Optional.of(getBlobsBundle());
   }
 }
