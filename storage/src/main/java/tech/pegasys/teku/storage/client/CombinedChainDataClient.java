@@ -470,7 +470,7 @@ public class CombinedChainDataClient {
 
     return forkChoiceStrategy
         .get()
-        .getAncestor(slotAndBlockRoot.getBlockRoot(), slotAndBlockRoot.getSlot())
+        .getAncestor(chainHead.get().getRoot(), slotAndBlockRoot.getSlot())
         .map(blockRootAtSlot -> blockRootAtSlot.equals(slotAndBlockRoot.getBlockRoot()))
         .orElse(false);
   }
