@@ -204,7 +204,8 @@ public class BlobSidecarsByRangeMessageHandler
     private final UInt64 startSlot;
     private final UInt64 endSlot;
 
-    private Optional<Iterator<SlotAndBlockRootAndBlobIndex>> iterator = Optional.empty();
+    private Optional<Iterator<SlotAndBlockRootAndBlobIndex>> blobSidecarKeysIterator =
+        Optional.empty();
 
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
@@ -222,31 +223,54 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     SafeFuture<Optional<BlobSidecar>> loadNextBlobSidecar() {
-      if (iterator.isEmpty()) {
+      if (blobSidecarKeysIterator.isEmpty()) {
         return combinedChainDataClient
             .getBlobSidecarKeys(startSlot, endSlot, maxRequestBlobSidecars)
             .thenCompose(
                 list -> {
-                  iterator = Optional.of(list.iterator());
-                  return getNextElement(iterator.get());
+                  blobSidecarKeysIterator = Optional.of(list.iterator());
+                  return getNextBlobSidecar(blobSidecarKeysIterator.get());
                 });
       } else {
-        return getNextElement(iterator.get());
+        return getNextBlobSidecar(blobSidecarKeysIterator.get());
       }
     }
 
-    private SafeFuture<Optional<BlobSidecar>> getNextElement(
+    private SafeFuture<Optional<BlobSidecar>> getNextBlobSidecar(
         final Iterator<SlotAndBlockRootAndBlobIndex> iterator) {
       if (iterator.hasNext()) {
-        return combinedChainDataClient.getBlobSidecarByKey(iterator.next());
-      } else {
-        return SafeFuture.completedFuture(Optional.empty());
+        final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex = iterator.next();
+
+        if (isSlotAndBlockRootAndBlobIndexFinalized(slotAndBlockRootAndBlobIndex)) {
+          return combinedChainDataClient.getBlobSidecarByKey(slotAndBlockRootAndBlobIndex);
+        }
+
+        // not finalized, let's check if it is on canonical chain
+        if (combinedChainDataClient.isAncestorOfCanonicalHead(
+            slotAndBlockRootAndBlobIndex.getSlotAndBlockRoot())) {
+          return combinedChainDataClient.getBlobSidecarByKey(slotAndBlockRootAndBlobIndex);
+        }
+
+        // non-canonical, try next one
+        return getNextBlobSidecar(iterator);
       }
+
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    private boolean isSlotAndBlockRootAndBlobIndexFinalized(
+        final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex) {
+      return combinedChainDataClient
+          .getFinalizedBlockSlot()
+          .map(
+              finalizedSlot ->
+                  finalizedSlot.isGreaterThanOrEqualTo(slotAndBlockRootAndBlobIndex.getSlot()))
+          .orElse(false);
     }
 
     boolean isComplete() {
       return endSlot.isLessThan(startSlot)
-          || iterator.map(iterator -> !iterator.hasNext()).orElse(false);
+          || blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

@@ -109,6 +109,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
+    when(combinedChainDataClient.isAncestorOfCanonicalHead(any())).thenReturn(true);
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
