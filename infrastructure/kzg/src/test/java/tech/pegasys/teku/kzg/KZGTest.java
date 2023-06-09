@@ -261,8 +261,9 @@ public final class KZGTest {
   }
 
   @ParameterizedTest(name = "trusted_setup={0}")
-  @ValueSource(strings = {"mainnet/trusted_setup_old.txt", "minimal/trusted_setup_old.txt"})
-  public void oldTrustedSetupFilesShouldThrow(final String path) {
+  @ValueSource(
+      strings = {"mainnet/trusted_setup_monomial.txt", "minimal/trusted_setup_monomial.txt"})
+  public void monomialTrustedSetupFilesShouldThrow(final String path) {
     final String trustedSetup = Resources.getResource(TrustedSetups.class, path).toExternalForm();
     final KZGException kzgException =
         assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup));
