@@ -83,7 +83,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
-    JsonRpcRequestParams.Builder paramsBuilder =
+    final JsonRpcRequestParams.Builder paramsBuilder =
         new JsonRpcRequestParams.Builder().add(newPayloadRequest.getExecutionPayload());
 
     newPayloadRequest.getVersionedHashes().ifPresent(paramsBuilder::add);
