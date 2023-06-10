@@ -46,7 +46,8 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
             .getSchemaDefinitions()
             .getSignedBeaconBlockSchema(),
         block -> spec.computeEpochAtSlot(block.getSlot()),
-        maxMessageSize);
+        maxMessageSize,
+        spec.getNetworkingConfig());
   }
 
   public void publishBlock(final SignedBeaconBlock message) {

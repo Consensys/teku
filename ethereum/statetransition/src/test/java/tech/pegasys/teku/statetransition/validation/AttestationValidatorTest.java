@@ -21,7 +21,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
@@ -164,7 +163,7 @@ class AttestationValidatorTest {
         attestationGenerator.validAttestation(storageSystem.getChainHead());
 
     // In the first slot after
-    final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
+    final UInt64 slot = spec.getNetworkingConfig().getAttestationPropagationSlotRange().plus(ONE);
     chainUpdater.setCurrentSlot(slot);
     // Add one more second to get past the MAXIMUM_GOSSIP_CLOCK_DISPARITY
     chainUpdater.setTime(recentChainData.getStore().getTimeSeconds().plus(ONE));
@@ -179,7 +178,7 @@ class AttestationValidatorTest {
 
     // At the very start of the first slot the attestation isn't allowed, but still within
     // the MAXIMUM_GOSSIP_CLOCK_DISPARITY so should be allowed.
-    final UInt64 slot = ATTESTATION_PROPAGATION_SLOT_RANGE.plus(ONE);
+    final UInt64 slot = spec.getNetworkingConfig().getAttestationPropagationSlotRange().plus(ONE);
     chainUpdater.setCurrentSlot(slot);
 
     assertThat(validate(attestation).code()).isEqualTo(ACCEPT);

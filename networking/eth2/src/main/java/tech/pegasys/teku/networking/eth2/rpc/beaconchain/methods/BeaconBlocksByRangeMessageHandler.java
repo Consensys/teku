@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import com.google.common.base.Throwables;
@@ -151,7 +150,7 @@ public class BeaconBlocksByRangeMessageHandler
   private UInt64 getMaxRequestBlocks(final SpecMilestone milestone) {
     return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
         ? MAX_REQUEST_BLOCKS_DENEB
-        : MAX_REQUEST_BLOCKS;
+        : spec.getNetworkingConfig().getMaxRequestBlocks();
   }
 
   private SafeFuture<?> sendMatchingBlocks(

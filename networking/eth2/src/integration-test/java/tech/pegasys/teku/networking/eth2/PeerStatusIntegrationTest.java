@@ -43,7 +43,7 @@ public class PeerStatusIntegrationTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetworkFactory networkFactory = new Eth2P2PNetworkFactory();
   private final RpcEncoding rpcEncoding =
-      RpcEncoding.createSszSnappyEncoding(spec.getGenesisSpecConfig().getMaxChunkSize());
+      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
   private final StorageSystem storageSystem = createStorageSystem();
 
   private final RecentChainData recentChainData1 = storageSystem.recentChainData();

@@ -102,7 +102,8 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
               gossipEncoding,
               forkInfo,
               signedBlsToExecutionChangeOperationProcessor,
-              getMessageMaxSize());
+              getMessageMaxSize(),
+              spec.getNetworkingConfig());
 
       addGossipManager(gossipManager);
       this.signedBlsToExecutionChangeGossipManager = Optional.of(gossipManager);

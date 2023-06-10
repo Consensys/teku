@@ -150,7 +150,8 @@ public class BlobSidecarGossipManager implements GossipManager {
             forkInfo.getFork(),
             blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getBlobSidecar().getSlot())),
         gossipType,
-        maxMessageSize);
+        maxMessageSize,
+        spec.getNetworkingConfig());
   }
 
   private static class TopicSubnetIdAwareOperationProcessor

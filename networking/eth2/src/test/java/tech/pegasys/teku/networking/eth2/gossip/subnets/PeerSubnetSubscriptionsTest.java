@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -213,7 +212,7 @@ class PeerSubnetSubscriptionsTest {
     IntStream.range(0, subscriberCount).mapToObj(MockNodeId::new).forEach(subscribers::add);
     // Set up attestation topic subscriptions
     final Map<String, Collection<NodeId>> subscribersByTopic = new HashMap<>();
-    IntStream.range(0, ATTESTATION_SUBNET_COUNT)
+    IntStream.range(0, spec.getNetworkingConfig().getAttestationSubnetCount())
         .forEach(
             subnetId ->
                 subscribersByTopic.put(

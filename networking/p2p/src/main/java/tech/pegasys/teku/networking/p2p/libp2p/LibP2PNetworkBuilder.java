@@ -52,6 +52,7 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
@@ -65,6 +66,7 @@ public class LibP2PNetworkBuilder {
 
   protected AsyncRunner asyncRunner;
   protected NetworkConfig config;
+  protected NetworkingSpecConfig networkingSpecConfig;
   protected PrivateKeyProvider privateKeyProvider;
   protected ReputationManager reputationManager;
   protected MetricsSystem metricsSystem;
@@ -122,6 +124,7 @@ public class LibP2PNetworkBuilder {
     return createLibP2PGossipNetworkBuilder()
         .metricsSystem(metricsSystem)
         .gossipConfig(config.getGossipConfig())
+        .networkingConfig(networkingSpecConfig)
         .defaultMessageFactory(preparedGossipMessageFactory)
         .gossipTopicFilter(gossipTopicFilter)
         .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
@@ -208,6 +211,11 @@ public class LibP2PNetworkBuilder {
 
   public LibP2PNetworkBuilder config(NetworkConfig config) {
     this.config = config;
+    return this;
+  }
+
+  public LibP2PNetworkBuilder networkingSpecConfig(NetworkingSpecConfig networkingSpecConfig) {
+    this.networkingSpecConfig = networkingSpecConfig;
     return this;
   }
 

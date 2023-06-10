@@ -23,6 +23,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHand
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -35,10 +36,10 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ExtraDataAppendedException;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcTimeouts.RpcTimeoutException;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStream;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class Eth2OutgoingRequestHandler<
@@ -70,6 +71,8 @@ public class Eth2OutgoingRequestHandler<
   private final RpcResponseDecoder<TResponse, ?> responseDecoder;
   private final boolean shouldReceiveResponse;
   private final AsyncResponseProcessor<TResponse> responseProcessor;
+  private final Duration ttbfTimeout;
+  private final Duration respTimeout;
 
   private volatile RpcStream rpcStream;
 
@@ -80,7 +83,8 @@ public class Eth2OutgoingRequestHandler<
       final RpcResponseDecoder<TResponse, ?> responseDecoder,
       final boolean shouldReceiveResponse,
       final TRequest request,
-      Eth2RpcResponseHandler<TResponse, ?> responseHandler) {
+      final Eth2RpcResponseHandler<TResponse, ?> responseHandler,
+      final NetworkingSpecConfig networkingConfig) {
     this.timeoutRunner = timeoutRunner;
     this.maximumResponseChunks = request.getMaximumResponseChunks();
 
@@ -91,6 +95,8 @@ public class Eth2OutgoingRequestHandler<
     this.responseDecoder = responseDecoder;
     this.shouldReceiveResponse = shouldReceiveResponse;
     this.protocolId = protocolId;
+    this.ttbfTimeout = Duration.of(networkingConfig.getTtbfTimeout(), ChronoUnit.SECONDS);
+    this.respTimeout = Duration.of(networkingConfig.getRespTimeout(), ChronoUnit.SECONDS);
   }
 
   public void handleInitialPayloadSent(final RpcStream stream) {
@@ -264,14 +270,13 @@ public class Eth2OutgoingRequestHandler<
 
   private void ensureFirstBytesArriveWithinTimeLimit(final RpcStream stream) {
     timeoutRunner
-        .getDelayedFuture(RpcTimeouts.TTFB_TIMEOUT)
+        .getDelayedFuture(ttbfTimeout)
         .thenAccept(
             (__) -> {
               if (!hasReceivedInitialBytes.get()) {
                 abortRequest(
                     stream,
-                    new RpcTimeoutException(
-                        "Timed out waiting for initial response", RpcTimeouts.TTFB_TIMEOUT));
+                    new RpcTimeoutException("Timed out waiting for initial response", ttbfTimeout));
               }
             })
         .ifExceptionGetsHereRaiseABug();
@@ -281,7 +286,7 @@ public class Eth2OutgoingRequestHandler<
       final RpcStream stream,
       final int previousResponseCount,
       final AtomicInteger currentResponseCount) {
-    final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
+    final Duration timeout = respTimeout;
     timeoutRunner
         .getDelayedFuture(timeout)
         .thenAccept(
@@ -297,7 +302,7 @@ public class Eth2OutgoingRequestHandler<
   }
 
   private void ensureReadCompleteArrivesInTime(final RpcStream stream) {
-    final Duration timeout = RpcTimeouts.RESP_TIMEOUT;
+    final Duration timeout = respTimeout;
     timeoutRunner
         .getDelayedFuture(timeout)
         .thenAccept(

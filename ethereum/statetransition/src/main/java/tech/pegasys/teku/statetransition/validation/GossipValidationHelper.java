@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
-
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,15 +27,18 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipValidationHelper {
-  public static final UInt64 MAX_OFFSET_TIME_IN_SECONDS =
-      UInt64.valueOf(Math.round((float) MAXIMUM_GOSSIP_CLOCK_DISPARITY / 1000.0));
 
   private final Spec spec;
   private final RecentChainData recentChainData;
+  private final UInt64 maxOffsetTimeInSeconds;
 
   public GossipValidationHelper(final Spec spec, RecentChainData recentChainData) {
     this.spec = spec;
     this.recentChainData = recentChainData;
+    this.maxOffsetTimeInSeconds =
+        UInt64.valueOf(
+            Math.round(
+                (float) spec.getNetworkingConfig().getMaximumGossipClockDisparity() / 1000.0));
   }
 
   public boolean isSlotFinalized(final UInt64 slot) {
@@ -48,7 +49,7 @@ public class GossipValidationHelper {
 
   public boolean isSlotFromFuture(final UInt64 slot) {
     final ReadOnlyStore store = recentChainData.getStore();
-    final UInt64 maxTime = store.getTimeSeconds().plus(MAX_OFFSET_TIME_IN_SECONDS);
+    final UInt64 maxTime = store.getTimeSeconds().plus(maxOffsetTimeInSeconds);
     final UInt64 maxCurrSlot = spec.getCurrentSlot(maxTime, store.getGenesisTime());
     return slot.isGreaterThan(maxCurrSlot);
   }
@@ -90,5 +91,9 @@ public class GossipValidationHelper {
 
   public boolean isBlockAvailable(final Bytes32 blockRoot) {
     return recentChainData.containsBlock(blockRoot);
+  }
+
+  public UInt64 getMaxOffsetTimeInSeconds() {
+    return maxOffsetTimeInSeconds;
   }
 }

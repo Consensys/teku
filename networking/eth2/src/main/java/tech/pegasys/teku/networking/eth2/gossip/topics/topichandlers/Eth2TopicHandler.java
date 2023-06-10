@@ -37,6 +37,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -49,8 +50,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final String topicName;
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
-  private final int maxMessageSize;
   private final OperationMilestoneValidator<MessageT> forkValidator;
+  private final NetworkingSpecConfig networkingConfig;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -61,18 +62,18 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final String topicName,
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final int maxMessageSize) {
+      final NetworkingSpecConfig networkingConfig) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
     this.forkDigest = forkDigest;
     this.topicName = topicName;
     this.messageType = messageType;
-    this.maxMessageSize = maxMessageSize;
     this.forkValidator = forkValidator;
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
+    this.networkingConfig = networkingConfig;
   }
 
   public Eth2TopicHandler(
@@ -84,7 +85,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipTopicName topicName,
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final int maxMessageSize) {
+      final NetworkingSpecConfig networkingConfig) {
     this(
         recentChainData,
         asyncRunner,
@@ -94,7 +95,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         topicName.toString(),
         forkValidator,
         messageType,
-        maxMessageSize);
+        networkingConfig);
   }
 
   @Override
@@ -178,12 +179,13 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   @Override
   public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return preparedGossipMessageFactory.create(getTopic(), payload, getMessageType());
+    return preparedGossipMessageFactory.create(
+        getTopic(), payload, getMessageType(), networkingConfig);
   }
 
   @Override
   public int getMaxMessageSize() {
-    return maxMessageSize;
+    return networkingConfig.getGossipMaxSize();
   }
 
   protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {

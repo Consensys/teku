@@ -18,28 +18,42 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMessageFactory {
 
   private final SnappyBlockCompressor snappyCompressor;
   private final ForkDigestToMilestone forkDigestToMilestone;
+  private final NetworkingSpecConfig networkingConfig;
 
   public SnappyPreparedGossipMessageFactory(
       final SnappyBlockCompressor snappyCompressor,
-      final ForkDigestToMilestone forkDigestToMilestone) {
+      final ForkDigestToMilestone forkDigestToMilestone,
+      final NetworkingSpecConfig networkingConfig) {
     this.snappyCompressor = snappyCompressor;
     this.forkDigestToMilestone = forkDigestToMilestone;
+    this.networkingConfig = networkingConfig;
   }
 
   @Override
   public <T extends SszData> PreparedGossipMessage create(
-      final String topic, final Bytes data, final SszSchema<T> valueType) {
+      final String topic,
+      final Bytes data,
+      final SszSchema<T> valueType,
+      final NetworkingSpecConfig networkingConfig) {
     return SnappyPreparedGossipMessage.create(
-        topic, data, forkDigestToMilestone, valueType, snappyCompressor::uncompress);
+        topic,
+        data,
+        forkDigestToMilestone,
+        valueType,
+        snappyCompressor::uncompress,
+        networkingConfig);
   }
 
   @Override
-  public PreparedGossipMessage create(final String topic, final Bytes data) {
-    return SnappyPreparedGossipMessage.createUnknown(topic, data, forkDigestToMilestone);
+  public PreparedGossipMessage create(
+      final String topic, final Bytes data, final NetworkingSpecConfig networkingConfig) {
+    return SnappyPreparedGossipMessage.createUnknown(
+        topic, data, forkDigestToMilestone, networkingConfig);
   }
 }

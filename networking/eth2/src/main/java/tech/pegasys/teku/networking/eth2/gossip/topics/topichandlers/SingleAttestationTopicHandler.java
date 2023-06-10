@@ -55,6 +55,7 @@ public class SingleAttestationTopicHandler {
             forkInfo.getFork(),
             message -> spec.computeEpochAtSlot(message.getData().getSlot())),
         attestationSchema,
-        maxMessageSize);
+        maxMessageSize,
+        spec.getNetworkingConfig());
   }
 }

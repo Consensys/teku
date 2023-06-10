@@ -32,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.S
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.SingleProtocolEth2RpcMethod;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 
@@ -41,7 +42,7 @@ public class RpcDecoderTestBase {
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
   protected static final RpcEncoding ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
   protected static final Compressor COMPRESSOR = new SnappyFramedCompressor();
   protected static final Bytes MESSAGE_PLAIN_DATA = MESSAGE.sszSerialize();
   protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);
@@ -56,8 +57,10 @@ public class RpcDecoderTestBase {
   protected static final AsyncRunner ASYNC_RUNNER = new StubAsyncRunner();
   protected static final PeerLookup PEER_LOOKUP = mock(PeerLookup.class);
 
+  protected static final Spec spec = TestSpecFactory.createDefault();
   protected static final RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
-      RpcContextCodec.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
+      RpcContextCodec.noop(
+          spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema());
   protected static final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes>
       RESPONSE_DECODER = RpcResponseDecoder.create(ENCODING, CONTEXT_ENCODER);
 
@@ -71,11 +74,12 @@ public class RpcDecoderTestBase {
               "",
               1,
               ENCODING,
-              BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
+              spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
               false,
               CONTEXT_ENCODER,
               mock(LocalMessageHandler.class),
-              PEER_LOOKUP);
+              PEER_LOOKUP,
+              spec.getGenesisSpecConfig());
 
   protected List<List<ByteBuf>> testByteBufSlices(final Bytes... bytes) {
     List<List<ByteBuf>> ret = Utils.generateTestSlices(bytes);
@@ -89,7 +93,8 @@ public class RpcDecoderTestBase {
     for (int i = 0; i < blocksRequested; i++) {
       roots.add(Bytes32.leftPad(Bytes.ofUnsignedInt(i)));
     }
-    return new BeaconBlocksByRootRequestMessage(roots);
+    return new BeaconBlocksByRootRequestMessage(
+        spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots);
   }
 
   protected static Bytes getLengthPrefix(final int size) {

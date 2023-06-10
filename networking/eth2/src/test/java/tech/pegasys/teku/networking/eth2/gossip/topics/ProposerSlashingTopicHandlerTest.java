@@ -38,7 +38,8 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
             gossipEncoding,
             forkInfo,
             processor,
-            gossipMaxSize)
+            gossipMaxSize,
+            spec.getNetworkingConfig())
         .getTopicHandler();
   }
 

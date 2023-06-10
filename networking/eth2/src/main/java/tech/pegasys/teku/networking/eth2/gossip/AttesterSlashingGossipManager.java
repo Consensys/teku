@@ -46,7 +46,8 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
             .getSchemaDefinitions()
             .getAttesterSlashingSchema(),
         message -> spec.computeEpochAtSlot(message.getAttestation1().getData().getSlot()),
-        maxMessageSize);
+        maxMessageSize,
+        spec.getNetworkingConfig());
   }
 
   public void publishAttesterSlashing(final AttesterSlashing message) {

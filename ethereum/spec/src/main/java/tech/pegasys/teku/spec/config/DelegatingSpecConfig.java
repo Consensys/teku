@@ -312,6 +312,66 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public UInt64 getMaxRequestBlocks() {
+    return specConfig.getMaxRequestBlocks();
+  }
+
+  @Override
+  public int getEpochsPerSubnetSubscription() {
+    return specConfig.getEpochsPerSubnetSubscription();
+  }
+
+  @Override
+  public int getTtbfTimeout() {
+    return specConfig.getTtbfTimeout();
+  }
+
+  @Override
+  public int getRespTimeout() {
+    return specConfig.getRespTimeout();
+  }
+
+  @Override
+  public UInt64 getAttestationPropagationSlotRange() {
+    return specConfig.getAttestationPropagationSlotRange();
+  }
+
+  @Override
+  public int getMaximumGossipClockDisparity() {
+    return specConfig.getMaximumGossipClockDisparity();
+  }
+
+  @Override
+  public Bytes4 getMessageDomainInvalidSnappy() {
+    return specConfig.getMessageDomainInvalidSnappy();
+  }
+
+  @Override
+  public Bytes4 getMessageDomainValidSnappy() {
+    return specConfig.getMessageDomainValidSnappy();
+  }
+
+  @Override
+  public int getSubnetsPerNode() {
+    return specConfig.getSubnetsPerNode();
+  }
+
+  @Override
+  public int getAttestationSubnetCount() {
+    return specConfig.getAttestationSubnetCount();
+  }
+
+  @Override
+  public int getAttestationSubnetExtraBits() {
+    return specConfig.getAttestationSubnetExtraBits();
+  }
+
+  @Override
+  public int getAttestationSubnetPrefixBits() {
+    return specConfig.getAttestationSubnetPrefixBits();
+  }
+
+  @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }

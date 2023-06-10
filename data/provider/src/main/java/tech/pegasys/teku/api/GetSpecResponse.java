@@ -80,11 +80,11 @@ public class GetSpecResponse {
   }
 
   private String getRandomSubnetsPerValidator() {
-    return Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR);
+    return Integer.toString(specConfig.getSubnetsPerNode());
   }
 
   private String getEpochsPerRandomSubnetSubscription() {
-    return Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION);
+    return Integer.toString(specConfig.getEpochsPerSubnetSubscription());
   }
 
   private Bytes4 getDomainBeaconProposer() {

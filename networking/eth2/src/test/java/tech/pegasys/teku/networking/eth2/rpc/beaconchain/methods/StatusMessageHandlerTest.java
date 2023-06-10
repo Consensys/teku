@@ -62,7 +62,7 @@ class StatusMessageHandlerTest {
       BeaconChainMethodIds.getStatusMethodId(
           1,
           RpcEncoding.createSszSnappyEncoding(
-              TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize()));
+              TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize()));
   private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @BeforeEach

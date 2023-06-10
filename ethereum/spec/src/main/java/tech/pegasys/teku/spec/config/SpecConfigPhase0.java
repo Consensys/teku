@@ -100,11 +100,24 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final long depositNetworkId;
   private final Eth1Address depositContractAddress;
 
-  private final ProgressiveBalancesMode progressiveBalancesMode;
-
+  // Networking
   private final int gossipMaxSize;
-
   private final int maxChunkSize;
+  private final UInt64 maxRequestBlocks;
+  private final int epochsPerSubnetSubscription;
+  private final int ttbfTimeout;
+  private final int respTimeout;
+  private final UInt64 attestationPropagationSlotRange;
+  private final int maximumGossipClockDisparity;
+  private final Bytes4 messageDomainInvalidSnappy;
+  private final Bytes4 messageDomainValidSnappy;
+  private final int subnetsPerNode;
+  private final int attestationSubnetCount;
+  private final int attestationSubnetExtraBits;
+  private final int attestationSubnetPrefixBits;
+
+  // Misc
+  private final ProgressiveBalancesMode progressiveBalancesMode;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -159,7 +172,19 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Eth1Address depositContractAddress,
       final ProgressiveBalancesMode progressiveBalancesMode,
       final int gossipMaxSize,
-      final int maxChunkSize) {
+      final int maxChunkSize,
+      final UInt64 maxRequestBlocks,
+      final int epochsPerSubnetSubscription,
+      final int ttbfTimeout,
+      final int respTimeout,
+      final UInt64 attestationPropagationSlotRange,
+      final int maximumGossipClockDisparity,
+      final Bytes4 messageDomainInvalidSnappy,
+      final Bytes4 messageDomainValidSnappy,
+      final int subnetsPerNode,
+      final int attestationSubnetCount,
+      final int attestationSubnetExtraBits,
+      final int attestationSubnetPrefixBits) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -214,6 +239,18 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.progressiveBalancesMode = progressiveBalancesMode;
     this.gossipMaxSize = gossipMaxSize;
     this.maxChunkSize = maxChunkSize;
+    this.maxRequestBlocks = maxRequestBlocks;
+    this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    this.ttbfTimeout = ttbfTimeout;
+    this.respTimeout = respTimeout;
+    this.attestationPropagationSlotRange = attestationPropagationSlotRange;
+    this.maximumGossipClockDisparity = maximumGossipClockDisparity;
+    this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
+    this.messageDomainValidSnappy = messageDomainValidSnappy;
+    this.subnetsPerNode = subnetsPerNode;
+    this.attestationSubnetCount = attestationSubnetCount;
+    this.attestationSubnetExtraBits = attestationSubnetExtraBits;
+    this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
   }
 
   @Override
@@ -507,6 +544,66 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public UInt64 getMaxRequestBlocks() {
+    return maxRequestBlocks;
+  }
+
+  @Override
+  public int getEpochsPerSubnetSubscription() {
+    return epochsPerSubnetSubscription;
+  }
+
+  @Override
+  public int getTtbfTimeout() {
+    return ttbfTimeout;
+  }
+
+  @Override
+  public int getRespTimeout() {
+    return respTimeout;
+  }
+
+  @Override
+  public UInt64 getAttestationPropagationSlotRange() {
+    return attestationPropagationSlotRange;
+  }
+
+  @Override
+  public int getMaximumGossipClockDisparity() {
+    return maximumGossipClockDisparity;
+  }
+
+  @Override
+  public Bytes4 getMessageDomainInvalidSnappy() {
+    return messageDomainInvalidSnappy;
+  }
+
+  @Override
+  public Bytes4 getMessageDomainValidSnappy() {
+    return messageDomainValidSnappy;
+  }
+
+  @Override
+  public int getSubnetsPerNode() {
+    return subnetsPerNode;
+  }
+
+  @Override
+  public int getAttestationSubnetCount() {
+    return attestationSubnetCount;
+  }
+
+  @Override
+  public int getAttestationSubnetExtraBits() {
+    return attestationSubnetExtraBits;
+  }
+
+  @Override
+  public int getAttestationSubnetPrefixBits() {
+    return attestationSubnetPrefixBits;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -551,6 +648,14 @@ public class SpecConfigPhase0 implements SpecConfig {
         && depositNetworkId == that.depositNetworkId
         && gossipMaxSize == that.gossipMaxSize
         && maxChunkSize == that.maxChunkSize
+        && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
+        && ttbfTimeout == that.ttbfTimeout
+        && respTimeout == that.respTimeout
+        && maximumGossipClockDisparity == that.maximumGossipClockDisparity
+        && subnetsPerNode == that.subnetsPerNode
+        && attestationSubnetCount == that.attestationSubnetCount
+        && attestationSubnetExtraBits == that.attestationSubnetExtraBits
+        && attestationSubnetPrefixBits == that.attestationSubnetPrefixBits
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -567,6 +672,10 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
         && Objects.equals(depositContractAddress, that.depositContractAddress)
+        && Objects.equals(maxRequestBlocks, that.maxRequestBlocks)
+        && Objects.equals(attestationPropagationSlotRange, that.attestationPropagationSlotRange)
+        && Objects.equals(messageDomainInvalidSnappy, that.messageDomainInvalidSnappy)
+        && Objects.equals(messageDomainValidSnappy, that.messageDomainValidSnappy)
         && progressiveBalancesMode == that.progressiveBalancesMode;
   }
 
@@ -623,8 +732,20 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        progressiveBalancesMode,
         gossipMaxSize,
-        maxChunkSize);
+        maxChunkSize,
+        maxRequestBlocks,
+        epochsPerSubnetSubscription,
+        ttbfTimeout,
+        respTimeout,
+        attestationPropagationSlotRange,
+        maximumGossipClockDisparity,
+        messageDomainInvalidSnappy,
+        messageDomainValidSnappy,
+        subnetsPerNode,
+        attestationSubnetCount,
+        attestationSubnetExtraBits,
+        attestationSubnetPrefixBits,
+        progressiveBalancesMode);
   }
 }

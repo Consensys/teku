@@ -50,7 +50,8 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
             .getSchemaDefinitions()
             .getSignedAggregateAndProofSchema(),
         message -> spec.computeEpochAtSlot(message.getMessage().getAggregate().getData().getSlot()),
-        maxMessageSize);
+        maxMessageSize,
+        spec.getNetworkingConfig());
   }
 
   public void onNewAggregate(final ValidatableAttestation validatableAttestation) {

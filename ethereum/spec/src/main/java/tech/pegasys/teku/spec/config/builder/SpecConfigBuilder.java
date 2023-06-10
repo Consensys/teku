@@ -104,9 +104,21 @@ public class SpecConfigBuilder {
 
   private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.FULL;
 
+  // Networking
   private int gossipMaxSize;
-
   private int maxChunkSize;
+  private UInt64 maxRequestBlocks;
+  private int epochsPerSubnetSubscription;
+  private int ttbfTimeout;
+  private int respTimeout;
+  private UInt64 attestationPropagationSlotRange;
+  private int maximumGossipClockDisparity;
+  private Bytes4 messageDomainInvalidSnappy;
+  private Bytes4 messageDomainValidSnappy;
+  private int subnetsPerNode;
+  private int attestationSubnetCount;
+  private int attestationSubnetExtraBits;
+  private int attestationSubnetPrefixBits;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -176,7 +188,19 @@ public class SpecConfigBuilder {
             depositContractAddress,
             progressiveBalancesMode,
             gossipMaxSize,
-            maxChunkSize);
+            maxChunkSize,
+            maxRequestBlocks,
+            epochsPerSubnetSubscription,
+            ttbfTimeout,
+            respTimeout,
+            attestationPropagationSlotRange,
+            maximumGossipClockDisparity,
+            messageDomainInvalidSnappy,
+            messageDomainValidSnappy,
+            subnetsPerNode,
+            attestationSubnetCount,
+            attestationSubnetExtraBits,
+            attestationSubnetPrefixBits);
 
     return builderChain.build(config);
   }
@@ -237,6 +261,19 @@ public class SpecConfigBuilder {
 
     SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
+    SpecBuilderUtil.validateConstant("maxRequestBlocks", maxRequestBlocks);
+    SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
+    SpecBuilderUtil.validateConstant("ttbfTimeout", ttbfTimeout);
+    SpecBuilderUtil.validateConstant("respTimeout", respTimeout);
+    SpecBuilderUtil.validateConstant(
+        "attestationPropagationSlotRange", attestationPropagationSlotRange);
+    SpecBuilderUtil.validateConstant("maximumGossipClockDisparity", maximumGossipClockDisparity);
+    SpecBuilderUtil.validateConstant("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
+    SpecBuilderUtil.validateConstant("messageDomainValidSnappy", messageDomainValidSnappy);
+    SpecBuilderUtil.validateConstant("subnetsPerNode", subnetsPerNode);
+    SpecBuilderUtil.validateConstant("attestationSubnetCount", attestationSubnetCount);
+    SpecBuilderUtil.validateConstant("attestationSubnetExtraBits", attestationSubnetExtraBits);
+    SpecBuilderUtil.validateConstant("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
 
     builderChain.validate();
   }
@@ -558,6 +595,67 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder maxChunkSize(final int maxChunkSize) {
     this.maxChunkSize = maxChunkSize;
+    return this;
+  }
+
+  public SpecConfigBuilder setMaxRequestBlocks(final UInt64 maxRequestBlocks) {
+    this.maxRequestBlocks = maxRequestBlocks;
+    return this;
+  }
+
+  public SpecConfigBuilder setEpochsPerSubnetSubscription(final int epochsPerSubnetSubscription) {
+    this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    return this;
+  }
+
+  public SpecConfigBuilder setTtbfTimeout(final int ttbfTimeout) {
+    this.ttbfTimeout = ttbfTimeout;
+    return this;
+  }
+
+  public SpecConfigBuilder setRespTimeout(final int respTimeout) {
+    this.respTimeout = respTimeout;
+    return this;
+  }
+
+  public SpecConfigBuilder setAttestationPropagationSlotRange(
+      final UInt64 attestationPropagationSlotRange) {
+    this.attestationPropagationSlotRange = attestationPropagationSlotRange;
+    return this;
+  }
+
+  public SpecConfigBuilder setMaximumGossipClockDisparity(final int maximumGossipClockDisparity) {
+    this.maximumGossipClockDisparity = maximumGossipClockDisparity;
+    return this;
+  }
+
+  public SpecConfigBuilder setMessageDomainInvalidSnappy(final Bytes4 messageDomainInvalidSnappy) {
+    this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
+    return this;
+  }
+
+  public SpecConfigBuilder setMessageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
+    this.messageDomainValidSnappy = messageDomainValidSnappy;
+    return this;
+  }
+
+  public SpecConfigBuilder setSubnetsPerNode(final int subnetsPerNode) {
+    this.subnetsPerNode = subnetsPerNode;
+    return this;
+  }
+
+  public SpecConfigBuilder setAttestationSubnetCount(final int attestationSubnetCount) {
+    this.attestationSubnetCount = attestationSubnetCount;
+    return this;
+  }
+
+  public SpecConfigBuilder setAttestationSubnetExtraBits(final int attestationSubnetExtraBits) {
+    this.attestationSubnetExtraBits = attestationSubnetExtraBits;
+    return this;
+  }
+
+  public SpecConfigBuilder setAttestationSubnetPrefixBits(final int attestationSubnetPrefixBits) {
+    this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
   }
 

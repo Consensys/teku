@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import static java.lang.Integer.max;
 import static java.lang.Integer.min;
 import static java.util.Collections.emptySet;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -34,7 +33,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscriber {
@@ -49,6 +47,7 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private final Random random;
   private final Spec spec;
   private final int minimumSubnetSubscriptions;
+  private final int attestationSubnetCount;
 
   public ValidatorBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber,
@@ -57,9 +56,10 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
       final int minimumSubnetSubscriptions) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.random = random;
-    IntStream.range(0, ATTESTATION_SUBNET_COUNT).forEach(availableSubnetIndices::add);
     this.spec = spec;
-    this.minimumSubnetSubscriptions = min(minimumSubnetSubscriptions, ATTESTATION_SUBNET_COUNT);
+    this.attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
+    IntStream.range(0, attestationSubnetCount).forEach(availableSubnetIndices::add);
+    this.minimumSubnetSubscriptions = min(minimumSubnetSubscriptions, attestationSubnetCount);
   }
 
   @Override
@@ -94,9 +94,9 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNumberOfValidators(
       UInt64 currentSlot, int validatorCount) {
 
-    final int randomSubnetsPerValidator = ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR;
+    final int randomSubnetsPerValidator = spec.getNetworkingConfig().getSubnetsPerNode();
     final int requiredSubnetSubscriptions =
-        min(ATTESTATION_SUBNET_COUNT, randomSubnetsPerValidator * validatorCount);
+        min(attestationSubnetCount, randomSubnetsPerValidator * validatorCount);
     final int totalNumberOfSubscriptions =
         max(requiredSubnetSubscriptions, minimumSubnetSubscriptions);
 
@@ -166,8 +166,8 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
 
     return UInt64.valueOf(
         (long)
-                (ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
-                    + random.nextInt(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION))
+                (config.getEpochsPerSubnetSubscription()
+                    + random.nextInt(config.getEpochsPerSubnetSubscription()))
             * config.getSlotsPerEpoch());
   }
 }

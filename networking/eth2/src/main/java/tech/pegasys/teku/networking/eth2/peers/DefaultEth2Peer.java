@@ -243,7 +243,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, SignedBeaconBlock> blockByRoot =
         rpcMethods.beaconBlocksByRoot();
     return requestOptionalItem(
-        blockByRoot, new BeaconBlocksByRootRequestMessage(List.of(blockRoot)));
+        blockByRoot,
+        new BeaconBlocksByRootRequestMessage(
+            spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
+            List.of(blockRoot)));
   }
 
   @Override
