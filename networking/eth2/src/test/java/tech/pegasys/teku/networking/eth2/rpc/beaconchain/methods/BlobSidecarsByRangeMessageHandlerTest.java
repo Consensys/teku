@@ -148,7 +148,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.popBlobSidecarRequests(listener, 20)).thenReturn(false);
+    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue()))
+        .thenReturn(false);
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
