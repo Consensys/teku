@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -133,8 +134,7 @@ public class BlobSidecarGossipManagerTest {
 
     topicChannels.forEach(
         (subnetId, channel) -> {
-          // 10 % 4 = 2
-          if (subnetId == 2) {
+          if (subnetId == 10 % BLOB_SIDECAR_SUBNET_COUNT) {
             verify(channel).gossip(serialized);
           } else {
             verifyNoInteractions(channel);
