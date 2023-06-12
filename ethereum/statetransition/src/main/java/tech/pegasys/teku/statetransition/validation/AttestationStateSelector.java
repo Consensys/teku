@@ -74,12 +74,13 @@ public class AttestationStateSelector {
     }
 
     final UInt64 headEpoch = spec.computeEpochAtSlot(chainHead.getSlot());
-    final boolean isWithinHistoricalEpochs = attestationEpoch
+    final boolean isWithinHistoricalEpochs =
+        attestationEpoch
             .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
             .isGreaterThan(headEpoch);
     if (isWithinHistoricalEpochs && isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
-        appliedSelectorRule.labels("ancestor_of_head").inc();
-        return chainHead.getState().thenApply(Optional::of);
+      appliedSelectorRule.labels("ancestor_of_head").inc();
+      return chainHead.getState().thenApply(Optional::of);
     }
 
     final UInt64 earliestSlot =
