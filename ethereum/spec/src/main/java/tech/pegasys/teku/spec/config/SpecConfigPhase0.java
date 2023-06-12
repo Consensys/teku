@@ -100,11 +100,15 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final long depositNetworkId;
   private final Eth1Address depositContractAddress;
 
-  private final ProgressiveBalancesMode progressiveBalancesMode;
-
+  // Networking
   private final int gossipMaxSize;
-
   private final int maxChunkSize;
+  private final UInt64 maxRequestBlocksDeneb;
+  private final UInt64 maxRequestBlobSidecars;
+  private final int minEpochsForBlobSidecarsRequests;
+
+  // Misc
+  private final ProgressiveBalancesMode progressiveBalancesMode;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -159,7 +163,10 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Eth1Address depositContractAddress,
       final ProgressiveBalancesMode progressiveBalancesMode,
       final int gossipMaxSize,
-      final int maxChunkSize) {
+      final int maxChunkSize,
+      final UInt64 maxRequestBlocksDeneb,
+      final UInt64 maxRequestBlobSidecars,
+      final int minEpochsForBlobSidecarsRequests) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -214,6 +221,9 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.progressiveBalancesMode = progressiveBalancesMode;
     this.gossipMaxSize = gossipMaxSize;
     this.maxChunkSize = maxChunkSize;
+    this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
+    this.maxRequestBlobSidecars = maxRequestBlobSidecars;
+    this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
   }
 
   @Override
@@ -507,6 +517,21 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public UInt64 getMaxRequestBlocksDeneb() {
+    return maxRequestBlocksDeneb;
+  }
+
+  @Override
+  public UInt64 getMaxRequestBlobSidecars() {
+    return maxRequestBlobSidecars;
+  }
+
+  @Override
+  public int getMinEpochsForBlobSidecarsRequests() {
+    return minEpochsForBlobSidecarsRequests;
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
@@ -551,6 +576,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && depositNetworkId == that.depositNetworkId
         && gossipMaxSize == that.gossipMaxSize
         && maxChunkSize == that.maxChunkSize
+        && minEpochsForBlobSidecarsRequests == that.minEpochsForBlobSidecarsRequests
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -567,6 +593,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
         && Objects.equals(depositContractAddress, that.depositContractAddress)
+        && Objects.equals(maxRequestBlocksDeneb, that.maxRequestBlocksDeneb)
+        && Objects.equals(maxRequestBlobSidecars, that.maxRequestBlobSidecars)
         && progressiveBalancesMode == that.progressiveBalancesMode;
   }
 
@@ -625,6 +653,9 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositContractAddress,
         progressiveBalancesMode,
         gossipMaxSize,
-        maxChunkSize);
+        maxChunkSize,
+        maxRequestBlocksDeneb,
+        maxRequestBlobSidecars,
+        minEpochsForBlobSidecarsRequests);
   }
 }

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSecond
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -193,6 +193,11 @@ public class Spec {
 
   public SpecConfig getGenesisSpecConfig() {
     return getGenesisSpec().getConfig();
+  }
+
+  public NetworkingSpecConfig getNetworkingConfig() {
+    // Networking config is constant along forks
+    return getGenesisSpec().getConfig().getNetworkingConfig();
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -862,7 +867,7 @@ public class Spec {
     }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS);
+        .isLessThanOrEqualTo(getSpecConfig(epoch).getMinEpochsForBlobSidecarsRequests());
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {

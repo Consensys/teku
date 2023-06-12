@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import java.util.NavigableMap;
@@ -195,7 +194,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
                 UInt64.valueOf(startBlock),
-                MAX_REQUEST_BLOCKS_DENEB.increment(),
+                spec.getNetworkingConfig().getMaxRequestBlocksDeneb().increment(),
                 UInt64.valueOf(skip)));
 
     assertThat(result)

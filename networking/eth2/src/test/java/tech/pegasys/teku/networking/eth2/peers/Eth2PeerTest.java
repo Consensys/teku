@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.HISTORICAL_SYNC_BATCH_SIZE;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -217,10 +216,10 @@ class Eth2PeerTest {
   public void verifyForwardAndHistoricalSyncBatchSizeIsNotLargerThanMaxRequestBlocks() {
     assertThat(FORWARD_SYNC_BATCH_SIZE.longValue())
         .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
-        .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
+        .isLessThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocksDeneb().longValue());
     assertThat(HISTORICAL_SYNC_BATCH_SIZE.longValue())
         .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
-        .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
+        .isLessThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocksDeneb().longValue());
   }
 
   private PeerStatus randomPeerStatus() {

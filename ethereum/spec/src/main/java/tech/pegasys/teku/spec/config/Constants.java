@@ -25,7 +25,6 @@ public class Constants {
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
   // Deneb
-  public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
   public static final int BLOB_SIDECAR_SUBNET_COUNT = 4;
 

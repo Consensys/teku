@@ -16,14 +16,17 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 
 class BeaconBlocksByRootRequestMessageTest {
+
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
 
   @Test
   public void shouldRoundTripViaSsz() {
@@ -44,6 +47,6 @@ class BeaconBlocksByRootRequestMessageTest {
   public void verifyMaxLengthOfContainerIsGreaterOrEqualToMaxRequestBlocks() {
     assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
         .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
-        .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
+        .isGreaterThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocksDeneb().longValue());
   }
 }

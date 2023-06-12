@@ -25,13 +25,22 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class BlobSidecarsByRootRequestMessageTest {
 
+  final Spec spec = TestSpecFactory.createMinimalDeneb();
+
   @Test
   public void shouldRoundTripViaSsz() {
+    BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema
+        blobSidecarsByRootRequestMessageSchema =
+            SchemaDefinitionsDeneb.required(
+                    spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+                .getBlobSidecarsByRootRequestMessageSchema();
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
+            blobSidecarsByRootRequestMessageSchema,
             List.of(
                 new BlobIdentifier(
                     Bytes32.fromHexString(
@@ -43,7 +52,7 @@ class BlobSidecarsByRootRequestMessageTest {
                     UInt64.ONE)));
     final Bytes data = request.sszSerialize();
     final BlobSidecarsByRootRequestMessage result =
-        BlobSidecarsByRootRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
+        blobSidecarsByRootRequestMessageSchema.sszDeserialize(data);
     assertThatSszData(result).isEqualByAllMeansTo(request);
   }
 

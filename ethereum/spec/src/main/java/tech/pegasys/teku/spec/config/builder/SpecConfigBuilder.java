@@ -104,9 +104,12 @@ public class SpecConfigBuilder {
 
   private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.FULL;
 
+  // Networking
   private int gossipMaxSize;
-
   private int maxChunkSize;
+  private UInt64 maxRequestBlocksDeneb;
+  private UInt64 maxRequestBlobSidecars;
+  private int minEpochsForBlobSidecarsRequests;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -176,7 +179,10 @@ public class SpecConfigBuilder {
             depositContractAddress,
             progressiveBalancesMode,
             gossipMaxSize,
-            maxChunkSize);
+            maxChunkSize,
+            maxRequestBlocksDeneb,
+            maxRequestBlobSidecars,
+            minEpochsForBlobSidecarsRequests);
 
     return builderChain.build(config);
   }
@@ -237,7 +243,10 @@ public class SpecConfigBuilder {
 
     SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
-
+    SpecBuilderUtil.validateConstant("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
+    SpecBuilderUtil.validateConstant("maxRequestBlobSidecars", maxRequestBlobSidecars);
+    SpecBuilderUtil.validateConstant(
+        "minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
     builderChain.validate();
   }
 
@@ -558,6 +567,22 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder maxChunkSize(final int maxChunkSize) {
     this.maxChunkSize = maxChunkSize;
+    return this;
+  }
+
+  public SpecConfigBuilder setMaxRequestBlocksDeneb(final UInt64 maxRequestBlocksDeneb) {
+    this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
+    return this;
+  }
+
+  public SpecConfigBuilder setMaxRequestBlobSidecars(final UInt64 maxRequestBlobSidecars) {
+    this.maxRequestBlobSidecars = maxRequestBlobSidecars;
+    return this;
+  }
+
+  public SpecConfigBuilder setMinEpochsForBlobSidecarsRequests(
+      final int minEpochsForBlobSidecarsRequests) {
+    this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
     return this;
   }
 

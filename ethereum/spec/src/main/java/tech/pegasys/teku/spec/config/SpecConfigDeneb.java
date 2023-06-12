@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.config;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
-
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -50,10 +48,6 @@ public interface SpecConfigDeneb extends SpecConfigCapella {
   int getMaxBlobCommitmentsPerBlock();
 
   int getMaxBlobsPerBlock();
-
-  default UInt64 getMaxRequestBlobSidecars() {
-    return MAX_REQUEST_BLOCKS_DENEB.times(getMaxBlobsPerBlock());
-  }
 
   Optional<String> getTrustedSetupPath();
 
