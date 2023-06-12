@@ -74,33 +74,12 @@ public class AttestationStateSelector {
     }
 
     final UInt64 headEpoch = spec.computeEpochAtSlot(chainHead.getSlot());
-    if (attestationEpoch
-        .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
-        .isGreaterThan(headEpoch)) {
-      // If it's an ancestor of head and within historic slots, use the chain head
-      if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
+    final boolean isWithinHistoricalEpochs = attestationEpoch
+            .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
+            .isGreaterThan(headEpoch);
+    if (isWithinHistoricalEpochs && isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
         appliedSelectorRule.labels("ancestor_of_head").inc();
         return chainHead.getState().thenApply(Optional::of);
-      }
-      // if it's an ancestor of any chain head within historic slots, use that chain head.
-      final Optional<BeaconState> maybeChainHeadData =
-          recentChainData.getChainHeads().stream()
-              .filter(head -> isAncestorOfChainHead(head.getRoot(), targetBlockRoot))
-              .findFirst()
-              .flatMap(
-                  protoNodeData -> {
-                    LOG.debug(
-                        "Found chain for target {}, chain head {}",
-                        () -> attestationData.getTarget().getRoot(),
-                        protoNodeData::getStateRoot);
-                    return recentChainData
-                        .getStore()
-                        .getBlockStateIfAvailable(protoNodeData.getRoot());
-                  });
-      if (maybeChainHeadData.isPresent()) {
-        appliedSelectorRule.labels("ancestor_of_fork").inc();
-        return completedFuture(maybeChainHeadData);
-      }
     }
 
     final UInt64 earliestSlot =
@@ -113,15 +92,37 @@ public class AttestationStateSelector {
       return completedFuture(Optional.of(finalizedState));
     }
 
-    // Otherwise, use the state from the earliest allowed slot.
-    // This maximises the chance that the state we get will be on the canonical fork and so useful
-    // for other requests, and means all attestations for that epoch refer to the same slot,
-    // minimising the number of states we need
     final Optional<UInt64> targetBlockSlot = recentChainData.getSlotForBlockRoot(targetBlockRoot);
     if (targetBlockSlot.isEmpty()) {
       // Block became unknown, so ignore it
       appliedSelectorRule.labels("block_became_unknown").inc();
       return completedFuture(Optional.empty());
+    }
+
+    // We generally have the chain head states, so attempt to locate which chain head is a
+    // descendent and use that
+    if (isWithinHistoricalEpochs) {
+      // if it's an ancestor of any chain head within historic slots, use that chain head.
+      final Optional<BeaconState> maybeChainHeadData =
+          recentChainData.getChainHeads().stream()
+              .filter(
+                  head ->
+                      isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot.get()))
+              .findFirst()
+              .flatMap(
+                  protoNodeData -> {
+                    LOG.trace(
+                        "Found chain for target {}, chain head {}",
+                        () -> attestationData.getTarget().getRoot(),
+                        protoNodeData::getStateRoot);
+                    return recentChainData
+                        .getStore()
+                        .getBlockStateIfAvailable(protoNodeData.getRoot());
+                  });
+      if (maybeChainHeadData.isPresent()) {
+        appliedSelectorRule.labels("ancestor_of_fork").inc();
+        return completedFuture(maybeChainHeadData);
+      }
     }
 
     // Check if the attestations head block state is already available in cache and usable
