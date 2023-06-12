@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.util.List;
@@ -88,13 +87,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     final List<KZGProof> proofs =
         blobSidecars.stream().map(BlobSidecar::getKZGProof).collect(Collectors.toList());
 
-    checkState(
-        kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs),
-        "The blobs and KZG proofs do not correspond to the KZG commitments for slot %s and block root %s",
-        slot,
-        beaconBlockRoot);
-
-    return true;
+    return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs);
   }
 
   /**
