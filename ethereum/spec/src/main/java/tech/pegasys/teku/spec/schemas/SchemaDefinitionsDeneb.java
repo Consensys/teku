@@ -15,7 +15,9 @@ package tech.pegasys.teku.spec.schemas;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Suppliers;
 import java.util.Optional;
+import java.util.function.Supplier;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
@@ -85,7 +87,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobsBundleSchema blobsBundleSchema;
   private final BlindedBlobsBundleSchema blindedBlobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
-  private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
+  private final Supplier<BlobSidecarsByRootRequestMessageSchema>
+      blobSidecarsByRootRequestMessageSchema;
 
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig.toVersionDeneb().orElseThrow());
@@ -152,8 +155,11 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blobsBundleSchema = new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, specConfig);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
+
+    // We initialize all schemas for all configs even when fork is in the FAR_FUTURE_EPOCH.
+    // Initialization of this schema could miss some constants when Deneb constants are missing
     this.blobSidecarsByRootRequestMessageSchema =
-        new BlobSidecarsByRootRequestMessageSchema(specConfig);
+        Suppliers.memoize(() -> new BlobSidecarsByRootRequestMessageSchema(specConfig));
   }
 
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {
@@ -295,7 +301,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   }
 
   public BlobSidecarsByRootRequestMessageSchema getBlobSidecarsByRootRequestMessageSchema() {
-    return blobSidecarsByRootRequestMessageSchema;
+    return blobSidecarsByRootRequestMessageSchema.get();
   }
 
   @Override

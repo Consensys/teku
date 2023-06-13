@@ -46,11 +46,11 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
@@ -62,8 +62,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
   private final int maxChunkSize =
       SpecConfigBellatrix.required(spec.getGenesisSpecConfig()).getMaxChunkSizeBellatrix();
   private final BlobSidecarsByRootRequestMessageSchema messageSchema =
-      new BlobSidecarsByRootRequestMessageSchema(
-          SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig()));
+      SchemaDefinitionsDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+          .getBlobSidecarsByRootRequestMessageSchema();
   private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(maxChunkSize);
 
   private final String protocolId =
