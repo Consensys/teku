@@ -156,3 +156,10 @@ CAPELLA_FORK_EPOCH: 244224 # Wed May 24 2023 13:12:00 GMT+0000
 INACTIVITY_SCORE_BIAS: 4
 # 2**4 (= 16)
 INACTIVITY_SCORE_RECOVERY_RATE: 16
+
+# Networking
+# ---------------------------------------------------------------
+# `10 * 2**20` (= 10485760, 10 MiB)
+GOSSIP_MAX_SIZE: 10485760
+# `10 * 2**20` (=10485760, 10 MiB)
+MAX_CHUNK_SIZE: 10485760
