@@ -32,7 +32,7 @@ class BlobSidecarsByRootRequestMessageTest {
 
   @Test
   public void shouldRoundTripViaSsz() {
-    BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema =
+    final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema =
         SchemaDefinitionsDeneb.required(
                 spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
             .getBlobSidecarsByRootRequestMessageSchema();

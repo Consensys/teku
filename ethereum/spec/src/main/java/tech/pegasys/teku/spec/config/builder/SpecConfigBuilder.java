@@ -566,17 +566,17 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder setMaxRequestBlocksDeneb(final UInt64 maxRequestBlocksDeneb) {
+  public SpecConfigBuilder maxRequestBlocksDeneb(final UInt64 maxRequestBlocksDeneb) {
     this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
     return this;
   }
 
-  public SpecConfigBuilder setMaxRequestBlobSidecars(final UInt64 maxRequestBlobSidecars) {
+  public SpecConfigBuilder maxRequestBlobSidecars(final UInt64 maxRequestBlobSidecars) {
     this.maxRequestBlobSidecars = maxRequestBlobSidecars;
     return this;
   }
 
-  public SpecConfigBuilder setMinEpochsForBlobSidecarsRequests(
+  public SpecConfigBuilder minEpochsForBlobSidecarsRequests(
       final int minEpochsForBlobSidecarsRequests) {
     this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
     return this;
