@@ -51,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage.EmptyMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
@@ -279,11 +280,10 @@ public class BeaconChainMethods {
     final BlobSidecarsByRootMessageHandler blobSidecarsByRootHandler =
         new BlobSidecarsByRootMessageHandler(
             spec, metricsSystem, getDenebForkEpoch(spec), combinedChainDataClient);
-    BlobSidecarsByRootRequestMessage.BlobSidecarsByRootRequestMessageSchema
-        blobSidecarsByRootRequestMessageSchema =
-            SchemaDefinitionsDeneb.required(
-                    spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-                .getBlobSidecarsByRootRequestMessageSchema();
+    BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema =
+        SchemaDefinitionsDeneb.required(
+                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+            .getBlobSidecarsByRootRequestMessageSchema();
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(

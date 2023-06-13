@@ -16,30 +16,10 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier>
     implements SszList<BlobIdentifier>, RpcRequest {
-
-  public static class BlobSidecarsByRootRequestMessageSchema
-      extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
-
-    // size validation according to the spec (MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK) is
-    // done
-    // in the RPC handler
-    public BlobSidecarsByRootRequestMessageSchema(final NetworkingSpecConfig networkingSpecConfig) {
-      super(
-          BlobIdentifier.SSZ_SCHEMA,
-          networkingSpecConfig.getMaxRequestBlocksDeneb().times(128).longValue());
-    }
-
-    @Override
-    public BlobSidecarsByRootRequestMessage createFromBackingNode(final TreeNode node) {
-      return new BlobSidecarsByRootRequestMessage(this, node);
-    }
-  }
 
   public BlobSidecarsByRootRequestMessage(
       final BlobSidecarsByRootRequestMessageSchema schema,
@@ -47,7 +27,7 @@ public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier
     super(schema, schema.createTreeFromElements(blobIdentifiers));
   }
 
-  private BlobSidecarsByRootRequestMessage(
+  BlobSidecarsByRootRequestMessage(
       final BlobSidecarsByRootRequestMessageSchema schema, final TreeNode node) {
     super(schema, node);
   }
