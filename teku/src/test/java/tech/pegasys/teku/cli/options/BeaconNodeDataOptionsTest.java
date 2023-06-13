@@ -239,6 +239,19 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void shouldSetNonCanonicalBlobSidecarsStoringOption() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--data-storage-non-canonical-blob-sidecars-enabled");
+    assertThat(config.storageConfiguration().isStoreNonCanonicalBlobSidecarsEnabled()).isTrue();
+    assertThat(
+            createConfigBuilder()
+                .storageConfiguration(b -> b.storeNonCanonicalBlobSidecars(true))
+                .build())
+        .usingRecursiveComparison()
+        .isEqualTo(config);
+  }
+
+  @Test
   void shouldNotAllowPruningBlocksAndReconstructingStates() {
     assertThatThrownBy(
             () ->
