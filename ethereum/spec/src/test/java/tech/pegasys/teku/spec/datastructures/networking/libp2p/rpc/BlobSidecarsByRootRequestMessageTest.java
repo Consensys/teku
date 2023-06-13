@@ -24,7 +24,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class BlobSidecarsByRootRequestMessageTest {
@@ -65,8 +64,7 @@ class BlobSidecarsByRootRequestMessageTest {
         milestone -> {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
           final UInt64 maxRequestBlobSidecars =
-              SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig())
-                  .getMaxRequestBlobSidecars();
+              spec.getNetworkingConfig().getMaxRequestBlobSidecars();
           assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
               .isGreaterThanOrEqualTo(maxRequestBlobSidecars.longValue());
         });

@@ -312,6 +312,21 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public UInt64 getMaxRequestBlocksDeneb() {
+    return specConfig.getMaxRequestBlocksDeneb();
+  }
+
+  @Override
+  public UInt64 getMaxRequestBlobSidecars() {
+    return specConfig.getMaxRequestBlobSidecars();
+  }
+
+  @Override
+  public int getMinEpochsForBlobSidecarsRequests() {
+    return specConfig.getMinEpochsForBlobSidecarsRequests();
+  }
+
+  @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }

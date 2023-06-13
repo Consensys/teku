@@ -208,7 +208,7 @@ public class Eth2P2PNetworkFactory {
               RpcEncoding.createSszSnappyEncoding(
                   spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
                       ? spec.forMilestone(SpecMilestone.BELLATRIX).getConfig().getMaxChunkSize()
-                      : spec.forMilestone(SpecMilestone.PHASE0).getConfig().getMaxChunkSize());
+                      : spec.getNetworkingConfig().getMaxChunkSize());
         }
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(

@@ -95,7 +95,8 @@ public class BlobSidecarsByRangeMessageHandler
 
     final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
     final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
-    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final UInt64 maxRequestBlobSidecars =
+        specConfig.getNetworkingConfig().getMaxRequestBlobSidecars();
 
     final UInt64 requestedCount = message.getCount().times(maxBlobsPerBlock);
 
@@ -158,7 +159,7 @@ public class BlobSidecarsByRangeMessageHandler
     final UInt64 minEpochForBlobSidecars =
         denebForkEpoch.max(
             currentEpoch.minusMinZero(
-                spec.getSpecConfig(currentEpoch).getMinEpochsForBlobSidecarsRequests()));
+                spec.getNetworkingConfig().getMinEpochsForBlobSidecarsRequests()));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }

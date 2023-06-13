@@ -195,8 +195,13 @@ public class Spec {
     return getGenesisSpec().getConfig();
   }
 
+  /**
+   * Networking constants
+   *
+   * <p>These constants are unified among forks and are not overriden, new constant name is used if
+   * it's changed in the new fork
+   */
   public NetworkingSpecConfig getNetworkingConfig() {
-    // Networking config is constant along forks
     return getGenesisSpec().getConfig().getNetworkingConfig();
   }
 
@@ -867,7 +872,8 @@ public class Spec {
     }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(getSpecConfig(epoch).getMinEpochsForBlobSidecarsRequests());
+        .isLessThanOrEqualTo(
+            getGenesisSpecConfig().getNetworkingConfig().getMinEpochsForBlobSidecarsRequests());
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {

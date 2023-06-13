@@ -90,6 +90,6 @@ public class BlockPruner extends Service {
   }
 
   private int getEpochsToKeep(final UInt64 finalizedEpoch) {
-    return spec.getSpecConfig(finalizedEpoch).getMinEpochsForBlockRequests();
+    return spec.getNetworkingConfig().getMinEpochsForBlockRequests();
   }
 }

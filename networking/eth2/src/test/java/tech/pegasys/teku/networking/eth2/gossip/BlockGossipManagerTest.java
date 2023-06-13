@@ -40,7 +40,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class BlockGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
+  private final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();

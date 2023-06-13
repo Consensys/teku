@@ -53,7 +53,7 @@ public class BlobSidecarGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
 
-  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
+  private final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

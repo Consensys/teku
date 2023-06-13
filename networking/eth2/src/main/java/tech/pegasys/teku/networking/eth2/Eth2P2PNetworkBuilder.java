@@ -140,7 +140,7 @@ public class Eth2P2PNetworkBuilder {
                 ? SpecConfigBellatrix.required(
                         spec.forMilestone(SpecMilestone.BELLATRIX).getConfig())
                     .getMaxChunkSizeBellatrix()
-                : spec.forMilestone(SpecMilestone.PHASE0).getConfig().getMaxChunkSize());
+                : spec.getNetworkingConfig().getMaxChunkSize());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }

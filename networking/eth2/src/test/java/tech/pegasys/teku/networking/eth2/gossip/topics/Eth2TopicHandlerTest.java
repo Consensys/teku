@@ -305,7 +305,7 @@ public class Eth2TopicHandlerTest {
           new OperationMilestoneValidator<>(
               spec, spec.getForkSchedule().getFork(UInt64.ZERO), message -> UInt64.ZERO),
           spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
-          spec.getGenesisSpecConfig().getGossipMaxSize());
+          spec.getNetworkingConfig().getGossipMaxSize());
       this.forkDigest =
           recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
       deserializer =

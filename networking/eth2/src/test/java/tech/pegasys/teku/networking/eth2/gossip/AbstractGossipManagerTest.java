@@ -47,7 +47,7 @@ class AbstractGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
 
-  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
+  private final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();

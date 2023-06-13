@@ -55,7 +55,7 @@ class BlockPrunerTest {
 
   @BeforeEach
   void setUp() {
-    epochsToKeep = spec.getGenesisSpecConfig().getMinEpochsForBlockRequests();
+    epochsToKeep = spec.getNetworkingConfig().getMinEpochsForBlockRequests();
     assertThat(pruner.start()).isCompleted();
   }
 

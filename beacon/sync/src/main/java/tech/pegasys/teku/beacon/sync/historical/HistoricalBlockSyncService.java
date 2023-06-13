@@ -209,8 +209,7 @@ public class HistoricalBlockSyncService extends Service {
               .orElseThrow()
               .getCheckpoint()
               .getEpoch()
-              .minusMinZero(
-                  spec.getSpecConfig(chainData.getCurrentEpoch()).getMinEpochsForBlockRequests());
+              .minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
       return spec.computeStartSlotAtEpoch(earliestRequiredEpoch).minusMinZero(1);
     }
   }
