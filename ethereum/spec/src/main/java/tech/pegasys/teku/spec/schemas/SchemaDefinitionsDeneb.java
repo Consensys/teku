@@ -153,7 +153,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
     this.blobSidecarsByRootRequestMessageSchema =
-        new BlobSidecarsByRootRequestMessageSchema(specConfig.getNetworkingConfig());
+        new BlobSidecarsByRootRequestMessageSchema(specConfig);
   }
 
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {

@@ -43,8 +43,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
@@ -59,8 +61,9 @@ public class BlobSidecarsByRootMessageHandlerTest {
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
   private final int maxChunkSize =
       SpecConfigBellatrix.required(spec.getGenesisSpecConfig()).getMaxChunkSizeBellatrix();
-  private final BlobSidecarsByRootRequestMessageSchema schema =
-      new BlobSidecarsByRootRequestMessageSchema(spec.getNetworkingConfig());
+  private final BlobSidecarsByRootRequestMessageSchema messageSchema =
+      new BlobSidecarsByRootRequestMessageSchema(
+          SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig()));
   private final RpcEncoding rpcEncoding = RpcEncoding.createSszSnappyEncoding(maxChunkSize);
 
   private final String protocolId =
@@ -120,7 +123,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     final int maxRequestBlobSidecars = getMaxRequestBlobSidecars();
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
-            schema, dataStructureUtil.randomBlobIdentifiers(maxRequestBlobSidecars + 1));
+            messageSchema, dataStructureUtil.randomBlobIdentifiers(maxRequestBlobSidecars + 1));
 
     final Optional<RpcException> result = handler.validateRequest(protocolId, request);
 
@@ -148,7 +151,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(peer.popBlobSidecarRequests(callback, 5)).thenReturn(false);
 
     final BlobSidecarsByRootRequestMessage request =
-        new BlobSidecarsByRootRequestMessage(schema, dataStructureUtil.randomBlobIdentifiers(5));
+        new BlobSidecarsByRootRequestMessage(
+            messageSchema, dataStructureUtil.randomBlobIdentifiers(5));
 
     handler.onIncomingMessage(protocolId, peer, request, callback);
 
@@ -176,7 +180,10 @@ public class BlobSidecarsByRootMessageHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
 
     handler.onIncomingMessage(
-        protocolId, peer, new BlobSidecarsByRootRequestMessage(schema, blobIdentifiers), callback);
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
 
     verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(secondBlockRoot);
     verify(callback, times(3)).respond(blobSidecarCaptor.capture());
@@ -214,7 +221,10 @@ public class BlobSidecarsByRootMessageHandlerTest {
                 Optional.of(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE))));
 
     handler.onIncomingMessage(
-        protocolId, peer, new BlobSidecarsByRootRequestMessage(schema, blobIdentifiers), callback);
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -242,7 +252,10 @@ public class BlobSidecarsByRootMessageHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
 
     handler.onIncomingMessage(
-        protocolId, peer, new BlobSidecarsByRootRequestMessage(schema, blobIdentifiers), callback);
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -261,7 +274,10 @@ public class BlobSidecarsByRootMessageHandlerTest {
     final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(5);
 
     handler.onIncomingMessage(
-        protocolId, peer, new BlobSidecarsByRootRequestMessage(schema, blobIdentifiers), callback);
+        protocolId,
+        peer,
+        new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
+        callback);
 
     verify(callback, times(5)).respond(blobSidecarCaptor.capture());
 

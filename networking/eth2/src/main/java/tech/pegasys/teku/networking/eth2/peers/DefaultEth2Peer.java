@@ -83,6 +83,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker requestTracker;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
+  private final Supplier<BlobSidecarsByRootRequestMessageSchema>
+      blobSidecarsByRootRequestMessageSchema;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -111,6 +113,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       .getDenebForkEpoch();
               return spec.computeStartSlotAtEpoch(denebForkEpoch);
             });
+    this.blobSidecarsByRootRequestMessageSchema =
+        Suppliers.memoize(
+            () ->
+                SchemaDefinitionsDeneb.required(
+                        spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+                    .getBlobSidecarsByRootRequestMessageSchema());
   }
 
   @Override
@@ -229,7 +237,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 requestStream(
                     method,
                     new BlobSidecarsByRootRequestMessage(
-                        getBlobSidecarsByRootRequestMessageSchema(), blobIdentifiers),
+                        blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
                     listener))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
@@ -261,7 +269,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 requestOptionalItem(
                     method,
                     new BlobSidecarsByRootRequestMessage(
-                        getBlobSidecarsByRootRequestMessageSchema(),
+                        blobSidecarsByRootRequestMessageSchema.get(),
                         Collections.singletonList(blobIdentifier))))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
@@ -420,12 +428,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private <T> SafeFuture<T> failWithUnsupportedMethodException(final String method) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException(method + " method is not supported"));
-  }
-
-  private BlobSidecarsByRootRequestMessageSchema getBlobSidecarsByRootRequestMessageSchema() {
-    return SchemaDefinitionsDeneb.required(
-            spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-        .getBlobSidecarsByRootRequestMessageSchema();
   }
 
   @Override

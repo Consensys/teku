@@ -15,7 +15,7 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public class BlobSidecarsByRootRequestMessageSchema
     extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
@@ -23,10 +23,14 @@ public class BlobSidecarsByRootRequestMessageSchema
   // size validation according to the spec (MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK) is
   // done
   // in the RPC handler
-  public BlobSidecarsByRootRequestMessageSchema(final NetworkingSpecConfig networkingSpecConfig) {
+  public BlobSidecarsByRootRequestMessageSchema(final SpecConfigDeneb specConfigDeneb) {
     super(
         BlobIdentifier.SSZ_SCHEMA,
-        networkingSpecConfig.getMaxRequestBlocksDeneb().times(128).longValue());
+        specConfigDeneb
+            .getNetworkingConfig()
+            .getMaxRequestBlocksDeneb()
+            .times(specConfigDeneb.getMaxBlobCommitmentsPerBlock())
+            .longValue());
   }
 
   @Override
