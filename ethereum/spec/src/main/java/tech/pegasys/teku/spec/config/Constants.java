@@ -26,7 +26,7 @@ public class Constants {
 
   // Deneb
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
-  public static final int BLOB_SIDECAR_SUBNET_COUNT = 4;
+  public static final int BLOB_SIDECAR_SUBNET_COUNT = 6;
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;

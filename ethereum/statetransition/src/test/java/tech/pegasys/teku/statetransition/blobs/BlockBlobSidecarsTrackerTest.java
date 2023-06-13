@@ -43,7 +43,7 @@ public class BlockBlobSidecarsTrackerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final SignedBeaconBlock block =
-      dataStructureUtil.randomSignedBeaconBlockWithCommitments(4);
+      dataStructureUtil.randomSignedBeaconBlockWithCommitments(maxBlobsPerBlock.intValue());
   private final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
   private final List<BlobSidecar> blobSidecarsForBlock =
       dataStructureUtil.randomBlobSidecarsForBlock(block);
@@ -171,7 +171,7 @@ public class BlockBlobSidecarsTrackerTest {
 
     // we don't know the block, missing blobs are max blobs minus the blob we already have
     final Set<BlobIdentifier> potentialMissingBlocks =
-        UInt64.range(UInt64.valueOf(1), UInt64.valueOf(5))
+        UInt64.range(UInt64.valueOf(1), maxBlobsPerBlock.plus(1))
             .map(index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), index))
             .collect(Collectors.toSet());
 
@@ -303,7 +303,7 @@ public class BlockBlobSidecarsTrackerTest {
     blockBlobSidecarsTracker.setBlock(block);
 
     final Set<BlobIdentifier> expectedUnusedBlobs =
-        UInt64.range(UInt64.valueOf(4), UInt64.valueOf(6))
+        UInt64.range(maxBlobsPerBlock, maxBlobsPerBlock.plus(2))
             .map(index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), index))
             .collect(Collectors.toSet());
 
@@ -323,7 +323,7 @@ public class BlockBlobSidecarsTrackerTest {
     blockBlobSidecarsTracker.setBlock(block);
 
     final Set<BlobIdentifier> expectedUnusedBlobs =
-        UInt64.range(UInt64.ZERO, UInt64.valueOf(6))
+        UInt64.range(UInt64.ZERO, maxBlobsPerBlock.plus(2))
             .map(index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), index))
             .collect(Collectors.toSet());
 
