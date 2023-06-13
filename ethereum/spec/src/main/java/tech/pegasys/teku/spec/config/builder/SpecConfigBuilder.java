@@ -243,10 +243,6 @@ public class SpecConfigBuilder {
 
     SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
-    SpecBuilderUtil.validateConstant("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
-    SpecBuilderUtil.validateConstant("maxRequestBlobSidecars", maxRequestBlobSidecars);
-    SpecBuilderUtil.validateConstant(
-        "minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
     builderChain.validate();
   }
 
