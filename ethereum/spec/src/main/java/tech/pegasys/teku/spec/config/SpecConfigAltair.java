@@ -56,5 +56,7 @@ public interface SpecConfigAltair extends SpecConfig {
   int getFinalityBranchLength();
 
   @Override
-  Optional<SpecConfigAltair> toVersionAltair();
+  default Optional<SpecConfigAltair> toVersionAltair() {
+    return Optional.of(this);
+  }
 }

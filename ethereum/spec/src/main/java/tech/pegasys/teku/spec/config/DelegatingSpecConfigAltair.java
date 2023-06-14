@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.config;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -89,10 +88,5 @@ public class DelegatingSpecConfigAltair extends DelegatingSpecConfig implements 
   @Override
   public int getFinalityBranchLength() {
     return specConfigAltair.getFinalityBranchLength();
-  }
-
-  @Override
-  public Optional<SpecConfigAltair> toVersionAltair() {
-    return Optional.of(this);
   }
 }

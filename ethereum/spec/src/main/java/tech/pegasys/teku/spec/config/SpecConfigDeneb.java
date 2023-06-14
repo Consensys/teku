@@ -18,7 +18,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SpecConfigDeneb extends SpecConfigCapella {
+public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfigDeneb {
   Bytes BLOB_TX_TYPE = Bytes.fromHexString("0x03");
   Bytes VERSIONED_HASH_VERSION_KZG = Bytes.fromHexString("0x01");
   UInt64 BYTES_PER_FIELD_ELEMENT = UInt64.valueOf(32);
@@ -52,6 +52,9 @@ public interface SpecConfigDeneb extends SpecConfigCapella {
   Optional<String> getTrustedSetupPath();
 
   boolean isKZGNoop();
+
+  @Override
+  NetworkingSpecConfigDeneb getNetworkingConfig();
 
   @Override
   Optional<SpecConfigDeneb> toVersionDeneb();

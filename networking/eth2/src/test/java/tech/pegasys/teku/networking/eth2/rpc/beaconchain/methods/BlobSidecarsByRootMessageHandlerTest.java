@@ -297,6 +297,6 @@ public class BlobSidecarsByRootMessageHandlerTest {
   }
 
   private int getMaxRequestBlobSidecars() {
-    return spec.getNetworkingConfig().getMaxRequestBlobSidecars().intValue();
+    return spec.getNetworkingConfigDeneb().getMaxRequestBlobSidecars().intValue();
   }
 }

@@ -216,10 +216,12 @@ class Eth2PeerTest {
   public void verifyForwardAndHistoricalSyncBatchSizeIsNotLargerThanMaxRequestBlocks() {
     assertThat(FORWARD_SYNC_BATCH_SIZE.longValue())
         .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
-        .isLessThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocksDeneb().longValue());
+        .isLessThanOrEqualTo(
+            spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb().longValue());
     assertThat(HISTORICAL_SYNC_BATCH_SIZE.longValue())
         .isLessThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
-        .isLessThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocksDeneb().longValue());
+        .isLessThanOrEqualTo(
+            spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb().longValue());
   }
 
   private PeerStatus randomPeerStatus() {

@@ -13,22 +13,24 @@
 
 package tech.pegasys.teku.spec.config;
 
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
 /**
- * Networking constants for Deneb. Though it's a part of main config, we put it here to clarify it's
- * read only when Deneb is activated
+ * Networking constants
  *
  * <p>These constants are unified among forks and are not overriden, new constant name is used if
  * it's changed in the new fork
  */
-public interface NetworkingSpecConfig {
+public interface NetworkingSpecConfigDeneb extends NetworkingSpecConfig {
 
-  int getGossipMaxSize();
+  UInt64 getMaxRequestBlocksDeneb();
 
-  int getMaxChunkSize();
+  UInt64 getMaxRequestBlobSidecars();
 
-  int getMinEpochsForBlockRequests();
+  int getMinEpochsForBlobSidecarsRequests();
 
-  default NetworkingSpecConfig getNetworkingConfig() {
+  @Override
+  default NetworkingSpecConfigDeneb getNetworkingConfig() {
     return this;
   }
 }

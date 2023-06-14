@@ -43,6 +43,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -196,13 +197,18 @@ public class Spec {
   }
 
   /**
-   * Networking constants
+   * Base networking constants
    *
    * <p>These constants are unified among forks and are not overriden, new constant name is used if
    * it's changed in the new fork
    */
   public NetworkingSpecConfig getNetworkingConfig() {
     return getGenesisSpec().getConfig().getNetworkingConfig();
+  }
+
+  /** Networking config with constants up to Deneb */
+  public NetworkingSpecConfigDeneb getNetworkingConfigDeneb() {
+    return SpecConfigDeneb.required(forMilestone(DENEB).getConfig()).getNetworkingConfig();
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -872,8 +878,7 @@ public class Spec {
     }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(
-            getGenesisSpecConfig().getNetworkingConfig().getMinEpochsForBlobSidecarsRequests());
+        .isLessThanOrEqualTo(getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests());
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {

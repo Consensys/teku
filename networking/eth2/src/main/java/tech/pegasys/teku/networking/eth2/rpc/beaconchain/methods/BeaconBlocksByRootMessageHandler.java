@@ -125,7 +125,7 @@ public class BeaconBlocksByRootMessageHandler
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
     return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-        ? spec.getNetworkingConfig().getMaxRequestBlocksDeneb()
+        ? spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb()
         : MAX_REQUEST_BLOCKS;
   }
 

@@ -95,7 +95,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
             spec, storageSystem.getMetricsSystem(), recentChainData);
 
     final List<Bytes32> roots =
-        UInt64.range(UInt64.ZERO, spec.getNetworkingConfig().getMaxRequestBlocksDeneb().increment())
+        UInt64.range(
+                UInt64.ZERO, spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb().increment())
             .map(__ -> Bytes32.ZERO)
             .collect(Collectors.toList());
 

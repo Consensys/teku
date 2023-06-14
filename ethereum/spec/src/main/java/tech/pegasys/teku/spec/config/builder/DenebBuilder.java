@@ -36,6 +36,10 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Optional<String> trustedSetupPath = Optional.empty();
   private boolean kzgNoop = false;
 
+  private UInt64 maxRequestBlocksDeneb;
+  private UInt64 maxRequestBlobSidecars;
+  private int minEpochsForBlobSidecarsRequests;
+
   DenebBuilder() {}
 
   @Override
@@ -48,7 +52,10 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
         trustedSetupPath,
-        kzgNoop);
+        kzgNoop,
+        maxRequestBlocksDeneb,
+        maxRequestBlobSidecars,
+        minEpochsForBlobSidecarsRequests);
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
@@ -88,6 +95,21 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     return this;
   }
 
+  public DenebBuilder maxRequestBlocksDeneb(final UInt64 maxRequestBlocksDeneb) {
+    this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
+    return this;
+  }
+
+  public DenebBuilder maxRequestBlobSidecars(final UInt64 maxRequestBlobSidecars) {
+    this.maxRequestBlobSidecars = maxRequestBlobSidecars;
+    return this;
+  }
+
+  public DenebBuilder minEpochsForBlobSidecarsRequests(final int minEpochsForBlobSidecarsRequests) {
+    this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (denebForkEpoch == null) {
@@ -99,6 +121,10 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
     SpecBuilderUtil.validateConstant("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
     SpecBuilderUtil.validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
+    SpecBuilderUtil.validateConstant("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
+    SpecBuilderUtil.validateConstant("maxRequestBlobSidecars", maxRequestBlobSidecars);
+    SpecBuilderUtil.validateConstant(
+        "minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
     }
