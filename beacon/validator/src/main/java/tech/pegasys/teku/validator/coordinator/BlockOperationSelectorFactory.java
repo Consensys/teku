@@ -216,7 +216,7 @@ public class BlockOperationSelectorFactory {
           executionPayloadResultFuture.thenCompose(
               executionPayloadResult ->
                   executionPayloadResult
-                      .getExecutionPayloadHeaderFuture()
+                      .getHeaderWithFallbackDataFuture()
                       .orElseThrow()
                       .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader)));
     } else {
@@ -272,7 +272,7 @@ public class BlockOperationSelectorFactory {
               } else {
                 return executionLayerBlockProductionManager
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)
-                    .getExecutionPayloadHeaderFuture()
+                    .getHeaderWithFallbackDataFuture()
                     .orElseThrow()
                     .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader);
               }
@@ -288,9 +288,7 @@ public class BlockOperationSelectorFactory {
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments =
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult ->
-                executionPayloadResult
-                    .getBlobsBundleFuture()
-                    .orElseThrow()
+                getBlobsBundle(executionPayloadResult)
                     .thenApply(
                         blobsBundle ->
                             schemaDefinitionsDeneb
@@ -386,15 +384,25 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  private SafeFuture<BlobsBundle> getCachedBlobsBundle(final UInt64 slot) {
-    return executionLayerBlockProductionManager
-        .getCachedPayloadResult(slot)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "ExecutionPayloadResult is not available for slot " + slot))
+  private SafeFuture<BlobsBundle> getBlobsBundle(
+      final ExecutionPayloadResult executionPayloadResult) {
+    return executionPayloadResult
         .getBlobsBundleFuture()
-        .orElseThrow(
-            () -> new IllegalStateException("BlobsBundle is not available for slot " + slot));
+        .orElseThrow(this::blobsBundleIsNotAvailableException)
+        .thenApply(
+            blobsBundle -> blobsBundle.orElseThrow(this::blobsBundleIsNotAvailableException));
+  }
+
+  private SafeFuture<BlobsBundle> getCachedBlobsBundle(final UInt64 slot) {
+    final ExecutionPayloadResult executionPayloadResult =
+        executionLayerBlockProductionManager
+            .getCachedPayloadResult(slot)
+            .orElseThrow(
+                () -> new IllegalStateException("ExecutionPayloadResult is not available"));
+    return getBlobsBundle(executionPayloadResult);
+  }
+
+  private IllegalStateException blobsBundleIsNotAvailableException() {
+    return new IllegalStateException("BlobsBundle is not available");
   }
 }

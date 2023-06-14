@@ -262,7 +262,7 @@ public class ExecutionBuilderModule {
     final Optional<SafeFuture<HeaderWithFallbackData>> maybeProcessedSlot =
         getPayloadResultFunction
             .apply(slot)
-            .flatMap(ExecutionPayloadResult::getExecutionPayloadHeaderFuture);
+            .flatMap(ExecutionPayloadResult::getHeaderWithFallbackDataFuture);
 
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(

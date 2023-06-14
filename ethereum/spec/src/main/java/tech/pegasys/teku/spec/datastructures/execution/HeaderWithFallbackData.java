@@ -27,6 +27,7 @@ import java.util.Optional;
  * optional to signal that we must call the builder to serve builderGetPayload later
  */
 public class HeaderWithFallbackData {
+
   final ExecutionPayloadHeader executionPayloadHeader;
   final Optional<FallbackData> fallbackDataOptional;
 

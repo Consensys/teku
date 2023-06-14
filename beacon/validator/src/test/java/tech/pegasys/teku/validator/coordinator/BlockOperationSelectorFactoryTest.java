@@ -536,8 +536,8 @@ class BlockOperationSelectorFactoryTest {
                 new ExecutionPayloadResult(
                     null,
                     Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blobsBundle)))));
+                    Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                    Optional.empty())));
 
     final CapturingBlobSidecarsUnblinder blobSidecarsUnblinder =
         new CapturingBlobSidecarsUnblinder();
@@ -569,10 +569,10 @@ class BlockOperationSelectorFactoryTest {
             new ExecutionPayloadResult(
                 executionPayloadContext,
                 Optional.empty(),
+                Optional.empty(),
                 Optional.of(
                     SafeFuture.completedFuture(
-                        HeaderWithFallbackData.create(executionPayloadHeader))),
-                Optional.empty()));
+                        HeaderWithFallbackData.create(executionPayloadHeader)))));
   }
 
   private void prepareBlockAndBlobsProductionWithPayload(
@@ -586,8 +586,8 @@ class BlockOperationSelectorFactoryTest {
             new ExecutionPayloadResult(
                 executionPayloadContext,
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
-                Optional.empty(),
-                Optional.of(SafeFuture.completedFuture(blobsBundle))));
+                Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                Optional.empty()));
   }
 
   private void prepareCachedPayloadResult(
@@ -601,8 +601,8 @@ class BlockOperationSelectorFactoryTest {
                 new ExecutionPayloadResult(
                     executionPayloadContext,
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blobsBundle)))));
+                    Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                    Optional.empty())));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {

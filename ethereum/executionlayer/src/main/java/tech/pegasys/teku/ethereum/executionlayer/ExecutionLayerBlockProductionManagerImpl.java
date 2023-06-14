@@ -32,9 +32,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
-  // TODO: Switch to actual builder API
-  protected static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_DUMMY =
-      SafeFuture.completedFuture(BlobsBundle.EMPTY_BUNDLE);
 
   private static final UInt64 EXECUTION_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
 
@@ -75,7 +72,7 @@ public class ExecutionLayerBlockProductionManagerImpl
           new ExecutionPayloadResult(
               context, Optional.of(executionPayloadFuture), Optional.empty(), Optional.empty());
     } else {
-      result = builderGetHeader(context, blockSlotState, false);
+      result = builderGetHeader(context, blockSlotState);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -92,16 +89,17 @@ public class ExecutionLayerBlockProductionManagerImpl
           executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
-      final SafeFuture<BlobsBundle> blobsBundleFuture =
+      final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle);
       result =
           new ExecutionPayloadResult(
               context,
               Optional.of(executionPayloadFuture),
-              Optional.empty(),
-              Optional.of(blobsBundleFuture));
+              Optional.of(blobsBundleFuture),
+              Optional.empty());
     } else {
-      result = builderGetHeader(context, blockSlotState, true);
+      // TODO: Implement builder flow for Deneb
+      result = builderGetHeader(context, blockSlotState);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -115,16 +113,14 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   private ExecutionPayloadResult builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState state,
-      final boolean postDeneb) {
-    final SafeFuture<HeaderWithFallbackData> executionPayloadHeaderFuture =
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+    final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionLayerChannel.builderGetHeader(executionPayloadContext, state);
 
     return new ExecutionPayloadResult(
         executionPayloadContext,
         Optional.empty(),
-        Optional.of(executionPayloadHeaderFuture),
-        postDeneb ? Optional.of(BLOBS_BUNDLE_DUMMY) : Optional.empty());
+        Optional.empty(),
+        Optional.of(headerWithFallbackDataFuture));
   }
 }
