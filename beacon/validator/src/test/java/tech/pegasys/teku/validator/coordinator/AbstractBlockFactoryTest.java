@@ -240,26 +240,25 @@ public abstract class AbstractBlockFactoryTest {
       final SignedBlockContainer blindedBlockContainer, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
-    final SignedBeaconBlock blindedBlock = blindedBlockContainer.getSignedBlock();
-
-    when(executionLayer.getUnblindedPayload(blindedBlock))
+    when(executionLayer.getUnblindedPayload(blindedBlockContainer))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
     // used for unblinding the blob sidecars
-    setupCachedBlobsBundle(blindedBlock.getSlot());
+    setupCachedBlobsBundle(blindedBlockContainer.getSlot());
 
     final SignedBlockContainer unblindedBlockContainer =
         blockFactory.unblindSignedBlockIfBlinded(blindedBlockContainer).join();
 
     final SignedBeaconBlock block = unblindedBlockContainer.getSignedBlock();
 
-    if (!blindedBlock.getMessage().getBody().isBlinded()) {
+    if (!blindedBlockContainer.isBlinded()) {
       verifyNoInteractions(executionLayer);
     } else {
-      verify(executionLayer).getUnblindedPayload(blindedBlock);
+      verify(executionLayer).getUnblindedPayload(blindedBlockContainer);
     }
 
     assertThat(block).isNotNull();
-    assertThat(block.hashTreeRoot()).isEqualTo(blindedBlock.hashTreeRoot());
+    assertThat(block.hashTreeRoot())
+        .isEqualTo(blindedBlockContainer.getSignedBlock().hashTreeRoot());
     assertThat(block.getMessage().getBody().isBlinded()).isFalse();
     assertThat(block.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isEqualTo(Optional.empty());

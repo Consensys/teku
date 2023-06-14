@@ -91,6 +91,10 @@ public interface ExecutionLayerBlockProductionManager {
 
   SafeFuture<BuilderPayload> getUnblindedPayload(SignedBlockContainer signedBlockContainer);
 
+  /**
+   * Requires {@link #getUnblindedPayload( SignedBlockContainer)} to have been called first in order
+   * for a value to be present
+   */
   @SuppressWarnings("unused")
   Optional<BuilderPayload> getCachedUnblindedPayload(UInt64 slot);
 }

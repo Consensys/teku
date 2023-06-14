@@ -115,6 +115,7 @@ public class ExecutionBuilderModule {
     return Optional.empty();
   }
 
+  // TODO: Implement for Deneb
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
@@ -340,7 +341,7 @@ public class ExecutionBuilderModule {
             });
   }
 
-  // TODO: implement for Deneb
+  // TODO: Implement for Deneb
   private SafeFuture<BuilderPayload> getPayloadFromFallbackData(
       final SignedBlindedBlockContainer signedBlindedBlockContainer,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
