@@ -97,14 +97,4 @@ public class DelegatingSpecConfigBellatrix extends DelegatingSpecConfigAltair
   public int getSafeSlotsToImportOptimistically() {
     return specConfigBellatrix.getSafeSlotsToImportOptimistically();
   }
-
-  @Override
-  public int getGossipMaxSizeBellatrix() {
-    return specConfigBellatrix.getGossipMaxSizeBellatrix();
-  }
-
-  @Override
-  public int getMaxChunkSizeBellatrix() {
-    return specConfigBellatrix.getMaxChunkSizeBellatrix();
-  }
 }
