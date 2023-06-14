@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
+import com.google.common.collect.ImmutableSortedMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -109,7 +111,9 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
-    when(combinedChainDataClient.isAncestorOfCanonicalHead(any())).thenReturn(true);
+    // everything is finalized by default
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(startSlot.plus(count)));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
@@ -211,12 +215,63 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldSendToPeerRequestedNumberOfBlobSidecars() {
+  public void shouldSendToPeerRequestedNumberOfFinalizedBlobSidecars() {
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
     final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
+
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+
+    verify(listener).completeSuccessfully();
+
+    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+  }
+
+  @Test
+  public void shouldSendToPeerRequestedNumberOfCanonicalBlobSidecars() {
+
+    final UInt64 latestFinalizedSlot = startSlot.plus(count).minus(3);
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(latestFinalizedSlot));
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
+
+    final List<BlobSidecar> allAvailableBlobs =
+        setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+
+    // we simulate that the canonical non-finalized chain only contains blobs from last
+    // slotAndBlockRoot
+    final SlotAndBlockRoot canonicalSlotAndBlockRoot =
+        allAvailableBlobs.get(allAvailableBlobs.size() - 1).getSlotAndBlockRoot();
+
+    final List<BlobSidecar> expectedSent =
+        allAvailableBlobs.stream()
+            .filter(
+                blobSidecar ->
+                    blobSidecar
+                            .getSlot()
+                            .isLessThanOrEqualTo(latestFinalizedSlot) // include finalized
+                        || blobSidecar
+                            .getSlotAndBlockRoot()
+                            .equals(canonicalSlotAndBlockRoot) // include non canonical
+                )
+            .collect(Collectors.toUnmodifiableList());
+
+    // let return only canonical slot and block root as canonical
+    when(combinedChainDataClient.getAncestorRoots(
+            eq(latestFinalizedSlot.increment()), eq(ONE), any()))
+        .thenReturn(
+            ImmutableSortedMap.of(
+                canonicalSlotAndBlockRoot.getSlot(), canonicalSlotAndBlockRoot.getBlockRoot()));
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -270,10 +325,11 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .forEach(
             slot -> {
               final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-              UInt64.range(
+              UInt64.rangeClosed(
                       ZERO,
-                      dataStructureUtil.randomUInt64(
-                          miscHelpers.getBlobSidecarsCount(Optional.of(block))))
+                      dataStructureUtil
+                          .randomUInt64(miscHelpers.getBlobSidecarsCount(Optional.of(block)))
+                          .minusMinZero(1))
                   .forEach(
                       index ->
                           keys.add(new SlotAndBlockRootAndBlobIndex(slot, block.getRoot(), index)));
