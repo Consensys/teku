@@ -129,6 +129,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<Bytes> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
+  Optional<Bytes> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
 

@@ -125,6 +125,10 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
   }
 
+  public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
+  }
+
   @MustBeClosed
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {

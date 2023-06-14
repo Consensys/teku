@@ -65,6 +65,8 @@ public interface Database extends AutoCloseable {
 
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
+  Optional<BlobSidecar> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
   void removeBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   /**

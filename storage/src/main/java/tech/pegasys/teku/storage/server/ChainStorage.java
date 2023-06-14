@@ -296,6 +296,12 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
+    return SafeFuture.of(() -> database.getNonCanonicalBlobSidecar(key));
+  }
+
+  @Override
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return SafeFuture.of(

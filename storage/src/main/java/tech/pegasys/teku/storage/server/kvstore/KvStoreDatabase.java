@@ -801,6 +801,12 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public Optional<BlobSidecar> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    final Optional<Bytes> maybePayload = dao.getNonCanonicalBlobSidecar(key);
+    return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
+  }
+
+  @Override
   public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       getBlobSidecarKeys(slotAndBlockRoot).forEach(updater::removeBlobSidecar);

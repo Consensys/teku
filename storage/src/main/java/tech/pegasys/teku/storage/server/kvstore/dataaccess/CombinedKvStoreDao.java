@@ -336,6 +336,13 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         new SlotAndBlockRootAndBlobIndex(key.getSlot(), key.getBlockRoot(), key.getBlobIndex()));
   }
 
+  @Override
+  public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return db.get(
+        schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
+        new SlotAndBlockRootAndBlobIndex(key.getSlot(), key.getBlockRoot(), key.getBlobIndex()));
+  }
+
   @MustBeClosed
   @Override
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
