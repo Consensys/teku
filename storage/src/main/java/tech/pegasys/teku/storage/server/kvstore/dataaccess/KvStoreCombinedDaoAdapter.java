@@ -437,6 +437,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void removeNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      finalizedUpdater.removeNonCanonicalBlobSidecar(key);
+    }
+
+    @Override
     public void addHotState(final Bytes32 blockRoot, final BeaconState state) {
       hotUpdater.addHotState(blockRoot, state);
     }

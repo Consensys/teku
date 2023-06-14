@@ -715,5 +715,10 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
     }
+
+    @Override
+    public void removeNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      transaction.delete(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
+    }
   }
 }

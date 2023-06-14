@@ -329,6 +329,11 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void removeNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
+    }
+
+    @Override
     public void setEarliestBlobSidecarSlot(final UInt64 slot) {
       transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
     }
