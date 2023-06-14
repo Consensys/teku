@@ -57,6 +57,11 @@ public interface ExecutionLayerBlockProductionManager {
             final SignedBlockContainer signedBlockContainer) {
           return SafeFuture.completedFuture(null);
         }
+
+        @Override
+        public Optional<BuilderPayload> getCachedUnblindedPayload(final UInt64 slot) {
+          return Optional.empty();
+        }
       };
 
   /**
@@ -85,4 +90,7 @@ public interface ExecutionLayerBlockProductionManager {
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
   SafeFuture<BuilderPayload> getUnblindedPayload(SignedBlockContainer signedBlockContainer);
+
+  @SuppressWarnings("unused")
+  Optional<BuilderPayload> getCachedUnblindedPayload(UInt64 slot);
 }

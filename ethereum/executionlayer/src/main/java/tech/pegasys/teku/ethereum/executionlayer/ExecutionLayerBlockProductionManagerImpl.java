@@ -35,8 +35,12 @@ public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
 
   private static final UInt64 EXECUTION_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
+  private static final UInt64 BUILDER_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
 
   private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
+      new ConcurrentSkipListMap<>();
+
+  private final NavigableMap<UInt64, BuilderPayload> builderResultCache =
       new ConcurrentSkipListMap<>();
 
   private final ExecutionLayerChannel executionLayerChannel;
@@ -50,6 +54,9 @@ public class ExecutionLayerBlockProductionManagerImpl
   public void onSlot(final UInt64 slot) {
     executionResultCache
         .headMap(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS), false)
+        .clear();
+    builderResultCache
+        .headMap(slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS), false)
         .clear();
   }
 
@@ -109,8 +116,16 @@ public class ExecutionLayerBlockProductionManagerImpl
   @Override
   public SafeFuture<BuilderPayload> getUnblindedPayload(
       final SignedBlockContainer signedBlockContainer) {
-    return executionLayerChannel.builderGetPayload(
-        signedBlockContainer, this::getCachedPayloadResult);
+    return executionLayerChannel
+        .builderGetPayload(signedBlockContainer, this::getCachedPayloadResult)
+        .thenPeek(
+            builderPayload ->
+                builderResultCache.put(signedBlockContainer.getSlot(), builderPayload));
+  }
+
+  @Override
+  public Optional<BuilderPayload> getCachedUnblindedPayload(final UInt64 slot) {
+    return Optional.ofNullable(builderResultCache.get(slot));
   }
 
   private ExecutionPayloadResult builderGetHeader(
