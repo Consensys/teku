@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -762,12 +763,13 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private static class CapturingBeaconBlockUnblinder extends AbstractSignedBeaconBlockUnblinder {
+
     protected SafeFuture<ExecutionPayload> executionPayload;
 
     public CapturingBeaconBlockUnblinder(
         final SchemaDefinitions schemaDefinitions,
-        final SignedBeaconBlock signedBlindedBeaconBlock) {
-      super(schemaDefinitions, signedBlindedBeaconBlock);
+        final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      super(schemaDefinitions, signedBlindedBlockContainer);
     }
 
     @Override

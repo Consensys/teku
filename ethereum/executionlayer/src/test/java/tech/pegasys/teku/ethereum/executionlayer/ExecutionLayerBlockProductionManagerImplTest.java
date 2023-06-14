@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -119,7 +120,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     // wrong slot
     assertThat(blockProductionManager.getCachedPayloadResult(slot.plus(1))).isEmpty();
 
-    SafeFuture<ExecutionPayload> unblindedPayload =
+    SafeFuture<BuilderPayload> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
             dataStructureUtil.randomSignedBlindedBeaconBlock(slot));
     assertThat(unblindedPayload.get()).isEqualTo(payload);
@@ -249,7 +250,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(blockProductionManager.getCachedPayloadResult(slot))
         .contains(executionPayloadResult);
 
-    SafeFuture<ExecutionPayload> unblindedPayload =
+    SafeFuture<BuilderPayload> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
             dataStructureUtil.randomSignedBlindedBeaconBlock(slot));
     assertThat(unblindedPayload.get()).isEqualTo(payload);

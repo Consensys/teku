@@ -46,7 +46,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -358,18 +359,18 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock,
-      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+  public SafeFuture<BuilderPayload> builderGetPayload(
+      final SignedBlockContainer signedBlockContainer,
+      final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
-        spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions().toVersionBellatrix();
+        spec.atSlot(signedBlockContainer.getSlot()).getSchemaDefinitions().toVersionBellatrix();
 
     checkState(
         schemaDefinitionsBellatrix.isPresent(),
         "proposeBlindedBlock not supported for non-Bellatrix milestones");
 
     checkState(
-        signedBlindedBeaconBlock.getBeaconBlock().orElseThrow().getBody().isBlinded(),
+        signedBlockContainer.isBlinded(),
         "proposeBlindedBlock requires a signed blinded beacon block");
 
     checkState(
@@ -377,7 +378,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "proposeBlindedBlock requires a previous call to getPayloadHeader");
 
     final ExecutionPayloadHeader executionPayloadHeader =
-        signedBlindedBeaconBlock
+        signedBlockContainer
+            .getSignedBlock()
             .getBeaconBlock()
             .orElseThrow()
             .getBody()
@@ -392,8 +394,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     LOG.info(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
-        signedBlindedBeaconBlock.getSlot(),
-        signedBlindedBeaconBlock.getRoot(),
+        signedBlockContainer.getSlot(),
+        signedBlockContainer.getRoot(),
         lastBuilderPayloadToBeUnblinded.get().getBlockHash());
 
     return SafeFuture.completedFuture(lastBuilderPayloadToBeUnblinded.get());
