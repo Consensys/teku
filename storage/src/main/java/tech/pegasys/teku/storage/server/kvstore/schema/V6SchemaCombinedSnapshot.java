@@ -45,6 +45,8 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   private final KvStoreColumn<UInt64, BeaconState> finalizedStatesBySlot;
 
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> blobSidecarBySlotRootBlobIndex;
+  private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final List<Bytes> deletedColumnIds;
 
   private V6SchemaCombinedSnapshot(final Spec spec, final int finalizedOffset) {
@@ -69,6 +71,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
     nonCanonicalBlockRootsBySlot =
         KvStoreColumn.create(finalizedOffset + 6, UINT64_SERIALIZER, BLOCK_ROOTS_SERIALIZER);
     blobSidecarBySlotRootBlobIndex =
+        KvStoreColumn.create(
+            finalizedOffset + 12,
+            SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
+            BYTES_SERIALIZER);
+
+    nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
             finalizedOffset + 12,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
@@ -128,6 +136,12 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
   }
 
   @Override
+  public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex() {
+    return nonCanonicalBlobSidecarBySlotRootBlobIndex;
+  }
+
+  @Override
   public Map<String, KvStoreColumn<?, ?>> getColumnMap() {
     return ImmutableMap.<String, KvStoreColumn<?, ?>>builder()
         .put("HOT_BLOCKS_BY_ROOT", getColumnHotBlocksByRoot())
@@ -146,6 +160,9 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
         .put(
             "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnBlobSidecarBySlotRootBlobIndex())
+        .put(
+            "NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex())
         .build();
   }
 

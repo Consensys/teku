@@ -311,6 +311,15 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+      transaction.put(
+          schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
+          new SlotAndBlockRootAndBlobIndex(
+              blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex()),
+          blobSidecar.sszSerialize());
+    }
+
+    @Override
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
     }

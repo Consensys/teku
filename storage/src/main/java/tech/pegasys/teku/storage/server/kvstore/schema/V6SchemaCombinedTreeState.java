@@ -47,6 +47,8 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   private final KvStoreColumn<Bytes32, CompressedBranchInfo> finalizedStateTreeBranchesByRoot;
 
   private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> blobSidecarBySlotRootBlobIndex;
+  private final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      nonCanonicalBlobSidecarBySlotRootBlobIndex;
   private final List<Bytes> deletedColumnIds;
 
   public V6SchemaCombinedTreeState(final Spec spec) {
@@ -77,6 +79,11 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             BYTES32_SERIALIZER,
             KvStoreSerializer.createSignedBlockSerializer(spec));
     blobSidecarBySlotRootBlobIndex =
+        KvStoreColumn.create(
+            finalizedOffset + 14,
+            SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
+            BYTES_SERIALIZER);
+    nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
             finalizedOffset + 14,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
@@ -137,6 +144,12 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
   }
 
   @Override
+  public KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex() {
+    return nonCanonicalBlobSidecarBySlotRootBlobIndex;
+  }
+
+  @Override
   public Map<String, KvStoreVariable<?>> getVariableMap() {
     return ImmutableMap.<String, KvStoreVariable<?>>builder()
         .put("GENESIS_TIME", getVariableGenesisTime())
@@ -174,6 +187,9 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
         .put(
             "BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
             getColumnBlobSidecarBySlotRootBlobIndex())
+        .put(
+            "NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX",
+            getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex())
         .build();
   }
 
