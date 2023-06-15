@@ -106,7 +106,6 @@ public class ExecutionLayerBlockProductionManagerImpl
               Optional.of(blobsBundleFuture),
               Optional.empty());
     } else {
-      // TODO: Implement for Deneb
       result = builderGetHeader(context, blockSlotState);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
