@@ -443,7 +443,7 @@ class BlockOperationSelectorFactoryTest {
 
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
 
-    prepareBlockAndBlobsProductionWithPayload(
+    prepareBlockAndBlobsProduction(
         randomExecutionPayload, executionPayloadContext, blockSlotState, blobsBundle);
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder =
@@ -457,6 +457,35 @@ class BlockOperationSelectorFactoryTest {
     assertThat(bodyBuilder.blobKzgCommitments)
         .map(SszKZGCommitment::getKZGCommitment)
         .hasSameElementsAs(blobsBundle.getCommitments());
+  }
+
+  @Test
+  void shouldIncludeKzgCommitmentsInBlindedBlock() {
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false);
+    final ExecutionPayloadHeader randomExecutionPayloadHeader =
+        dataStructureUtil.randomExecutionPayloadHeader();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+
+    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
+
+    prepareBlindedBlockAndBlobsProduction(
+        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blindedBlobsBundle);
+
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(true, true);
+
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+
+    assertThat(bodyBuilder.blobKzgCommitments)
+        .hasSameElementsAs(blindedBlobsBundle.getCommitments());
   }
 
   @Test
@@ -578,7 +607,7 @@ class BlockOperationSelectorFactoryTest {
                         HeaderWithFallbackData.create(executionPayloadHeader)))));
   }
 
-  private void prepareBlockAndBlobsProductionWithPayload(
+  private void prepareBlockAndBlobsProduction(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
@@ -591,6 +620,23 @@ class BlockOperationSelectorFactoryTest {
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
                 Optional.empty()));
+  }
+
+  private void prepareBlindedBlockAndBlobsProduction(
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState,
+      final BlindedBlobsBundle blindedBlobsBundle) {
+    final HeaderWithFallbackData headerWithFallbackData =
+        HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blindedBlobsBundle));
+    when(executionLayer.initiateBlockAndBlobsProduction(
+            executionPayloadContext, blockSlotState, true))
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(SafeFuture.completedFuture(headerWithFallbackData))));
   }
 
   private void prepareCachedPayloadResult(

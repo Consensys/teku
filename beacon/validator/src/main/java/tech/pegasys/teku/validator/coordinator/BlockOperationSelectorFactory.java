@@ -290,8 +290,12 @@ public class BlockOperationSelectorFactory {
         SchemaDefinitionsDeneb.required(schemaDefinitions);
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments =
         executionPayloadResultFuture.thenCompose(
-            executionPayloadResult ->
-                getBlobsBundle(executionPayloadResult)
+            executionPayloadResult -> {
+              if (bodyBuilder.isBlinded()) {
+                return getBlindedBlobsBundle(executionPayloadResult)
+                    .thenApply(BlindedBlobsBundle::getCommitments);
+              } else {
+                return getBlobsBundle(executionPayloadResult)
                     .thenApply(
                         blobsBundle ->
                             schemaDefinitionsDeneb
@@ -302,7 +306,9 @@ public class BlockOperationSelectorFactory {
                                 .createFromElements(
                                     blobsBundle.getCommitments().stream()
                                         .map(SszKZGCommitment::new)
-                                        .collect(Collectors.toList()))));
+                                        .collect(Collectors.toList())));
+              }
+            });
     bodyBuilder.blobKzgCommitments(blobKzgCommitments);
   }
 
