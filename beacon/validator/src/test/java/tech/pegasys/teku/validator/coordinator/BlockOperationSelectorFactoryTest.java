@@ -49,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -463,6 +465,7 @@ class BlockOperationSelectorFactoryTest {
 
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
 
+    // the BlobsBundle is stored in the ExecutionPayloadResult
     prepareCachedPayloadResult(
         block.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
@@ -494,19 +497,23 @@ class BlockOperationSelectorFactoryTest {
   void shouldCreateBlindedBlobSidecarsForBlindedBlockFromCachedPayloadResult() {
     final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock();
 
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
+
+    // the BlindedBlobsBundle is stored in the HeaderWithFallbackData (retrieved via builder flow)
+    final HeaderWithFallbackData headerWithFallbackData =
+        HeaderWithFallbackData.create(
+            dataStructureUtil.randomExecutionPayloadHeader(), Optional.of(blindedBlobsBundle));
 
     prepareCachedPayloadResult(
         block.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
         dataStructureUtil.randomPayloadExecutionContext(false),
-        blobsBundle);
+        headerWithFallbackData);
 
     final List<BlindedBlobSidecar> blindedBlobSidecars =
         safeJoin(factory.createBlindedBlobSidecarsSelector().apply(block));
 
     assertThat(blindedBlobSidecars)
-        .hasSize(blobsBundle.getNumberOfBlobs())
+        .hasSize(blindedBlobsBundle.getNumberOfBlobs())
         .first()
         .satisfies(
             // assert on one of the blinded sidecars
@@ -517,35 +524,30 @@ class BlockOperationSelectorFactoryTest {
               assertThat(blindedBlobSidecar.getSlot()).isEqualTo(block.getSlot());
               assertThat(blindedBlobSidecar.getProposerIndex()).isEqualTo(block.getProposerIndex());
               assertThat(blindedBlobSidecar.getBlobRoot())
-                  .isEqualTo(blobsBundle.getBlobs().get(0).hashTreeRoot());
+                  .isEqualTo(blindedBlobsBundle.getBlobRoots().get(0).get());
               assertThat(blindedBlobSidecar.getKZGCommitment())
-                  .isEqualTo(blobsBundle.getCommitments().get(0));
+                  .isEqualTo(blindedBlobsBundle.getCommitments().get(0).getKZGCommitment());
               assertThat(blindedBlobSidecar.getKZGProof())
-                  .isEqualTo(blobsBundle.getProofs().get(0));
+                  .isEqualTo(blindedBlobsBundle.getProofs().get(0).getKZGProof());
             });
   }
 
   @Test
-  void shouldSetBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+  void shouldSetBlindedBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
+    final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle =
+        dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
     final UInt64 slot = dataStructureUtil.randomUInt64();
 
-    when(executionLayer.getCachedPayloadResult(slot))
-        .thenReturn(
-            Optional.of(
-                // only BlobsBundle is required
-                new ExecutionPayloadResult(
-                    null,
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
-                    Optional.empty())));
+    when(executionLayer.getCachedUnblindedPayload(slot))
+        .thenReturn(Optional.of(executionPayloadAndBlobsBundle));
 
     final CapturingBlobSidecarsUnblinder blobSidecarsUnblinder =
         new CapturingBlobSidecarsUnblinder();
 
     factory.createBlobSidecarsUnblinderSelector(slot).accept(blobSidecarsUnblinder);
 
-    assertThat(blobSidecarsUnblinder.blobsBundle).isCompletedWithValue(blobsBundle);
+    assertThat(blobSidecarsUnblinder.blobsBundle)
+        .isCompletedWithValue(executionPayloadAndBlobsBundle.getBlobsBundle());
   }
 
   private void prepareBlockProductionWithPayload(
@@ -604,6 +606,20 @@ class BlockOperationSelectorFactoryTest {
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
                     Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
                     Optional.empty())));
+  }
+
+  private void prepareCachedPayloadResult(
+      final UInt64 slot,
+      final ExecutionPayloadContext executionPayloadContext,
+      final HeaderWithFallbackData headerWithFallbackData) {
+    when(executionLayer.getCachedPayloadResult(slot))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    executionPayloadContext,
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)))));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
@@ -748,11 +764,12 @@ class BlockOperationSelectorFactoryTest {
 
   private static class CapturingBlobSidecarsUnblinder implements SignedBlobSidecarsUnblinder {
 
-    protected SafeFuture<BlobsBundle> blobsBundle;
+    protected SafeFuture<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle> blobsBundle;
 
     @Override
     public void setBlobsBundleSupplier(
-        final Supplier<SafeFuture<BlobsBundle>> blobsBundleSupplier) {
+        final Supplier<SafeFuture<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>>
+            blobsBundleSupplier) {
       this.blobsBundle = blobsBundleSupplier.get();
     }
 

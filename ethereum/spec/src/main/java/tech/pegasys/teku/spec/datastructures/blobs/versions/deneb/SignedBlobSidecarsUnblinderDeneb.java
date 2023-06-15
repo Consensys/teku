@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnblinder {

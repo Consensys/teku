@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
@@ -42,9 +41,10 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblind() {
+
     final SignedBeaconBlock signedBlindedBeaconBlock = signedBlindedBlockContainer.getSignedBlock();
-    final BeaconBlock blindedBeaconBlock = signedBlindedBeaconBlock.getMessage();
-    if (!blindedBeaconBlock.getBody().isBlinded()) {
+
+    if (!signedBlindedBeaconBlock.isBlinded()) {
       return SafeFuture.completedFuture(signedBlindedBeaconBlock);
     }
 
@@ -53,7 +53,8 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
     return executionPayloadFuture.thenApply(
         executionPayload -> {
           final BlindedBeaconBlockBodyBellatrix blindedBody =
-              BlindedBeaconBlockBodyBellatrix.required(blindedBeaconBlock.getBody());
+              BlindedBeaconBlockBodyBellatrix.required(
+                  signedBlindedBeaconBlock.getMessage().getBody());
           checkState(
               executionPayload
                   .hashTreeRoot()

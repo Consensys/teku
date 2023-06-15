@@ -2321,6 +2321,16 @@ public final class DataStructureUtil {
     return randomSignedBlindedBlockContents(randomSlot());
   }
 
+  public SignedBlindedBlockContents randomSignedBlindedBlockContents(
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    final UInt64 slot = signedBlindedBeaconBlock.getSlot();
+    return getDenebSchemaDefinitions(slot)
+        .getSignedBlindedBlockContentsSchema()
+        .create(
+            signedBlindedBeaconBlock,
+            randomSignedBlindedBlobSidecars(randomNumberOfBlobsPerBlock()));
+  }
+
   public SignedBlindedBlockContents randomSignedBlindedBlockContents(final UInt64 slot) {
     final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
         randomSignedBlindedBlobSidecars(randomNumberOfBlobsPerBlock());

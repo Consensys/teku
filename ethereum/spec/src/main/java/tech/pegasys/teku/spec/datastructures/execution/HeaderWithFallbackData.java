@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 
 /**
  * if we serve unblind production, external optional is empty
@@ -28,27 +29,41 @@ import java.util.Optional;
  */
 public class HeaderWithFallbackData {
 
-  final ExecutionPayloadHeader executionPayloadHeader;
-  final Optional<FallbackData> fallbackDataOptional;
+  private final ExecutionPayloadHeader executionPayloadHeader;
+  private final Optional<BlindedBlobsBundle> blindedBlobsBundle;
+  private final Optional<FallbackData> fallbackDataOptional;
 
   private HeaderWithFallbackData(
       final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<BlindedBlobsBundle> blindedBlobsBundle,
       final Optional<FallbackData> fallbackDataOptional) {
     this.executionPayloadHeader = executionPayloadHeader;
+    this.blindedBlobsBundle = blindedBlobsBundle;
     this.fallbackDataOptional = fallbackDataOptional;
   }
 
   public static HeaderWithFallbackData create(
       final ExecutionPayloadHeader executionPayloadHeader, final FallbackData fallbackData) {
-    return new HeaderWithFallbackData(executionPayloadHeader, Optional.of(fallbackData));
+    return new HeaderWithFallbackData(
+        executionPayloadHeader, Optional.empty(), Optional.of(fallbackData));
   }
 
   public static HeaderWithFallbackData create(final ExecutionPayloadHeader executionPayloadHeader) {
-    return new HeaderWithFallbackData(executionPayloadHeader, Optional.empty());
+    return new HeaderWithFallbackData(executionPayloadHeader, Optional.empty(), Optional.empty());
+  }
+
+  public static HeaderWithFallbackData create(
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<BlindedBlobsBundle> blindedBlobsBundle) {
+    return new HeaderWithFallbackData(executionPayloadHeader, blindedBlobsBundle, Optional.empty());
   }
 
   public ExecutionPayloadHeader getExecutionPayloadHeader() {
     return executionPayloadHeader;
+  }
+
+  public Optional<BlindedBlobsBundle> getBlindedBlobsBundle() {
+    return blindedBlobsBundle;
   }
 
   public Optional<FallbackData> getFallbackDataOptional() {
@@ -65,18 +80,20 @@ public class HeaderWithFallbackData {
     }
     final HeaderWithFallbackData that = (HeaderWithFallbackData) o;
     return Objects.equals(executionPayloadHeader, that.executionPayloadHeader)
+        && Objects.equals(blindedBlobsBundle, that.blindedBlobsBundle)
         && Objects.equals(fallbackDataOptional, that.fallbackDataOptional);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionPayloadHeader, fallbackDataOptional);
+    return Objects.hash(executionPayloadHeader, blindedBlobsBundle, fallbackDataOptional);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("executionPayloadHeader", executionPayloadHeader)
+        .add("blindedBlobsBundle", blindedBlobsBundle)
         .add("fallbackDataOptional", fallbackDataOptional)
         .toString();
   }
