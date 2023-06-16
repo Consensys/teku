@@ -203,6 +203,8 @@ public class BlobSidecarPoolImplTest {
 
     assertBlobSidecarsCount(1);
     assertBlobSidecarsTrackersCount(1);
+
+    blobSidecarPool.onSlot(UInt64.ONE);
   }
 
   @Test

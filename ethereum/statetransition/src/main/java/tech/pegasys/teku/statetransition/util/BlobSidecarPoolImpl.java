@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     implements BlobSidecarPool {
+  private static final Logger LOG = LogManager.getLogger();
 
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
@@ -216,6 +219,13 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   @VisibleForTesting
   BlockBlobSidecarsTracker getBlobSidecarsTracker(final SlotAndBlockRoot slotAndBlockRoot) {
     return blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
+  }
+
+  @Override
+  public void onSlot(UInt64 slot) {
+    super.onSlot(slot);
+
+    LOG.trace("Trackers: {}", blockBlobSidecarsTrackers);
   }
 
   @VisibleForTesting
