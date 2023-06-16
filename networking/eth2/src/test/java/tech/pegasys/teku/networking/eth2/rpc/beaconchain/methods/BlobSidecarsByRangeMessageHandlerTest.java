@@ -267,8 +267,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
             .collect(Collectors.toUnmodifiableList());
 
     // let return only canonical slot and block root as canonical
-    when(combinedChainDataClient.getAncestorRoots(
-            eq(latestFinalizedSlot.increment()), eq(ONE), any()))
+    when(combinedChainDataClient.getAncestorRoots(eq(startSlot), eq(ONE), any()))
         .thenReturn(
             ImmutableSortedMap.of(
                 canonicalSlotAndBlockRoot.getSlot(), canonicalSlotAndBlockRoot.getBlockRoot()));

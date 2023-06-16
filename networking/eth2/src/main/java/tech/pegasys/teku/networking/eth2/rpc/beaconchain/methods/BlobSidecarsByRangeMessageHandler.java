@@ -135,16 +135,19 @@ public class BlobSidecarsByRangeMessageHandler
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
               }
 
-              final UInt64 finalizedSlot =
+              UInt64 finalizedSlot =
                   combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
 
               final SortedMap<UInt64, Bytes32> canonicalHotRoots;
               if (endSlot.isGreaterThan(finalizedSlot)) {
-                final UInt64 count = endSlot.minus(finalizedSlot);
-                final UInt64 hotBlocksStartSlot = finalizedSlot.plus(1);
+                final UInt64 hotSlotsCount = endSlot.minus(startSlot).increment();
 
                 canonicalHotRoots =
-                    combinedChainDataClient.getAncestorRoots(hotBlocksStartSlot, UInt64.ONE, count);
+                    combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
+
+                // refresh finalized slot to avoid race condition that can occur if we finalize just
+                // after getting hot canonical roots
+                finalizedSlot = combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
               } else {
                 canonicalHotRoots = ImmutableSortedMap.of();
               }
@@ -230,6 +233,8 @@ public class BlobSidecarsByRangeMessageHandler
     private final UInt64 finalizedSlot;
     private final Map<UInt64, Bytes32> canonicalHotRoots;
 
+    // since our storage stores hot and finalized blobs on the same "table", this iterator can span
+    // over hot and finalized blobs
     private Optional<Iterator<SlotAndBlockRootAndBlobIndex>> blobSidecarKeysIterator =
         Optional.empty();
 
@@ -277,7 +282,7 @@ public class BlobSidecarsByRangeMessageHandler
         }
 
         // not finalized, let's check if it is on canonical chain
-        if (isCanonical(slotAndBlockRootAndBlobIndex)) {
+        if (isCanonicalHotBlobSidecar(slotAndBlockRootAndBlobIndex)) {
           return combinedChainDataClient.getBlobSidecarByKey(slotAndBlockRootAndBlobIndex);
         }
 
@@ -288,7 +293,8 @@ public class BlobSidecarsByRangeMessageHandler
       return SafeFuture.completedFuture(Optional.empty());
     }
 
-    private boolean isCanonical(final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex) {
+    private boolean isCanonicalHotBlobSidecar(
+        final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex) {
       return Optional.ofNullable(canonicalHotRoots.get(slotAndBlockRootAndBlobIndex.getSlot()))
           .map(blockRoot -> blockRoot.equals(slotAndBlockRootAndBlobIndex.getBlockRoot()))
           .orElse(false);
