@@ -16,6 +16,7 @@ package tech.pegasys.teku.statetransition.blobs;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -245,5 +247,24 @@ public class BlockBlobSidecarsTracker {
     }
 
     LOG.debug(timingsReport.toString());
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("slotAndBlockRoot", slotAndBlockRoot)
+        .add("isBlockBodyPresent", blockBody.get().isPresent())
+        .add("isCompleted", isCompleted())
+        .add("fetchTriggered", fetchTriggered)
+        .add(
+            "blobSidecars",
+            blobSidecars.entrySet().stream()
+                .map(
+                    entry ->
+                        MoreObjects.toStringHelper("")
+                            .add("index", entry.getKey())
+                            .add("blobSidecar", entry.getValue().toLogString()))
+                .collect(Collectors.toUnmodifiableList()))
+        .toString();
   }
 }
