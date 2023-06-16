@@ -14,17 +14,18 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -56,6 +58,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
 
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
+    assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
+        .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
     assertThat(blockContainer.getBlobSidecars())
         .hasValueSatisfying(
             blobSidecars ->
@@ -65,18 +69,18 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
                     .hasSameElementsAs(blobsBundle.getBlobs()));
   }
 
-  // TODO Enable when blinded flow is implemented correctly
   @Test
-  @Disabled
   void shouldCreateBlindedBlockContentsWhenBlindedBlockRequested() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
+    final BlindedBlobsBundle blindedBlobsBundle = prepareBlindedBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
 
     assertThat(blockContainer).isInstanceOf(BlindedBlockContents.class);
     final BlindedBlockContainer blindedBlockContainer = blockContainer.toBlinded().orElseThrow();
+    assertThat(blindedBlockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
+        .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
     assertThat(blindedBlockContainer.getBlindedBlobSidecars())
         .hasValueSatisfying(
             blindedBlobSidecars ->
@@ -84,8 +88,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
                     .hasSize(3)
                     .map(BlindedBlobSidecar::getBlobRoot)
                     .hasSameElementsAs(
-                        blobsBundle.getBlobs().stream()
-                            .map(Blob::hashTreeRoot)
+                        blindedBlobsBundle.getBlobRoots().stream()
+                            .map(SszBytes32::get)
                             .collect(Collectors.toList())));
   }
 
@@ -100,12 +104,16 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(unblindedSignedBlockContainer).isEqualTo(signedBlockContents);
   }
 
-  // TODO Enable when blinded flow is implemented correctly
   @Test
-  @Disabled
   void unblindSignedBlock_shouldUnblindBlockContents() {
 
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
+    // let the unblinder return consistent BlindedBlobsBundle
+    blindedBlobsBundle =
+        Optional.of(
+            schemaDefinitions
+                .getBlindedBlobsBundleSchema()
+                .createFromExecutionBlobsBundle(blobsBundle));
 
     final List<SignedBlindedBlobSidecar> blindedBlobSidecars =
         dataStructureUtil.randomSignedBlindedBlobSidecars(blobsBundle);
@@ -117,7 +125,6 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
         schemaDefinitions
             .getSignedBlindedBlockContentsSchema()
             .create(blindedBlock, blindedBlobSidecars);
-
     // let the unblinder return a consistent execution payload
     executionPayload =
         unblindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow();
@@ -125,7 +132,10 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final SignedBlockContainer unblindedBlockContents =
         assertBlockUnblinded(blindedBlockContents, spec);
 
-    verify(executionLayer).getCachedPayloadResult(blindedBlockContents.getSlot());
+    // make sure getCachedUnblindedPayload is second in order of method calling
+    InOrder inOrder = Mockito.inOrder(executionLayer);
+    inOrder.verify(executionLayer).getUnblindedPayload(blindedBlockContents);
+    inOrder.verify(executionLayer).getCachedUnblindedPayload(blindedBlockContents.getSlot());
 
     assertThat(unblindedBlockContents).isInstanceOf(SignedBlockContents.class);
     assertThat(unblindedBlockContents.isBlinded()).isFalse();

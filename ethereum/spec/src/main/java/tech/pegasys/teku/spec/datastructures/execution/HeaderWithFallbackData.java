@@ -54,6 +54,14 @@ public class HeaderWithFallbackData {
 
   public static HeaderWithFallbackData create(
       final ExecutionPayloadHeader executionPayloadHeader,
+      final Optional<BlindedBlobsBundle> blindedBlobsBundle,
+      final FallbackData fallbackData) {
+    return new HeaderWithFallbackData(
+        executionPayloadHeader, blindedBlobsBundle, Optional.of(fallbackData));
+  }
+
+  public static HeaderWithFallbackData create(
+      final ExecutionPayloadHeader executionPayloadHeader,
       final Optional<BlindedBlobsBundle> blindedBlobsBundle) {
     return new HeaderWithFallbackData(executionPayloadHeader, blindedBlobsBundle, Optional.empty());
   }

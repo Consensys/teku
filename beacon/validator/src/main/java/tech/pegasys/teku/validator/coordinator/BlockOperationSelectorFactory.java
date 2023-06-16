@@ -26,6 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
@@ -291,22 +292,26 @@ public class BlockOperationSelectorFactory {
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments =
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult -> {
+              final SszListSchema<SszKZGCommitment, ?> blobKzgCommitmentsSchema =
+                  schemaDefinitionsDeneb
+                      .getBeaconBlockBodySchema()
+                      .toVersionDeneb()
+                      .orElseThrow()
+                      .getBlobKzgCommitmentsSchema();
               if (bodyBuilder.isBlinded()) {
                 return getBlindedBlobsBundle(executionPayloadResult)
-                    .thenApply(BlindedBlobsBundle::getCommitments);
+                    .thenApply(
+                        blindedBlobsBundle ->
+                            blobKzgCommitmentsSchema.createFromElements(
+                                blindedBlobsBundle.getCommitments().asList()));
               } else {
                 return getBlobsBundle(executionPayloadResult)
                     .thenApply(
                         blobsBundle ->
-                            schemaDefinitionsDeneb
-                                .getBeaconBlockBodySchema()
-                                .toVersionDeneb()
-                                .orElseThrow()
-                                .getBlobKzgCommitmentsSchema()
-                                .createFromElements(
-                                    blobsBundle.getCommitments().stream()
-                                        .map(SszKZGCommitment::new)
-                                        .collect(Collectors.toList())));
+                            blobKzgCommitmentsSchema.createFromElements(
+                                blobsBundle.getCommitments().stream()
+                                    .map(SszKZGCommitment::new)
+                                    .collect(Collectors.toList())));
               }
             });
     bodyBuilder.blobKzgCommitments(blobKzgCommitments);
