@@ -69,7 +69,9 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
         terminalTotalDifficulty,
         terminalBlockHash,
         terminalBlockHashActivationEpoch,
-        safeSlotsToImportOptimistically);
+        safeSlotsToImportOptimistically,
+        gossipMaxSizeBellatrix,
+        maxChunkSizeBellatrix);
   }
 
   @Override
