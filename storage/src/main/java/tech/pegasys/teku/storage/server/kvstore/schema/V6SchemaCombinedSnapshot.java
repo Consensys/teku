@@ -78,7 +78,7 @@ public class V6SchemaCombinedSnapshot extends V6SchemaCombined
 
     nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
-            finalizedOffset + 12,
+            finalizedOffset + 13,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
             BYTES_SERIALIZER);
 

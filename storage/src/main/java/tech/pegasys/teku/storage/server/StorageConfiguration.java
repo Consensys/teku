@@ -27,7 +27,6 @@ public class StorageConfiguration {
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
   public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 32;
-  public static final boolean DEFAULT_STORE_NON_CANONICAL_BLOB_SIDECARS_ENABLED = false;
   private final Eth1Address eth1DepositContract;
 
   private final StateStorageMode dataStorageMode;
@@ -39,7 +38,6 @@ public class StorageConfiguration {
   private final Duration blockPruningInterval;
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
-  private final boolean storeNonCanonicalBlobSidecars;
 
   private StorageConfiguration(
       final Eth1Address eth1DepositContract,
@@ -51,7 +49,6 @@ public class StorageConfiguration {
       final Duration blockPruningInterval,
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
-      final boolean storeNonCanonicalBlobSidecars,
       final Spec spec) {
     this.eth1DepositContract = eth1DepositContract;
     this.dataStorageMode = dataStorageMode;
@@ -62,7 +59,6 @@ public class StorageConfiguration {
     this.blockPruningInterval = blockPruningInterval;
     this.blobsPruningInterval = blobsPruningInterval;
     this.blobsPruningLimit = blobsPruningLimit;
-    this.storeNonCanonicalBlobSidecars = storeNonCanonicalBlobSidecars;
     this.spec = spec;
   }
 
@@ -106,10 +102,6 @@ public class StorageConfiguration {
     return blobsPruningLimit;
   }
 
-  public boolean isStoreNonCanonicalBlobSidecarsEnabled() {
-    return storeNonCanonicalBlobSidecars;
-  }
-
   public Spec getSpec() {
     return spec;
   }
@@ -126,9 +118,6 @@ public class StorageConfiguration {
     private Duration blockPruningInterval = DEFAULT_BLOCK_PRUNING_INTERVAL;
     private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
-
-    private boolean storeNonCanonicalBlobSidecars =
-        DEFAULT_STORE_NON_CANONICAL_BLOB_SIDECARS_ENABLED;
 
     private Builder() {}
 
@@ -207,11 +196,6 @@ public class StorageConfiguration {
       return this;
     }
 
-    public Builder storeNonCanonicalBlobSidecars(final boolean storeNonCanonicalBlobSidecars) {
-      this.storeNonCanonicalBlobSidecars = storeNonCanonicalBlobSidecars;
-      return this;
-    }
-
     public StorageConfiguration build() {
       return new StorageConfiguration(
           eth1DepositContract,
@@ -223,7 +207,6 @@ public class StorageConfiguration {
           blockPruningInterval,
           blobsPruningInterval,
           blobsPruningLimit,
-          storeNonCanonicalBlobSidecars,
           spec);
     }
   }

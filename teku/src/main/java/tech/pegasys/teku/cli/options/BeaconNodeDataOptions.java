@@ -64,7 +64,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       names = {"--data-storage-non-canonical-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Store non-canonical blocks",
+      description = "Store non-canonical blocks and associated blobs if they exist",
       fallbackValue = "true",
       arity = "0..1")
   private boolean storeNonCanonicalBlocksEnabled =
@@ -127,16 +127,6 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       arity = "0..1")
   private int blobsPruningLimit = StorageConfiguration.DEFAULT_BLOBS_PRUNING_LIMIT;
 
-  @CommandLine.Option(
-      names = {"--data-storage-non-canonical-blob-sidecars-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Store non-canonical blob sidecars",
-      fallbackValue = "true",
-      arity = "0..1")
-  private boolean storeNonCanonicalBlobSidecarsEnabled =
-      StorageConfiguration.DEFAULT_STORE_NON_CANONICAL_BLOB_SIDECARS_ENABLED;
-
   @Override
   protected DataConfig.Builder configureDataConfig(final DataConfig.Builder config) {
     return super.configureDataConfig(config).beaconDataPath(dataBeaconPath);
@@ -154,8 +144,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
                 .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds))
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
-                .blobsPruningLimit(blobsPruningLimit)
-                .storeNonCanonicalBlobSidecars(storeNonCanonicalBlobSidecarsEnabled));
+                .blobsPruningLimit(blobsPruningLimit));
     builder.sync(
         b ->
             b.fetchAllHistoricBlocks(dataStorageMode.storesAllBlocks())

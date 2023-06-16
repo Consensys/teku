@@ -94,6 +94,7 @@ import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 public class KvStoreDatabase implements Database {
 
   protected static final int TX_BATCH_SIZE = 500;
+  protected static final int BLOBS_TX_BATCH_SIZE = 100;
   private static final Logger LOG = LogManager.getLogger();
   protected final Spec spec;
   protected final boolean storeNonCanonicalBlocks;
@@ -1017,21 +1018,48 @@ public class KvStoreDatabase implements Database {
       final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      LOG.trace("Removing blob sidecars for non-canonical blocks");
       final Set<SlotAndBlockRoot> nonCanonicalBlocks =
           deletedHotBlocks.entrySet().stream()
               .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
               .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
               .collect(Collectors.toSet());
-      for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
-        dao.getBlobSidecarKeys(slotAndBlockRoot)
-            .forEach(
-                key -> {
-                  LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
-                  updater.removeBlobSidecar(key);
-                });
+      if (storeNonCanonicalBlocks) {
+        int index = 0;
+        Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
+        while (nonCanonicalBlocksIterator.hasNext()) {
+          if (index < BLOBS_TX_BATCH_SIZE) {
+            dao.getBlobSidecarKeys(nonCanonicalBlocksIterator.next())
+                .forEach(
+                    key -> {
+                      dao.getBlobSidecar(key)
+                          .ifPresent(
+                              blobSidecarBytes -> {
+                                BlobSidecar blobSidecar =
+                                    spec.deserializeBlobSidecar(blobSidecarBytes, key.getSlot());
+                                updater.addNonCanonicalBlobSidecar(blobSidecar);
+                                updater.removeBlobSidecar(key);
+                              });
+                    });
+          }
+          if (index >= BLOBS_TX_BATCH_SIZE || index == nonCanonicalBlocks.size() - 1) {
+            index = 0;
+            updater.commit();
+          } else {
+            index++;
+          }
+        }
+      } else {
+        LOG.trace("Removing blob sidecars for non-canonical blocks");
+        for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+          dao.getBlobSidecarKeys(slotAndBlockRoot)
+              .forEach(
+                  key -> {
+                    LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
+                    updater.removeBlobSidecar(key);
+                  });
+        }
+        updater.commit();
       }
-      updater.commit();
     }
   }
 

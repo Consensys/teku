@@ -85,7 +85,7 @@ public class V6SchemaCombinedTreeState extends V6SchemaCombined implements Schem
             BYTES_SERIALIZER);
     nonCanonicalBlobSidecarBySlotRootBlobIndex =
         KvStoreColumn.create(
-            finalizedOffset + 14,
+            finalizedOffset + 15,
             SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX_KEY_SERIALIZER,
             BYTES_SERIALIZER);
     deletedColumnIds =

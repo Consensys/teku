@@ -189,7 +189,6 @@ public class DatabaseMigrater {
                 .storeNonCanonicalBlocks(true)
                 .eth1DepositContract(config.getEth1DepositContractAddress())
                 .dataStorageCreateDbVersion(databaseVersion)
-                .storeNonCanonicalBlobSidecars(true)
                 .build());
     final Database database = databaseFactory.createDatabase();
     if (!(database instanceof KvStoreDatabase)) {
