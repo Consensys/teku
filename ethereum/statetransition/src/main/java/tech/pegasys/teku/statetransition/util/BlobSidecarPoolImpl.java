@@ -222,7 +222,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public void onSlot(UInt64 slot) {
+  public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
 
     LOG.trace("Trackers: {}", blockBlobSidecarsTrackers);
