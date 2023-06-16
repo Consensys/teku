@@ -240,7 +240,8 @@ class LengthPrefixedEncodingTest {
   public void decodePayload_shouldThrowRpcExceptionIfMessageLengthPrefixIsMoreThanThreeBytes() {
     final ByteBuf input = inputByteBuffer("0x80808001");
     RpcByteBufDecoder<StatusMessage> decoder = encoding.createDecoder(StatusMessage.SSZ_SCHEMA);
-    assertThatThrownBy(() -> decoder.decodeOneMessage(input)).isInstanceOf(RpcException.class);
+    assertThatThrownBy(() -> decoder.decodeOneMessage(input))
+        .isInstanceOf(ChunkTooLongException.class);
     input.release();
     assertThat(input.refCnt()).isEqualTo(0);
   }

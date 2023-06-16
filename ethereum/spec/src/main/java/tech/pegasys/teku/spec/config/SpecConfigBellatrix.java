@@ -59,4 +59,8 @@ public interface SpecConfigBellatrix extends SpecConfigAltair {
   UInt256 getTerminalTotalDifficulty();
 
   int getSafeSlotsToImportOptimistically();
+
+  int getGossipMaxSizeBellatrix();
+
+  int getMaxChunkSizeBellatrix();
 }
