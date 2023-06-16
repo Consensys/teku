@@ -146,7 +146,7 @@ public class BlobSidecarsByRangeMessageHandler
                     combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
 
                 // refresh finalized slot to avoid race condition that can occur if we finalize just
-                // after getting hot canonical roots
+                // before getting hot canonical roots
                 finalizedSlot = combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
               } else {
                 canonicalHotRoots = ImmutableSortedMap.of();
