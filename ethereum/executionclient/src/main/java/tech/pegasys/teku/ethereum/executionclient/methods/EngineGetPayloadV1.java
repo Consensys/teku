@@ -69,12 +69,12 @@ public class EngineGetPayloadV1 extends AbstractEngineJsonRpcMethod<GetPayloadRe
               return new GetPayloadResponse(payload.asInternalExecutionPayload(payloadSchema));
             })
         .thenPeek(
-            payloadAndValue ->
+            getPayloadResponse ->
                 LOG.trace(
                     "Response {}(payloadId={}, slot={}) -> {}",
                     getVersionedName(),
                     executionPayloadContext.getPayloadId(),
                     slot,
-                    payloadAndValue));
+                    getPayloadResponse));
   }
 }

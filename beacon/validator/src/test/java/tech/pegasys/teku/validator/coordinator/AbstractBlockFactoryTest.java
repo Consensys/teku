@@ -98,7 +98,7 @@ public abstract class AbstractBlockFactoryTest {
 
   protected ExecutionPayload executionPayload = null;
   protected ExecutionPayloadHeader executionPayloadHeader = null;
-  protected BlobsBundle blobsBundle = null;
+  protected Optional<BlobsBundle> blobsBundle = Optional.empty();
   protected ExecutionPayloadResult cachedExecutionPayloadResult = null;
 
   @BeforeAll
@@ -221,7 +221,7 @@ public abstract class AbstractBlockFactoryTest {
           .hasValueSatisfying(
               blobKzgCommitments ->
                   assertThat(blobKzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment))
-                      .hasSameElementsAs(blobsBundle.getCommitments()));
+                      .hasSameElementsAs(blobsBundle.orElseThrow().getCommitments()));
     } else {
       assertThat(block.getBody().getOptionalBlobKzgCommitments()).isEmpty();
     }
@@ -240,26 +240,25 @@ public abstract class AbstractBlockFactoryTest {
       final SignedBlockContainer blindedBlockContainer, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
-    final SignedBeaconBlock blindedBlock = blindedBlockContainer.getSignedBlock();
-
-    when(executionLayer.getUnblindedPayload(blindedBlock))
+    when(executionLayer.getUnblindedPayload(blindedBlockContainer))
         .thenReturn(SafeFuture.completedFuture(executionPayload));
     // used for unblinding the blob sidecars
-    setupCachedBlobsBundle(blindedBlock.getSlot());
+    setupCachedBlobsBundle(blindedBlockContainer.getSlot());
 
     final SignedBlockContainer unblindedBlockContainer =
         blockFactory.unblindSignedBlockIfBlinded(blindedBlockContainer).join();
 
     final SignedBeaconBlock block = unblindedBlockContainer.getSignedBlock();
 
-    if (!blindedBlock.getMessage().getBody().isBlinded()) {
+    if (!blindedBlockContainer.isBlinded()) {
       verifyNoInteractions(executionLayer);
     } else {
-      verify(executionLayer).getUnblindedPayload(blindedBlock);
+      verify(executionLayer).getUnblindedPayload(blindedBlockContainer);
     }
 
     assertThat(block).isNotNull();
-    assertThat(block.hashTreeRoot()).isEqualTo(blindedBlock.hashTreeRoot());
+    assertThat(block.hashTreeRoot())
+        .isEqualTo(blindedBlockContainer.getSignedBlock().hashTreeRoot());
     assertThat(block.getMessage().getBody().isBlinded()).isFalse();
     assertThat(block.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isEqualTo(Optional.empty());
@@ -327,7 +326,7 @@ public abstract class AbstractBlockFactoryTest {
   protected BlobsBundle prepareBlobsBundle(final Spec spec, final int count) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(count);
-    this.blobsBundle = blobsBundle;
+    this.blobsBundle = Optional.of(blobsBundle);
     return blobsBundle;
   }
 
@@ -352,10 +351,10 @@ public abstract class AbstractBlockFactoryTest {
                   new ExecutionPayloadResult(
                       args.getArgument(0),
                       Optional.empty(),
+                      Optional.empty(),
                       Optional.of(
                           SafeFuture.completedFuture(
-                              HeaderWithFallbackData.create(executionPayloadHeader))),
-                      Optional.empty());
+                              HeaderWithFallbackData.create(executionPayloadHeader))));
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
@@ -367,8 +366,8 @@ public abstract class AbstractBlockFactoryTest {
                   new ExecutionPayloadResult(
                       args.getArgument(0),
                       Optional.of(SafeFuture.completedFuture(executionPayload)),
-                      Optional.empty(),
-                      Optional.of(SafeFuture.completedFuture(blobsBundle)));
+                      Optional.of(SafeFuture.completedFuture(blobsBundle)),
+                      Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
@@ -379,10 +378,10 @@ public abstract class AbstractBlockFactoryTest {
                   new ExecutionPayloadResult(
                       args.getArgument(0),
                       Optional.empty(),
+                      Optional.empty(),
                       Optional.of(
                           SafeFuture.completedFuture(
-                              HeaderWithFallbackData.create(executionPayloadHeader))),
-                      Optional.of(SafeFuture.completedFuture(blobsBundle)));
+                              HeaderWithFallbackData.create(executionPayloadHeader))));
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
@@ -397,8 +396,8 @@ public abstract class AbstractBlockFactoryTest {
         new ExecutionPayloadResult(
             null,
             Optional.empty(),
-            Optional.empty(),
-            Optional.of(SafeFuture.completedFuture(blobsBundle)));
+            Optional.of(SafeFuture.completedFuture(blobsBundle)),
+            Optional.empty());
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(Optional.of(executionPayloadResult));
   }

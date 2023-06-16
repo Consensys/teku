@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -654,21 +655,21 @@ public class Spec {
   // Blind Block Utils
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
-      final SignedBeaconBlock blindedSignedBeaconBlock,
+      final SignedBlindedBlockContainer signedBlindedBlockContainer,
       final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
-    return atSlot(blindedSignedBeaconBlock.getSlot())
+    return atSlot(signedBlindedBlockContainer.getSlot())
         .getBlindBlockUtil()
         .map(
             converter ->
                 converter.unblindSignedBeaconBlock(
-                    blindedSignedBeaconBlock, beaconBlockUnblinderConsumer))
+                    signedBlindedBlockContainer, beaconBlockUnblinderConsumer))
         .orElseGet(
             () -> {
               // this shouldn't happen: BlockFactory should skip unblinding when is not needed
               checkState(
-                  !blindedSignedBeaconBlock.getMessage().getBody().isBlinded(),
+                  !signedBlindedBlockContainer.isBlinded(),
                   "Unblinder not available for the current spec but the given block was blinded");
-              return SafeFuture.completedFuture(blindedSignedBeaconBlock);
+              return SafeFuture.completedFuture(signedBlindedBlockContainer.getSignedBlock());
             });
   }
 

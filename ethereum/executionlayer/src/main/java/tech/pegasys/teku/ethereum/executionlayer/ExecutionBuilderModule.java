@@ -115,6 +115,7 @@ public class ExecutionBuilderModule {
     return Optional.empty();
   }
 
+  // TODO: Implement for Deneb
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
@@ -248,7 +249,7 @@ public class ExecutionBuilderModule {
                     signedValidatorRegistrations));
   }
 
-  public SafeFuture<ExecutionPayload> builderGetPayload(
+  public SafeFuture<BuilderPayload> builderGetPayload(
       final SignedBlockContainer signedBlockContainer,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
 
@@ -262,7 +263,7 @@ public class ExecutionBuilderModule {
     final Optional<SafeFuture<HeaderWithFallbackData>> maybeProcessedSlot =
         getPayloadResultFunction
             .apply(slot)
-            .flatMap(ExecutionPayloadResult::getExecutionPayloadHeaderFuture);
+            .flatMap(ExecutionPayloadResult::getHeaderWithFallbackDataFuture);
 
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
@@ -315,7 +316,7 @@ public class ExecutionBuilderModule {
         });
   }
 
-  private SafeFuture<ExecutionPayload> getPayloadFromBuilder(
+  private SafeFuture<BuilderPayload> getPayloadFromBuilder(
       final SignedBlindedBlockContainer signedBlindedBlockContainer) {
     LOG.trace(
         "calling builderGetPayload(signedBlindedBlockContainer={})", signedBlindedBlockContainer);
@@ -327,20 +328,21 @@ public class ExecutionBuilderModule {
                     "Unable to get payload from builder: builder endpoint not available"))
         .getPayload(signedBlindedBlockContainer)
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
-        .thenApply(BuilderPayload::getExecutionPayload)
         .thenPeek(
-            executionPayload -> {
+            builderPayload -> {
+              final ExecutionPayload executionPayload = builderPayload.getExecutionPayload();
               logReceivedBuilderExecutionPayload(executionPayload);
               executionLayerManager.recordExecutionPayloadFallbackSource(
                   Source.BUILDER, FallbackReason.NONE);
               LOG.trace(
                   "builderGetPayload(signedBlindedBlockContainer={}) -> {}",
                   signedBlindedBlockContainer,
-                  executionPayload);
+                  builderPayload);
             });
   }
 
-  private SafeFuture<ExecutionPayload> getPayloadFromFallbackData(
+  // TODO: Implement for Deneb
+  private SafeFuture<BuilderPayload> getPayloadFromFallbackData(
       final SignedBlindedBlockContainer signedBlindedBlockContainer,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.

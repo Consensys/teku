@@ -43,11 +43,14 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -440,7 +443,7 @@ class BlockOperationSelectorFactoryTest {
 
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
 
-    prepareBlockAndBlobsProductionWithPayload(
+    prepareBlockAndBlobsProduction(
         randomExecutionPayload, executionPayloadContext, blockSlotState, blobsBundle);
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder =
@@ -457,11 +460,41 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
+  void shouldIncludeKzgCommitmentsInBlindedBlock() {
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false);
+    final ExecutionPayloadHeader randomExecutionPayloadHeader =
+        dataStructureUtil.randomExecutionPayloadHeader();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+
+    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
+
+    prepareBlindedBlockAndBlobsProduction(
+        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blindedBlobsBundle);
+
+    final CapturingBeaconBlockBodyBuilder bodyBuilder =
+        new CapturingBeaconBlockBodyBuilder(true, true);
+
+    factory
+        .createSelector(
+            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+        .accept(bodyBuilder);
+
+    assertThat(bodyBuilder.blobKzgCommitments)
+        .hasSameElementsAs(blindedBlobsBundle.getCommitments());
+  }
+
+  @Test
   void shouldCreateBlobSidecarsForBlockFromCachedPayloadResult() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
 
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
 
+    // the BlobsBundle is stored in the ExecutionPayloadResult
     prepareCachedPayloadResult(
         block.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
@@ -493,19 +526,23 @@ class BlockOperationSelectorFactoryTest {
   void shouldCreateBlindedBlobSidecarsForBlindedBlockFromCachedPayloadResult() {
     final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock();
 
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
+
+    // the BlindedBlobsBundle is stored in the HeaderWithFallbackData (retrieved via builder flow)
+    final HeaderWithFallbackData headerWithFallbackData =
+        HeaderWithFallbackData.create(
+            dataStructureUtil.randomExecutionPayloadHeader(), Optional.of(blindedBlobsBundle));
 
     prepareCachedPayloadResult(
         block.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
         dataStructureUtil.randomPayloadExecutionContext(false),
-        blobsBundle);
+        headerWithFallbackData);
 
     final List<BlindedBlobSidecar> blindedBlobSidecars =
         safeJoin(factory.createBlindedBlobSidecarsSelector().apply(block));
 
     assertThat(blindedBlobSidecars)
-        .hasSize(blobsBundle.getNumberOfBlobs())
+        .hasSize(blindedBlobsBundle.getNumberOfBlobs())
         .first()
         .satisfies(
             // assert on one of the blinded sidecars
@@ -516,35 +553,30 @@ class BlockOperationSelectorFactoryTest {
               assertThat(blindedBlobSidecar.getSlot()).isEqualTo(block.getSlot());
               assertThat(blindedBlobSidecar.getProposerIndex()).isEqualTo(block.getProposerIndex());
               assertThat(blindedBlobSidecar.getBlobRoot())
-                  .isEqualTo(blobsBundle.getBlobs().get(0).hashTreeRoot());
+                  .isEqualTo(blindedBlobsBundle.getBlobRoots().get(0).get());
               assertThat(blindedBlobSidecar.getKZGCommitment())
-                  .isEqualTo(blobsBundle.getCommitments().get(0));
+                  .isEqualTo(blindedBlobsBundle.getCommitments().get(0).getKZGCommitment());
               assertThat(blindedBlobSidecar.getKZGProof())
-                  .isEqualTo(blobsBundle.getProofs().get(0));
+                  .isEqualTo(blindedBlobsBundle.getProofs().get(0).getKZGProof());
             });
   }
 
   @Test
-  void shouldSetBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+  void shouldSetBlindedBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
+    final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle =
+        dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
     final UInt64 slot = dataStructureUtil.randomUInt64();
 
-    when(executionLayer.getCachedPayloadResult(slot))
-        .thenReturn(
-            Optional.of(
-                // only BlobsBundle is required
-                new ExecutionPayloadResult(
-                    null,
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blobsBundle)))));
+    when(executionLayer.getCachedUnblindedPayload(slot))
+        .thenReturn(Optional.of(executionPayloadAndBlobsBundle));
 
     final CapturingBlobSidecarsUnblinder blobSidecarsUnblinder =
         new CapturingBlobSidecarsUnblinder();
 
     factory.createBlobSidecarsUnblinderSelector(slot).accept(blobSidecarsUnblinder);
 
-    assertThat(blobSidecarsUnblinder.blobsBundle).isCompletedWithValue(blobsBundle);
+    assertThat(blobSidecarsUnblinder.blobsBundle)
+        .isCompletedWithValue(executionPayloadAndBlobsBundle.getBlobsBundle());
   }
 
   private void prepareBlockProductionWithPayload(
@@ -569,13 +601,13 @@ class BlockOperationSelectorFactoryTest {
             new ExecutionPayloadResult(
                 executionPayloadContext,
                 Optional.empty(),
+                Optional.empty(),
                 Optional.of(
                     SafeFuture.completedFuture(
-                        HeaderWithFallbackData.create(executionPayloadHeader))),
-                Optional.empty()));
+                        HeaderWithFallbackData.create(executionPayloadHeader)))));
   }
 
-  private void prepareBlockAndBlobsProductionWithPayload(
+  private void prepareBlockAndBlobsProduction(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
@@ -586,8 +618,25 @@ class BlockOperationSelectorFactoryTest {
             new ExecutionPayloadResult(
                 executionPayloadContext,
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
+                Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                Optional.empty()));
+  }
+
+  private void prepareBlindedBlockAndBlobsProduction(
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState,
+      final BlindedBlobsBundle blindedBlobsBundle) {
+    final HeaderWithFallbackData headerWithFallbackData =
+        HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blindedBlobsBundle));
+    when(executionLayer.initiateBlockAndBlobsProduction(
+            executionPayloadContext, blockSlotState, true))
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
                 Optional.empty(),
-                Optional.of(SafeFuture.completedFuture(blobsBundle))));
+                Optional.empty(),
+                Optional.of(SafeFuture.completedFuture(headerWithFallbackData))));
   }
 
   private void prepareCachedPayloadResult(
@@ -601,8 +650,22 @@ class BlockOperationSelectorFactoryTest {
                 new ExecutionPayloadResult(
                     executionPayloadContext,
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
+                    Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                    Optional.empty())));
+  }
+
+  private void prepareCachedPayloadResult(
+      final UInt64 slot,
+      final ExecutionPayloadContext executionPayloadContext,
+      final HeaderWithFallbackData headerWithFallbackData) {
+    when(executionLayer.getCachedPayloadResult(slot))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    executionPayloadContext,
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blobsBundle)))));
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)))));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
@@ -747,11 +810,12 @@ class BlockOperationSelectorFactoryTest {
 
   private static class CapturingBlobSidecarsUnblinder implements SignedBlobSidecarsUnblinder {
 
-    protected SafeFuture<BlobsBundle> blobsBundle;
+    protected SafeFuture<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle> blobsBundle;
 
     @Override
     public void setBlobsBundleSupplier(
-        final Supplier<SafeFuture<BlobsBundle>> blobsBundleSupplier) {
+        final Supplier<SafeFuture<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>>
+            blobsBundleSupplier) {
       this.blobsBundle = blobsBundleSupplier.get();
     }
 
@@ -762,12 +826,13 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private static class CapturingBeaconBlockUnblinder extends AbstractSignedBeaconBlockUnblinder {
+
     protected SafeFuture<ExecutionPayload> executionPayload;
 
     public CapturingBeaconBlockUnblinder(
         final SchemaDefinitions schemaDefinitions,
-        final SignedBeaconBlock signedBlindedBeaconBlock) {
-      super(schemaDefinitions, signedBlindedBeaconBlock);
+        final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      super(schemaDefinitions, signedBlindedBlockContainer);
     }
 
     @Override
