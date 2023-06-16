@@ -92,7 +92,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private UInt64 transitionTime;
   private Optional<TransitionConfiguration> transitionConfiguration = Optional.empty();
 
-  // block and payload tracking
+  // block, payload and blobs tracking
   private Optional<ExecutionPayload> lastBuilderPayloadToBeUnblinded = Optional.empty();
   private Optional<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>
       lastBuilderBlobsBundleToBeUnblinded = Optional.empty();
@@ -336,6 +336,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         slot);
 
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+
     final SafeFuture<ExecutionPayloadHeader> payloadHeaderFuture =
         engineGetPayload(executionPayloadContext, slot)
             .thenApply(
@@ -348,14 +349,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                       slot,
                       executionPayload.getBlockHash());
                   lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
-                  lastBuilderBlobsBundleToBeUnblinded =
-                      getPayloadResponse
-                          .getBlobsBundle()
-                          .map(
-                              blobsBundle ->
-                                  SchemaDefinitionsDeneb.required(schemaDefinitions)
-                                      .getBlobsBundleSchema()
-                                      .createFromExecutionBlobsBundle(blobsBundle));
                   return schemaDefinitions
                       .toVersionBellatrix()
                       .orElseThrow()
@@ -367,10 +360,18 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     final Optional<BlindedBlobsBundle> blindedBlobsBundle =
         headAndAttrs.currentBlobsBundle.map(
-            blobsBundle ->
-                SchemaDefinitionsDeneb.required(schemaDefinitions)
-                    .getBlindedBlobsBundleSchema()
-                    .createFromExecutionBlobsBundle(blobsBundle));
+            blobsBundle -> {
+              final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+                  SchemaDefinitionsDeneb.required(schemaDefinitions);
+              lastBuilderBlobsBundleToBeUnblinded =
+                  Optional.of(
+                      schemaDefinitionsDeneb
+                          .getBlobsBundleSchema()
+                          .createFromExecutionBlobsBundle(blobsBundle));
+              return schemaDefinitionsDeneb
+                  .getBlindedBlobsBundleSchema()
+                  .createFromExecutionBlobsBundle(blobsBundle);
+            });
 
     return payloadHeaderFuture.thenApply(
         payloadHeader -> HeaderWithFallbackData.create(payloadHeader, blindedBlobsBundle));
@@ -426,13 +427,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         SchemaDefinitionsDeneb.required(schemaDefinitions)
                             .getExecutionPayloadAndBlobsBundleSchema()
                             .create(lastBuilderPayloadToBeUnblinded.get(), blobsBundle))
-            .orElseGet(() -> lastBuilderPayloadToBeUnblinded.get());
+            .orElse(lastBuilderPayloadToBeUnblinded.get());
 
     return SafeFuture.completedFuture(builderPayload);
-  }
-
-  public PayloadStatus getPayloadStatus() {
-    return payloadStatus;
   }
 
   public void setPayloadStatus(PayloadStatus payloadStatus) {
@@ -459,7 +456,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     private Optional<ExecutionPayload> currentExecutionPayload = Optional.empty();
     private Optional<BlobsBundle> currentBlobsBundle = Optional.empty();
 
-    private HeadAndAttributes(Bytes32 head, PayloadBuildingAttributes attributes) {
+    private HeadAndAttributes(final Bytes32 head, final PayloadBuildingAttributes attributes) {
       this.head = head;
       this.attributes = attributes;
     }
