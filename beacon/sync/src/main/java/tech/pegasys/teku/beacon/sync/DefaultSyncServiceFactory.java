@@ -27,6 +27,7 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.FetchRecentBlobSidecarsService;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -127,9 +129,14 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         FetchRecentBlocksService.create(
             asyncRunner, pendingBlocks, blobSidecarPool, forwardSyncService, fetchTaskFactory);
 
-    final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService =
-        FetchRecentBlobSidecarsService.create(
-            asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory, spec);
+    final RecentBlobSidecarFetcher fetchRecentBlobSidecarsService;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      fetchRecentBlobSidecarsService =
+          FetchRecentBlobSidecarsService.create(
+              asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory, spec);
+    } else {
+      fetchRecentBlobSidecarsService = RecentBlobSidecarFetcher.NOOP;
+    }
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -53,5 +54,9 @@ public class SchemaDefinitionCache {
                         + milestone.name()
                         + ". Ensure network config includes all required options."))
         .getSchemaDefinitions();
+  }
+
+  public List<SpecMilestone> getSupportedMilestones() {
+    return spec.getForkSchedule().getSupportedMilestones();
   }
 }

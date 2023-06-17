@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
 import java.time.Duration;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -36,19 +37,21 @@ public class ThrottlingSyncSource implements SyncSource {
   private final SyncSource delegate;
 
   private final RateTracker blocksRateTracker;
-  private final RateTracker blobSidecarsRateTracker;
+  private final Optional<RateTracker> blobSidecarsRateTracker;
 
   public ThrottlingSyncSource(
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final SyncSource delegate,
       final int maxBlocksPerMinute,
-      final int maxBlobSidecarsPerMinute) {
+      final Optional<Integer> maybeMaxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
     this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, TIME_OUT, timeProvider);
     this.blobSidecarsRateTracker =
-        new RateTracker(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider);
+        maybeMaxBlobSidecarsPerMinute.map(
+            maxBlobSidecarsPerMinute ->
+                new RateTracker(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider));
   }
 
   @Override
@@ -68,7 +71,7 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    if (blobSidecarsRateTracker.popObjectRequests(count.longValue()) > 0) {
+    if (blobSidecarsRateTracker.orElseThrow().popObjectRequests(count.longValue()) > 0) {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {

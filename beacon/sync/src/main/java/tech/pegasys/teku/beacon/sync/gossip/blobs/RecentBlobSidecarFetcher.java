@@ -13,13 +13,40 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.blobs;
 
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public interface RecentBlobSidecarFetcher {
+
+  RecentBlobSidecarFetcher NOOP =
+      new RecentBlobSidecarFetcher() {
+        @Override
+        public void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber) {}
+
+        @Override
+        public void requestRecentBlobSidecar(BlobIdentifier blobIdentifier) {}
+
+        @Override
+        public void cancelRecentBlobSidecarRequest(BlobIdentifier blobIdentifier) {}
+
+        @Override
+        public SafeFuture<?> start() {
+          return SafeFuture.COMPLETE;
+        }
+
+        @Override
+        public SafeFuture<?> stop() {
+          return SafeFuture.COMPLETE;
+        }
+      };
 
   void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber);
 
   void requestRecentBlobSidecar(BlobIdentifier blobIdentifier);
 
   void cancelRecentBlobSidecarRequest(BlobIdentifier blobIdentifier);
+
+  SafeFuture<?> start();
+
+  SafeFuture<?> stop();
 }

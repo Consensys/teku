@@ -17,7 +17,6 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
-import tech.pegasys.teku.beacon.sync.gossip.blobs.FetchRecentBlobSidecarsService;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcher;
@@ -30,14 +29,14 @@ public class DefaultSyncService extends Service implements SyncService {
 
   private final ForwardSyncService forwardSyncService;
   private final FetchRecentBlocksService fetchRecentBlocksService;
-  private final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService;
+  private final RecentBlobSidecarFetcher fetchRecentBlobSidecarsService;
   private final SyncStateTracker syncStateTracker;
   private final HistoricalBlockSyncService historicalBlockSyncService;
 
   public DefaultSyncService(
       final ForwardSyncService forwardSyncService,
       final FetchRecentBlocksService fetchRecentBlocksService,
-      final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService,
+      final RecentBlobSidecarFetcher fetchRecentBlobSidecarsService,
       final SyncStateTracker syncStateTracker,
       final HistoricalBlockSyncService historicalBlockSyncService) {
     this.forwardSyncService = forwardSyncService;

@@ -204,6 +204,10 @@ public class Spec {
     return forkSchedule;
   }
 
+  /**
+   * @return Milestones that are actively transitioned to. Does not include milestones that are
+   *     immediately eclipsed by later milestones that activate at the same epoch.
+   */
   public List<ForkAndSpecMilestone> getEnabledMilestones() {
     return forkSchedule.getActiveMilestones();
   }
@@ -867,7 +871,12 @@ public class Spec {
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {
-    return forMilestone(getForkSchedule().getHighestSupportedMilestone())
+    final SpecMilestone highestSupportedMilestone =
+        getForkSchedule().getHighestSupportedMilestone();
+    if (!highestSupportedMilestone.isGreaterThanOrEqualTo(DENEB)) {
+      return Optional.empty();
+    }
+    return forMilestone(highestSupportedMilestone)
         .getConfig()
         .toVersionDeneb()
         .map(SpecConfigDeneb::getMaxBlobsPerBlock);

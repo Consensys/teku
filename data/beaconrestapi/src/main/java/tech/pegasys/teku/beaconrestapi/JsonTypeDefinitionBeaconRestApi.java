@@ -113,6 +113,7 @@ import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
@@ -241,10 +242,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostVoluntaryExit(dataProvider))
             .endpoint(new PostSyncCommittees(dataProvider))
             .endpoint(new PostValidatorLiveness(dataProvider))
-            .endpoint(new PostBlsToExecutionChanges(dataProvider, schemaCache))
-            .endpoint(new GetBlsToExecutionChanges(dataProvider, schemaCache))
-            .endpoint(new GetExpectedWithdrawals(dataProvider, schemaCache))
-            .endpoint(new GetBlobSidecars(dataProvider, schemaCache))
             // Event Handler
             .endpoint(
                 new GetEvents(
@@ -305,6 +302,17 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetDepositSnapshot(eth1DataProvider))
             .endpoint(new GetGlobalValidatorInclusion(dataProvider))
             .endpoint(new GetValidatorInclusion(dataProvider));
+
+    if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
+      builder =
+          builder
+              .endpoint(new PostBlsToExecutionChanges(dataProvider, schemaCache))
+              .endpoint(new GetBlsToExecutionChanges(dataProvider, schemaCache))
+              .endpoint(new GetExpectedWithdrawals(dataProvider, schemaCache));
+    }
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      builder = builder.endpoint(new GetBlobSidecars(dataProvider, schemaCache));
+    }
 
     if (config.isRestApiLightClientEnabled()) {
       builder =
