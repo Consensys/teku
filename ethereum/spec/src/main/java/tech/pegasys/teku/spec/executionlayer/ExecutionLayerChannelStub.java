@@ -427,7 +427,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                               .orElseThrow()
                               .size()
                           == blobsBundle.getNumberOfBlobs(),
-                      "provided signed blinded block contains different number of kzg commitments than the expected %d",
+                      "provided signed blinded block contains different number of kzg commitments than the expected %s",
                       blobsBundle.getNumberOfBlobs());
                   return (BuilderPayload)
                       SchemaDefinitionsDeneb.required(schemaDefinitions)
