@@ -79,6 +79,11 @@ public enum SpecMilestone {
     return allMilestones.subList(0, milestoneIndex + 1);
   }
 
+  public static SpecMilestone getHighestMilestone() {
+    final int length = SpecMilestone.values().length;
+    return SpecMilestone.values()[length - 1];
+  }
+
   static boolean areMilestonesInOrder(final SpecMilestone... milestones) {
     final List<SpecMilestone> allMilestones = Arrays.asList(SpecMilestone.values());
     int lastMilestoneIndex = -1;

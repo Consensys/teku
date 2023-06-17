@@ -30,7 +30,7 @@ public class OpenApiIntegrationTest extends AbstractDataBackedRestAPIIntegration
 
   @BeforeEach
   public void setup() throws IOException {
-    startRestAPIAtGenesis();
+    startRestAPIAtGenesisWithHighestSupportedMilestone();
     currentJsonNodes = util.parseSwagger(getOpenApiDoc().body().string());
   }
 

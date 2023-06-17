@@ -267,6 +267,10 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.PHASE0, CONFIG);
   }
 
+  protected void startRestAPIAtGenesisWithHighestSupportedMilestone() {
+    startRestAPIAtGenesis(StateStorageMode.ARCHIVE, SpecMilestone.getHighestMilestone(), CONFIG);
+  }
+
   protected void startRestApiAtGenesisStoringNonCanonicalBlocks() {
     setupStorage(StateStorageMode.ARCHIVE, false, SpecMilestone.PHASE0, true);
     chainUpdater.initializeGenesis();
