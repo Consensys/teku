@@ -337,44 +337,40 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
-    final SafeFuture<ExecutionPayloadHeader> payloadHeaderFuture =
-        engineGetPayload(executionPayloadContext, slot)
-            .thenApply(
-                getPayloadResponse -> {
-                  final ExecutionPayload executionPayload =
-                      getPayloadResponse.getExecutionPayload();
-                  LOG.info(
-                      "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
-                      executionPayloadContext,
-                      slot,
-                      executionPayload.getBlockHash());
-                  lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
-                  return schemaDefinitions
+    return engineGetPayload(executionPayloadContext, slot)
+        .thenApply(
+            getPayloadResponse -> {
+              final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
+              LOG.info(
+                  "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
+                  executionPayloadContext,
+                  slot,
+                  executionPayload.getBlockHash());
+              lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
+              final ExecutionPayloadHeader payloadHeader =
+                  schemaDefinitions
                       .toVersionBellatrix()
                       .orElseThrow()
                       .getExecutionPayloadHeaderSchema()
                       .createFromExecutionPayload(executionPayload);
-                });
-
-    final HeadAndAttributes headAndAttrs = getCachedHeadAndAttributes(executionPayloadContext);
-
-    final Optional<BlindedBlobsBundle> blindedBlobsBundle =
-        headAndAttrs.currentBlobsBundle.map(
-            blobsBundle -> {
-              final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-                  SchemaDefinitionsDeneb.required(schemaDefinitions);
-              lastBuilderBlobsBundleToBeUnblinded =
-                  Optional.of(
-                      schemaDefinitionsDeneb
-                          .getBlobsBundleSchema()
-                          .createFromExecutionBlobsBundle(blobsBundle));
-              return schemaDefinitionsDeneb
-                  .getBlindedBlobsBundleSchema()
-                  .createFromExecutionBlobsBundle(blobsBundle);
+              final Optional<BlindedBlobsBundle> blindedBlobsBundle =
+                  getPayloadResponse
+                      .getBlobsBundle()
+                      .map(
+                          blobsBundle -> {
+                            final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+                                SchemaDefinitionsDeneb.required(schemaDefinitions);
+                            lastBuilderBlobsBundleToBeUnblinded =
+                                Optional.of(
+                                    schemaDefinitionsDeneb
+                                        .getBlobsBundleSchema()
+                                        .createFromExecutionBlobsBundle(blobsBundle));
+                            return schemaDefinitionsDeneb
+                                .getBlindedBlobsBundleSchema()
+                                .createFromExecutionBlobsBundle(blobsBundle);
+                          });
+              return HeaderWithFallbackData.create(payloadHeader, blindedBlobsBundle);
             });
-
-    return payloadHeaderFuture.thenApply(
-        payloadHeader -> HeaderWithFallbackData.create(payloadHeader, blindedBlobsBundle));
   }
 
   @Override
@@ -421,12 +417,26 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     final BuilderPayload builderPayload =
         lastBuilderBlobsBundleToBeUnblinded
+            // post Deneb
             .map(
-                blobsBundle ->
-                    (BuilderPayload)
-                        SchemaDefinitionsDeneb.required(schemaDefinitions)
-                            .getExecutionPayloadAndBlobsBundleSchema()
-                            .create(lastBuilderPayloadToBeUnblinded.get(), blobsBundle))
+                blobsBundle -> {
+                  checkState(
+                      signedBlockContainer
+                              .getSignedBlock()
+                              .getMessage()
+                              .getBody()
+                              .getOptionalBlobKzgCommitments()
+                              .orElseThrow()
+                              .size()
+                          == blobsBundle.getNumberOfBlobs(),
+                      "provided signed blinded block contains different number of kzg commitments than the expected %d",
+                      blobsBundle.getNumberOfBlobs());
+                  return (BuilderPayload)
+                      SchemaDefinitionsDeneb.required(schemaDefinitions)
+                          .getExecutionPayloadAndBlobsBundleSchema()
+                          .create(lastBuilderPayloadToBeUnblinded.get(), blobsBundle);
+                })
+            // pre Deneb
             .orElse(lastBuilderPayloadToBeUnblinded.get());
 
     return SafeFuture.completedFuture(builderPayload);
@@ -436,11 +446,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.payloadStatus = payloadStatus;
   }
 
-  /**
-   * set to empty to restore random number of blobs for each block
-   *
-   * @param blobsToGenerate
-   */
+  /** Set to empty to restore random number of blobs for each block */
   public void setBlobsToGenerate(final Optional<Integer> blobsToGenerate) {
     this.blobsToGenerate = blobsToGenerate;
   }
