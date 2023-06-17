@@ -460,6 +460,21 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
+  public boolean isAncestorOfCanonicalHead(final SlotAndBlockRoot slotAndBlockRoot) {
+    final Optional<ChainHead> chainHead = recentChainData.getChainHead();
+    final Optional<ReadOnlyForkChoiceStrategy> forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy();
+    if (chainHead.isEmpty() || forkChoiceStrategy.isEmpty()) {
+      return false;
+    }
+
+    return forkChoiceStrategy
+        .get()
+        .getAncestor(chainHead.get().getRoot(), slotAndBlockRoot.getSlot())
+        .map(blockRootAtSlot -> blockRootAtSlot.equals(slotAndBlockRoot.getBlockRoot()))
+        .orElse(false);
+  }
+
   /** @return The earliest available block's slot */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return earliestAvailableBlockSlot.get();
@@ -522,8 +537,16 @@ public class CombinedChainDataClient {
     if (recentChainData.isPreGenesis()) {
       return false;
     }
-    final UInt64 finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
+    final UInt64 finalizedSlot = getStore().getLatestFinalizedBlockSlot();
     return slot.compareTo(finalizedSlot) >= 0;
+  }
+
+  public Optional<UInt64> getFinalizedBlockSlot() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalizedBlockSlot());
   }
 
   public Optional<SignedBeaconBlock> getFinalizedBlock() {
@@ -546,8 +569,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<Checkpoint> getJustifiedCheckpoint() {
-    return Optional.ofNullable(recentChainData.getStore())
-        .map(ReadOnlyStore::getJustifiedCheckpoint);
+    return Optional.ofNullable(getStore()).map(ReadOnlyStore::getJustifiedCheckpoint);
   }
 
   public Optional<GenesisData> getGenesisData() {
