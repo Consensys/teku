@@ -348,9 +348,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   executionPayload.getBlockHash());
               lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
               final ExecutionPayloadHeader payloadHeader =
-                  schemaDefinitions
-                      .toVersionBellatrix()
-                      .orElseThrow()
+                  SchemaDefinitionsBellatrix.required(schemaDefinitions)
                       .getExecutionPayloadHeaderSchema()
                       .createFromExecutionPayload(executionPayload);
               final Optional<BlindedBlobsBundle> blindedBlobsBundle =
