@@ -104,9 +104,9 @@ public class SpecConfigBuilder {
 
   private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.FULL;
 
-  private int gossipMaxSize;
+  private Integer gossipMaxSize;
 
-  private int maxChunkSize;
+  private Integer maxChunkSize;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -551,12 +551,12 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder gossipMaxSize(final int gossipMaxSize) {
+  public SpecConfigBuilder gossipMaxSize(final Integer gossipMaxSize) {
     this.gossipMaxSize = gossipMaxSize;
     return this;
   }
 
-  public SpecConfigBuilder maxChunkSize(final int maxChunkSize) {
+  public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
     this.maxChunkSize = maxChunkSize;
     return this;
   }
