@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.p2p.connection;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 
 class PeerPoolsTest {
@@ -24,24 +23,24 @@ class PeerPoolsTest {
 
   @Test
   void shouldAddPeerToPool() {
-    pools.addPeerToPool(new MockNodeId(1), PeerPool.RANDOMLY_SELECTED);
-    pools.addPeerToPool(new MockNodeId(2), PeerPool.STATIC);
-    pools.addPeerToPool(new MockNodeId(3), PeerPool.SCORE_BASED);
-    assertThat(pools.getPool(new MockNodeId(1))).isEqualTo(PeerPool.RANDOMLY_SELECTED);
-    assertThat(pools.getPool(new MockNodeId(2))).isEqualTo(PeerPool.STATIC);
-    assertThat(pools.getPool(new MockNodeId(3))).isEqualTo(PeerPool.SCORE_BASED);
+    pools.addPeerToPool(new MockNodeId(1), PeerConnectionType.RANDOMLY_SELECTED);
+    pools.addPeerToPool(new MockNodeId(2), PeerConnectionType.STATIC);
+    pools.addPeerToPool(new MockNodeId(3), PeerConnectionType.SCORE_BASED);
+    assertThat(pools.getPool(new MockNodeId(1))).isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(pools.getPool(new MockNodeId(2))).isEqualTo(PeerConnectionType.STATIC);
+    assertThat(pools.getPool(new MockNodeId(3))).isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 
   @Test
   void shouldDefaultToScoreBasedPool() {
-    assertThat(pools.getPool(new MockNodeId(1))).isEqualTo(PeerPool.SCORE_BASED);
+    assertThat(pools.getPool(new MockNodeId(1))).isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 
   @Test
   void shouldReturnToDefaultPoolWhenPeerForgotten() {
     final MockNodeId nodeId = new MockNodeId(1);
-    pools.addPeerToPool(nodeId, PeerPool.RANDOMLY_SELECTED);
+    pools.addPeerToPool(nodeId, PeerConnectionType.RANDOMLY_SELECTED);
     pools.forgetPeer(nodeId);
-    assertThat(pools.getPool(nodeId)).isEqualTo(PeerPool.SCORE_BASED);
+    assertThat(pools.getPool(nodeId)).isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 }
