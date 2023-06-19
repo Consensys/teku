@@ -47,4 +47,8 @@ public class BlindedBlobsBundle
   public SszList<SszBytes32> getBlobRoots() {
     return getField2();
   }
+
+  public int getNumberOfBlobs() {
+    return getBlobRoots().size();
+  }
 }

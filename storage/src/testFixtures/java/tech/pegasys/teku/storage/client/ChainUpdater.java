@@ -148,7 +148,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState finalizeCurrentChain() {
-    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain();
+    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain(Optional.empty());
     newBlocks.forEach(this::saveBlock);
     final SignedBlockAndState newHead = newBlocks.get(newBlocks.size() - 1);
     updateBestBlock(newHead);
@@ -156,7 +156,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState finalizeCurrentChainOptimistically() {
-    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain();
+    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain(Optional.empty());
     newBlocks.forEach(this::saveOptimisticBlock);
     final SignedBlockAndState newHead = newBlocks.get(newBlocks.size() - 1);
     updateBestBlock(newHead);

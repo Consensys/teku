@@ -19,20 +19,21 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ExecutionPayloadResult {
+
   private final ExecutionPayloadContext executionPayloadContext;
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
-  private final Optional<SafeFuture<HeaderWithFallbackData>> executionPayloadHeaderFuture;
-  private final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture;
+  private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
+  private final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture;
 
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
-      final Optional<SafeFuture<HeaderWithFallbackData>> executionPayloadHeaderFuture,
-      final Optional<SafeFuture<BlobsBundle>> blobsBundleFuture) {
+      final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
+      final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
-    this.executionPayloadHeaderFuture = executionPayloadHeaderFuture;
     this.blobsBundleFuture = blobsBundleFuture;
+    this.headerWithFallbackDataFuture = headerWithFallbackDataFuture;
   }
 
   public ExecutionPayloadContext getExecutionPayloadContext() {
@@ -43,12 +44,12 @@ public class ExecutionPayloadResult {
     return executionPayloadFuture;
   }
 
-  public Optional<SafeFuture<HeaderWithFallbackData>> getExecutionPayloadHeaderFuture() {
-    return executionPayloadHeaderFuture;
+  public Optional<SafeFuture<Optional<BlobsBundle>>> getBlobsBundleFuture() {
+    return blobsBundleFuture;
   }
 
-  public Optional<SafeFuture<BlobsBundle>> getBlobsBundleFuture() {
-    return blobsBundleFuture;
+  public Optional<SafeFuture<HeaderWithFallbackData>> getHeaderWithFallbackDataFuture() {
+    return headerWithFallbackDataFuture;
   }
 
   @Override
@@ -62,8 +63,8 @@ public class ExecutionPayloadResult {
     final ExecutionPayloadResult that = (ExecutionPayloadResult) o;
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
         && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
-        && Objects.equals(executionPayloadHeaderFuture, that.executionPayloadHeaderFuture)
-        && Objects.equals(blobsBundleFuture, that.blobsBundleFuture);
+        && Objects.equals(blobsBundleFuture, that.blobsBundleFuture)
+        && Objects.equals(headerWithFallbackDataFuture, that.headerWithFallbackDataFuture);
   }
 
   @Override
@@ -71,8 +72,8 @@ public class ExecutionPayloadResult {
     return Objects.hash(
         executionPayloadContext,
         executionPayloadFuture,
-        executionPayloadHeaderFuture,
-        blobsBundleFuture);
+        blobsBundleFuture,
+        headerWithFallbackDataFuture);
   }
 
   @Override
@@ -80,8 +81,8 @@ public class ExecutionPayloadResult {
     return MoreObjects.toStringHelper(this)
         .add("executionPayloadContext", executionPayloadContext)
         .add("executionPayloadFuture", executionPayloadFuture)
-        .add("executionPayloadHeaderFuture", executionPayloadHeaderFuture)
         .add("blobsBundleFuture", blobsBundleFuture)
+        .add("headerWithFallbackDataFuture", headerWithFallbackDataFuture)
         .toString();
   }
 }

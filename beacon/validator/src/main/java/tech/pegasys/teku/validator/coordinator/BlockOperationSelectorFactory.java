@@ -36,7 +36,10 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSch
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -216,7 +219,7 @@ public class BlockOperationSelectorFactory {
           executionPayloadResultFuture.thenCompose(
               executionPayloadResult ->
                   executionPayloadResult
-                      .getExecutionPayloadHeaderFuture()
+                      .getHeaderWithFallbackDataFuture()
                       .orElseThrow()
                       .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader)));
     } else {
@@ -272,7 +275,7 @@ public class BlockOperationSelectorFactory {
               } else {
                 return executionLayerBlockProductionManager
                     .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)
-                    .getExecutionPayloadHeaderFuture()
+                    .getHeaderWithFallbackDataFuture()
                     .orElseThrow()
                     .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader);
               }
@@ -287,10 +290,12 @@ public class BlockOperationSelectorFactory {
         SchemaDefinitionsDeneb.required(schemaDefinitions);
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments =
         executionPayloadResultFuture.thenCompose(
-            executionPayloadResult ->
-                executionPayloadResult
-                    .getBlobsBundleFuture()
-                    .orElseThrow()
+            executionPayloadResult -> {
+              if (bodyBuilder.isBlinded()) {
+                return getBlindedBlobsBundle(executionPayloadResult)
+                    .thenApply(BlindedBlobsBundle::getCommitments);
+              } else {
+                return getBlobsBundle(executionPayloadResult)
                     .thenApply(
                         blobsBundle ->
                             schemaDefinitionsDeneb
@@ -301,13 +306,18 @@ public class BlockOperationSelectorFactory {
                                 .createFromElements(
                                     blobsBundle.getCommitments().stream()
                                         .map(SszKZGCommitment::new)
-                                        .collect(Collectors.toList()))));
+                                        .collect(Collectors.toList())));
+              }
+            });
     bodyBuilder.blobKzgCommitments(blobKzgCommitments);
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector() {
     return bodyUnblinder -> {
-      final BeaconBlock block = bodyUnblinder.getSignedBlindedBeaconBlock().getMessage();
+      final SignedBlockContainer signedBlindedBlockContainer =
+          bodyUnblinder.getSignedBlindedBlockContainer();
+
+      final BeaconBlock block = signedBlindedBlockContainer.getSignedBlock().getMessage();
 
       if (block
           .getBody()
@@ -325,8 +335,9 @@ public class BlockOperationSelectorFactory {
       } else {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
-                executionLayerBlockProductionManager.getUnblindedPayload(
-                    bodyUnblinder.getSignedBlindedBeaconBlock()));
+                executionLayerBlockProductionManager
+                    .getUnblindedPayload(signedBlindedBlockContainer)
+                    .thenApply(BuilderPayload::getExecutionPayload));
       }
     };
   }
@@ -334,7 +345,25 @@ public class BlockOperationSelectorFactory {
   public Consumer<SignedBlobSidecarsUnblinder> createBlobSidecarsUnblinderSelector(
       final UInt64 slot) {
     return blobSidecarsUnblinder ->
-        blobSidecarsUnblinder.setBlobsBundleSupplier(() -> getCachedBlobsBundle(slot));
+        blobSidecarsUnblinder.setBlobsBundleSupplier(
+            () -> {
+              final BuilderPayload cachedBuilderPayload =
+                  executionLayerBlockProductionManager
+                      .getCachedUnblindedPayload(slot)
+                      .orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "BuilderPayload hasn't been cached for slot " + slot));
+              final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+                  cachedBuilderPayload
+                      .getOptionalBlobsBundle()
+                      .orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "BlobsBundle is not available in BuilderPayload: "
+                                      + cachedBuilderPayload));
+              return SafeFuture.completedFuture(blobsBundle);
+            });
   }
 
   public Function<BeaconBlock, SafeFuture<List<BlobSidecar>>> createBlobSidecarsSelector() {
@@ -367,10 +396,10 @@ public class BlockOperationSelectorFactory {
       final BlindedBlobSidecarSchema blindedBlobSidecarSchema =
           SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
               .getBlindedBlobSidecarSchema();
-      return getCachedBlobsBundle(block.getSlot())
+      return getCachedBlindedBlobsBundle(block.getSlot())
           .thenApply(
-              blobsBundle ->
-                  IntStream.range(0, blobsBundle.getNumberOfBlobs())
+              blindedBlobsBundle ->
+                  IntStream.range(0, blindedBlobsBundle.getNumberOfBlobs())
                       .mapToObj(
                           index ->
                               blindedBlobSidecarSchema.create(
@@ -379,22 +408,52 @@ public class BlockOperationSelectorFactory {
                                   block.getSlot(),
                                   block.getParentRoot(),
                                   block.getProposerIndex(),
-                                  blobsBundle.getBlobs().get(index).hashTreeRoot(),
-                                  blobsBundle.getCommitments().get(index),
-                                  blobsBundle.getProofs().get(index)))
+                                  blindedBlobsBundle.getBlobRoots().get(index).get(),
+                                  blindedBlobsBundle.getCommitments().get(index).getKZGCommitment(),
+                                  blindedBlobsBundle.getProofs().get(index).getKZGProof()))
                       .collect(Collectors.toUnmodifiableList()));
     };
   }
 
+  private SafeFuture<BlobsBundle> getBlobsBundle(
+      final ExecutionPayloadResult executionPayloadResult) {
+    return executionPayloadResult
+        .getBlobsBundleFuture()
+        .orElseThrow(() -> blobsBundleIsNotAvailableException(false))
+        .thenApply(
+            blobsBundle ->
+                blobsBundle.orElseThrow(() -> blobsBundleIsNotAvailableException(false)));
+  }
+
+  private SafeFuture<BlindedBlobsBundle> getBlindedBlobsBundle(
+      final ExecutionPayloadResult executionPayloadResult) {
+    return executionPayloadResult
+        .getHeaderWithFallbackDataFuture()
+        .orElseThrow(() -> new IllegalStateException("HeaderWithFallbackData is not available"))
+        .thenApply(
+            headerWithFallbackData ->
+                headerWithFallbackData
+                    .getBlindedBlobsBundle()
+                    .orElseThrow(() -> blobsBundleIsNotAvailableException(true)));
+  }
+
   private SafeFuture<BlobsBundle> getCachedBlobsBundle(final UInt64 slot) {
+    final ExecutionPayloadResult executionPayloadResult = getCachedPayloadResult(slot);
+    return getBlobsBundle(executionPayloadResult);
+  }
+
+  private SafeFuture<BlindedBlobsBundle> getCachedBlindedBlobsBundle(final UInt64 slot) {
+    final ExecutionPayloadResult executionPayloadResult = getCachedPayloadResult(slot);
+    return getBlindedBlobsBundle(executionPayloadResult);
+  }
+
+  private ExecutionPayloadResult getCachedPayloadResult(final UInt64 slot) {
     return executionLayerBlockProductionManager
         .getCachedPayloadResult(slot)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "ExecutionPayloadResult is not available for slot " + slot))
-        .getBlobsBundleFuture()
-        .orElseThrow(
-            () -> new IllegalStateException("BlobsBundle is not available for slot " + slot));
+        .orElseThrow(() -> new IllegalStateException("ExecutionPayloadResult is not available"));
+  }
+
+  private IllegalStateException blobsBundleIsNotAvailableException(final boolean blinded) {
+    return new IllegalStateException((blinded ? "Blinded" : "") + "BlobsBundle is not available");
   }
 }

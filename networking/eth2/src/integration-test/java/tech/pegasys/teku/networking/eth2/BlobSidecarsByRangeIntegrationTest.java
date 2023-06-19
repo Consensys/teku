@@ -29,13 +29,15 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 
 public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
   @Test
   public void requestBlobSidecars_shouldFailBeforeDenebMilestone() {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalCapella());
-    assertThatThrownBy(() -> requestBlobSidecarsByRange(peer))
+    assertThatThrownBy(() -> requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.valueOf(10)))
         .hasRootCauseInstanceOf(UnsupportedOperationException.class)
         .hasMessageContaining("BlobSidecarsByRange method is not supported");
   }
@@ -44,39 +46,84 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
-    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer);
+    final List<BlobSidecar> blobSidecars =
+        requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.valueOf(10));
     assertThat(blobSidecars).isEmpty();
   }
 
   @Test
-  public void requestBlobSidecars_shouldReturnBlobSidecarsOnDenebMilestone()
+  public void requestBlobSidecars_shouldReturnCanonicalBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
 
-    // generate 4 blobs per block
+    // finalize chain 2 blobs per block
     peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobs(true);
-    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(2));
 
-    // up to slot 3
-    final UInt64 targetSlot = UInt64.valueOf(3);
-    final SignedBlockAndState lastBlock = peerStorage.chainUpdater().advanceChainUntil(targetSlot);
-    peerStorage.chainUpdater().updateBestBlock(lastBlock);
+    final List<SignedBlockAndState> finalizedBlocksAndStates =
+        peerStorage
+            .chainBuilder()
+            .finalizeCurrentChain(Optional.of(peerStorage.chainUpdater().blockOptions));
+    finalizedBlocksAndStates.forEach(
+        blockAndState -> {
+          final List<BlobSidecar> blobSidecars =
+              peerStorage.chainBuilder().getBlobSidecars(blockAndState.getRoot());
+          peerStorage.chainUpdater().saveBlock(blockAndState, blobSidecars);
+          peerStorage.chainUpdater().updateBestBlock(blockAndState);
+        });
+
+    final ChainBuilder fork = peerStorage.chainBuilder().fork();
+
+    final Checkpoint finalizedCheckpoint =
+        peerStorage.recentChainData().getFinalizedCheckpoint().orElseThrow();
+    final UInt64 finalizedSlot =
+        finalizedCheckpoint.getEpochStartSlot(peerStorage.recentChainData().getSpec());
+
+    // add 5 extra blocks that will be canonical
+    final UInt64 targetSlot = peerStorage.getChainHead().getSlot().plus(5);
+    final SignedBlockAndState canonicalHead =
+        peerStorage.chainUpdater().advanceChainUntil(targetSlot);
+
+    // generate non canonical blocks and blobs up to the same target slot
+    peerStorage.chainUpdater().blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
+    final List<SignedBlockAndState> nonCanonicalBlocksAndStates =
+        fork.generateBlocksUpToSlot(targetSlot.intValue(), peerStorage.chainUpdater().blockOptions);
+
+    final List<BlobSidecar> nonCanonicalBlobSidecars = new ArrayList<>();
+    nonCanonicalBlocksAndStates.forEach(
+        signedBlockAndState -> {
+          final List<BlobSidecar> blobSidecars =
+              fork.getBlobSidecars(signedBlockAndState.getRoot());
+          nonCanonicalBlobSidecars.addAll(blobSidecars);
+          peerStorage.chainUpdater().saveBlock(signedBlockAndState, blobSidecars);
+        });
+
+    // make sure canonical head is the canonical head
+    peerStorage.chainUpdater().updateBestBlock(canonicalHead);
+
+    // make sure we have 2 heads
+    assertThat(peerStorage.recentChainData().getChainHeads().size()).isEqualTo(2);
+
+    // lets get blobs starting from 5 slots prior to finalized slot
+    final UInt64 startSlot = finalizedSlot.minus(5);
 
     // grab expected blobs from storage
-    final List<BlobSidecar> expectedBlobSidecars =
-        retrieveCanonicalBlobSidecarsFromPeerStorage(UInt64.rangeClosed(UInt64.ONE, targetSlot));
+    final List<BlobSidecar> expectedCanonicalBlobSidecars =
+        retrieveCanonicalBlobSidecarsFromPeerStorage(UInt64.rangeClosed(startSlot, targetSlot));
 
+    final UInt64 slotCount = targetSlot.minus(startSlot).increment();
     // call and check
-    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer);
-    assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedBlobSidecars);
+    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer, startSlot, slotCount);
+    assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedCanonicalBlobSidecars);
+    assertThat(blobSidecars).doesNotContainAnyElementsOf(nonCanonicalBlobSidecars);
   }
 
-  private List<BlobSidecar> requestBlobSidecarsByRange(final Eth2Peer peer)
+  private List<BlobSidecar> requestBlobSidecarsByRange(
+      final Eth2Peer peer, final UInt64 from, final UInt64 count)
       throws InterruptedException, ExecutionException, TimeoutException {
     final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
-        peer.requestBlobSidecarsByRange(
-            UInt64.ONE, UInt64.valueOf(10), RpcResponseListener.from(blobSidecars::add)));
+        peer.requestBlobSidecarsByRange(from, count, RpcResponseListener.from(blobSidecars::add)));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     return blobSidecars;
   }

@@ -14,6 +14,9 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,7 +26,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -50,16 +52,15 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 @TestSpecContext(
-    milestone = {SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA},
+    milestone = {BELLATRIX, CAPELLA, DENEB},
     network = Eth2Network.MAINNET)
 class RestBuilderClientTest {
 
@@ -90,15 +91,17 @@ class RestBuilderClientTest {
   private final MockWebServer mockWebServer = new MockWebServer();
 
   private Spec spec;
+  private SpecMilestone milestone;
   private OkHttpRestClient okHttpRestClient;
   private SchemaDefinitionsBellatrix schemaDefinitions;
 
   private RestBuilderClient restBuilderClient;
 
   private String signedValidatorRegistrationsRequest;
-  private String signedBlindedBeaconBlockRequest;
-  private String executionPayloadHeaderResponse;
-  private String unblindedExecutionPayloadResponse;
+  private String signedBlindedBlockContainerRequest;
+
+  private String signedBuilderBidResponse;
+  private String unblindedBuilderPayloadResponse;
 
   @BeforeEach
   void setUp(final SpecContext specContext) throws IOException {
@@ -108,24 +111,17 @@ class RestBuilderClientTest {
     final String endpoint = "http://localhost:" + mockWebServer.getPort();
     okHttpRestClient = new OkHttpRestClient(okHttpClient, endpoint);
 
-    final SpecMilestone milestone = specContext.getSpecMilestone();
+    milestone = specContext.getSpecMilestone();
 
-    if (milestone.equals(SpecMilestone.BELLATRIX)) {
-      this.schemaDefinitions =
-          SchemaDefinitionsBellatrix.required(specContext.getSchemaDefinitions());
-    } else {
-      this.schemaDefinitions =
-          SchemaDefinitionsCapella.required(specContext.getSchemaDefinitions());
-    }
+    schemaDefinitions = SchemaDefinitionsBellatrix.required(specContext.getSchemaDefinitions());
 
     signedValidatorRegistrationsRequest = readResource("builder/signedValidatorRegistrations.json");
     final String milestoneFolder = "builder/" + milestone.toString().toLowerCase();
-    signedBlindedBeaconBlockRequest =
-        readResource(milestoneFolder + "/signedBlindedBeaconBlock.json");
-    executionPayloadHeaderResponse =
-        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
-    unblindedExecutionPayloadResponse =
-        readResource(milestoneFolder + "/unblindedExecutionPayloadResponse.json");
+    signedBlindedBlockContainerRequest =
+        readResource(milestoneFolder + "/signedBlindedBlockContainer.json");
+    signedBuilderBidResponse = readResource(milestoneFolder + "/signedBuilderBid.json");
+    unblindedBuilderPayloadResponse =
+        readResource(milestoneFolder + "/unblindedBuilderPayload.json");
 
     restBuilderClient = new RestBuilderClient(okHttpRestClient, spec, true);
   }
@@ -237,12 +233,12 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
-  void getExecutionPayloadHeader_success_doesNotSetUserAgentHeader() {
+  void getHeader_success_doesNotSetUserAgentHeader() {
 
     restBuilderClient = new RestBuilderClient(okHttpRestClient, spec, false);
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+        new MockResponse().setResponseCode(200).setBody(signedBuilderBidResponse));
 
     assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
@@ -262,10 +258,10 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
-  void getExecutionPayloadHeader_success() {
+  void getHeader_success() {
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+        new MockResponse().setResponseCode(200).setBody(signedBuilderBidResponse));
 
     assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
@@ -282,7 +278,7 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
-  void getExecutionPayloadHeader_noHeaderAvailable() {
+  void getHeader_noHeaderAvailable() {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(204));
 
@@ -299,7 +295,7 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
-  void getExecutionPayloadHeader_failures() {
+  void getHeader_failures() {
 
     final String missingParentHashError =
         "{\"code\":400,\"message\":\"Unknown hash: missing parent hash\"}";
@@ -332,83 +328,81 @@ class RestBuilderClientTest {
   }
 
   @TestTemplate
-  void getExecutionPayloadHeader_wrongFork(final SpecContext specContext) {
+  void getHeader_wrongFork(final SpecContext specContext) {
     specContext.assumeCapellaActive();
 
-    final String milestoneFolder = "builder/" + SpecMilestone.BELLATRIX.toString().toLowerCase();
+    final String milestoneFolder =
+        "builder/" + milestone.getPreviousMilestone().toString().toLowerCase();
 
-    executionPayloadHeaderResponse =
-        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
+    signedBuilderBidResponse = readResource(milestoneFolder + "/signedBuilderBid.json");
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+        new MockResponse().setResponseCode(200).setBody(signedBuilderBidResponse));
 
     assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .failsWithin(WAIT_FOR_CALL_COMPLETION)
         .withThrowableOfType(ExecutionException.class)
         .withRootCauseInstanceOf(MissingRequiredFieldException.class)
-        .withMessageContaining("required fields: (withdrawals_root) were not set");
+        .withMessageMatching(".+required fields: (.+) were not set");
 
     verifyGetRequest(
         "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
   }
 
   @TestTemplate
-  void getExecutionPayloadHeader_wrongVersion(final SpecContext specContext) {
+  void getHeader_wrongVersion(final SpecContext specContext) {
     specContext.assumeCapellaActive();
 
-    final String milestoneFolder =
-        "builder/"
-            + specContext.getSpecMilestone().toString().toLowerCase(Locale.ROOT)
-            + "_wrong_version_responses";
-
-    executionPayloadHeaderResponse =
-        readResource(milestoneFolder + "/executionPayloadHeaderResponse.json");
+    signedBuilderBidResponse =
+        changeResponseVersion(signedBuilderBidResponse, milestone.getPreviousMilestone());
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(executionPayloadHeaderResponse));
+        new MockResponse().setResponseCode(200).setBody(signedBuilderBidResponse));
 
     assertThat(restBuilderClient.getHeader(SLOT, PUB_KEY, PARENT_HASH))
         .failsWithin(WAIT_FOR_CALL_COMPLETION)
         .withThrowableOfType(ExecutionException.class)
         .withRootCauseInstanceOf(IllegalArgumentException.class)
         .withMessageContaining(
-            "java.lang.IllegalArgumentException: Wrong response version: expected CAPELLA, received BELLATRIX");
+            "java.lang.IllegalArgumentException: Wrong response version: expected %s, received %s",
+            milestone, milestone.getPreviousMilestone());
 
     verifyGetRequest(
         "/eth/v1/builder/header/1/" + PARENT_HASH + "/" + PUB_KEY, USER_AGENT_HEADER_ASSERTION);
   }
 
   @TestTemplate
-  void sendSignedBlindedBlock_success() {
+  void getPayload_success() {
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(unblindedExecutionPayloadResponse));
+        new MockResponse().setResponseCode(200).setBody(unblindedBuilderPayloadResponse));
 
-    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
+    final SignedBlindedBlockContainer signedBlindedBlockContainer =
+        createSignedBlindedBlockContainer();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              ExecutionPayload responsePayload = response.getPayload();
-              verifyExecutionPayloadResponse(responsePayload);
+              final BuilderPayload builderPayload = response.getPayload();
+              verifyBuilderPayloadResponse(builderPayload);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
   }
 
   @TestTemplate
-  void sendSignedBlindedBlock_failures() {
+  void getPayload_failures() {
 
     String missingSignatureError =
         "{\"code\":400,\"message\":\"Invalid block: missing signature\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(missingSignatureError));
 
-    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
+    final SignedBlindedBlockContainer signedBlindedBlockContainer =
+        createSignedBlindedBlockContainer();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -416,12 +410,12 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(missingSignatureError);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -429,36 +423,32 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
   }
 
   @TestTemplate
-  void sendSignedBlindedBlock_wrongVersion(final SpecContext specContext) {
+  void getPayload_wrongVersion(final SpecContext specContext) {
     specContext.assumeCapellaActive();
 
-    final String milestoneFolder =
-        "builder/"
-            + specContext.getSpecMilestone().toString().toLowerCase(Locale.ROOT)
-            + "_wrong_version_responses";
-
-    unblindedExecutionPayloadResponse =
-        readResource(milestoneFolder + "/unblindedExecutionPayloadResponse.json");
+    unblindedBuilderPayloadResponse =
+        changeResponseVersion(unblindedBuilderPayloadResponse, milestone.getPreviousMilestone());
 
     mockWebServer.enqueue(
-        new MockResponse().setResponseCode(200).setBody(unblindedExecutionPayloadResponse));
+        new MockResponse().setResponseCode(200).setBody(unblindedBuilderPayloadResponse));
 
-    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
+    final SignedBlindedBlockContainer signedBlindedBlockContainer =
+        createSignedBlindedBlockContainer();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
+    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
               assertThat(response.isSuccess()).isTrue();
-              ExecutionPayload responsePayload = response.getPayload();
-              verifyExecutionPayloadResponse(responsePayload);
+              final BuilderPayload builderPayload = response.getPayload();
+              verifyBuilderPayloadResponse(builderPayload);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
   }
 
   private void verifyGetRequest(final String apiPath) {
@@ -519,33 +509,35 @@ class RestBuilderClientTest {
                 schemaDefinitions.getSignedBuilderBidSchema().getJsonTypeDefinition());
     try {
       final SignedBuilderBid expected =
-          JsonUtil.parse(executionPayloadHeaderResponse, responseTypeDefinition).getData();
+          JsonUtil.parse(signedBuilderBidResponse, responseTypeDefinition).getData();
       assertThat(actual).isEqualTo(expected);
-    } catch (JsonProcessingException ex) {
+    } catch (final JsonProcessingException ex) {
       Assertions.fail(ex);
     }
   }
 
-  private SignedBeaconBlock createSignedBlindedBeaconBlock() {
+  private SignedBlindedBlockContainer createSignedBlindedBlockContainer() {
     try {
       return JsonUtil.parse(
-          signedBlindedBeaconBlockRequest,
-          schemaDefinitions.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition());
-    } catch (JsonProcessingException ex) {
+              signedBlindedBlockContainerRequest,
+              schemaDefinitions.getSignedBlindedBlockContainerSchema().getJsonTypeDefinition())
+          .toBlinded()
+          .orElseThrow();
+    } catch (final JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
     }
   }
 
-  private void verifyExecutionPayloadResponse(final ExecutionPayload actual) {
-    final DeserializableTypeDefinition<? extends BuilderApiResponse<? extends ExecutionPayload>>
+  private void verifyBuilderPayloadResponse(final BuilderPayload actual) {
+    final DeserializableTypeDefinition<? extends BuilderApiResponse<? extends BuilderPayload>>
         responseTypeDefinition =
             BuilderApiResponse.createTypeDefinition(
-                schemaDefinitions.getExecutionPayloadSchema().getJsonTypeDefinition());
+                schemaDefinitions.getBuilderPayloadSchema().getJsonTypeDefinition());
     try {
-      final ExecutionPayload expected =
-          JsonUtil.parse(unblindedExecutionPayloadResponse, responseTypeDefinition).getData();
+      final BuilderPayload expected =
+          JsonUtil.parse(unblindedBuilderPayloadResponse, responseTypeDefinition).getData();
       assertThat(actual).isEqualTo(expected);
-    } catch (JsonProcessingException ex) {
+    } catch (final JsonProcessingException ex) {
       Assertions.fail(ex);
     }
   }
@@ -556,5 +548,9 @@ class RestBuilderClientTest {
     } catch (IOException ex) {
       throw new UncheckedIOException(ex);
     }
+  }
+
+  private static String changeResponseVersion(final String json, final SpecMilestone newVersion) {
+    return json.replaceFirst("(?<=version\":\\s?\")\\w+", newVersion.toString().toLowerCase());
   }
 }

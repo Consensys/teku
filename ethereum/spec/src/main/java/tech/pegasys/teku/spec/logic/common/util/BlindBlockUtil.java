@@ -23,23 +23,24 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 
 public abstract class BlindBlockUtil {
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
-      final SignedBeaconBlock signedBeaconBlock,
+      final SignedBlindedBlockContainer signedBlindedBlockContainer,
       final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
     final SignedBeaconBlockUnblinder beaconBlockUnblinder =
-        createSignedBeaconBlockUnblinder(signedBeaconBlock);
+        createSignedBeaconBlockUnblinder(signedBlindedBlockContainer);
     beaconBlockUnblinderConsumer.accept(beaconBlockUnblinder);
     return beaconBlockUnblinder.unblind();
   }
 
   public SafeFuture<List<SignedBlobSidecar>> unblindSignedBlobSidecars(
-      final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars,
       final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
     final SignedBlobSidecarsUnblinder blobSidecarsUnblinder =
-        createSignedBlobSidecarsUnblinder(blindedBlobSidecars)
+        createSignedBlobSidecarsUnblinder(signedBlindedBlobSidecars)
             .orElseThrow(
                 () ->
                     new IllegalStateException(
@@ -53,7 +54,7 @@ public abstract class BlindBlockUtil {
   }
 
   protected abstract SignedBeaconBlockUnblinder createSignedBeaconBlockUnblinder(
-      final SignedBeaconBlock signedBeaconBlock);
+      final SignedBlindedBlockContainer signedBlindedBlockContainer);
 
   protected abstract Optional<SignedBlobSidecarsUnblinder> createSignedBlobSidecarsUnblinder(
       final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars);

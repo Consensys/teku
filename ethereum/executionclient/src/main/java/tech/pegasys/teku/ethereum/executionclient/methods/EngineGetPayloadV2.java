@@ -71,12 +71,12 @@ public class EngineGetPayloadV2 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                   response.blockValue);
             })
         .thenPeek(
-            payloadAndValue ->
+            getPayloadResponse ->
                 LOG.trace(
                     "Response {}(payloadId={}, slot={}) -> {}",
                     getVersionedName(),
                     executionPayloadContext.getPayloadId(),
                     slot,
-                    payloadAndValue));
+                    getPayloadResponse));
   }
 }

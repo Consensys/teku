@@ -23,8 +23,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 
 public class BlobsBundle {
 
-  public static final BlobsBundle EMPTY_BUNDLE = new BlobsBundle(List.of(), List.of(), List.of());
-
   private final List<KZGCommitment> commitments;
   private final List<KZGProof> proofs;
   private final List<Blob> blobs;
