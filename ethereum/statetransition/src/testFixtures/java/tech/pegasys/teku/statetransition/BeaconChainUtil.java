@@ -56,9 +56,7 @@ import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
-/**
- * @deprecated Prefer ChainBuilder, ChainUpdater, or StorageSystem
- */
+/** @deprecated Prefer ChainBuilder, ChainUpdater, or StorageSystem */
 @Deprecated
 public class BeaconChainUtil {
 
