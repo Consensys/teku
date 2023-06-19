@@ -72,8 +72,8 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
+import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -151,7 +151,7 @@ public class SyncingNodeManager {
             blobSidecarValidator,
             futureBlobSidecars,
             invalidBlobSidecarRoots,
-            eventChannels.getPublisher(StorageQueryChannel.class, asyncRunner));
+            eventChannels.getPublisher(CombinedStorageChannel.class, asyncRunner));
 
     final ForkChoice forkChoice =
         new ForkChoice(
