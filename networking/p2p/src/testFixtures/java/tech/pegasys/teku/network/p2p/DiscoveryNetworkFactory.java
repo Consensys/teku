@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
@@ -104,7 +105,8 @@ public class DiscoveryNetworkFactory {
             new DefaultReputationManager(
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
-                Constants.REPUTATION_MANAGER_CAPACITY);
+                Constants.REPUTATION_MANAGER_CAPACITY,
+                new PeerPools()); // TODO check this
         final PeerSelectionStrategy peerSelectionStrategy =
             new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
         final DiscoveryNetwork<?> network =

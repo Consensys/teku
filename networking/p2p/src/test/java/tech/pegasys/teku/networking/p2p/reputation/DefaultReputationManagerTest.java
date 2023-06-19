@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -42,7 +43,7 @@ class DefaultReputationManagerTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final ReputationManager reputationManager =
-      new DefaultReputationManager(metricsSystem, timeProvider, 5);
+      new DefaultReputationManager(metricsSystem, timeProvider, 5, new PeerPools());
 
   @Test
   public void shouldDisallowConnectionInitiationWhenConnectionHasFailedRecently() {

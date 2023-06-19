@@ -65,6 +65,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -240,7 +241,8 @@ public class Eth2P2PNetworkFactory {
             new DefaultReputationManager(
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
-                Constants.REPUTATION_MANAGER_CAPACITY);
+                Constants.REPUTATION_MANAGER_CAPACITY,
+                new PeerPools()); // TODO check this
         final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
