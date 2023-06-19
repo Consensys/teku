@@ -133,7 +133,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
         assertBlockUnblinded(blindedBlockContents, spec);
 
     // make sure getCachedUnblindedPayload is second in order of method calling
-    InOrder inOrder = Mockito.inOrder(executionLayer);
+    final InOrder inOrder = Mockito.inOrder(executionLayer);
     inOrder.verify(executionLayer).getUnblindedPayload(blindedBlockContents);
     inOrder.verify(executionLayer).getCachedUnblindedPayload(blindedBlockContents.getSlot());
 

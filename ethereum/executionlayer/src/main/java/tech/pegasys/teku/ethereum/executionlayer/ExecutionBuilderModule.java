@@ -465,7 +465,8 @@ public class ExecutionBuilderModule {
   }
 
   private void logReceivedBuilderBlobsBundle(final BlobsBundle blobsBundle) {
-    LOG.info("Received blobs bundle from Builder (Blobs = {})", blobsBundle.getNumberOfBlobs());
+    LOG.info(
+        "Received blobs bundle from Builder (Blobs count = {})", blobsBundle.getNumberOfBlobs());
   }
 
   private void logReceivedBuilderBid(final BuilderBid builderBid) {
@@ -473,7 +474,7 @@ public class ExecutionBuilderModule {
     final String blobsLog =
         builderBid
             .getOptionalBlindedBlobsBundle()
-            .map(blindedBlobsBundle -> ", Blobs = " + blindedBlobsBundle.getNumberOfBlobs())
+            .map(blindedBlobsBundle -> ", Blobs count = " + blindedBlobsBundle.getNumberOfBlobs())
             .orElse("");
     LOG.info(
         "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (ETH) = {}, Gas Limit = {}, Gas Used = {}{})",
