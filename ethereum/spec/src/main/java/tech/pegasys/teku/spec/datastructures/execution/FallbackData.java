@@ -29,6 +29,15 @@ public class FallbackData {
     this.reason = reason;
   }
 
+  public FallbackData(
+      final ExecutionPayload executionPayload,
+      final Optional<BlobsBundle> blobsBundle,
+      final FallbackReason reason) {
+    this.executionPayload = executionPayload;
+    this.blobsBundle = blobsBundle;
+    this.reason = reason;
+  }
+
   public ExecutionPayload getExecutionPayload() {
     return executionPayload;
   }
