@@ -72,7 +72,6 @@ import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.api.CombinedStorageChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -131,13 +130,13 @@ public class SyncingNodeManager {
         poolFactory.createPendingPoolForBlocks(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
-    final FutureItems<SignedBlobSidecar> futureBlobSidecars =
-        FutureItems.create(
-            SignedBlobSidecar::getSlot, mock(SettableLabelledGauge.class), "blob_sidecars");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronized(500);
     final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
         LimitedMap.createSynchronized(500);
 
+    final FutureItems<SignedBlobSidecar> futureBlobSidecars =
+        FutureItems.create(
+            SignedBlobSidecar::getSlot, mock(SettableLabelledGauge.class), "blob_sidecars");
     final BlobSidecarValidator blobSidecarValidator =
         BlobSidecarValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
     final BlobSidecarPoolImpl blobSidecarPool =
@@ -150,8 +149,7 @@ public class SyncingNodeManager {
             blobSidecarPool,
             blobSidecarValidator,
             futureBlobSidecars,
-            invalidBlobSidecarRoots,
-            eventChannels.getPublisher(CombinedStorageChannel.class, asyncRunner));
+            invalidBlobSidecarRoots);
 
     final ForkChoice forkChoice =
         new ForkChoice(
