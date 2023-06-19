@@ -25,13 +25,13 @@ dependencies {
   implementation project(':data:provider')
   implementation project(':data:dataexchange')
   implementation project(':ethereum:signingrecord')
+  implementation project(':infrastructure:bls-keystore')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'commons-io:commons-io'
 
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-  implementation 'tech.pegasys.signers.internal:bls-keystore'
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
 

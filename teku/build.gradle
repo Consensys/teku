@@ -39,6 +39,7 @@ dependencies {
   implementation project(':validator:api')
   implementation project(':validator:client')
   implementation project(':validator:remote')
+  implementation project(':infrastructure:bls-keystore')
 
   api 'com.google.guava:guava'
 
@@ -53,7 +54,6 @@ dependencies {
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.apache.tuweni:tuweni-units'
   implementation 'org.hyperledger.besu.internal:metrics-core'
-  implementation 'tech.pegasys.signers.internal:bls-keystore'
   implementation 'com.fasterxml.jackson.core:jackson-databind'
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
   implementation 'org.xerial.snappy:snappy-java'
