@@ -237,12 +237,13 @@ public class Eth2P2PNetworkFactory {
         this.peerHandler(eth2PeerManager);
 
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
+        final PeerPools peerPools = new PeerPools();
         final ReputationManager reputationManager =
             new DefaultReputationManager(
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
                 Constants.REPUTATION_MANAGER_CAPACITY,
-                new PeerPools()); // TODO check this
+                peerPools);
         final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
@@ -284,6 +285,7 @@ public class Eth2P2PNetworkFactory {
                                 recentChainData::getMilestoneByForkDigest))
                         .gossipTopicFilter(gossipTopicsFilter)
                         .build())
+                .peerPools(peerPools)
                 .peerSelectionStrategy(
                     new Eth2PeerSelectionStrategy(
                         targetPeerRange,
