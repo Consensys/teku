@@ -180,7 +180,7 @@ public class TransitionCaches {
    * (validator pub key) -> (validator index) cache
    *
    * <p>WARNING: May contain mappings for public keys of validators that are not yet registered in
-   * this state (but when registered are guaranteed to be at that index). Check index < total
+   * this state (but when registered are guaranteed to be at that index). Check index &lt; total
    * validator count before looking up the cache
    */
   public ValidatorIndexCache getValidatorIndexCache() {
