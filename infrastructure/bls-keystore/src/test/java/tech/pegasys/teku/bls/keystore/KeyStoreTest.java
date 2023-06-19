@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -239,9 +239,8 @@ class KeyStoreTest {
   }
 
   KeyStoreData loadKeystoreFromString(final String resourceFileName) throws IOException {
-    final Path testKeyStorePath = Path.of(Resources.getResource(resourceFileName).getPath());
     final String keystoreString =
-        Files.readAllLines(testKeyStorePath).stream().collect(Collectors.joining());
+        Resources.toString(Resources.getResource(resourceFileName), StandardCharsets.UTF_8);
     return KeyStoreLoader.loadFromString(keystoreString);
   }
 }
