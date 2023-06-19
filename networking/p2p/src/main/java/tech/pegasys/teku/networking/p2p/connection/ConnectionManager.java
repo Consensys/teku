@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -219,7 +218,7 @@ public class ConnectionManager extends Service {
       return new SafeFuture<>();
     }
     LOG.debug("Connecting to peer {}", peerAddress);
-    peerPools.addPeerToPool(peerAddress.getId(), PeerPool.STATIC);
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.STATIC);
     attemptedConnectionCounter.inc();
     return network
         .connect(peerAddress)

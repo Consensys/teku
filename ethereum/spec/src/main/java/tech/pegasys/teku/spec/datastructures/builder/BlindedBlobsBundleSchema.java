@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -20,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -63,5 +65,27 @@ public class BlindedBlobsBundleSchema
   @Override
   public BlindedBlobsBundle createFromBackingNode(final TreeNode node) {
     return new BlindedBlobsBundle(this, node);
+  }
+
+  public BlindedBlobsBundle createFromExecutionBlobsBundle(
+      final tech.pegasys.teku.spec.datastructures.execution.BlobsBundle blobsBundle) {
+    return new BlindedBlobsBundle(
+        this,
+        getCommitmentsSchema()
+            .createFromElements(
+                blobsBundle.getCommitments().stream()
+                    .map(SszKZGCommitment::new)
+                    .collect(Collectors.toList())),
+        getProofsSchema()
+            .createFromElements(
+                blobsBundle.getProofs().stream()
+                    .map(SszKZGProof::new)
+                    .collect(Collectors.toList())),
+        getBlobRootsSchema()
+            .createFromElements(
+                blobsBundle.getBlobs().stream()
+                    .map(Blob::hashTreeRoot)
+                    .map(SszBytes32::of)
+                    .collect(Collectors.toList())));
   }
 }

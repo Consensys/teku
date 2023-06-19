@@ -2191,18 +2191,20 @@ public final class DataStructureUtil {
         randomSszList(schema.getBlobsSchema(), this::randomBlob, numberOfBlobs));
   }
 
-  public BlindedBlobsBundle randomBlindedBlobsBundle() {
+  public BlindedBlobsBundle randomBlindedBlobsBundle(final int count) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
     final BlindedBlobsBundleSchema schema = schemaDefinitions.getBlindedBlobsBundleSchema();
 
-    final int numberOfBlobs = randomNumberOfBlobsPerBlock();
-
     return new BlindedBlobsBundle(
         schema,
-        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, numberOfBlobs),
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, numberOfBlobs),
-        randomSszList(schema.getBlobRootsSchema(), numberOfBlobs, this::randomSszBytes32));
+        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, count),
+        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, count),
+        randomSszList(schema.getBlobRootsSchema(), count, this::randomSszBytes32));
+  }
+
+  public BlindedBlobsBundle randomBlindedBlobsBundle() {
+    return randomBlindedBlobsBundle(randomNumberOfBlobsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {
