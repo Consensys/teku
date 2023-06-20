@@ -463,7 +463,15 @@ public class Spec {
     final UInt64 epoch = signedExit.getMessage().getEpoch();
     return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyVoluntaryExitSignature(state.getFork(), state, signedExit, signatureVerifier);
+        .verifyVoluntaryExitSignature(
+            state,
+            signedExit,
+            signatureVerifier,
+            getBlockProcessor(state.getSlot())
+                .computeVoluntaryExitDomain(
+                    signedExit.getMessage().getEpoch(),
+                    state.getFork(),
+                    state.getGenesisValidatorsRoot()));
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {

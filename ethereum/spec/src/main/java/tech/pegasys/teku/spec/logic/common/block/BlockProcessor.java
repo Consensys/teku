@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -167,6 +169,8 @@ public interface BlockProcessor {
       throws BlockProcessingException;
 
   Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
+
+  Bytes32 computeVoluntaryExitDomain(UInt64 epoch, Fork fork, Bytes32 getGenesisValidatorsRoot);
 
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();

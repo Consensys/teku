@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -838,12 +839,25 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     for (SignedVoluntaryExit signedExit : exits) {
       boolean exitSignatureValid =
           operationSignatureVerifier.verifyVoluntaryExitSignature(
-              state.getFork(), state, signedExit, signatureVerifier);
+              state,
+              signedExit,
+              signatureVerifier,
+              computeVoluntaryExitDomain(
+                  signedExit.getMessage().getEpoch(),
+                  state.getFork(),
+                  state.getGenesisValidatorsRoot()));
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }
     }
     return BlockValidationResult.SUCCESSFUL;
+  }
+
+  @Override
+  public Bytes32 computeVoluntaryExitDomain(
+      UInt64 epoch, Fork fork, Bytes32 getGenesisValidatorsRoot) {
+    return beaconStateAccessors.getDomain(
+        Domain.VOLUNTARY_EXIT, epoch, fork, getGenesisValidatorsRoot);
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException
