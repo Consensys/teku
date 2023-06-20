@@ -11,6 +11,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+ - The Development option `--Xprogressive-balances-mode` has been removed and will no longer be recognised as a command line option.
 
 ### Additions and Improvements
 

@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
@@ -102,11 +101,9 @@ public class SpecConfigBuilder {
   private Long depositNetworkId;
   private Eth1Address depositContractAddress;
 
-  private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.FULL;
+  private Integer gossipMaxSize;
 
-  private int gossipMaxSize;
-
-  private int maxChunkSize;
+  private Integer maxChunkSize;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -174,7 +171,6 @@ public class SpecConfigBuilder {
             depositChainId,
             depositNetworkId,
             depositContractAddress,
-            progressiveBalancesMode,
             gossipMaxSize,
             maxChunkSize);
 
@@ -545,18 +541,12 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder progressiveBalancesMode(
-      final ProgressiveBalancesMode progressiveBalancesMode) {
-    this.progressiveBalancesMode = progressiveBalancesMode;
-    return this;
-  }
-
-  public SpecConfigBuilder gossipMaxSize(final int gossipMaxSize) {
+  public SpecConfigBuilder gossipMaxSize(final Integer gossipMaxSize) {
     this.gossipMaxSize = gossipMaxSize;
     return this;
   }
 
-  public SpecConfigBuilder maxChunkSize(final int maxChunkSize) {
+  public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
     this.maxChunkSize = maxChunkSize;
     return this;
   }

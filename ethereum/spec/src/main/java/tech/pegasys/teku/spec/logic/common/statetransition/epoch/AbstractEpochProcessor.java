@@ -116,18 +116,6 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processHistoricalSummariesUpdate(state);
     processParticipationUpdates(state);
     processSyncCommitteeUpdates(state);
-
-    if (specConfig.getProgressiveBalancesMode().isUsed()) {
-      progressiveTotalBalances
-          .getTotalBalances(specConfig)
-          .ifPresent(
-              newTotalBalances ->
-                  BeaconStateCache.getTransitionCaches(state)
-                      .getTotalActiveBalance()
-                      .get(
-                          currentEpoch.plus(1),
-                          __ -> newTotalBalances.getCurrentEpochActiveValidators()));
-    }
   }
 
   private void updateTransitionCaches(
@@ -147,8 +135,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final UInt64 currentEpoch = beaconStateAccessors.getCurrentEpoch(preState);
     final Checkpoint currentJustifiedCheckpoint = preState.getCurrentJustifiedCheckpoint();
     final Checkpoint currentFinalizedCheckpoint = preState.getFinalizedCheckpoint();
-    if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))
-        || !specConfig.getProgressiveBalancesMode().isUsed()) {
+    if (currentEpoch.isLessThanOrEqualTo(SpecConfig.GENESIS_EPOCH.plus(1))) {
       return new BlockCheckpoints(
           currentJustifiedCheckpoint,
           currentFinalizedCheckpoint,

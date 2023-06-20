@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BlockFactoryDeneb extends BlockFactoryPhase0 {
@@ -75,14 +77,21 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
             });
   }
 
+  /**
+   * Unblinding blob sidecars after the block in order to use the cached value from the {@link
+   * ExecutionLayerChannel#builderGetPayload( SignedBlockContainer, Function)} call
+   */
   @Override
   public SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
       final SignedBlockContainer maybeBlindedBlockContainer) {
     if (maybeBlindedBlockContainer.isBlinded()) {
       return unblindBlock(maybeBlindedBlockContainer)
-          .thenCombine(
-              unblindBlobSidecars(maybeBlindedBlockContainer),
-              this::createUnblindedSignedBlockContents);
+          .thenCompose(
+              signedBlock ->
+                  unblindBlobSidecars(maybeBlindedBlockContainer)
+                      .thenApply(
+                          signedBlobSidecars ->
+                              createUnblindedSignedBlockContents(signedBlock, signedBlobSidecars)));
     }
     return SafeFuture.completedFuture(maybeBlindedBlockContainer);
   }
