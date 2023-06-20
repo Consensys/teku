@@ -31,7 +31,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   BlobSidecarPool NOOP =
       new BlobSidecarPool() {
         @Override
-        public void onSlot(UInt64 slot) {}
+        public void onSlot(final UInt64 slot) {}
 
         @Override
         public void onNewBlobSidecar(final BlobSidecar blobSidecar) {}
@@ -52,19 +52,19 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         }
 
         @Override
-        public boolean containsBlock(Bytes32 blockRoot) {
+        public boolean containsBlock(final Bytes32 blockRoot) {
           return false;
         }
 
         @Override
         public BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
-            SignedBeaconBlock block) {
+            final SignedBeaconBlock block) {
           throw new UnsupportedOperationException();
         }
 
         @Override
         public Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(
-            SignedBeaconBlock block) {
+            final SignedBeaconBlock block) {
           return Optional.empty();
         }
 
