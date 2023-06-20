@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -166,8 +167,8 @@ class KeyStoreTest {
   }
 
   private KeyStoreData loadKeyStoreFromResource(final String resourcePath) {
-    final Path testKeyStorePath = Path.of(Resources.getResource(resourcePath).getPath());
-    return KeyStoreLoader.loadFromFile(testKeyStorePath);
+    final URL resource = Resources.getResource(KeyStoreTest.class, resourcePath);
+    return KeyStoreLoader.loadFromFile(Path.of(resource.getPath()));
   }
 
   @ParameterizedTest
@@ -240,7 +241,8 @@ class KeyStoreTest {
 
   KeyStoreData loadKeystoreFromString(final String resourceFileName) throws IOException {
     final String keystoreString =
-        Resources.toString(Resources.getResource(resourceFileName), StandardCharsets.UTF_8);
+        Resources.toString(
+            Resources.getResource(KeyStoreTest.class, resourceFileName), StandardCharsets.UTF_8);
     return KeyStoreLoader.loadFromString(keystoreString);
   }
 }
