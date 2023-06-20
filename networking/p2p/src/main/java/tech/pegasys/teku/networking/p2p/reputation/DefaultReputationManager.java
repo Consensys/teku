@@ -99,7 +99,7 @@ public class DefaultReputationManager implements ReputationManager {
   @Override
   public boolean adjustReputation(
       final PeerAddress peerAddress, final ReputationAdjustment effect) {
-    if (peerPools.getPool(peerAddress.getId()).equals(PeerConnectionType.STATIC)) {
+    if (peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC)) {
       return false;
     }
     return getOrCreateReputation(peerAddress)
