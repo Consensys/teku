@@ -25,7 +25,6 @@ import tech.pegasys.teku.cli.converter.UInt256Converter;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 
 public class Eth2NetworkOptions {
 
@@ -154,14 +153,6 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Integer startupTimeoutSeconds;
 
-  @Option(
-      names = {"--Xprogressive-balances-mode"},
-      paramLabel = "<MODE>",
-      description = "Progressive balance optimization mode to use.",
-      arity = "1",
-      hidden = true)
-  private ProgressiveBalancesMode progressiveBalancesMode = null;
-
   // can be removed after investigating the consequences of not doing it anymore
   @Option(
       names = {"--Xfork-choice-update-head-on-block-import-enabled"},
@@ -233,9 +224,6 @@ public class Eth2NetworkOptions {
     }
     if (terminalBlockHashEpochOverride != null) {
       builder.terminalBlockHashEpochOverride(terminalBlockHashEpochOverride);
-    }
-    if (progressiveBalancesMode != null) {
-      builder.progressiveBalancesEnabled(progressiveBalancesMode);
     }
     if (trustedSetup != null) {
       builder.trustedSetup(trustedSetup);

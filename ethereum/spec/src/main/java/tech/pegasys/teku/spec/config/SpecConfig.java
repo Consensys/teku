@@ -142,8 +142,6 @@ public interface SpecConfig {
 
   Eth1Address getDepositContractAddress();
 
-  ProgressiveBalancesMode getProgressiveBalancesMode();
-
   int getGossipMaxSize();
 
   int getMaxChunkSize();

@@ -74,7 +74,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .currentEpoch(ZERO)
             .finalizedCheckpoint(latestState.getFinalizedCheckpoint())
             .justifiedCheckpoint(latestState.getCurrentJustifiedCheckpoint())
-            .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
     addBlocksFromBuilder(chainBuilder, protoArray);
 
@@ -142,7 +141,6 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .currentEpoch(anchor.getEpoch())
             .justifiedCheckpoint(anchorState.getCurrentJustifiedCheckpoint())
             .finalizedCheckpoint(anchorState.getFinalizedCheckpoint())
-            .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
     protoArray.onBlock(
         anchor.getBlockSlot(),

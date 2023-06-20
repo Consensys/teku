@@ -137,9 +137,6 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   @Override
   public void initProgressiveTotalBalancesIfRequired(
       final BeaconState state, final TotalBalances totalBalances) {
-    if (specConfigAltair.getProgressiveBalancesMode().isDisabled()) {
-      return;
-    }
     final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
     if (!(transitionCaches.getProgressiveTotalBalances()
         instanceof ProgressiveTotalBalancesAltair)) {

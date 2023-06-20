@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -53,7 +52,6 @@ public class ProtoArray {
   // The epoch of our initial startup state
   // When starting from genesis, this value is zero (genesis epoch)
   private final UInt64 initialEpoch;
-  private final ProgressiveBalancesMode progressiveBalancesMode;
   private final StatusLogger statusLog;
 
   /**
@@ -81,7 +79,6 @@ public class ProtoArray {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final UInt64 initialEpoch,
-      final ProgressiveBalancesMode progressiveBalancesMode,
       final StatusLogger statusLog) {
     this.spec = spec;
     this.pruneThreshold = pruneThreshold;
@@ -89,7 +86,6 @@ public class ProtoArray {
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.finalizedCheckpoint = finalizedCheckpoint;
     this.initialEpoch = initialEpoch;
-    this.progressiveBalancesMode = progressiveBalancesMode;
     this.statusLog = statusLog;
   }
 
@@ -212,7 +208,7 @@ public class ProtoArray {
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint) {
-    if ((progressiveBalancesMode.isFull() && !this.currentEpoch.equals(currentEpoch))
+    if (!this.currentEpoch.equals(currentEpoch)
         || !this.justifiedCheckpoint.equals(justifiedCheckpoint)
         || !this.finalizedCheckpoint.equals(finalizedCheckpoint)) {
       this.currentEpoch = currentEpoch;
@@ -623,35 +619,30 @@ public class ProtoArray {
       return false;
     }
 
-    if (progressiveBalancesMode.isFull()) {
-      // The voting source should be at the same height as the store's justified checkpoint
-      boolean correctJustified =
-          doesCheckpointEpochMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint);
+    // The voting source should be at the same height as the store's justified checkpoint
+    boolean correctJustified =
+        doesCheckpointEpochMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint);
 
-      // If this is a pulled-up block from the current epoch, also check that the unrealized
-      // justification is higher than the store's justified checkpoint, and the voting source is not
-      // more than two epochs ago.
-      if (!correctJustified
-          && !node.getUnrealizedJustifiedCheckpoint().equals(node.getJustifiedCheckpoint())) {
-        correctJustified =
-            node.getUnrealizedJustifiedCheckpoint()
-                    .getEpoch()
-                    .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch())
-                && node.getJustifiedCheckpoint()
-                    .getEpoch()
-                    .plus(2)
-                    .isGreaterThanOrEqualTo(currentEpoch);
-      }
-
-      final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch());
-      final boolean correctFinalized =
-          node.getFinalizedCheckpoint().getEpoch().equals(initialEpoch)
-              || hasAncestorAtSlot(node, finalizedSlot, finalizedCheckpoint.getRoot());
-      return correctJustified && correctFinalized;
-    } else {
-      return doesCheckpointMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint)
-          && doesCheckpointMatch(node.getFinalizedCheckpoint(), finalizedCheckpoint);
+    // If this is a pulled-up block from the current epoch, also check that the unrealized
+    // justification is higher than the store's justified checkpoint, and the voting source is not
+    // more than two epochs ago.
+    if (!correctJustified
+        && !node.getUnrealizedJustifiedCheckpoint().equals(node.getJustifiedCheckpoint())) {
+      correctJustified =
+          node.getUnrealizedJustifiedCheckpoint()
+                  .getEpoch()
+                  .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch())
+              && node.getJustifiedCheckpoint()
+                  .getEpoch()
+                  .plus(2)
+                  .isGreaterThanOrEqualTo(currentEpoch);
     }
+
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch());
+    final boolean correctFinalized =
+        node.getFinalizedCheckpoint().getEpoch().equals(initialEpoch)
+            || hasAncestorAtSlot(node, finalizedSlot, finalizedCheckpoint.getRoot());
+    return correctJustified && correctFinalized;
   }
 
   /**
@@ -668,12 +659,6 @@ public class ProtoArray {
       node = node.getParentIndex().map(this::getNodeByIndex).orElse(null);
     }
     return node != null && requiredRoot.equals(node.getBlockRoot());
-  }
-
-  private boolean doesCheckpointMatch(final Checkpoint actual, final Checkpoint required) {
-    return required.getEpoch().equals(initialEpoch)
-        || (actual.getEpoch().equals(required.getEpoch())
-            && (actual.getRoot().isZero() || actual.getRoot().equals(required.getRoot())));
   }
 
   private boolean doesCheckpointEpochMatch(final Checkpoint actual, final Checkpoint required) {

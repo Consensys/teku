@@ -22,14 +22,12 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 
 class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
@@ -38,19 +36,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
         .isEqualTo(SpecMilestone.CAPELLA);
-  }
-
-  @Test
-  void shouldEnableProgressiveModeFullByDefault() {
-    final TekuConfiguration config = getTekuConfigurationFromArguments();
-    final Spec spec = config.eth2NetworkConfiguration().getSpec();
-    spec.getForkSchedule()
-        .getSupportedMilestones()
-        .forEach(
-            specMilestone ->
-                assertThat(
-                        spec.forMilestone(specMilestone).getConfig().getProgressiveBalancesMode())
-                    .isEqualTo(ProgressiveBalancesMode.FULL));
   }
 
   @Test
@@ -126,21 +111,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
                 .orElseThrow()
                 .getSafeSlotsToImportOptimistically())
         .isEqualTo(256);
-  }
-
-  @ParameterizedTest
-  @EnumSource(value = ProgressiveBalancesMode.class)
-  void shouldUseCustomProgressiveBalancesMode(final ProgressiveBalancesMode mode) {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments("--Xprogressive-balances-mode", mode.name());
-    final Spec spec = config.eth2NetworkConfiguration().getSpec();
-    spec.getForkSchedule()
-        .getSupportedMilestones()
-        .forEach(
-            specMilestone ->
-                assertThat(
-                        spec.forMilestone(specMilestone).getConfig().getProgressiveBalancesMode())
-                    .isEqualTo(mode));
   }
 
   @ParameterizedTest

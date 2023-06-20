@@ -55,7 +55,7 @@ public class ConnectionManager extends Service {
   private final Counter attemptedConnectionCounter;
   private final Counter successfulConnectionCounter;
   private final Counter failedConnectionCounter;
-  private final PeerPools peerPools = new PeerPools();
+  private final PeerPools peerPools;
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
 
   private volatile long peerConnectedSubscriptionId;
@@ -67,7 +67,8 @@ public class ConnectionManager extends Service {
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
       final PeerSelectionStrategy peerSelectionStrategy,
-      final List<PeerAddress> peerAddresses) {
+      final List<PeerAddress> peerAddresses,
+      final PeerPools peerPools) {
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.staticPeers = new HashSet<>(peerAddresses);
@@ -83,6 +84,7 @@ public class ConnectionManager extends Service {
     attemptedConnectionCounter = connectionAttemptCounter.labels("attempted");
     successfulConnectionCounter = connectionAttemptCounter.labels("successful");
     failedConnectionCounter = connectionAttemptCounter.labels("failed");
+    this.peerPools = peerPools;
   }
 
   @Override
