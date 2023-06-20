@@ -192,7 +192,8 @@ public class ProfilingRun {
       final BlockImportNotifications blockImportNotifications =
           mock(BlockImportNotifications.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create();
-      BeaconChainUtil localChain = BeaconChainUtil.create(recentChainData, validatorKeys, false);
+      BeaconChainUtil localChain =
+          BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
       final MergeTransitionBlockValidator transitionBlockValidator =
