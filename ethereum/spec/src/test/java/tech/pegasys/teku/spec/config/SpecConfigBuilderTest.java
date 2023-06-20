@@ -16,7 +16,9 @@ package tech.pegasys.teku.spec.config;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
@@ -26,6 +28,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.builder.AltairBuilder;
+import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -33,7 +37,8 @@ class SpecConfigBuilderTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
-  private static final Set<Class<?>> BUILDERS = Set.of(SpecConfigBuilder.class);
+  private static final Set<Class<?>> BUILDERS =
+      Set.of(SpecConfigBuilder.class, AltairBuilder.class, BellatrixBuilder.class);
 
   /**
    * Ensures Builders have actually non-primitive setters, because primitive setters are silently
@@ -57,6 +62,23 @@ class SpecConfigBuilderTest {
               .isFalse();
         }
       }
+    }
+  }
+
+  @Test
+  public void shouldHaveOnlyNonPrimitiveFields() {
+    for (Class<?> builderClass : BUILDERS) {
+      Arrays.stream(builderClass.getDeclaredFields())
+          .filter(field -> !Modifier.isFinal(field.getModifiers()))
+          .forEach(
+              field -> {
+                final Class<?> fieldType = field.getType();
+                assertThat(fieldType.isPrimitive())
+                    .withFailMessage(
+                        "Builder [%s] field \"%s %s\" has primitive type",
+                        builderClass.getSimpleName(), fieldType, field.getName())
+                    .isFalse();
+              });
     }
   }
 

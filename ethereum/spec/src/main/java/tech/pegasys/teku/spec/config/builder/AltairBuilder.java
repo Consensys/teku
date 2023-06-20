@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -75,10 +76,13 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   @Override
   public void validate() {
     if (altairForkEpoch == null) {
-      altairForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
+      altairForkEpoch = FAR_FUTURE_EPOCH;
       altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
       inactivityScoreBias = UInt64.valueOf(4);
       inactivityScoreRecoveryRate = UInt64.valueOf(16);
+    }
+    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      fillMissingValues();
     }
     SpecBuilderUtil.validateConstant(
         "inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
