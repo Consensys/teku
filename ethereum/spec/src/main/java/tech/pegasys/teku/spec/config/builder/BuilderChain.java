@@ -13,21 +13,14 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 
-/**
- * Hides some serious abuse of Java's type system so that from the outside we have a type safe chain
- * of {@link ForkConfigBuilder} where each one takes the type of config from the previous and
- * modifies it further. Due to limitations in Java's type system, we can't actually track that so
- * this class exposes a type safe public API but uses a lot of unchecked and raw types internally.
- *
- * @param <In> the specific type of SpecConfig taken as input
- * @param <Out> the specific type of SpecConfig returned as output
- */
+/** TODO */
 @SuppressWarnings("rawtypes")
-class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigBuilder<In, Out> {
+class BuilderChain implements ForkConfigBuilder<SpecConfig, SpecConfig> {
 
   private final ForkConfigBuilder builderToApply;
   private final ForkConfigBuilder tail;
@@ -37,9 +30,8 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
     this.tail = tail;
   }
 
-  public static <In extends SpecConfig, Out extends In> BuilderChain<In, Out> create(
-      final ForkConfigBuilder<In, Out> builder) {
-    return new BuilderChain<>(builder, new NoOpForkBuilder());
+  public static BuilderChain create(final ForkConfigBuilder<?, ?> builder) {
+    return new BuilderChain(builder, new NoOpForkBuilder());
   }
 
   @SuppressWarnings("unchecked")
@@ -48,22 +40,20 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
     if (type.isInstance(builderToApply)) {
       consumer.accept((T) builderToApply);
     } else if (tail instanceof BuilderChain) {
-      ((BuilderChain<?, ?>) tail).withBuilder(type, consumer);
+      ((BuilderChain) tail).withBuilder(type, consumer);
     } else {
       throw new IllegalArgumentException("Unrecognized config type: " + type.getCanonicalName());
     }
   }
 
-  @SuppressWarnings("unchecked")
-  public <NewOut extends Out> BuilderChain<In, NewOut> appendBuilder(
-      final ForkConfigBuilder<Out, NewOut> newBuilder) {
-    final BuilderChain<Out, NewOut> newTail;
+  public BuilderChain appendBuilder(final ForkConfigBuilder<?, ?> newBuilder) {
+    final BuilderChain newTail;
     if (tail instanceof BuilderChain) {
       newTail = ((BuilderChain) tail).appendBuilder(newBuilder);
     } else {
-      newTail = new BuilderChain<>(newBuilder, new NoOpForkBuilder<>());
+      newTail = new BuilderChain(newBuilder, new NoOpForkBuilder<>());
     }
-    return new BuilderChain<>(builderToApply, newTail);
+    return new BuilderChain(builderToApply, newTail);
   }
 
   @SuppressWarnings("unchecked")
@@ -73,11 +63,15 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
     tail.addOverridableItemsToRawConfig(rawConfig);
   }
 
-  @Override
   @SuppressWarnings("unchecked")
-  public Out build(final In specConfig) {
-    final SpecConfig config = builderToApply.build(specConfig);
-    return (Out) tail.build(config);
+  @Override
+  public Optional<SpecConfig> build(final SpecConfig specConfig) {
+    final Optional<SpecConfig> maybeConfig = builderToApply.build(specConfig);
+    if (maybeConfig.isEmpty()) {
+      return Optional.of(specConfig);
+    } else {
+      return tail.build(maybeConfig.get());
+    }
   }
 
   @Override
@@ -89,8 +83,8 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
   private static class NoOpForkBuilder<T extends SpecConfig> implements ForkConfigBuilder<T, T> {
 
     @Override
-    public T build(final T specConfig) {
-      return specConfig;
+    public Optional<T> build(final T specConfig) {
+      return Optional.of(specConfig);
     }
 
     @Override

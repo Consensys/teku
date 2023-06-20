@@ -13,12 +13,13 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 
 interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends ParentType> {
 
-  ForkType build(ParentType specConfig);
+  Optional<ForkType> build(ParentType specConfig);
 
   void validate();
 

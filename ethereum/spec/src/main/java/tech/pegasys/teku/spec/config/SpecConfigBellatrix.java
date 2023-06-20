@@ -32,7 +32,9 @@ public interface SpecConfigBellatrix extends SpecConfigAltair {
   }
 
   @Override
-  Optional<SpecConfigBellatrix> toVersionBellatrix();
+  default Optional<SpecConfigBellatrix> toVersionBellatrix() {
+    return Optional.of(this);
+  }
 
   Bytes4 getBellatrixForkVersion();
 

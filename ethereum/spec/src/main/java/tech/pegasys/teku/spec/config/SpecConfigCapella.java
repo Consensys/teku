@@ -34,7 +34,9 @@ public interface SpecConfigCapella extends SpecConfigBellatrix {
   UInt64 getCapellaForkEpoch();
 
   @Override
-  Optional<SpecConfigCapella> toVersionCapella();
+  default Optional<SpecConfigCapella> toVersionCapella() {
+    return Optional.of(this);
+  }
 
   int getMaxBlsToExecutionChanges();
 

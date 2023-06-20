@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -54,22 +55,26 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   AltairBuilder() {}
 
   @Override
-  public SpecConfigAltair build(final SpecConfig specConfig) {
-    return new SpecConfigAltairImpl(
-        specConfig,
-        inactivityPenaltyQuotientAltair,
-        minSlashingPenaltyQuotientAltair,
-        proportionalSlashingMultiplierAltair,
-        syncCommitteeSize,
-        inactivityScoreBias,
-        inactivityScoreRecoveryRate,
-        epochsPerSyncCommitteePeriod,
-        altairForkVersion,
-        altairForkEpoch,
-        minSyncCommitteeParticipants,
-        updateTimeout,
-        syncCommitteeBranchLength,
-        finalityBranchLength);
+  public Optional<SpecConfigAltair> build(final SpecConfig specConfig) {
+    if (altairForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new SpecConfigAltairImpl(
+            specConfig,
+            inactivityPenaltyQuotientAltair,
+            minSlashingPenaltyQuotientAltair,
+            proportionalSlashingMultiplierAltair,
+            syncCommitteeSize,
+            inactivityScoreBias,
+            inactivityScoreRecoveryRate,
+            epochsPerSyncCommitteePeriod,
+            altairForkVersion,
+            altairForkEpoch,
+            minSyncCommitteeParticipants,
+            updateTimeout,
+            syncCommitteeBranchLength,
+            finalityBranchLength));
   }
 
   @Override
@@ -80,6 +85,10 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
       inactivityScoreBias = UInt64.valueOf(4);
       inactivityScoreRecoveryRate = UInt64.valueOf(16);
     }
+    if (altairForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+      return;
+    }
+
     SpecBuilderUtil.validateConstant(
         "inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
     SpecBuilderUtil.validateConstant(

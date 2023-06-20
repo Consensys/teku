@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.schemas;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,8 +30,15 @@ public class SchemaDefinitionCache {
     this.spec = spec;
   }
 
+  // TODO: Optional
   public SchemaDefinitions getSchemaDefinition(final SpecMilestone milestone) {
-    return schemas.computeIfAbsent(milestone, this::createSchemaDefinition);
+    return schemas.computeIfAbsent(
+        milestone,
+        milestone1 -> {
+          final Optional<SchemaDefinitions> maybeSchemaDefinition =
+              createSchemaDefinition(milestone1);
+          return maybeSchemaDefinition.orElse(null);
+        });
   }
 
   public SchemaDefinitions atSlot(final UInt64 slot) {
@@ -41,19 +49,14 @@ public class SchemaDefinitionCache {
     return spec.atSlot(slot).getMilestone();
   }
 
-  private SchemaDefinitions createSchemaDefinition(final SpecMilestone milestone) {
+  private Optional<SchemaDefinitions> createSchemaDefinition(final SpecMilestone milestone) {
     final SpecVersion specVersion = spec.forMilestone(milestone);
     if (specVersion != null) {
-      return specVersion.getSchemaDefinitions();
+      return Optional.of(specVersion.getSchemaDefinitions());
     }
+    // FIXME: genesis spec config??
     return SpecVersion.create(milestone, spec.getGenesisSpecConfig())
-        .orElseThrow(
-            () ->
-                new IllegalArgumentException(
-                    "Unable to create spec for milestone "
-                        + milestone.name()
-                        + ". Ensure network config includes all required options."))
-        .getSchemaDefinitions();
+        .map(SpecVersion::getSchemaDefinitions);
   }
 
   public List<SpecMilestone> getSupportedMilestones() {

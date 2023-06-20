@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -35,14 +36,18 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   CapellaBuilder() {}
 
   @Override
-  public SpecConfigCapella build(final SpecConfigBellatrix specConfig) {
-    return new SpecConfigCapellaImpl(
-        specConfig,
-        capellaForkVersion,
-        capellaForkEpoch,
-        maxBlsToExecutionChanges,
-        maxWithdrawalsPerPayload,
-        maxValidatorsPerWithdrawalSweep);
+  public Optional<SpecConfigCapella> build(final SpecConfigBellatrix specConfig) {
+    if (capellaForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new SpecConfigCapellaImpl(
+            specConfig,
+            capellaForkVersion,
+            capellaForkEpoch,
+            maxBlsToExecutionChanges,
+            maxWithdrawalsPerPayload,
+            maxValidatorsPerWithdrawalSweep));
   }
 
   public CapellaBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
@@ -86,6 +91,10 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
       capellaForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
       capellaForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+    if (capellaForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+      return;
+    }
+
     SpecBuilderUtil.validateConstant("capellaForkVersion", capellaForkVersion);
     SpecBuilderUtil.validateConstant("capellaForkEpoch", capellaForkEpoch);
     SpecBuilderUtil.validateConstant("maxBlsToExecutionChanges", maxBlsToExecutionChanges);

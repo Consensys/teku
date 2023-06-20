@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -94,10 +93,5 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   @Override
   public int getMaxValidatorsPerWithdrawalSweep() {
     return maxValidatorsPerWithdrawalSweep;
-  }
-
-  @Override
-  public Optional<SpecConfigCapella> toVersionCapella() {
-    return Optional.of(this);
   }
 }

@@ -144,12 +144,16 @@ public interface SpecConfig {
 
   ProgressiveBalancesMode getProgressiveBalancesMode();
 
-  int getGossipMaxSize();
+  Integer getGossipMaxSize();
 
-  int getMaxChunkSize();
+  Integer getMaxChunkSize();
 
   default int getMinEpochsForBlockRequests() {
     return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
+  }
+
+  default Optional<SpecConfigPhase0> toVersionPhase0() {
+    return Optional.empty();
   }
 
   default Optional<SpecConfigAltair> toVersionAltair() {

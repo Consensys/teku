@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.config;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -102,9 +103,9 @@ public class SpecConfigPhase0 implements SpecConfig {
 
   private final ProgressiveBalancesMode progressiveBalancesMode;
 
-  private final int gossipMaxSize;
+  private final Integer gossipMaxSize;
 
-  private final int maxChunkSize;
+  private final Integer maxChunkSize;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -158,8 +159,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
       final ProgressiveBalancesMode progressiveBalancesMode,
-      final int gossipMaxSize,
-      final int maxChunkSize) {
+      final Integer gossipMaxSize,
+      final Integer maxChunkSize) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -214,6 +215,16 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.progressiveBalancesMode = progressiveBalancesMode;
     this.gossipMaxSize = gossipMaxSize;
     this.maxChunkSize = maxChunkSize;
+  }
+
+  public static SpecConfigPhase0 required(SpecConfig specConfig) {
+    return specConfig
+        .toVersionPhase0()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected Phase0 spec config but got: "
+                        + specConfig.getClass().getSimpleName()));
   }
 
   @Override
@@ -497,13 +508,18 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getGossipMaxSize() {
+  public Integer getGossipMaxSize() {
     return gossipMaxSize;
   }
 
   @Override
-  public int getMaxChunkSize() {
+  public Integer getMaxChunkSize() {
     return maxChunkSize;
+  }
+
+  @Override
+  public Optional<SpecConfigPhase0> toVersionPhase0() {
+    return Optional.of(this);
   }
 
   @Override
@@ -549,8 +565,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
-        && gossipMaxSize == that.gossipMaxSize
-        && maxChunkSize == that.maxChunkSize
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -567,6 +581,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
         && Objects.equals(depositContractAddress, that.depositContractAddress)
+        && Objects.equals(gossipMaxSize, that.gossipMaxSize)
+        && Objects.equals(maxChunkSize, that.maxChunkSize)
         && progressiveBalancesMode == that.progressiveBalancesMode;
   }
 

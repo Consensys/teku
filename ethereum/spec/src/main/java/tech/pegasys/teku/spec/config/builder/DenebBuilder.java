@@ -39,16 +39,20 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   DenebBuilder() {}
 
   @Override
-  public SpecConfigDeneb build(final SpecConfigCapella specConfig) {
-    return new SpecConfigDenebImpl(
-        specConfig,
-        denebForkVersion,
-        denebForkEpoch,
-        fieldElementsPerBlob,
-        maxBlobCommitmentsPerBlock,
-        maxBlobsPerBlock,
-        trustedSetupPath,
-        kzgNoop);
+  public Optional<SpecConfigDeneb> build(final SpecConfigCapella specConfig) {
+    if (denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new SpecConfigDenebImpl(
+            specConfig,
+            denebForkVersion,
+            denebForkEpoch,
+            fieldElementsPerBlob,
+            maxBlobCommitmentsPerBlock,
+            maxBlobsPerBlock,
+            trustedSetupPath,
+            kzgNoop));
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
@@ -94,6 +98,10 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
       denebForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
       denebForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+    if (denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH)) {
+      return;
+    }
+
     SpecBuilderUtil.validateConstant("denebForkEpoch", denebForkEpoch);
     SpecBuilderUtil.validateConstant("denebForkVersion", denebForkVersion);
     SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);

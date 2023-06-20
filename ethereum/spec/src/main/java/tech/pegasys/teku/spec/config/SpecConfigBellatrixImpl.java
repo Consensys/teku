@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.config;
 
 import java.util.Objects;
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -146,11 +145,6 @@ public class SpecConfigBellatrixImpl extends DelegatingSpecConfigAltair
   @Override
   public int getSafeSlotsToImportOptimistically() {
     return safeSlotsToImportOptimistically;
-  }
-
-  @Override
-  public Optional<SpecConfigBellatrix> toVersionBellatrix() {
-    return Optional.of(this);
   }
 
   @Override

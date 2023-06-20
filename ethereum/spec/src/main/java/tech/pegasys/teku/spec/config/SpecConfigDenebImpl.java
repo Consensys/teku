@@ -84,11 +84,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
-  public Optional<SpecConfigDeneb> toVersionDeneb() {
-    return Optional.of(this);
-  }
-
-  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;

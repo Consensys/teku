@@ -18,13 +18,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -108,7 +108,7 @@ public class SpecConfigBuilder {
 
   private Integer maxChunkSize;
 
-  private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
+  private final BuilderChain builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
@@ -178,7 +178,8 @@ public class SpecConfigBuilder {
             gossipMaxSize,
             maxChunkSize);
 
-    return builderChain.build(config);
+    Optional<SpecConfig> build = builderChain.build(config);
+    return build.orElseThrow();
   }
 
   private void validate() {

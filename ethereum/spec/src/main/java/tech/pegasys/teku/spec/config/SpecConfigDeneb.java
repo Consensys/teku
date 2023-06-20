@@ -60,5 +60,7 @@ public interface SpecConfigDeneb extends SpecConfigCapella {
   boolean isKZGNoop();
 
   @Override
-  Optional<SpecConfigDeneb> toVersionDeneb();
+  default Optional<SpecConfigDeneb> toVersionDeneb() {
+    return Optional.of(this);
+  }
 }
