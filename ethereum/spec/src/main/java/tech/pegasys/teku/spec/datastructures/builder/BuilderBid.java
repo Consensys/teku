@@ -13,45 +13,19 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
-import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
-public class BuilderBid
-    extends Container3<BuilderBid, ExecutionPayloadHeader, SszUInt256, SszPublicKey>
-    implements SszContainer {
+public interface BuilderBid extends SszContainer {
 
-  protected BuilderBid(BuilderBidSchema schema, TreeNode backingNode) {
-    super(schema, backingNode);
-  }
+  ExecutionPayloadHeader getHeader();
 
-  protected BuilderBid(
-      BuilderBidSchema schema,
-      ExecutionPayloadHeader executionPayloadHeader,
-      SszUInt256 value,
-      SszPublicKey publicKey) {
-    super(schema, executionPayloadHeader, value, publicKey);
-  }
+  Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle();
 
-  public ExecutionPayloadHeader getExecutionPayloadHeader() {
-    return getField0();
-  }
+  UInt256 getValue();
 
-  public UInt256 getValue() {
-    return getField1().get();
-  }
-
-  public BLSPublicKey getPublicKey() {
-    return getField2().getBLSPublicKey();
-  }
-
-  @Override
-  public BuilderBidSchema getSchema() {
-    return (BuilderBidSchema) super.getSchema();
-  }
+  BLSPublicKey getPublicKey();
 }

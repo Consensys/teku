@@ -18,14 +18,20 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
+import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadHeaderSchemaBellatrix;
@@ -43,7 +49,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBlindedBeaconBlockSchema;
   private final ExecutionPayloadHeaderSchemaBellatrix executionPayloadHeaderSchema;
-  private final BuilderBidSchema builderBidSchema;
+  private final BuilderBidSchema<?> builderBidSchema;
   private final SignedBuilderBidSchema signedBuilderBidSchema;
 
   public SchemaDefinitionsBellatrix(final SpecConfigBellatrix specConfig) {
@@ -66,9 +72,7 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockBellatrix");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockBellatrix");
-    this.builderBidSchema =
-        new BuilderBidSchema(
-            "BuilderBidBellatrix", blindedBeaconBlockBodySchema.getExecutionPayloadHeaderSchema());
+    this.builderBidSchema = new BuilderBidSchemaBellatrix(executionPayloadHeaderSchema);
     this.signedBuilderBidSchema =
         new SignedBuilderBidSchema("SignedBuilderBidBellatrix", builderBidSchema);
   }
@@ -118,6 +122,26 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     return signedBlindedBeaconBlockSchema;
   }
 
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
+    return getBeaconBlockSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlindedBlockContainerSchema() {
+    return getBlindedBeaconBlockSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
+    return getSignedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
+    return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {
     return beaconBlockBodySchema.getExecutionPayloadSchema();
   }
@@ -126,12 +150,16 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
     return executionPayloadHeaderSchema;
   }
 
-  public BuilderBidSchema getBuilderBidSchema() {
+  public BuilderBidSchema<?> getBuilderBidSchema() {
     return builderBidSchema;
   }
 
   public SignedBuilderBidSchema getSignedBuilderBidSchema() {
     return signedBuilderBidSchema;
+  }
+
+  public BuilderPayloadSchema<?> getBuilderPayloadSchema() {
+    return getExecutionPayloadSchema();
   }
 
   @Override

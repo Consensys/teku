@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -135,11 +134,6 @@ public class BeaconBlockBodyCapellaImpl
   }
 
   @Override
-  public Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges() {
-    return Optional.of(getBlsToExecutionChanges());
-  }
-
-  @Override
   public SyncAggregate getSyncAggregate() {
     return getField8();
   }
@@ -152,11 +146,6 @@ public class BeaconBlockBodyCapellaImpl
   @Override
   public SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
     return getField10();
-  }
-
-  @Override
-  public Optional<BeaconBlockBodyCapella> toVersionCapella() {
-    return Optional.of(this);
   }
 
   @Override

@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,6 +30,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
@@ -38,6 +40,7 @@ public class ChainUpdater {
   public final ChainBuilder chainBuilder;
   public final BlobSidecarManager blobSidecarManager;
   public final Spec spec;
+  public final BlockOptions blockOptions = BlockOptions.create();
 
   public ChainUpdater(final RecentChainData recentChainData, final ChainBuilder chainBuilder) {
     this.recentChainData = recentChainData;
@@ -145,7 +148,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState finalizeCurrentChain() {
-    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain();
+    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain(Optional.empty());
     newBlocks.forEach(this::saveBlock);
     final SignedBlockAndState newHead = newBlocks.get(newBlocks.size() - 1);
     updateBestBlock(newHead);
@@ -153,7 +156,7 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState finalizeCurrentChainOptimistically() {
-    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain();
+    final List<SignedBlockAndState> newBlocks = chainBuilder.finalizeCurrentChain(Optional.empty());
     newBlocks.forEach(this::saveOptimisticBlock);
     final SignedBlockAndState newHead = newBlocks.get(newBlocks.size() - 1);
     updateBestBlock(newHead);
@@ -233,10 +236,13 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
-    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot);
-    final Optional<List<BlobSidecar>> maybeBlobSidecars =
-        chainBuilder.getBlobSidecars(block.getRoot());
-    saveBlock(block, maybeBlobSidecars);
+    final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot, blockOptions);
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    if (blobSidecars.isEmpty()) {
+      saveBlock(block);
+    } else {
+      saveBlock(block, blobSidecars);
+    }
     return block;
   }
 
@@ -246,6 +252,7 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
+        Collections.emptyList(),
         Optional.empty());
     assertThat(tx.commit()).isCompleted();
     recentChainData
@@ -264,19 +271,27 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
+        Collections.emptyList(),
         Optional.empty());
     assertThat(tx.commit()).isCompleted();
     saveBlockTime(block);
   }
 
+  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
+    saveBlock(block, blobSidecars, block.getSlot());
+  }
+
   public void saveBlock(
-      final SignedBlockAndState block, final Optional<List<BlobSidecar>> blobSidecars) {
+      final SignedBlockAndState block,
+      final List<BlobSidecar> blobSidecars,
+      final UInt64 earliestBlobSidecarSlot) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        blobSidecars);
+        blobSidecars,
+        Optional.of(earliestBlobSidecarSlot));
     assertThat(tx.commit()).isCompleted();
     recentChainData
         .getUpdatableForkChoiceStrategy()

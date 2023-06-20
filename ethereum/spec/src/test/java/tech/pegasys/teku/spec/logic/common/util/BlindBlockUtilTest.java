@@ -24,18 +24,20 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = {SpecMilestone.BELLATRIX, SpecMilestone.DENEB})
+@TestSpecContext(milestone = {SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA, SpecMilestone.DENEB})
 class BlindBlockUtilTest {
 
-  private Spec spec;
+  private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
   private BlindBlockUtil blindBlockUtil;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
-    spec = specContext.getSpec();
+    final Spec spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
     final SpecVersion specVersion = spec.forMilestone(specContext.getSpecMilestone());
     blindBlockUtil = specVersion.getBlindBlockUtil().orElseThrow();
@@ -45,18 +47,26 @@ class BlindBlockUtilTest {
   void shouldBlindAndUnblindBlock() {
     final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
     assertThat(signedBeaconBlock.isBlinded()).isFalse();
-    final SignedBeaconBlock blindSignedBeaconBlock =
+    final SignedBeaconBlock signedBlindedBeaconBlock =
         blindBlockUtil.blindSignedBeaconBlock(signedBeaconBlock);
-    assertThat(blindSignedBeaconBlock.isBlinded()).isTrue();
-    assertThat(blindSignedBeaconBlock.getBodyRoot()).isEqualTo(signedBeaconBlock.getBodyRoot());
-    assertThat(blindSignedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload())
+    assertThat(signedBlindedBeaconBlock.isBlinded()).isTrue();
+    assertThat(signedBlindedBeaconBlock.getBodyRoot()).isEqualTo(signedBeaconBlock.getBodyRoot());
+    assertThat(signedBlindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload())
         .isEmpty();
-    assertThat(blindSignedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader())
+    assertThat(signedBlindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isNotEmpty();
+
+    final SignedBlindedBlockContainer signedBlindedBlockContainer;
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+      signedBlindedBlockContainer =
+          dataStructureUtil.randomSignedBlindedBlockContents(signedBlindedBeaconBlock);
+    } else {
+      signedBlindedBlockContainer = signedBlindedBeaconBlock;
+    }
 
     final SafeFuture<SignedBeaconBlock> signedBeaconBlockSafeFuture =
         blindBlockUtil.unblindSignedBeaconBlock(
-            blindSignedBeaconBlock,
+            signedBlindedBlockContainer,
             unblinder ->
                 unblinder.setExecutionPayloadSupplier(
                     () ->

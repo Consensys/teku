@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetSubscriptions;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeStateUtils;
 
@@ -59,7 +59,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
     publishFailureCounter = publishedSyncCommitteeCounter.labels("failure");
   }
 
-  public void publish(final ValidateableSyncCommitteeMessage message) {
+  public void publish(final ValidatableSyncCommitteeMessage message) {
     if (message.getReceivedSubnetId().isPresent()) {
       // Republish only on the subnet we received it on
       publish(message.getMessage(), message.getReceivedSubnetId().getAsInt());
@@ -95,7 +95,7 @@ public class SyncCommitteeMessageGossipManager implements GossipManager {
   }
 
   private void publish(
-      final ValidateableSyncCommitteeMessage message, final Set<Integer> subnetIds) {
+      final ValidatableSyncCommitteeMessage message, final Set<Integer> subnetIds) {
     subnetIds.forEach(subnetId -> publish(message.getMessage(), subnetId));
   }
 

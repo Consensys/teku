@@ -36,12 +36,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -186,7 +187,8 @@ public class ForkChoiceIntegrationTest {
             storageClient,
             BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
-            transitionBlockValidator);
+            transitionBlockValidator,
+            new StubMetricsSystem());
 
     @SuppressWarnings("ModifiedButNotUsed")
     List<SignedBeaconBlock> blockBuffer = new ArrayList<>();
@@ -276,7 +278,7 @@ public class ForkChoiceIntegrationTest {
 
   private boolean processAttestation(ForkChoice fc, Attestation step) {
     AttestationProcessingResult attestationProcessingResult =
-        fc.onAttestation(ValidateableAttestation.from(SPEC, step)).join();
+        fc.onAttestation(ValidatableAttestation.from(SPEC, step)).join();
     return attestationProcessingResult.isSuccessful();
   }
 

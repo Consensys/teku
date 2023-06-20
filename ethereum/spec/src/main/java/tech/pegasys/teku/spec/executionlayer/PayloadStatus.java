@@ -52,6 +52,15 @@ public class PayloadStatus {
         Optional.empty());
   }
 
+  public static PayloadStatus valid(
+      Optional<Bytes32> latestValidHash, Optional<String> validationError) {
+    return new PayloadStatus(
+        Optional.of(ExecutionPayloadStatus.VALID),
+        latestValidHash,
+        validationError,
+        Optional.empty());
+  }
+
   public static PayloadStatus create(
       ExecutionPayloadStatus status,
       Optional<Bytes32> latestValidHash,

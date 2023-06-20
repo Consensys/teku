@@ -14,8 +14,8 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -33,51 +33,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class MilestoneDependentTypesUtil {
 
-  public static <T extends SszData>
-      SerializableOneOfTypeDefinition<T> getAvailableSchemaDefinitionForAllMilestones(
-          final SchemaDefinitionCache schemaDefinitionCache,
-          final String title,
-          final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
-          final BiPredicate<T, SpecMilestone> predicate) {
-    return getAvailableSchemaDefinitions(
-        schemaDefinitionCache, title, schemaGetter, predicate, List.of(SpecMilestone.values()));
-  }
-
-  public static <T extends SszData>
-      SerializableOneOfTypeDefinition<T> getAvailableSchemaDefinitionUpToMilestone(
-          final SchemaDefinitionCache schemaDefinitionCache,
-          final String title,
-          final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
-          final BiPredicate<T, SpecMilestone> predicate,
-          final SpecMilestone milestone) {
-    return getAvailableSchemaDefinitions(
-        schemaDefinitionCache,
-        title,
-        schemaGetter,
-        predicate,
-        SpecMilestone.getMilestonesUpTo(milestone));
-  }
-
-  private static <T extends SszData>
-      SerializableOneOfTypeDefinition<T> getAvailableSchemaDefinitions(
-          final SchemaDefinitionCache schemaDefinitionCache,
-          final String title,
-          final Function<SchemaDefinitions, Optional<SszSchema<? extends T>>> schemaGetter,
-          final BiPredicate<T, SpecMilestone> predicate,
-          final List<SpecMilestone> milestones) {
-    final SerializableOneOfTypeDefinitionBuilder<T> builder =
-        new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
-    for (SpecMilestone milestoneValue : milestones) {
-      final Optional<SszSchema<? extends T>> schemaDefinition =
-          schemaGetter.apply(schemaDefinitionCache.getSchemaDefinition(milestoneValue));
-      schemaDefinition.ifPresent(
-          sszSchema ->
-              builder.withType(
-                  value -> predicate.test(value, milestoneValue),
-                  sszSchema.getJsonTypeDefinition()));
-    }
-    return builder.build();
-  }
+  private static final Set<SpecMilestone> IGNORED_MILESTONES = Set.of();
 
   public static <T extends SszData>
       SerializableOneOfTypeDefinition<T> getSchemaDefinitionForAllMilestones(
@@ -85,35 +41,43 @@ public class MilestoneDependentTypesUtil {
           final String title,
           final Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter,
           final BiPredicate<T, SpecMilestone> predicate) {
-    return getAvailableSchemaDefinitionForAllMilestones(
-        schemaDefinitionCache, title, schemaGetter.andThen(Optional::of), predicate);
-  }
-
-  public static <T extends SszData>
-      SerializableOneOfTypeDefinition<T> getSchemaDefinitionUpToMilestone(
-          final SchemaDefinitionCache schemaDefinitionCache,
-          final String title,
-          final Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter,
-          final BiPredicate<T, SpecMilestone> predicate,
-          final SpecMilestone milestone) {
-    return getAvailableSchemaDefinitionUpToMilestone(
-        schemaDefinitionCache, title, schemaGetter.andThen(Optional::of), predicate, milestone);
+    final SerializableOneOfTypeDefinitionBuilder<T> builder =
+        new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
+    for (SpecMilestone milestone : SpecMilestone.values()) {
+      if (IGNORED_MILESTONES.contains(milestone)) {
+        continue;
+      }
+      final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
+          schemaGetter
+              .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+              .getJsonTypeDefinition();
+      builder.withType(value -> predicate.test(value, milestone), jsonTypeDefinition);
+    }
+    return builder.build();
   }
 
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
       final String json,
       final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
+    final Optional<UInt64> slot =
+        // SignedBeaconBlock
+        getSlot(json, "message", "slot")
+            // SignedBlockContents
+            .or(() -> getSlot(json, "signed_block", "message", "slot"))
+            // SignedBlindedBlockContents
+            .or(() -> getSlot(json, "signed_blinded_block", "message", "slot"));
+    final SpecMilestone milestone =
+        schemaDefinitionCache.milestoneAtSlot(
+            slot.orElseThrow(() -> new BadRequestException("Could not locate slot in JSON data")));
+    return getSchema
+        .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+        .getJsonTypeDefinition();
+  }
+
+  private static Optional<UInt64> getSlot(final String json, final String... path) {
     try {
-      final Optional<UInt64> slot =
-          JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, "message", "slot");
-      final SpecMilestone milestone =
-          schemaDefinitionCache.milestoneAtSlot(
-              slot.orElseThrow(
-                  () -> new BadRequestException("Could not locate slot in JSON data")));
-      return getSchema
-          .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
-          .getJsonTypeDefinition();
+      return JsonUtil.getAttribute(json, CoreTypes.UINT64_TYPE, path);
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());
     }

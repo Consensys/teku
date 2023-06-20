@@ -19,8 +19,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.SSZ_SNAPPY;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
-import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarIndexTopicName;
+import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
+import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
@@ -33,7 +34,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,8 +53,6 @@ class Eth2GossipTopicFilterTest {
       spec.atEpoch(nextFork.getEpoch())
           .miscHelpers()
           .computeForkDigest(nextFork.getCurrentVersion(), genesisValidatorsRoot);
-  private final int maxBlobsPerBlock =
-      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig()).getMaxBlobsPerBlock();
 
   private final Eth2GossipTopicFilter filter =
       new Eth2GossipTopicFilter(recentChainData, SSZ_SNAPPY, spec);
@@ -106,17 +104,17 @@ class Eth2GossipTopicFilterTest {
   }
 
   @Test
-  void shouldConsiderAllBlobSidecarIndexTopicsRelevant() {
-    for (int i = 0; i < maxBlobsPerBlock; i++) {
-      assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarIndexTopicName(i)))).isTrue();
+  void shouldConsiderAllBlobSidecarSubnetsRelevant() {
+    for (int i = 0; i < BLOB_SIDECAR_SUBNET_COUNT; i++) {
+      assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarSubnetTopicName(i)))).isTrue();
     }
   }
 
   @Test
-  void shouldNotConsiderBlobSidecarWithIncorrectIndexTopicRelevant() {
+  void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
     assertThat(
             filter.isRelevantTopic(
-                getTopicName(getBlobSidecarIndexTopicName(maxBlobsPerBlock + 1))))
+                getTopicName(getBlobSidecarSubnetTopicName(BLOB_SIDECAR_SUBNET_COUNT + 1))))
         .isFalse();
   }
 

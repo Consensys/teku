@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.storage.server;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -110,9 +108,12 @@ public class ChainStorage
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     return SafeFuture.fromRunnable(
-        () -> database.storeFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot));
+        () ->
+            database.storeFinalizedBlocks(
+                finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot));
   }
 
   @Override
@@ -160,18 +161,13 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.fromRunnable(() -> database.storeNoBlobsSlot(slotAndBlockRoot));
-  }
-
-  @Override
   public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
     return SafeFuture.fromRunnable(() -> database.storeBlobSidecar(blobSidecar));
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
-    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slot));
+  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slotAndBlockRoot));
   }
 
   @Override
@@ -220,28 +216,13 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+  public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(
         () -> {
-          try (final Stream<SlotAndBlockRootAndBlobIndex> keyStream =
-              database.streamBlobSidecarKeys(
-                  slotAndBlockRoot.getSlot(), slotAndBlockRoot.getSlot())) {
-            final List<BlobSidecar> blobSidecars = new ArrayList<>();
-            boolean noKeys = true;
-            for (Iterator<SlotAndBlockRootAndBlobIndex> iterator = keyStream.iterator();
-                iterator.hasNext(); ) {
-              noKeys = false;
-              final SlotAndBlockRootAndBlobIndex key = iterator.next();
-              if (!key.isNoBlobsKey()) {
-                blobSidecars.add(database.getBlobSidecar(key).orElseThrow());
-              }
-            }
-            if (noKeys) {
-              return Optional.empty();
-            } else {
-              return Optional.of(blobSidecars);
-            }
+          try (final Stream<BlobSidecar> blobSidecarStream =
+              database.streamBlobSidecars(slotAndBlockRoot)) {
+            return blobSidecarStream.collect(Collectors.toList());
           }
         });
   }
@@ -322,13 +303,15 @@ public class ChainStorage
           final List<SlotAndBlockRootAndBlobIndex> result;
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
-            result =
-                blobSidecars
-                    .filter(key -> !key.isNoBlobsKey())
-                    .limit(limit.longValue())
-                    .collect(Collectors.toList());
+            result = blobSidecars.limit(limit.longValue()).collect(Collectors.toList());
           }
           return result;
         });
+  }
+
+  @Override
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return SafeFuture.of(() -> database.getBlobSidecarKeys(slotAndBlockRoot));
   }
 }

@@ -23,6 +23,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineNewPayloadV3Test {
@@ -75,7 +78,7 @@ class EngineNewPayloadV3Test {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final String errorResponseFromClient = "error!";
 
-    when(executionEngineClient.newPayloadV3(any()))
+    when(executionEngineClient.newPayloadV3(any(), any()))
         .thenReturn(dummyFailedResponse(errorResponseFromClient));
 
     final JsonRpcRequestParams params =
@@ -98,7 +101,7 @@ class EngineNewPayloadV3Test {
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV1))
+    when(executionEngineClient.newPayloadV3(executionPayloadV1, Optional.empty()))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -106,7 +109,7 @@ class EngineNewPayloadV3Test {
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV1));
+    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV1), eq(Optional.empty()));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
@@ -122,7 +125,7 @@ class EngineNewPayloadV3Test {
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV2))
+    when(executionEngineClient.newPayloadV3(executionPayloadV2, Optional.empty()))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -130,31 +133,33 @@ class EngineNewPayloadV3Test {
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV2));
+    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV2), eq(Optional.empty()));
     verifyNoMoreInteractions(executionEngineClient);
   }
 
   @Test
-  public void shouldCallNewPayloadV3WithExecutionPayloadV3WhenInDeneb() {
+  public void shouldCallNewPayloadV3WithExecutionPayloadV3AndBlobVersionedHashesWhenInDeneb() {
     final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
     final DataStructureUtil dataStructureUtilDeneb = new DataStructureUtil(denebSpec);
 
     final ExecutionPayload executionPayload = dataStructureUtilDeneb.randomExecutionPayload();
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtilDeneb.randomVersionedHashes(4);
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     assertThat(executionPayloadV3).isExactlyInstanceOf(ExecutionPayloadV3.class);
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV3))
+    when(executionEngineClient.newPayloadV3(executionPayloadV3, Optional.of(blobVersionedHashes)))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+        new JsonRpcRequestParams.Builder().add(executionPayload).add(blobVersionedHashes).build();
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV3));
+    verify(executionEngineClient)
+        .newPayloadV3(eq(executionPayloadV3), eq(Optional.of(blobVersionedHashes)));
     verifyNoMoreInteractions(executionEngineClient);
   }
 

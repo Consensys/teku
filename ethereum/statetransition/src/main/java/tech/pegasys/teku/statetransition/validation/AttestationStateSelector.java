@@ -19,7 +19,11 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
@@ -35,9 +39,19 @@ public class AttestationStateSelector {
   private final Spec spec;
   private final RecentChainData recentChainData;
 
-  public AttestationStateSelector(final Spec spec, final RecentChainData recentChainData) {
+  private final LabelledMetric<Counter> appliedSelectorRule;
+
+  public AttestationStateSelector(
+      final Spec spec, final RecentChainData recentChainData, MetricsSystem metricsSystem) {
     this.spec = spec;
     this.recentChainData = recentChainData;
+
+    appliedSelectorRule =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.NETWORK,
+            "attestation_state_selector_total",
+            "Counter of the rules applied successfully to find a state against which to validate a gossipped attestation",
+            "rule_applied");
   }
 
   public SafeFuture<Optional<BeaconState>> getStateToValidate(
@@ -49,24 +63,24 @@ public class AttestationStateSelector {
     final ChainHead chainHead = maybeChainHead.get();
 
     final Bytes32 targetBlockRoot = attestationData.getBeaconBlockRoot();
-    final UInt64 attestationSlot = attestationData.getSlot();
     final UInt64 attestationEpoch = attestationData.getTarget().getEpoch();
 
     // If targetBlockRoot is the current chain head, use the chain head
     if (chainHead.getRoot().equals(targetBlockRoot)) {
+      appliedSelectorRule.labels("chain_head_is_target").inc();
       return chainHead
           .getState()
           .thenCompose(state -> resolveStateForAttestation(attestationData, state));
     }
 
-    // If it's a descendant of head and within historic slots, use the chain head
     final UInt64 headEpoch = spec.computeEpochAtSlot(chainHead.getSlot());
-    if (attestationEpoch
-        .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
-        .isGreaterThan(headEpoch)) {
-      if (isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot, attestationSlot)) {
-        return chainHead.getState().thenApply(Optional::of);
-      }
+    final boolean isWithinHistoricalEpochs =
+        attestationEpoch
+            .plus(spec.getSpecConfig(headEpoch).getEpochsPerHistoricalVector())
+            .isGreaterThan(headEpoch);
+    if (isWithinHistoricalEpochs && isAncestorOfChainHead(chainHead.getRoot(), targetBlockRoot)) {
+      appliedSelectorRule.labels("ancestor_of_head").inc();
+      return chainHead.getState().thenApply(Optional::of);
     }
 
     final UInt64 earliestSlot =
@@ -75,17 +89,41 @@ public class AttestationStateSelector {
     // If the target block doesn't descend from finalized the attestation is invalid
     final BeaconState finalizedState = recentChainData.getStore().getLatestFinalized().getState();
     if (finalizedState.getSlot().isGreaterThanOrEqualTo(earliestSlot)) {
+      appliedSelectorRule.labels("attestation_within_lookahead").inc();
       return completedFuture(Optional.of(finalizedState));
     }
 
-    // Otherwise, use the state from the earliest allowed slot.
-    // This maximises the chance that the state we get will be on the canonical fork and so useful
-    // for other requests, and means all attestations for that epoch refer to the same slot,
-    // minimising the number of states we need
     final Optional<UInt64> targetBlockSlot = recentChainData.getSlotForBlockRoot(targetBlockRoot);
     if (targetBlockSlot.isEmpty()) {
       // Block became unknown, so ignore it
+      appliedSelectorRule.labels("block_became_unknown").inc();
       return completedFuture(Optional.empty());
+    }
+
+    // We generally have the chain head states, so attempt to locate which chain head is a
+    // descendent and use that
+    if (isWithinHistoricalEpochs) {
+      // if it's an ancestor of any chain head within historic slots, use that chain head.
+      final Optional<BeaconState> maybeChainHeadData =
+          recentChainData.getChainHeads().stream()
+              .filter(
+                  head ->
+                      isAncestorOfChainHead(head.getRoot(), targetBlockRoot, targetBlockSlot.get()))
+              .findFirst()
+              .flatMap(
+                  protoNodeData -> {
+                    LOG.trace(
+                        "Found chain for target {}, chain head {}",
+                        () -> attestationData.getTarget().getRoot(),
+                        protoNodeData::getStateRoot);
+                    return recentChainData
+                        .getStore()
+                        .getBlockStateIfAvailable(protoNodeData.getRoot());
+                  });
+      if (maybeChainHeadData.isPresent()) {
+        appliedSelectorRule.labels("ancestor_of_fork").inc();
+        return completedFuture(maybeChainHeadData);
+      }
     }
 
     // Check if the attestations head block state is already available in cache and usable
@@ -93,6 +131,13 @@ public class AttestationStateSelector {
       final Optional<BeaconState> maybeState =
           recentChainData.getStore().getBlockStateIfAvailable(targetBlockRoot);
       if (maybeState.isPresent()) {
+        LOG.debug(
+            "Found state in cache for attestationData target {}, source {}, head {} , slot {}",
+            attestationData.getTarget().getRoot(),
+            attestationData.getSource().getRoot(),
+            attestationData.getBeaconBlockRoot(),
+            attestationData.getSlot());
+        appliedSelectorRule.labels("state_in_cache").inc();
         return SafeFuture.completedFuture(maybeState);
       }
     }
@@ -105,6 +150,7 @@ public class AttestationStateSelector {
           attestationData.getSource().getRoot(),
           attestationData.getBeaconBlockRoot(),
           attestationData.getSlot());
+      appliedSelectorRule.labels("justified_more_recent_slot").inc();
       return completedFuture(Optional.empty());
     }
 
@@ -120,6 +166,7 @@ public class AttestationStateSelector {
       if (maybeAncestorRoot.isEmpty()) {
         // The target block has become unknown or doesn't extend from finalized anymore
         // so we can now ignore it.
+        appliedSelectorRule.labels("target_block_now_unknown").inc();
         return completedFuture(Optional.empty());
       }
       requiredCheckpoint =
@@ -132,7 +179,15 @@ public class AttestationStateSelector {
         attestationData.getBeaconBlockRoot(),
         attestationData.getSlot(),
         requiredCheckpoint.getRoot());
+    appliedSelectorRule.labels("retrieve_checkpoint_state").inc();
     return recentChainData.retrieveCheckpointState(requiredCheckpoint);
+  }
+
+  private Boolean isAncestorOfChainHead(final Bytes32 headRoot, final Bytes32 blockRoot) {
+    return recentChainData
+        .getSlotForBlockRoot(blockRoot)
+        .map(blockSlot -> isAncestorOfChainHead(headRoot, blockRoot, blockSlot))
+        .orElse(false);
   }
 
   private Boolean isAncestorOfChainHead(

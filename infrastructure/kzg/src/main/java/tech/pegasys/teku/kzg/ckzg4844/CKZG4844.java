@@ -140,7 +140,7 @@ public final class CKZG4844 implements KZG {
               blobs.size(), kzgCommitments.size(), kzgProofs.size()));
     }
     try {
-      final byte[] blobsBytes = CKZG4844Utils.flattenBytes(blobs);
+      final byte[] blobsBytes = CKZG4844Utils.flattenBlobs(blobs);
       final byte[] commitmentsBytes = CKZG4844Utils.flattenCommitments(kzgCommitments);
       final byte[] proofBytes = CKZG4844Utils.flattenProofs(kzgProofs);
       return CKZG4844JNI.verifyBlobKzgProofBatch(

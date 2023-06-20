@@ -100,7 +100,9 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final long depositNetworkId;
   private final Eth1Address depositContractAddress;
 
-  private final ProgressiveBalancesMode progressiveBalancesMode;
+  private final int gossipMaxSize;
+
+  private final int maxChunkSize;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -153,7 +155,8 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositChainId,
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
-      final ProgressiveBalancesMode progressiveBalancesMode) {
+      final int gossipMaxSize,
+      final int maxChunkSize) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -205,7 +208,8 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
-    this.progressiveBalancesMode = progressiveBalancesMode;
+    this.gossipMaxSize = gossipMaxSize;
+    this.maxChunkSize = maxChunkSize;
   }
 
   @Override
@@ -484,8 +488,13 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public ProgressiveBalancesMode getProgressiveBalancesMode() {
-    return progressiveBalancesMode;
+  public int getGossipMaxSize() {
+    return gossipMaxSize;
+  }
+
+  @Override
+  public int getMaxChunkSize() {
+    return maxChunkSize;
   }
 
   @Override
@@ -531,6 +540,8 @@ public class SpecConfigPhase0 implements SpecConfig {
         && proposerScoreBoost == that.proposerScoreBoost
         && depositChainId == that.depositChainId
         && depositNetworkId == that.depositNetworkId
+        && gossipMaxSize == that.gossipMaxSize
+        && maxChunkSize == that.maxChunkSize
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -546,8 +557,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(depositContractAddress, that.depositContractAddress)
-        && progressiveBalancesMode == that.progressiveBalancesMode;
+        && Objects.equals(depositContractAddress, that.depositContractAddress);
   }
 
   @Override
@@ -603,6 +613,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositChainId,
         depositNetworkId,
         depositContractAddress,
-        progressiveBalancesMode);
+        gossipMaxSize,
+        maxChunkSize);
   }
 }

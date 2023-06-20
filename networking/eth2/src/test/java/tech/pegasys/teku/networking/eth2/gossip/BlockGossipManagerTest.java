@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 public class BlockGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -70,7 +70,7 @@ public class BlockGossipManagerTest {
             gossipEncoding,
             forkInfo,
             processor,
-            GOSSIP_MAX_SIZE);
+            gossipMaxSize);
     blockGossipManager.subscribe();
   }
 

@@ -20,13 +20,16 @@ import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetSyncCommitteeRewards;
+import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszVector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -93,23 +96,8 @@ public class GetSyncCommitteeRewardsIntegrationTest
   }
 
   @Test
-  public void shouldGiveDecentErrorIfNonNumberRequestList() throws IOException {
-    final List<String> requestBody = List.of("asdf");
-    Response response =
-        post(
-            GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
-            jsonProvider.objectToJSON(requestBody));
-
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.body().string())
-        .isEqualTo(
-            "{\"code\":400,\"message\":\"'asdf' is not a valid "
-                + "hex encoded public key or validator index in the committee\"}");
-  }
-
-  @Test
   public void shouldReturnBadRequestWhenOutOfValidatorRange() throws IOException {
-    final List<String> requestBody = List.of("99999999999999");
+    final List<String> requestBody = List.of("9a");
     Response response =
         post(
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
@@ -117,26 +105,28 @@ public class GetSyncCommitteeRewardsIntegrationTest
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string())
-        .isEqualTo(
-            "{\"code\":400,\"message\":\"'99999999999999' is not a valid "
-                + "hex encoded public key or validator index in the committee\"}");
+        .startsWith("{\"code\":400,\"message\":\"'9a' was expected to be a committee index");
   }
 
   @Test
-  public void shouldReturnValueOnlyForValidatorsInCommittee() throws IOException {
-    final List<String> requestBody = List.of("1", "6", "31");
+  @SuppressWarnings("unchecked")
+  public void shouldReturnValueOnlyForValidatorsInCommittee() throws Exception {
+    final List<String> requestBody = List.of("1", "6", "0");
     Response response =
         post(
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
             jsonProvider.objectToJSON(requestBody));
 
-    final SyncCommitteeRewardData data = new SyncCommitteeRewardData(false, false);
-    data.decreaseReward(1, 11180L);
-    data.decreaseReward(6, 0L);
-    final String expectedResponse = serialize(data, GetSyncCommitteeRewards.RESPONSE_TYPE);
+    final Map<String, Object> body = JsonTestUtil.parse(response.body().string());
+    final ArrayList<HashMap<String, String>> data =
+        (ArrayList<HashMap<String, String>>) body.get("data");
+
+    // 0 didn't participate, 1 participated, 6 not in committee
+    assertThat(data.get(0)).isEqualTo(Map.of("validator_index", "0", "reward", "11180"));
+    assertThat(data.get(1)).isEqualTo(Map.of("validator_index", "1", "reward", "-11180"));
+    assertThat(data.get(2)).isEqualTo(Map.of("validator_index", "6", "reward", "0"));
 
     assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.body().string()).isEqualTo(expectedResponse);
   }
 
   @Test

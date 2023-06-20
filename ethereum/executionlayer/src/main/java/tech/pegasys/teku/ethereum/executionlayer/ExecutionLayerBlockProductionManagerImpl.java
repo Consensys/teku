@@ -19,8 +19,9 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -32,13 +33,14 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 
 public class ExecutionLayerBlockProductionManagerImpl
     implements ExecutionLayerBlockProductionManager, SlotEventsChannel {
-  // TODO: Switch to actual builder API
-  protected static final SafeFuture<BlobsBundle> BLOBS_BUNDLE_DUMMY =
-      SafeFuture.completedFuture(BlobsBundle.EMPTY_BUNDLE);
 
   private static final UInt64 EXECUTION_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
+  private static final UInt64 BUILDER_RESULT_CACHE_RETENTION_SLOTS = UInt64.valueOf(2);
 
   private final NavigableMap<UInt64, ExecutionPayloadResult> executionResultCache =
+      new ConcurrentSkipListMap<>();
+
+  private final NavigableMap<UInt64, BuilderPayload> builderResultCache =
       new ConcurrentSkipListMap<>();
 
   private final ExecutionLayerChannel executionLayerChannel;
@@ -52,6 +54,9 @@ public class ExecutionLayerBlockProductionManagerImpl
   public void onSlot(final UInt64 slot) {
     executionResultCache
         .headMap(slot.minusMinZero(EXECUTION_RESULT_CACHE_RETENTION_SLOTS), false)
+        .clear();
+    builderResultCache
+        .headMap(slot.minusMinZero(BUILDER_RESULT_CACHE_RETENTION_SLOTS), false)
         .clear();
   }
 
@@ -75,7 +80,7 @@ public class ExecutionLayerBlockProductionManagerImpl
           new ExecutionPayloadResult(
               context, Optional.of(executionPayloadFuture), Optional.empty(), Optional.empty());
     } else {
-      result = builderGetHeader(context, blockSlotState, false);
+      result = builderGetHeader(context, blockSlotState);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -92,39 +97,45 @@ public class ExecutionLayerBlockProductionManagerImpl
           executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
-      final SafeFuture<BlobsBundle> blobsBundleFuture =
+      final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle);
       result =
           new ExecutionPayloadResult(
               context,
               Optional.of(executionPayloadFuture),
-              Optional.empty(),
-              Optional.of(blobsBundleFuture));
+              Optional.of(blobsBundleFuture),
+              Optional.empty());
     } else {
-      result = builderGetHeader(context, blockSlotState, true);
+      result = builderGetHeader(context, blockSlotState);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> getUnblindedPayload(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    return executionLayerChannel.builderGetPayload(
-        signedBlindedBeaconBlock, this::getCachedPayloadResult);
+  public SafeFuture<BuilderPayload> getUnblindedPayload(
+      final SignedBlockContainer signedBlockContainer) {
+    return executionLayerChannel
+        .builderGetPayload(signedBlockContainer, this::getCachedPayloadResult)
+        .thenPeek(
+            builderPayload ->
+                builderResultCache.put(signedBlockContainer.getSlot(), builderPayload));
+  }
+
+  @Override
+  public Optional<BuilderPayload> getCachedUnblindedPayload(final UInt64 slot) {
+    return Optional.ofNullable(builderResultCache.get(slot));
   }
 
   private ExecutionPayloadResult builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState state,
-      final boolean postDeneb) {
-    final SafeFuture<HeaderWithFallbackData> executionPayloadHeaderFuture =
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+    final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionLayerChannel.builderGetHeader(executionPayloadContext, state);
 
     return new ExecutionPayloadResult(
         executionPayloadContext,
         Optional.empty(),
-        Optional.of(executionPayloadHeaderFuture),
-        postDeneb ? Optional.of(BLOBS_BUNDLE_DUMMY) : Optional.empty());
+        Optional.empty(),
+        Optional.of(headerWithFallbackDataFuture));
   }
 }

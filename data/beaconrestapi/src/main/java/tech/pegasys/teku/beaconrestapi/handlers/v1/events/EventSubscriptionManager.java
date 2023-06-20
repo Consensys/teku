@@ -38,7 +38,7 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -172,7 +172,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     }
   }
 
-  protected void onNewAttestation(final ValidateableAttestation attestation) {
+  protected void onNewAttestation(final ValidatableAttestation attestation) {
     final AttestationEvent attestationEvent = new AttestationEvent(attestation.getAttestation());
     notifySubscribersOfEvent(EventType.attestation, attestationEvent);
   }

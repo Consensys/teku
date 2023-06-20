@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
+import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -24,6 +26,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatus> {
 
@@ -47,8 +50,14 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
   public SafeFuture<PayloadStatus> execute(final JsonRpcRequestParams params) {
     final ExecutionPayload executionPayload =
         params.getRequiredParameter(0, ExecutionPayload.class);
+    final Optional<List<VersionedHash>> blobVersionedHashes =
+        params.getOptionalListParameter(1, VersionedHash.class);
 
-    LOG.trace("Calling {}(executionPayload={})", getVersionedName(), executionPayload);
+    LOG.trace(
+        "Calling {}(executionPayload={}, blobVersionedHashes={})",
+        getVersionedName(),
+        executionPayload,
+        blobVersionedHashes);
     final ExecutionPayloadV1 executionPayloadV1;
     if (executionPayload.toVersionDeneb().isPresent()) {
       executionPayloadV1 = ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
@@ -58,7 +67,7 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
       executionPayloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
     }
     return executionEngineClient
-        .newPayloadV3(executionPayloadV1)
+        .newPayloadV3(executionPayloadV1, blobVersionedHashes)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

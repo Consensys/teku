@@ -227,7 +227,7 @@ class RecentChainDataTest {
                 bestBlock.getStateRoot(),
                 bestBlock.getRoot(),
                 true,
-                false, // Default execution payload so not optimistic
+                true,
                 spec.getBeaconStateUtil(bestBlock.getSlot())
                     .getPreviousDutyDependentRoot(bestBlock.getState()),
                 spec.getBeaconStateUtil(bestBlock.getSlot())
@@ -796,27 +796,41 @@ class RecentChainDataTest {
     final SignedBlockAndState block =
         chainBuilder.generateBlockAtSlot(
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
-    final Optional<List<BlobSidecar>> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    assertThat(blobSidecars).isNotEmpty();
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
-    assertThat(blobSidecars.orElseThrow()).isNotEmpty();
 
-    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecarsFuture =
+    final SafeFuture<List<BlobSidecar>> blobSidecarsFuture =
         recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
     assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
   }
 
   @Test
-  void retrieveBlobSidecars_shouldReturnNoBlobSidecarsWhenNotExists() {
+  void retrieveBlobSidecars_shouldReturnEmptyBlobSidecarsWhenNotExists() {
     initPostGenesis();
 
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(UInt64.valueOf(1));
-    final Optional<List<BlobSidecar>> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
-    assertThat(blobSidecars.orElseThrow()).isEmpty();
+    assertThat(blobSidecars).isEmpty();
 
-    final SafeFuture<Optional<List<BlobSidecar>>> blobSidecarsFuture =
+    final SafeFuture<List<BlobSidecar>> blobSidecarsFuture =
         recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
     assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
+  }
+
+  @Test
+  void saveBlock_shouldNotOverrideEarliestBlobSidecarWithGreaterValue() {
+    initPostGenesis();
+
+    final SignedBlockAndState block1 =
+        chainBuilder.generateBlockAtSlot(
+            UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
+    final List<BlobSidecar> blobSidecars1 = chainBuilder.getBlobSidecars(block1.getRoot());
+    storageSystem.chainUpdater().saveBlock(block1, blobSidecars1, UInt64.valueOf(1));
+    // 0 from genesis
+    assertThat(recentChainData.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValue(Optional.of(UInt64.valueOf(0)));
   }
 
   @Test

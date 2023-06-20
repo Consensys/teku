@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -60,7 +61,12 @@ class LocalSignerTest {
     final SafeFuture<BLSSignature> result = signer.signBlock(block, fork);
     asyncRunner.executeQueuedActions();
 
-    assertThat(result).isCompletedWithValue(expectedSignature);
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 
   @Test
@@ -74,23 +80,64 @@ class LocalSignerTest {
     final SafeFuture<BLSSignature> result = signer.signBlock(block, fork);
     asyncRunner.executeQueuedActions();
 
-    assertThat(result).isCompletedWithValue(expectedSignature);
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 
   @Test
   public void shouldSignBlobSidecar() {
-    final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(10);
+    final UInt64 slot = UInt64.valueOf(10);
+    final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
     final BlobSidecar blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
+        dataStructureUtilDeneb
+            .createRandomBlobSidecarBuilder()
+            .forBlock(block)
+            .index(UInt64.valueOf(2))
+            .build();
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
-                "prASoQPihthrZi42TYEP1qA1LARu5ShDGpqmAH9IggeZYTbdxyboeusgk/k/dWOfEPUKqi9/DYeVPsXlvm1Ei5rN5kcBAvPhvRxYdxrtGLkFp3w6iesEqmGdmyGijVex"));
+                "isqZtIbjo7S257GYVjvWgr1x1kZ3u0nM7XihYpFzfOF0ugIOAmaYy2iTx0scmuNlDVSgMpgBhp+LCMaUWkaCd7qA8+bLK0lgugD9yvT7niq4LbbGwcCzloOPT/HhvB2C"));
 
     final SafeFuture<BLSSignature> result = signer.signBlobSidecar(blobSidecar, fork);
     asyncRunner.executeQueuedActions();
 
-    assertThat(result).isCompletedWithValue(expectedSignature);
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignBlindedBlobSidecar() {
+    final UInt64 slot = UInt64.valueOf(10);
+    final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
+    final BlindedBlobSidecar blindedBlobSidecar =
+        dataStructureUtilDeneb
+            .createRandomBlobSidecarBuilder()
+            .forBlock(block)
+            .index(UInt64.valueOf(2))
+            .buildBlinded();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "isqZtIbjo7S257GYVjvWgr1x1kZ3u0nM7XihYpFzfOF0ugIOAmaYy2iTx0scmuNlDVSgMpgBhp+LCMaUWkaCd7qA8+bLK0lgugD9yvT7niq4LbbGwcCzloOPT/HhvB2C"));
+
+    final SafeFuture<BLSSignature> result = signer.signBlindedBlobSidecar(blindedBlobSidecar, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 
   @Test
@@ -102,7 +149,12 @@ class LocalSignerTest {
     final SafeFuture<BLSSignature> reveal = signer.createRandaoReveal(UInt64.valueOf(7), fork);
     asyncRunner.executeQueuedActions();
 
-    assertThat(reveal).isCompletedWithValue(expectedSignature);
+    assertThat(reveal)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            reveal.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 
   @Test
@@ -116,7 +168,12 @@ class LocalSignerTest {
     final SafeFuture<BLSSignature> result = signer.signAttestationData(attestationData, fork);
     asyncRunner.executeQueuedActions();
 
-    assertThat(result).isCompletedWithValue(expectedSignature);
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 
   @Test
@@ -129,7 +186,12 @@ class LocalSignerTest {
     final SafeFuture<BLSSignature> result = signer.signAggregationSlot(UInt64.valueOf(7), fork);
     asyncRunner.executeQueuedActions();
 
-    assertThat(result).isCompletedWithValue(expectedSignature);
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 
   @Test
@@ -157,7 +219,12 @@ class LocalSignerTest {
     final SafeFuture<BLSSignature> result = signer.signVoluntaryExit(voluntaryExit, fork);
     asyncRunner.executeQueuedActions();
 
-    assertThat(result).isCompletedWithValue(expectedSignature);
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 
   @Test
@@ -172,6 +239,11 @@ class LocalSignerTest {
     final SafeFuture<BLSSignature> result = signer.signValidatorRegistration(validatorRegistration);
     asyncRunner.executeQueuedActions();
 
-    assertThat(result).isCompletedWithValue(expectedSignature);
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
   }
 }

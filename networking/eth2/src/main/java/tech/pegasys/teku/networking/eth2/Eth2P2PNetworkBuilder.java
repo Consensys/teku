@@ -16,8 +16,6 @@ package tech.pegasys.teku.networking.eth2;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE_BELLATRIX;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -50,6 +48,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -62,12 +61,12 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -75,7 +74,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsSupplier;
@@ -97,8 +96,8 @@ public class Eth2P2PNetworkBuilder {
   protected CombinedChainDataClient combinedChainDataClient;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
-  protected OperationProcessor<ValidateableAttestation> gossipedAttestationConsumer;
-  protected OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor;
+  protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
+  protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
   protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
   protected OperationProcessor<ProposerSlashing> gossipedProposerSlashingConsumer;
   protected OperationProcessor<SignedVoluntaryExit> gossipedVoluntaryExitConsumer;
@@ -118,7 +117,7 @@ public class Eth2P2PNetworkBuilder {
   protected Spec spec;
   protected OperationProcessor<SignedContributionAndProof>
       gossipedSignedContributionAndProofProcessor;
-  protected OperationProcessor<ValidateableSyncCommitteeMessage>
+  protected OperationProcessor<ValidatableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected StatusMessageFactory statusMessageFactory;
 
@@ -135,10 +134,7 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final RpcEncoding rpcEncoding =
-        RpcEncoding.createSszSnappyEncoding(
-            spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
-                ? MAX_CHUNK_SIZE_BELLATRIX
-                : MAX_CHUNK_SIZE);
+        RpcEncoding.createSszSnappyEncoding(spec.getGenesisSpecConfig().getMaxChunkSize());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }
@@ -301,8 +297,10 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService) {
+    final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
-        new ReputationManager(metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
+        new DefaultReputationManager(
+            metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
     PreparedGossipMessageFactory defaultMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             combinedChainDataClient.getRecentChainData()::getMilestoneByForkDigest);
@@ -352,6 +350,7 @@ public class Eth2P2PNetworkBuilder {
         .asyncRunner(asyncRunner)
         .kvStore(keyValueStore)
         .p2pNetwork(p2pNetwork)
+        .peerPools(peerPools)
         .peerSelectionStrategy(
             new Eth2PeerSelectionStrategy(
                 targetPeerRange,
@@ -453,14 +452,14 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedAttestationProcessor(
-      final OperationProcessor<ValidateableAttestation> gossipedAttestationProcessor) {
+      final OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor) {
     checkNotNull(gossipedAttestationProcessor);
     this.gossipedAttestationConsumer = gossipedAttestationProcessor;
     return this;
   }
 
   public Eth2P2PNetworkBuilder gossipedAggregateProcessor(
-      final OperationProcessor<ValidateableAttestation> gossipedAggregateProcessor) {
+      final OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor) {
     checkNotNull(gossipedAggregateProcessor);
     this.gossipedAggregateProcessor = gossipedAggregateProcessor;
     return this;
@@ -496,7 +495,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedSyncCommitteeMessageProcessor(
-      final OperationProcessor<ValidateableSyncCommitteeMessage>
+      final OperationProcessor<ValidatableSyncCommitteeMessage>
           gossipedSyncCommitteeMessageProcessor) {
     checkNotNull(gossipedSyncCommitteeMessageProcessor);
     this.gossipedSyncCommitteeMessageProcessor = gossipedSyncCommitteeMessageProcessor;

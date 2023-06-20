@@ -1,13 +1,7 @@
 # Changelog
 
 ## Upcoming Breaking Changes
-- Upgrading source code to Java 17 meaning users will need to upgrade their Java install to at least 17, or use the jdk17 variant of the docker image. 
-- The `/eth/v1/debug/beacon/states/:state_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/debug/beacon/states/:state_id`
-- The `/eth/v1/beacon/blocks/:block_id` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/beacon/blocks/:block_id`
-- The `/eth/v1/validator/blocks/:slot` endpoint has been deprecated in favor of the v2 Altair endpoint `/eth/v2/validator/blocks/:slot`
-- The `/eth/v1/debug/beacon/heads` endpoint has been deprecated in favor of the v2 Bellatrix endpoint `/eth/v2/debug/beacon/heads`
-- The command argument `--Xengine-exchange-capabilities` will be removed, update to use `--engine-exchange-capabilities` if you are using this option.
-- The command argument `--Xdeposit-snapshot-enabled` will be removed, just remove it from commandline/configuration if you use it, updated argument `--deposit-snapshot-enabled` defaults to true now.
+- Upgrading the minimum Java version to Java 17, which means users will need to upgrade their Java installation to at least `Java 17`.  The docker versions relying on `jdk16` will no longer be published, so docker users explicitly referencing the `jdk16` build need to update their package to reference `jdk17`, as tags `develop-jdk16`, `develop-jdk16-arm64`, `latest-jdk16` will no longer be updated.
 
 ## Current Releases
 
@@ -16,8 +10,9 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- The Development option `--Xprogressive-balances-mode` has been removed and will no longer be recognised as a command line option.
+- Network configs updated following Consensus Specs changes. If you run custom network, you will need to add [lines with network parameters](https://github.com/ConsenSys/teku/blob/475986c523b606c6936d7b4207c1da920ad82ea0/ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml#L98-L125) to your custom config. If you are using a remote validator `auto` network feature, you will need to update both Beacon Node and Validator Client.  
 
 ### Additions and Improvements
 
 ### Bug Fixes
-

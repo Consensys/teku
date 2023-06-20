@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.client;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex.NO_BLOBS_INDEX;
 
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -461,6 +460,21 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
+  public boolean isAncestorOfCanonicalHead(final SlotAndBlockRoot slotAndBlockRoot) {
+    final Optional<ChainHead> chainHead = recentChainData.getChainHead();
+    final Optional<ReadOnlyForkChoiceStrategy> forkChoiceStrategy =
+        recentChainData.getForkChoiceStrategy();
+    if (chainHead.isEmpty() || forkChoiceStrategy.isEmpty()) {
+      return false;
+    }
+
+    return forkChoiceStrategy
+        .get()
+        .getAncestor(chainHead.get().getRoot(), slotAndBlockRoot.getSlot())
+        .map(blockRootAtSlot -> blockRootAtSlot.equals(slotAndBlockRoot.getBlockRoot()))
+        .orElse(false);
+  }
+
   /** @return The earliest available block's slot */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return earliestAvailableBlockSlot.get();
@@ -478,17 +492,12 @@ public class CombinedChainDataClient {
             });
   }
 
-  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarEpoch() {
-    return historicalChainData
-        .getEarliestAvailableBlobSidecarSlot()
-        .thenApply(slot -> slot.map(spec::computeEpochAtSlot));
+  public SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot() {
+    return historicalChainData.getEarliestAvailableBlobSidecarSlot();
   }
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
       final Bytes32 blockRoot, final UInt64 index) {
-    if (index.equals(NO_BLOBS_INDEX)) {
-      return SafeFuture.completedFuture(Optional.empty());
-    }
     final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
     if (hotSlotForBlockRoot.isPresent()) {
       return getBlobSidecarByKey(
@@ -518,13 +527,26 @@ public class CombinedChainDataClient {
     return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
   }
 
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return historicalChainData.getBlobSidecarKeys(slotAndBlockRoot);
+  }
+
   private boolean isRecentData(final UInt64 slot) {
     checkNotNull(slot);
     if (recentChainData.isPreGenesis()) {
       return false;
     }
-    final UInt64 finalizedSlot = recentChainData.getStore().getLatestFinalizedBlockSlot();
+    final UInt64 finalizedSlot = getStore().getLatestFinalizedBlockSlot();
     return slot.compareTo(finalizedSlot) >= 0;
+  }
+
+  public Optional<UInt64> getFinalizedBlockSlot() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalizedBlockSlot());
   }
 
   public Optional<SignedBeaconBlock> getFinalizedBlock() {
@@ -547,8 +569,7 @@ public class CombinedChainDataClient {
   }
 
   public Optional<Checkpoint> getJustifiedCheckpoint() {
-    return Optional.ofNullable(recentChainData.getStore())
-        .map(ReadOnlyStore::getJustifiedCheckpoint);
+    return Optional.ofNullable(getStore()).map(ReadOnlyStore::getJustifiedCheckpoint);
   }
 
   public Optional<GenesisData> getGenesisData() {

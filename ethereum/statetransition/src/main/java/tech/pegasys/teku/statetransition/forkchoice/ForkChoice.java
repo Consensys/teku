@@ -16,16 +16,20 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,11 +42,14 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyStore;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -60,7 +67,6 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
@@ -105,7 +111,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
+      final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
+      final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
     this.blobSidecarManager = blobSidecarManager;
@@ -113,7 +120,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.recentChainData = recentChainData;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.transitionBlockValidator = transitionBlockValidator;
-    this.attestationStateSelector = new AttestationStateSelector(spec, recentChainData);
+    this.attestationStateSelector =
+        new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
@@ -131,7 +139,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final RecentChainData recentChainData,
       final BlobSidecarManager blobSidecarManager,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final MergeTransitionBlockValidator transitionBlockValidator) {
+      final MergeTransitionBlockValidator transitionBlockValidator,
+      final MetricsSystem metricsSystem) {
     this(
         spec,
         forkChoiceExecutor,
@@ -141,7 +150,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
-        true);
+        true,
+        metricsSystem);
   }
 
   @Override
@@ -292,9 +302,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final CapturingIndexedAttestationCache indexedAttestationCache =
         IndexedAttestationCache.capturing();
 
-    final KzgCommitmentsProcessor kzgCommitmentsProcessor =
-        KzgCommitmentsProcessor.create(specVersion.miscHelpers());
-
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         blobSidecarManager.createAvailabilityChecker(block);
 
@@ -308,8 +315,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                   block,
                   blockSlotState.get(),
                   indexedAttestationCache,
-                  Optional.of(payloadExecutor),
-                  kzgCommitmentsProcessor);
+                  Optional.of(payloadExecutor));
     } catch (final StateTransitionException e) {
       final BlockImportResult result = BlockImportResult.failedStateTransition(e);
       reportInvalidBlock(block, result);
@@ -409,9 +415,29 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
-    // TODO: replace Optional.empty() with blobSidecars Optional
+
+    final List<BlobSidecar> blobSidecars;
+    if (blobSidecarsAndValidationResult.isNotRequired()) {
+      // Outside availability window or pre-Deneb
+      blobSidecars = Collections.emptyList();
+    } else if (blobSidecarsAndValidationResult.isValid()) {
+      blobSidecars = blobSidecarsAndValidationResult.getBlobSidecars();
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Unexpected attempt to store invalid blob sidecars (%s) for block: %s",
+              blobSidecarsAndValidationResult.getBlobSidecars().size(), block.toLogString()));
+    }
+    final Optional<UInt64> earliestBlobSidecarsSlot =
+        computeEarliestBlobSidecarsSlot(
+            recentChainData.getStore(), blobSidecarsAndValidationResult, block.getMessage());
     forkChoiceUtil.applyBlockToStore(
-        transaction, block, postState, payloadResult.hasNotValidatedStatus(), Optional.empty());
+        transaction,
+        block,
+        postState,
+        payloadResult.hasNotValidatedStatus(),
+        blobSidecars,
+        earliestBlobSidecarsSlot);
 
     if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
@@ -451,6 +477,65 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
+  }
+
+  /**
+   * In order to keep track of DataAvailability Window, we need to compute the earliest slot we can
+   * consider data available for the given block. It needs to take in account possible empty slots
+   * so the actual slot should be parent block slot + 1. Moreover, we need to manage the case in
+   * which the calculated slot is before Deneb activation, so it should never be before the first
+   * deneb slot.
+   *
+   * @param store requires for data availability window calculation
+   * @param blobSidecarsAndValidationResult If it's not required or invalid, we could skip
+   *     calculation
+   * @param block Beacon block
+   * @return the slot we could mark as earliestBlobSidecarsSlot if any, otherwise Optional.empty()
+   */
+  private Optional<UInt64> computeEarliestBlobSidecarsSlot(
+      final ReadOnlyStore store,
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult,
+      final BeaconBlock block) {
+    if (!blobSidecarsAndValidationResult.isValid()) {
+      return Optional.empty();
+    }
+    final UInt64 earliestAffectedSlot =
+        recentChainData
+            .getSlotForBlockRoot(block.getParentRoot())
+            .map(UInt64::increment)
+            .orElse(block.getSlot());
+
+    final Optional<UInt64> maybeEarliestAvailabilityWindowSlotBeforeBlock =
+        getEarliestAvailabilityWindowSlotBeforeBlock(store, block.getSlot());
+
+    return maybeEarliestAvailabilityWindowSlotBeforeBlock.map(
+        earliestAvailabilityWindowSlotBeforeBlock ->
+            earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
+  }
+
+  private Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
+      final ReadOnlyStore store, final UInt64 slot) {
+    final UInt64 currentEpoch = spec.getCurrentEpoch(store);
+    if (!spec.getForkSchedule()
+        .getSpecMilestoneAtEpoch(currentEpoch)
+        .isGreaterThanOrEqualTo(DENEB)) {
+      return Optional.empty();
+    }
+    final UInt64 firstAvailabilityWindowSlot =
+        spec.computeStartSlotAtEpoch(
+                currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS))
+            .max(
+                spec.getForkSchedule()
+                    .streamMilestoneBoundarySlots()
+                    .filter(pair -> pair.getLeft().isGreaterThanOrEqualTo(DENEB))
+                    .findFirst()
+                    .orElseThrow()
+                    .getRight());
+    if (firstAvailabilityWindowSlot.isLessThanOrEqualTo(slot)) {
+      return Optional.of(firstAvailabilityWindowSlot);
+    } else {
+      return Optional.empty();
+    }
   }
 
   private UInt64 getMillisIntoSlot(StoreTransaction transaction, UInt64 millisPerSlot) {
@@ -596,7 +681,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
-      final ValidateableAttestation attestation) {
+      final ValidatableAttestation attestation) {
     return attestationStateSelector
         .getStateToValidate(attestation.getData())
         .thenCompose(
@@ -631,7 +716,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public void applyIndexedAttestations(final List<ValidateableAttestation> attestations) {
+  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
     onForkChoiceThread(
             () -> {
               final VoteUpdater transaction = recentChainData.startVoteUpdate();
@@ -745,7 +830,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     "Attempting to perform fork choice operations before store has been initialized"));
   }
 
-  private IndexedAttestation getIndexedAttestation(final ValidateableAttestation attestation) {
+  private IndexedAttestation getIndexedAttestation(final ValidatableAttestation attestation) {
     return attestation
         .getIndexedAttestation()
         .orElseThrow(

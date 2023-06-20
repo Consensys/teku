@@ -44,7 +44,12 @@ class GetAttestationRewardsTest extends AbstractMigratedBeaconHandlerTest {
 
   {
     IdealAttestationReward idealAttestationReward =
-        new IdealAttestationReward(UInt64.valueOf(1000000000L), 2500L, 5000L, 5000L);
+        new IdealAttestationReward(UInt64.valueOf(1000000000L));
+    {
+      idealAttestationReward.addHead(2500L);
+      idealAttestationReward.addTarget(5000L);
+      idealAttestationReward.addSource(5000L);
+    }
     TotalAttestationReward totalAttestationReward =
         new TotalAttestationReward(0L, 2000L, 2000L, 4000L, Optional.of(UInt64.valueOf(2000L)));
     AttestationRewardsData attestationRewardsData =
@@ -55,7 +60,7 @@ class GetAttestationRewardsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
-    setHandler(new GetAttestationRewards());
+    setHandler(new GetAttestationRewards(chainDataProvider));
   }
 
   @Test

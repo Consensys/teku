@@ -37,7 +37,7 @@ public enum GossipTopicName {
     return "sync_committee_" + subnetId;
   }
 
-  public static String getBlobSidecarIndexTopicName(final int index) {
-    return "blob_sidecar_" + index;
+  public static String getBlobSidecarSubnetTopicName(final int subnetId) {
+    return "blob_sidecar_" + subnetId;
   }
 }

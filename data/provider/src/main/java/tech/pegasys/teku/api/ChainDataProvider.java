@@ -19,16 +19,10 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getVali
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
-import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
-import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -36,6 +30,7 @@ import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -43,15 +38,17 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
+import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.BlockHeadersResponse;
 import tech.pegasys.teku.api.migrated.BlockRewardData;
+import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
-import tech.pegasys.teku.api.response.SszResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.rewards.EpochAttestationRewardsCalculator;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
@@ -59,15 +56,13 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -76,12 +71,9 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
-import tech.pegasys.teku.spec.datastructures.state.Validator;
-import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
+import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -96,19 +88,37 @@ public class ChainDataProvider {
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
   private final SchemaObjectProvider schemaObjectProvider;
-
   private final RecentChainData recentChainData;
+  private final RewardCalculator rewardCalculator;
 
   public ChainDataProvider(
       final Spec spec,
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient) {
+    this(
+        spec,
+        recentChainData,
+        combinedChainDataClient,
+        new BlockSelectorFactory(spec, combinedChainDataClient),
+        new StateSelectorFactory(spec, combinedChainDataClient),
+        new RewardCalculator(spec));
+  }
+
+  @VisibleForTesting
+  ChainDataProvider(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final CombinedChainDataClient combinedChainDataClient,
+      final BlockSelectorFactory blockSelectorFactory,
+      final StateSelectorFactory stateSelectorFactory,
+      final RewardCalculator rewardCalculator) {
     this.spec = spec;
     this.combinedChainDataClient = combinedChainDataClient;
     this.recentChainData = recentChainData;
     this.schemaObjectProvider = new SchemaObjectProvider(spec);
-    this.defaultBlockSelectorFactory = new BlockSelectorFactory(spec, combinedChainDataClient);
-    this.defaultStateSelectorFactory = new StateSelectorFactory(spec, combinedChainDataClient);
+    this.defaultBlockSelectorFactory = blockSelectorFactory;
+    this.defaultStateSelectorFactory = stateSelectorFactory;
+    this.rewardCalculator = rewardCalculator;
   }
 
   public UInt64 getCurrentEpoch(
@@ -211,23 +221,6 @@ public class ChainDataProvider {
         .byBlockRootStateSelector(blockRootParam)
         .getState()
         .thenApply(maybeState -> maybeState.map(ObjectAndMetaData::getData));
-  }
-
-  public SafeFuture<Optional<SszResponse>> getBeaconStateSszByBlockRoot(
-      final String blockRootParam) {
-    return defaultStateSelectorFactory
-        .byBlockRootStateSelector(blockRootParam)
-        .getState()
-        .thenApply(
-            maybeState ->
-                maybeState
-                    .map(ObjectAndMetaData::getData)
-                    .map(
-                        state ->
-                            new SszResponse(
-                                new ByteArrayInputStream(state.sszSerialize().toArrayUnsafe()),
-                                state.hashTreeRoot().toUnprefixedHexString(),
-                                spec.atSlot(state.getSlot()).getMilestone())));
   }
 
   public ForkChoiceData getForkChoiceData() {
@@ -569,247 +562,123 @@ public class ChainDataProvider {
               }
               final BlockAndMetaData blockAndMetaData = result.get();
               final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
-              final SyncCommitteeRewardData data =
-                  new SyncCommitteeRewardData(
-                      blockAndMetaData.isExecutionOptimistic(), blockAndMetaData.isFinalized());
 
               return combinedChainDataClient
                   .getStateByBlockRoot(block.getRoot())
                   .thenApply(
                       maybeState ->
                           maybeState.map(
-                              state -> getSyncCommitteeRewardData(validators, block, data, state)));
+                              state ->
+                                  rewardCalculator.getSyncCommitteeRewardData(
+                                      validators, blockAndMetaData, state)));
             });
-  }
-
-  private SyncCommitteeRewardData getSyncCommitteeRewardData(
-      Set<String> validators,
-      BeaconBlock block,
-      SyncCommitteeRewardData data,
-      tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
-      throw new BadRequestException(
-          "Slot "
-              + block.getSlot()
-              + " is pre altair, and no sync committee information is available");
-    }
-
-    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
-    final SyncCommittee committee =
-        spec.getSyncCommitteeUtil(block.getSlot()).orElseThrow().getSyncCommittee(state, epoch);
-    final List<BLSPublicKey> committeeKeys =
-        committee.getPubkeys().stream().map(SszPublicKey::getBLSPublicKey).collect(toList());
-    final Map<Integer, Integer> committeeIndices =
-        getCommitteeIndices(committeeKeys, validators, state);
-    final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
-    return calculateRewards(committeeIndices, participantReward.longValue(), block, data);
-  }
-
-  @VisibleForTesting
-  protected Map<Integer, Integer> getCommitteeIndices(
-      final List<BLSPublicKey> committeeKeys,
-      final Set<String> validators,
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    if (validators.isEmpty()) {
-      final List<Integer> result =
-          committeeKeys.stream()
-              .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey).stream())
-              .collect(toList());
-
-      return IntStream.range(0, result.size())
-          .boxed()
-          .collect(Collectors.<Integer, Integer, Integer>toMap(Function.identity(), result::get));
-    }
-
-    checkValidatorsList(committeeKeys, validators);
-
-    final Map<Integer, Integer> output = new HashMap<>();
-    for (int i = 0; i < committeeKeys.size(); i++) {
-      final BLSPublicKey key = committeeKeys.get(i);
-      final Optional<Integer> validatorIndex = spec.getValidatorIndex(state, key);
-      if (validatorIndex.isPresent()
-          && (validators.contains(key.toHexString())
-              || validators.contains(validatorIndex.get().toString()))) {
-        output.put(i, validatorIndex.get());
-      }
-    }
-
-    return output;
-  }
-
-  private void checkValidatorsList(List<BLSPublicKey> committeeKeys, Set<String> validators) {
-    final Set<BLSPublicKey> keysSet = new HashSet<>(committeeKeys);
-    for (String v : validators) {
-      final String errorMessage =
-          String.format(
-              "'%s' is not a valid hex encoded public key or validator index in the committee", v);
-
-      if (v.startsWith("0x")) {
-        if (!keysSet.contains(BLSPublicKey.fromHexString(v))) {
-          throw new BadRequestException(errorMessage);
-        }
-      } else {
-        try {
-          final int index = Integer.parseInt(v);
-          if (index < 0 || index >= committeeKeys.size()) {
-            throw new BadRequestException(errorMessage);
-          }
-        } catch (NumberFormatException e) {
-          throw new BadRequestException(errorMessage);
-        }
-      }
-    }
-  }
-
-  @VisibleForTesting
-  protected SyncCommitteeRewardData calculateRewards(
-      final Map<Integer, Integer> committeeIndices,
-      final Long participantReward,
-      final BeaconBlock block,
-      final SyncCommitteeRewardData data) {
-    final Optional<SyncAggregate> aggregate = block.getBody().getOptionalSyncAggregate();
-    if (aggregate.isEmpty()) {
-      return data;
-    }
-
-    committeeIndices.forEach(
-        (i, key) -> {
-          if (aggregate.get().getSyncCommitteeBits().getBit(i)) {
-            data.increaseReward(key, participantReward);
-          } else {
-            data.decreaseReward(key, participantReward);
-          }
-        });
-
-    return data;
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<BlockRewardData>>> getBlockRewardsFromBlockId(
       final String blockId) {
     return getBlockAndMetaData(blockId)
         .thenCompose(
-            result -> {
-              if (result.isEmpty() || result.get().getData().getBeaconBlock().isEmpty()) {
+            maybeBlockAndMetadata -> {
+              if (maybeBlockAndMetadata.isEmpty()
+                  || maybeBlockAndMetadata.get().getData().getBeaconBlock().isEmpty()) {
                 return SafeFuture.completedFuture(Optional.empty());
               }
-              final BlockAndMetaData blockAndMetaData = result.get();
+              final BlockAndMetaData blockAndMetaData = maybeBlockAndMetadata.get();
               final BeaconBlock block = blockAndMetaData.getData().getBeaconBlock().get();
 
               return combinedChainDataClient
-                  .getStateByBlockRoot(block.getRoot())
+                  .getStateAtSlotExact(block.getSlot().decrement())
                   .thenApply(
                       maybeState ->
-                          maybeState.map(state -> getBlockRewardData(blockAndMetaData, state)));
+                          maybeState.map(
+                              state ->
+                                  rewardCalculator.getBlockRewardData(blockAndMetaData, state)));
             });
   }
 
-  @VisibleForTesting
-  protected ObjectAndMetaData<BlockRewardData> getBlockRewardData(
-      final BlockAndMetaData blockAndMetaData,
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    final BeaconBlock block = blockAndMetaData.getData().getMessage();
-    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+  public SafeFuture<Optional<GetAttestationRewardsResponse>> calculateAttestationRewardsAtEpoch(
+      final UInt64 epoch, final List<String> validatorsPubKeys) {
+    final UInt64 slot;
+    try {
+      slot = findSlotAtEndOfNextEpoch(epoch);
+    } catch (final ArithmeticException e) {
+      final UInt64 availableEpoch = findLatestAvailableEpochForRewardCalculation().orElseThrow();
       throw new BadRequestException(
-          "Slot "
-              + block.getSlot()
-              + " is pre altair, and no sync committee information is available");
+          "Invalid epoch range. Latest available epoch for reward calculation is "
+              + availableEpoch);
     }
 
-    final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);
-    final long proposerReward =
-        participantReward
-            .times(PROPOSER_WEIGHT)
-            .dividedBy(WEIGHT_DENOMINATOR.minus(PROPOSER_WEIGHT))
-            .longValue();
-    return blockAndMetaData.map(__ -> calculateBlockRewards(proposerReward, block, state));
-  }
-
-  private BlockRewardData calculateBlockRewards(
-      final long proposerReward,
-      final BeaconBlock block,
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    final SyncAggregate aggregate = block.getBody().getOptionalSyncAggregate().orElseThrow();
-
-    final UInt64 proposerIndex = block.getProposerIndex();
-    final long attestationsBlockRewards = calculateAttestationRewards();
-    final long syncAggregateBlockRewards =
-        calculateProposerSyncAggregateBlockRewards(proposerReward, aggregate);
-    final long proposerSlashingsBlockRewards = calculateProposerSlashingsRewards(block, state);
-    final long attesterSlashingsBlockRewards = calculateAttesterSlashingsRewards(block, state);
-
-    return new BlockRewardData(
-        proposerIndex,
-        attestationsBlockRewards,
-        syncAggregateBlockRewards,
-        proposerSlashingsBlockRewards,
-        attesterSlashingsBlockRewards);
-  }
-
-  @VisibleForTesting
-  protected long calculateProposerSyncAggregateBlockRewards(
-      long proposerReward, SyncAggregate aggregate) {
-    final SszBitvector syncCommitteeBits = aggregate.getSyncCommitteeBits();
-    return proposerReward * syncCommitteeBits.getBitCount();
-  }
-
-  @VisibleForTesting
-  protected long calculateProposerSlashingsRewards(
-      final BeaconBlock beaconBlock,
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    final SszList<ProposerSlashing> proposerSlashings =
-        beaconBlock.getBody().getProposerSlashings();
-
-    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
-    final SpecConfig specConfig = spec.getSpecConfig(epoch);
-
-    long proposerSlashingsRewards = 0;
-    for (ProposerSlashing slashing : proposerSlashings) {
-      final int slashedIndex = slashing.getHeader1().getMessage().getProposerIndex().intValue();
-      proposerSlashingsRewards =
-          calculateSlashingRewards(specConfig, state, slashedIndex, proposerSlashingsRewards);
+    if (!spec.atEpoch(epoch).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      throw new BadRequestException(
+          "Can't calculate attestation rewards for for epoch " + epoch + " pre Altair");
     }
 
-    return proposerSlashingsRewards;
+    return getBlockAndMetaData(slot.toString())
+        .thenCompose(
+            maybeBlockAndMetadata -> {
+              if (maybeBlockAndMetadata.isEmpty()
+                  || maybeBlockAndMetadata.get().getData().getBeaconBlock().isEmpty()) {
+                return SafeFuture.completedFuture(Optional.empty());
+              }
+
+              final BlockAndMetaData blockAndMetaData = maybeBlockAndMetadata.get();
+
+              return defaultStateSelectorFactory
+                  .forSlot(slot)
+                  .getState()
+                  .thenApply(
+                      maybeState -> {
+                        final StateAndMetaData stateAndMetadata =
+                            maybeState.orElseThrow(
+                                () -> {
+                                  final String availableEpochString =
+                                      findLatestAvailableEpochForRewardCalculation()
+                                          .map(UInt64::toString)
+                                          .orElse("<unknown>");
+                                  return new BadRequestException(
+                                      "Invalid epoch range. Latest available epoch for reward calculation is "
+                                          + availableEpochString);
+                                });
+
+                        final AttestationRewardsData attestationRewardsData =
+                            new EpochAttestationRewardsCalculator(
+                                    spec.atSlot(slot),
+                                    stateAndMetadata.getData(),
+                                    validatorsPubKeys)
+                                .calculate();
+
+                        return Optional.of(
+                            new GetAttestationRewardsResponse(
+                                blockAndMetaData.isExecutionOptimistic(),
+                                blockAndMetaData.isFinalized(),
+                                attestationRewardsData));
+                      });
+            });
   }
 
-  @VisibleForTesting
-  protected long calculateAttesterSlashingsRewards(
-      final BeaconBlock beaconBlock,
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state) {
-    final SszList<AttesterSlashing> attesterSlashings =
-        beaconBlock.getBody().getAttesterSlashings();
+  private UInt64 findSlotAtEndOfNextEpoch(final UInt64 epoch) {
+    /*
+     We need to fetch the state corresponding to the slot at the end of the next epoch because attestations can
+     be included up to the end of the next epoch of the slot they are attesting to.
 
-    final UInt64 epoch = spec.computeEpochAtSlot(state.getSlot());
-    final SpecConfig specConfig = spec.getSpecConfig(epoch);
-
-    long attesterSlashingsRewards = 0;
-    for (AttesterSlashing slashing : attesterSlashings) {
-      for (final UInt64 index : slashing.getIntersectingValidatorIndices()) {
-        attesterSlashingsRewards =
-            calculateSlashingRewards(specConfig, state, index.intValue(), attesterSlashingsRewards);
-      }
-    }
-
-    return attesterSlashingsRewards;
+     Example: if user is requests rewards for epoch 10, we find the slot at the start of epoch 12 and
+     subtract 1 to get the end slot of epoch 11.
+    */
+    return spec.computeStartSlotAtEpoch(epoch.plus(2)).minus(1);
   }
 
-  private long calculateSlashingRewards(
-      final SpecConfig specConfig,
-      final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState state,
-      final int slashedIndex,
-      final long currentRewards) {
-    final Validator validator = state.getValidators().get(slashedIndex);
-    final UInt64 whistleblowerReward =
-        validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
-    final UInt64 proposerReward =
-        whistleblowerReward.dividedBy(specConfig.getProposerRewardQuotient());
-    final UInt64 rewardsAdditions = proposerReward.plus(whistleblowerReward.minus(proposerReward));
-    return currentRewards + rewardsAdditions.longValue();
-  }
-
-  @VisibleForTesting
-  protected long calculateAttestationRewards() {
-    return 0L;
+  private Optional<UInt64> findLatestAvailableEpochForRewardCalculation() {
+    final int minEpochInterval = 2;
+    return recentChainData
+        .getCurrentEpoch()
+        .flatMap(
+            epoch -> {
+              if (epoch.isGreaterThanOrEqualTo(minEpochInterval)) {
+                return Optional.of(epoch.minus(minEpochInterval));
+              } else {
+                return Optional.empty();
+              }
+            });
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
@@ -887,6 +756,35 @@ public class ChainDataProvider {
 
   public SpecMilestone getMilestoneAtHead() {
     return spec.atSlot(recentChainData.getHeadSlot()).getMilestone();
+  }
+
+  public SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> blobSidecarKeys =
+        combinedChainDataClient.getBlobSidecarKeys(slotAndBlockRoot);
+    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> filteredKeysFuture =
+        blobSidecarKeys.thenApply(
+            blobKeys ->
+                blobKeys.stream()
+                    .filter(
+                        blobKey -> {
+                          if (indices.isEmpty()) {
+                            return true;
+                          } else {
+                            return indices.contains(blobKey.getBlobIndex());
+                          }
+                        })
+                    .collect(toList()));
+    return filteredKeysFuture
+        .thenCompose(
+            keys -> {
+              final Stream<SafeFuture<Optional<BlobSidecar>>> maybeBlobSidecarsFutures =
+                  keys.stream().map(combinedChainDataClient::getBlobSidecarByKey);
+              return SafeFuture.collectAll(maybeBlobSidecarsFutures);
+            })
+        .thenApply(
+            maybeBlobSidecarsList ->
+                maybeBlobSidecarsList.stream().flatMap(Optional::stream).collect(toList()));
   }
 
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(

@@ -18,12 +18,16 @@ import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECA
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSortedMap;
 import java.nio.channels.ClosedChannelException;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
+import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -34,6 +38,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -120,19 +125,41 @@ public class BlobSidecarsByRangeMessageHandler
     totalBlobSidecarsRequestedCounter.inc(requestedCount.longValue());
 
     combinedChainDataClient
-        .getEarliestAvailableBlobSidecarEpoch()
+        .getEarliestAvailableBlobSidecarSlot()
         .thenCompose(
-            earliestAvailableEpoch -> {
+            earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              if (checkRequestInMinEpochsRange(requestEpoch)
-                  && !checkBlobSidecarsAreAvailable(earliestAvailableEpoch, requestEpoch)) {
+              if (checkRequestInBlobServeRange(requestEpoch)
+                  && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlot)) {
                 return SafeFuture.failedFuture(
-                    new RpcException.ResourceUnavailableException(
-                        "Requested blob sidecars are not available."));
+                    new ResourceUnavailableException("Requested blob sidecars are not available."));
               }
-              final BlobSidecarsByRangeMessageHandler.RequestState initialState =
-                  new BlobSidecarsByRangeMessageHandler.RequestState(
-                      callback, maxRequestBlobSidecars, startSlot, endSlot);
+
+              UInt64 finalizedSlot =
+                  combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
+
+              final SortedMap<UInt64, Bytes32> canonicalHotRoots;
+              if (endSlot.isGreaterThan(finalizedSlot)) {
+                final UInt64 hotSlotsCount = endSlot.minus(startSlot).increment();
+
+                canonicalHotRoots =
+                    combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
+
+                // refresh finalized slot to avoid race condition that can occur if we finalize just
+                // before getting hot canonical roots
+                finalizedSlot = combinedChainDataClient.getFinalizedBlockSlot().orElse(UInt64.ZERO);
+              } else {
+                canonicalHotRoots = ImmutableSortedMap.of();
+              }
+
+              final RequestState initialState =
+                  new RequestState(
+                      callback,
+                      maxRequestBlobSidecars,
+                      startSlot,
+                      endSlot,
+                      canonicalHotRoots,
+                      finalizedSlot);
               if (initialState.isComplete()) {
                 return SafeFuture.completedFuture(initialState);
               }
@@ -148,13 +175,13 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   private boolean checkBlobSidecarsAreAvailable(
-      final Optional<UInt64> earliestAvailableSidecarEpoch, final UInt64 requestEpoch) {
-    return earliestAvailableSidecarEpoch
-        .map(earliestEpoch -> earliestEpoch.isLessThanOrEqualTo(requestEpoch))
+      final Optional<UInt64> earliestAvailableSidecarSlot, final UInt64 requestSlot) {
+    return earliestAvailableSidecarSlot
+        .map(earliestSlot -> earliestSlot.isLessThanOrEqualTo(requestSlot))
         .orElse(false);
   }
 
-  private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {
+  private boolean checkRequestInBlobServeRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     final UInt64 minEpochForBlobSidecars =
         denebForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS));
@@ -187,7 +214,7 @@ public class BlobSidecarsByRangeMessageHandler
     } else {
       if (rootCause instanceof StreamClosedException
           || rootCause instanceof ClosedChannelException) {
-        LOG.trace("Stream closed while sending requested blobs sidecars", error);
+        LOG.trace("Stream closed while sending requested blob sidecars", error);
       } else {
         LOG.error("Failed to process blob sidecars request", error);
       }
@@ -203,18 +230,27 @@ public class BlobSidecarsByRangeMessageHandler
     private final UInt64 maxRequestBlobSidecars;
     private final UInt64 startSlot;
     private final UInt64 endSlot;
+    private final UInt64 finalizedSlot;
+    private final Map<UInt64, Bytes32> canonicalHotRoots;
 
-    private Optional<Iterator<SlotAndBlockRootAndBlobIndex>> iterator = Optional.empty();
+    // since our storage stores hot and finalized blobs on the same "table", this iterator can span
+    // over hot and finalized blobs
+    private Optional<Iterator<SlotAndBlockRootAndBlobIndex>> blobSidecarKeysIterator =
+        Optional.empty();
 
     RequestState(
         final ResponseCallback<BlobSidecar> callback,
         final UInt64 maxRequestBlobSidecars,
         final UInt64 startSlot,
-        final UInt64 endSlot) {
+        final UInt64 endSlot,
+        final Map<UInt64, Bytes32> canonicalHotRoots,
+        final UInt64 finalizedSlot) {
       this.callback = callback;
       this.maxRequestBlobSidecars = maxRequestBlobSidecars;
       this.startSlot = startSlot;
       this.endSlot = endSlot;
+      this.finalizedSlot = finalizedSlot;
+      this.canonicalHotRoots = canonicalHotRoots;
     }
 
     SafeFuture<Void> sendBlobSidecar(final BlobSidecar blobSidecar) {
@@ -222,31 +258,51 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     SafeFuture<Optional<BlobSidecar>> loadNextBlobSidecar() {
-      if (iterator.isEmpty()) {
+      if (blobSidecarKeysIterator.isEmpty()) {
         return combinedChainDataClient
             .getBlobSidecarKeys(startSlot, endSlot, maxRequestBlobSidecars)
             .thenCompose(
                 list -> {
-                  iterator = Optional.of(list.iterator());
-                  return getNextElement(iterator.get());
+                  blobSidecarKeysIterator = Optional.of(list.iterator());
+                  return getNextBlobSidecar(blobSidecarKeysIterator.get());
                 });
       } else {
-        return getNextElement(iterator.get());
+        return getNextBlobSidecar(blobSidecarKeysIterator.get());
       }
     }
 
-    private SafeFuture<Optional<BlobSidecar>> getNextElement(
-        final Iterator<SlotAndBlockRootAndBlobIndex> iterator) {
-      if (iterator.hasNext()) {
-        return combinedChainDataClient.getBlobSidecarByKey(iterator.next());
-      } else {
-        return SafeFuture.completedFuture(Optional.empty());
+    private SafeFuture<Optional<BlobSidecar>> getNextBlobSidecar(
+        final Iterator<SlotAndBlockRootAndBlobIndex> blobSidecarKeysIterator) {
+      if (blobSidecarKeysIterator.hasNext()) {
+        final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex =
+            blobSidecarKeysIterator.next();
+
+        if (finalizedSlot.isGreaterThanOrEqualTo(slotAndBlockRootAndBlobIndex.getSlot())) {
+          return combinedChainDataClient.getBlobSidecarByKey(slotAndBlockRootAndBlobIndex);
+        }
+
+        // not finalized, let's check if it is on canonical chain
+        if (isCanonicalHotBlobSidecar(slotAndBlockRootAndBlobIndex)) {
+          return combinedChainDataClient.getBlobSidecarByKey(slotAndBlockRootAndBlobIndex);
+        }
+
+        // non-canonical, try next one
+        return getNextBlobSidecar(blobSidecarKeysIterator);
       }
+
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+
+    private boolean isCanonicalHotBlobSidecar(
+        final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex) {
+      return Optional.ofNullable(canonicalHotRoots.get(slotAndBlockRootAndBlobIndex.getSlot()))
+          .map(blockRoot -> blockRoot.equals(slotAndBlockRootAndBlobIndex.getBlockRoot()))
+          .orElse(false);
     }
 
     boolean isComplete() {
       return endSlot.isLessThan(startSlot)
-          || iterator.map(iterator -> !iterator.hasNext()).orElse(false);
+          || blobSidecarKeysIterator.map(iterator -> !iterator.hasNext()).orElse(false);
     }
   }
 }

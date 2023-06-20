@@ -14,26 +14,17 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.config.SpecConfigDeneb.BLOB_TX_TYPE;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
-import com.google.common.io.ByteSource;
-import com.google.common.io.Resources;
-import java.io.IOException;
-import java.util.List;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 class MiscHelpersDenebTest {
 
-  private static final String SIGNED_BLOB_TX_LOCATION = "signed_blob_transaction.ssz";
   private static final VersionedHash VERSIONED_HASH =
       VersionedHash.create(
           VERSIONED_HASH_VERSION_KZG,
@@ -51,26 +42,5 @@ class MiscHelpersDenebTest {
             KZGCommitment.fromHexString(
                 "0x85d1edf1ee88f68260e750abb2c766398ad1125d4e94e1de04034075ccbd2bb79c5689b952ef15374fd03ca2b2475371"));
     assertThat(actual).isEqualTo(VERSIONED_HASH);
-  }
-
-  @Test
-  public void txPeekBlobVersionedHashes() throws IOException {
-    final Bytes sszTx = loadData(SIGNED_BLOB_TX_LOCATION);
-    assertThat(sszTx.get(0)).isEqualTo(BLOB_TX_TYPE.get(0));
-    final TransactionSchema transactionSchema =
-        new TransactionSchema(spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow());
-    final Transaction blobTx = transactionSchema.sszDeserialize(sszTx);
-    List<VersionedHash> versionedHashes = miscHelpersDeneb.txPeekBlobVersionedHashes(blobTx);
-    assertThat(versionedHashes.size()).isEqualTo(5);
-    assertThat(
-            versionedHashes.stream().allMatch(hash -> hash.isVersion(VERSIONED_HASH_VERSION_KZG)))
-        .isTrue();
-    assertThat(versionedHashes.stream().allMatch(hash -> hash.equals(VERSIONED_HASH))).isTrue();
-  }
-
-  private Bytes loadData(final String location) throws IOException {
-    final ByteSource binaryData =
-        Resources.asByteSource(Resources.getResource(MiscHelpersDenebTest.class, location));
-    return Bytes.wrap(binaryData.read());
   }
 }

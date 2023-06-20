@@ -48,6 +48,7 @@ import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -304,24 +305,45 @@ public class KvStoreDatabase implements Database {
 
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, List<BlobSidecar>> finalizedBlobSidecarsBySlot) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
           block -> {
             updater.addFinalizedBlock(block);
             // If there is no slot in BlobSidecar's map it means we are pre-Deneb or not in
             // availability period
-            if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlot())) {
+            if (!finalizedBlobSidecarsBySlot.containsKey(block.getSlotAndBlockRoot())) {
               return;
             }
-            final List<BlobSidecar> blobSidecars = finalizedBlobSidecarsBySlot.get(block.getSlot());
-            if (blobSidecars.isEmpty()) {
-              updater.addNoBlobsSlot(block.getSlotAndBlockRoot());
-            } else {
-              blobSidecars.forEach(updater::addBlobSidecar);
-            }
+            finalizedBlobSidecarsBySlot
+                .get(block.getSlotAndBlockRoot())
+                .forEach(updater::addBlobSidecar);
           });
+
+      needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecar)
+          .ifPresent(updater::setEarliestBlobSidecarSlot);
       updater.commit();
+    }
+  }
+
+  private Optional<UInt64> needToUpdateEarliestBlobSidecarSlot(
+      final Optional<UInt64> maybeNewEarliestBlobSidecarSlot) {
+    // New value is absent - not updating
+    if (maybeNewEarliestBlobSidecarSlot.isEmpty()) {
+      return Optional.empty();
+    }
+    // New value is present, value from DB is absent - updating
+    final Optional<UInt64> maybeEarliestFinalizedBlockSlotDb = dao.getEarliestFinalizedBlockSlot();
+    if (maybeEarliestFinalizedBlockSlotDb.isEmpty()) {
+      return maybeNewEarliestBlobSidecarSlot;
+    }
+    // New value is smaller than value from DB - updating
+    final UInt64 newEarliestBlobSidecarSlot = maybeNewEarliestBlobSidecarSlot.get();
+    if (newEarliestBlobSidecarSlot.isLessThan(maybeEarliestFinalizedBlockSlotDb.get())) {
+      return maybeNewEarliestBlobSidecarSlot;
+    } else {
+      return Optional.empty();
     }
   }
 
@@ -461,15 +483,15 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeInitialAnchor(final AnchorPoint anchor) {
+  public void storeInitialAnchor(final AnchorPoint initialAnchor) {
     try (final CombinedUpdater updater = combinedUpdater()) {
       // We should only have a single block / state / checkpoint at anchorpoint initialization
-      final Checkpoint anchorCheckpoint = anchor.getCheckpoint();
+      final Checkpoint anchorCheckpoint = initialAnchor.getCheckpoint();
       final Bytes32 anchorRoot = anchorCheckpoint.getRoot();
-      final BeaconState anchorState = anchor.getState();
-      final Optional<SignedBeaconBlock> anchorBlock = anchor.getSignedBeaconBlock();
+      final BeaconState anchorState = initialAnchor.getState();
+      final Optional<SignedBeaconBlock> anchorBlock = initialAnchor.getSignedBeaconBlock();
 
-      updater.setAnchor(anchor.getCheckpoint());
+      updater.setAnchor(initialAnchor.getCheckpoint());
       updater.setGenesisTime(anchorState.getGenesisTime());
       updater.setJustifiedCheckpoint(anchorCheckpoint);
       updater.setBestJustifiedCheckpoint(anchorCheckpoint);
@@ -485,6 +507,12 @@ public class KvStoreDatabase implements Database {
           });
 
       putFinalizedState(updater, anchorRoot, anchorState);
+      if (initialAnchor.isGenesis()
+          && spec.atSlot(initialAnchor.getSlot())
+              .getMilestone()
+              .isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
+        updater.setEarliestBlobSidecarSlot(initialAnchor.getSlot());
+      }
 
       updater.commit();
     }
@@ -516,7 +544,8 @@ public class KvStoreDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     if (blocks.isEmpty()) {
       return;
     }
@@ -541,7 +570,7 @@ public class KvStoreDatabase implements Database {
       expectedRoot = block.getParentRoot();
     }
 
-    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot);
+    storeFinalizedBlocksToDao(blocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
   }
 
   @Override
@@ -766,27 +795,15 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      updater.addNoBlobsSlot(slotAndBlockRoot);
-      updater.commit();
-    }
-  }
-
-  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-    if (key.isNoBlobsKey()) {
-      return Optional.empty();
-    }
     final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
 
   @Override
-  public void removeBlobSidecars(final UInt64 slot) {
-    try (final FinalizedUpdater updater = finalizedUpdater();
-        final Stream<SlotAndBlockRootAndBlobIndex> keyStream = streamBlobSidecarKeys(slot, slot)) {
-      keyStream.forEach(updater::removeBlobSidecar);
+  public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      getBlobSidecarKeys(slotAndBlockRoot).forEach(updater::removeBlobSidecar);
       updater.commit();
     }
   }
@@ -798,18 +815,21 @@ public class KvStoreDatabase implements Database {
         final FinalizedUpdater updater = finalizedUpdater()) {
       int remaining = pruneLimit;
       int pruned = 0;
+      Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
       for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
           it.hasNext(); ) {
         --remaining;
         final boolean finished = remaining < 0;
         final SlotAndBlockRootAndBlobIndex key = it.next();
         // Before we finish we should check that there are no BlobSidecars left in the same slot
-        if (finished && (key.isNoBlobsKey() || key.getBlobIndex().equals(ZERO))) {
+        if (finished && key.getBlobIndex().equals(ZERO)) {
           break;
         }
         updater.removeBlobSidecar(key);
+        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
         ++pruned;
       }
+      earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
       updater.commit();
 
       // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
@@ -822,6 +842,19 @@ public class KvStoreDatabase implements Database {
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobSidecarKeys(startSlot, endSlot);
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return dao.streamBlobSidecars(slotAndBlockRoot)
+        .map(payload -> spec.deserializeBlobSidecar(payload, slotAndBlockRoot.getSlot()));
+  }
+
+  @Override
+  public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return dao.getBlobSidecarKeys(slotAndBlockRoot);
   }
 
   @Override
@@ -878,7 +911,8 @@ public class KvStoreDatabase implements Database {
             update.getOptimisticTransitionBlockRoot());
 
     if (update.isBlobSidecarsEnabled()) {
-      updateBlobSidecars(update.getFinalizedBlocks(), update.getDeletedHotBlocks());
+      removeNonCanonicalBlobSidecars(
+          update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
     }
 
     LOG.trace("Applying hot updates");
@@ -903,8 +937,10 @@ public class KvStoreDatabase implements Database {
 
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
-      updater.addHotBlobSidecars(update.getHotBlobSidecars());
-
+      if (update.isBlobSidecarsEnabled()) {
+        updater.addHotBlobSidecars(update.getHotBlobSidecars());
+        update.getEarliestBlobSidecarSlot().ifPresent(this::updateEarliestBlobSidecarSlotIfNeeded);
+      }
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
@@ -918,6 +954,15 @@ public class KvStoreDatabase implements Database {
     DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
+  }
+
+  private void updateEarliestBlobSidecarSlotIfNeeded(final UInt64 earliestBlobSidecarSlot) {
+    if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
+      try (final FinalizedUpdater finalizedUpdater = finalizedUpdater()) {
+        finalizedUpdater.setEarliestBlobSidecarSlot(earliestBlobSidecarSlot);
+        finalizedUpdater.commit();
+      }
+    }
   }
 
   private Optional<SlotAndExecutionPayloadSummary> updateFinalizedData(
@@ -962,24 +1007,24 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  private void updateBlobSidecars(
-      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
-      final Map<Bytes32, UInt64> deletedHotBlocks) {
+  private void removeNonCanonicalBlobSidecars(
+      final Map<Bytes32, UInt64> deletedHotBlocks,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
-      final Set<Bytes32> finalizedBlockRoots = finalizedBlocks.keySet();
-      LOG.trace("Removing blob sidecars for deleted hot blocks");
-      List<UInt64> dropSlots =
+      LOG.trace("Removing blob sidecars for non-canonical blocks");
+      final Set<SlotAndBlockRoot> nonCanonicalBlocks =
           deletedHotBlocks.entrySet().stream()
-              .filter(entry -> !finalizedBlockRoots.contains(entry.getKey()))
-              .map(Map.Entry::getValue)
-              .collect(Collectors.toList());
-      for (final UInt64 slot : dropSlots) {
-        try (final Stream<SlotAndBlockRootAndBlobIndex> slotAndBlockRootAndBlobIndexStream =
-            dao.streamBlobSidecarKeys(slot, slot)) {
-          slotAndBlockRootAndBlobIndexStream.forEach(updater::removeBlobSidecar);
-        }
+              .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
+              .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
+              .collect(Collectors.toSet());
+      for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+        dao.getBlobSidecarKeys(slotAndBlockRoot)
+            .forEach(
+                key -> {
+                  LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
+                  updater.removeBlobSidecar(key);
+                });
       }
-
       updater.commit();
     }
   }

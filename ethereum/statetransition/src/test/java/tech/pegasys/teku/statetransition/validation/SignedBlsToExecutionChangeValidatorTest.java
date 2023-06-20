@@ -138,7 +138,7 @@ class SignedBlsToExecutionChangeValidatorTest {
         .isCompletedWithValue(
             InternalValidationResult.create(
                 IGNORE,
-                "BlsToExecutionChange arrived before Capella and was ignored for validator 272337."));
+                "BlsToExecutionChange arrived before Capella and was ignored for validator 657086."));
   }
 
   @Test

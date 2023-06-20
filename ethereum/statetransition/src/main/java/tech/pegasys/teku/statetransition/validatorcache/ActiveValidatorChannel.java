@@ -18,7 +18,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public interface ActiveValidatorChannel extends ChannelInterface {
@@ -37,7 +37,7 @@ public interface ActiveValidatorChannel extends ChannelInterface {
    *
    * @param attestation the attestation that was produced
    */
-  void onAttestation(ValidateableAttestation attestation);
+  void onAttestation(ValidatableAttestation attestation);
 
   /**
    * Query the validator liveness cache to check if validators were seen in a recent epoch If N is

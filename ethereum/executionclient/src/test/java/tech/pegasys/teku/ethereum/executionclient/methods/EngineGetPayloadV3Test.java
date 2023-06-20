@@ -38,7 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -120,7 +120,6 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilBellatrix.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsBundle blobsBundle = BlobsBundle.EMPTY_BUNDLE;
     final ExecutionPayload executionPayloadBellatrix =
         dataStructureUtilBellatrix.randomExecutionPayload();
     assertThat(executionPayloadBellatrix).isInstanceOf(ExecutionPayloadBellatrix.class);
@@ -135,7 +134,7 @@ class EngineGetPayloadV3Test {
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, bellatrixSpec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponse(executionPayloadBellatrix, blockValue, blobsBundle);
+        new GetPayloadResponse(executionPayloadBellatrix, blockValue);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
@@ -150,7 +149,6 @@ class EngineGetPayloadV3Test {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtilCapella.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsBundle blobsBundle = BlobsBundle.EMPTY_BUNDLE;
     final ExecutionPayload executionPayloadCapella =
         dataStructureUtilCapella.randomExecutionPayload();
     assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadCapella.class);
@@ -164,7 +162,7 @@ class EngineGetPayloadV3Test {
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, capellaSpec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponse(executionPayloadCapella, blockValue, blobsBundle);
+        new GetPayloadResponse(executionPayloadCapella, blockValue);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));

@@ -94,6 +94,10 @@ public class BellatrixTransitionHelpers {
 
   private SafeFuture<PayloadStatus> validateParentPowBlock(
       final ExecutionLayerChannel executionLayer, final Bytes32 parentBlockHash) {
+    // fast check for genesis
+    if (parentBlockHash.isZero()) {
+      return completedFuture(PayloadStatus.VALID);
+    }
     return executionLayer
         .eth1GetPowBlock(parentBlockHash)
         .thenCompose(
@@ -110,6 +114,6 @@ public class BellatrixTransitionHelpers {
   }
 
   private boolean isBelowTotalDifficulty(final PowBlock powBlock) {
-    return powBlock.getTotalDifficulty().compareTo(specConfig.getTerminalTotalDifficulty()) < 0;
+    return powBlock.getTotalDifficulty().lessThan(specConfig.getTerminalTotalDifficulty());
   }
 }

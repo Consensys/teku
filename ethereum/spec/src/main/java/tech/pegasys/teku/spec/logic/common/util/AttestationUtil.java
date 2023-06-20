@@ -35,7 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -142,14 +142,14 @@ public abstract class AttestationUtil {
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
-      final Fork fork, final BeaconState state, final ValidateableAttestation attestation) {
+      final Fork fork, final BeaconState state, final ValidatableAttestation attestation) {
     return isValidIndexedAttestation(fork, state, attestation, BLSSignatureVerifier.SIMPLE);
   }
 
   public AttestationProcessingResult isValidIndexedAttestation(
       final Fork fork,
       final BeaconState state,
-      final ValidateableAttestation attestation,
+      final ValidatableAttestation attestation,
       final BLSSignatureVerifier blsSignatureVerifier) {
     final SafeFuture<AttestationProcessingResult> result =
         isValidIndexedAttestationAsync(
@@ -161,7 +161,7 @@ public abstract class AttestationUtil {
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestationAsync(
       final Fork fork,
       final BeaconState state,
-      final ValidateableAttestation attestation,
+      final ValidatableAttestation attestation,
       final AsyncBLSSignatureVerifier blsSignatureVerifier) {
     if (attestation.isValidIndexedAttestation()
         && attestation.getIndexedAttestation().isPresent()) {

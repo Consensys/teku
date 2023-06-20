@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
 /** Key for storing blobs in DB */
 public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRootAndBlobIndex> {
-  public static final UInt64 NO_BLOBS_INDEX = UInt64.MAX_VALUE;
 
   private final UInt64 slot;
   private final Bytes32 blockRoot;
@@ -34,16 +33,6 @@ public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRoot
     this.slot = slot;
     this.blockRoot = blockRoot;
     this.blobIndex = blobIndex;
-  }
-
-  public static SlotAndBlockRootAndBlobIndex createNoBlobsKey(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return createNoBlobsKey(slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot());
-  }
-
-  public static SlotAndBlockRootAndBlobIndex createNoBlobsKey(
-      final UInt64 slot, final Bytes32 blockRoot) {
-    return new SlotAndBlockRootAndBlobIndex(slot, blockRoot, NO_BLOBS_INDEX);
   }
 
   public UInt64 getSlot() {
@@ -58,8 +47,8 @@ public class SlotAndBlockRootAndBlobIndex implements Comparable<SlotAndBlockRoot
     return blobIndex;
   }
 
-  public boolean isNoBlobsKey() {
-    return blobIndex.equals(NO_BLOBS_INDEX);
+  public SlotAndBlockRoot getSlotAndBlockRoot() {
+    return new SlotAndBlockRoot(slot, blockRoot);
   }
 
   @Override

@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
@@ -62,7 +63,8 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
   @Override
   public boolean optimisticallyExecute(
       final ExecutionPayloadHeader latestExecutionPayloadHeader,
-      final ExecutionPayload executionPayload) {
+      final NewPayloadRequest payloadToExecute) {
+    final ExecutionPayload executionPayload = payloadToExecute.getExecutionPayload();
     if (executionPayload.isDefault()) {
       // We're still pre-merge so no payload to execute
       // Note that the BlockProcessor will have already failed if this is default and shouldn't be
@@ -73,7 +75,7 @@ class ForkChoicePayloadExecutor implements OptimisticExecutionPayloadExecutor {
     result =
         Optional.of(
             executionLayer
-                .engineNewPayload(executionPayload)
+                .engineNewPayload(payloadToExecute)
                 .thenCompose(
                     result -> {
                       if (result.hasValidStatus()) {

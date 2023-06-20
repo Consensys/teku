@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.topics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.GOSSIP_MAX_SIZE;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.List;
@@ -27,13 +26,13 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SingleAttestationTopicHandlerTest
-    extends AbstractTopicHandlerTest<ValidateableAttestation> {
+    extends AbstractTopicHandlerTest<ValidatableAttestation> {
 
   private static final int SUBNET_ID = 1;
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(12);
@@ -49,15 +48,15 @@ public class SingleAttestationTopicHandlerTest
         GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
         spec.getGenesisSchemaDefinitions().getAttestationSchema(),
         SUBNET_ID,
-        GOSSIP_MAX_SIZE);
+        gossipMaxSize);
   }
 
   @Test
   public void handleMessage_valid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = getChainHead();
-    final ValidateableAttestation attestation =
-        ValidateableAttestation.fromNetwork(
+    final ValidatableAttestation attestation =
+        ValidatableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
@@ -74,8 +73,8 @@ public class SingleAttestationTopicHandlerTest
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState =
         storageSystem.chainBuilder().getBlockAndStateAtSlot(wrongForkSlot);
-    final ValidateableAttestation attestation =
-        ValidateableAttestation.fromNetwork(
+    final ValidatableAttestation attestation =
+        ValidatableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
@@ -90,8 +89,8 @@ public class SingleAttestationTopicHandlerTest
   public void handleMessage_ignored() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = getChainHead();
-    final ValidateableAttestation attestation =
-        ValidateableAttestation.fromNetwork(
+    final ValidatableAttestation attestation =
+        ValidatableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
@@ -107,8 +106,8 @@ public class SingleAttestationTopicHandlerTest
   public void handleMessage_saveForFuture() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = getChainHead();
-    final ValidateableAttestation attestation =
-        ValidateableAttestation.fromNetwork(
+    final ValidatableAttestation attestation =
+        ValidatableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
@@ -124,8 +123,8 @@ public class SingleAttestationTopicHandlerTest
   public void handleMessage_invalid() {
     final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     final StateAndBlockSummary blockAndState = getChainHead();
-    final ValidateableAttestation attestation =
-        ValidateableAttestation.fromNetwork(
+    final ValidatableAttestation attestation =
+        ValidatableAttestation.fromNetwork(
             spec, attestationGenerator.validAttestation(blockAndState), SUBNET_ID);
     when(processor.process(attestation))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));

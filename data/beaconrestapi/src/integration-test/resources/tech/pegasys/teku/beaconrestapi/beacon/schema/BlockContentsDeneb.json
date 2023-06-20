@@ -1,0 +1,16 @@
+{
+  "title" : "BlockContentsDeneb",
+  "type" : "object",
+  "required" : [ "block", "blob_sidecars" ],
+  "properties" : {
+    "block" : {
+      "$ref" : "#/components/schemas/BeaconBlockDeneb"
+    },
+    "blob_sidecars" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/components/schemas/BlobSidecar"
+      }
+    }
+  }
+}

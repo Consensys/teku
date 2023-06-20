@@ -13,16 +13,18 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecars;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 
 public class SignedBlockContents
-    extends Container2<SignedBlockContents, SignedBeaconBlock, SignedBlobSidecars>
-    implements BlockContainer {
+    extends Container2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecar>>
+    implements SignedBlockContainer {
 
   SignedBlockContents(final SignedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
@@ -31,17 +33,20 @@ public class SignedBlockContents
   public SignedBlockContents(
       final SignedBlockContentsSchema schema,
       final SignedBeaconBlock signedBeaconBlock,
-      final SignedBlobSidecars signedBlobSidecars) {
-    super(schema, signedBeaconBlock, signedBlobSidecars);
+      final List<SignedBlobSidecar> signedBlobSidecars) {
+    super(
+        schema,
+        signedBeaconBlock,
+        schema.getSignedBlobSidecarsSchema().createFromElements(signedBlobSidecars));
   }
 
   @Override
-  public Optional<SignedBeaconBlock> getSignedBeaconBlock() {
-    return Optional.of(getField0());
+  public SignedBeaconBlock getSignedBlock() {
+    return getField0();
   }
 
   @Override
-  public Optional<SignedBlobSidecars> getSignedBlobSidecars() {
-    return Optional.of(getField1());
+  public Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
+    return Optional.of(getField1().asList());
   }
 }

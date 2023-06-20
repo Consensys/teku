@@ -13,26 +13,27 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
 
 public class GetPayloadResponse {
 
   private final ExecutionPayload executionPayload;
   private final UInt256 blockValue;
-  private final BlobsBundle blobsBundle;
+  private final Optional<BlobsBundle> blobsBundle;
 
   public GetPayloadResponse(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     this.blockValue = UInt256.ZERO;
-    this.blobsBundle = BlobsBundle.EMPTY_BUNDLE;
+    this.blobsBundle = Optional.empty();
   }
 
   public GetPayloadResponse(final ExecutionPayload executionPayload, final UInt256 blockValue) {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
-    this.blobsBundle = BlobsBundle.EMPTY_BUNDLE;
+    this.blobsBundle = Optional.empty();
   }
 
   public GetPayloadResponse(
@@ -41,7 +42,7 @@ public class GetPayloadResponse {
       final BlobsBundle blobsBundle) {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
-    this.blobsBundle = blobsBundle;
+    this.blobsBundle = Optional.of(blobsBundle);
   }
 
   public ExecutionPayload getExecutionPayload() {
@@ -52,7 +53,7 @@ public class GetPayloadResponse {
     return blockValue;
   }
 
-  public BlobsBundle getBlobsBundle() {
+  public Optional<BlobsBundle> getBlobsBundle() {
     return blobsBundle;
   }
 
@@ -73,5 +74,14 @@ public class GetPayloadResponse {
   @Override
   public int hashCode() {
     return Objects.hash(executionPayload, blockValue, blobsBundle);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("executionPayload", executionPayload)
+        .add("blockValue", blockValue)
+        .add("blobsBundle", blobsBundle)
+        .toString();
   }
 }

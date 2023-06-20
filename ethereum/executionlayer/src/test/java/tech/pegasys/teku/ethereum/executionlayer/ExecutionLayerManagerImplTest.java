@@ -197,7 +197,7 @@ class ExecutionLayerManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayloadHeader header =
-        prepareBuilderGetHeaderResponse(executionPayloadContext, false).getExecutionPayloadHeader();
+        prepareBuilderGetHeaderResponse(executionPayloadContext, false).getHeader();
     prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
 
     // we expect result from the builder
@@ -314,7 +314,7 @@ class ExecutionLayerManagerImplTest {
         executionPayloadContext, builderBid.getValue().multiply(49).divide(100), slot);
 
     // we expect result from the builder
-    final ExecutionPayloadHeader builderHeader = builderBid.getExecutionPayloadHeader();
+    final ExecutionPayloadHeader builderHeader = builderBid.getHeader();
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(expectedResult);
@@ -338,7 +338,7 @@ class ExecutionLayerManagerImplTest {
         executionPayloadContext, builderBid.getValue().multiply(100), slot);
 
     // we expect result from the builder
-    final ExecutionPayloadHeader builderHeader = builderBid.getExecutionPayloadHeader();
+    final ExecutionPayloadHeader builderHeader = builderBid.getHeader();
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
     assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
         .isCompletedWithValue(expectedResult);
@@ -424,8 +424,8 @@ class ExecutionLayerManagerImplTest {
                         new ExecutionPayloadResult(
                             executionPayloadContext,
                             Optional.empty(),
-                            Optional.of(SafeFuture.completedFuture(expectedResult)),
-                            Optional.empty()))))
+                            Optional.empty(),
+                            Optional.of(SafeFuture.completedFuture(expectedResult))))))
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
@@ -763,8 +763,8 @@ class ExecutionLayerManagerImplTest {
                         new ExecutionPayloadResult(
                             executionPayloadContext,
                             Optional.empty(),
-                            Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
-                            Optional.empty()))))
+                            Optional.empty(),
+                            Optional.of(SafeFuture.completedFuture(headerWithFallbackData))))))
         .isCompletedWithValue(executionPayload);
 
     // we expect no additional calls

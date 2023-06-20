@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -45,19 +46,24 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -69,12 +75,12 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private final Set<Bytes32> requestedPowBlocks = new HashSet<>();
   private final Spec spec;
   private final BlobsUtil blobsUtil;
+  private final Random random = new Random();
 
   private PayloadStatus payloadStatus = PayloadStatus.VALID;
-  private int blobsToGenerate = 2;
+  private Optional<Integer> blobsToGenerate = Optional.empty();
 
   // transition emulation
-  private static final int TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION = 10;
   private static final Bytes32 TERMINAL_BLOCK_PARENT_HASH = Bytes32.ZERO;
   private final boolean transitionEmulationEnabled;
   private final Bytes32 terminalBlockHashInTTDMode;
@@ -86,8 +92,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private UInt64 transitionTime;
   private Optional<TransitionConfiguration> transitionConfiguration = Optional.empty();
 
-  // block and payload tracking
+  // block, payload and blobs tracking
   private Optional<ExecutionPayload> lastBuilderPayloadToBeUnblinded = Optional.empty();
+  private Optional<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>
+      lastBuilderBlobsBundleToBeUnblinded = Optional.empty();
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
   public ExecutionLayerChannelStub(
@@ -212,13 +220,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
               "getPayload not supported for non-Bellatrix milestones"));
     }
 
-    final Optional<HeadAndAttributes> maybeHeadAndAttrs =
-        payloadIdToHeadAndAttrsCache.getCached(executionPayloadContext.getPayloadId());
-    if (maybeHeadAndAttrs.isEmpty()) {
-      return SafeFuture.failedFuture(new RuntimeException("payloadId not found in cache"));
-    }
-
-    final HeadAndAttributes headAndAttrs = maybeHeadAndAttrs.get();
+    final HeadAndAttributes headAndAttrs = getCachedHeadAndAttributes(executionPayloadContext);
     final PayloadBuildingAttributes payloadAttributes = headAndAttrs.attributes;
 
     final List<Bytes> transactions = generateTransactions(slot, headAndAttrs);
@@ -247,7 +249,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .blockHash(Bytes32.random())
                         .transactions(transactions)
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
-                        .excessDataGas(() -> UInt256.ZERO));
+                        .dataGasUsed(() -> UInt64.ZERO)
+                        .excessDataGas(() -> UInt64.ZERO));
 
     // we assume all blocks are produced locally
     lastValidBlock =
@@ -280,13 +283,15 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<PayloadStatus> engineNewPayload(final ExecutionPayload executionPayload) {
+  public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+    final ExecutionPayload executionPayload = newPayloadRequest.getExecutionPayload();
     final PayloadStatus returnedStatus =
         Optional.ofNullable(knownPosBlocks.get(executionPayload.getBlockHash()))
             .orElse(payloadStatus);
     LOG.info(
-        "newPayload: executionPayload blockHash: {} -> {}",
+        "newPayload: executionPayload blockHash: {}  versionedHashes: {} -> {}",
         executionPayload.getBlockHash(),
+        newPayloadRequest.getVersionedHashes(),
         returnedStatus);
     return SafeFuture.completedFuture(returnedStatus);
   }
@@ -330,41 +335,57 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         executionPayloadContext,
         slot);
 
-    SafeFuture<ExecutionPayloadHeader> payloadHeaderFuture =
-        engineGetPayload(executionPayloadContext, slot)
-            .thenApply(GetPayloadResponse::getExecutionPayload)
-            .thenApply(
-                executionPayload -> {
-                  LOG.info(
-                      "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
-                      executionPayloadContext,
-                      slot,
-                      executionPayload.getBlockHash());
-                  lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
-                  return spec.atSlot(slot)
-                      .getSchemaDefinitions()
-                      .toVersionBellatrix()
-                      .orElseThrow()
+    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+
+    return engineGetPayload(executionPayloadContext, slot)
+        .thenApply(
+            getPayloadResponse -> {
+              final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
+              LOG.info(
+                  "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
+                  executionPayloadContext,
+                  slot,
+                  executionPayload.getBlockHash());
+              lastBuilderPayloadToBeUnblinded = Optional.of(executionPayload);
+              final ExecutionPayloadHeader payloadHeader =
+                  SchemaDefinitionsBellatrix.required(schemaDefinitions)
                       .getExecutionPayloadHeaderSchema()
                       .createFromExecutionPayload(executionPayload);
-                });
-
-    return payloadHeaderFuture.thenApply(HeaderWithFallbackData::create);
+              final Optional<BlindedBlobsBundle> blindedBlobsBundle =
+                  getPayloadResponse
+                      .getBlobsBundle()
+                      .map(
+                          blobsBundle -> {
+                            final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+                                SchemaDefinitionsDeneb.required(schemaDefinitions);
+                            lastBuilderBlobsBundleToBeUnblinded =
+                                Optional.of(
+                                    schemaDefinitionsDeneb
+                                        .getBlobsBundleSchema()
+                                        .createFromExecutionBlobsBundle(blobsBundle));
+                            return schemaDefinitionsDeneb
+                                .getBlindedBlobsBundleSchema()
+                                .createFromExecutionBlobsBundle(blobsBundle);
+                          });
+              return HeaderWithFallbackData.create(payloadHeader, blindedBlobsBundle);
+            });
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock,
-      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+  public SafeFuture<BuilderPayload> builderGetPayload(
+      final SignedBlockContainer signedBlockContainer,
+      final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+    final UInt64 slot = signedBlockContainer.getSlot();
+    final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
-        spec.atSlot(signedBlindedBeaconBlock.getSlot()).getSchemaDefinitions().toVersionBellatrix();
+        schemaDefinitions.toVersionBellatrix();
 
     checkState(
         schemaDefinitionsBellatrix.isPresent(),
         "proposeBlindedBlock not supported for non-Bellatrix milestones");
 
     checkState(
-        signedBlindedBeaconBlock.getBeaconBlock().orElseThrow().getBody().isBlinded(),
+        signedBlockContainer.isBlinded(),
         "proposeBlindedBlock requires a signed blinded beacon block");
 
     checkState(
@@ -372,7 +393,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "proposeBlindedBlock requires a previous call to getPayloadHeader");
 
     final ExecutionPayloadHeader executionPayloadHeader =
-        signedBlindedBeaconBlock
+        signedBlockContainer
+            .getSignedBlock()
             .getBeaconBlock()
             .orElseThrow()
             .getBody()
@@ -387,22 +409,43 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     LOG.info(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
-        signedBlindedBeaconBlock.getSlot(),
-        signedBlindedBeaconBlock.getRoot(),
+        slot,
+        signedBlockContainer.getRoot(),
         lastBuilderPayloadToBeUnblinded.get().getBlockHash());
 
-    return SafeFuture.completedFuture(lastBuilderPayloadToBeUnblinded.get());
-  }
+    final BuilderPayload builderPayload =
+        lastBuilderBlobsBundleToBeUnblinded
+            // post Deneb
+            .map(
+                blobsBundle -> {
+                  checkState(
+                      signedBlockContainer
+                              .getSignedBlock()
+                              .getMessage()
+                              .getBody()
+                              .getOptionalBlobKzgCommitments()
+                              .orElseThrow()
+                              .size()
+                          == blobsBundle.getNumberOfBlobs(),
+                      "provided signed blinded block contains different number of kzg commitments than the expected %s",
+                      blobsBundle.getNumberOfBlobs());
+                  return (BuilderPayload)
+                      SchemaDefinitionsDeneb.required(schemaDefinitions)
+                          .getExecutionPayloadAndBlobsBundleSchema()
+                          .create(lastBuilderPayloadToBeUnblinded.get(), blobsBundle);
+                })
+            // pre Deneb
+            .orElse(lastBuilderPayloadToBeUnblinded.get());
 
-  public PayloadStatus getPayloadStatus() {
-    return payloadStatus;
+    return SafeFuture.completedFuture(builderPayload);
   }
 
   public void setPayloadStatus(PayloadStatus payloadStatus) {
     this.payloadStatus = payloadStatus;
   }
 
-  public void setBlobsToGenerate(final int blobsToGenerate) {
+  /** Set to empty to restore random number of blobs for each block */
+  public void setBlobsToGenerate(final Optional<Integer> blobsToGenerate) {
     this.blobsToGenerate = blobsToGenerate;
   }
 
@@ -417,7 +460,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     private Optional<ExecutionPayload> currentExecutionPayload = Optional.empty();
     private Optional<BlobsBundle> currentBlobsBundle = Optional.empty();
 
-    private HeadAndAttributes(Bytes32 head, PayloadBuildingAttributes attributes) {
+    private HeadAndAttributes(final Bytes32 head, final PayloadBuildingAttributes attributes) {
       this.head = head;
       this.attributes = attributes;
     }
@@ -457,7 +500,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       // TTD emulation
       LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
 
-      transitionTime = bellatrixActivationTime.plus(TRANSITION_DELAY_AFTER_BELLATRIX_ACTIVATION);
+      transitionTime = bellatrixActivationTime.plus(specConfigBellatrix.getSecondsPerSlot() - 1);
 
       terminalBlockHash = terminalBlockHashInTTDMode;
 
@@ -478,6 +521,16 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             terminalBlockHash, TERMINAL_BLOCK_PARENT_HASH, terminalTotalDifficulty, transitionTime);
   }
 
+  private HeadAndAttributes getCachedHeadAndAttributes(
+      final ExecutionPayloadContext executionPayloadContext) {
+    final Bytes8 payloadId = executionPayloadContext.getPayloadId();
+    return payloadIdToHeadAndAttrsCache
+        .getCached(payloadId)
+        .orElseThrow(
+            () ->
+                new RuntimeException(String.format("payloadId %s not found in cache", payloadId)));
+  }
+
   private List<Bytes> generateTransactions(
       final UInt64 slot, final HeadAndAttributes headAndAttrs) {
     final List<Bytes> transactions = new ArrayList<>();
@@ -494,7 +547,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private Bytes generateBlobsAndTransaction(
       final UInt64 slot, final HeadAndAttributes headAndAttrs) {
 
-    final List<Blob> blobs = blobsUtil.generateBlobs(slot, blobsToGenerate);
+    final List<Blob> blobs =
+        blobsUtil.generateBlobs(
+            slot,
+            blobsToGenerate.orElseGet(
+                () -> random.nextInt(spec.getMaxBlobsPerBlock().orElseThrow() + 1)));
     final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
     final List<KZGProof> proofs = blobsUtil.computeKzgProofs(slot, blobs, commitments);
 

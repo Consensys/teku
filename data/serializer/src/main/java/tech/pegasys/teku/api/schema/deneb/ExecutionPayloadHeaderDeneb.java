@@ -29,8 +29,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 
 public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
 
+  @JsonProperty("data_gas_used")
+  public final UInt64 dataGasUsed;
+
   @JsonProperty("excess_data_gas")
-  public final UInt256 excessDataGas;
+  public final UInt64 excessDataGas;
 
   @JsonCreator
   public ExecutionPayloadHeaderDeneb(
@@ -49,7 +52,8 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions_root") final Bytes32 transactionsRoot,
       @JsonProperty("withdrawals_root") final Bytes32 withdrawalsRoot,
-      @JsonProperty("excess_data_gas") final UInt256 excessDataGas) {
+      @JsonProperty("data_gas_used") final UInt64 dataGasUsed,
+      @JsonProperty("excess_data_gas") final UInt64 excessDataGas) {
     super(
         parentHash,
         feeRecipient,
@@ -66,6 +70,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
         blockHash,
         transactionsRoot,
         withdrawalsRoot);
+    this.dataGasUsed = dataGasUsed;
     this.excessDataGas = excessDataGas;
   }
 
@@ -86,6 +91,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
         executionPayloadHeader.getBlockHash(),
         executionPayloadHeader.getTransactionsRoot(),
         executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow());
+    this.dataGasUsed = executionPayloadHeader.toVersionDeneb().orElseThrow().getDataGasUsed();
     this.excessDataGas = executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessDataGas();
   }
 
@@ -110,6 +116,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
                 .blockHash(blockHash)
                 .transactionsRoot(transactionsRoot)
                 .withdrawalsRoot(() -> withdrawalsRoot)
+                .dataGasUsed(() -> dataGasUsed)
                 .excessDataGas(() -> excessDataGas));
   }
 
@@ -123,19 +130,20 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof ExecutionPayloadHeaderDeneb)) {
       return false;
     }
     if (!super.equals(o)) {
       return false;
     }
     final ExecutionPayloadHeaderDeneb that = (ExecutionPayloadHeaderDeneb) o;
-    return Objects.equals(excessDataGas, that.excessDataGas);
+    return Objects.equals(dataGasUsed, that.dataGasUsed)
+        && Objects.equals(excessDataGas, that.excessDataGas);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), excessDataGas);
+    return Objects.hash(super.hashCode(), dataGasUsed, excessDataGas);
   }
 
   @Override
@@ -156,6 +164,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
         .add("blockHash", blockHash)
         .add("transactionsRoot", transactionsRoot)
         .add("withdrawalsRoot", withdrawalsRoot)
+        .add("dataGasUsed", dataGasUsed)
         .add("excessDataGas", excessDataGas)
         .toString();
   }

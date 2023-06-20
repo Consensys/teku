@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.api;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -36,7 +37,8 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     return SafeFuture.COMPLETE;
   }
 
@@ -65,17 +67,12 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
   public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
     return SafeFuture.COMPLETE;
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
+  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.COMPLETE;
   }
 

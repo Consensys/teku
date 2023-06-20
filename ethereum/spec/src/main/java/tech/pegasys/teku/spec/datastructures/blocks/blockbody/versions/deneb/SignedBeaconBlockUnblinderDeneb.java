@@ -18,20 +18,20 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SignedBeaconBlockUnblinderDeneb extends AbstractSignedBeaconBlockUnblinder {
   protected SafeFuture<ExecutionPayload> executionPayloadFuture;
 
   public SignedBeaconBlockUnblinderDeneb(
-      final SchemaDefinitionsBellatrix schemaDefinitions,
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    super(schemaDefinitions, signedBlindedBeaconBlock);
+      final SchemaDefinitionsDeneb schemaDefinitions,
+      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+    super(schemaDefinitions, signedBlindedBlockContainer);
   }
 
   @Override
@@ -42,24 +42,28 @@ public class SignedBeaconBlockUnblinderDeneb extends AbstractSignedBeaconBlockUn
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblind() {
-    BeaconBlock blindedBeaconBlock = signedBlindedBeaconBlock.getMessage();
-    if (!blindedBeaconBlock.getBody().isBlinded()) {
+
+    final SignedBeaconBlock signedBlindedBeaconBlock = signedBlindedBlockContainer.getSignedBlock();
+
+    if (!signedBlindedBeaconBlock.isBlinded()) {
       return SafeFuture.completedFuture(signedBlindedBeaconBlock);
     }
 
     checkNotNull(executionPayloadFuture, "executionPayload must be set");
 
-    return executionPayloadFuture.thenApply(
-        executionPayload -> {
-          ExecutionPayloadDeneb.required(executionPayload);
-          final BlindedBeaconBlockBodyDeneb blindedBody =
-              BlindedBeaconBlockBodyDeneb.required(blindedBeaconBlock.getBody());
-          checkState(
-              executionPayload
-                  .hashTreeRoot()
-                  .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
-              "executionPayloadHeader root in blinded block do not match provided executionPayload root");
-          return signedBlindedBeaconBlock.unblind(schemaDefinitions, executionPayload);
-        });
+    return executionPayloadFuture
+        .thenApply(ExecutionPayloadDeneb::required)
+        .thenApply(
+            executionPayload -> {
+              final BlindedBeaconBlockBodyDeneb blindedBody =
+                  BlindedBeaconBlockBodyDeneb.required(
+                      signedBlindedBeaconBlock.getMessage().getBody());
+              checkState(
+                  executionPayload
+                      .hashTreeRoot()
+                      .equals(blindedBody.getExecutionPayloadHeader().hashTreeRoot()),
+                  "executionPayloadHeader root in blinded block do not match provided executionPayload root");
+              return signedBlindedBeaconBlock.unblind(schemaDefinitions, executionPayload);
+            });
   }
 }

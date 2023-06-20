@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
@@ -140,11 +142,15 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV1 executionPayload) {
+      final ExecutionPayloadV1 executionPayload,
+      final Optional<List<VersionedHash>> blobVersionedHashes) {
+    final Optional<List<String>> blobVersionedHashesData =
+        blobVersionedHashes.map(
+            hashes -> hashes.stream().map(VersionedHash::toHexString).collect(Collectors.toList()));
     final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV3",
-            Collections.singletonList(executionPayload),
+            list(executionPayload, blobVersionedHashesData.orElse(null)),
             web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);

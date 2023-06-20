@@ -84,7 +84,7 @@ public class BuilderBidValidatorTest {
         .thenReturn(dataStructureUtil.randomBytes32());
     when(specMock.atSlot(any())).thenReturn(specVersionMock);
     when(specVersionMock.getBlockProcessor()).thenReturn(blockProcessor);
-    doNothing().when(blockProcessor).validateExecutionPayload(any(), any(), any(), any());
+    doNothing().when(blockProcessor).validateExecutionPayloadHeader(any(), any());
   }
 
   @AfterEach
@@ -128,7 +128,7 @@ public class BuilderBidValidatorTest {
             state,
             Optional.of(localExecutionPayload));
 
-    assertThat(result).isEqualTo(signedBuilderBid.getMessage().getExecutionPayloadHeader());
+    assertThat(result).isEqualTo(signedBuilderBid.getMessage().getHeader());
   }
 
   @Test
@@ -149,7 +149,7 @@ public class BuilderBidValidatorTest {
             localExecutionPayload.getOptionalWithdrawalsRoot().orElseThrow(),
             dodgySignedBuilderBid
                 .getMessage()
-                .getExecutionPayloadHeader()
+                .getHeader()
                 .getOptionalWithdrawalsRoot()
                 .orElseThrow());
   }
@@ -258,11 +258,14 @@ public class BuilderBidValidatorTest {
             .create(
                 schemaDefinitions
                     .getBuilderBidSchema()
-                    .create(
-                        createExecutionPayloadHeaderWithGasLimit(
-                            schemaDefinitions, proposedGasLimit),
-                        dataStructureUtil.randomUInt256(),
-                        dataStructureUtil.randomPublicKey()),
+                    .createBuilderBid(
+                        builder ->
+                            builder
+                                .header(
+                                    createExecutionPayloadHeaderWithGasLimit(
+                                        schemaDefinitions, proposedGasLimit))
+                                .value(dataStructureUtil.randomUInt256())
+                                .publicKey(dataStructureUtil.randomPublicKey())),
                 dataStructureUtil.randomSignature());
 
     // create validator registration with preferred gasLimit
@@ -298,6 +301,7 @@ public class BuilderBidValidatorTest {
                     .blockHash(Bytes32.random())
                     .transactionsRoot(Bytes32.ZERO)
                     .withdrawalsRoot(() -> Bytes32.ZERO)
-                    .excessDataGas(() -> UInt256.ONE));
+                    .dataGasUsed(() -> UInt64.ONE)
+                    .excessDataGas(() -> UInt64.ONE));
   }
 }

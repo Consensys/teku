@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -23,6 +22,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 
 final class RpcResponseEncoderTest {
@@ -42,7 +42,10 @@ final class RpcResponseEncoderTest {
   private final RpcContextCodec<?, StatusMessage> contextCodec =
       RpcContextCodec.noop(StatusMessage.SSZ_SCHEMA);
   private final RpcResponseEncoder<StatusMessage, ?> responseEncoder =
-      new RpcResponseEncoder<>(RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE), contextCodec);
+      new RpcResponseEncoder<>(
+          RpcEncoding.createSszSnappyEncoding(
+              TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize()),
+          contextCodec);
 
   @Test
   public void shouldEncodeSuccessfulResponse() {

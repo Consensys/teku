@@ -16,8 +16,8 @@ package tech.pegasys.teku.spec.executionlayer;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -32,26 +32,35 @@ public interface ExecutionLayerBlockProductionManager {
   ExecutionLayerBlockProductionManager NOOP =
       new ExecutionLayerBlockProductionManager() {
         @Override
-        public Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot) {
+        public Optional<ExecutionPayloadResult> getCachedPayloadResult(final UInt64 slot) {
           return Optional.empty();
         }
 
         @Override
         public ExecutionPayloadResult initiateBlockProduction(
-            ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
+            final ExecutionPayloadContext context,
+            final BeaconState blockSlotState,
+            final boolean isBlind) {
           return null;
         }
 
         @Override
         public ExecutionPayloadResult initiateBlockAndBlobsProduction(
-            ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind) {
+            final ExecutionPayloadContext context,
+            final BeaconState blockSlotState,
+            final boolean isBlind) {
           return null;
         }
 
         @Override
-        public SafeFuture<ExecutionPayload> getUnblindedPayload(
-            SignedBeaconBlock signedBlindedBeaconBlock) {
+        public SafeFuture<BuilderPayload> getUnblindedPayload(
+            final SignedBlockContainer signedBlockContainer) {
           return SafeFuture.completedFuture(null);
+        }
+
+        @Override
+        public Optional<BuilderPayload> getCachedUnblindedPayload(final UInt64 slot) {
+          return Optional.empty();
         }
       };
 
@@ -80,5 +89,12 @@ public interface ExecutionLayerBlockProductionManager {
 
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
-  SafeFuture<ExecutionPayload> getUnblindedPayload(SignedBeaconBlock signedBlindedBeaconBlock);
+  SafeFuture<BuilderPayload> getUnblindedPayload(SignedBlockContainer signedBlockContainer);
+
+  /**
+   * Requires {@link #getUnblindedPayload( SignedBlockContainer)} to have been called first in order
+   * for a value to be present
+   */
+  @SuppressWarnings("unused")
+  Optional<BuilderPayload> getCachedUnblindedPayload(UInt64 slot);
 }

@@ -134,10 +134,32 @@ public class V4FinalizedKvStoreDao {
         new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
+  @MustBeClosed
+  public Stream<Bytes> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return db.stream(
+            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))
+        .map(ColumnEntry::getValue);
+  }
+
+  public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final Stream<SlotAndBlockRootAndBlobIndex> streamKeys =
+        db.streamKeys(
+            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
+      return streamKeys.collect(Collectors.toList());
+    }
+  }
+
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
-    return db.getFirstEntry(schema.getColumnBlobSidecarBySlotRootBlobIndex())
-        .map(ColumnEntry::getKey)
-        .map(SlotAndBlockRootAndBlobIndex::getSlot);
+    return db.get(schema.getVariableEarliestBlobSidecarSlot());
   }
 
   public <T> Optional<Bytes> getRawVariable(final KvStoreVariable<T> var) {
@@ -289,16 +311,13 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-      transaction.put(
-          schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
-          Bytes.EMPTY);
+    public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
     }
 
     @Override
-    public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-      transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
+    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
     }
 
     @Override

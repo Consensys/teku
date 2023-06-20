@@ -38,8 +38,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -55,11 +55,13 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -81,6 +83,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
+import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -97,45 +100,63 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class ForkChoiceTest {
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+  private Spec spec;
+  private DataStructureUtil dataStructureUtil;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
-  private final AttestationSchema attestationSchema =
-      spec.getGenesisSchemaDefinitions().getAttestationSchema();
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.create()
-          .storageMode(StateStorageMode.PRUNE)
-          .specProvider(spec)
-          .numberOfValidators(16)
-          .build();
-  private final ChainBuilder chainBuilder = storageSystem.chainBuilder();
-  private final SignedBlockAndState genesis = chainBuilder.generateGenesis();
-  private final RecentChainData recentChainData = storageSystem.recentChainData();
+  private final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
+      mock(BlobSidecarsAvailabilityChecker.class);
+  private AttestationSchema attestationSchema;
+  private StorageSystem storageSystem;
+  private ChainBuilder chainBuilder;
+  private SignedBlockAndState genesis;
+  private RecentChainData recentChainData;
 
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
-  private final ExecutionLayerChannelStub executionLayer =
-      new ExecutionLayerChannelStub(spec, false, Optional.empty());
+  private ExecutionLayerChannelStub executionLayer;
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
 
   private final InlineEventThread eventThread = new InlineEventThread();
 
-  private ForkChoice forkChoice =
-      new ForkChoice(
-          spec,
-          eventThread,
-          recentChainData,
-          blobSidecarManager,
-          forkChoiceNotifier,
-          new ForkChoiceStateProvider(eventThread, recentChainData),
-          new TickProcessor(spec, recentChainData),
-          transitionBlockValidator,
-          DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+  private ForkChoice forkChoice;
 
   @BeforeEach
   public void setup() {
+    setupWithSpec(TestSpecFactory.createMinimalBellatrix());
+  }
+
+  private void setupWithSpec(final Spec spec) {
+    // Setting up spec and all dependants
+    this.spec = spec;
+    this.dataStructureUtil = new DataStructureUtil(spec);
+    this.attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
+    this.storageSystem =
+        InMemoryStorageSystemBuilder.create()
+            .storageMode(StateStorageMode.PRUNE)
+            .specProvider(spec)
+            .numberOfValidators(16)
+            .build();
+    this.chainBuilder = storageSystem.chainBuilder();
+    this.genesis = chainBuilder.generateGenesis();
+    this.recentChainData = storageSystem.recentChainData();
+    this.executionLayer = new ExecutionLayerChannelStub(spec, false, Optional.empty());
+    this.forkChoice =
+        new ForkChoice(
+            spec,
+            eventThread,
+            recentChainData,
+            blobSidecarManager,
+            forkChoiceNotifier,
+            new ForkChoiceStateProvider(eventThread, recentChainData),
+            new TickProcessor(spec, recentChainData),
+            transitionBlockValidator,
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
+            metricsSystem);
+
+    // Starting and mocks
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
@@ -153,6 +174,14 @@ class ForkChoiceTest {
 
     // blobs always available
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      when(blobSidecarManager.createAvailabilityChecker(any()))
+          .thenReturn(blobSidecarsAvailabilityChecker);
+      final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
+      when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+          .thenReturn(
+              SafeFuture.completedFuture(
+                  BlobSidecarsAndValidationResult.validResult(blobSidecars)));
+    } else {
       when(blobSidecarManager.createAvailabilityChecker(any()))
           .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
     }
@@ -173,50 +202,49 @@ class ForkChoiceTest {
     assertThat(reorgEvents).isEmpty();
   }
 
-  @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
   @Test
   void onBlock_shouldCheckBlobsAvailability() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
     importBlock(blockAndState);
 
-    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
 
-  @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
   @Test
   void onBlock_shouldFailIfBlobsAreNotAvailable() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
-    //    when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-    //
-    // .thenReturn(SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_AVAILABLE));
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
 
-    importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID);
+    importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
 
-    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
 
-  @Disabled("enable and fix when decoupled blob fork choice changes are implemented")
   @Test
   void onBlock_shouldImportIfBlobsAreNotRequired() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
-    //    when(blobsSidecarAvailabilityChecker.getAvailabilityCheckResult())
-    //        .thenReturn(SafeFuture.completedFuture(BlobsSidecarAndValidationResult.NOT_REQUIRED));
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED));
 
     importBlock(blockAndState);
 
-    //    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
-    //    verify(blobSidecarAvailabilityChecker).initiateDataAvailabilityCheck();
-    //    verify(blobSidecarAvailabilityChecker).getAvailabilityCheckResult();
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
   }
 
   @Test
@@ -274,7 +302,8 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED);
+            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
+            metricsSystem);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     final UInt64 lateBlockSlot = currentSlot.minus(1);
@@ -1070,7 +1099,7 @@ class ForkChoiceTest {
                 targetCheckpoint),
             BLSSignature.empty());
     final SafeFuture<AttestationProcessingResult> result =
-        forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation));
+        forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation));
     assertThat(result)
         .isCompletedWithValue(
             AttestationProcessingResult.invalid(
@@ -1087,7 +1116,7 @@ class ForkChoiceTest {
     final Attestation attestation =
         chainBuilder.streamValidAttestationsWithTargetBlock(targetBlock).findFirst().orElseThrow();
     final SafeFuture<AttestationProcessingResult> result =
-        forkChoice.onAttestation(ValidateableAttestation.from(spec, attestation));
+        forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation));
     assertThat(result).isCompletedWithValue(AttestationProcessingResult.DEFER_FOR_FORK_CHOICE);
 
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
@@ -1109,8 +1138,8 @@ class ForkChoiceTest {
     // Note this attestation is wildly invalid but we're going to shove it straight into fork choice
     // as pre-validated.
     final UInt64 updatedAttestationSlot = UInt64.valueOf(20);
-    final ValidateableAttestation updatedVote =
-        ValidateableAttestation.from(
+    final ValidatableAttestation updatedVote =
+        ValidatableAttestation.from(
             spec,
             attestationSchema.create(
                 attestationSchema.getAggregationBitsSchema().ofBits(16),

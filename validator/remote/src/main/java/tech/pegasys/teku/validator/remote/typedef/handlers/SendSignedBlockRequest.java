@@ -24,7 +24,10 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
@@ -35,56 +38,70 @@ public class SendSignedBlockRequest extends AbstractTypeDefRequest {
       new ResponseHandler<>()
           .withHandler(SC_UNSUPPORTED_MEDIA_TYPE, this::handleUnsupportedSszRequest);
 
+  private final Spec spec;
   private final AtomicBoolean preferSszBlockEncoding;
 
   public SendSignedBlockRequest(
+      final Spec spec,
       final HttpUrl baseEndpoint,
       final OkHttpClient okHttpClient,
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
+    this.spec = spec;
     this.preferSszBlockEncoding = new AtomicBoolean(preferSszBlockEncoding);
   }
 
-  public SendSignedBlockResult sendSignedBlock(SignedBeaconBlock signedBeaconBlock) {
-    final ValidatorApiMethod apiMethod =
-        signedBeaconBlock.getMessage().getBody().isBlinded()
-            ? SEND_SIGNED_BLINDED_BLOCK
-            : SEND_SIGNED_BLOCK;
+  public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer signedBlockContainer) {
+    final boolean blinded = signedBlockContainer.isBlinded();
+
+    final ValidatorApiMethod apiMethod = blinded ? SEND_SIGNED_BLINDED_BLOCK : SEND_SIGNED_BLOCK;
+
+    final SchemaDefinitions schemaDefinitions =
+        spec.atSlot(signedBlockContainer.getSlot()).getSchemaDefinitions();
+
+    final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition =
+        blinded
+            ? schemaDefinitions.getSignedBlindedBlockContainerSchema().getJsonTypeDefinition()
+            : schemaDefinitions.getSignedBlockContainerSchema().getJsonTypeDefinition();
 
     return preferSszBlockEncoding.get()
-        ? sendSignedBlockAsSszOrFallback(signedBeaconBlock, apiMethod)
-        : sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
+        ? sendSignedBlockAsSszOrFallback(apiMethod, signedBlockContainer, typeDefinition)
+        : sendSignedBlockAsJson(apiMethod, signedBlockContainer, typeDefinition);
   }
 
   private SendSignedBlockResult sendSignedBlockAsSszOrFallback(
-      final SignedBeaconBlock signedBeaconBlock, final ValidatorApiMethod apiMethod) {
-    final SendSignedBlockResult result = sendSignedBlockAsSsz(apiMethod, signedBeaconBlock);
+      final ValidatorApiMethod apiMethod,
+      final SignedBlockContainer signedBlockContainer,
+      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition) {
+    final SendSignedBlockResult result = sendSignedBlockAsSsz(apiMethod, signedBlockContainer);
     if (!result.isPublished() && !preferSszBlockEncoding.get()) {
-      return sendSignedBlockAsJson(apiMethod, signedBeaconBlock);
+      return sendSignedBlockAsJson(apiMethod, signedBlockContainer, typeDefinition);
     }
     return result;
   }
 
   private SendSignedBlockResult sendSignedBlockAsSsz(
-      final ValidatorApiMethod apiMethod, final SignedBeaconBlock signedBeaconBlock) {
+      final ValidatorApiMethod apiMethod, final SignedBlockContainer signedBlockContainer) {
     return postOctetStream(
             apiMethod,
             Collections.emptyMap(),
-            signedBeaconBlock.sszSerialize().toArray(),
+            signedBlockContainer.sszSerialize().toArray(),
             sszResponseHandler)
-        .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
+        .map(__ -> SendSignedBlockResult.success(signedBlockContainer.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
   private SendSignedBlockResult sendSignedBlockAsJson(
-      final ValidatorApiMethod apiMethod, final SignedBeaconBlock signedBeaconBlock) {
+      final ValidatorApiMethod apiMethod,
+      final SignedBlockContainer signedBlockContainer,
+      final DeserializableTypeDefinition<SignedBlockContainer> typeDefinition) {
     return postJson(
             apiMethod,
             Collections.emptyMap(),
-            signedBeaconBlock,
-            signedBeaconBlock.getSchema().getJsonTypeDefinition(),
+            signedBlockContainer,
+            typeDefinition,
             new ResponseHandler<>())
-        .map(__ -> SendSignedBlockResult.success(signedBeaconBlock.getRoot()))
+        .map(__ -> SendSignedBlockResult.success(signedBlockContainer.getRoot()))
         .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 

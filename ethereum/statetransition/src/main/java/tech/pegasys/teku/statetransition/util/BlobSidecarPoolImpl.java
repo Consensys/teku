@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
@@ -45,6 +47,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     implements BlobSidecarPool {
+  private static final Logger LOG = LogManager.getLogger();
 
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
@@ -128,16 +131,14 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       final Spec spec, final SlotAndBlockRoot slotAndBlockRoot) {
     return new BlockBlobSidecarsTracker(
         slotAndBlockRoot,
-        UInt64.valueOf(
-            spec.atSlot(slotAndBlockRoot.getSlot())
-                .getConfig()
-                .toVersionDeneb()
-                .orElseThrow()
-                .getMaxBlobsPerBlock()));
+        UInt64.valueOf(spec.getMaxBlobsPerBlock(slotAndBlockRoot.getSlot()).orElseThrow()));
   }
 
   @Override
   public synchronized void onNewBlobSidecar(final BlobSidecar blobSidecar) {
+    if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
+      return;
+    }
     if (shouldIgnoreItemAtSlot(blobSidecar.getSlot())) {
       return;
     }
@@ -172,6 +173,12 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   public synchronized BlockBlobSidecarsTracker getOrCreateBlockBlobSidecarsTracker(
       final SignedBeaconBlock block) {
     return internalOnNewBlock(block);
+  }
+
+  @Override
+  public synchronized Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(
+      final SignedBeaconBlock block) {
+    return Optional.ofNullable(blockBlobSidecarsTrackers.get(block.getRoot()));
   }
 
   @Override
@@ -214,6 +221,13 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     return blockBlobSidecarsTrackers.get(slotAndBlockRoot.getBlockRoot());
   }
 
+  @Override
+  public void onSlot(final UInt64 slot) {
+    super.onSlot(slot);
+
+    LOG.trace("Trackers: {}", blockBlobSidecarsTrackers);
+  }
+
   @VisibleForTesting
   @Override
   synchronized void prune(final UInt64 slotLimit) {
@@ -235,8 +249,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
         .orElse(false);
   }
 
-  public synchronized boolean containsBlock(final SignedBeaconBlock block) {
-    return Optional.ofNullable(blockBlobSidecarsTrackers.get(block.getRoot()))
+  @Override
+  public synchronized boolean containsBlock(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blockBlobSidecarsTrackers.get(blockRoot))
         .map(tracker -> tracker.getBlockBody().isPresent())
         .orElse(false);
   }

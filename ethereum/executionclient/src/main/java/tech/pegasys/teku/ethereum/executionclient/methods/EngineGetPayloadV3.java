@@ -22,7 +22,8 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -72,23 +73,26 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadRe
               final ExecutionPayloadSchema<?> payloadSchema =
                   SchemaDefinitionsBellatrix.required(schemaDefinitions)
                       .getExecutionPayloadSchema();
-              final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
-              return new GetPayloadResponse(
-                  response.executionPayload.asInternalExecutionPayload(payloadSchema),
-                  response.blockValue,
-                  blobsBundle);
+              final ExecutionPayload executionPayload =
+                  response.executionPayload.asInternalExecutionPayload(payloadSchema);
+              return getBlobsBundle(response, schemaDefinitions)
+                  .map(
+                      blobsBundle ->
+                          new GetPayloadResponse(
+                              executionPayload, response.blockValue, blobsBundle))
+                  .orElse(new GetPayloadResponse(executionPayload, response.blockValue));
             })
         .thenPeek(
-            payloadAndValue ->
+            getPayloadResponse ->
                 LOG.trace(
                     "Response {}(payloadId={}, slot={}) -> {}",
                     getVersionedName(),
                     executionPayloadContext.getPayloadId(),
                     slot,
-                    payloadAndValue));
+                    getPayloadResponse));
   }
 
-  private BlobsBundle getBlobsBundle(
+  private Optional<BlobsBundle> getBlobsBundle(
       final GetPayloadV3Response response, final SchemaDefinitions schemaDefinitions) {
     return schemaDefinitions
         .toVersionDeneb()
@@ -96,7 +100,6 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadRe
         .flatMap(
             blobSchema ->
                 Optional.ofNullable(response.blobsBundle)
-                    .map(blobsBundleV1 -> blobsBundleV1.asInternalBlobsBundle(blobSchema)))
-        .orElse(BlobsBundle.EMPTY_BUNDLE);
+                    .map(blobsBundleV1 -> blobsBundleV1.asInternalBlobsBundle(blobSchema)));
   }
 }

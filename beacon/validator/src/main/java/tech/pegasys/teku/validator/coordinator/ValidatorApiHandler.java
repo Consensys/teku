@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,18 +46,17 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.BlockAndBlobsSidecarGossipChannel;
+import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -68,13 +66,14 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -135,7 +134,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlockAndBlobsSidecarGossipChannel blockAndBlobsSidecarGossipChannel,
+      final BlobSidecarPool blobSidecarPool,
+      final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
       final AttestationTopicSubscriber attestationTopicSubscriber,
@@ -171,7 +171,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blockAndBlobsSidecarGossipChannel,
+            blobSidecarPool,
+            blobSidecarGossipChannel,
             performanceTracker,
             dutyMetrics);
   }
@@ -286,7 +287,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
@@ -303,19 +304,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockSlotState -> createBlock(slot, randaoReveal, graffiti, blinded, blockSlotState));
   }
 
-  @Override
-  public SafeFuture<Optional<BlindedBlockContents>> createUnsignedBlindedBlockContents(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    throw new NotImplementedException("Not Yet Implemented");
-  }
-
-  @Override
-  public SafeFuture<Optional<BlockContents>> createUnsignedBlockContents(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    throw new NotImplementedException("Not Yet Implemented");
-  }
-
-  private SafeFuture<Optional<BeaconBlock>> createBlock(
+  private SafeFuture<Optional<BlockContainer>> createBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
@@ -431,7 +420,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         attestationPool
             .createAggregateFor(attestationHashTreeRoot)
             .filter(attestation -> attestation.getData().getSlot().equals(slot))
-            .map(ValidateableAttestation::getAttestation));
+            .map(ValidatableAttestation::getAttestation));
   }
 
   @Override
@@ -505,7 +494,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     return attestationManager
-        .addAttestation(ValidateableAttestation.fromValidator(spec, attestation))
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation))
         .thenPeek(
             result -> {
               if (!result.isReject()) {
@@ -556,7 +545,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
     return attestationManager
-        .addAggregate(ValidateableAttestation.aggregateFromValidator(spec, aggregateAndProof))
+        .addAggregate(ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof))
         .thenPeek(
             result -> {
               if (result.isReject()) {
@@ -569,9 +558,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBeaconBlock maybeBlindedBlock) {
+      final SignedBlockContainer maybeBlindedBlockContainer) {
     return blockPublisher
-        .sendSignedBlock(maybeBlindedBlock)
+        .sendSignedBlock(maybeBlindedBlockContainer)
         .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
   }
 
@@ -581,7 +570,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
     final List<SafeFuture<InternalValidationResult>> addedMessages =
         syncCommitteeMessages.stream()
-            .map(ValidateableSyncCommitteeMessage::fromValidator)
+            .map(ValidatableSyncCommitteeMessage::fromValidator)
             .map(this::processSyncCommitteeMessage)
             .collect(toList());
 
@@ -590,7 +579,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   }
 
   private SafeFuture<InternalValidationResult> processSyncCommitteeMessage(
-      final ValidateableSyncCommitteeMessage message) {
+      final ValidatableSyncCommitteeMessage message) {
     return syncCommitteeMessagePool
         .addLocal(message)
         .thenPeek(

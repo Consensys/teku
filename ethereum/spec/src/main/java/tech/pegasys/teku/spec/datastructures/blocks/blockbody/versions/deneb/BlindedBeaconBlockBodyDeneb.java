@@ -29,12 +29,17 @@ public interface BlindedBeaconBlockBodyDeneb extends BlindedBeaconBlockBodyCapel
                         + body.getClass().getSimpleName()));
   }
 
+  SszList<SszKZGCommitment> getBlobKzgCommitments();
+
+  @Override
+  default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+    return Optional.of(getBlobKzgCommitments());
+  }
+
   @Override
   default Optional<BlindedBeaconBlockBodyDeneb> toBlindedVersionDeneb() {
     return Optional.of(this);
   }
-
-  SszList<SszKZGCommitment> getBlobKzgCommitments();
 
   @Override
   BlindedBeaconBlockBodySchemaDeneb<?> getSchema();

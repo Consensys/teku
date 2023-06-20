@@ -48,7 +48,7 @@ import tech.pegasys.teku.storage.server.Database;
 public class NoOpDatabase implements Database {
 
   @Override
-  public void storeInitialAnchor(final AnchorPoint genesis) {}
+  public void storeInitialAnchor(final AnchorPoint initialAnchor) {}
 
   @Override
   public UpdateResult update(final StorageUpdate event) {
@@ -58,7 +58,8 @@ public class NoOpDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {}
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {}
 
   @Override
   public void storeFinalizedState(BeaconState state, Bytes32 blockRoot) {}
@@ -271,20 +272,28 @@ public class NoOpDatabase implements Database {
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
 
   @Override
-  public void storeNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {}
-
-  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     return Optional.empty();
   }
 
   @Override
-  public void removeBlobSidecars(final UInt64 slot) {}
+  public void removeBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {}
 
   @Override
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
+  }
+
+  @Override
+  public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return Collections.emptyList();
   }
 
   @Override

@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
+import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,8 +47,12 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -57,8 +62,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.MutableStore;
@@ -95,7 +101,6 @@ import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.spec.logic.common.util.LightClientUtil;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.block.KzgCommitmentsProcessor;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class Spec {
@@ -287,19 +292,33 @@ public class Spec {
   }
 
   public SignedBeaconBlock deserializeSignedBeaconBlock(final Bytes serializedSignedBlock) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedSignedBlock);
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlock);
     return atSlot(slot)
         .getSchemaDefinitions()
         .getSignedBeaconBlockSchema()
         .sszDeserialize(serializedSignedBlock);
   }
 
-  public SignedBeaconBlock deserializeSignedBlindedBeaconBlock(final Bytes serializedState) {
-    final UInt64 slot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(serializedState);
+  public SignedBlockContainer deserializeSignedBlockContainer(
+      final Bytes serializedSignedBlockContainer) {
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlockContainer);
     return atSlot(slot)
         .getSchemaDefinitions()
-        .getSignedBlindedBeaconBlockSchema()
-        .sszDeserialize(serializedState);
+        .getSignedBlockContainerSchema()
+        .sszDeserialize(serializedSignedBlockContainer);
+  }
+
+  public SignedBlockContainer deserializeSignedBlindedBlockContainer(
+      final Bytes serializedSignedBlindedBlockContainer) {
+    final UInt64 slot =
+        BeaconBlockInvariants.extractSignedBlockContainerSlot(
+            serializedSignedBlindedBlockContainer);
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .getSignedBlindedBlockContainerSchema()
+        .sszDeserialize(serializedSignedBlindedBlockContainer);
   }
 
   public BeaconBlock deserializeBeaconBlock(final Bytes serializedBlock) {
@@ -308,17 +327,6 @@ public class Spec {
         .getSchemaDefinitions()
         .getBeaconBlockSchema()
         .sszDeserialize(serializedBlock);
-  }
-
-  public ExecutionPayload deserializeExecutionPayload(
-      final Bytes serializedPayload, final UInt64 slot) {
-    return atSlot(slot)
-        .getSchemaDefinitions()
-        .toVersionBellatrix()
-        .orElseThrow(
-            () -> new RuntimeException("Bellatrix milestone is required to load execution payload"))
-        .getExecutionPayloadSchema()
-        .sszDeserialize(serializedPayload);
   }
 
   public BlobSidecar deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
@@ -375,6 +383,12 @@ public class Spec {
 
   public Bytes computeSigningRoot(BlobSidecar blobSidecar, Bytes32 domain) {
     return atSlot(blobSidecar.getSlot()).miscHelpers().computeSigningRoot(blobSidecar, domain);
+  }
+
+  public Bytes computeSigningRoot(BlindedBlobSidecar blindedBlobSidecar, Bytes32 domain) {
+    return atSlot(blindedBlobSidecar.getSlot())
+        .miscHelpers()
+        .computeSigningRoot(blindedBlobSidecar, domain);
   }
 
   public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {
@@ -554,13 +568,13 @@ public class Spec {
 
   public AttestationProcessingResult validateAttestation(
       final ReadOnlyStore store,
-      final ValidateableAttestation validateableAttestation,
+      final ValidatableAttestation validatableAttestation,
       final Optional<BeaconState> maybeState) {
-    final UInt64 slot = validateableAttestation.getAttestation().getData().getSlot();
+    final UInt64 slot = validatableAttestation.getAttestation().getData().getSlot();
     final Fork fork = forkSchedule.getFork(computeEpochAtSlot(slot));
     return atSlot(slot)
         .getForkChoiceUtil()
-        .validate(fork, store, validateableAttestation, maybeState);
+        .validate(fork, store, validatableAttestation, maybeState);
   }
 
   public Optional<OperationInvalidReason> validateAttesterSlashing(
@@ -641,21 +655,38 @@ public class Spec {
   // Blind Block Utils
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
-      final SignedBeaconBlock blindedSignedBeaconBlock,
-      final Consumer<SignedBeaconBlockUnblinder> blockUnblinder) {
-    return atSlot(blindedSignedBeaconBlock.getSlot())
+      final SignedBlindedBlockContainer signedBlindedBlockContainer,
+      final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
+    return atSlot(signedBlindedBlockContainer.getSlot())
         .getBlindBlockUtil()
         .map(
             converter ->
-                converter.unblindSignedBeaconBlock(blindedSignedBeaconBlock, blockUnblinder))
+                converter.unblindSignedBeaconBlock(
+                    signedBlindedBlockContainer, beaconBlockUnblinderConsumer))
         .orElseGet(
             () -> {
               // this shouldn't happen: BlockFactory should skip unblinding when is not needed
               checkState(
-                  !blindedSignedBeaconBlock.getMessage().getBody().isBlinded(),
+                  !signedBlindedBlockContainer.isBlinded(),
                   "Unblinder not available for the current spec but the given block was blinded");
-              return SafeFuture.completedFuture(blindedSignedBeaconBlock);
+              return SafeFuture.completedFuture(signedBlindedBlockContainer.getSignedBlock());
             });
+  }
+
+  public SafeFuture<List<SignedBlobSidecar>> unblindSignedBlindedBlobSidecars(
+      final UInt64 slot,
+      final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
+      final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
+    return atSlot(slot)
+        .getBlindBlockUtil()
+        .map(
+            converter ->
+                converter.unblindSignedBlobSidecars(
+                    blindedBlobSidecars, blobSidecarsUnblinderConsumer))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Unblinder was not available but blob sidecars were blinded"));
   }
 
   public SignedBeaconBlock blindSignedBeaconBlock(
@@ -687,8 +718,7 @@ public class Spec {
       final BeaconState preState,
       final SignedBeaconBlock block,
       final BLSSignatureVerifier signatureVerifier,
-      final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor,
-      final KzgCommitmentsProcessor kzgCommitmentsProcessor)
+      final Optional<OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws StateTransitionException {
     try {
       final BeaconState blockSlotState = stateTransition.processSlots(preState, block.getSlot());
@@ -698,8 +728,7 @@ public class Spec {
               blockSlotState,
               IndexedAttestationCache.NOOP,
               signatureVerifier,
-              payloadExecutor,
-              kzgCommitmentsProcessor);
+              payloadExecutor);
     } catch (SlotProcessingException | EpochProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -715,8 +744,7 @@ public class Spec {
               block.getMessage(),
               IndexedAttestationCache.NOOP,
               BLSSignatureVerifier.NO_OP,
-              Optional.empty(),
-              KzgCommitmentsProcessor.NOOP);
+              Optional.empty());
     } catch (SlotProcessingException | EpochProcessingException | BlockProcessingException e) {
       throw new StateTransitionException(e);
     }
@@ -805,7 +833,7 @@ public class Spec {
 
   public SafeFuture<AttestationProcessingResult> isValidIndexedAttestation(
       BeaconState state,
-      ValidateableAttestation attestation,
+      ValidatableAttestation attestation,
       AsyncBLSSignatureVerifier blsSignatureVerifier) {
     final UInt64 slot = attestation.getData().getSlot();
     return atSlot(slot)
@@ -843,6 +871,22 @@ public class Spec {
         .getConfig()
         .toVersionDeneb()
         .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+  }
+
+  public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {
+    return atSlot(slot).getConfig().toVersionDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
+  }
+
+  public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
+    return signedBlobSidecar.getBlobSidecar().getIndex().mod(BLOB_SIDECAR_SUBNET_COUNT);
+  }
+
+  public Optional<UInt64> computeFirstSlotWithBlobSupport() {
+    return forMilestone(forkSchedule.getHighestSupportedMilestone())
+        .getConfig()
+        .toVersionDeneb()
+        .map(SpecConfigDeneb::getDenebForkEpoch)
+        .map(this::computeStartSlotAtEpoch);
   }
 
   // Private helpers

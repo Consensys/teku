@@ -13,7 +13,9 @@
 
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
@@ -97,7 +99,6 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
    * @return the sequence of sync committee indices
    */
   public IntList getNextSyncCommitteeIndices(final BeaconState state) {
-    final Sha256 sha256 = new Sha256();
     final UInt64 epoch = getCurrentEpoch(state).plus(1);
     final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = activeValidatorIndices.size();
@@ -107,6 +108,8 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     final IntList syncCommitteeIndices = new IntArrayList();
     final UInt64 maxEffectiveBalance = config.getMaxEffectiveBalance();
     final int syncCommitteeSize = altairConfig.getSyncCommitteeSize();
+
+    final Sha256 sha256 = getSha256Instance();
 
     while (syncCommitteeIndices.size() < syncCommitteeSize) {
       final int shuffledIndex =
@@ -201,5 +204,15 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
     }
     return participationFlagIndices;
+  }
+
+  public static BeaconStateAccessorsAltair required(
+      final BeaconStateAccessors beaconStateAccessors) {
+    checkArgument(
+        beaconStateAccessors.getClass().isAssignableFrom(BeaconStateAccessorsAltair.class),
+        "Expected %s but it was %s",
+        BeaconStateAccessorsAltair.class,
+        beaconStateAccessors.getClass());
+    return (BeaconStateAccessorsAltair) beaconStateAccessors;
   }
 }

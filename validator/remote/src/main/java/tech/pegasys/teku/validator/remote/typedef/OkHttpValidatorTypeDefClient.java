@@ -23,18 +23,14 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlindedBlockContentsRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockContentsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
@@ -68,7 +64,7 @@ public class OkHttpValidatorTypeDefClient {
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.sendSignedBlockRequest =
-        new SendSignedBlockRequest(baseEndpoint, okHttpClient, preferSszBlockEncoding);
+        new SendSignedBlockRequest(spec, baseEndpoint, okHttpClient, preferSszBlockEncoding);
     this.registerValidatorsRequest =
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
     this.createAttestationDataRequest =
@@ -87,11 +83,11 @@ public class OkHttpValidatorTypeDefClient {
                 new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
   }
 
-  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    return sendSignedBlockRequest.sendSignedBlock(beaconBlock);
+  public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
+    return sendSignedBlockRequest.sendSignedBlock(blockContainer);
   }
 
-  public Optional<BeaconBlock> createUnsignedBlock(
+  public Optional<BlockContainer> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
@@ -107,23 +103,6 @@ public class OkHttpValidatorTypeDefClient {
           baseEndpoint);
       return createUnsignedBlock(slot, randaoReveal, graffiti, false);
     }
-  }
-
-  public Optional<BlindedBlockContents> createUnsignedBlindedBlockContents(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    final CreateBlindedBlockContentsRequest createBlindedBlockContentsRequest =
-        new CreateBlindedBlockContentsRequest(
-            baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
-    return createBlindedBlockContentsRequest.createUnsignedBlindedBlockContents(
-        randaoReveal, graffiti);
-  }
-
-  public Optional<BlockContents> createUnsignedBlockContents(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    final CreateBlockContentsRequest createBlockContentsRequest =
-        new CreateBlockContentsRequest(
-            baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
-    return createBlockContentsRequest.createUnsignedBlockContents(randaoReveal, graffiti);
   }
 
   public void registerValidators(

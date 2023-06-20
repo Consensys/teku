@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstractClient
     implements ExecutionEngineClient {
@@ -110,8 +111,10 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV1 executionPayload) {
-    return countRequest(() -> delegate.newPayloadV3(executionPayload), NEW_PAYLOAD_V3_METHOD);
+      final ExecutionPayloadV1 executionPayload,
+      final Optional<List<VersionedHash>> blobVersionedHashes) {
+    return countRequest(
+        () -> delegate.newPayloadV3(executionPayload, blobVersionedHashes), NEW_PAYLOAD_V3_METHOD);
   }
 
   @Override

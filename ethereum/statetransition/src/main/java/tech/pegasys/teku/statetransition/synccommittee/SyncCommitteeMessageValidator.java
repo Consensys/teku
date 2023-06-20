@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static java.util.stream.Collectors.toList;
+import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.IGNORE;
@@ -34,7 +35,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
@@ -46,11 +47,13 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class SyncCommitteeMessageValidator {
   private static final Logger LOG = LogManager.getLogger();
   private final Set<UniquenessKey> seenIndices =
-      LimitedSet.createSynchronized(VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE);
+      LimitedSet.createSynchronizedIterable(VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE * 2);
   private final Spec spec;
   private final SyncCommitteeStateUtils syncCommitteeStateUtils;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final SyncCommitteeCurrentSlotUtil slotUtil;
+
+  private final RecentChainData recentChainData;
 
   public SyncCommitteeMessageValidator(
       final Spec spec,
@@ -62,17 +65,18 @@ public class SyncCommitteeMessageValidator {
     this.syncCommitteeStateUtils = syncCommitteeStateUtils;
     this.signatureVerifier = signatureVerifier;
     this.slotUtil = new SyncCommitteeCurrentSlotUtil(recentChainData, spec, timeProvider);
+    this.recentChainData = recentChainData;
   }
 
   public SafeFuture<InternalValidationResult> validate(
-      final ValidateableSyncCommitteeMessage validateableMessage) {
+      final ValidatableSyncCommitteeMessage validateableMessage) {
 
     final SyncCommitteeMessage message = validateableMessage.getMessage();
 
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil =
         spec.getSyncCommitteeUtil(message.getSlot());
     if (maybeSyncCommitteeUtil.isEmpty()) {
-      return SafeFuture.completedFuture(
+      return completedFuture(
           reject(
               "Rejecting sync committee message because the fork active at slot %s does not support sync committees",
               message.getSlot()));
@@ -83,22 +87,52 @@ public class SyncCommitteeMessageValidator {
     // allowance),
     // i.e. sync_committee_message.slot == current_slot.
     if (!slotUtil.isForCurrentSlot(message.getSlot())) {
-      LOG.trace("Ignoring sync committee message because it is not from the current slot");
-      return SafeFuture.completedFuture(IGNORE);
+      LOG.trace(
+          "Ignoring sync committee message from validator {}, "
+              + "because it is not from the current slot "
+              + "(message slot: {}, current slot: {})",
+          message::getValidatorIndex,
+          message::getSlot,
+          recentChainData::getCurrentSlot);
+      return completedFuture(IGNORE);
     }
 
     // [IGNORE] There has been no other valid sync committee message for the declared slot for the
-    // validator referenced by sync_committee_message.validator_index.
-    // (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE //
+    // validator referenced by sync_committee_message.validator_index, unless the
+    // block being signed (beacon_block_root) matches the local head as selected by fork
+    // choice (this requires maintaining a cache of size `SYNC_COMMITTEE_SIZE //
     // SYNC_COMMITTEE_SUBNET_COUNT` for each subnet that can be flushed after each slot).
     // Note this validation is _per topic_ so that for a given `slot`, multiple messages could be
     // forwarded with the same `validator_index` as long as the `subnet_id`s are distinct.
     final Optional<UniquenessKey> uniquenessKey;
     if (validateableMessage.getReceivedSubnetId().isPresent()) {
       final UniquenessKey key =
-          getUniquenessKey(message, validateableMessage.getReceivedSubnetId().getAsInt());
-      if (seenIndices.contains(key)) {
-        return SafeFuture.completedFuture(IGNORE);
+          getUniquenessKey(
+              message,
+              validateableMessage.getReceivedSubnetId().getAsInt(),
+              message.getBeaconBlockRoot());
+      final Optional<Bytes32> maybeBestBlockRoot = recentChainData.getBestBlockRoot();
+
+      if (maybeBestBlockRoot.isPresent()) {
+        final Optional<Bytes32> bestSeenRoot =
+            seenIndices.stream()
+                .filter(item -> item.isSameIgnoringBlockRoot(key))
+                .findFirst()
+                .map(UniquenessKey::getBlockRoot);
+        // I've already seen this message, can ignore it.
+        if (bestSeenRoot.isPresent() && maybeBestBlockRoot.get().equals(bestSeenRoot.get())) {
+          return completedFuture(IGNORE);
+        } else {
+          if (seenIndices.remove(key)) {
+            // I've seen a message for this slot already, and its block root didn't match current
+            // head
+            LOG.trace(
+                "Removed already seen sync committee message from cache "
+                    + "to accept a better one for validator index {}, slot {}",
+                message.getValidatorIndex(),
+                message.getSlot());
+          }
+        }
       }
       uniquenessKey = Optional.of(key);
     } else {
@@ -112,7 +146,7 @@ public class SyncCommitteeMessageValidator {
               if (maybeState.isEmpty()) {
                 LOG.trace(
                     "Ignoring sync committee message because state is not available or not from Altair fork");
-                return SafeFuture.completedFuture(IGNORE);
+                return completedFuture(IGNORE);
               }
               final BeaconStateAltair state = maybeState.get();
               return validateWithState(
@@ -121,7 +155,7 @@ public class SyncCommitteeMessageValidator {
   }
 
   private SafeFuture<InternalValidationResult> validateWithState(
-      final ValidateableSyncCommitteeMessage validateableMessage,
+      final ValidatableSyncCommitteeMessage validateableMessage,
       final SyncCommitteeMessage message,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAltair state,
@@ -137,7 +171,7 @@ public class SyncCommitteeMessageValidator {
     // committee, i.e. state.validators[sync_committee_message.validator_index].pubkey in
     // state.current_sync_committee.pubkeys.
     if (assignedSubcommittees.isEmpty()) {
-      return SafeFuture.completedFuture(
+      return completedFuture(
           reject(
               "Rejecting sync committee message because validator is not in the sync committee"));
     }
@@ -152,13 +186,15 @@ public class SyncCommitteeMessageValidator {
                     assignedSubcommittees
                         .getAssignedSubcommittees()
                         .intStream()
-                        .mapToObj(subnetId -> getUniquenessKey(message, subnetId))
+                        .mapToObj(
+                            subnetId ->
+                                getUniquenessKey(message, subnetId, message.getBeaconBlockRoot()))
                         .collect(toList()));
 
     // [IGNORE] There has been no other valid sync committee message for the declared slot for the
     // validator referenced by sync_committee_message.validator_index.
     if (seenIndices.containsAll(uniquenessKeys)) {
-      return SafeFuture.completedFuture(IGNORE);
+      return completedFuture(IGNORE);
     }
 
     // [REJECT] The subnet_id is correct, i.e. subnet_id in
@@ -167,14 +203,14 @@ public class SyncCommitteeMessageValidator {
         && !assignedSubcommittees
             .getAssignedSubcommittees()
             .contains(validateableMessage.getReceivedSubnetId().getAsInt())) {
-      return SafeFuture.completedFuture(
+      return completedFuture(
           reject("Rejecting sync committee message because subnet id is incorrect"));
     }
 
     final Optional<BLSPublicKey> maybeValidatorPublicKey =
         spec.getValidatorPubKey(state, message.getValidatorIndex());
     if (maybeValidatorPublicKey.isEmpty()) {
-      return SafeFuture.completedFuture(
+      return completedFuture(
           reject("Rejecting sync committee message because the validator index is unknown"));
     }
 
@@ -200,8 +236,9 @@ public class SyncCommitteeMessageValidator {
             });
   }
 
-  private UniquenessKey getUniquenessKey(final SyncCommitteeMessage message, final int subnetId) {
-    return new UniquenessKey(message.getValidatorIndex(), message.getSlot(), subnetId);
+  private UniquenessKey getUniquenessKey(
+      final SyncCommitteeMessage message, final int subnetId, final Bytes32 root) {
+    return new UniquenessKey(message.getValidatorIndex(), message.getSlot(), subnetId, root);
   }
 
   private static class UniquenessKey {
@@ -209,10 +246,27 @@ public class SyncCommitteeMessageValidator {
     private final UInt64 slot;
     private final int subnetId;
 
-    private UniquenessKey(final UInt64 validatorIndex, final UInt64 slot, final int subnetId) {
+    private final Bytes32 blockRoot;
+
+    private UniquenessKey(
+        final UInt64 validatorIndex,
+        final UInt64 slot,
+        final int subnetId,
+        final Bytes32 blockRoot) {
       this.validatorIndex = validatorIndex;
       this.slot = slot;
       this.subnetId = subnetId;
+      this.blockRoot = blockRoot;
+    }
+
+    public Bytes32 getBlockRoot() {
+      return blockRoot;
+    }
+
+    boolean isSameIgnoringBlockRoot(final UniquenessKey candidate) {
+      return candidate.validatorIndex.equals(this.validatorIndex)
+          && candidate.subnetId == this.subnetId
+          && candidate.slot.equals(this.slot);
     }
 
     @Override
@@ -226,12 +280,13 @@ public class SyncCommitteeMessageValidator {
       final UniquenessKey that = (UniquenessKey) o;
       return subnetId == that.subnetId
           && Objects.equals(validatorIndex, that.validatorIndex)
-          && Objects.equals(slot, that.slot);
+          && Objects.equals(slot, that.slot)
+          && Objects.equals(blockRoot, that.blockRoot);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(validatorIndex, slot, subnetId);
+      return Objects.hash(validatorIndex, slot, subnetId, blockRoot);
     }
   }
 }

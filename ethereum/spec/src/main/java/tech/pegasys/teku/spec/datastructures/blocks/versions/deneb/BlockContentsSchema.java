@@ -13,30 +13,47 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
+import java.util.List;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecars;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarsSchema;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 
 public class BlockContentsSchema
-    extends ContainerSchema2<BlockContents, BeaconBlock, BlobSidecars> {
+    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecar>>
+    implements BlockContainerSchema<BlockContents> {
+
+  static final SszFieldName FIELD_BLOB_SIDECARS = () -> "blob_sidecars";
 
   BlockContentsSchema(
-      final BeaconBlockSchema beaconBlockSchema, final BlobSidecarsSchema blobSidecarsSchema) {
+      final String containerName,
+      final SpecConfigDeneb specConfig,
+      final BeaconBlockSchema beaconBlockSchema,
+      final BlobSidecarSchema blobSidecarSchema) {
     super(
-        "BlockContents",
-        namedSchema("beacon_block", beaconBlockSchema),
-        namedSchema("blob_sidecars", blobSidecarsSchema));
+        containerName,
+        namedSchema("block", beaconBlockSchema),
+        namedSchema(
+            FIELD_BLOB_SIDECARS,
+            SszListSchema.create(blobSidecarSchema, specConfig.getMaxBlobsPerBlock())));
   }
 
   public static BlockContentsSchema create(
-      final BeaconBlockSchema beaconBlockSchema, final BlobSidecarsSchema blobSidecarsSchema) {
-    return new BlockContentsSchema(beaconBlockSchema, blobSidecarsSchema);
+      final SpecConfigDeneb specConfig,
+      final BeaconBlockSchema beaconBlockSchema,
+      final BlobSidecarSchema blobSidecarSchema,
+      final String containerName) {
+    return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSidecarSchema);
   }
 
-  public BlockContents create(final BeaconBlock beaconBlock, final BlobSidecars blobSidecars) {
+  public BlockContents create(final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
     return new BlockContents(this, beaconBlock, blobSidecars);
   }
 
@@ -45,7 +62,8 @@ public class BlockContentsSchema
     return new BlockContents(this, node);
   }
 
-  public BlobSidecarsSchema getBlobSidecarsSchema() {
-    return (BlobSidecarsSchema) getFieldSchema1();
+  @SuppressWarnings("unchecked")
+  public SszListSchema<BlobSidecar, ?> getBlobSidecarsSchema() {
+    return (SszListSchema<BlobSidecar, ?>) getChildSchema(getFieldIndex(FIELD_BLOB_SIDECARS));
   }
 }

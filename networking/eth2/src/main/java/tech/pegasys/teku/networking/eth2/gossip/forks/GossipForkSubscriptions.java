@@ -15,7 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.forks;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
-import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidateableSyncCommitteeMessage;
+import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
 
 public interface GossipForkSubscriptions {
 
@@ -35,7 +35,7 @@ public interface GossipForkSubscriptions {
 
   void stopGossipForOptimisticSync();
 
-  void publishAttestation(ValidateableAttestation attestation);
+  void publishAttestation(ValidatableAttestation attestation);
 
   void publishBlock(SignedBeaconBlock block);
 
@@ -47,7 +47,7 @@ public interface GossipForkSubscriptions {
 
   void unsubscribeFromAttestationSubnetId(int subnetId);
 
-  default void publishSyncCommitteeMessage(ValidateableSyncCommitteeMessage message) {
+  default void publishSyncCommitteeMessage(ValidatableSyncCommitteeMessage message) {
     // since Altair
   }
 

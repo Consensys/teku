@@ -42,7 +42,7 @@ public class BlobsUtil {
   // actual list of versioned hashes representing the commitments
   private static final Bytes MAGIC_BLOB_TRANSACTION_PREFIX =
       Bytes.fromHexString(
-          "0x05450000000000000000000000000000000000000000000000000000000000000000"
+          "0x03450000000000000000000000000000000000000000000000000000000000000000"
               + "0000000000000000000000000000000000000000000000000000000000000000000000"
               + "0000000000000000000000000000000000000000000000000000000000000000000000"
               + "0000000000000000000000000000000000000000000000000000000000000000000000"
@@ -100,7 +100,7 @@ public class BlobsUtil {
     final Bytes rawBlob =
         IntStream.range(0, fieldElementsPerBlob)
             .mapToObj(__ -> randomBLSFieldElement())
-            .map(fieldElement -> Bytes.wrap(fieldElement.toArray(ByteOrder.LITTLE_ENDIAN)))
+            .map(fieldElement -> Bytes.wrap(fieldElement.toArray(ByteOrder.BIG_ENDIAN)))
             .reduce(Bytes::wrap)
             .orElse(Bytes.EMPTY);
 

@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.util;
 
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarsUnblinderDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockBlinderDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.SignedBeaconBlockUnblinderDeneb;
 import tech.pegasys.teku.spec.logic.common.util.BlindBlockUtil;
@@ -32,8 +37,15 @@ public class BlindBlockUtilDeneb extends BlindBlockUtil {
 
   @Override
   protected SignedBeaconBlockUnblinder createSignedBeaconBlockUnblinder(
-      final SignedBeaconBlock signedBeaconBlock) {
-    return new SignedBeaconBlockUnblinderDeneb(schemaDefinitions, signedBeaconBlock);
+      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+    return new SignedBeaconBlockUnblinderDeneb(schemaDefinitions, signedBlindedBlockContainer);
+  }
+
+  @Override
+  protected Optional<SignedBlobSidecarsUnblinder> createSignedBlobSidecarsUnblinder(
+      final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
+    return Optional.of(
+        new SignedBlobSidecarsUnblinderDeneb(schemaDefinitions, signedBlindedBlobSidecars));
   }
 
   @Override

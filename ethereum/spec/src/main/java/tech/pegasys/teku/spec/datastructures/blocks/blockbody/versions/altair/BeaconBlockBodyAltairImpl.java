@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -26,7 +25,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
@@ -136,11 +134,6 @@ public class BeaconBlockBodyAltairImpl
   }
 
   @Override
-  public Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges() {
-    return Optional.empty();
-  }
-
-  @Override
   public SyncAggregate getSyncAggregate() {
     return getField8();
   }
@@ -148,10 +141,5 @@ public class BeaconBlockBodyAltairImpl
   @Override
   public BeaconBlockBodySchemaAltairImpl getSchema() {
     return (BeaconBlockBodySchemaAltairImpl) super.getSchema();
-  }
-
-  @Override
-  public Optional<BeaconBlockBodyAltair> toVersionAltair() {
-    return Optional.of(this);
   }
 }

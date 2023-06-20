@@ -266,24 +266,17 @@ public class V4HotKvStoreDao {
     }
 
     @Override
-    public void addHotBlobSidecarSlot(
+    public void addHotBlobSidecarsForBlock(
         final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
-      if (blobSidecars.isEmpty()) {
-        transaction.put(
-            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-            SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
-            Bytes.EMPTY);
-      } else {
-        blobSidecars.forEach(
-            blobSidecar ->
-                transaction.put(
-                    schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-                    new SlotAndBlockRootAndBlobIndex(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        blobSidecar.getIndex()),
-                    blobSidecar.sszSerialize()));
-      }
+      blobSidecars.forEach(
+          blobSidecar ->
+              transaction.put(
+                  schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+                  new SlotAndBlockRootAndBlobIndex(
+                      slotAndBlockRoot.getSlot(),
+                      slotAndBlockRoot.getBlockRoot(),
+                      blobSidecar.getIndex()),
+                  blobSidecar.sszSerialize()));
     }
 
     @Override

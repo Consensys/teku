@@ -21,7 +21,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -134,8 +134,7 @@ public class OperationsReOrgManager implements ChainHeadChannel {
         attestation ->
             attestationManager
                 .onAttestation(
-                    ValidateableAttestation.fromReorgedBlock(
-                        recentChainData.getSpec(), attestation))
+                    ValidatableAttestation.fromReorgedBlock(recentChainData.getSpec(), attestation))
                 .finish(
                     result ->
                         result.ifInvalid(

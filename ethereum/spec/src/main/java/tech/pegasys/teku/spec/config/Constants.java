@@ -19,11 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class Constants {
 
   // Networking
-  public static final int GOSSIP_MAX_SIZE = 1048576; // bytes
-  public static final int GOSSIP_MAX_SIZE_BELLATRIX = 10485760; // bytes
   public static final UInt64 MAX_REQUEST_BLOCKS = UInt64.valueOf(1024);
-  public static final int MAX_CHUNK_SIZE = 1048576; // bytes
-  public static final int MAX_CHUNK_SIZE_BELLATRIX = 10485760; // bytes
   public static final int ATTESTATION_SUBNET_COUNT = 64;
   public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
@@ -31,6 +27,7 @@ public class Constants {
   // Deneb
   public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
+  public static final int BLOB_SIDECAR_SUBNET_COUNT = 6;
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;

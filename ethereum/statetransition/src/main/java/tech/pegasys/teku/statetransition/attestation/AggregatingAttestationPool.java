@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.attestation.ValidateableAttestation;
+import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -92,7 +92,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     this.maximumAttestationCount = maximumAttestationCount;
   }
 
-  public synchronized void add(final ValidateableAttestation attestation) {
+  public synchronized void add(final ValidatableAttestation attestation) {
     final AttestationData attestationData = attestation.getAttestation().getData();
     final boolean add = getOrCreateAttestationGroup(attestationData).add(attestation);
     if (add) {
@@ -187,7 +187,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(group -> worthinessChecker.areAttestationsWorthy(group.getAttestationData()))
         .flatMap(MatchingDataAttestationGroup::stream)
         .limit(attestationsSchema.getMaxLength())
-        .map(ValidateableAttestation::getAttestation)
+        .map(ValidatableAttestation::getAttestation)
         .filter(
             att -> {
               if (spec.computeEpochAtSlot(att.getData().getSlot()).isLessThan(currentEpoch)) {
@@ -218,7 +218,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(Objects::nonNull)
         .filter(filterForCommitteeIndex)
         .flatMap(MatchingDataAttestationGroup::stream)
-        .map(ValidateableAttestation::getAttestation)
+        .map(ValidatableAttestation::getAttestation)
         .collect(Collectors.toList());
   }
 
@@ -227,7 +227,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
     return spec.validateAttestation(stateAtBlockSlot, attestationData).isEmpty();
   }
 
-  public synchronized Optional<ValidateableAttestation> createAggregateFor(
+  public synchronized Optional<ValidatableAttestation> createAggregateFor(
       final Bytes32 attestationHashTreeRoot) {
     return Optional.ofNullable(attestationGroupByDataHash.get(attestationHashTreeRoot))
         .flatMap(attestations -> attestations.stream().findFirst());

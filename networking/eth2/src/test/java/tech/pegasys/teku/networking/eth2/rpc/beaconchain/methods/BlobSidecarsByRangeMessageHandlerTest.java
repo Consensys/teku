@@ -26,8 +26,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_CHUNK_SIZE;
 
+import com.google.common.collect.ImmutableSortedMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
@@ -62,9 +63,11 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RpcEncoding RPC_ENCODING =
-      RpcEncoding.createSszSnappyEncoding(MAX_CHUNK_SIZE);
+      RpcEncoding.createSszSnappyEncoding(
+          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -104,17 +107,21 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void setUp() {
     when(peer.popRequest()).thenReturn(true);
     when(peer.popBlobSidecarRequests(eq(listener), anyLong())).thenReturn(true);
-    when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
+    when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
+    // everything is finalized by default
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(startSlot.plus(count)));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
   public void validateRequest_validRequest() {
     final Optional<RpcException> result =
-        handler.validateRequest(protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ONE));
+        handler.validateRequest(
+            protocolId, new BlobSidecarsByRangeRequestMessage(startSlot, ONE, maxBlobsPerBlock));
     assertThat(result).isEmpty();
   }
 
@@ -122,7 +129,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
     final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, maxRequestBlobSidecars.increment());
+        new BlobSidecarsByRangeRequestMessage(
+            startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -145,10 +153,11 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.popBlobSidecarRequests(listener, 20)).thenReturn(false);
+    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue()))
+        .thenReturn(false);
 
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, count);
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -169,12 +178,15 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(5020));
 
     // earliest available sidecar epoch - 5010
-    when(combinedChainDataClient.getEarliestAvailableBlobSidecarEpoch())
-        .thenReturn(SafeFuture.completedFuture(Optional.of(denebForkEpoch.plus(5009))));
+    when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(denebForkEpoch.plus(5009).times(slotsPerEpoch))));
 
     // start slot in epoch 5000 within MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS range
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(UInt64.valueOf(5000).times(slotsPerEpoch), count);
+        new BlobSidecarsByRangeRequestMessage(
+            UInt64.valueOf(5000).times(slotsPerEpoch), count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -191,7 +203,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     when(combinedChainDataClient.getBlobSidecarKeys(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Collections.emptyList()));
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(ZERO, count);
+        new BlobSidecarsByRangeRequestMessage(ZERO, count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -203,12 +215,62 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   @Test
-  public void shouldSendToPeerRequestedNumberOfBlobSidecars() {
+  public void shouldSendToPeerRequestedNumberOfFinalizedBlobSidecars() {
 
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, count);
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
     final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+
+    verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
+
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+
+    verify(listener).completeSuccessfully();
+
+    AssertionsForInterfaceTypes.assertThat(actualSent).containsExactlyElementsOf(expectedSent);
+  }
+
+  @Test
+  public void shouldSendToPeerRequestedNumberOfCanonicalBlobSidecars() {
+
+    final UInt64 latestFinalizedSlot = startSlot.plus(count).minus(3);
+    when(combinedChainDataClient.getFinalizedBlockSlot())
+        .thenReturn(Optional.of(latestFinalizedSlot));
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
+
+    final List<BlobSidecar> allAvailableBlobs =
+        setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+
+    // we simulate that the canonical non-finalized chain only contains blobs from last
+    // slotAndBlockRoot
+    final SlotAndBlockRoot canonicalSlotAndBlockRoot =
+        allAvailableBlobs.get(allAvailableBlobs.size() - 1).getSlotAndBlockRoot();
+
+    final List<BlobSidecar> expectedSent =
+        allAvailableBlobs.stream()
+            .filter(
+                blobSidecar ->
+                    blobSidecar
+                            .getSlot()
+                            .isLessThanOrEqualTo(latestFinalizedSlot) // include finalized
+                        || blobSidecar
+                            .getSlotAndBlockRoot()
+                            .equals(canonicalSlotAndBlockRoot) // include non canonical
+                )
+            .collect(Collectors.toUnmodifiableList());
+
+    // let return only canonical slot and block root as canonical
+    when(combinedChainDataClient.getAncestorRoots(eq(startSlot), eq(ONE), any()))
+        .thenReturn(
+            ImmutableSortedMap.of(
+                canonicalSlotAndBlockRoot.getSlot(), canonicalSlotAndBlockRoot.getBlockRoot()));
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -227,7 +289,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void shouldIgnoreRequestWhenCountIsZero() {
 
     final BlobSidecarsByRangeRequestMessage request =
-        new BlobSidecarsByRangeRequestMessage(startSlot, ZERO);
+        new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
     when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(true);
 
@@ -262,10 +324,11 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .forEach(
             slot -> {
               final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
-              UInt64.range(
+              UInt64.rangeClosed(
                       ZERO,
-                      dataStructureUtil.randomUInt64(
-                          miscHelpers.getBlobSidecarsCount(Optional.of(block))))
+                      dataStructureUtil
+                          .randomUInt64(miscHelpers.getBlobSidecarsCount(Optional.of(block)))
+                          .minusMinZero(1))
                   .forEach(
                       index ->
                           keys.add(new SlotAndBlockRootAndBlobIndex(slot, block.getRoot(), index)));

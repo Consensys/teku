@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -63,7 +64,6 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -99,9 +99,9 @@ public class SyncingNodeManager {
   @SuppressWarnings("FutureReturnValueIgnored")
   public static SyncingNodeManager create(
       final AsyncRunner asyncRunner,
-      Eth2P2PNetworkFactory networkFactory,
+      final Eth2P2PNetworkFactory networkFactory,
       final List<BLSKeyPair> validatorKeys,
-      Consumer<Eth2P2PNetworkBuilder> configureNetwork)
+      final Consumer<Eth2P2PNetworkBuilder> configureNetwork)
       throws Exception {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final EventChannels eventChannels =
@@ -113,6 +113,7 @@ public class SyncingNodeManager {
 
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
@@ -120,15 +121,8 @@ public class SyncingNodeManager {
             recentChainData,
             BlobSidecarManager.NOOP,
             new StubForkChoiceNotifier(),
-            transitionBlockValidator);
-    final BlockImporter blockImporter =
-        new BlockImporter(
-            spec,
-            eventChannels.getPublisher(BlockImportNotifications.class),
-            recentChainData,
-            forkChoice,
-            WeakSubjectivityFactory.lenientValidator(),
-            new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+            transitionBlockValidator,
+            new StubMetricsSystem());
 
     final BlockValidator blockValidator =
         new BlockValidator(
@@ -138,16 +132,24 @@ public class SyncingNodeManager {
     final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
     final PendingPool<SignedBeaconBlock> pendingBlocks =
         poolFactory.createPendingPoolForBlocks(spec);
-    final BlobSidecarPoolImpl blobSidecarPool =
-        poolFactory.createPoolForBlobSidecars(spec, timeProvider, asyncRunner, recentChainData);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
     final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronized(500);
+
+    final BlockImporter blockImporter =
+        new BlockImporter(
+            spec,
+            eventChannels.getPublisher(BlockImportNotifications.class),
+            recentChainData,
+            forkChoice,
+            WeakSubjectivityFactory.lenientValidator(),
+            new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+
     final BlockManager blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            blobSidecarPool,
+            BlobSidecarPool.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -161,9 +163,7 @@ public class SyncingNodeManager {
         .subscribe(BlockImportChannel.class, blockManager)
         .subscribe(BlockImportNotifications.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks)
-        .subscribe(SlotEventsChannel.class, pendingBlocks)
-        .subscribe(FinalizedCheckpointChannel.class, blobSidecarPool)
-        .subscribe(SlotEventsChannel.class, blobSidecarPool);
+        .subscribe(SlotEventsChannel.class, pendingBlocks);
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
@@ -183,9 +183,7 @@ public class SyncingNodeManager {
             eth2P2PNetwork,
             recentChainData,
             blockImporter,
-            // TODO: change to the real value when renamed and initialized
             BlobSidecarManager.NOOP,
-            // TODO: change to the real value when implemented
             BlobSidecarPool.NOOP,
             new NoOpMetricsSystem(),
             spec);
@@ -196,7 +194,7 @@ public class SyncingNodeManager {
 
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(
-            asyncRunner, pendingBlocks, blobSidecarPool, syncService, fetchBlockTaskFactory);
+            asyncRunner, pendingBlocks, BlobSidecarPool.NOOP, syncService, fetchBlockTaskFactory);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->

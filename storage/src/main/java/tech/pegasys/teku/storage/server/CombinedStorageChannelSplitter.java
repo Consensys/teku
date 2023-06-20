@@ -71,8 +71,10 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
-    return updateDelegate.onFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot);
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+    return updateDelegate.onFinalizedBlocks(
+        finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
   }
 
   @Override
@@ -105,18 +107,13 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    return updateDelegate.onNoBlobsSlot(slotAndBlockRoot);
-  }
-
-  @Override
   public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
     return updateDelegate.onBlobSidecar(blobSidecar);
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
-    return updateDelegate.onBlobSidecarsRemoval(slot);
+  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
+    return updateDelegate.onBlobSidecarsRemoval(slotAndBlockRoot);
   }
 
   @Override
@@ -174,7 +171,7 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsBySlotAndBlockRoot(
+  public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return asyncRunner.runAsync(
         () -> queryDelegate.getBlobSidecarsBySlotAndBlockRoot(slotAndBlockRoot));
@@ -235,5 +232,11 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       UInt64 startSlot, UInt64 endSlot, UInt64 limit) {
     return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecarKeys(startSlot, endSlot, limit));
+  }
+
+  @Override
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecarKeys(slotAndBlockRoot));
   }
 }

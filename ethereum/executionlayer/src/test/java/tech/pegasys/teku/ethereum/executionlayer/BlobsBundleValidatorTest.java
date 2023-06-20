@@ -29,8 +29,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobsBundle;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -42,22 +41,7 @@ public class BlobsBundleValidatorTest {
       new BlobsBundleValidatorImpl(miscHelpers);
 
   @Test
-  public void shouldVerifyAgainstPayloadTransactions() throws Exception {
-    final BlobsBundle blobsBundle =
-        new BlobsBundle(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
-    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
-    when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(false);
-    assertThatThrownBy(
-            () -> blobsBundleValidator.validate(blobsBundle, Optional.of(executionPayload)))
-        .isInstanceOf(BlobsBundleValidationException.class)
-        .hasMessage("KZG commitments doesn't match the versioned hashes in the transactions");
-    when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(true);
-    blobsBundleValidator.validate(blobsBundle, Optional.of(executionPayload));
-  }
-
-  @Test
   public void shouldMatchSizesOfCommitmentsAndBlobs() {
-    when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(true);
     final BlobsBundle blobsBundle =
         new BlobsBundle(
             List.of(dataStructureUtil.randomKZGCommitment()),
@@ -71,7 +55,6 @@ public class BlobsBundleValidatorTest {
   @Test
   public void shouldVerifyAllBlobsAgainstKzgCommitments() throws Exception {
     final KZGCommitment commitment = new KZGCommitment(Bytes48.leftPad(Bytes.fromHexString("a0")));
-    when(miscHelpers.verifyKZGCommitmentsAgainstTransactions(any(), any())).thenReturn(true);
     when(miscHelpers.blobToKzgCommitment(any())).thenReturn(commitment);
 
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();

@@ -143,8 +143,12 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder excessDataGas(
-      final Supplier<UInt256> excessDataGasSupplier) {
+  public ExecutionPayloadHeaderBuilder dataGasUsed(final Supplier<UInt64> dataGasUsedSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder excessDataGas(final Supplier<UInt64> excessDataGasSupplier) {
     return this;
   }
 

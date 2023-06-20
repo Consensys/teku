@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
@@ -33,11 +32,9 @@ public class ProtoArrayBuilder {
   private Checkpoint justifiedCheckpoint;
   private Checkpoint finalizedCheckpoint;
   private UInt64 initialEpoch = SpecConfig.GENESIS_EPOCH;
-  private ProgressiveBalancesMode progressiveBalancesMode;
 
   public ProtoArray build() {
     checkNotNull(spec, "Spec must be supplied");
-    checkNotNull(progressiveBalancesMode, "Progressive balances mode must be supplied");
     checkNotNull(currentEpoch, "Current epoch must be supplied");
     checkNotNull(justifiedCheckpoint, "Justified checkpoint must be supplied");
     checkNotNull(finalizedCheckpoint, "finalized checkpoint must be supplied");
@@ -48,7 +45,6 @@ public class ProtoArrayBuilder {
         justifiedCheckpoint,
         finalizedCheckpoint,
         initialEpoch,
-        progressiveBalancesMode,
         statusLog);
   }
 
@@ -93,12 +89,6 @@ public class ProtoArrayBuilder {
     initialCheckpoint.ifPresentOrElse(
         checkpoint -> initialEpoch(checkpoint.getEpoch()),
         () -> initialEpoch(SpecConfig.GENESIS_EPOCH));
-    return this;
-  }
-
-  public ProtoArrayBuilder progressiveBalancesMode(
-      final ProgressiveBalancesMode progressiveBalancesMode) {
-    this.progressiveBalancesMode = progressiveBalancesMode;
     return this;
   }
 }

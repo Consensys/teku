@@ -46,12 +46,14 @@ public interface Database extends AutoCloseable {
   int PRUNE_BATCH_SIZE = 10_000;
   int PRUNE_BLOCK_STREAM_LIMIT = 5_000;
 
-  void storeInitialAnchor(AnchorPoint genesis);
+  void storeInitialAnchor(AnchorPoint initialAnchor);
 
   UpdateResult update(StorageUpdate event);
 
   void storeFinalizedBlocks(
-      Collection<SignedBeaconBlock> blocks, Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot);
+      Collection<SignedBeaconBlock> blocks,
+      Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      Optional<UInt64> maybeEarliestBlobSidecarSlot);
 
   void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
 
@@ -61,11 +63,9 @@ public interface Database extends AutoCloseable {
 
   void storeBlobSidecar(BlobSidecar blobSidecar);
 
-  void storeNoBlobsSlot(SlotAndBlockRoot slotAndBlockRoot);
-
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
-  void removeBlobSidecars(UInt64 slot);
+  void removeBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   /**
    * This prune method will delete BlobSidecars starting from the oldest BlobSidecars (by slot) up
@@ -82,6 +82,11 @@ public interface Database extends AutoCloseable {
 
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<BlobSidecar> streamBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+
+  List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(SlotAndBlockRoot slotAndBlockRoot);
 
   Optional<UInt64> getEarliestBlobSidecarSlot();
 

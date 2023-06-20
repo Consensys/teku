@@ -41,6 +41,14 @@ public enum SpecMilestone {
     return compareTo(other) >= 0;
   }
 
+  /** Returns the milestone prior to this milestone */
+  public SpecMilestone getPreviousMilestone() {
+    if (equals(PHASE0)) {
+      throw new IllegalArgumentException("There is no milestone prior to Phase0");
+    }
+    return SpecMilestone.values()[ordinal() - 1];
+  }
+
   /**
    * @param milestone The milestone being inspected
    * @return An ordered list of all milestones preceding the supplied milestone

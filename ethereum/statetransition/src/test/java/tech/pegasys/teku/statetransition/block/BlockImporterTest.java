@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -91,6 +93,8 @@ public class BlockImporterTest {
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
+
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
   private final ForkChoice forkChoice =
       new ForkChoice(
           spec,
@@ -98,13 +102,14 @@ public class BlockImporterTest {
           recentChainData,
           BlobSidecarManager.NOOP,
           forkChoiceNotifier,
-          transitionBlockValidator);
+          transitionBlockValidator,
+          metricsSystem);
   private final BeaconChainUtil localChain =
       BeaconChainUtil.create(spec, recentChainData, validatorKeys, forkChoice, false);
 
   private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create();
   private final BeaconChainUtil otherChain =
-      BeaconChainUtil.create(otherStorage, validatorKeys, false);
+      BeaconChainUtil.create(spec, otherStorage, validatorKeys, false);
 
   private final BlockImporter blockImporter =
       new BlockImporter(
@@ -444,7 +449,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
-            transitionBlockValidator);
+            transitionBlockValidator,
+            storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -488,7 +494,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
-            transitionBlockValidator);
+            transitionBlockValidator,
+            storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -540,7 +547,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
-            transitionBlockValidator);
+            transitionBlockValidator,
+            storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -584,7 +592,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
-            transitionBlockValidator);
+            transitionBlockValidator,
+            storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -616,7 +625,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
-            transitionBlockValidator);
+            transitionBlockValidator,
+            storageSystem.getMetricsSystem());
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -669,7 +679,8 @@ public class BlockImporterTest {
             storageSystem.recentChainData(),
             BlobSidecarManager.NOOP,
             forkChoiceNotifier,
-            transitionBlockValidator);
+            transitionBlockValidator,
+            storageSystem.getMetricsSystem());
 
     final BlockImporter blockImporter =
         new BlockImporter(

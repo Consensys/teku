@@ -37,8 +37,8 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.BlindedBlockEndpointNotAvailableException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
@@ -50,7 +50,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
   private final UInt64 slot;
   private final boolean preferSszBlockEncoding;
   private final ValidatorApiMethod apiMethod;
-  private final BeaconBlockSchema beaconBlockSchema;
+  private final BlockContainerSchema<BlockContainer> blockContainerSchema;
   private final DeserializableTypeDefinition<GetBlockResponse> getBlockResponseDefinition;
   private final ResponseHandler<GetBlockResponse> responseHandler;
 
@@ -65,16 +65,16 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
     this.slot = slot;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     apiMethod = blinded ? GET_UNSIGNED_BLINDED_BLOCK : GET_UNSIGNED_BLOCK_V2;
-    beaconBlockSchema =
+    blockContainerSchema =
         blinded
-            ? spec.atSlot(slot).getSchemaDefinitions().getBlindedBeaconBlockSchema()
-            : spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockSchema();
+            ? spec.atSlot(slot).getSchemaDefinitions().getBlindedBlockContainerSchema()
+            : spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
     getBlockResponseDefinition =
         DeserializableTypeDefinition.object(GetBlockResponse.class)
             .initializer(GetBlockResponse::new)
             .withField(
                 "data",
-                beaconBlockSchema.getJsonTypeDefinition(),
+                blockContainerSchema.getJsonTypeDefinition(),
                 GetBlockResponse::getData,
                 GetBlockResponse::setData)
             .withField(
@@ -85,7 +85,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
             .build();
     final ResponseHandler<GetBlockResponse> responseHandler =
         new ResponseHandler<>(getBlockResponseDefinition)
-            .withHandler(SC_OK, this::handleBeaconBlockResult);
+            .withHandler(SC_OK, this::handleBlockContainerResult);
     this.responseHandler =
         blinded
             ? responseHandler.withHandler(
@@ -96,7 +96,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
             : responseHandler;
   }
 
-  public Optional<BeaconBlock> createUnsignedBlock(
+  public Optional<BlockContainer> createUnsignedBlock(
       final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("randao_reveal", randaoReveal.toString());
@@ -111,7 +111,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
         .map(GetBlockResponse::getData);
   }
 
-  private Optional<GetBlockResponse> handleBeaconBlockResult(
+  private Optional<GetBlockResponse> handleBlockContainerResult(
       final Request request, final Response response) {
     try {
       final String responseContentType = response.header("Content-Type");
@@ -119,30 +119,30 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
           && MediaType.parse(responseContentType).is(MediaType.OCTET_STREAM)) {
         return Optional.of(
             new GetBlockResponse(
-                beaconBlockSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
+                blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
       }
       return Optional.of(JsonUtil.parse(response.body().string(), getBlockResponseDefinition));
-    } catch (IOException e) {
-      LOG.trace("Failed to parse response object creating block", e);
+    } catch (final IOException ex) {
+      LOG.trace("Failed to parse response object creating block", ex);
     }
     return Optional.empty();
   }
 
   static class GetBlockResponse {
-    private BeaconBlock data;
+    private BlockContainer data;
     private SpecMilestone specMilestone;
 
     public GetBlockResponse() {}
 
-    public GetBlockResponse(final BeaconBlock data) {
+    public GetBlockResponse(final BlockContainer data) {
       this.data = data;
     }
 
-    public BeaconBlock getData() {
+    public BlockContainer getData() {
       return data;
     }
 
-    public void setData(final BeaconBlock data) {
+    public void setData(final BlockContainer data) {
       this.data = data;
     }
 

@@ -15,12 +15,15 @@ package tech.pegasys.teku.api;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
+import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
+import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,15 +51,15 @@ public abstract class AbstractChainDataProviderTest {
 
   protected DataStructureUtil data;
   protected StorageSystem storageSystem;
-
   protected SpecConfig specConfig;
   protected RecentChainData recentChainData;
-
   protected CombinedChainDataClient combinedChainDataClient;
+  protected BlockSelectorFactory blockSelectorFactory;
+  protected StateSelectorFactory stateSelectorFactory;
   protected BeaconState beaconStateInternal;
-
   protected SignedBlockAndState bestBlock;
   protected Bytes32 blockRoot;
+  protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
   protected final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
@@ -90,9 +93,22 @@ public abstract class AbstractChainDataProviderTest {
   }
 
   protected ChainDataProvider setupBySpec(
+      final Spec spec, final DataStructureUtil dataStructureUtil) {
+    return setupBySpec(spec, dataStructureUtil, 16);
+  }
+
+  protected ChainDataProvider setupBySpec(
       final Spec spec, final DataStructureUtil dataStructureUtil, final int validatorCount) {
+    this.blockSelectorFactory = spy(new BlockSelectorFactory(spec, mockCombinedChainDataClient));
+    this.stateSelectorFactory = spy(new StateSelectorFactory(spec, mockCombinedChainDataClient));
     final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, mockCombinedChainDataClient);
+        new ChainDataProvider(
+            spec,
+            recentChainData,
+            mockCombinedChainDataClient,
+            blockSelectorFactory,
+            stateSelectorFactory,
+            rewardCalculator);
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       final SszList<Validator> validators =

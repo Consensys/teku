@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -88,8 +89,12 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
-    return retry(() -> delegate.onFinalizedBlocks(finalizedBlocks, blobSidecarsBySlot));
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+    return retry(
+        () ->
+            delegate.onFinalizedBlocks(
+                finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot));
   }
 
   @Override
@@ -127,18 +132,13 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<Void> onNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-    return retry(() -> delegate.onNoBlobsSlot(slotAndBlockRoot));
-  }
-
-  @Override
   public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
     return retry(() -> delegate.onBlobSidecar(blobSidecar));
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final UInt64 slot) {
-    return retry(() -> delegate.onBlobSidecarsRemoval(slot));
+  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
+    return retry(() -> delegate.onBlobSidecarsRemoval(slotAndBlockRoot));
   }
 
   private <O> SafeFuture<O> retry(final Supplier<SafeFuture<O>> method) {

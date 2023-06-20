@@ -52,10 +52,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -269,7 +267,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconBlock>> createUnsignedBlock(
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
@@ -279,22 +277,9 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BlindedBlockContents>> createUnsignedBlindedBlockContents(
-      final UInt64 slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
-    return sendRequest(
-        () -> typeDefClient.createUnsignedBlindedBlockContents(slot, randaoReveal, graffiti));
-  }
-
-  @Override
-  public SafeFuture<Optional<BlockContents>> createUnsignedBlockContents(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    return sendRequest(
-        () -> typeDefClient.createUnsignedBlockContents(slot, randaoReveal, graffiti));
-  }
-
-  @Override
-  public SafeFuture<SendSignedBlockResult> sendSignedBlock(final SignedBeaconBlock block) {
-    return sendRequest(() -> typeDefClient.sendSignedBlock(block));
+  public SafeFuture<SendSignedBlockResult> sendSignedBlock(
+      final SignedBlockContainer blockContainer) {
+    return sendRequest(() -> typeDefClient.sendSignedBlock(blockContainer));
   }
 
   @Override

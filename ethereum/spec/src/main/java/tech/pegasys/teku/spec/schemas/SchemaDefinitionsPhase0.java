@@ -16,7 +16,11 @@ package tech.pegasys.teku.spec.schemas;
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodySchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.phase0.MetadataMessageSchemaPhase0;
@@ -75,6 +79,26 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
   @Override
   public SignedBeaconBlockSchema getSignedBlindedBeaconBlockSchema() {
     return getSignedBeaconBlockSchema();
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlockContainerSchema() {
+    return getBeaconBlockSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public BlockContainerSchema<BlockContainer> getBlindedBlockContainerSchema() {
+    return getBeaconBlockSchema().castTypeToBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlockContainerSchema() {
+    return getSignedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
+  @Override
+  public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
+    return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
   }
 
   @Override

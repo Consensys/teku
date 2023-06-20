@@ -56,6 +56,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -576,19 +577,21 @@ class FailoverValidatorApiHandlerTest {
     final UInt64 slot = UInt64.ONE;
     final BLSSignature randaoReveal = DATA_STRUCTURE_UTIL.randomSignature();
 
-    final ValidatorApiChannelRequest<Optional<BeaconBlock>> creationRequest =
+    final BeaconBlock blindedBlock = DATA_STRUCTURE_UTIL.randomBlindedBeaconBlock(UInt64.ONE);
+
+    final ValidatorApiChannelRequest<Optional<BlockContainer>> creationRequest =
         apiChannel -> apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), true);
 
     setupFailures(creationRequest, primaryApiChannel);
-    setupSuccesses(creationRequest, Optional.of(mock(BeaconBlock.class)), failoverApiChannel1);
+    setupSuccesses(creationRequest, Optional.of(blindedBlock), failoverApiChannel1);
 
     SafeFutureAssert.assertThatSafeFuture(creationRequest.run(failoverApiHandler)).isCompleted();
 
-    final SignedBeaconBlock blindedBlock =
+    final SignedBeaconBlock blindedSignedBlock =
         DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock(UInt64.ONE);
 
     final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
-        apiChannel -> apiChannel.sendSignedBlock(blindedBlock);
+        apiChannel -> apiChannel.sendSignedBlock(blindedSignedBlock);
 
     setupSuccesses(
         publishingRequest,
@@ -599,10 +602,10 @@ class FailoverValidatorApiHandlerTest {
 
     SafeFutureAssert.assertThatSafeFuture(publishingRequest.run(failoverApiHandler)).isCompleted();
 
-    verify(failoverApiChannel1).sendSignedBlock(blindedBlock);
+    verify(failoverApiChannel1).sendSignedBlock(blindedSignedBlock);
 
-    verify(primaryApiChannel, never()).sendSignedBlock(blindedBlock);
-    verify(failoverApiChannel2, never()).sendSignedBlock(blindedBlock);
+    verify(primaryApiChannel, never()).sendSignedBlock(blindedSignedBlock);
+    verify(failoverApiChannel2, never()).sendSignedBlock(blindedSignedBlock);
   }
 
   private <T> void setupSuccesses(

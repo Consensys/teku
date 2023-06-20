@@ -52,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -76,6 +77,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProces
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 import tech.pegasys.teku.spec.signatures.Signer;
 
@@ -89,9 +91,10 @@ public class ChainBuilder {
   private final AttestationGenerator attestationGenerator;
   private final AttesterSlashingGenerator attesterSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
-  private final NavigableMap<UInt64, List<BlobSidecar>> blobSidecars = new TreeMap<>();
+  private final NavigableMap<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
   private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
+  private Optional<UInt64> earliestBlobSidecarSlot;
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
 
@@ -99,7 +102,8 @@ public class ChainBuilder {
       final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
-      final Map<UInt64, List<BlobSidecar>> existingBlobSidecars) {
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.blobsUtil = new BlobsUtil(spec);
@@ -117,6 +121,7 @@ public class ChainBuilder {
                 blobSidecarsByHash.put(b.get(0).getBlockRoot(), b);
               }
             });
+    earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -124,7 +129,8 @@ public class ChainBuilder {
   }
 
   public static ChainBuilder create(final Spec spec, final List<BLSKeyPair> validatorKeys) {
-    return new ChainBuilder(spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap());
+    return new ChainBuilder(
+        spec, validatorKeys, Collections.emptyMap(), Collections.emptyMap(), Optional.empty());
   }
 
   public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
@@ -135,8 +141,12 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  public Optional<List<BlobSidecar>> getBlobSidecars(final Bytes32 blockRoot) {
-    return Optional.ofNullable(blobSidecarsByHash.get(blockRoot));
+  public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
+    return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
+  }
+
+  public Optional<UInt64> getEarliestBlobSidecarSlot() {
+    return earliestBlobSidecarSlot;
   }
 
   /**
@@ -146,7 +156,7 @@ public class ChainBuilder {
    * @return An independent copy of this ChainBuilder
    */
   public ChainBuilder fork() {
-    return new ChainBuilder(spec, validatorKeys, blocks, blobSidecars);
+    return new ChainBuilder(spec, validatorKeys, blocks, blobSidecars, earliestBlobSidecarSlot);
   }
 
   public List<BLSKeyPair> getValidatorKeys() {
@@ -187,16 +197,17 @@ public class ChainBuilder {
         .filter(b -> b.getBlock().getSlot().isLessThanOrEqualTo(toSlot));
   }
 
-  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
       final long fromSlot, final long toSlot) {
     return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
-  public Stream<Map.Entry<UInt64, List<BlobSidecar>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
       final UInt64 fromSlot, final UInt64 toSlot) {
     return blobSidecars.entrySet().stream()
-        .filter(slot -> slot.getKey().isGreaterThanOrEqualTo(fromSlot))
-        .filter(slot -> slot.getKey().isLessThanOrEqualTo(toSlot))
+        .filter(slot -> slot.getKey().getSlot().isGreaterThanOrEqualTo(fromSlot))
+        .filter(slot -> slot.getKey().getSlot().isLessThanOrEqualTo(toSlot))
+        .filter(entry -> !entry.getValue().isEmpty())
         .sorted(Map.Entry.comparingByKey());
   }
 
@@ -304,19 +315,30 @@ public class ChainBuilder {
     final SignedBlockAndState blockAndState = new SignedBlockAndState(signedBlock, genesisState);
     trackBlock(blockAndState);
 
-    // add an empty blobs sidecar to the genesis block if genesis is in the Deneb milestone
+    // Set earliest blobSidecar slot if genesis is in the Deneb milestone
     spec.getGenesisSchemaDefinitions()
         .toVersionDeneb()
-        .ifPresent(
-            schemaDefinitions ->
-                trackBlobSidecars(
-                    blockAndState.getSlot(), blockAndState.getRoot(), Collections.emptyList()));
+        .ifPresent(__ -> earliestBlobSidecarSlot = Optional.of(genesisState.getSlot()));
 
     return blockAndState;
   }
 
   public List<SignedBlockAndState> generateBlocksUpToSlot(final long slot) {
     return generateBlocksUpToSlot(UInt64.valueOf(slot));
+  }
+
+  public List<SignedBlockAndState> generateBlocksUpToSlot(
+      final long slot, final BlockOptions options) {
+    assertBlockCanBeGenerated();
+    final List<SignedBlockAndState> generated = new ArrayList<>();
+
+    SignedBlockAndState latestBlock = getLatestBlockAndState();
+    while (latestBlock.getState().getSlot().compareTo(slot) < 0) {
+      latestBlock = generateBlockAtSlot(latestBlock.getSlot().plus(1), options);
+      generated.add(latestBlock);
+    }
+
+    return generated;
   }
 
   public List<SignedBlockAndState> generateBlocksUpToSlot(final UInt64 slot) {
@@ -369,18 +391,31 @@ public class ChainBuilder {
     return appendNewBlockToChain(slot, options);
   }
 
-  public List<SignedBlockAndState> finalizeCurrentChain() {
+  public List<SignedBlockAndState> finalizeCurrentChain(
+      final Optional<BlockOptions> maybeBlockOptions) {
     final UInt64 chainHeadSlot = getLatestSlot();
     final UInt64 finalizeEpoch = spec.computeEpochAtSlot(chainHeadSlot).max(2);
     final UInt64 finalHeadEpoch = finalizeEpoch.plus(3);
     final UInt64 finalHeadSlot = spec.computeStartSlotAtEpoch(finalHeadEpoch);
+
+    // save attestations to be restored at the end
+    final Optional<List<Attestation>> savedAttestations =
+        maybeBlockOptions.map(BlockOptions::getAttestations);
 
     final List<SignedBlockAndState> addedBlockAndStates = new ArrayList<>();
     SignedBlockAndState newChainHead = null;
     for (UInt64 slot = chainHeadSlot.plus(1);
         slot.isLessThan(finalHeadSlot);
         slot = slot.increment()) {
-      final BlockOptions blockOptions = BlockOptions.create();
+      final BlockOptions blockOptions;
+      if (maybeBlockOptions.isPresent()) {
+        blockOptions = maybeBlockOptions.get();
+        // reset to empty
+        blockOptions.setAttestations(new ArrayList<>());
+      } else {
+        blockOptions = BlockOptions.create();
+      }
+
       streamValidAttestationsForBlockAtSlot(slot).forEach(blockOptions::addAttestation);
       newChainHead = generateBlockAtSlot(slot, blockOptions);
       addedBlockAndStates.add(newChainHead);
@@ -392,6 +427,10 @@ public class ChainBuilder {
     assertThat(finalizedCheckpoint.getRoot())
         .describedAs("Failed to finalize epoch %s", finalizeEpoch)
         .isNotEqualTo(Bytes32.ZERO);
+
+    // restore original attestations
+    savedAttestations.ifPresent(
+        attestations -> maybeBlockOptions.orElseThrow().setAttestations(attestations));
     return addedBlockAndStates;
   }
 
@@ -475,9 +514,12 @@ public class ChainBuilder {
   }
 
   private void trackBlobSidecars(
-      final UInt64 slot, final Bytes32 blockRoot, final List<BlobSidecar> blobSidecars) {
-    this.blobSidecars.put(slot, blobSidecars);
-    blobSidecarsByHash.put(blockRoot, blobSidecars);
+      final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
+    if (blobSidecars.isEmpty()) {
+      return;
+    }
+    this.blobSidecars.put(slotAndBlockRoot, blobSidecars);
+    blobSidecarsByHash.put(slotAndBlockRoot.getBlockRoot(), blobSidecars);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
@@ -558,6 +600,27 @@ public class ChainBuilder {
       final SszList<Attestation> attestations,
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
+    final List<Blob> blobs =
+        options
+            .getBlobSidecars()
+            .map(
+                blobSidecars1 ->
+                    blobSidecars1.stream().map(BlobSidecar::getBlob).collect(Collectors.toList()))
+            .or(options::getBlobs)
+            .orElse(Collections.emptyList());
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
+    final List<KZGCommitment> kzgCommitments =
+        blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
+    if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
+      maybeGeneratedBlobTransactions =
+          Optional.of(
+              List.of(blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments)));
+    } else {
+      maybeGeneratedBlobTransactions = Optional.empty();
+    }
+
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
             blockProposalTestUtil.createBlock(
@@ -570,7 +633,7 @@ public class ChainBuilder {
                 Optional.of(attesterSlashings),
                 Optional.empty(),
                 options.getEth1Data(),
-                options.getTransactions(),
+                maybeGeneratedBlobTransactions,
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
                 options.getSyncAggregate(),
@@ -579,34 +642,29 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobSidecarSchema blobSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecar> blobSidecars =
-          options
-              .getBlobSidecars()
-              .orElseGet(
-                  () -> {
-                    if (options.getBlobs().isPresent()) {
-                      return IntStream.range(0, options.getBlobs().get().size())
-                          .mapToObj(
-                              index ->
-                                  new BlobSidecar(
-                                      blobSidecarSchema,
-                                      nextBlockAndState.getRoot(),
-                                      UInt64.valueOf(index),
-                                      slot,
-                                      parentRoot,
-                                      UInt64.ZERO,
-                                      options.getBlobs().get().get(index),
-                                      KZGCommitment.infinity(),
-                                      KZGProof.INFINITY))
-                          .collect(Collectors.toList());
-                    } else {
-                      return Collections.emptyList();
-                    }
-                  });
-      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecars);
+          IntStream.range(0, blobs.size())
+              .mapToObj(
+                  index -> {
+                    final Blob blob = blobs.get(index);
+                    final KZGCommitment kzgCommitment = kzgCommitments.get(index);
+                    return new BlobSidecar(
+                        blobSidecarSchema,
+                        nextBlockAndState.getRoot(),
+                        UInt64.valueOf(index),
+                        slot,
+                        parentRoot,
+                        UInt64.ZERO,
+                        blob,
+                        kzgCommitment,
+                        miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
+                  })
+              .collect(Collectors.toList());
+      trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
     }
 
     return nextBlockAndState;
@@ -621,7 +679,21 @@ public class ChainBuilder {
       final SszList<Attestation> attestations,
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
-    final List<Blob> randomBlobs = blobsUtil.generateBlobs(slot, RANDOM_BLOBS_COUNT);
+    final List<Blob> randomBlobs =
+        blobsUtil.generateBlobs(
+            slot, options.getGenerateRandomBlobsCount().orElse(RANDOM_BLOBS_COUNT));
+    final MiscHelpersDeneb miscHelpers =
+        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
+    final List<KZGCommitment> kzgCommitments =
+        randomBlobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
+    if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
+      maybeGeneratedBlobTransactions =
+          Optional.of(
+              List.of(blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments)));
+    } else {
+      maybeGeneratedBlobTransactions = Optional.empty();
+    }
 
     final SignedBlockAndState nextBlockAndState =
         SafeFutureAssert.safeJoin(
@@ -635,7 +707,7 @@ public class ChainBuilder {
                 Optional.of(attesterSlashings),
                 Optional.empty(),
                 options.getEth1Data(),
-                options.getTransactions(),
+                maybeGeneratedBlobTransactions,
                 options.getTerminalBlockHash(),
                 options.getExecutionPayload(),
                 options.getSyncAggregate(),
@@ -644,9 +716,8 @@ public class ChainBuilder {
                 options.getSkipStateTransition()));
 
     final BlobSidecarSchema blobSidecarSchema =
-        spec.getGenesisSchemaDefinitions().toVersionDeneb().orElseThrow().getBlobSidecarSchema();
-    final MiscHelpersDeneb miscHelpers =
-        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecar> blobSidecars =
@@ -654,7 +725,7 @@ public class ChainBuilder {
               .mapToObj(
                   index -> {
                     final Blob blob = randomBlobs.get(index);
-                    final KZGCommitment kzgCommitment = miscHelpers.blobToKzgCommitment(blob);
+                    final KZGCommitment kzgCommitment = kzgCommitments.get(index);
                     return new BlobSidecar(
                         blobSidecarSchema,
                         nextBlockAndState.getRoot(),
@@ -662,12 +733,12 @@ public class ChainBuilder {
                         slot,
                         parentRoot,
                         UInt64.ZERO,
-                        blob,
-                        kzgCommitment,
+                        randomBlobs.get(index),
+                        kzgCommitments.get(index),
                         miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
                   })
               .collect(Collectors.toList());
-      trackBlobSidecars(slot, nextBlockAndState.getRoot(), blobSidecars);
+      trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
     }
     return nextBlockAndState;
   }
@@ -743,6 +814,11 @@ public class ChainBuilder {
     return createSyncCommitteeMessage(target.getSlot(), target.getRoot());
   }
 
+  public SyncCommitteeMessage createValidSyncCommitteeMessageAtParentBlockRoot() {
+    final SignedBlockAndState target = getLatestBlockAndState();
+    return createSyncCommitteeMessage(target.getSlot(), target.getParentRoot());
+  }
+
   public SyncCommitteeMessage createSyncCommitteeMessage(
       final UInt64 slot, final Bytes32 blockRoot) {
     final BeaconStateAltair state =
@@ -782,7 +858,7 @@ public class ChainBuilder {
 
   public static final class BlockOptions {
 
-    private final List<Attestation> attestations = new ArrayList<>();
+    private List<Attestation> attestations = new ArrayList<>();
     private final List<AttesterSlashing> attesterSlashings = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
@@ -795,6 +871,7 @@ public class ChainBuilder {
     private Optional<KZGProof> kzgProof = Optional.empty();
     private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
     private boolean generateRandomBlobs = false;
+    private Optional<Integer> generateRandomBlobsCount = Optional.empty();
     private boolean storeBlobSidecars = true;
     private boolean skipStateTransition = false;
     private boolean wrongProposer = false;
@@ -803,6 +880,11 @@ public class ChainBuilder {
 
     public static BlockOptions create() {
       return new BlockOptions();
+    }
+
+    public BlockOptions setAttestations(final List<Attestation> attestations) {
+      this.attestations = attestations;
+      return this;
     }
 
     public BlockOptions addAttestation(final Attestation attestation) {
@@ -858,6 +940,12 @@ public class ChainBuilder {
 
     public BlockOptions setGenerateRandomBlobs(final boolean generateRandomBlobs) {
       this.generateRandomBlobs = generateRandomBlobs;
+      return this;
+    }
+
+    public BlockOptions setGenerateRandomBlobsCount(
+        final Optional<Integer> generateRandomBlobsCount) {
+      this.generateRandomBlobsCount = generateRandomBlobsCount;
       return this;
     }
 
@@ -940,6 +1028,10 @@ public class ChainBuilder {
 
     public boolean getGenerateRandomBlobs() {
       return generateRandomBlobs;
+    }
+
+    public Optional<Integer> getGenerateRandomBlobsCount() {
+      return generateRandomBlobsCount;
     }
 
     public boolean getWrongProposer() {

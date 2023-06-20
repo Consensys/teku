@@ -19,6 +19,8 @@ import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.mockito.Mockito.mock;
+import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -33,17 +35,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -54,10 +60,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-@TestSpecContext(milestone = SpecMilestone.CAPELLA)
+@TestSpecContext(milestone = {CAPELLA, DENEB})
 public class Web3JExecutionEngineClientTest {
 
   private static final Duration DEFAULT_TIMEOUT = Duration.ofMinutes(1);
@@ -71,6 +79,7 @@ public class Web3JExecutionEngineClientTest {
   ObjectMapper objectMapper;
   DataStructureUtil dataStructureUtil;
   Spec spec;
+  SpecMilestone specMilestone;
 
   Web3JExecutionEngineClient eeClient;
 
@@ -81,6 +90,7 @@ public class Web3JExecutionEngineClientTest {
     objectMapper = new ObjectMapper();
     dataStructureUtil = specContext.getDataStructureUtil();
     spec = specContext.getSpec();
+    specMilestone = specContext.getSpecMilestone();
     mockWebServer.start();
     Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
     Web3JClient web3JClient =
@@ -116,11 +126,7 @@ public class Web3JExecutionEngineClientTest {
             + validationError
             + "\"}}}";
 
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(200)
-            .setBody(bodyResponse)
-            .addHeader("Content-Type", "application/json"));
+    mockSuccessfulResponse(bodyResponse);
 
     final ForkChoiceStateV1 forkChoiceStateV1Request =
         new ForkChoiceStateV1(
@@ -197,7 +203,71 @@ public class Web3JExecutionEngineClientTest {
     assertThat(requestData.get("params")).asInstanceOf(LIST).containsExactly(consensusCapabilities);
   }
 
-  private void mockSuccessfulResponse(String responseBody) {
+  @TestTemplate
+  @SuppressWarnings("unchecked")
+  public void newPayloadV3_shouldBuildRequestAndResponseSuccessfully() {
+    final boolean isDeneb = spec.isMilestoneSupported(DENEB);
+    final Bytes32 latestValidHash = dataStructureUtil.randomBytes32();
+    final PayloadStatus payloadStatusResponse =
+        PayloadStatus.valid(Optional.of(latestValidHash), Optional.empty());
+
+    final String bodyResponse =
+        "{\"jsonrpc\": \"2.0\", \"id\": 0, \"result\":"
+            + "{ \"status\": \"VALID\", \"latestValidHash\": \""
+            + latestValidHash
+            + "\", \"validationError\": null}}";
+
+    mockSuccessfulResponse(bodyResponse);
+
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final ExecutionPayloadV3 executionPayloadV3 =
+        ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
+
+    final Optional<List<VersionedHash>> blobVersionedHashes =
+        isDeneb ? Optional.of(dataStructureUtil.randomVersionedHashes(3)) : Optional.empty();
+
+    final SafeFuture<Response<PayloadStatusV1>> futureResponse =
+        eeClient.newPayloadV3(executionPayloadV3, blobVersionedHashes);
+
+    assertThat(futureResponse)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .matches(
+            response ->
+                response.getPayload().asInternalExecutionPayload().equals(payloadStatusResponse));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_newPayloadV3");
+
+    final Map<String, Object> executionPayloadV3Parameter =
+        (Map<String, Object>) ((List<Object>) requestData.get("params")).get(0);
+    // 17 fields in ExecutionPayloadV3
+    assertThat(executionPayloadV3Parameter).hasSize(17);
+    // sanity check
+    assertThat(executionPayloadV3Parameter.get("parentHash"))
+        .isEqualTo(executionPayloadV3.parentHash.toHexString());
+
+    if (isDeneb) {
+      assertThat(executionPayloadV3Parameter.get("dataGasUsed"))
+          .isEqualTo(
+              Bytes.ofUnsignedLong(executionPayloadV3.dataGasUsed.longValue())
+                  .toQuantityHexString());
+      assertThat(executionPayloadV3Parameter.get("excessDataGas"))
+          .isEqualTo(
+              Bytes.ofUnsignedLong(executionPayloadV3.excessDataGas.longValue())
+                  .toQuantityHexString());
+      assertThat(((List<Object>) requestData.get("params")).get(1))
+          .asInstanceOf(LIST)
+          .containsExactlyElementsOf(
+              blobVersionedHashes.get().stream()
+                  .map(VersionedHash::toHexString)
+                  .collect(Collectors.toList()));
+    } else {
+      // pre-deneb versionedHashes param must be null
+      assertThat(((List<Object>) requestData.get("params")).get(1)).isNull();
+    }
+  }
+
+  private void mockSuccessfulResponse(final String responseBody) {
     mockWebServer.enqueue(
         new MockResponse()
             .setResponseCode(200)
@@ -215,7 +285,7 @@ public class Web3JExecutionEngineClientTest {
     }
   }
 
-  private void verifyJsonRpcMethodCall(Map<String, Object> data, final String method) {
+  private void verifyJsonRpcMethodCall(final Map<String, Object> data, final String method) {
     assertThat(data.get("method")).asInstanceOf(STRING).isEqualTo(method);
     assertThat(data.get("id")).asInstanceOf(INTEGER).isGreaterThanOrEqualTo(0);
     assertThat(data.get("jsonrpc")).asInstanceOf(STRING).isEqualTo("2.0");

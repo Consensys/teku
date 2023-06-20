@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public interface BeaconBlockBody extends SszContainer {
@@ -76,7 +77,13 @@ public interface BeaconBlockBody extends SszContainer {
     return Optional.empty();
   }
 
-  Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges();
+  default Optional<SszList<SignedBlsToExecutionChange>> getOptionalBlsToExecutionChanges() {
+    return Optional.empty();
+  }
+
+  default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+    return Optional.empty();
+  }
 
   default boolean isBlinded() {
     return false;

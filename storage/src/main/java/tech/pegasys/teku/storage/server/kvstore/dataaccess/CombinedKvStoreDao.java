@@ -346,10 +346,35 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
         new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
 
+  @MustBeClosed
+  @Override
+  public Stream<Bytes> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+    return db.stream(
+            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))
+        .map(ColumnEntry::getValue);
+  }
+
+  @Override
+  public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final Stream<SlotAndBlockRootAndBlobIndex> streamKeys =
+        db.streamKeys(
+            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
+      return streamKeys.collect(Collectors.toList());
+    }
+  }
+
   @Override
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
-    return db.getFirstEntry(schema.getColumnBlobSidecarBySlotRootBlobIndex())
-        .map(entry -> entry.getKey().getSlot());
+    return db.get(schema.getVariableEarliestBlobSidecarSlot());
   }
 
   @Override
@@ -520,24 +545,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
-    public void addHotBlobSidecarSlot(
+    public void addHotBlobSidecarsForBlock(
         final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
-      if (blobSidecars.isEmpty()) {
-        transaction.put(
-            schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-            SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
-            Bytes.EMPTY);
-      } else {
-        blobSidecars.forEach(
-            blobSidecar ->
-                transaction.put(
-                    schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-                    new SlotAndBlockRootAndBlobIndex(
-                        slotAndBlockRoot.getSlot(),
-                        slotAndBlockRoot.getBlockRoot(),
-                        blobSidecar.getIndex()),
-                    blobSidecar.sszSerialize()));
-      }
+      blobSidecars.forEach(
+          blobSidecar ->
+              transaction.put(
+                  schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+                  new SlotAndBlockRootAndBlobIndex(
+                      slotAndBlockRoot.getSlot(),
+                      slotAndBlockRoot.getBlockRoot(),
+                      blobSidecar.getIndex()),
+                  blobSidecar.sszSerialize()));
     }
 
     @Override
@@ -582,6 +600,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     @Override
     public void removeDepositsFromBlockEvent(final UInt64 blockNumber) {
       transaction.delete(schema.getColumnDepositsFromBlockEvents(), blockNumber);
+    }
+
+    @Override
+    public void setEarliestBlobSidecarSlot(final UInt64 slot) {
+      transaction.put(schema.getVariableEarliestBlobSidecarSlot(), slot);
     }
 
     @Override
@@ -670,14 +693,6 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
           new SlotAndBlockRootAndBlobIndex(
               blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex()),
           blobSidecar.sszSerialize());
-    }
-
-    @Override
-    public void addNoBlobsSlot(final SlotAndBlockRoot slotAndBlockRoot) {
-      transaction.put(
-          schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-          SlotAndBlockRootAndBlobIndex.createNoBlobsKey(slotAndBlockRoot),
-          Bytes.EMPTY);
     }
 
     @Override

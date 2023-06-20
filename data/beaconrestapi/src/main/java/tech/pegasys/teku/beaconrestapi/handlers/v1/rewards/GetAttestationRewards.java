@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.LONG_TYPE;
@@ -26,20 +25,25 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.commons.lang3.NotImplementedException;
+import java.util.List;
+import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.IdealAttestationReward;
 import tech.pegasys.teku.api.migrated.TotalAttestationReward;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetAttestationRewards extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/beacon/rewards/attestations/{epoch}";
+
+  private final ChainDataProvider chainDataProvider;
 
   private static final SerializableTypeDefinition<IdealAttestationReward> IDEAL_REWARDS_TYPE =
       SerializableTypeDefinition.object(IdealAttestationReward.class)
@@ -82,14 +86,15 @@ public class GetAttestationRewards extends RestApiEndpoint {
           .withField("data", DATA_TYPE, GetAttestationRewardsResponse::getAttestationRewardsData)
           .build();
 
-  public GetAttestationRewards() {
+  public GetAttestationRewards(final ChainDataProvider chainDataProvider) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("getAttestationsRewards")
             .summary("Get Attestations Rewards")
             .description(
-                "Retrieve attestation reward info for validators specified by array of public keys or validator index. If no array is provided, return reward info for every validator.")
-            .tags(TAG_BEACON, TAG_REWARDS, TAG_EXPERIMENTAL)
+                "Retrieve attestation reward info for validators specified by array of public keys or validator index"
+                    + ". If no array is provided, return reward info for every validator.")
+            .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(EPOCH_PARAMETER)
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
@@ -97,10 +102,23 @@ public class GetAttestationRewards extends RestApiEndpoint {
             .withNotFoundResponse()
             .withInternalErrorResponse()
             .build());
+
+    this.chainDataProvider = chainDataProvider;
   }
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    throw new NotImplementedException();
+    final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
+    // Validator identifier might be the validator's public key or index
+    final List<String> validatorsIds = request.getRequestBody();
+
+    request.respondAsync(
+        chainDataProvider
+            .calculateAttestationRewardsAtEpoch(epoch, validatorsIds)
+            .thenApply(
+                result ->
+                    result
+                        .map(AsyncApiResponse::respondOk)
+                        .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

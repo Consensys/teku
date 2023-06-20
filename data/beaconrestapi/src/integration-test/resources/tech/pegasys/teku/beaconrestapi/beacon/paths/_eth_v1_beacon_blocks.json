@@ -3,7 +3,7 @@
     "tags" : [ "Beacon", "Validator Required Api" ],
     "operationId" : "publishBlock",
     "summary" : "Publish a signed block",
-    "description" : "Submit a signed beacon block to the beacon node to be imported. The beacon node performs the required validation.",
+    "description" : "Submit a signed beacon block to the beacon node to be broadcast and imported. After Deneb, this additionally instructs the beacon node to broadcast and import all given signed blobs. The beacon node performs the required validation.",
     "requestBody" : {
       "content" : {
         "application/octet-stream" : {
@@ -14,7 +14,7 @@
         },
         "application/json" : {
           "schema" : {
-            "title" : "SignedBeaconBlock",
+            "title" : "SignedBlock",
             "type" : "object",
             "oneOf" : [ {
               "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
@@ -25,7 +25,7 @@
             }, {
               "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
             }, {
-              "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
+              "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
             } ]
           }
         }

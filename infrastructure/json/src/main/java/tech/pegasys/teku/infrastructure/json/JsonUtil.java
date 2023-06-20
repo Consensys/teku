@@ -24,6 +24,7 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 
@@ -91,6 +92,14 @@ public class JsonUtil {
   }
 
   public static <T> T parse(
+      final String json, final DeserializableOneOfTypeDefinition<T, ?> oneOfType)
+      throws JsonProcessingException {
+    final DeserializableTypeDefinition<? extends T> typeDefinition =
+        oneOfType.getMatchingType(json);
+    return parse(json, typeDefinition);
+  }
+
+  public static <T> T parse(
       final JsonFactory factory, final InputStream json, final DeserializableTypeDefinition<T> type)
       throws JsonProcessingException {
     return parse(() -> factory.createParser(json), type);
@@ -127,7 +136,10 @@ public class JsonUtil {
   }
 
   private static <T> Optional<T> getAttributeFromParser(
-      JsonParser parser, final DeserializableTypeDefinition<T> type, int i, final String... path)
+      final JsonParser parser,
+      final DeserializableTypeDefinition<T> type,
+      final int i,
+      final String... path)
       throws IOException {
     if (!JsonToken.START_OBJECT.equals(parser.nextToken())) {
       throw new IllegalStateException("getAttribute was not passed an object");

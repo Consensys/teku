@@ -408,9 +408,6 @@ public class DebugDbCommand implements Runnable {
         for (final Iterator<SlotAndBlockRootAndBlobIndex> it = keyStream.iterator();
             it.hasNext(); ) {
           final SlotAndBlockRootAndBlobIndex key = it.next();
-          if (key.isNoBlobsKey()) {
-            continue;
-          }
           final BlobSidecar blobSidecar = database.getBlobSidecar(key).orElseThrow();
           out.putNextEntry(
               new ZipEntry(
@@ -469,7 +466,7 @@ public class DebugDbCommand implements Runnable {
             iterator.hasNext(); ) {
           final Map.Entry<Bytes, Bytes> rootAndBlock = iterator.next();
           final Bytes blockData = rootAndBlock.getValue();
-          final UInt64 blockSlot = BeaconBlockInvariants.extractSignedBeaconBlockSlot(blockData);
+          final UInt64 blockSlot = BeaconBlockInvariants.extractSignedBlockContainerSlot(blockData);
           final boolean shouldDelete;
           final boolean isJustifiedBlock = blockSlot.isLessThanOrEqualTo(justifiedSlot);
           if (deleteAll) {
