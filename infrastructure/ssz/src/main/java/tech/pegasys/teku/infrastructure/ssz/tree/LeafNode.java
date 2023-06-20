@@ -44,7 +44,7 @@ public interface LeafNode extends TreeNode, LeafDataNode {
   /** The {@link LeafNode} with empty data */
   LeafNode EMPTY_LEAF = ZERO_LEAVES[0];
 
-  /** Creates a basic Leaf node instance with the data {@literal <=} 32 bytes */
+  /** Creates a basic Leaf node instance with the data {@literal <= } 32 bytes */
   static LeafNode create(Bytes data) {
     return new SimpleLeafNode(data);
   }
