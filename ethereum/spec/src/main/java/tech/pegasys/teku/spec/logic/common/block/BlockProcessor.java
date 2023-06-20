@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
@@ -170,7 +169,7 @@ public interface BlockProcessor {
 
   Optional<List<Withdrawal>> getExpectedWithdrawals(BeaconState preState);
 
-  Bytes32 computeVoluntaryExitDomain(UInt64 epoch, Fork fork, Bytes32 getGenesisValidatorsRoot);
+  Bytes32 computeVoluntaryExitDomain(SignedVoluntaryExit signedVoluntaryExit, BeaconState state);
 
   default Optional<BlockProcessorAltair> toVersionAltair() {
     return Optional.empty();

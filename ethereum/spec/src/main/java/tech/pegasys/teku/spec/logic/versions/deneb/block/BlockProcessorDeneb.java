@@ -18,13 +18,12 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -104,11 +103,11 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
 
   @Override
   public Bytes32 computeVoluntaryExitDomain(
-      UInt64 epoch, Fork fork, Bytes32 getGenesisValidatorsRoot) {
+      final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
     return miscHelpers.computeDomain(
         Domain.VOLUNTARY_EXIT,
         specConfig.toVersionCapella().orElseThrow().getCapellaForkVersion(),
-        getGenesisValidatorsRoot);
+        state.getGenesisValidatorsRoot());
   }
 
   public SszList<SszKZGCommitment> extractBlobKzgCommitments(final BeaconBlockBody beaconBlockBody)

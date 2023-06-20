@@ -57,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -837,15 +836,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
     for (SignedVoluntaryExit signedExit : exits) {
+      final Bytes32 voluntaryExitDomain = computeVoluntaryExitDomain(signedExit, state);
       boolean exitSignatureValid =
           operationSignatureVerifier.verifyVoluntaryExitSignature(
-              state,
-              signedExit,
-              signatureVerifier,
-              computeVoluntaryExitDomain(
-                  signedExit.getMessage().getEpoch(),
-                  state.getFork(),
-                  state.getGenesisValidatorsRoot()));
+              state, signedExit, signatureVerifier, voluntaryExitDomain);
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }
@@ -855,9 +849,12 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
 
   @Override
   public Bytes32 computeVoluntaryExitDomain(
-      UInt64 epoch, Fork fork, Bytes32 getGenesisValidatorsRoot) {
+      final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
     return beaconStateAccessors.getDomain(
-        Domain.VOLUNTARY_EXIT, epoch, fork, getGenesisValidatorsRoot);
+        Domain.VOLUNTARY_EXIT,
+        signedVoluntaryExit.getMessage().getEpoch(),
+        state.getFork(),
+        state.getGenesisValidatorsRoot());
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException
