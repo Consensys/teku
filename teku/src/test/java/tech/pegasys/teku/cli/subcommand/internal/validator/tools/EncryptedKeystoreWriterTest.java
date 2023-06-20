@@ -83,7 +83,7 @@ class EncryptedKeystoreWriterTest {
 
   private void assertKeyStoreCreatedAndCanBeDecrypted(
       final Path keystorePath, final BLSSecretKey blsSecretKey) {
-    final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath);
+    final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath.toUri());
     assertThat(KeyStore.validatePassword(PASSWORD, keyStoreData)).isTrue();
     assertThat(KeyStore.decrypt(PASSWORD, keyStoreData)).isEqualTo(blsSecretKey.toBytes());
   }

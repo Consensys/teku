@@ -160,7 +160,7 @@ public class LocalValidatorSource extends AbstractValidatorSource implements Val
     final Path keystorePath = keystorePasswordFilePair.getLeft();
     final Path passwordPath = keystorePasswordFilePair.getRight();
     try {
-      final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath);
+      final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath.toUri());
       final BLSPublicKey publicKey =
           BLSPublicKey.fromBytesCompressedValidate(Bytes48.wrap(keyStoreData.getPubkey()));
       final String password = loadPassword(passwordPath);

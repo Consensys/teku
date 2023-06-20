@@ -168,7 +168,7 @@ class KeyStoreTest {
 
   private KeyStoreData loadKeyStoreFromResource(final String resourcePath) {
     final URL resource = Resources.getResource(KeyStoreTest.class, resourcePath);
-    return KeyStoreLoader.loadFromFile(Path.of(resource.getPath()));
+    return KeyStoreLoader.loadFromUrl(resource);
   }
 
   @ParameterizedTest
@@ -213,8 +213,8 @@ class KeyStoreTest {
   void loadingNonExistentKeyStoreFileThrowsError(@TempDir final Path tempDir) {
     final Path keyStoreFile = tempDir.resolve("nonexistent.json");
     assertThatExceptionOfType(KeyStoreValidationException.class)
-        .isThrownBy(() -> KeyStoreLoader.loadFromFile(keyStoreFile))
-        .withMessage("KeyStore file not found: " + keyStoreFile);
+        .isThrownBy(() -> KeyStoreLoader.loadFromFile(keyStoreFile.toUri()))
+        .withMessage("KeyStore file not found: file:" + keyStoreFile);
   }
 
   @Test
@@ -233,7 +233,7 @@ class KeyStoreTest {
         .doesNotThrowAnyException();
 
     // reload it back
-    final KeyStoreData loadedKeyStore = KeyStoreLoader.loadFromFile(tempKeyStoreFile);
+    final KeyStoreData loadedKeyStore = KeyStoreLoader.loadFromFile(tempKeyStoreFile.toUri());
     assertThat(loadedKeyStore.getUuid()).isEqualByComparingTo(keyStoreData.getUuid());
     assertThat(loadedKeyStore.getCrypto().getChecksum().getMessage())
         .isEqualTo(keyStoreData.getCrypto().getChecksum().getMessage());

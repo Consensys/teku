@@ -14,6 +14,7 @@
 package tech.pegasys.teku.bls.keystore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,7 +24,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
@@ -55,13 +58,23 @@ public class KeyStoreLoader {
     }
   }
 
-  public static KeyStoreData loadFromFile(final Path keystoreFile)
+  public static KeyStoreData loadFromFile(final URI keystoreFile)
       throws KeyStoreValidationException {
     checkNotNull(keystoreFile, "KeyStore path cannot be null");
 
     try {
-      final KeyStoreData keyStoreData =
-          OBJECT_MAPPER.readValue(keystoreFile.toFile(), KeyStoreData.class);
+      return loadFromUrl(keystoreFile.toURL());
+    } catch (final MalformedURLException e) {
+      throw new KeyStoreValidationException("Invalid KeyStore: " + e.getMessage(), e);
+    }
+  }
+
+  public static KeyStoreData loadFromUrl(final URL keystoreFile)
+      throws KeyStoreValidationException {
+    checkNotNull(keystoreFile, "KeyStore path cannot be null");
+
+    try {
+      final KeyStoreData keyStoreData = OBJECT_MAPPER.readValue(keystoreFile, KeyStoreData.class);
       keyStoreData.validate();
       return keyStoreData;
     } catch (final JsonParseException e) {
@@ -106,7 +119,7 @@ public class KeyStoreLoader {
     checkNotNull(keystoreFile, "KeyStore path cannot be null");
     checkNotNull(keyStoreData, "KeyStore data cannot be null");
 
-    Files.writeString(keystoreFile, toJson(keyStoreData), StandardCharsets.UTF_8);
+    Files.writeString(keystoreFile, toJson(keyStoreData), UTF_8);
   }
 
   private static String toJson(final KeyStoreData keyStoreData) {

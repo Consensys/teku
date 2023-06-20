@@ -177,7 +177,7 @@ class LocalValidatorSourceTest {
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("KeyStore file not found: " + scryptKeystore);
+        .hasMessage("KeyStore file not found: file:" + scryptKeystore);
   }
 
   private void assertProviderMatchesKey(

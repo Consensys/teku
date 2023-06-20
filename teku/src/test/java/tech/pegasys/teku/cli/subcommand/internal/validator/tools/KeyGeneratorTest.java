@@ -211,7 +211,7 @@ class KeyGeneratorTest {
     for (File file : keyStoreFiles) {
       assertThat(
               KeyStore.validatePassword(
-                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toPath())))
+                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toURI())))
           .isTrue();
     }
   }

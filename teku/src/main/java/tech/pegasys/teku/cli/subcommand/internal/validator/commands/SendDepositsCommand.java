@@ -109,7 +109,7 @@ public class SendDepositsCommand implements Runnable {
   private BLSPublicKey getWithdrawalKeyFromKeystore() {
     try {
       final KeyStoreData keyStoreData =
-          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.getWithdrawalKeystoreFile().toPath());
+          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.getWithdrawalKeystoreFile().toURI());
       return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
     } catch (final KeyStoreValidationException e) {
       throw new CommandLine.ParameterException(
@@ -145,10 +145,7 @@ public class SendDepositsCommand implements Runnable {
 
       final KeyStoreData keyStoreData =
           KeyStoreLoader.loadFromFile(
-              validatorKeyOptions
-                  .getValidatorKeyStoreOptions()
-                  .getValidatorKeystoreFile()
-                  .toPath());
+              validatorKeyOptions.getValidatorKeyStoreOptions().getValidatorKeystoreFile().toURI());
       final Bytes privateKey = KeyStore.decrypt(keystorePassword, keyStoreData);
       return privateKeyToKeyPair(Bytes32.wrap(privateKey));
     } catch (final KeyStoreValidationException e) {
