@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
-import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
-
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
@@ -75,6 +73,9 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlobSidecarPool blobSidecarPool,
+      final int batchSize,
+      final int maxPendingBatches,
+      final int maxBlockPerMinute,
       final Spec spec) {
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
     final SettableLabelledGauge targetChainCountGauge =
@@ -95,7 +96,8 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             new BatchImporter(blockImporter, blobSidecarPool, asyncRunner),
             new BatchFactory(
                 eventThread, blobSidecarManager, new PeerScoringConflictResolutionStrategy()),
-            FORWARD_SYNC_BATCH_SIZE,
+            batchSize,
+            maxPendingBatches,
             MultipeerCommonAncestorFinder.create(recentChainData, eventThread, spec),
             timeProvider);
     final SyncController syncController =
@@ -115,7 +117,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             recentChainData.getSpec(),
             eventThread,
             p2pNetwork,
-            new SyncSourceFactory(asyncRunner, timeProvider),
+            new SyncSourceFactory(asyncRunner, timeProvider, maxBlockPerMinute, batchSize),
             finalizedTargetChains,
             nonfinalizedTargetChains);
     peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);

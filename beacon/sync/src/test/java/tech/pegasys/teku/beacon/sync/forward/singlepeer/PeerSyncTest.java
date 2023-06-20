@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beacon.sync.forward.singlepeer.PeerSync.MAX_THROTTLED_REQUESTS;
-import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,6 +51,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTrans
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 public class PeerSyncTest extends AbstractSyncTest {
+  private static final UInt64 FORWARD_SYNC_BATCH_SIZE = UInt64.valueOf(50);
 
   private static final Bytes32 PEER_HEAD_BLOCK_ROOT = Bytes32.fromHexString("0x1234");
   private static final UInt64 PEER_HEAD_SLOT = UInt64.valueOf(30);
@@ -96,6 +96,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             blockImporter,
             blobSidecarManager,
             blobSidecarPool,
+            FORWARD_SYNC_BATCH_SIZE.intValue(),
             new NoOpMetricsSystem());
   }
 

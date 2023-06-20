@@ -163,7 +163,8 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         syncStateProvider,
         syncConfig.isReconstructHistoricStatesEnabled(),
         genesisStateResource,
-        syncConfig.fetchAllHistoricBlocks());
+        syncConfig.fetchAllHistoricBlocks(),
+        syncConfig.getHistoricalSyncBatchSize());
   }
 
   protected SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {
@@ -187,6 +188,9 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blobSidecarPool,
+              syncConfig.getForwardSyncBatchSize(),
+              syncConfig.getForwardSyncMaxPendingBatches(),
+              syncConfig.getForwardSyncMaxBlocksPerMinute(),
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -199,6 +203,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blobSidecarPool,
+              syncConfig.getForwardSyncBatchSize(),
               spec);
     }
     return forwardSync;

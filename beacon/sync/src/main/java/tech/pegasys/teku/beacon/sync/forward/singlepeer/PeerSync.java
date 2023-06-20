@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.forward.singlepeer;
 
-import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
-
 import com.google.common.base.Throwables;
 import java.time.Duration;
 import java.util.List;
@@ -48,15 +46,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class PeerSync {
   private static final Duration NEXT_REQUEST_TIMEOUT = Duration.ofSeconds(3);
 
-  /**
-   * Peers are allowed to limit the number of blocks they actually return to use. We tolerate this
-   * up to a point, but if the peer is throttling too excessively we would be better syncing from a
-   * different peer. This value sets how many slots we should progress per request. Since some slots
-   * may be empty we check that we're progressing through slots, even if not many blocks are being
-   * returned.
-   */
-  static final UInt64 MIN_SLOTS_TO_PROGRESS_PER_REQUEST = FORWARD_SYNC_BATCH_SIZE.dividedBy(4);
-
   private static final List<FailureReason> BAD_BLOCK_FAILURE_REASONS =
       List.of(
           FailureReason.FAILED_WEAK_SUBJECTIVITY_CHECKS,
@@ -66,6 +55,17 @@ public class PeerSync {
 
   private static final Logger LOG = LogManager.getLogger();
   static final int MAX_THROTTLED_REQUESTS = 10;
+
+  /**
+   * Peers are allowed to limit the number of blocks they actually return to use. We tolerate this
+   * up to a point, but if the peer is throttling too excessively we would be better syncing from a
+   * different peer. This value sets how many slots we should progress per request. Since some slots
+   * may be empty we check that we're progressing through slots, even if not many blocks are being
+   * returned.
+   */
+  private final UInt64 minSlotsToProgressPerRequest;
+
+  private final UInt64 batchSize;
 
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final Spec spec;
@@ -88,6 +88,7 @@ public class PeerSync {
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlobSidecarPool blobSidecarPool,
+      final int batchSize,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
     this.asyncRunner = asyncRunner;
@@ -103,6 +104,8 @@ public class PeerSync {
             "result");
     this.blockImportSuccessResult = blockImportCounter.labels("imported");
     this.blockImportFailureResult = blockImportCounter.labels("rejected");
+    this.batchSize = UInt64.valueOf(batchSize);
+    this.minSlotsToProgressPerRequest = this.batchSize.dividedBy(4);
   }
 
   public SafeFuture<PeerSyncResult> sync(final Eth2Peer peer) {
@@ -220,10 +223,10 @@ public class PeerSync {
                   blockListener.getCount(),
                   peer.getId(),
                   nextSlot);
-              if (blockListener.getCount().isGreaterThan(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
+              if (blockListener.getCount().isGreaterThan(minSlotsToProgressPerRequest)
                   && blockListener
                       .getStartSlot()
-                      .plus(MIN_SLOTS_TO_PROGRESS_PER_REQUEST)
+                      .plus(minSlotsToProgressPerRequest)
                       .isGreaterThan(nextSlot)) {
                 final int throttledRequests = throttledRequestCount.incrementAndGet();
                 LOG.debug(
@@ -315,7 +318,7 @@ public class PeerSync {
 
   private RequestContext createRequestContext(final UInt64 startSlot, final PeerStatus status) {
     final UInt64 diff = status.getHeadSlot().minusMinZero(startSlot).plus(UInt64.ONE);
-    final UInt64 count = diff.min(FORWARD_SYNC_BATCH_SIZE); // limit the request count
+    final UInt64 count = diff.min(batchSize); // limit the request count
     final UInt64 endSlot = startSlot.plus(count).decrement();
     return new RequestContext(startSlot, count, endSlot);
   }
