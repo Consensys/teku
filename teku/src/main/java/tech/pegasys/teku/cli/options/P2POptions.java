@@ -163,7 +163,8 @@ public class P2POptions {
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Number of objects being requested in a single batch to a single peer, while syncing historical data",
+          "Number of blocks/blobs being requested in a single batch to a single peer, while syncing historical data.\n"
+              + "NOTE: the actual size for blobs batches will be `maxBlobsPerBlock` times the value of this parameter.",
       hidden = true,
       arity = "1")
   private Integer historicalSyncBatchSize = SyncConfig.DEFAULT_HISTORICAL_SYNC_BATCH_SIZE;
@@ -173,7 +174,8 @@ public class P2POptions {
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
       description =
-          "Number of objects being requested in a single batch to a single peer, while forward syncing",
+          "Number of blocks/blobs being requested in a single batch to a single peer, while syncing.\n"
+              + "NOTE: the actual size for blobs batches will be `maxBlobsPerBlock` times the value of this parameter.",
       hidden = true,
       arity = "1")
   private Integer forwardSyncBatchSize = SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE;
@@ -182,8 +184,7 @@ public class P2POptions {
       names = {"--Xp2p-sync-max-pending-batches"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description =
-          "Maximum number of concurrent batches being requested to peers, while forward syncing",
+      description = "Maximum number of concurrent batches being requested to peers, while syncing.",
       hidden = true,
       arity = "1")
   private Integer forwardSyncMaxPendingBatches =
@@ -193,8 +194,7 @@ public class P2POptions {
       names = {"--Xp2p-sync-rate-limit"},
       paramLabel = "<NUMBER>",
       showDefaultValue = Visibility.ALWAYS,
-      description =
-          "Number of objects being requested per minute to a single peer, while forward syncing",
+      description = "Number of objects being requested per minute to a single peer, while syncing.",
       hidden = true,
       arity = "1")
   private Integer forwardSyncRateLimit = SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
