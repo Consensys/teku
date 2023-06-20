@@ -26,23 +26,23 @@ public class SyncSourceFactory {
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final Map<Eth2Peer, SyncSource> syncSourcesByPeer = new HashMap<>();
-  private final int maxBlockPerMinute;
+  private final int maxBlocksPerMinute;
   private final int batchSize;
 
   public SyncSourceFactory(
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
-      final int maxBlockPerMinute,
+      final int maxBlocksPerMinute,
       final int batchSize) {
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
-    this.maxBlockPerMinute = maxBlockPerMinute;
+    this.maxBlocksPerMinute = maxBlocksPerMinute;
     this.batchSize = batchSize;
   }
 
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
     // Limit request rate to just a little under what we'd accept
-    final int maxBlocksPerMinute = maxBlockPerMinute - batchSize - 1;
+    final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
     final int maxBlobSidecarsPerMinute = maxBlocksPerMinute * spec.getMaxBlobsPerBlock().orElse(1);
 
     return syncSourcesByPeer.computeIfAbsent(

@@ -75,7 +75,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
       final BlobSidecarPool blobSidecarPool,
       final int batchSize,
       final int maxPendingBatches,
-      final int maxBlockPerMinute,
+      final int maxBlocksPerMinute,
       final Spec spec) {
     final EventThread eventThread = new AsyncRunnerEventThread("sync", asyncRunnerFactory);
     final SettableLabelledGauge targetChainCountGauge =
@@ -117,7 +117,7 @@ public class MultipeerSyncService extends Service implements ForwardSyncService 
             recentChainData.getSpec(),
             eventThread,
             p2pNetwork,
-            new SyncSourceFactory(asyncRunner, timeProvider, maxBlockPerMinute, batchSize),
+            new SyncSourceFactory(asyncRunner, timeProvider, maxBlocksPerMinute, batchSize),
             finalizedTargetChains,
             nonfinalizedTargetChains);
     peerChainTracker.subscribeToTargetChainUpdates(syncController::onTargetChainsUpdated);
