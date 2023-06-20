@@ -191,8 +191,10 @@ class Eth2PeerSelectionStrategyTest {
                 peerPools,
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER3, PEER1);
-    assertThat(peerPools.getPeerConnectionType(PEER3.getId())).isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
-    assertThat(peerPools.getPeerConnectionType(PEER1.getId())).isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER3.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER1.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
   }
 
   @Test
@@ -206,9 +208,12 @@ class Eth2PeerSelectionStrategyTest {
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER3, PEER1, PEER2);
 
-    assertThat(peerPools.getPeerConnectionType(PEER1.getId())).isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
-    assertThat(peerPools.getPeerConnectionType(PEER2.getId())).isEqualTo(PeerConnectionType.SCORE_BASED);
-    assertThat(peerPools.getPeerConnectionType(PEER3.getId())).isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER1.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER2.getId()))
+        .isEqualTo(PeerConnectionType.SCORE_BASED);
+    assertThat(peerPools.getPeerConnectionType(PEER3.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
   }
 
   @Test
@@ -280,7 +285,8 @@ class Eth2PeerSelectionStrategyTest {
     // Peer2 was dropped from the random pool but had a better score than peer3 so was kept
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer3);
-    assertThat(peerPools.getPeerConnectionType(peer2.getId())).isEqualTo(PeerConnectionType.SCORE_BASED);
+    assertThat(peerPools.getPeerConnectionType(peer2.getId()))
+        .isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 
   @Test

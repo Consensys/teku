@@ -26,14 +26,17 @@ class PeerPoolsTest {
     pools.addPeerToPool(new MockNodeId(1), PeerConnectionType.RANDOMLY_SELECTED);
     pools.addPeerToPool(new MockNodeId(2), PeerConnectionType.STATIC);
     pools.addPeerToPool(new MockNodeId(3), PeerConnectionType.SCORE_BASED);
-    assertThat(pools.getPeerConnectionType(new MockNodeId(1))).isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(pools.getPeerConnectionType(new MockNodeId(1)))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
     assertThat(pools.getPeerConnectionType(new MockNodeId(2))).isEqualTo(PeerConnectionType.STATIC);
-    assertThat(pools.getPeerConnectionType(new MockNodeId(3))).isEqualTo(PeerConnectionType.SCORE_BASED);
+    assertThat(pools.getPeerConnectionType(new MockNodeId(3)))
+        .isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 
   @Test
   void shouldDefaultToScoreBasedPool() {
-    assertThat(pools.getPeerConnectionType(new MockNodeId(1))).isEqualTo(PeerConnectionType.SCORE_BASED);
+    assertThat(pools.getPeerConnectionType(new MockNodeId(1)))
+        .isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 
   @Test
