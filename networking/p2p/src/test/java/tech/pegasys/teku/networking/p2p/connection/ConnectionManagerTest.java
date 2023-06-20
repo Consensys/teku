@@ -68,6 +68,8 @@ class ConnectionManagerTest {
   @SuppressWarnings("unchecked")
   private final P2PNetwork<Peer> network = mock(P2PNetwork.class);
 
+  private final PeerPools peerPools = new PeerPools();
+
   private final DiscoveryService discoveryService = mock(DiscoveryService.class);
   private final PeerSelectionStrategy peerSelectionStrategy = mock(PeerSelectionStrategy.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
@@ -456,7 +458,8 @@ class ConnectionManagerTest {
         asyncRunner,
         network,
         peerSelectionStrategy,
-        Arrays.asList(peers));
+        Arrays.asList(peers),
+        peerPools);
   }
 
   private static DiscoveryPeer createDiscoveryPeer(final PeerAddress peer, final int... subnetIds) {

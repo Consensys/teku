@@ -56,7 +56,7 @@ public class SimplePeerSelectionStrategy implements PeerSelectionStrategy {
     final int peersToDrop = targetPeerRange.getPeersToDrop(network.getPeerCount());
     return network
         .streamPeers()
-        .filter(peer -> peerPools.getPool(peer.getId()) != STATIC)
+        .filter(peer -> peerPools.getPeerConnectionType(peer.getId()) != STATIC)
         .limit(peersToDrop)
         .collect(toList());
   }

@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.network.p2p.peer.SimplePeerSelectionStrategy;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
@@ -100,11 +101,13 @@ public class DiscoveryNetworkFactory {
                 .networkInterface("127.0.0.1")
                 .build();
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
+        final PeerPools peerPools = new PeerPools();
         final ReputationManager reputationManager =
             new DefaultReputationManager(
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
-                Constants.REPUTATION_MANAGER_CAPACITY);
+                Constants.REPUTATION_MANAGER_CAPACITY,
+                peerPools);
         final PeerSelectionStrategy peerSelectionStrategy =
             new SimplePeerSelectionStrategy(new TargetPeerRange(20, 30, 0));
         final DiscoveryNetwork<?> network =
@@ -127,6 +130,7 @@ public class DiscoveryNetworkFactory {
                             })
                         .gossipTopicFilter(topic -> true)
                         .build())
+                .peerPools(peerPools)
                 .peerSelectionStrategy(peerSelectionStrategy)
                 .discoveryConfig(discoveryConfig)
                 .p2pConfig(config)
