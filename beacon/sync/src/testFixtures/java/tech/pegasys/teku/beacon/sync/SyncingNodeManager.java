@@ -50,13 +50,13 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -64,11 +64,9 @@ import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
-import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
-import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -117,8 +115,15 @@ public class SyncingNodeManager {
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
 
-    final GossipValidationHelper gossipValidationHelper =
-        new GossipValidationHelper(spec, recentChainData);
+    final ForkChoice forkChoice =
+        new ForkChoice(
+            spec,
+            new InlineEventThread(),
+            recentChainData,
+            BlobSidecarManager.NOOP,
+            new StubForkChoiceNotifier(),
+            transitionBlockValidator,
+            new StubMetricsSystem());
 
     final BlockValidator blockValidator =
         new BlockValidator(
@@ -134,33 +139,6 @@ public class SyncingNodeManager {
     final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
         LimitedMap.createSynchronized(500);
 
-    final FutureItems<SignedBlobSidecar> futureBlobSidecars =
-        FutureItems.create(
-            SignedBlobSidecar::getSlot, mock(SettableLabelledGauge.class), "blob_sidecars");
-    final BlobSidecarValidator blobSidecarValidator =
-        BlobSidecarValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
-    final BlobSidecarPoolImpl blobSidecarPool =
-        poolFactory.createPoolForBlobSidecars(spec, timeProvider, asyncRunner, recentChainData);
-    final BlobSidecarManagerImpl blobSidecarManager =
-        new BlobSidecarManagerImpl(
-            spec,
-            asyncRunner,
-            recentChainData,
-            blobSidecarPool,
-            blobSidecarValidator,
-            futureBlobSidecars,
-            invalidBlobSidecarRoots);
-
-    final ForkChoice forkChoice =
-        new ForkChoice(
-            spec,
-            new InlineEventThread(),
-            recentChainData,
-            blobSidecarManager,
-            new StubForkChoiceNotifier(),
-            transitionBlockValidator,
-            new StubMetricsSystem());
-
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
@@ -169,11 +147,12 @@ public class SyncingNodeManager {
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
             new ExecutionLayerChannelStub(spec, false, Optional.empty()));
+
     final BlockManager blockManager =
         new BlockManager(
             recentChainData,
             blockImporter,
-            blobSidecarPool,
+            BlobSidecarPool.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -187,10 +166,7 @@ public class SyncingNodeManager {
         .subscribe(BlockImportChannel.class, blockManager)
         .subscribe(BlockImportNotifications.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks)
-        .subscribe(SlotEventsChannel.class, pendingBlocks)
-        .subscribe(FinalizedCheckpointChannel.class, blobSidecarPool)
-        .subscribe(SlotEventsChannel.class, blobSidecarManager)
-        .subscribe(SlotEventsChannel.class, blobSidecarPool);
+        .subscribe(SlotEventsChannel.class, pendingBlocks);
 
     final Eth2P2PNetworkBuilder networkBuilder =
         networkFactory
@@ -210,8 +186,8 @@ public class SyncingNodeManager {
             eth2P2PNetwork,
             recentChainData,
             blockImporter,
-            blobSidecarManager,
-            blobSidecarPool,
+            BlobSidecarManager.NOOP,
+            BlobSidecarPool.NOOP,
             new NoOpMetricsSystem(),
             spec);
 
@@ -221,7 +197,7 @@ public class SyncingNodeManager {
 
     final FetchRecentBlocksService recentBlockFetcher =
         FetchRecentBlocksService.create(
-            asyncRunner, pendingBlocks, blobSidecarPool, syncService, fetchBlockTaskFactory);
+            asyncRunner, pendingBlocks, BlobSidecarPool.NOOP, syncService, fetchBlockTaskFactory);
     recentBlockFetcher.subscribeBlockFetched(blockManager::importBlock);
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->
