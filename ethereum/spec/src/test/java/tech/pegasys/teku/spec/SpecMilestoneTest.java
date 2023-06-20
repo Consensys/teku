@@ -28,11 +28,11 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class SpecMilestoneTest {
   private final SpecConfigCapella capellaSpecConfig =
-      SpecConfigCapella.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigCapella.required(TestSpecFactory.createMinimalCapella().getGenesisSpecConfig());
   private final SpecConfigBellatrix bellatrixSpecConfig =
-      SpecConfigBellatrix.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigBellatrix.required(TestSpecFactory.createMinimalBellatrix().getGenesisSpecConfig());
   private final SpecConfigAltair altairSpecConfig =
-      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
+      SpecConfigAltair.required(TestSpecFactory.createMinimalAltair().getGenesisSpecConfig());
   private final SpecConfig phase0SpecConfig =
       SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
 
@@ -193,19 +193,16 @@ public class SpecMilestoneTest {
 
   @Test
   public void getForkSlot_altairNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR))
-        .contains(UInt64.MAX_VALUE);
+    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.ALTAIR)).isEmpty();
   }
 
   @Test
   public void getForkSlot_bellatrixNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(phase0SpecConfig, SpecMilestone.BELLATRIX))
-        .contains(UInt64.MAX_VALUE);
+    assertThat(SpecMilestone.getForkEpoch(altairSpecConfig, SpecMilestone.BELLATRIX)).isEmpty();
   }
 
   @Test
   public void getForkEpoch_capellaNotScheduled() {
-    assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, SpecMilestone.CAPELLA))
-        .contains(UInt64.MAX_VALUE);
+    assertThat(SpecMilestone.getForkEpoch(bellatrixSpecConfig, SpecMilestone.CAPELLA)).isEmpty();
   }
 }

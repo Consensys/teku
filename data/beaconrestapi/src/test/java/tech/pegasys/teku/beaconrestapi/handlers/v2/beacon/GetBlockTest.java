@@ -37,7 +37,7 @@ class GetBlockTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
 
     setHandler(new GetBlock(chainDataProvider, schemaDefinitionCache));

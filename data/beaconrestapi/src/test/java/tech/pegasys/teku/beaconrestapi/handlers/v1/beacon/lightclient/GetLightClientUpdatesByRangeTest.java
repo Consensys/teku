@@ -37,14 +37,13 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetLightClientUpdatesByRangeTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
+    setup(TestSpecFactory.createMinimalAltair());
     setHandler(new GetLightClientUpdatesByRange(schemaDefinitionCache));
-    dataStructureUtil = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
     request.setQueryParameter("start_period", "1");
     request.setQueryParameter("count", "1");
   }

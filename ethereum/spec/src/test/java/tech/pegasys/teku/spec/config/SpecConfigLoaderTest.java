@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllBellat
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllFieldsSet;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Streams;
 import com.google.common.io.Resources;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +29,8 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
@@ -44,7 +45,7 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 public class SpecConfigLoaderTest {
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("knownNetworks")
+  @MethodSource("knownNetworksWithSupportedSpecConfigs")
   public void shouldLoadAllKnownNetworks(final String name, final Class<?> configType)
       throws Exception {
     final SpecConfig config = SpecConfigLoader.loadConfigStrict(name);
@@ -145,20 +146,53 @@ public class SpecConfigLoaderTest {
 
   @Test
   public void shouldTestAllKnownNetworks() {
-    final List<String> testedNetworks =
-        knownNetworks().map(args -> (String) args.get()[0]).sorted().collect(Collectors.toList());
-    final List<String> allKnownNetworks =
+    final Set<String> testedNetworks =
+        knownNetworksWithSupportedSpecConfigs()
+            .map(args -> (String) args.get()[0])
+            .sorted()
+            .collect(Collectors.toSet());
+    final Set<String> allKnownNetworks =
         Arrays.stream(Eth2Network.values())
             .map(Eth2Network::configName)
-            .sorted()
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
 
     assertThat(testedNetworks).isEqualTo(allKnownNetworks);
   }
 
-  static Stream<Arguments> knownNetworks() {
-    return Stream.of(Eth2Network.values())
-        .map(network -> Arguments.of(network.configName(), SpecConfigBellatrix.class));
+  static Stream<Arguments> knownNetworksWithSupportedSpecConfigs() {
+    final Stream<Arguments> phase0SupportedNetworks =
+        Stream.of(Eth2Network.values())
+            // We cannot check on SpecConfigPhase0 because DelegatingSpecConfig is not its child
+            .map(network -> Arguments.of(network.configName(), SpecConfig.class));
+    final Stream<Arguments> altairSupportedNetworks =
+        Stream.of(Eth2Network.values())
+            .filter(network -> !network.equals(Eth2Network.MINIMAL))
+            .map(network -> Arguments.of(network.configName(), SpecConfigAltair.class));
+    final Stream<Arguments> bellatrixSupportedNetworks =
+        Stream.of(Eth2Network.values())
+            .filter(
+                network ->
+                    !Set.of(Eth2Network.MINIMAL, Eth2Network.SWIFT, Eth2Network.LESS_SWIFT)
+                        .contains(network))
+            .map(network -> Arguments.of(network.configName(), SpecConfigBellatrix.class));
+    final Stream<Arguments> capellaSupportedNetworks =
+        Stream.of(Eth2Network.values())
+            .filter(
+                network ->
+                    !Set.of(
+                            Eth2Network.MINIMAL,
+                            Eth2Network.SWIFT,
+                            Eth2Network.LESS_SWIFT,
+                            Eth2Network.GNOSIS,
+                            Eth2Network.ROPSTEN,
+                            Eth2Network.KILN)
+                        .contains(network))
+            .map(network -> Arguments.of(network.configName(), SpecConfigCapella.class));
+    return Streams.concat(
+        phase0SupportedNetworks,
+        altairSupportedNetworks,
+        bellatrixSupportedNetworks,
+        capellaSupportedNetworks);
   }
 
   private void writeStreamToFile(final InputStream inputStream, final Path filePath)

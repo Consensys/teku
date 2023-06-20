@@ -37,7 +37,7 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @BeforeEach
   void setup() throws ExecutionException, InterruptedException {
-    initialise(SpecMilestone.PHASE0);
+    initialiseStorage(SpecMilestone.PHASE0);
     genesis();
     setHandler(new GetStateFork(chainDataProvider));
     request.setPathParameter("state_id", "head");

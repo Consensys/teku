@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTest {
 
@@ -49,8 +48,8 @@ public class GetLightClientBootstrapTest extends AbstractMigratedBeaconHandlerTe
 
   @BeforeEach
   void setup() {
+    setup(TestSpecFactory.createMinimalAltair());
     setHandler(new GetLightClientBootstrap(chainDataProvider, schemaDefinitionCache));
-    dataStructureUtil = new DataStructureUtil(TestSpecFactory.createMinimalAltair());
     request.setPathParameter("block_root", blockRoot.toHexString());
   }
 

@@ -34,7 +34,7 @@ class GetChainHeadsV2Test extends AbstractMigratedBeaconHandlerWithChainDataProv
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
     setHandler(new GetChainHeadsV2(chainDataProvider));
     protoNodeDataList = chainDataProvider.getChainHeads();

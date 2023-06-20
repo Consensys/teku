@@ -53,7 +53,7 @@ public class GetGenesisTest extends AbstractMigratedBeaconHandlerWithChainDataPr
 
   @Test
   public void shouldReturnGenesisInformation() throws Exception {
-    initialise(SpecMilestone.PHASE0);
+    initialiseStorage(SpecMilestone.PHASE0);
     genesis();
     final GetGenesis handler = new GetGenesis(chainDataProvider);
 

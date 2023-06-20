@@ -40,7 +40,7 @@ public class GetStateFinalityCheckpointsTest
 
   @BeforeEach
   void setup() throws ExecutionException, InterruptedException {
-    initialise(SpecMilestone.PHASE0);
+    initialiseStorage(SpecMilestone.PHASE0);
     genesis();
 
     chainUpdater.updateBestBlock(chainBuilder.generateNextBlock());

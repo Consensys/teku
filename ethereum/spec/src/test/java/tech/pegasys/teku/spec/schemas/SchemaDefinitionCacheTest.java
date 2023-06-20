@@ -20,10 +20,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import com.google.common.collect.Streams;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +50,7 @@ public class SchemaDefinitionCacheTest {
   private static final Logger LOG = LogManager.getLogger();
 
   @ParameterizedTest
-  @MethodSource("allNetworksWithAllMilestones")
+  @MethodSource("allNetworksWithAllSupportedMilestones")
   void shouldGetSchemasForAllMilestonesOnAllNetworks(
       final Eth2Network network, final SpecMilestone specMilestone) {
     final SpecConfig specConfig = SpecConfigLoader.loadConfigStrict(network.configName());
@@ -57,12 +59,38 @@ public class SchemaDefinitionCacheTest {
     assertThat(cache.getSchemaDefinition(specMilestone)).isNotNull();
   }
 
-  static Stream<Arguments> allNetworksWithAllMilestones() {
-    return Stream.of(Eth2Network.values())
-        .flatMap(
-            network ->
-                Stream.of(SpecMilestone.values())
-                    .map(milestone -> Arguments.of(network, milestone)));
+  static Stream<Arguments> allNetworksWithAllSupportedMilestones() {
+    final Stream<Arguments> phase0SupportedNetworks =
+        Stream.of(Eth2Network.values()).map(network -> Arguments.of(network, SpecMilestone.PHASE0));
+    final Stream<Arguments> altairSupportedNetworks =
+        Stream.of(Eth2Network.values())
+            .filter(network -> !network.equals(Eth2Network.MINIMAL))
+            .map(network -> Arguments.of(network, SpecMilestone.ALTAIR));
+    final Stream<Arguments> bellatrixSupportedNetworks =
+        Stream.of(Eth2Network.values())
+            .filter(
+                network ->
+                    !Set.of(Eth2Network.MINIMAL, Eth2Network.SWIFT, Eth2Network.LESS_SWIFT)
+                        .contains(network))
+            .map(network -> Arguments.of(network, SpecMilestone.BELLATRIX));
+    final Stream<Arguments> capellaSupportedNetworks =
+        Stream.of(Eth2Network.values())
+            .filter(
+                network ->
+                    !Set.of(
+                            Eth2Network.MINIMAL,
+                            Eth2Network.SWIFT,
+                            Eth2Network.LESS_SWIFT,
+                            Eth2Network.GNOSIS,
+                            Eth2Network.ROPSTEN,
+                            Eth2Network.KILN)
+                        .contains(network))
+            .map(network -> Arguments.of(network, SpecMilestone.CAPELLA));
+    return Streams.concat(
+        phase0SupportedNetworks,
+        altairSupportedNetworks,
+        bellatrixSupportedNetworks,
+        capellaSupportedNetworks);
   }
 
   @Test
@@ -93,7 +121,7 @@ public class SchemaDefinitionCacheTest {
     final Spec spec = TestSpecFactory.createMinimalPhase0();
     final SchemaDefinitionCache cache = new SchemaDefinitionCache(spec);
     assertThat(spec.forMilestone(SpecMilestone.BELLATRIX)).isNull();
-    assertThat(cache.getSchemaDefinition(SpecMilestone.BELLATRIX)).isNotNull();
+    assertThat(cache.getSchemaDefinition(SpecMilestone.BELLATRIX)).isNull();
   }
 
   @ParameterizedTest

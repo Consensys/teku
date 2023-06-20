@@ -47,7 +47,7 @@ public class GetStateValidatorTest extends AbstractMigratedBeaconHandlerWithChai
 
   @BeforeEach
   void setup() throws ExecutionException, InterruptedException {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
     setHandler(new GetStateValidator(chainDataProvider));
     request.setPathParameter("state_id", "head");

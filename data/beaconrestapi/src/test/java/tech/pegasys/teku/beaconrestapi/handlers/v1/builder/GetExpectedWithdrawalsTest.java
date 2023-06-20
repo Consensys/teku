@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -39,7 +40,8 @@ class GetExpectedWithdrawalsTest extends AbstractMigratedBeaconHandlerWithChainD
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.CAPELLA);
+    setup(TestSpecFactory.createMinimalCapella());
+    initialiseStorage(SpecMilestone.CAPELLA);
     genesis();
 
     setHandler(new GetExpectedWithdrawals(chainDataProvider, schemaDefinitionCache));

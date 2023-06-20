@@ -17,18 +17,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 class SpecVersionTest {
-  private final SpecConfigAltair minimalConfig =
-      SpecConfigAltair.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
 
   @Test
   void shouldCreatePhase0Spec() {
+    final SpecConfigPhase0 minimalConfig =
+        SpecConfigPhase0.required(SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName()));
     final SpecVersion expectedVersion = SpecVersion.createPhase0(minimalConfig);
     final Optional<SpecVersion> actualVersion =
         SpecVersion.create(SpecMilestone.PHASE0, minimalConfig);
@@ -40,6 +42,11 @@ class SpecVersionTest {
 
   @Test
   void shouldCreateAltairSpec() {
+    SpecConfigAltair minimalConfig =
+        SpecConfigAltair.required(
+            SpecConfigLoader.loadConfig(
+                Eth2Network.MINIMAL.configName(),
+                b -> b.altairBuilder(ab -> ab.altairForkEpoch(UInt64.ZERO))));
     final SpecConfigAltair altairSpecConfig = SpecConfigAltair.required(minimalConfig);
     final SpecVersion expectedVersion = SpecVersion.createAltair(altairSpecConfig);
     final Optional<SpecVersion> actualVersion =
@@ -52,6 +59,13 @@ class SpecVersionTest {
 
   @Test
   void shouldCreateBellatrixSpec() {
+    SpecConfigAltair minimalConfig =
+        SpecConfigAltair.required(
+            SpecConfigLoader.loadConfig(
+                Eth2Network.MINIMAL.configName(),
+                b ->
+                    b.altairBuilder(ab -> ab.altairForkEpoch(UInt64.ZERO))
+                        .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.ZERO))));
     final SpecConfigBellatrix bellatrixSpecConfig = SpecConfigBellatrix.required(minimalConfig);
     final SpecVersion expectedVersion = SpecVersion.createBellatrix(bellatrixSpecConfig);
     final Optional<SpecVersion> actualVersion =
@@ -64,6 +78,14 @@ class SpecVersionTest {
 
   @Test
   void shouldCreateCapellaSpec() {
+    SpecConfigAltair minimalConfig =
+        SpecConfigAltair.required(
+            SpecConfigLoader.loadConfig(
+                Eth2Network.MINIMAL.configName(),
+                b ->
+                    b.altairBuilder(ab -> ab.altairForkEpoch(UInt64.ZERO))
+                        .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.ZERO))
+                        .capellaBuilder(cb -> cb.capellaForkEpoch(UInt64.ZERO))));
     final SpecConfigCapella capellaSpecConfig = SpecConfigCapella.required(minimalConfig);
     final SpecVersion expectedVersion = SpecVersion.createCapella(capellaSpecConfig);
     final Optional<SpecVersion> actualVersion =

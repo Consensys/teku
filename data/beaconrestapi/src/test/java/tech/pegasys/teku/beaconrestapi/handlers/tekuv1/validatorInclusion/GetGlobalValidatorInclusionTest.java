@@ -37,7 +37,7 @@ class GetGlobalValidatorInclusionTest
     extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
 
     setHandler(new GetGlobalValidatorInclusion(chainDataProvider));

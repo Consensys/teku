@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -70,7 +71,7 @@ public abstract class AbstractBeaconStateSchemaTest<
 
   @Test
   public void changeSpecConfigTest() {
-    final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
+    final Spec standardSpec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ZERO);
     final SpecConfig modifiedConfig =
         SpecConfigLoader.loadConfig(
             "minimal",
@@ -81,7 +82,8 @@ public abstract class AbstractBeaconStateSchemaTest<
                     .validatorRegistryLimit(123L)
                     .epochsPerHistoricalVector(123)
                     .epochsPerSlashingsVector(123)
-                    .maxAttestations(123));
+                    .maxAttestations(123)
+                    .altairBuilder(ab -> ab.altairForkEpoch(UInt64.ZERO)));
 
     BeaconState s1 = getSchema(modifiedConfig).createEmpty();
     BeaconState s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();
@@ -109,9 +111,10 @@ public abstract class AbstractBeaconStateSchemaTest<
   @Test
   public void create_compareDifferentSpecs() {
     final BeaconStateSchema<T, TMutable> minimalState =
-        getSchema(TestSpecFactory.createMinimalPhase0().getGenesisSpecConfig());
+        getSchema(
+            TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ZERO).getGenesisSpecConfig());
     final BeaconStateSchema<T, TMutable> mainnetState =
-        getSchema(TestSpecFactory.createMainnetPhase0().getGenesisSpecConfig());
+        getSchema(TestSpecFactory.createMainnetAltair().getGenesisSpecConfig());
 
     assertThat(minimalState).isNotEqualTo(mainnetState);
   }

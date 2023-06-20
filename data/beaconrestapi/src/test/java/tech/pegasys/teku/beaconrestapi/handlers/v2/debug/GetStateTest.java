@@ -36,7 +36,7 @@ class GetStateTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTes
 
   @BeforeEach
   void setup() {
-    initialise(PHASE0);
+    initialiseStorage(PHASE0);
     genesis();
 
     setHandler(new GetState(chainDataProvider, schemaDefinitionCache));

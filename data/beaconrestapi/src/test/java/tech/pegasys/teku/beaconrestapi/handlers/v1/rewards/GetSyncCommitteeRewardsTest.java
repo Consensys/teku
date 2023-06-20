@@ -47,7 +47,7 @@ public class GetSyncCommitteeRewardsTest
   void setup() {
     spec = TestSpecFactory.createMinimalAltair();
     dataStructureUtil = new DataStructureUtil(spec);
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
     final SyncAggregate syncAggregate =
         dataStructureUtil.randomSyncAggregate(0, 3, 4, 7, 8, 9, 10, 16, 17, 20, 23, 25, 26, 29, 30);

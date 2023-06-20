@@ -42,7 +42,7 @@ public class AbstractMigratedBeaconHandlerWithChainDataProviderTest
   protected CombinedChainDataClient combinedChainDataClient;
   protected RecentChainData recentChainData;
 
-  public void initialise(final SpecMilestone specMilestone) {
+  public void initialiseStorage(final SpecMilestone specMilestone) {
     setupStorage(StateStorageMode.ARCHIVE, specMilestone, false);
   }
 

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config;
 
+import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 
@@ -20,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SpecConfigReaderTest {
   private final SpecConfigReader reader = new SpecConfigReader();
@@ -38,6 +40,23 @@ public class SpecConfigReaderTest {
     processFileAsInputStream(getInvalidConfigPath("missingAltairField"), this::readConfig);
 
     assertThatThrownBy(reader::build)
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
+  }
+
+  @Test
+  public void read_missingAltairConstantFarFutureEpoch() {
+    processFileAsInputStream(getInvalidConfigPath("missingAltairFieldFarFuture"), this::readConfig);
+
+    // Not checking Altair constants when Altair is in the far future epoch
+    assertThatNoException().isThrownBy(reader::build);
+
+    // Checking Altair constants when Altair is not in the far future epoch
+    assertThatThrownBy(
+            () ->
+                reader.build(
+                    modifier ->
+                        modifier.altairBuilder(ab -> ab.altairForkEpoch(UInt64.valueOf(12345)))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
   }

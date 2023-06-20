@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -26,8 +27,18 @@ public class SpecConfigDenebTest {
 
   @Test
   public void equals_mainnet() {
-    SpecConfigDeneb configA = SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
-    SpecConfigDeneb configB = SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
+    SpecConfigDeneb configA =
+        SpecConfigLoader.loadConfig(
+                "mainnet",
+                b -> b.denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(294048)).kzgNoop(true)))
+            .toVersionDeneb()
+            .orElseThrow();
+    SpecConfigDeneb configB =
+        SpecConfigLoader.loadConfig(
+                "mainnet",
+                b -> b.denebBuilder(db -> db.denebForkEpoch(UInt64.valueOf(294048)).kzgNoop(true)))
+            .toVersionDeneb()
+            .orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());

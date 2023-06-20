@@ -42,7 +42,7 @@ public class GetStateValidatorBalancesTest
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
 
     setHandler(new GetStateValidatorBalances(chainDataProvider));

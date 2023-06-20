@@ -33,7 +33,7 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @BeforeEach
   public void setup() {
-    initialise(SpecMilestone.PHASE0);
+    initialiseStorage(SpecMilestone.PHASE0);
     genesis();
     setHandler(new GetStateRoot(chainDataProvider));
     request.setPathParameter("state_id", "head");

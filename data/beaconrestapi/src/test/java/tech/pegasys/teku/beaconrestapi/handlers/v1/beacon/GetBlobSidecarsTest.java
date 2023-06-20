@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -40,7 +41,8 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.DENEB);
+    setup(TestSpecFactory.createMinimalDeneb());
+    initialiseStorage(SpecMilestone.DENEB);
     genesis();
 
     setHandler(new GetBlobSidecars(chainDataProvider, schemaDefinitionCache));

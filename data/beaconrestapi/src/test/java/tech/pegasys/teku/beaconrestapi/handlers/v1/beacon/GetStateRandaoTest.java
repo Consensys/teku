@@ -35,7 +35,7 @@ public class GetStateRandaoTest extends AbstractMigratedBeaconHandlerWithChainDa
 
   @BeforeEach
   public void setup() {
-    initialise(SpecMilestone.PHASE0);
+    initialiseStorage(SpecMilestone.PHASE0);
     genesis();
     setHandler(getStateRandaoHandler);
     request.setPathParameter("state_id", "head");

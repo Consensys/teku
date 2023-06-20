@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -60,9 +61,13 @@ public class BeaconStateSchemaAltairTest
 
   @Test
   public void changeSpecConfigTest_checkAltairFields() {
-    final Spec standardSpec = TestSpecFactory.createMinimalPhase0();
+    final Spec standardSpec = TestSpecFactory.createMinimalWithAltairForkEpoch(UInt64.ZERO);
     final SpecConfig modifiedConstants =
-        SpecConfigLoader.loadConfig("minimal", b -> b.validatorRegistryLimit(123L));
+        SpecConfigLoader.loadConfig(
+            "minimal",
+            b ->
+                b.validatorRegistryLimit(123L)
+                    .altairBuilder(ab -> ab.altairForkEpoch(UInt64.ZERO)));
 
     BeaconStateAltair s1 = getSchema(modifiedConstants).createEmpty();
     BeaconStateAltair s2 = getSchema(standardSpec.getGenesisSpecConfig()).createEmpty();

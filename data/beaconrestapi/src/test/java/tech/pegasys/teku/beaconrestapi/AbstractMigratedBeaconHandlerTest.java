@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class AbstractMigratedBeaconHandlerTest {
   protected final Eth2P2PNetwork eth2P2PNetwork = mock(Eth2P2PNetwork.class);
-  protected Spec spec = TestSpecFactory.createMinimalPhase0();
+  protected Spec spec;
 
   protected final JsonProvider jsonProvider = new JsonProvider();
   protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
@@ -47,8 +47,8 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected final IntSupplier rejectedExecutionSupplier = () -> rejectedExecutionCount;
   protected final SyncDataProvider syncDataProvider =
       new SyncDataProvider(syncService, rejectedExecutionSupplier);
-  protected SchemaDefinitionCache schemaDefinitionCache = new SchemaDefinitionCache(spec);
-  protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  protected SchemaDefinitionCache schemaDefinitionCache;
+  protected DataStructureUtil dataStructureUtil;
 
   protected ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
   protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
@@ -59,6 +59,16 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   // Getting a NullPointerException from this? Call setHandler as the first thing you do. :)
   protected StubRestApiRequest request;
   protected RestApiEndpoint handler;
+
+  public AbstractMigratedBeaconHandlerTest() {
+    setup(TestSpecFactory.createMinimalPhase0());
+  }
+
+  protected void setup(final Spec spec) {
+    this.spec = spec;
+    this.schemaDefinitionCache = new SchemaDefinitionCache(spec);
+    this.dataStructureUtil = new DataStructureUtil(spec);
+  }
 
   protected void setHandler(final RestApiEndpoint handler) {
     this.handler = handler;

@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 class GetValidatorInclusionTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
 
     setHandler(new GetValidatorInclusion(chainDataProvider));

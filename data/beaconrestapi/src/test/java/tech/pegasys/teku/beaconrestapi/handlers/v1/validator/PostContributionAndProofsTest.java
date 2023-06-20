@@ -29,12 +29,14 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 
 public class PostContributionAndProofsTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setup() {
+    setup(TestSpecFactory.createMinimalAltair());
     setHandler(new PostContributionAndProofs(validatorDataProvider, schemaDefinitionCache));
   }
 

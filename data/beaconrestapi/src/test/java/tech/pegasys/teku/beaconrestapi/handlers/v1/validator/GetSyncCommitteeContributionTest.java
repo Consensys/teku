@@ -36,20 +36,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class GetSyncCommitteeContributionTest extends AbstractMigratedBeaconHandlerTest {
-  @SuppressWarnings("HidingField")
-  private final Spec spec = TestSpecFactory.createMinimalAltair();
-
-  @SuppressWarnings("HidingField")
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @BeforeEach
   void setUp() {
+    setup(TestSpecFactory.createMinimalAltair());
     setHandler(new GetSyncCommitteeContribution(validatorDataProvider, schemaDefinitionCache));
   }
 

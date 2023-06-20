@@ -45,7 +45,7 @@ public class GetStateCommitteesTest extends AbstractMigratedBeaconHandlerWithCha
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
 
     setHandler(new GetStateCommittees(chainDataProvider));

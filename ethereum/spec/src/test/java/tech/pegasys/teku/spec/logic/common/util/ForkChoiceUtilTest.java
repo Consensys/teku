@@ -48,7 +48,7 @@ class ForkChoiceUtilTest {
 
   private static final UInt64 GENESIS_TIME = UInt64.valueOf("1591924193");
   private static final UInt64 GENESIS_TIME_MILLIS = GENESIS_TIME.times(1000L);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final RandomChainBuilder chainBuilder = new RandomChainBuilder(dataStructureUtil);
   private final RandomChainBuilderForkChoiceStrategy forkChoiceStrategy =

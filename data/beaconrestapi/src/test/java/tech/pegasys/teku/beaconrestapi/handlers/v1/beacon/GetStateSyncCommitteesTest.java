@@ -38,7 +38,7 @@ class GetStateSyncCommitteesTest extends AbstractMigratedBeaconHandlerWithChainD
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.ALTAIR);
+    initialiseStorage(SpecMilestone.ALTAIR);
     genesis();
 
     setHandler(new GetStateSyncCommittees(chainDataProvider));

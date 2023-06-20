@@ -37,7 +37,7 @@ class GetBlockRootTest extends AbstractMigratedBeaconHandlerWithChainDataProvide
 
   @BeforeEach
   void setup() {
-    initialise(SpecMilestone.PHASE0);
+    initialiseStorage(SpecMilestone.PHASE0);
     genesis();
 
     setHandler(new GetBlockRoot(chainDataProvider));
