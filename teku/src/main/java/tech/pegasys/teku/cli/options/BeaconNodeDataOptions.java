@@ -121,7 +121,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       names = {"--Xdata-storage-blobs-pruning-limit"},
       hidden = true,
       paramLabel = "<INTEGER>",
-      description = "Maximum number of blob sidecars that can be pruned in in each pruning session",
+      description = "Maximum number of blob sidecars that can be pruned in each pruning session",
       fallbackValue = "true",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")

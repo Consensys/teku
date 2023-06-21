@@ -50,15 +50,18 @@ import tech.pegasys.teku.validator.client.ValidatorClientService;
  * ensures that signing cannot occur once the source has been marked deleted.
  *
  * <p>DeletableSigner -> SlashingProtectedSigner -> (LocalSigner | ExternalSigner)
- * <li>DeletableSigner being at the top of the hierarchy ensures that a signer can be deleted and
- *     ensure no further signing occurs. Outstanding duties for a validator may still attempt to
- *     process. It also delegates if it is read-only: read-only signers will not be allowed to be
- *     deleted.
- * <li>SlashingProtectedSigner ensures that a signer cannot attempt to sign anything that may
- *     violate slashing conditions. Actual signing is delegated once it has been verified that
- *     slashing would not occur.
- * <li>LocalSigner uses local signing
- * <li>ExternalSigner delegates singing to an external tool
+ *
+ * <ul>
+ *   <li>DeletableSigner being at the top of the hierarchy ensures that a signer can be deleted and
+ *       ensure no further signing occurs. Outstanding duties for a validator may still attempt to
+ *       process. It also delegates if it is read-only: read-only signers will not be allowed to be
+ *       deleted.
+ *   <li>SlashingProtectedSigner ensures that a signer cannot attempt to sign anything that may
+ *       violate slashing conditions. Actual signing is delegated once it has been verified that
+ *       slashing would not occur.
+ *   <li>LocalSigner uses local signing
+ *   <li>ExternalSigner delegates singing to an external tool
+ * </ul>
  */
 public class ValidatorSourceFactory {
   private static final Logger LOG = LogManager.getLogger();

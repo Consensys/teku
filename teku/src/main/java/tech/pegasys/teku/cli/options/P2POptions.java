@@ -159,6 +159,47 @@ public class P2POptions {
   private boolean multiPeerSyncEnabled = SyncConfig.DEFAULT_MULTI_PEER_SYNC_ENABLED;
 
   @Option(
+      names = {"--Xp2p-historical-sync-batch-size"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Number of blocks/blobs being requested in a single batch to a single peer, while syncing historical data.\n"
+              + "NOTE: the actual size for blobs batches will be `maxBlobsPerBlock` times the value of this parameter.",
+      hidden = true,
+      arity = "1")
+  private Integer historicalSyncBatchSize = SyncConfig.DEFAULT_HISTORICAL_SYNC_BATCH_SIZE;
+
+  @Option(
+      names = {"--Xp2p-sync-batch-size"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description =
+          "Number of blocks/blobs being requested in a single batch to a single peer, while syncing.\n"
+              + "NOTE: the actual size for blobs batches will be `maxBlobsPerBlock` times the value of this parameter.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncBatchSize = SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE;
+
+  @Option(
+      names = {"--Xp2p-sync-max-pending-batches"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Maximum number of concurrent batches being requested to peers, while syncing.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncMaxPendingBatches =
+      SyncConfig.DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES;
+
+  @Option(
+      names = {"--Xp2p-sync-rate-limit"},
+      paramLabel = "<NUMBER>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Number of objects being requested per minute to a single peer, while syncing.",
+      hidden = true,
+      arity = "1")
+  private Integer forwardSyncRateLimit = SyncConfig.DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
+
+  @Option(
       names = {"--p2p-subscribe-all-subnets-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -326,7 +367,13 @@ public class P2POptions {
                   .listenPort(p2pPort)
                   .advertisedIp(Optional.ofNullable(p2pAdvertisedIp));
             })
-        .sync(s -> s.isMultiPeerSyncEnabled(multiPeerSyncEnabled));
+        .sync(
+            s ->
+                s.isMultiPeerSyncEnabled(multiPeerSyncEnabled)
+                    .historicalSyncBatchSize(historicalSyncBatchSize)
+                    .forwardSyncMaxBlocksPerMinute(forwardSyncRateLimit)
+                    .forwardSyncBatchSize(forwardSyncBatchSize)
+                    .forwardSyncMaxPendingBatches(forwardSyncMaxPendingBatches));
     natOptions.configure(builder);
   }
 }
