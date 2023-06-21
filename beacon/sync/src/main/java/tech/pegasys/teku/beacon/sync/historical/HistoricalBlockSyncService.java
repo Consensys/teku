@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beacon.sync.historical;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.spec.config.Constants.HISTORICAL_SYNC_BATCH_SIZE;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilder;
@@ -134,7 +133,8 @@ public class HistoricalBlockSyncService extends Service {
       final SyncStateProvider syncStateProvider,
       final boolean reconstructHistoricStatesEnabled,
       final Optional<String> genesisStateResource,
-      final boolean fetchAllHistoricBlocks) {
+      final boolean fetchAllHistoricBlocks,
+      final int batchSize) {
     final Optional<ReconstructHistoricalStatesService> reconstructHistoricalStatesService =
         reconstructHistoricStatesEnabled
             ? Optional.of(
@@ -157,7 +157,7 @@ public class HistoricalBlockSyncService extends Service {
         chainData,
         syncStateProvider,
         signatureVerifier,
-        HISTORICAL_SYNC_BATCH_SIZE,
+        UInt64.valueOf(batchSize),
         reconstructHistoricalStatesService,
         fetchAllHistoricBlocks);
   }
