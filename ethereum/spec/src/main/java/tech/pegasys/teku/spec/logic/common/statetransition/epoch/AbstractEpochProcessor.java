@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.statetransition.epoch;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -101,9 +103,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
     final ProgressiveTotalBalancesUpdates progressiveTotalBalances =
         transitionCaches.getProgressiveTotalBalances();
-    progressiveTotalBalances.checkResult(specConfig, state.getSlot(), totalBalances);
     progressiveTotalBalances.onEpochTransition(validatorStatuses.getStatuses());
-    processJustificationAndFinalization(state, validatorStatuses.getTotalBalances());
+    processJustificationAndFinalization(state, totalBalances);
     processInactivityUpdates(state, validatorStatuses);
     processRewardsAndPenalties(state, validatorStatuses);
     processRegistryUpdates(state, validatorStatuses.getStatuses());
@@ -279,8 +280,12 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     int validatorsCount = state.getValidators().size();
     for (int i = 0; i < validatorsCount; i++) {
       final RewardAndPenalty delta = attestationDeltas.getDelta(i);
-      balances.setElement(
-          i, balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty()));
+      if (delta.isZero()) {
+        continue;
+      }
+      final UInt64 newBalance =
+          balances.getElement(i).plus(delta.getReward()).minusMinZero(delta.getPenalty());
+      balances.setElement(i, newBalance);
     }
   }
 
@@ -377,7 +382,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         state
             .getSlashings()
             .streamUnboxed()
-            .reduce(UInt64.ZERO, UInt64::plus)
+            .reduce(ZERO, UInt64::plus)
             .times(getProportionalSlashingMultiplier())
             .min(totalBalance);
 
@@ -407,7 +412,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   public void processEth1DataReset(final MutableBeaconState state) {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Reset eth1 data votes
-    if (nextEpoch.mod(specConfig.getEpochsPerEth1VotingPeriod()).equals(UInt64.ZERO)) {
+    if (nextEpoch.mod(specConfig.getEpochsPerEth1VotingPeriod()).equals(ZERO)) {
       state.getEth1DataVotes().clear();
     }
   }
@@ -475,7 +480,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(1);
     // Reset slashings
     int index = nextEpoch.mod(specConfig.getEpochsPerSlashingsVector()).intValue();
-    state.getSlashings().setElement(index, UInt64.ZERO);
+    state.getSlashings().setElement(index, ZERO);
   }
 
   @Override
@@ -495,7 +500,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     // Set historical root accumulator
     if (nextEpoch
         .mod(specConfig.getSlotsPerHistoricalRoot() / specConfig.getSlotsPerEpoch())
-        .equals(UInt64.ZERO)) {
+        .equals(ZERO)) {
       HistoricalBatch historicalBatch =
           schemaDefinitions
               .getHistoricalBatchSchema()

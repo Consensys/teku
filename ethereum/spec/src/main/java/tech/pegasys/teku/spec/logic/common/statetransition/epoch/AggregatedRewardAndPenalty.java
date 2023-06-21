@@ -58,6 +58,11 @@ public class AggregatedRewardAndPenalty implements RewardAndPenalty {
   }
 
   @Override
+  public boolean isZero() {
+    return getPenalty().isZero() && getReward().isZero();
+  }
+
+  @Override
   public boolean equals(final Object o) {
     if (this == o) {
       return true;
