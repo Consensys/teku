@@ -35,7 +35,7 @@ public class PeerPools {
     knownSources.remove(nodeId);
   }
 
-  public PeerConnectionType getPool(final NodeId nodeId) {
+  public PeerConnectionType getPeerConnectionType(final NodeId nodeId) {
     return knownSources.getOrDefault(nodeId, DEFAULT_POOL);
   }
 }

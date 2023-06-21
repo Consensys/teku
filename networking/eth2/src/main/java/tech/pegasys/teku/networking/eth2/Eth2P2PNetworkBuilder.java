@@ -48,6 +48,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -296,9 +297,10 @@ public class Eth2P2PNetworkBuilder {
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService) {
+    final PeerPools peerPools = new PeerPools();
     final ReputationManager reputationManager =
         new DefaultReputationManager(
-            metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY);
+            metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
     PreparedGossipMessageFactory defaultMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             combinedChainDataClient.getRecentChainData()::getMilestoneByForkDigest);
@@ -348,6 +350,7 @@ public class Eth2P2PNetworkBuilder {
         .asyncRunner(asyncRunner)
         .kvStore(keyValueStore)
         .p2pNetwork(p2pNetwork)
+        .peerPools(peerPools)
         .peerSelectionStrategy(
             new Eth2PeerSelectionStrategy(
                 targetPeerRange,

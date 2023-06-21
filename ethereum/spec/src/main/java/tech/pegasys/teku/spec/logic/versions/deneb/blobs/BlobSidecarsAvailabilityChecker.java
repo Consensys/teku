@@ -18,8 +18,8 @@ import static tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndV
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
@@ -48,7 +48,7 @@ public interface BlobSidecarsAvailabilityChecker {
 
   /**
    * Similar to {@link OptimisticExecutionPayloadExecutor#optimisticallyExecute(
-   * ExecutionPayloadHeader , ExecutionPayload )}
+   * ExecutionPayloadHeader, NewPayloadRequest)}
    *
    * @return true if data availability check is initiated or false to immediately fail the
    *     validation

@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class Eth2NetworkConfiguration {
@@ -49,8 +48,6 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
-  public static final ProgressiveBalancesMode DEFAULT_PROGRESSIVE_BALANCES_MODE =
-      ProgressiveBalancesMode.FULL;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
 
@@ -234,7 +231,6 @@ public class Eth2NetworkConfiguration {
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
     private Optional<String> trustedSetup = Optional.empty();
-    private ProgressiveBalancesMode progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
     private Optional<UInt64> altairForkEpoch = Optional.empty();
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
@@ -260,7 +256,6 @@ public class Eth2NetworkConfiguration {
             SpecFactory.create(
                 constants,
                 builder -> {
-                  builder.progressiveBalancesMode(progressiveBalancesMode);
                   altairForkEpoch.ifPresent(
                       forkEpoch ->
                           builder.altairBuilder(
@@ -402,12 +397,6 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder progressiveBalancesEnabled(
-        final ProgressiveBalancesMode progressiveBalancesMode) {
-      this.progressiveBalancesMode = progressiveBalancesMode;
-      return this;
-    }
-
     public Builder forkChoiceUpdateHeadOnBlockImportEnabled(
         final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
       this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
@@ -507,7 +496,6 @@ public class Eth2NetworkConfiguration {
       eth1DepositContractAddress = null;
       eth1DepositContractDeployBlock = Optional.empty();
       trustedSetup = Optional.empty();
-      progressiveBalancesMode = DEFAULT_PROGRESSIVE_BALANCES_MODE;
       return this;
     }
 

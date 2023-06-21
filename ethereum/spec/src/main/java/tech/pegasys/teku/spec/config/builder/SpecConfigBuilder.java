@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
@@ -102,8 +101,6 @@ public class SpecConfigBuilder {
   private Long depositNetworkId;
   private Eth1Address depositContractAddress;
 
-  private ProgressiveBalancesMode progressiveBalancesMode = ProgressiveBalancesMode.FULL;
-
   private Integer gossipMaxSize;
 
   private Integer maxChunkSize;
@@ -174,7 +171,6 @@ public class SpecConfigBuilder {
             depositChainId,
             depositNetworkId,
             depositContractAddress,
-            progressiveBalancesMode,
             gossipMaxSize,
             maxChunkSize);
 
@@ -542,12 +538,6 @@ public class SpecConfigBuilder {
   public SpecConfigBuilder depositContractAddress(final Eth1Address depositContractAddress) {
     checkNotNull(depositContractAddress);
     this.depositContractAddress = depositContractAddress;
-    return this;
-  }
-
-  public SpecConfigBuilder progressiveBalancesMode(
-      final ProgressiveBalancesMode progressiveBalancesMode) {
-    this.progressiveBalancesMode = progressiveBalancesMode;
     return this;
   }
 

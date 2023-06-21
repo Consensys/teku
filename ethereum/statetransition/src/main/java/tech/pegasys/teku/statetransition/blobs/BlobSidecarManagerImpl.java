@@ -32,7 +32,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvaila
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsChannel {
@@ -41,12 +40,9 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final BlobSidecarValidator validator;
+  private final BlobSidecarPool blobSidecarPool;
   private final FutureItems<SignedBlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
-  private final BlobSidecarPool blobSidecarPool;
-
-  @SuppressWarnings("unused")
-  private final StorageQueryChannel storageQueryChannel;
 
   private final Subscribers<ReceivedBlobSidecarListener> receivedBlobSidecarSubscribers =
       Subscribers.create(true);
@@ -58,8 +54,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final BlobSidecarPool blobSidecarPool,
       final BlobSidecarValidator validator,
       final FutureItems<SignedBlobSidecar> futureBlobSidecars,
-      final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots,
-      final StorageQueryChannel storageQueryChannel) {
+      final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
@@ -67,7 +62,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     this.blobSidecarPool = blobSidecarPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
-    this.storageQueryChannel = storageQueryChannel;
   }
 
   @Override
