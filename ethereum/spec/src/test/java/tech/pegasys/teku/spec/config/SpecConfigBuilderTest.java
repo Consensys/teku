@@ -30,6 +30,8 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.builder.AltairBuilder;
 import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
+import tech.pegasys.teku.spec.config.builder.CapellaBuilder;
+import tech.pegasys.teku.spec.config.builder.DenebBuilder;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -38,7 +40,12 @@ class SpecConfigBuilderTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
   private static final Set<Class<?>> BUILDERS =
-      Set.of(SpecConfigBuilder.class, AltairBuilder.class, BellatrixBuilder.class);
+      Set.of(
+          SpecConfigBuilder.class,
+          AltairBuilder.class,
+          BellatrixBuilder.class,
+          CapellaBuilder.class,
+          DenebBuilder.class);
 
   /**
    * Ensures Builders have actually non-primitive setters, because primitive setters are silently

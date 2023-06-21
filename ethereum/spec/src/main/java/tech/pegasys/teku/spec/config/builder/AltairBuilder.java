@@ -81,9 +81,20 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
       inactivityScoreBias = UInt64.valueOf(4);
       inactivityScoreRecoveryRate = UInt64.valueOf(16);
     }
-    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      fillMissingValues();
+
+    // Config items were added after launch so provide defaults to preserve compatibility
+    if (syncCommitteeBranchLength == null) {
+      syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
     }
+    if (finalityBranchLength == null) {
+      finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
+    }
+
+    // Fill default zeros if epoch is unsupported
+    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      SpecBuilderUtil.fillMissingValuesWithZeros(this);
+    }
+
     SpecBuilderUtil.validateConstant(
         "inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
     SpecBuilderUtil.validateConstant(
@@ -97,15 +108,10 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
     SpecBuilderUtil.validateConstant("altairForkVersion", altairForkVersion);
     SpecBuilderUtil.validateConstant("altairForkEpoch", altairForkEpoch);
     SpecBuilderUtil.validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+
     // Config items were added after launch so provide defaults to preserve compatibility
     if (updateTimeout == null) {
       updateTimeout = epochsPerSyncCommitteePeriod * 32;
-    }
-    if (syncCommitteeBranchLength == null) {
-      syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
-    }
-    if (finalityBranchLength == null) {
-      finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
     }
   }
 

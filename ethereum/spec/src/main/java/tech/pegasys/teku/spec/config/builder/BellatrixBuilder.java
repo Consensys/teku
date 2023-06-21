@@ -76,21 +76,6 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
       bellatrixForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
       bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
-    if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
-      fillMissingValues();
-    }
-    SpecBuilderUtil.validateConstant("bellatrixForkVersion", bellatrixForkVersion);
-    SpecBuilderUtil.validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
-    SpecBuilderUtil.validateConstant(
-        "inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
-    SpecBuilderUtil.validateConstant(
-        "minSlashingPenaltyQuotientBellatrix", minSlashingPenaltyQuotientBellatrix);
-    SpecBuilderUtil.validateConstant(
-        "proportionalSlashingMultiplierBellatrix", proportionalSlashingMultiplierBellatrix);
-    SpecBuilderUtil.validateConstant("maxBytesPerTransaction", maxBytesPerTransaction);
-    SpecBuilderUtil.validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
-    SpecBuilderUtil.validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
-    SpecBuilderUtil.validateConstant("maxExtraDataBytes", maxExtraDataBytes);
 
     // temporary, provide default values for backward compatibility
     if (terminalTotalDifficulty == null) {
@@ -105,6 +90,24 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     if (terminalBlockHashActivationEpoch == null) {
       terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
     }
+
+    // Fill default zeros if epoch is unsupported
+    if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      SpecBuilderUtil.fillMissingValuesWithZeros(this);
+    }
+
+    SpecBuilderUtil.validateConstant("bellatrixForkVersion", bellatrixForkVersion);
+    SpecBuilderUtil.validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
+    SpecBuilderUtil.validateConstant(
+        "inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
+    SpecBuilderUtil.validateConstant(
+        "minSlashingPenaltyQuotientBellatrix", minSlashingPenaltyQuotientBellatrix);
+    SpecBuilderUtil.validateConstant(
+        "proportionalSlashingMultiplierBellatrix", proportionalSlashingMultiplierBellatrix);
+    SpecBuilderUtil.validateConstant("maxBytesPerTransaction", maxBytesPerTransaction);
+    SpecBuilderUtil.validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
+    SpecBuilderUtil.validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
+    SpecBuilderUtil.validateConstant("maxExtraDataBytes", maxExtraDataBytes);
   }
 
   @Override
