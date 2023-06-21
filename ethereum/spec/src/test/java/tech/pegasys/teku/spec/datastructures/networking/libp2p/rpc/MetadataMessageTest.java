@@ -31,11 +31,11 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.vers
 
 class MetadataMessageTest {
 
-  private static final Spec spec = TestSpecFactory.createDefault();
+  private static final Spec SPEC = TestSpecFactory.createDefault();
   private static final MetadataMessageSchemaPhase0 PHASE0_SCHEMA =
-      new MetadataMessageSchemaPhase0(spec.getNetworkingConfig());
+      new MetadataMessageSchemaPhase0(SPEC.getNetworkingConfig());
   private static final MetadataMessageSchemaAltair ALTAIR_SCHEMA =
-      new MetadataMessageSchemaAltair(spec.getNetworkingConfig());
+      new MetadataMessageSchemaAltair(SPEC.getNetworkingConfig());
   private static final Bytes EXPECTED_SSZ =
       Bytes.fromHexString("0x23000000000000000100000000000080");
   private static final MetadataMessage MESSAGE =
@@ -59,7 +59,7 @@ class MetadataMessageTest {
             () ->
                 PHASE0_SCHEMA.create(
                     UInt64.valueOf(15),
-                    IntList.of(spec.getNetworkingConfig().getAttestationSubnetCount()),
+                    IntList.of(SPEC.getNetworkingConfig().getAttestationSubnetCount()),
                     Collections.emptyList()))
         .isInstanceOf(IndexOutOfBoundsException.class);
   }

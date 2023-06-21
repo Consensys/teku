@@ -34,8 +34,7 @@ public class SingleAttestationTopicHandler {
       final ForkInfo forkInfo,
       final String topicName,
       final AttestationSchema attestationSchema,
-      final int subnetId,
-      final int maxMessageSize) {
+      final int subnetId) {
 
     final Spec spec = recentChainData.getSpec();
     OperationProcessor<Attestation> convertingProcessor =
@@ -55,7 +54,6 @@ public class SingleAttestationTopicHandler {
             forkInfo.getFork(),
             message -> spec.computeEpochAtSlot(message.getData().getSlot())),
         attestationSchema,
-        maxMessageSize,
         spec.getNetworkingConfig());
   }
 }

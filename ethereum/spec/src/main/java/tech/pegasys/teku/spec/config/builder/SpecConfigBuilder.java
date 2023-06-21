@@ -588,63 +588,63 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder setMaxRequestBlocks(final UInt64 maxRequestBlocks) {
+  public SpecConfigBuilder maxRequestBlocks(final UInt64 maxRequestBlocks) {
     this.maxRequestBlocks = maxRequestBlocks;
     return this;
   }
 
-  public SpecConfigBuilder setEpochsPerSubnetSubscription(final int epochsPerSubnetSubscription) {
+  public SpecConfigBuilder epochsPerSubnetSubscription(final int epochsPerSubnetSubscription) {
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     return this;
   }
 
-  public SpecConfigBuilder setTtbfTimeout(final int ttbfTimeout) {
+  public SpecConfigBuilder ttbfTimeout(final int ttbfTimeout) {
     this.ttbfTimeout = ttbfTimeout;
     return this;
   }
 
-  public SpecConfigBuilder setRespTimeout(final int respTimeout) {
+  public SpecConfigBuilder respTimeout(final int respTimeout) {
     this.respTimeout = respTimeout;
     return this;
   }
 
-  public SpecConfigBuilder setAttestationPropagationSlotRange(
+  public SpecConfigBuilder attestationPropagationSlotRange(
       final UInt64 attestationPropagationSlotRange) {
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
     return this;
   }
 
-  public SpecConfigBuilder setMaximumGossipClockDisparity(final int maximumGossipClockDisparity) {
+  public SpecConfigBuilder maximumGossipClockDisparity(final int maximumGossipClockDisparity) {
     this.maximumGossipClockDisparity = maximumGossipClockDisparity;
     return this;
   }
 
-  public SpecConfigBuilder setMessageDomainInvalidSnappy(final Bytes4 messageDomainInvalidSnappy) {
+  public SpecConfigBuilder messageDomainInvalidSnappy(final Bytes4 messageDomainInvalidSnappy) {
     this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
     return this;
   }
 
-  public SpecConfigBuilder setMessageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
+  public SpecConfigBuilder messageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
     this.messageDomainValidSnappy = messageDomainValidSnappy;
     return this;
   }
 
-  public SpecConfigBuilder setSubnetsPerNode(final int subnetsPerNode) {
+  public SpecConfigBuilder subnetsPerNode(final int subnetsPerNode) {
     this.subnetsPerNode = subnetsPerNode;
     return this;
   }
 
-  public SpecConfigBuilder setAttestationSubnetCount(final int attestationSubnetCount) {
+  public SpecConfigBuilder attestationSubnetCount(final int attestationSubnetCount) {
     this.attestationSubnetCount = attestationSubnetCount;
     return this;
   }
 
-  public SpecConfigBuilder setAttestationSubnetExtraBits(final int attestationSubnetExtraBits) {
+  public SpecConfigBuilder attestationSubnetExtraBits(final int attestationSubnetExtraBits) {
     this.attestationSubnetExtraBits = attestationSubnetExtraBits;
     return this;
   }
 
-  public SpecConfigBuilder setAttestationSubnetPrefixBits(final int attestationSubnetPrefixBits) {
+  public SpecConfigBuilder attestationSubnetPrefixBits(final int attestationSubnetPrefixBits) {
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
   }

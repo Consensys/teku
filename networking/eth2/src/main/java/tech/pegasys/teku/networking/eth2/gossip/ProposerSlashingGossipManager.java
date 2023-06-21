@@ -32,7 +32,6 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<ProposerSlashing> processor,
-      final int maxMessageSize,
       final NetworkingSpecConfig networkingConfig) {
     super(
         recentChainData,
@@ -47,7 +46,6 @@ public class ProposerSlashingGossipManager extends AbstractGossipManager<Propose
             recentChainData
                 .getSpec()
                 .computeEpochAtSlot(message.getHeader1().getMessage().getSlot()),
-        maxMessageSize,
         networkingConfig);
   }
 

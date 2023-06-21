@@ -35,7 +35,6 @@ public class SignedBlsToExecutionChangeGossipManager
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedBlsToExecutionChange> processor,
-      final int maxMessageSize,
       final NetworkingSpecConfig networkingConfig) {
     super(
         recentChainData,
@@ -49,7 +48,6 @@ public class SignedBlsToExecutionChangeGossipManager
         // BLS changes don't have a fork they apply to so are always considered to match the fork
         // of the topic they arrived on (ie disable fork checking at this level)
         message -> forkInfo.getFork().getEpoch(),
-        maxMessageSize,
         networkingConfig);
   }
 

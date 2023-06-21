@@ -32,8 +32,7 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<SignedBeaconBlock> processor,
-      final int maxMessageSize) {
+      final OperationProcessor<SignedBeaconBlock> processor) {
     super(
         recentChainData,
         GossipTopicName.BEACON_BLOCK,
@@ -46,7 +45,6 @@ public class BlockGossipManager extends AbstractGossipManager<SignedBeaconBlock>
             .getSchemaDefinitions()
             .getSignedBeaconBlockSchema(),
         block -> spec.computeEpochAtSlot(block.getSlot()),
-        maxMessageSize,
         spec.getNetworkingConfig());
   }
 

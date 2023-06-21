@@ -24,15 +24,12 @@ public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMes
 
   private final SnappyBlockCompressor snappyCompressor;
   private final ForkDigestToMilestone forkDigestToMilestone;
-  private final NetworkingSpecConfig networkingConfig;
 
   public SnappyPreparedGossipMessageFactory(
       final SnappyBlockCompressor snappyCompressor,
-      final ForkDigestToMilestone forkDigestToMilestone,
-      final NetworkingSpecConfig networkingConfig) {
+      final ForkDigestToMilestone forkDigestToMilestone) {
     this.snappyCompressor = snappyCompressor;
     this.forkDigestToMilestone = forkDigestToMilestone;
-    this.networkingConfig = networkingConfig;
   }
 
   @Override

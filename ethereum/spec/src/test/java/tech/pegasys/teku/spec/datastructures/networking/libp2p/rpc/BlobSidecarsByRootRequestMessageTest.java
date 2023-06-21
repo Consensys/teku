@@ -58,7 +58,10 @@ class BlobSidecarsByRootRequestMessageTest {
           final UInt64 maxRequestBlobSidecars =
               SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig())
                   .getMaxRequestBlobSidecars();
-          assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
+          assertThat(
+                  spec.getGenesisSchemaDefinitions()
+                      .getBeaconBlocksByRootRequestMessageSchema()
+                      .getMaxLength())
               .isGreaterThanOrEqualTo(maxRequestBlobSidecars.longValue());
         });
   }

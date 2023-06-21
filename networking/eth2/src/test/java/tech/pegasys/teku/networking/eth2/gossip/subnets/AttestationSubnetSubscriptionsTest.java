@@ -68,8 +68,7 @@ public class AttestationSubnetSubscriptionsTest {
             gossipEncoding,
             recentChainData,
             processor,
-            recentChainData.getCurrentForkInfo().orElseThrow(),
-            gossipMaxSize);
+            recentChainData.getCurrentForkInfo().orElseThrow());
     subnetSubscriptions.subscribe();
 
     when(gossipNetwork.subscribe(any(), any())).thenReturn(mock(TopicChannel.class));

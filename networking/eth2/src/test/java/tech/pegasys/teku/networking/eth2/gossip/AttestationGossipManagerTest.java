@@ -70,8 +70,7 @@ public class AttestationGossipManagerTest {
           gossipEncoding,
           recentChainData,
           gossipedAttestationProcessor,
-          forkInfo,
-          gossipMaxSize);
+          forkInfo);
 
   @BeforeEach
   public void setup() {
