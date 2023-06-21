@@ -43,8 +43,11 @@ public class SpecConfigReaderTest {
                 reader.build(
                     builder ->
                         builder
-                            .altairBuilder(ab -> ab.altairForkEpoch(UInt64.ZERO))
-                            .bellatrixBuilder(bb -> bb.bellatrixForkEpoch(UInt64.ZERO))))
+                            .altairBuilder(
+                                altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                            .bellatrixBuilder(
+                                bellatrixBuilder ->
+                                    bellatrixBuilder.bellatrixForkEpoch(UInt64.ZERO))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
   }

@@ -53,7 +53,7 @@ class SpecConfigBuilderTest {
    */
   @Test
   public void shouldHaveOnlyNonPrimitiveSetters() {
-    for (Class<?> builderClass : BUILDERS) {
+    for (final Class<?> builderClass : BUILDERS) {
       final Method[] methods = builderClass.getDeclaredMethods();
 
       for (Method method : methods) {
@@ -72,9 +72,14 @@ class SpecConfigBuilderTest {
     }
   }
 
+  /**
+   * Ensures Builders have actually non-primitive non-final fields, because primitive fields are
+   * silently filled with 0's and doesn't lead to client startup failure with clear missing field
+   * error
+   */
   @Test
   public void shouldHaveOnlyNonPrimitiveFields() {
-    for (Class<?> builderClass : BUILDERS) {
+    for (final Class<?> builderClass : BUILDERS) {
       Arrays.stream(builderClass.getDeclaredFields())
           .filter(field -> !Modifier.isFinal(field.getModifiers()))
           .forEach(
