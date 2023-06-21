@@ -31,8 +31,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.network.p2p.peer.StubPeer;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy.Shuffler;
+import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
-import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
@@ -191,8 +191,10 @@ class Eth2PeerSelectionStrategyTest {
                 peerPools,
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER3, PEER1);
-    assertThat(peerPools.getPool(PEER3.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
-    assertThat(peerPools.getPool(PEER1.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER3.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER1.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
   }
 
   @Test
@@ -206,9 +208,12 @@ class Eth2PeerSelectionStrategyTest {
                 () -> List.of(DISCOVERY_PEER1, DISCOVERY_PEER2, DISCOVERY_PEER3)))
         .containsExactly(PEER3, PEER1, PEER2);
 
-    assertThat(peerPools.getPool(PEER1.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
-    assertThat(peerPools.getPool(PEER2.getId())).isEqualTo(PeerPool.SCORE_BASED);
-    assertThat(peerPools.getPool(PEER3.getId())).isEqualTo(PeerPool.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER1.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
+    assertThat(peerPools.getPeerConnectionType(PEER2.getId()))
+        .isEqualTo(PeerConnectionType.SCORE_BASED);
+    assertThat(peerPools.getPeerConnectionType(PEER3.getId()))
+        .isEqualTo(PeerConnectionType.RANDOMLY_SELECTED);
   }
 
   @Test
@@ -237,7 +242,7 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerPools.addPeerToPool(peer2.getId(), PeerPool.STATIC);
+    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.STATIC);
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer1, peer3);
   }
@@ -251,7 +256,7 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerPools.addPeerToPool(peer2.getId(), PeerPool.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.RANDOMLY_SELECTED);
     peerScorer.setScore(peer1.getId(), 100);
     peerScorer.setScore(peer2.getId(), 0);
     peerScorer.setScore(peer3.getId(), 50);
@@ -269,8 +274,8 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerPools.addPeerToPool(peer1.getId(), PeerPool.RANDOMLY_SELECTED);
-    peerPools.addPeerToPool(peer2.getId(), PeerPool.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer1.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.RANDOMLY_SELECTED);
 
     peerScorer.setScore(peer1.getId(), 100);
     peerScorer.setScore(peer2.getId(), 200);
@@ -280,7 +285,8 @@ class Eth2PeerSelectionStrategyTest {
     // Peer2 was dropped from the random pool but had a better score than peer3 so was kept
     assertThat(strategy.selectPeersToDisconnect(network, peerPools))
         .containsExactlyInAnyOrder(peer3);
-    assertThat(peerPools.getPool(peer2.getId())).isEqualTo(PeerPool.SCORE_BASED);
+    assertThat(peerPools.getPeerConnectionType(peer2.getId()))
+        .isEqualTo(PeerConnectionType.SCORE_BASED);
   }
 
   @Test
@@ -292,8 +298,8 @@ class Eth2PeerSelectionStrategyTest {
     when(network.getPeerCount()).thenReturn(3);
     when(network.streamPeers()).thenReturn(Stream.of(peer1, peer2, peer3));
 
-    peerPools.addPeerToPool(peer1.getId(), PeerPool.RANDOMLY_SELECTED);
-    peerPools.addPeerToPool(peer2.getId(), PeerPool.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer1.getId(), PeerConnectionType.RANDOMLY_SELECTED);
+    peerPools.addPeerToPool(peer2.getId(), PeerConnectionType.RANDOMLY_SELECTED);
 
     peerScorer.setScore(peer1.getId(), 100);
     peerScorer.setScore(peer2.getId(), 50);

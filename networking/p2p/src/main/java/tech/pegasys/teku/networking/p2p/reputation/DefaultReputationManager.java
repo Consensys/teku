@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
@@ -42,9 +44,13 @@ public class DefaultReputationManager implements ReputationManager {
 
   private final TimeProvider timeProvider;
   private final Cache<NodeId, Reputation> peerReputations;
+  private final PeerPools peerPools;
 
   public DefaultReputationManager(
-      final MetricsSystem metricsSystem, final TimeProvider timeProvider, final int capacity) {
+      final MetricsSystem metricsSystem,
+      final TimeProvider timeProvider,
+      final int capacity,
+      final PeerPools peerPools) {
     this.timeProvider = timeProvider;
     this.peerReputations = LRUCache.create(capacity);
     metricsSystem.createIntegerGauge(
@@ -52,6 +58,7 @@ public class DefaultReputationManager implements ReputationManager {
         "peer_reputation_cache_size",
         "Total number of peer reputations tracked",
         peerReputations::size);
+    this.peerPools = peerPools;
   }
 
   @Override
@@ -92,6 +99,9 @@ public class DefaultReputationManager implements ReputationManager {
   @Override
   public boolean adjustReputation(
       final PeerAddress peerAddress, final ReputationAdjustment effect) {
+    if (peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC)) {
+      return false;
+    }
     return getOrCreateReputation(peerAddress)
         .adjustReputation(effect, timeProvider.getTimeInSeconds());
   }

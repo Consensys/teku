@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryService;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
@@ -56,7 +55,7 @@ public class ConnectionManager extends Service {
   private final Counter attemptedConnectionCounter;
   private final Counter successfulConnectionCounter;
   private final Counter failedConnectionCounter;
-  private final PeerPools peerPools = new PeerPools();
+  private final PeerPools peerPools;
   private final Collection<Predicate<DiscoveryPeer>> peerPredicates = new CopyOnWriteArrayList<>();
 
   private volatile long peerConnectedSubscriptionId;
@@ -68,7 +67,8 @@ public class ConnectionManager extends Service {
       final AsyncRunner asyncRunner,
       final P2PNetwork<? extends Peer> network,
       final PeerSelectionStrategy peerSelectionStrategy,
-      final List<PeerAddress> peerAddresses) {
+      final List<PeerAddress> peerAddresses,
+      final PeerPools peerPools) {
     this.asyncRunner = asyncRunner;
     this.network = network;
     this.staticPeers = new HashSet<>(peerAddresses);
@@ -84,6 +84,7 @@ public class ConnectionManager extends Service {
     attemptedConnectionCounter = connectionAttemptCounter.labels("attempted");
     successfulConnectionCounter = connectionAttemptCounter.labels("successful");
     failedConnectionCounter = connectionAttemptCounter.labels("failed");
+    this.peerPools = peerPools;
   }
 
   @Override
@@ -219,7 +220,7 @@ public class ConnectionManager extends Service {
       return new SafeFuture<>();
     }
     LOG.debug("Connecting to peer {}", peerAddress);
-    peerPools.addPeerToPool(peerAddress.getId(), PeerPool.STATIC);
+    peerPools.addPeerToPool(peerAddress.getId(), PeerConnectionType.STATIC);
     attemptedConnectionCounter.inc();
     return network
         .connect(peerAddress)

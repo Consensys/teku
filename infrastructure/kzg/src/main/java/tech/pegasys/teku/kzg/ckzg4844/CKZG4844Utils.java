@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
+import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,6 +39,10 @@ public class CKZG4844Utils {
   public static byte[] flattenBytes(final List<? extends Bytes> bytes) {
     return flattenBytes(
         bytes.stream(), bytes.stream().map(Bytes::size).reduce(Integer::sum).orElse(0));
+  }
+
+  public static byte[] flattenBlobs(final List<Bytes> blobs) {
+    return flattenBytes(blobs.stream(), CKZG4844JNI.getBytesPerBlob() * blobs.size());
   }
 
   public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {

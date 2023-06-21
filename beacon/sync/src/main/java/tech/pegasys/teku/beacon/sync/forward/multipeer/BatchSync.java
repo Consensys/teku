@@ -42,7 +42,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 /** Manages the sync process to reach a finalized chain. */
 public class BatchSync implements Sync {
   private static final Logger LOG = LogManager.getLogger();
-  private static final int MAX_PENDING_BATCHES = 5;
   private static final Duration PAUSE_ON_SERVICE_OFFLINE = Duration.ofSeconds(5);
 
   private final EventThread eventThread;
@@ -98,13 +97,14 @@ public class BatchSync implements Sync {
       final RecentChainData recentChainData,
       final BatchImporter batchImporter,
       final BatchFactory batchFactory,
-      final UInt64 batchSize,
+      final int batchSize,
+      final int maxPendingBatches,
       final MultipeerCommonAncestorFinder commonAncestorFinder,
       final TimeProvider timeProvider) {
     final BatchChain activeBatches = new BatchChain();
     final BatchDataRequester batchDataRequester =
         new BatchDataRequester(
-            eventThread, activeBatches, batchFactory, batchSize, MAX_PENDING_BATCHES);
+            eventThread, activeBatches, batchFactory, UInt64.valueOf(batchSize), maxPendingBatches);
     return new BatchSync(
         eventThread,
         asyncRunner,

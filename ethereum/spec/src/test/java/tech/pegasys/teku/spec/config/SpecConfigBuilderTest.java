@@ -15,6 +15,9 @@ package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
+import java.util.Set;
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -30,6 +33,32 @@ class SpecConfigBuilderTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
+  private static final Set<Class<?>> BUILDERS = Set.of(SpecConfigBuilder.class);
+
+  /**
+   * Ensures Builders have actually non-primitive setters, because primitive setters are silently
+   * filled with 0's and doesn't lead to client startup failure with clear missing field error
+   */
+  @Test
+  public void shouldHaveOnlyNonPrimitiveSetters() {
+    for (Class<?> builderClass : BUILDERS) {
+      final Method[] methods = builderClass.getDeclaredMethods();
+
+      for (Method method : methods) {
+        final Parameter[] parameters = method.getParameters();
+        // Check if method has exactly one parameter, most of these methods are setters, others have
+        // non-primitive inputs
+        if (parameters.length == 1) {
+          final Class<?> paramType = parameters[0].getType();
+          assertThat(paramType.isPrimitive())
+              .withFailMessage(
+                  "Builder [%s] method \"%s(%s)\" has primitive input",
+                  builderClass.getSimpleName(), method.getName(), paramType)
+              .isFalse();
+        }
+      }
+    }
+  }
 
   @Test
   public void shouldLoadAltairForkEpoch() {

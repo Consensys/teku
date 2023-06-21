@@ -260,6 +260,18 @@ public final class KZGTest {
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
   }
 
+  @ParameterizedTest(name = "trusted_setup={0}")
+  @ValueSource(
+      strings = {"mainnet/trusted_setup_monomial.txt", "minimal/trusted_setup_monomial.txt"})
+  public void monomialTrustedSetupFilesShouldThrow(final String path) {
+    final String trustedSetup = Resources.getResource(TrustedSetups.class, path).toExternalForm();
+    final KZGException kzgException =
+        assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup));
+    assertThat(kzgException.getMessage()).contains("Failed to load trusted setup");
+    assertThat(kzgException.getCause().getMessage())
+        .contains("There was an error while loading the Trusted Setup. (C_KZG_BADARGS)");
+  }
+
   @Test
   public void testInvalidLengthG2PointInNewTrustedSetup() {
     assertThatThrownBy(() -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString(""))))

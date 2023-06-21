@@ -109,7 +109,7 @@ public class BlockImporterTest {
 
   private final RecentChainData otherStorage = MemoryOnlyRecentChainData.create();
   private final BeaconChainUtil otherChain =
-      BeaconChainUtil.create(otherStorage, validatorKeys, false);
+      BeaconChainUtil.create(spec, otherStorage, validatorKeys, false);
 
   private final BlockImporter blockImporter =
       new BlockImporter(

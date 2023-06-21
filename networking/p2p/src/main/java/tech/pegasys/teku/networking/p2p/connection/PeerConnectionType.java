@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,27 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.networking.p2p.connection;
 
-public enum ProgressiveBalancesMode {
-  DISABLED,
-  CHECKED,
-  USED,
-  FULL;
-
-  public boolean isDisabled() {
-    return this == DISABLED;
-  }
-
-  public boolean isChecked() {
-    return ordinal() >= CHECKED.ordinal();
-  }
-
-  public boolean isUsed() {
-    return ordinal() >= USED.ordinal();
-  }
-
-  public boolean isFull() {
-    return ordinal() >= FULL.ordinal();
-  }
+public enum PeerConnectionType {
+  /** Default pool where peers are ranked based on their usefulness */
+  SCORE_BASED,
+  /**
+   * Pool of peers we randomly selected which are kept connected to provide Sybil resistance
+   * regardless of their usefulness
+   */
+  RANDOMLY_SELECTED,
+  /** Static peers which we maintain persistent connections to */
+  STATIC
 }

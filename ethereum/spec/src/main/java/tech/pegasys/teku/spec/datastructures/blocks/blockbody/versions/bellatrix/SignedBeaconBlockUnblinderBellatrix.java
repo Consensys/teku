@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -29,8 +29,8 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
 
   public SignedBeaconBlockUnblinderBellatrix(
       final SchemaDefinitionsBellatrix schemaDefinitions,
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    super(schemaDefinitions, signedBlindedBeaconBlock);
+      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+    super(schemaDefinitions, signedBlindedBlockContainer);
   }
 
   @Override
@@ -41,8 +41,10 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblind() {
-    BeaconBlock blindedBeaconBlock = signedBlindedBeaconBlock.getMessage();
-    if (!blindedBeaconBlock.getBody().isBlinded()) {
+
+    final SignedBeaconBlock signedBlindedBeaconBlock = signedBlindedBlockContainer.getSignedBlock();
+
+    if (!signedBlindedBeaconBlock.isBlinded()) {
       return SafeFuture.completedFuture(signedBlindedBeaconBlock);
     }
 
@@ -51,7 +53,8 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
     return executionPayloadFuture.thenApply(
         executionPayload -> {
           final BlindedBeaconBlockBodyBellatrix blindedBody =
-              BlindedBeaconBlockBodyBellatrix.required(blindedBeaconBlock.getBody());
+              BlindedBeaconBlockBodyBellatrix.required(
+                  signedBlindedBeaconBlock.getMessage().getBody());
           checkState(
               executionPayload
                   .hashTreeRoot()

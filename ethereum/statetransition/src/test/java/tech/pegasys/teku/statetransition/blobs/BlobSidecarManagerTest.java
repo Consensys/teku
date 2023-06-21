@@ -45,7 +45,6 @@ import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
 
@@ -54,7 +53,6 @@ public class BlobSidecarManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = mock(RecentChainData.class);
-  private final StorageQueryChannel storageQueryChannel = mock(StorageQueryChannel.class);
   private final BlobSidecarValidator blobSidecarValidator = mock(BlobSidecarValidator.class);
   private final BlobSidecarPoolImpl blobSidecarPool = mock(BlobSidecarPoolImpl.class);
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
@@ -70,8 +68,7 @@ public class BlobSidecarManagerTest {
           blobSidecarPool,
           blobSidecarValidator,
           futureBlobSidecars,
-          invalidBlobSidecarRoots,
-          storageQueryChannel);
+          invalidBlobSidecarRoots);
 
   private final ReceivedBlobSidecarListener receivedBlobSidecarListener =
       mock(ReceivedBlobSidecarListener.class);

@@ -297,11 +297,6 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public ProgressiveBalancesMode getProgressiveBalancesMode() {
-    return specConfig.getProgressiveBalancesMode();
-  }
-
-  @Override
   public int getGossipMaxSize() {
     return specConfig.getGossipMaxSize();
   }

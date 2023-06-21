@@ -161,8 +161,6 @@ public interface SpecConfig extends NetworkingSpecConfig {
   // Misc
   int getSafeSlotsToUpdateJustified();
 
-  ProgressiveBalancesMode getProgressiveBalancesMode();
-
   // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();

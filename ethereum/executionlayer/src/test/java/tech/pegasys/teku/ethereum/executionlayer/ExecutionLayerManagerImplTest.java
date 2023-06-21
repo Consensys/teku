@@ -424,8 +424,8 @@ class ExecutionLayerManagerImplTest {
                         new ExecutionPayloadResult(
                             executionPayloadContext,
                             Optional.empty(),
-                            Optional.of(SafeFuture.completedFuture(expectedResult)),
-                            Optional.empty()))))
+                            Optional.empty(),
+                            Optional.of(SafeFuture.completedFuture(expectedResult))))))
         .isCompletedWithValue(payload);
 
     // we expect no additional calls
@@ -763,8 +763,8 @@ class ExecutionLayerManagerImplTest {
                         new ExecutionPayloadResult(
                             executionPayloadContext,
                             Optional.empty(),
-                            Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
-                            Optional.empty()))))
+                            Optional.empty(),
+                            Optional.of(SafeFuture.completedFuture(headerWithFallbackData))))))
         .isCompletedWithValue(executionPayload);
 
     // we expect no additional calls

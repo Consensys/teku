@@ -116,9 +116,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int attestationSubnetExtraBits;
   private final int attestationSubnetPrefixBits;
 
-  // Misc
-  private final ProgressiveBalancesMode progressiveBalancesMode;
-
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
       final UInt64 eth1FollowDistance,
@@ -170,7 +167,6 @@ public class SpecConfigPhase0 implements SpecConfig {
       final long depositChainId,
       final long depositNetworkId,
       final Eth1Address depositContractAddress,
-      final ProgressiveBalancesMode progressiveBalancesMode,
       final int gossipMaxSize,
       final int maxChunkSize,
       final UInt64 maxRequestBlocks,
@@ -236,7 +232,6 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.depositNetworkId = depositNetworkId;
     this.depositContractAddress = depositContractAddress;
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
-    this.progressiveBalancesMode = progressiveBalancesMode;
     this.gossipMaxSize = gossipMaxSize;
     this.maxChunkSize = maxChunkSize;
     this.maxRequestBlocks = maxRequestBlocks;
@@ -529,11 +524,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public ProgressiveBalancesMode getProgressiveBalancesMode() {
-    return progressiveBalancesMode;
-  }
-
-  @Override
   public int getGossipMaxSize() {
     return gossipMaxSize;
   }
@@ -675,8 +665,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(maxRequestBlocks, that.maxRequestBlocks)
         && Objects.equals(attestationPropagationSlotRange, that.attestationPropagationSlotRange)
         && Objects.equals(messageDomainInvalidSnappy, that.messageDomainInvalidSnappy)
-        && Objects.equals(messageDomainValidSnappy, that.messageDomainValidSnappy)
-        && progressiveBalancesMode == that.progressiveBalancesMode;
+        && Objects.equals(messageDomainValidSnappy, that.messageDomainValidSnappy);
   }
 
   @Override
@@ -745,7 +734,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         subnetsPerNode,
         attestationSubnetCount,
         attestationSubnetExtraBits,
-        attestationSubnetPrefixBits,
-        progressiveBalancesMode);
+        attestationSubnetPrefixBits);
   }
 }

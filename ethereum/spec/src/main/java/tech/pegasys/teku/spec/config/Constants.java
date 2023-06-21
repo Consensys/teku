@@ -24,7 +24,7 @@ public class Constants {
   // Deneb
   public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
   public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
-  public static final int BLOB_SIDECAR_SUBNET_COUNT = 4;
+  public static final int BLOB_SIDECAR_SUBNET_COUNT = 6;
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
@@ -56,11 +56,6 @@ public class Constants {
   public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
-
-  // Teku Sync
-  public static final UInt64 HISTORICAL_SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final UInt64 FORWARD_SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final int MAX_BLOCKS_PER_MINUTE = 500;
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);
