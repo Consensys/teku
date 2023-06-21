@@ -35,7 +35,7 @@ public interface RewardAndPenalty {
   UInt64 getPenalty();
 
   default boolean isZero() {
-    return getPenalty().isZero() && getReward().isZero();
+    return getReward().isZero() && getPenalty().isZero();
   }
 
   default Optional<DetailedRewardAndPenalty> asDetailed() {
