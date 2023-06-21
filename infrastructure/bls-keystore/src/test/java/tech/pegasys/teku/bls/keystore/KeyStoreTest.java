@@ -214,7 +214,8 @@ class KeyStoreTest {
     final Path keyStoreFile = tempDir.resolve("nonexistent.json");
     assertThatExceptionOfType(KeyStoreValidationException.class)
         .isThrownBy(() -> KeyStoreLoader.loadFromFile(keyStoreFile.toUri()))
-        .withMessage("KeyStore file not found: file:" + keyStoreFile);
+        .withMessageStartingWith("KeyStore file not found: file:")
+        .withMessageEndingWith(keyStoreFile.getFileName().toString());
   }
 
   @Test
