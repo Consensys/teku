@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -110,15 +111,16 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    if (!peer.popRequest() || !peer.popBlobSidecarRequests(callback, message.size())) {
+    if (!peer.popRequest() || !peer.wantToRequestBlobSidecars(callback, message.size())) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
 
     requestCounter.labels("ok").inc();
-    totalBlobSidecarsRequestedCounter.inc(message.size());
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
+
+    final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
 
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
@@ -131,10 +133,24 @@ public class BlobSidecarsByRootMessageHandler
                       validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
                           .thenApply(__ -> maybeSidecar))
               .thenComposeChecked(
-                  maybeSidecar -> maybeSidecar.map(callback::respond).orElse(SafeFuture.COMPLETE));
+                  maybeSidecar ->
+                      maybeSidecar
+                          .map(
+                              blobSidecar -> {
+                                callback.respond(blobSidecar);
+                                sentBlobSidecars.incrementAndGet();
+                                return SafeFuture.COMPLETE;
+                              })
+                          .orElse(SafeFuture.COMPLETE));
     }
 
-    future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
+    future.finish(
+        () -> {
+          peer.popBlobSidecarRequests(sentBlobSidecars.get());
+          totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars.get());
+          callback.completeSuccessfully();
+        },
+        err -> handleError(callback, err));
   }
 
   private UInt64 getFinalizedEpoch() {

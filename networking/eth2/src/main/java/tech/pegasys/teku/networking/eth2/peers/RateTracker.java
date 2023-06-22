@@ -48,6 +48,11 @@ public class RateTracker {
     return objectCount;
   }
 
+  public synchronized long wantToRequestObjects(final long objectsCount) {
+    final long remainingCapacity = peerRateLimit - requestsWithinWindow;
+    return remainingCapacity <= 0L ? 0L : objectsCount;
+  }
+
   void pruneRequests() {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     if (currentTime.isLessThan(timeoutSeconds)) {

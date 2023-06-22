@@ -340,16 +340,26 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public boolean popBlockRequests(
-      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return popObjectRequests("block", blockRequestTracker, callback, blocksCount);
+  public void popBlockRequests(final long blocksCount) {
+    popObjectRequests(blockRequestTracker, blocksCount);
   }
 
   @Override
-  public boolean popBlobSidecarRequests(
-      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return popObjectRequests(
-        "blob sidecars", blobSidecarsRequestTracker, callback, blobSidecarsCount);
+  public boolean wantToRequestBlocks(
+      final ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
+    return wantToRequestObjects("blocks", blockRequestTracker, blocksCount, callback);
+  }
+
+  @Override
+  public void popBlobSidecarRequests(final long blobSidecarsCount) {
+    popObjectRequests(blobSidecarsRequestTracker, blobSidecarsCount);
+  }
+
+  @Override
+  public boolean wantToRequestBlobSidecars(
+      final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
+    return wantToRequestObjects(
+        "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
   }
 
   @Override
@@ -385,12 +395,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .thenCompose(__ -> responseHandler.getResult());
   }
 
-  private <T> boolean popObjectRequests(
+  private void popObjectRequests(final RateTracker requestTracker, final long objectCount) {
+    requestTracker.popObjectRequests(objectCount);
+  }
+
+  private <T> boolean wantToRequestObjects(
       final String requestType,
       final RateTracker requestTracker,
-      final ResponseCallback<T> callback,
-      final long objectCount) {
-    if (requestTracker.popObjectRequests(objectCount) == 0L) {
+      final long objectCount,
+      final ResponseCallback<T> callback) {
+    if (requestTracker.wantToRequestObjects(objectCount) == 0L) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));

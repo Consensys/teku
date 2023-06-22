@@ -19,6 +19,8 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -89,13 +91,15 @@ public class BeaconBlocksByRootMessageHandler
       }
 
       SafeFuture<Void> future = SafeFuture.COMPLETE;
-      if (!peer.popRequest() || !peer.popBlockRequests(callback, message.size())) {
+      if (!peer.popRequest() || !peer.wantToRequestBlocks(callback, message.size())) {
         requestCounter.labels("rate_limited").inc();
         return;
       }
 
       requestCounter.labels("ok").inc();
-      totalBlocksRequestedCounter.inc(message.size());
+
+      final AtomicInteger sentBlocks = new AtomicInteger(0);
+
       for (SszBytes32 blockRoot : message) {
         future =
             future.thenCompose(
@@ -110,10 +114,18 @@ public class BeaconBlocksByRootMessageHandler
                               if (validationResult.isPresent()) {
                                 return SafeFuture.failedFuture(validationResult.get());
                               }
-                              return block.map(callback::respond).orElse(SafeFuture.COMPLETE);
+                              return block.map(signedBeaconBlock -> {
+                                callback.respond(signedBeaconBlock);
+                                sentBlocks.incrementAndGet();
+                                return SafeFuture.COMPLETE;
+                              }).orElse(SafeFuture.COMPLETE);
                             }));
       }
-      future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
+      future.finish(() -> {
+        peer.popBlockRequests(sentBlocks.get());
+        totalBlocksRequestedCounter.inc(sentBlocks.get());
+        callback.completeSuccessfully();
+      }, err -> handleError(callback, err));
     } else {
       requestCounter.labels("ok").inc();
       callback.completeSuccessfully();
