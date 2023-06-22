@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -106,7 +107,7 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
       final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
     return miscHelpers.computeDomain(
         Domain.VOLUNTARY_EXIT,
-        specConfig.toVersionCapella().orElseThrow().getCapellaForkVersion(),
+        SpecConfigCapella.required(specConfig).getCapellaForkVersion(),
         state.getGenesisValidatorsRoot());
   }
 
