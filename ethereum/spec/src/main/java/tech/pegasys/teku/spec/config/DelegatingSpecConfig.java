@@ -317,8 +317,8 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public int getTtbfTimeout() {
-    return specConfig.getTtbfTimeout();
+  public int getTtfbTimeout() {
+    return specConfig.getTtfbTimeout();
   }
 
   @Override

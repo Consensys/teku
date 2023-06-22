@@ -66,7 +66,7 @@ public class Eth2OutgoingRequestHandlerTest
   private final int maxChunks = 3;
   private final SafeFuture<Void> finishedProcessingFuture = responseHandler.getCompletedFuture();
   private final Duration ttbfTimeout =
-      Duration.ofSeconds(spec.getGenesisSpecConfig().getTtbfTimeout());
+      Duration.ofSeconds(spec.getGenesisSpecConfig().getTtfbTimeout());
   private final Duration respTimeout =
       Duration.ofSeconds(spec.getGenesisSpecConfig().getRespTimeout());
 

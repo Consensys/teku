@@ -78,10 +78,9 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
     this.compressedData = compressedData;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
-
+    this.networkingConfig = networkingConfig;
     this.messageIdCalculator =
         createMessageIdCalculator(topic, compressedData, forkDigestToMilestone);
-    this.networkingConfig = networkingConfig;
   }
 
   private MessageIdCalculator createMessageIdCalculator(

@@ -105,7 +105,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int maxChunkSize;
   private final UInt64 maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
-  private final int ttbfTimeout;
+  private final int ttfbTimeout;
   private final int respTimeout;
   private final UInt64 attestationPropagationSlotRange;
   private final int maximumGossipClockDisparity;
@@ -171,7 +171,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxChunkSize,
       final UInt64 maxRequestBlocks,
       final int epochsPerSubnetSubscription,
-      final int ttbfTimeout,
+      final int ttfbTimeout,
       final int respTimeout,
       final UInt64 attestationPropagationSlotRange,
       final int maximumGossipClockDisparity,
@@ -236,7 +236,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxChunkSize = maxChunkSize;
     this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
-    this.ttbfTimeout = ttbfTimeout;
+    this.ttfbTimeout = ttfbTimeout;
     this.respTimeout = respTimeout;
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
     this.maximumGossipClockDisparity = maximumGossipClockDisparity;
@@ -544,8 +544,8 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public int getTtbfTimeout() {
-    return ttbfTimeout;
+  public int getTtfbTimeout() {
+    return ttfbTimeout;
   }
 
   @Override
@@ -639,7 +639,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && gossipMaxSize == that.gossipMaxSize
         && maxChunkSize == that.maxChunkSize
         && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
-        && ttbfTimeout == that.ttbfTimeout
+        && ttfbTimeout == that.ttfbTimeout
         && respTimeout == that.respTimeout
         && maximumGossipClockDisparity == that.maximumGossipClockDisparity
         && subnetsPerNode == that.subnetsPerNode
@@ -725,7 +725,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxChunkSize,
         maxRequestBlocks,
         epochsPerSubnetSubscription,
-        ttbfTimeout,
+        ttfbTimeout,
         respTimeout,
         attestationPropagationSlotRange,
         maximumGossipClockDisparity,

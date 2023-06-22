@@ -47,7 +47,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttestationGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")

@@ -95,7 +95,7 @@ public class Eth2OutgoingRequestHandler<
     this.responseDecoder = responseDecoder;
     this.shouldReceiveResponse = shouldReceiveResponse;
     this.protocolId = protocolId;
-    this.ttbfTimeout = Duration.of(networkingConfig.getTtbfTimeout(), ChronoUnit.SECONDS);
+    this.ttbfTimeout = Duration.of(networkingConfig.getTtfbTimeout(), ChronoUnit.SECONDS);
     this.respTimeout = Duration.of(networkingConfig.getRespTimeout(), ChronoUnit.SECONDS);
   }
 

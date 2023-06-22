@@ -29,7 +29,7 @@ public interface NetworkingSpecConfig {
   int getMinEpochsForBlockRequests();
 
   // in seconds
-  int getTtbfTimeout();
+  int getTtfbTimeout();
 
   // in seconds
   int getRespTimeout();

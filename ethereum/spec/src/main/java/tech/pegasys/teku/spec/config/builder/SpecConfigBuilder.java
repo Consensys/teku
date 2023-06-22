@@ -94,7 +94,7 @@ public class SpecConfigBuilder {
   // Fork Choice
   private Integer safeSlotsToUpdateJustified;
   // Added after Phase0 was live, so default to 0 which disables proposer score boosting.
-  private int proposerScoreBoost = 0;
+  private Integer proposerScoreBoost = 0;
 
   // Deposit Contract
   private Long depositChainId;
@@ -105,17 +105,17 @@ public class SpecConfigBuilder {
   private Integer gossipMaxSize;
   private Integer maxChunkSize;
   private UInt64 maxRequestBlocks;
-  private int epochsPerSubnetSubscription;
-  private int ttbfTimeout;
-  private int respTimeout;
+  private Integer epochsPerSubnetSubscription;
+  private Integer ttfbTimeout;
+  private Integer respTimeout;
   private UInt64 attestationPropagationSlotRange;
-  private int maximumGossipClockDisparity;
+  private Integer maximumGossipClockDisparity;
   private Bytes4 messageDomainInvalidSnappy;
   private Bytes4 messageDomainValidSnappy;
-  private int subnetsPerNode;
-  private int attestationSubnetCount;
-  private int attestationSubnetExtraBits;
-  private int attestationSubnetPrefixBits;
+  private Integer subnetsPerNode;
+  private Integer attestationSubnetCount;
+  private Integer attestationSubnetExtraBits;
+  private Integer attestationSubnetPrefixBits;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -187,7 +187,7 @@ public class SpecConfigBuilder {
             maxChunkSize,
             maxRequestBlocks,
             epochsPerSubnetSubscription,
-            ttbfTimeout,
+            ttfbTimeout,
             respTimeout,
             attestationPropagationSlotRange,
             maximumGossipClockDisparity,
@@ -259,7 +259,7 @@ public class SpecConfigBuilder {
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
     SpecBuilderUtil.validateConstant("maxRequestBlocks", maxRequestBlocks);
     SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
-    SpecBuilderUtil.validateConstant("ttbfTimeout", ttbfTimeout);
+    SpecBuilderUtil.validateConstant("ttfbTimeout", ttfbTimeout);
     SpecBuilderUtil.validateConstant("respTimeout", respTimeout);
     SpecBuilderUtil.validateConstant(
         "attestationPropagationSlotRange", attestationPropagationSlotRange);
@@ -593,17 +593,17 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder epochsPerSubnetSubscription(final int epochsPerSubnetSubscription) {
+  public SpecConfigBuilder epochsPerSubnetSubscription(final Integer epochsPerSubnetSubscription) {
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     return this;
   }
 
-  public SpecConfigBuilder ttbfTimeout(final int ttbfTimeout) {
-    this.ttbfTimeout = ttbfTimeout;
+  public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
+    this.ttfbTimeout = ttfbTimeout;
     return this;
   }
 
-  public SpecConfigBuilder respTimeout(final int respTimeout) {
+  public SpecConfigBuilder respTimeout(final Integer respTimeout) {
     this.respTimeout = respTimeout;
     return this;
   }
@@ -614,7 +614,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder maximumGossipClockDisparity(final int maximumGossipClockDisparity) {
+  public SpecConfigBuilder maximumGossipClockDisparity(final Integer maximumGossipClockDisparity) {
     this.maximumGossipClockDisparity = maximumGossipClockDisparity;
     return this;
   }
@@ -629,22 +629,22 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder subnetsPerNode(final int subnetsPerNode) {
+  public SpecConfigBuilder subnetsPerNode(final Integer subnetsPerNode) {
     this.subnetsPerNode = subnetsPerNode;
     return this;
   }
 
-  public SpecConfigBuilder attestationSubnetCount(final int attestationSubnetCount) {
+  public SpecConfigBuilder attestationSubnetCount(final Integer attestationSubnetCount) {
     this.attestationSubnetCount = attestationSubnetCount;
     return this;
   }
 
-  public SpecConfigBuilder attestationSubnetExtraBits(final int attestationSubnetExtraBits) {
+  public SpecConfigBuilder attestationSubnetExtraBits(final Integer attestationSubnetExtraBits) {
     this.attestationSubnetExtraBits = attestationSubnetExtraBits;
     return this;
   }
 
-  public SpecConfigBuilder attestationSubnetPrefixBits(final int attestationSubnetPrefixBits) {
+  public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
   }

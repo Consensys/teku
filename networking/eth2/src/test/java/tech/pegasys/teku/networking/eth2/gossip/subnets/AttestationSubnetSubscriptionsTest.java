@@ -44,7 +44,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class AttestationSubnetSubscriptionsTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
 
-  private final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);

@@ -33,14 +33,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   @Override
   protected Eth2TopicHandler<SignedBeaconBlock> createHandler() {
     return new BlockGossipManager(
-            recentChainData,
-            spec,
-            asyncRunner,
-            gossipNetwork,
-            gossipEncoding,
-            forkInfo,
-            processor,
-            gossipMaxSize)
+            recentChainData, spec, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
         .getTopicHandler();
   }
 
