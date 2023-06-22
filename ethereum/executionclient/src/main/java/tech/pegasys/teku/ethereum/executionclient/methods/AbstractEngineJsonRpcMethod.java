@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public abstract class AbstractEngineJsonRpcMethod<T> implements EngineJsonRpcMethod<T> {
 
@@ -23,18 +22,4 @@ public abstract class AbstractEngineJsonRpcMethod<T> implements EngineJsonRpcMet
   public AbstractEngineJsonRpcMethod(final ExecutionEngineClient executionEngineClient) {
     this.executionEngineClient = executionEngineClient;
   }
-
-  @Override
-  public abstract String getName();
-
-  @Override
-  public abstract int getVersion();
-
-  @Override
-  public final String getVersionedName() {
-    return getVersion() == 0 ? getName() : getName() + "V" + getVersion();
-  }
-
-  @Override
-  public abstract SafeFuture<T> execute(JsonRpcRequestParams params);
 }

@@ -29,6 +29,7 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
@@ -142,7 +143,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV1 executionPayload,
+      final ExecutionPayloadV3 executionPayload,
       final Optional<List<VersionedHash>> blobVersionedHashes) {
     final Optional<List<String>> blobVersionedHashesData =
         blobVersionedHashes.map(

@@ -16,12 +16,16 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 
+@Deprecated
 public class NegotiatedExecutionJsonRpcMethodsResolver implements ExecutionJsonRpcMethodsResolver {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -70,6 +74,14 @@ public class NegotiatedExecutionJsonRpcMethodsResolver implements ExecutionJsonR
     }
 
     return negotiatedMethod;
+  }
+
+  @Override
+  public <T> EngineJsonRpcMethod<T> getMilestoneMethod(
+      final EngineApiMethods method,
+      final Function<Spec, SpecMilestone> milestoneResolver,
+      final Class<T> resultType) {
+    throw new UnsupportedOperationException();
   }
 
   private boolean shouldSkipNegotiation(

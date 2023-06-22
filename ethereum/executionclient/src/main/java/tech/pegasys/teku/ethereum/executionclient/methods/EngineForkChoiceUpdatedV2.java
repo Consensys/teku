@@ -52,6 +52,11 @@ public class EngineForkChoiceUpdatedV2
   }
 
   @Override
+  public Optional<SpecMilestone> getApplicableMilestone() {
+    return Optional.of(SpecMilestone.CAPELLA);
+  }
+
+  @Override
   public SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> execute(
       final JsonRpcRequestParams params) {
     final ForkChoiceState forkChoiceState = params.getRequiredParameter(0, ForkChoiceState.class);
