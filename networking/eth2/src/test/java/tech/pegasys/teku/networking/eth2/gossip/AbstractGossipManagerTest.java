@@ -36,6 +36,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,7 +48,6 @@ class AbstractGossipManagerTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
 
-  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
@@ -78,7 +78,7 @@ class AbstractGossipManagerTest {
             forkInfo,
             processor,
             SszPrimitiveSchemas.UINT64_SCHEMA,
-            gossipMaxSize);
+            spec.getNetworkingConfig());
   }
 
   @Test
@@ -165,7 +165,7 @@ class AbstractGossipManagerTest {
         final ForkInfo forkInfo,
         final OperationProcessor<SszUInt64> processor,
         final SszSchema<SszUInt64> gossipType,
-        final int maxMessageSize) {
+        final NetworkingSpecConfig networkingConfig) {
       super(
           recentChainData,
           TOPIC_NAME,
@@ -176,7 +176,7 @@ class AbstractGossipManagerTest {
           processor,
           gossipType,
           message -> UInt64.ZERO,
-          maxMessageSize);
+          networkingConfig);
     }
   }
 }

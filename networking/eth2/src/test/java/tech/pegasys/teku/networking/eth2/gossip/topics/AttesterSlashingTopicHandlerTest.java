@@ -32,14 +32,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   protected Eth2TopicHandler<?> createHandler() {
     final AttesterSlashingGossipManager gossipManager =
         new AttesterSlashingGossipManager(
-            spec,
-            recentChainData,
-            asyncRunner,
-            null,
-            gossipEncoding,
-            forkInfo,
-            processor,
-            gossipMaxSize);
+            spec, recentChainData, asyncRunner, null, gossipEncoding, forkInfo, processor);
     return gossipManager.getTopicHandler();
   }
 

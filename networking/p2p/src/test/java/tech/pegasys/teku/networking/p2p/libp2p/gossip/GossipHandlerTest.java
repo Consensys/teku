@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 public class GossipHandlerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
+  private final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
   private final Topic topic = new Topic("Testing");
   private final PubsubPublisherApi publisher = mock(PubsubPublisherApi.class);
   private final TopicHandler topicHandler = mock(TopicHandler.class);

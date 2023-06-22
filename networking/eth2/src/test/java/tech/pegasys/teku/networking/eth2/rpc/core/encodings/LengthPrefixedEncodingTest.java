@@ -45,10 +45,9 @@ class LengthPrefixedEncodingTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final Bytes prefixExceedingMaxLength =
-      ProtobufEncoder.encodeVarInt(spec.getGenesisSpecConfig().getMaxChunkSize() + 1);
+      ProtobufEncoder.encodeVarInt(spec.getNetworkingConfig().getMaxChunkSize() + 1);
   private final RpcEncoding encoding =
-      RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
 
   @Test
   public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {

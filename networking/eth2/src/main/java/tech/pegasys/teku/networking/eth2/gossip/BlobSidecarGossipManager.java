@@ -54,8 +54,7 @@ public class BlobSidecarGossipManager implements GossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<SignedBlobSidecar> processor,
-      final int maxMessageSize) {
+      final OperationProcessor<SignedBlobSidecar> processor) {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final SignedBlobSidecarSchema gossipType =
         SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
@@ -74,8 +73,7 @@ public class BlobSidecarGossipManager implements GossipManager {
                       processor,
                       gossipEncoding,
                       forkInfo,
-                      gossipType,
-                      maxMessageSize);
+                      gossipType);
               subnetIdToTopicHandler.put(subnetId, topicHandler);
             });
     return new BlobSidecarGossipManager(
@@ -136,8 +134,7 @@ public class BlobSidecarGossipManager implements GossipManager {
       final OperationProcessor<SignedBlobSidecar> processor,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final SignedBlobSidecarSchema gossipType,
-      final int maxMessageSize) {
+      final SignedBlobSidecarSchema gossipType) {
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
@@ -150,7 +147,7 @@ public class BlobSidecarGossipManager implements GossipManager {
             forkInfo.getFork(),
             blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getBlobSidecar().getSlot())),
         gossipType,
-        maxMessageSize);
+        spec.getNetworkingConfig());
   }
 
   private static class TopicSubnetIdAwareOperationProcessor
