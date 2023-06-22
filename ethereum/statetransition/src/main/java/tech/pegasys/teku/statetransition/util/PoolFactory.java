@@ -30,7 +30,10 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class PoolFactory {
 
   private static final UInt64 DEFAULT_HISTORICAL_SLOT_TOLERANCE = UInt64.valueOf(320);
-  private static final int DEFAULT_MAX_ITEMS = 5000;
+  // should fit attestations for a slot given validator set size
+  // so DEFAULT_MAX_ITEMS * slots_per_epoch should be >= validator set size ideally
+  // on all subnets, you may receive and have to cache that number of messages
+  private static final int DEFAULT_MAX_ITEMS = 30_000;
   private static final int DEFAULT_MAX_BLOCKS = 5000;
 
   private final SettableLabelledGauge pendingPoolsSizeGauge;

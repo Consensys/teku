@@ -17,5 +17,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 - Updated Sigmaprime's bootnodes
+- Increased the pending pool size for attestations
 
 ### Bug Fixes
