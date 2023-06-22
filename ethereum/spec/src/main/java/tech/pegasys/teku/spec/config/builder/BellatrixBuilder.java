@@ -91,7 +91,7 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
       terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
     }
 
-    // Fill default zeros if epoch is unsupported
+    // Fill default zeros if fork is unsupported
     if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }

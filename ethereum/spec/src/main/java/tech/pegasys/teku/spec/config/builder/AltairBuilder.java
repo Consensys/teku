@@ -90,7 +90,7 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
       finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
     }
 
-    // Fill default zeros if epoch is unsupported
+    // Fill default zeros if fork is unsupported
     if (altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }

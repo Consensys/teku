@@ -88,7 +88,7 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
       capellaForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
 
-    // Fill default zeros if epoch is unsupported
+    // Fill default zeros if fork is unsupported
     if (capellaForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }

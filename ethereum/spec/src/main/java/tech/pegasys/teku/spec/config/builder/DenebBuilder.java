@@ -96,7 +96,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
       denebForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
 
-    // Fill default zeros if epoch is unsupported
+    // Fill default zeros if fork is unsupported
     if (denebForkEpoch.equals(FAR_FUTURE_EPOCH)) {
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }
