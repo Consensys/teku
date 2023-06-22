@@ -40,9 +40,8 @@ public class PingIntegrationTest {
   private Eth2P2PNetwork network2;
   private Eth2Peer peer1;
   private Eth2Peer peer2;
-  private static final Spec spec = TestSpecFactory.createDefault();
-  private static final int attestationSubnetCount =
-      spec.getNetworkingConfig().getAttestationSubnetCount();
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
   public void setUp(Duration pingInterval) throws Exception {
     network1 = networkFactory.builder().eth2RpcPingInterval(pingInterval).startNetwork();
