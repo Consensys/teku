@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -28,9 +29,9 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   private Bytes4 capellaForkVersion;
   private UInt64 capellaForkEpoch;
 
-  private int maxBlsToExecutionChanges;
-  private int maxWithdrawalsPerPayload;
-  private int maxValidatorsPerWithdrawalSweep;
+  private Integer maxBlsToExecutionChanges;
+  private Integer maxWithdrawalsPerPayload;
+  private Integer maxValidatorsPerWithdrawalSweep;
 
   CapellaBuilder() {}
 
@@ -57,18 +58,18 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     return this;
   }
 
-  public CapellaBuilder maxBlsToExecutionChanges(final int maxBlsToExecutionChanges) {
+  public CapellaBuilder maxBlsToExecutionChanges(final Integer maxBlsToExecutionChanges) {
     this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
     return this;
   }
 
-  public CapellaBuilder maxWithdrawalsPerPayload(final int maxWithdrawalsPerPayload) {
+  public CapellaBuilder maxWithdrawalsPerPayload(final Integer maxWithdrawalsPerPayload) {
     this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
     return this;
   }
 
   public CapellaBuilder maxValidatorsPerWithdrawalsSweep(
-      final int maxValidatorsPerWithdrawalSweep) {
+      final Integer maxValidatorsPerWithdrawalSweep) {
     this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
     return this;
   }
@@ -86,6 +87,12 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
       capellaForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
       capellaForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+
+    // Fill default zeros if fork is unsupported
+    if (capellaForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      SpecBuilderUtil.fillMissingValuesWithZeros(this);
+    }
+
     SpecBuilderUtil.validateConstant("capellaForkVersion", capellaForkVersion);
     SpecBuilderUtil.validateConstant("capellaForkEpoch", capellaForkEpoch);
     SpecBuilderUtil.validateConstant("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
