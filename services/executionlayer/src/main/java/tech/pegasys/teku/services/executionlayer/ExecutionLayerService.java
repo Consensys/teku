@@ -38,7 +38,6 @@ import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.EngineApiCapabilitiesProvider;
-import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientEngineApiCapabilitiesProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandler;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandlerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
@@ -46,7 +45,6 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
 import tech.pegasys.teku.ethereum.executionlayer.LocalEngineApiCapabilitiesProvider;
 import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedExecutionJsonRpcMethodsResolver;
-import tech.pegasys.teku.ethereum.executionlayer.NegotiatedExecutionJsonRpcMethodsResolver;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -188,27 +186,8 @@ public class ExecutionLayerService extends Service {
         new MilestoneBasedExecutionJsonRpcMethodsResolver(
             config.getSpec(), localEngineApiCapabilitiesProvider);
 
-    final ExecutionClientHandler executionClientHandler;
-    if (config.isExchangeCapabilitiesEnabled()) {
-      LOG.info("Negotiating Engine API methods to use with execution client");
-
-      final ExecutionClientEngineApiCapabilitiesProvider remoteEngineApiCapabilitiesProvider =
-          new ExecutionClientEngineApiCapabilitiesProvider(
-              asyncRunnerSupplier.get(),
-              executionEngineClient,
-              localEngineApiCapabilitiesProvider,
-              serviceConfig.getEventChannels());
-
-      final NegotiatedExecutionJsonRpcMethodsResolver negotiatedMethodsResolver =
-          new NegotiatedExecutionJsonRpcMethodsResolver(
-              localEngineApiCapabilitiesProvider,
-              remoteEngineApiCapabilitiesProvider,
-              milestoneBasedMethodResolver);
-
-      executionClientHandler = new ExecutionClientHandlerImpl(negotiatedMethodsResolver);
-    } else {
-      executionClientHandler = new ExecutionClientHandlerImpl(milestoneBasedMethodResolver);
-    }
+    final ExecutionClientHandler executionClientHandler =
+        new ExecutionClientHandlerImpl(milestoneBasedMethodResolver);
 
     final Optional<BuilderClient> builderClient =
         builderRestClientProvider.map(

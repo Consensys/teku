@@ -16,8 +16,11 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.spec.Spec;
@@ -29,8 +32,14 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
   @SuppressWarnings("rawtypes")
   private final List<EngineJsonRpcMethod> methods = new ArrayList<>();
 
+  @SuppressWarnings("rawtypes")
+  private final Map<SpecMilestone, List<EngineJsonRpcMethod>> milestoneMethods = new HashMap<>();
+
+  private final Spec spec;
+
   public MilestoneBasedExecutionJsonRpcMethodsResolver(
       final Spec spec, final EngineApiCapabilitiesProvider capabilitiesProvider) {
+    this.spec = spec;
     final Collection<String> supportedMethods = new HashSet<>();
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       supportedMethods.addAll(bellatrixSupportedMethods());
@@ -46,7 +55,16 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
 
     capabilitiesProvider.supportedMethods().stream()
         .filter(method -> supportedMethods.contains(method.getVersionedName()))
-        .forEach(methods::add);
+        .forEach(
+            method ->
+                method
+                    .getApplicableMilestone()
+                    .ifPresentOrElse(
+                        milestone ->
+                            milestoneMethods
+                                .computeIfAbsent(milestone, __ -> new ArrayList<>())
+                                .add(method),
+                        () -> methods.add(method)));
   }
 
   private static Collection<String> bellatrixSupportedMethods() {
@@ -82,9 +100,23 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
   }
 
   @Override
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public <T> EngineJsonRpcMethod<T> getMethod(
       final EngineApiMethods method, final Class<T> resultType) {
+    return findMethod(methods, method);
+  }
+
+  @Override
+  public <T> EngineJsonRpcMethod<T> getMilestoneMethod(
+      final EngineApiMethods method,
+      final Function<Spec, SpecMilestone> milestoneResolver,
+      final Class<T> resultType) {
+    final SpecMilestone milestone = milestoneResolver.apply(spec);
+    return findMethod(milestoneMethods.get(milestone), method);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private <T> EngineJsonRpcMethod<T> findMethod(
+      final List<EngineJsonRpcMethod> methods, final EngineApiMethods method) {
     return methods.stream()
         .filter(m -> m.getName().equals(method.getName()))
         .max(Comparator.comparingInt(EngineJsonRpcMethod::getVersion))

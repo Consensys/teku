@@ -19,11 +19,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -47,6 +46,11 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
   }
 
   @Override
+  public Optional<SpecMilestone> getApplicableMilestone() {
+    return Optional.of(SpecMilestone.DENEB);
+  }
+
+  @Override
   public SafeFuture<PayloadStatus> execute(final JsonRpcRequestParams params) {
     final ExecutionPayload executionPayload =
         params.getRequiredParameter(0, ExecutionPayload.class);
@@ -58,16 +62,10 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
         getVersionedName(),
         executionPayload,
         blobVersionedHashes);
-    final ExecutionPayloadV1 executionPayloadV1;
-    if (executionPayload.toVersionDeneb().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
-    } else if (executionPayload.toVersionCapella().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
-    } else {
-      executionPayloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
-    }
+    final ExecutionPayloadV3 executionPayloadV3 =
+        ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     return executionEngineClient
-        .newPayloadV3(executionPayloadV1, blobVersionedHashes)
+        .newPayloadV3(executionPayloadV3, blobVersionedHashes)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

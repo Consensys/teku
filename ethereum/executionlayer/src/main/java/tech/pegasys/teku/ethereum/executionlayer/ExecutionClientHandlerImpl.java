@@ -66,7 +66,10 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .build();
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED, ForkChoiceUpdatedResult.class)
+        .getMilestoneMethod(
+            EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED,
+            spec -> spec.atSlot(forkChoiceState.getHeadBlockSlot()).getMilestone(),
+            ForkChoiceUpdatedResult.class)
         .execute(params);
   }
 
@@ -77,7 +80,10 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(slot).build();
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_GET_PAYLOAD, GetPayloadResponse.class)
+        .getMilestoneMethod(
+            EngineApiMethods.ENGINE_GET_PAYLOAD,
+            spec -> spec.atSlot(slot).getMilestone(),
+            GetPayloadResponse.class)
         .execute(params);
   }
 
@@ -89,7 +95,10 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     newPayloadRequest.getVersionedHashes().ifPresent(paramsBuilder::add);
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_NEW_PAYLOAD, PayloadStatus.class)
+        .getMilestoneMethod(
+            EngineApiMethods.ENGINE_NEW_PAYLOAD,
+            __ -> newPayloadRequest.getExecutionPayload().getMilestone(),
+            PayloadStatus.class)
         .execute(paramsBuilder.build());
   }
 
