@@ -35,6 +35,8 @@ public class SpecBuilderUtil {
           UInt256.ZERO,
           Integer.class,
           0,
+          Long.class,
+          0,
           Bytes4.class,
           Bytes4.leftPad(Bytes.EMPTY),
           Bytes32.class,
