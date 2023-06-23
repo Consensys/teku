@@ -28,13 +28,13 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.ParameterException;
 import picocli.CommandLine.Spec;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.bls.keystore.KeyStore;
+import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.cli.options.WithdrawalPublicKeyOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.DepositOptions;
@@ -109,7 +109,7 @@ public class SendDepositsCommand implements Runnable {
   private BLSPublicKey getWithdrawalKeyFromKeystore() {
     try {
       final KeyStoreData keyStoreData =
-          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.getWithdrawalKeystoreFile().toPath());
+          KeyStoreLoader.loadFromFile(withdrawalKeyOptions.getWithdrawalKeystoreFile().toURI());
       return BLSPublicKey.fromBytesCompressed(Bytes48.wrap(keyStoreData.getPubkey()));
     } catch (final KeyStoreValidationException e) {
       throw new CommandLine.ParameterException(
@@ -145,10 +145,7 @@ public class SendDepositsCommand implements Runnable {
 
       final KeyStoreData keyStoreData =
           KeyStoreLoader.loadFromFile(
-              validatorKeyOptions
-                  .getValidatorKeyStoreOptions()
-                  .getValidatorKeystoreFile()
-                  .toPath());
+              validatorKeyOptions.getValidatorKeyStoreOptions().getValidatorKeystoreFile().toURI());
       final Bytes privateKey = KeyStore.decrypt(keystorePassword, keyStoreData);
       return privateKeyToKeyPair(Bytes32.wrap(privateKey));
     } catch (final KeyStoreValidationException e) {

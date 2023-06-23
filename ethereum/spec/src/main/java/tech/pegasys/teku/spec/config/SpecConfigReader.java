@@ -62,7 +62,10 @@ public class SpecConfigReader {
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
           // Old merge config item which is no longer used, ignore for backwards compatibility
-          "TRANSITION_TOTAL_DIFFICULTY");
+          "TRANSITION_TOTAL_DIFFICULTY",
+          // Deprecated fields
+          "GOSSIP_MAX_SIZE_BELLATRIX",
+          "MAX_CHUNK_SIZE_BELLATRIX");
   private static final ImmutableSet<String> CONSTANT_KEYS =
       ImmutableSet.of(
           // Phase0 constants which may exist in legacy config files, but should now be ignored

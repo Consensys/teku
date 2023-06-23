@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SpecConfigReaderTest {
   private final SpecConfigReader reader = new SpecConfigReader();
@@ -37,7 +38,16 @@ public class SpecConfigReaderTest {
   public void read_missingAltairConstant() {
     processFileAsInputStream(getInvalidConfigPath("missingAltairField"), this::readConfig);
 
-    assertThatThrownBy(reader::build)
+    assertThatThrownBy(
+            () ->
+                reader.build(
+                    builder ->
+                        builder
+                            .altairBuilder(
+                                altairBuilder -> altairBuilder.altairForkEpoch(UInt64.ZERO))
+                            .bellatrixBuilder(
+                                bellatrixBuilder ->
+                                    bellatrixBuilder.bellatrixForkEpoch(UInt64.ZERO))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
   }

@@ -33,16 +33,16 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.signers.bls.keystore.model.Cipher;
-import tech.pegasys.signers.bls.keystore.model.CipherFunction;
-import tech.pegasys.signers.bls.keystore.model.KdfParam;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
-import tech.pegasys.signers.bls.keystore.model.Pbkdf2Param;
-import tech.pegasys.signers.bls.keystore.model.Pbkdf2PseudoRandomFunction;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.keystore.KeyStore;
+import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.bls.keystore.model.Cipher;
+import tech.pegasys.teku.bls.keystore.model.CipherFunction;
+import tech.pegasys.teku.bls.keystore.model.KdfParam;
+import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
+import tech.pegasys.teku.bls.keystore.model.Pbkdf2Param;
+import tech.pegasys.teku.bls.keystore.model.Pbkdf2PseudoRandomFunction;
 import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 
 public class ValidatorKeystores {
