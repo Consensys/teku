@@ -33,8 +33,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.bls.keystore.KeyStore;
+import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.WithdrawalPasswordOptions;
 
@@ -211,7 +211,7 @@ class KeyGeneratorTest {
     for (File file : keyStoreFiles) {
       assertThat(
               KeyStore.validatePassword(
-                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toPath())))
+                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toURI())))
           .isTrue();
     }
   }

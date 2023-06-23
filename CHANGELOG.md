@@ -19,5 +19,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 - Added Gnosis configuration for the 🦉 CAPELLA 🦉 network fork due at epoch 648704, UTC Tue 01/08/2023, 11:34:20
 - Updated Sigmaprime's bootnodes
+- Increased the pending pool size for attestations
 
 ### Bug Fixes

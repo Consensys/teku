@@ -70,6 +70,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.topicName = topicName;
     this.messageType = messageType;
     this.forkValidator = forkValidator;
+    this.networkingConfig = networkingConfig;
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
