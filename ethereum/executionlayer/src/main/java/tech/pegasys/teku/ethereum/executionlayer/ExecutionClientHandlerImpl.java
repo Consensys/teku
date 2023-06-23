@@ -19,6 +19,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -31,9 +32,12 @@ import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
+  private final Spec spec;
   private final ExecutionJsonRpcMethodsResolver methodsResolver;
 
-  public ExecutionClientHandlerImpl(final ExecutionJsonRpcMethodsResolver methodsResolver) {
+  public ExecutionClientHandlerImpl(
+      final Spec spec, final ExecutionJsonRpcMethodsResolver methodsResolver) {
+    this.spec = spec;
     this.methodsResolver = methodsResolver;
   }
 
@@ -68,7 +72,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     return methodsResolver
         .getMilestoneMethod(
             EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED,
-            spec -> spec.atSlot(forkChoiceState.getHeadBlockSlot()).getMilestone(),
+            () -> spec.atSlot(forkChoiceState.getHeadBlockSlot()).getMilestone(),
             ForkChoiceUpdatedResult.class)
         .execute(params);
   }
@@ -82,7 +86,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     return methodsResolver
         .getMilestoneMethod(
             EngineApiMethod.ENGINE_GET_PAYLOAD,
-            spec -> spec.atSlot(slot).getMilestone(),
+            () -> spec.atSlot(slot).getMilestone(),
             GetPayloadResponse.class)
         .execute(params);
   }
@@ -97,7 +101,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     return methodsResolver
         .getMilestoneMethod(
             EngineApiMethod.ENGINE_NEW_PAYLOAD,
-            __ -> newPayloadRequest.getExecutionPayload().getMilestone(),
+            () -> newPayloadRequest.getExecutionPayload().getMilestone(),
             PayloadStatus.class)
         .execute(paramsBuilder.build());
   }

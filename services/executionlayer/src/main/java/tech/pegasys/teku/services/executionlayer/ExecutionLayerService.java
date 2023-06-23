@@ -179,7 +179,7 @@ public class ExecutionLayerService extends Service {
         new MilestoneBasedExecutionJsonRpcMethodsResolver(config.getSpec(), executionEngineClient);
 
     final ExecutionClientHandler executionClientHandler =
-        new ExecutionClientHandlerImpl(methodsResolver);
+        new ExecutionClientHandlerImpl(config.getSpec(), methodsResolver);
 
     final Optional<BuilderClient> builderClient =
         builderRestClientProvider.map(

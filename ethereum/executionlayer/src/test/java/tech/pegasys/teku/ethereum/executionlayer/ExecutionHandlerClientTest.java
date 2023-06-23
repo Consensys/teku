@@ -88,6 +88,6 @@ public abstract class ExecutionHandlerClientTest {
 
   final ExecutionClientHandler getHandler() {
     return new ExecutionClientHandlerImpl(
-        new MilestoneBasedExecutionJsonRpcMethodsResolver(spec, executionEngineClient));
+        spec, new MilestoneBasedExecutionJsonRpcMethodsResolver(spec, executionEngineClient));
   }
 }
