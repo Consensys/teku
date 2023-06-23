@@ -56,9 +56,22 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
     nonMilestoneMethods.add(new EngineExchangeTransitionConfigurationV1(executionEngineClient));
 
     // Milestone specific methods
-    milestoneMethods.put(SpecMilestone.BELLATRIX, bellatrixSupportedMethods());
-    milestoneMethods.put(SpecMilestone.CAPELLA, capellaSupportedMethods());
-    milestoneMethods.put(SpecMilestone.DENEB, denebSupportedMethods());
+    spec.getForkSchedule()
+        .getSupportedMilestones()
+        .forEach(
+            milestone -> {
+              switch (milestone) {
+                case BELLATRIX:
+                  milestoneMethods.put(milestone, bellatrixSupportedMethods());
+                  break;
+                case CAPELLA:
+                  milestoneMethods.put(milestone, capellaSupportedMethods());
+                  break;
+                case DENEB:
+                  milestoneMethods.put(milestone, denebSupportedMethods());
+                  break;
+              }
+            });
   }
 
   private List<EngineJsonRpcMethod<?>> bellatrixSupportedMethods() {
