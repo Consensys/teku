@@ -56,10 +56,10 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
     nonMilestoneMethods.add(new EngineExchangeTransitionConfigurationV1(executionEngineClient));
 
     // Milestone specific methods
-    spec.getForkSchedule()
-        .getSupportedMilestones()
+    spec.getEnabledMilestones()
         .forEach(
-            milestone -> {
+            forkAndMilestone -> {
+              final SpecMilestone milestone = forkAndMilestone.getSpecMilestone();
               switch (milestone) {
                 case PHASE0:
                 case ALTAIR:
