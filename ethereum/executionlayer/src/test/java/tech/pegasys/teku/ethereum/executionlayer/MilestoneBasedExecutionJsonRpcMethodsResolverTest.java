@@ -82,7 +82,7 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
         new MilestoneBasedExecutionJsonRpcMethodsResolver(bellatrixSpec, executionEngineClient);
 
     final EngineJsonRpcMethod<Object> providedMethod =
-        methodsResolver.getMilestoneMethod(method, __ -> SpecMilestone.BELLATRIX, Object.class);
+        methodsResolver.getMilestoneMethod(method, () -> SpecMilestone.BELLATRIX, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
   }
@@ -104,7 +104,7 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
         new MilestoneBasedExecutionJsonRpcMethodsResolver(capellaSpec, executionEngineClient);
 
     final EngineJsonRpcMethod<Object> providedMethod =
-        methodsResolver.getMilestoneMethod(method, __ -> SpecMilestone.CAPELLA, Object.class);
+        methodsResolver.getMilestoneMethod(method, () -> SpecMilestone.CAPELLA, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
   }
@@ -126,7 +126,7 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
         new MilestoneBasedExecutionJsonRpcMethodsResolver(denebSpec, executionEngineClient);
 
     final EngineJsonRpcMethod<Object> providedMethod =
-        methodsResolver.getMilestoneMethod(method, __ -> SpecMilestone.DENEB, Object.class);
+        methodsResolver.getMilestoneMethod(method, () -> SpecMilestone.DENEB, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
   }

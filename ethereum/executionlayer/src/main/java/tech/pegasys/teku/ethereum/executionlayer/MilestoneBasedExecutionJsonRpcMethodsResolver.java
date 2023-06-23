@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
@@ -102,9 +102,9 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
   @Override
   public <T> EngineJsonRpcMethod<T> getMilestoneMethod(
       final EngineApiMethod method,
-      final Function<Spec, SpecMilestone> milestoneResolver,
+      final Supplier<SpecMilestone> milestoneSupplier,
       final Class<T> resultType) {
-    final SpecMilestone milestone = milestoneResolver.apply(spec);
+    final SpecMilestone milestone = milestoneSupplier.get();
     return findMethod(milestoneMethods.get(milestone), method, resultType)
         .orElseThrow(
             () ->
