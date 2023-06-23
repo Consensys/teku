@@ -36,6 +36,9 @@ public class GetSpecResponse {
         .getRawConfig()
         .forEach((name, value) -> configAttributes.put(name, ConfigProvider.formatValue(value)));
 
+    configAttributes.put("GOSSIP_MAX_SIZE", Integer.toString(specConfig.getGossipMaxSize()));
+    configAttributes.put("MAX_CHUNK_SIZE", Integer.toString(specConfig.getMaxChunkSize()));
+
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
     configAttributes.put("RANDOM_SUBNETS_PER_VALIDATOR", getRandomSubnetsPerValidator());
