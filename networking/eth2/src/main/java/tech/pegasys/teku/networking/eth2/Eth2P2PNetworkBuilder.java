@@ -134,7 +134,7 @@ public class Eth2P2PNetworkBuilder {
     final SubnetSubscriptionService attestationSubnetService = new SubnetSubscriptionService();
     final SubnetSubscriptionService syncCommitteeSubnetService = new SubnetSubscriptionService();
     final RpcEncoding rpcEncoding =
-        RpcEncoding.createSszSnappyEncoding(spec.getGenesisSpecConfig().getMaxChunkSize());
+        RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
     if (statusMessageFactory == null) {
       statusMessageFactory = new StatusMessageFactory(combinedChainDataClient.getRecentChainData());
     }

@@ -60,7 +60,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 class BeaconBlocksByRangeMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
   private static final String V2_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRangeMethodId(2, RPC_ENCODING);

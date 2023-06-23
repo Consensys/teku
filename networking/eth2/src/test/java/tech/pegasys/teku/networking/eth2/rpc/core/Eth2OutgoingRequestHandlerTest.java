@@ -107,7 +107,7 @@ public class Eth2OutgoingRequestHandlerTest
   @Override
   protected RpcEncoding getRpcEncoding() {
     return RpcEncoding.createSszSnappyEncoding(
-        TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+        TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
   }
 
   @Test

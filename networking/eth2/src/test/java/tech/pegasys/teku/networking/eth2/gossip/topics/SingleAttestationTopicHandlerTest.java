@@ -47,8 +47,7 @@ public class SingleAttestationTopicHandlerTest
         forkInfo,
         GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
         spec.getGenesisSchemaDefinitions().getAttestationSchema(),
-        SUBNET_ID,
-        gossipMaxSize);
+        SUBNET_ID);
   }
 
   @Test

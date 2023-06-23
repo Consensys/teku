@@ -51,7 +51,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class BeaconBlocksByRootMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
   private static final String V2_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRootMethodId(2, RPC_ENCODING);

@@ -18,6 +18,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -31,7 +32,7 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
       final OperationProcessor<SignedVoluntaryExit> processor,
-      final int maxMessageSize) {
+      final NetworkingSpecConfig networkingConfig) {
     super(
         recentChainData,
         GossipTopicName.VOLUNTARY_EXIT,
@@ -42,7 +43,7 @@ public class VoluntaryExitGossipManager extends AbstractGossipManager<SignedVolu
         processor,
         SignedVoluntaryExit.SSZ_SCHEMA,
         exit -> exit.getMessage().getEpoch(),
-        maxMessageSize);
+        networkingConfig);
   }
 
   public void publishVoluntaryExit(final SignedVoluntaryExit message) {

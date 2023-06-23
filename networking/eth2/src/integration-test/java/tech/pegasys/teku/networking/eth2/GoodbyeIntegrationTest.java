@@ -29,7 +29,7 @@ public class GoodbyeIntegrationTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final RpcEncoding rpcEncoding =
-      RpcEncoding.createSszSnappyEncoding(spec.getGenesisSpecConfig().getMaxChunkSize());
+      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
   private Eth2Peer peer1;
   private Eth2Peer peer2;
 
