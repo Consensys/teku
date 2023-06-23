@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -340,31 +341,31 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public void popBlockRequests(final long blocksCount) {
-    popObjectRequests(blockRequestTracker, blocksCount);
-  }
-
-  @Override
-  public boolean wantToRequestBlocks(
+  public Pair<UInt64, Boolean> popBlockRequests(
       final ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
-    return wantToRequestObjects("blocks", blockRequestTracker, blocksCount, callback);
+    return popObjectRequests("blocks", blockRequestTracker, blocksCount, callback);
   }
 
   @Override
-  public void popBlobSidecarRequests(final long blobSidecarsCount) {
-    popObjectRequests(blobSidecarsRequestTracker, blobSidecarsCount);
+  public void adjustBlockRequests(final long blocksCount, final UInt64 time) {
+    adjustObjectRequests(blockRequestTracker, blocksCount, time);
   }
 
   @Override
-  public boolean wantToRequestBlobSidecars(
+  public Pair<UInt64, Boolean> popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
-    return wantToRequestObjects(
+    return popObjectRequests(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
   }
 
   @Override
+  public void adjustBlobSidecarRequests(final long blobSidecarsCount, final UInt64 time) {
+    adjustObjectRequests(blobSidecarsRequestTracker, blobSidecarsCount, time);
+  }
+
+  @Override
   public boolean popRequest() {
-    if (requestTracker.popObjectRequests(1L) == 0L) {
+    if (requestTracker.popObjectRequests(1L).getRight() == 0L) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
       return false;
@@ -395,23 +396,25 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .thenCompose(__ -> responseHandler.getResult());
   }
 
-  private void popObjectRequests(final RateTracker requestTracker, final long objectCount) {
-    requestTracker.popObjectRequests(objectCount);
+  private void adjustObjectRequests(
+      final RateTracker requestTracker, final long objectCount, final UInt64 time) {
+    requestTracker.adjustRequestObjects(objectCount, time);
   }
 
-  private <T> boolean wantToRequestObjects(
+  private <T> Pair<UInt64, Boolean> popObjectRequests(
       final String requestType,
       final RateTracker requestTracker,
       final long objectCount,
       final ResponseCallback<T> callback) {
-    if (requestTracker.wantToRequestObjects(objectCount) == 0L) {
+    Pair<UInt64, Long> requestTrackerResponse = requestTracker.popObjectRequests(objectCount);
+    if (requestTrackerResponse.getRight() == 0L) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
-      return false;
+      return Pair.of(requestTrackerResponse.getLeft(), false);
     }
-    return true;
+    return Pair.of(requestTrackerResponse.getLeft(), true);
   }
 
   private <I extends RpcRequest, O extends SszData> SafeFuture<Optional<O>> requestOptionalItem(

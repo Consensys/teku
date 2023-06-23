@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -104,7 +105,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @BeforeEach
   public void setUp() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.wantToRequestBlobSidecars(eq(listener), anyLong())).thenReturn(true);
+    when(peer.popBlobSidecarRequests(eq(listener), anyLong())).thenReturn(Pair.of(ZERO, true));
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
@@ -154,8 +155,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.wantToRequestBlobSidecars(listener, count.times(maxBlobsPerBlock).longValue()))
-        .thenReturn(false);
+    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue()))
+        .thenReturn(Pair.of(ZERO, false));
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
@@ -292,7 +293,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
-    when(peer.wantToRequestBlobSidecars(listener, 0)).thenReturn(true);
+    when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(Pair.of(ZERO, true));
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 

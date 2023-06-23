@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -101,13 +102,15 @@ public interface Eth2Peer extends Peer, SyncSource {
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request);
 
-  void popBlockRequests(long blocksCount);
+  Pair<UInt64, Boolean> popBlockRequests(
+      ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
 
-  boolean wantToRequestBlocks(ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
+  void adjustBlockRequests(long blocksCount, UInt64 time);
 
-  void popBlobSidecarRequests(long blobSidecarsCount);
+  Pair<UInt64, Boolean> popBlobSidecarRequests(
+      ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
 
-  boolean wantToRequestBlobSidecars(ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
+  void adjustBlobSidecarRequests(long blobSidecarsCount, UInt64 time);
 
   boolean popRequest();
 

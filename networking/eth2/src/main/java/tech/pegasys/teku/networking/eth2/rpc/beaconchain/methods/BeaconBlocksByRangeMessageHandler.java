@@ -24,7 +24,7 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -122,18 +122,22 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
 
-    if (!peer.popRequest() || !peer.wantToRequestBlocks(callback, message.getCount().longValue())) {
+    final Pair<UInt64, Boolean> rateLimiterResponse =
+        peer.popBlockRequests(callback, message.getCount().longValue());
+
+    if (!peer.popRequest() || !rateLimiterResponse.getRight()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
 
     requestCounter.labels("ok").inc();
-    totalBlocksRequestedCounter.inc(message.getCount().longValue());
+
     sendMatchingBlocks(message, callback)
         .finish(
             requestState -> {
-              peer.popBlockRequests(requestState.sentBlocks.get());
-
+              peer.adjustBlockRequests(
+                  requestState.sentBlocks.get(), rateLimiterResponse.getLeft());
+              totalBlocksRequestedCounter.inc(requestState.sentBlocks.get());
               callback.completeSuccessfully();
             },
             error -> {
@@ -190,7 +194,7 @@ public class BeaconBlocksByRangeMessageHandler
               // so we don't need to worry about inconsistent blocks
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
               return sendNextBlock(
-                      new RequestState(startSlot, step, count, headSlot, hotRoots, callback));
+                  new RequestState(startSlot, step, count, headSlot, hotRoots, callback));
             });
   }
 
@@ -278,10 +282,7 @@ public class BeaconBlocksByRangeMessageHandler
       if (step.isGreaterThan(1L)) {
         remainingBlocks = ZERO;
       }
-      return callback.respond(block).thenCompose(__ -> {
-        sentBlocks.incrementAndGet();
-        return SafeFuture.COMPLETE;
-      });
+      return callback.respond(block).thenRun(sentBlocks::incrementAndGet);
     }
 
     void incrementCurrentSlot() {

@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -94,9 +95,10 @@ class BeaconBlocksByRangeMessageHandlerTest {
   @BeforeEach
   public void setup() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.wantToRequestBlocks(any(), anyLong())).thenReturn(true);
+    when(peer.popBlockRequests(any(), anyLong())).thenReturn(Pair.of(ZERO, true));
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.of(ZERO)));
+    when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test

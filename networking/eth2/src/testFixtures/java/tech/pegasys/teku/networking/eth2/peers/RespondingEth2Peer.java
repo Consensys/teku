@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -301,22 +303,22 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public boolean wantToRequestBlocks(
+  public Pair<UInt64, Boolean> popBlockRequests(
       ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
-    return true;
+    return Pair.of(ZERO, true);
   }
 
   @Override
-  public void popBlockRequests(final long blocksCount) {}
+  public void adjustBlockRequests(long blobSidecarsCount, final UInt64 time) {}
 
   @Override
-  public boolean wantToRequestBlobSidecars(
+  public Pair<UInt64, Boolean> popBlobSidecarRequests(
       ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
-    return true;
+    return Pair.of(ZERO, true);
   }
 
   @Override
-  public void popBlobSidecarRequests(long blobSidecarsCount) {}
+  public void adjustBlobSidecarRequests(long blobSidecarsCount, final UInt64 time) {}
 
   @Override
   public boolean popRequest() {

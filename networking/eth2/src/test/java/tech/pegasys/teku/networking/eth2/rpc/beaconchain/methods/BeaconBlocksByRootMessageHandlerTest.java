@@ -21,11 +21,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,7 +78,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
   public void setup() {
     chainUpdater.initializeGenesis();
     when(peer.popRequest()).thenReturn(true);
-    when(peer.wantToRequestBlocks(any(), anyLong())).thenReturn(true);
+    when(peer.popBlockRequests(any(), anyLong())).thenReturn(Pair.of(ZERO, true));
     when(recentChainData.getStore()).thenReturn(store);
     // Forward block requests from the mock to the actual store
     when(store.retrieveSignedBlock(any()))

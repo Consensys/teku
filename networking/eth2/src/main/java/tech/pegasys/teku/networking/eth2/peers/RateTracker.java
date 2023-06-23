@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -35,31 +36,30 @@ public class RateTracker {
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
-  public synchronized long popObjectRequests(final long objectCount) {
-    pruneRequests();
+  public synchronized Pair<UInt64, Long> popObjectRequests(final long objectCount) {
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    pruneRequests(currentTime);
     if ((peerRateLimit - requestsWithinWindow) <= 0) {
-      return 0L;
+      return Pair.of(currentTime, 0L);
     }
 
     requestsWithinWindow += objectCount;
-    requestCount.compute(
-        timeProvider.getTimeInSeconds(),
-        (key, val) -> val == null ? objectCount : val + objectCount);
-    return objectCount;
+    requestCount.compute(currentTime, (key, val) -> val == null ? objectCount : val + objectCount);
+    return Pair.of(currentTime, objectCount);
   }
 
-  public synchronized long wantToRequestObjects(final long objectsCount) {
-    final long remainingCapacity = peerRateLimit - requestsWithinWindow;
-    return remainingCapacity <= 0L ? 0L : objectsCount;
+  public synchronized void adjustRequestObjects(final long objectsCount, final UInt64 time) {
+    if (requestCount.containsKey(time)) {
+      requestCount.put(time, objectsCount);
+    }
   }
 
-  void pruneRequests() {
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    if (currentTime.isLessThan(timeoutSeconds)) {
+  void pruneRequests(UInt64 time) {
+    if (time.isLessThan(timeoutSeconds)) {
       return;
     }
     final NavigableMap<UInt64, Long> headMap =
-        requestCount.headMap(currentTime.minus(timeoutSeconds), false);
+        requestCount.headMap(time.minus(timeoutSeconds), false);
     headMap.values().forEach(value -> requestsWithinWindow -= value);
     headMap.clear();
   }

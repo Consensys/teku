@@ -23,12 +23,14 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -96,7 +98,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @BeforeEach
   public void setup() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.wantToRequestBlobSidecars(eq(callback), anyLong())).thenReturn(true);
+    when(peer.popBlobSidecarRequests(eq(callback), anyLong())).thenReturn(Pair.of(ZERO, true));
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -148,7 +150,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.wantToRequestBlobSidecars(callback, 5)).thenReturn(false);
+    when(peer.popBlobSidecarRequests(callback, 5)).thenReturn(Pair.of(ZERO, false));
 
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(

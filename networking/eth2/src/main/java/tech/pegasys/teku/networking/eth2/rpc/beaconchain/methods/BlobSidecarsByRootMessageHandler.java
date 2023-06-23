@@ -19,6 +19,7 @@ import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -111,7 +112,10 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    if (!peer.popRequest() || !peer.wantToRequestBlobSidecars(callback, message.size())) {
+    final Pair<UInt64, Boolean> rateLimiterResponse =
+        peer.popBlobSidecarRequests(callback, message.size());
+
+    if (!peer.popRequest() || !rateLimiterResponse.getRight()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -146,7 +150,7 @@ public class BlobSidecarsByRootMessageHandler
 
     future.finish(
         () -> {
-          peer.popBlobSidecarRequests(sentBlobSidecars.get());
+          peer.adjustBlobSidecarRequests(sentBlobSidecars.get(), rateLimiterResponse.getLeft());
           totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars.get());
           callback.completeSuccessfully();
         },
