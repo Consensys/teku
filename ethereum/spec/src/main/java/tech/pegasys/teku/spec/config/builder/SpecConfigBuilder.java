@@ -104,6 +104,7 @@ public class SpecConfigBuilder {
   // Networking
   private Integer gossipMaxSize;
   private Integer maxChunkSize;
+  private UInt64 maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
   private Integer subnetsPerNode;
   private Integer attestationSubnetCount;
@@ -178,6 +179,7 @@ public class SpecConfigBuilder {
             depositContractAddress,
             gossipMaxSize,
             maxChunkSize,
+            maxRequestBlocks,
             epochsPerSubnetSubscription,
             subnetsPerNode,
             attestationSubnetCount,
@@ -243,6 +245,7 @@ public class SpecConfigBuilder {
 
     SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
+    SpecBuilderUtil.validateConstant("maxRequestBlocks", maxRequestBlocks);
     SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     SpecBuilderUtil.validateConstant("subnetsPerNode", subnetsPerNode);
     SpecBuilderUtil.validateConstant("attestationSubnetCount", attestationSubnetCount);
@@ -563,6 +566,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
     this.maxChunkSize = maxChunkSize;
+    return this;
+  }
+
+  public SpecConfigBuilder maxRequestBlocks(final UInt64 maxRequestBlocks) {
+    this.maxRequestBlocks = maxRequestBlocks;
     return this;
   }
 

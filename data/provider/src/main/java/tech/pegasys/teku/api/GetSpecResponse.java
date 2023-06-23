@@ -40,6 +40,7 @@ public class GetSpecResponse {
         "GOSSIP_MAX_SIZE", Integer.toString(specConfig.getNetworkingConfig().getGossipMaxSize()));
     configAttributes.put(
         "MAX_CHUNK_SIZE", Integer.toString(specConfig.getNetworkingConfig().getMaxChunkSize()));
+    configAttributes.put("MAX_REQUEST_BLOCKS", getMaxRequestBlocks());
 
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
@@ -85,6 +86,10 @@ public class GetSpecResponse {
 
   private String getTargetAggregatorsPerCommittee() {
     return Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE);
+  }
+
+  private String getMaxRequestBlocks() {
+    return Integer.toString(specConfig.getNetworkingConfig().getMaxRequestBlocks().intValue());
   }
 
   private String getRandomSubnetsPerValidator() {

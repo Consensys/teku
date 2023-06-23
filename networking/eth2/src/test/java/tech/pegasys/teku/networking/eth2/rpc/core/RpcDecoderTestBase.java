@@ -32,10 +32,13 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.S
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.SingleProtocolEth2RpcMethod;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 
 public class RpcDecoderTestBase {
+
+  protected static final Spec SPEC = TestSpecFactory.createDefault();
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
@@ -57,7 +60,8 @@ public class RpcDecoderTestBase {
   protected static final PeerLookup PEER_LOOKUP = mock(PeerLookup.class);
 
   protected static final RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
-      RpcContextCodec.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
+      RpcContextCodec.noop(
+          SPEC.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema());
   protected static final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes>
       RESPONSE_DECODER = RpcResponseDecoder.create(ENCODING, CONTEXT_ENCODER);
 
@@ -71,7 +75,7 @@ public class RpcDecoderTestBase {
               "",
               1,
               ENCODING,
-              BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
+              SPEC.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
               false,
               CONTEXT_ENCODER,
               mock(LocalMessageHandler.class),
@@ -89,7 +93,8 @@ public class RpcDecoderTestBase {
     for (int i = 0; i < blocksRequested; i++) {
       roots.add(Bytes32.leftPad(Bytes.ofUnsignedInt(i)));
     }
-    return new BeaconBlocksByRootRequestMessage(roots);
+    return new BeaconBlocksByRootRequestMessage(
+        SPEC.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots);
   }
 
   protected static Bytes getLengthPrefix(final int size) {
