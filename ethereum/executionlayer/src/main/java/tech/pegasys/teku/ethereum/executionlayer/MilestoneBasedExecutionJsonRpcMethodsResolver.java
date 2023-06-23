@@ -35,6 +35,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByHash;
 import tech.pegasys.teku.ethereum.executionclient.methods.EthGetBlockByNumber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 
 public class MilestoneBasedExecutionJsonRpcMethodsResolver
     implements ExecutionJsonRpcMethodsResolver {
@@ -56,10 +57,10 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
     nonMilestoneMethods.add(new EngineExchangeTransitionConfigurationV1(executionEngineClient));
 
     // Milestone specific methods
-    spec.getEnabledMilestones()
+    spec.getEnabledMilestones().stream()
+        .map(ForkAndSpecMilestone::getSpecMilestone)
         .forEach(
-            forkAndMilestone -> {
-              final SpecMilestone milestone = forkAndMilestone.getSpecMilestone();
+            milestone -> {
               switch (milestone) {
                 case PHASE0:
                 case ALTAIR:
