@@ -23,7 +23,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class RateTrackerTest {
 
   StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
-  final long zero = 0;
 
   @Test
   public void shouldAllowAddingItemsWithinLimit() {
@@ -63,7 +62,7 @@ public class RateTrackerTest {
     assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), objectCount));
 
     trackerResponse = tracker.popObjectRequests(objectCount);
-    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
   }
 
   @Test
@@ -74,7 +73,7 @@ public class RateTrackerTest {
     assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), objectCount));
 
     trackerResponse = tracker.popObjectRequests(objectCount);
-    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
 
     timeProvider.advanceTimeBySeconds(2L);
 
@@ -103,7 +102,7 @@ public class RateTrackerTest {
     // time:1002 count:14 - reject.
     objectCount = 5;
     trackerResponse = tracker.popObjectRequests(objectCount);
-    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
 
     timeProvider.advanceTimeBySeconds(1L);
     // time:1003 count:5
@@ -114,7 +113,7 @@ public class RateTrackerTest {
     // time:1003 count:10 - reject
 
     trackerResponse = tracker.popObjectRequests(objectCount);
-    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
 
     timeProvider.advanceTimeBySeconds(3L);
     // time:1006 count:0
@@ -131,7 +130,7 @@ public class RateTrackerTest {
 
     objectCount = 1;
     trackerResponse = tracker.popObjectRequests(objectCount);
-    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
 
     timeProvider.advanceTimeBySeconds(2L);
     // time:1009 count:5
@@ -145,27 +144,35 @@ public class RateTrackerTest {
     // time:1009 count:10 - reject
     objectCount = 1;
     trackerResponse = tracker.popObjectRequests(objectCount);
-    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
   }
 
   @Test
   public void shouldAdjustObjectsCount() {
     final RateTracker tracker = new RateTracker(10, 2, timeProvider);
 
+    // time: 1000, tracker count: 0, limit: 10, remaining: 10
     Pair<UInt64, Long> trackerResponse = tracker.popObjectRequests(10);
     assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 10L));
 
+    // time: 1000, tracker count: 10, limit: 10, remaining: 0
     trackerResponse = tracker.popObjectRequests(5);
-    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
 
     tracker.adjustRequestObjects(3, 10, timeProvider.getTimeInSeconds());
-
+    // time: 1000, tracker count: 3, limit: 10, remaining: 7
     trackerResponse = tracker.popObjectRequests(7);
     assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 7L));
-
+    // time: 1000, tracker count: 10, limit: 10, remaining: 0
     tracker.adjustRequestObjects(5, 7, timeProvider.getTimeInSeconds());
-
+    // time: 1000, tracker count: 8, limit: 10, remaining: 2
     trackerResponse = tracker.popObjectRequests(3);
     assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 3L));
+    // respond as long as the remaining capacity is > 0
+    // time: 1000, tracker count: 11, limit: 10, remaining: 0
+    tracker.adjustRequestObjects(3, 3, timeProvider.getTimeInSeconds());
+    // time: 1000, tracker count: 11, limit: 10, remaining: 0
+    trackerResponse = tracker.popObjectRequests(2);
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 0L));
   }
 }
