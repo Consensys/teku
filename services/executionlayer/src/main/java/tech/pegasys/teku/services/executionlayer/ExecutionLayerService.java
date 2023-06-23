@@ -37,13 +37,11 @@ import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
-import tech.pegasys.teku.ethereum.executionlayer.EngineApiCapabilitiesProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandler;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandlerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
-import tech.pegasys.teku.ethereum.executionlayer.LocalEngineApiCapabilitiesProvider;
 import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedExecutionJsonRpcMethodsResolver;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -129,7 +127,6 @@ public class ExecutionLayerService extends Service {
           createRealExecutionLayerManager(
               serviceConfig,
               config,
-              asyncRunnerSupplier,
               engineWeb3jClientProvider,
               builderRestClientProvider,
               builderCircuitBreaker);
@@ -169,7 +166,6 @@ public class ExecutionLayerService extends Service {
   private static ExecutionLayerManager createRealExecutionLayerManager(
       final ServiceConfig serviceConfig,
       final ExecutionLayerConfiguration config,
-      final Supplier<AsyncRunner> asyncRunnerSupplier,
       final ExecutionWeb3jClientProvider engineWeb3jClientProvider,
       final Optional<RestClientProvider> builderRestClientProvider,
       final BuilderCircuitBreaker builderCircuitBreaker) {
@@ -183,14 +179,11 @@ public class ExecutionLayerService extends Service {
             timeProvider,
             metricsSystem);
 
-    final EngineApiCapabilitiesProvider localEngineApiCapabilitiesProvider =
-        new LocalEngineApiCapabilitiesProvider(config.getSpec(), executionEngineClient);
-    final MilestoneBasedExecutionJsonRpcMethodsResolver milestoneBasedMethodResolver =
-        new MilestoneBasedExecutionJsonRpcMethodsResolver(
-            config.getSpec(), localEngineApiCapabilitiesProvider);
+    final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(config.getSpec(), executionEngineClient);
 
     final ExecutionClientHandler executionClientHandler =
-        new ExecutionClientHandlerImpl(milestoneBasedMethodResolver);
+        new ExecutionClientHandlerImpl(methodsResolver);
 
     final Optional<BuilderClient> builderClient =
         builderRestClientProvider.map(

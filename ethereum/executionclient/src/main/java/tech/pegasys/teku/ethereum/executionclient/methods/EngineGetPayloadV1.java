@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -21,7 +20,6 @@ import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -40,17 +38,12 @@ public class EngineGetPayloadV1 extends AbstractEngineJsonRpcMethod<GetPayloadRe
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_GET_PAYLOAD.getName();
+    return EngineApiMethod.ENGINE_GET_PAYLOAD.getName();
   }
 
   @Override
   public int getVersion() {
     return 1;
-  }
-
-  @Override
-  public Optional<SpecMilestone> getApplicableMilestone() {
-    return Optional.of(SpecMilestone.BELLATRIX);
   }
 
   @Override

@@ -29,7 +29,7 @@ public class EthGetBlockByNumber extends AbstractEngineJsonRpcMethod<PowBlock> {
 
   @Override
   public String getName() {
-    return EngineApiMethods.ETH_GET_BLOCK_BY_NUMBER.getName();
+    return EngineApiMethod.ETH_GET_BLOCK_BY_NUMBER.getName();
   }
 
   @Override

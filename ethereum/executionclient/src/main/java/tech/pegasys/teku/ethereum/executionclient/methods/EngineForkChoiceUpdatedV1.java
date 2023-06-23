@@ -22,7 +22,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
@@ -38,17 +37,12 @@ public class EngineForkChoiceUpdatedV1
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED.getName();
+    return EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED.getName();
   }
 
   @Override
   public int getVersion() {
     return 1;
-  }
-
-  @Override
-  public Optional<SpecMilestone> getApplicableMilestone() {
-    return Optional.of(SpecMilestone.BELLATRIX);
   }
 
   @Override

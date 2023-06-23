@@ -15,7 +15,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -42,7 +42,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ETH_GET_BLOCK_BY_HASH, PowBlock.class)
+        .getMethod(EngineApiMethod.ETH_GET_BLOCK_BY_HASH, PowBlock.class)
         .execute(params)
         .thenApply(Optional::ofNullable);
   }
@@ -51,7 +51,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
     // uses LATEST as default block parameter on Eth1 JSON-RPC call
     return methodsResolver
-        .getMethod(EngineApiMethods.ETH_GET_BLOCK_BY_NUMBER, PowBlock.class)
+        .getMethod(EngineApiMethod.ETH_GET_BLOCK_BY_NUMBER, PowBlock.class)
         .execute(JsonRpcRequestParams.NO_PARAMS);
   }
 
@@ -67,7 +67,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
     return methodsResolver
         .getMilestoneMethod(
-            EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED,
+            EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED,
             spec -> spec.atSlot(forkChoiceState.getHeadBlockSlot()).getMilestone(),
             ForkChoiceUpdatedResult.class)
         .execute(params);
@@ -81,7 +81,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
     return methodsResolver
         .getMilestoneMethod(
-            EngineApiMethods.ENGINE_GET_PAYLOAD,
+            EngineApiMethod.ENGINE_GET_PAYLOAD,
             spec -> spec.atSlot(slot).getMilestone(),
             GetPayloadResponse.class)
         .execute(params);
@@ -96,7 +96,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
     return methodsResolver
         .getMilestoneMethod(
-            EngineApiMethods.ENGINE_NEW_PAYLOAD,
+            EngineApiMethod.ENGINE_NEW_PAYLOAD,
             __ -> newPayloadRequest.getExecutionPayload().getMilestone(),
             PayloadStatus.class)
         .execute(paramsBuilder.build());
@@ -110,8 +110,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
     return methodsResolver
         .getMethod(
-            EngineApiMethods.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION,
-            TransitionConfiguration.class)
+            EngineApiMethod.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION, TransitionConfiguration.class)
         .execute(params);
   }
 }

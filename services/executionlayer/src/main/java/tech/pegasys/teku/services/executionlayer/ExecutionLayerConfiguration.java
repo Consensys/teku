@@ -39,8 +39,6 @@ public class ExecutionLayerConfiguration {
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
   public static final String BUILDER_ALWAYS_KEYWORD = "BUILDER_ALWAYS";
 
-  public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_ENABLED = true;
-
   private final Spec spec;
   private final Optional<String> engineEndpoint;
   private final Version engineVersion;
@@ -52,7 +50,6 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
   private final Optional<Integer> builderBidCompareFactor;
   private final boolean builderSetUserAgentHeader;
-  private final boolean exchangeCapabilitiesEnabled;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -65,8 +62,7 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
       final Optional<Integer> builderBidCompareFactor,
-      final boolean builderSetUserAgentHeader,
-      final boolean exchangeCapabilitiesEnabled) {
+      final boolean builderSetUserAgentHeader) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineVersion = engineVersion;
@@ -79,7 +75,6 @@ public class ExecutionLayerConfiguration {
         builderCircuitBreakerAllowedConsecutiveFaults;
     this.builderBidCompareFactor = builderBidCompareFactor;
     this.builderSetUserAgentHeader = builderSetUserAgentHeader;
-    this.exchangeCapabilitiesEnabled = exchangeCapabilitiesEnabled;
   }
 
   public static Builder builder() {
@@ -129,10 +124,6 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
-  public boolean isExchangeCapabilitiesEnabled() {
-    return exchangeCapabilitiesEnabled;
-  }
-
   public Optional<Integer> getBuilderBidCompareFactor() {
     return builderBidCompareFactor;
   }
@@ -154,7 +145,6 @@ public class ExecutionLayerConfiguration {
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
     private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
     private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
-    private boolean exchangeCapabilitiesEnabled = DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
 
     private Builder() {}
 
@@ -190,8 +180,7 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerAllowedFaults,
           builderCircuitBreakerAllowedConsecutiveFaults,
           builderBidCompareFactor,
-          builderSetUserAgentHeader,
-          exchangeCapabilitiesEnabled);
+          builderSetUserAgentHeader);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -249,11 +238,6 @@ public class ExecutionLayerConfiguration {
 
     public Builder builderSetUserAgentHeader(final boolean builderSetUserAgentHeader) {
       this.builderSetUserAgentHeader = builderSetUserAgentHeader;
-      return this;
-    }
-
-    public Builder exchangeCapabilitiesEnabled(boolean enabled) {
-      this.exchangeCapabilitiesEnabled = enabled;
       return this;
     }
 

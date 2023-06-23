@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-public enum EngineApiMethods {
+public enum EngineApiMethod {
   ETH_GET_BLOCK_BY_HASH("eth_getBlockByHash"),
   ETH_GET_BLOCK_BY_NUMBER("eth_getBlockByNumber"),
   ENGINE_NEW_PAYLOAD("engine_newPayload"),
@@ -23,7 +23,7 @@ public enum EngineApiMethods {
 
   private final String name;
 
-  EngineApiMethods(final String name) {
+  EngineApiMethod(final String name) {
     this.name = name;
   }
 

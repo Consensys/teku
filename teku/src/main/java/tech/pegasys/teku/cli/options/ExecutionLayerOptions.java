@@ -21,7 +21,6 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
-import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
@@ -125,16 +124,6 @@ public class ExecutionLayerOptions {
       hidden = true)
   private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 
-  @Option(
-      hidden = true,
-      names = {"--exchange-capabilities-enabled"},
-      paramLabel = "<BOOLEAN>",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Enables Engine API capabilities negotiation with Execution Client",
-      arity = "0..1")
-  private boolean exchangeCapabilitiesEnabled = DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
-
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -148,8 +137,7 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerAllowedConsecutiveFaults(
                     builderCircuitBreakerAllowedConsecutiveFaults)
                 .builderBidCompareFactor(builderBidCompareFactor)
-                .builderSetUserAgentHeader(builderSetUserAgentHeader)
-                .exchangeCapabilitiesEnabled(exchangeCapabilitiesEnabled));
+                .builderSetUserAgentHeader(builderSetUserAgentHeader));
     depositOptions.configure(builder);
   }
 }

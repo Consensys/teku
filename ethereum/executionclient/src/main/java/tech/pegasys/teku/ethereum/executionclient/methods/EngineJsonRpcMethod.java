@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.SpecMilestone;
 
 public interface EngineJsonRpcMethod<T> {
 
@@ -25,15 +23,7 @@ public interface EngineJsonRpcMethod<T> {
 
   SafeFuture<T> execute(JsonRpcRequestParams params);
 
-  default Optional<SpecMilestone> getApplicableMilestone() {
-    return Optional.empty();
-  }
-
   default String getVersionedName() {
     return getVersion() == 0 ? getName() : getName() + "V" + getVersion();
-  }
-
-  default boolean isNegotiable() {
-    return getVersion() != 0;
   }
 }

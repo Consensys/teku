@@ -43,17 +43,12 @@ public class EngineForkChoiceUpdatedV2
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED.getName();
+    return EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED.getName();
   }
 
   @Override
   public int getVersion() {
     return 2;
-  }
-
-  @Override
-  public Optional<SpecMilestone> getApplicableMilestone() {
-    return Optional.of(SpecMilestone.CAPELLA);
   }
 
   @Override
