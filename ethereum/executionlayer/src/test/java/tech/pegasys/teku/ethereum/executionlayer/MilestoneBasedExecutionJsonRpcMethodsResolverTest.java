@@ -14,11 +14,13 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.Mockito.mock;
 
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -94,6 +96,20 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
         arguments(EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV1.class));
   }
 
+  @Test
+  void capellaMilestoneMethodIsNotSupportedInBellatrix() {
+    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
+
+    final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(bellatrixSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                methodsResolver.getMilestoneMethod(
+                    EngineApiMethod.ENGINE_GET_PAYLOAD, () -> SpecMilestone.CAPELLA, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone CAPELLA");
+  }
+
   @ParameterizedTest
   @MethodSource("capellaMethods")
   void shouldProvideExpectedMethodsForCapella(
@@ -114,6 +130,20 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
         arguments(EngineApiMethod.ENGINE_NEW_PAYLOAD, EngineNewPayloadV2.class),
         arguments(EngineApiMethod.ENGINE_GET_PAYLOAD, EngineGetPayloadV2.class),
         arguments(EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV2.class));
+  }
+
+  @Test
+  void denebMilestoneMethodIsNotSupportedInCapella() {
+    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
+
+    final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
+        new MilestoneBasedExecutionJsonRpcMethodsResolver(capellaSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                methodsResolver.getMilestoneMethod(
+                    EngineApiMethod.ENGINE_GET_PAYLOAD, () -> SpecMilestone.DENEB, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone DENEB");
   }
 
   @ParameterizedTest

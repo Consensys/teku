@@ -118,11 +118,15 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
       final Supplier<SpecMilestone> milestoneSupplier,
       final Class<T> resultType) {
     final SpecMilestone milestone = milestoneSupplier.get();
-    return findMethod(milestoneMethods.get(milestone), method, resultType)
+    return Optional.ofNullable(milestoneMethods.get(milestone))
+        .flatMap(methods -> findMethod(methods, method, resultType))
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
-                    "Can't find method with name " + method.getName() + " for " + milestone));
+                    "Can't find method with name "
+                        + method.getName()
+                        + " for milestone "
+                        + milestone));
   }
 
   @SuppressWarnings({"unchecked", "unused"})
