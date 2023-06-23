@@ -101,9 +101,14 @@ public class SpecConfigBuilder {
   private Long depositNetworkId;
   private Eth1Address depositContractAddress;
 
+  // Networking
   private Integer gossipMaxSize;
-
   private Integer maxChunkSize;
+  private Integer epochsPerSubnetSubscription;
+  private Integer subnetsPerNode;
+  private Integer attestationSubnetCount;
+  private Integer attestationSubnetExtraBits;
+  private Integer attestationSubnetPrefixBits;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -172,7 +177,12 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress,
             gossipMaxSize,
-            maxChunkSize);
+            maxChunkSize,
+            epochsPerSubnetSubscription,
+            subnetsPerNode,
+            attestationSubnetCount,
+            attestationSubnetExtraBits,
+            attestationSubnetPrefixBits);
 
     return builderChain.build(config);
   }
@@ -233,6 +243,11 @@ public class SpecConfigBuilder {
 
     SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
+    SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
+    SpecBuilderUtil.validateConstant("subnetsPerNode", subnetsPerNode);
+    SpecBuilderUtil.validateConstant("attestationSubnetCount", attestationSubnetCount);
+    SpecBuilderUtil.validateConstant("attestationSubnetExtraBits", attestationSubnetExtraBits);
+    SpecBuilderUtil.validateConstant("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
 
     builderChain.validate();
   }
@@ -548,6 +563,31 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
     this.maxChunkSize = maxChunkSize;
+    return this;
+  }
+
+  public SpecConfigBuilder epochsPerSubnetSubscription(final Integer epochsPerSubnetSubscription) {
+    this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    return this;
+  }
+
+  public SpecConfigBuilder subnetsPerNode(final Integer subnetsPerNode) {
+    this.subnetsPerNode = subnetsPerNode;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationSubnetCount(final Integer attestationSubnetCount) {
+    this.attestationSubnetCount = attestationSubnetCount;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationSubnetExtraBits(final Integer attestationSubnetExtraBits) {
+    this.attestationSubnetExtraBits = attestationSubnetExtraBits;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
+    this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
   }
 

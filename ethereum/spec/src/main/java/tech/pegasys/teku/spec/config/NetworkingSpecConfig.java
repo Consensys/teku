@@ -19,7 +19,19 @@ public interface NetworkingSpecConfig {
 
   int getMaxChunkSize();
 
+  int getEpochsPerSubnetSubscription();
+
   int getMinEpochsForBlockRequests();
+
+  int getSubnetsPerNode();
+
+  int getAttestationSubnetCount();
+
+  // The number of extra bits of a NodeId to use when mapping to a subscribed subnet
+  int getAttestationSubnetExtraBits();
+
+  // int(ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS)
+  int getAttestationSubnetPrefixBits();
 
   default NetworkingSpecConfig getNetworkingConfig() {
     return this;

@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 
 class ScoringConfig {
@@ -217,7 +216,7 @@ class ScoringConfig {
   }
 
   public int getAttestationSubnetCount() {
-    return Constants.ATTESTATION_SUBNET_COUNT;
+    return spec.getNetworkingConfig().getAttestationSubnetCount();
   }
 
   /**

@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.intThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
+import static tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriberTest.DEFAULT_SUBNETS_PER_VALIDATOR;
 
 import java.util.Random;
 import org.jetbrains.annotations.NotNull;
@@ -31,14 +31,15 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 public class ValidatorBasedStableSubnetSubscriberTest {
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
+  private final int attestatonSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
   @Test
   void shouldSubscribeToNoMoreThanAttestationSubnetCount() {
     final ValidatorBasedStableSubnetSubscriber subscriber = createSubscriber(256);
     subscriber.onSlot(UInt64.ONE, 2);
-    verify(network, times(ATTESTATION_SUBNET_COUNT))
-        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < ATTESTATION_SUBNET_COUNT));
-    for (int i = 0; i < ATTESTATION_SUBNET_COUNT; i++) {
+    verify(network, times(attestatonSubnetCount))
+        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestatonSubnetCount));
+    for (int i = 0; i < attestatonSubnetCount; i++) {
       verify(network).subscribeToAttestationSubnetId(eq(i));
     }
   }
@@ -47,8 +48,8 @@ public class ValidatorBasedStableSubnetSubscriberTest {
   void shouldSubscribeToExpectedSubnetsWithNoMinimum() {
     final ValidatorBasedStableSubnetSubscriber subscriber = createSubscriber(0);
     subscriber.onSlot(UInt64.ONE, 10);
-    verify(network, times(10))
-        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < ATTESTATION_SUBNET_COUNT));
+    verify(network, times(10 * DEFAULT_SUBNETS_PER_VALIDATOR))
+        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestatonSubnetCount));
   }
 
   @NotNull

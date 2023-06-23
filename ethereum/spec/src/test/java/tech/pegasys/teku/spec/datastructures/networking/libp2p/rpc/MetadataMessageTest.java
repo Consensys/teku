@@ -22,7 +22,8 @@ import java.util.Collections;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageSchemaAltair;
@@ -30,10 +31,11 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.vers
 
 class MetadataMessageTest {
 
+  private static final Spec SPEC = TestSpecFactory.createDefault();
   private static final MetadataMessageSchemaPhase0 PHASE0_SCHEMA =
-      new MetadataMessageSchemaPhase0();
+      new MetadataMessageSchemaPhase0(SPEC.getNetworkingConfig());
   private static final MetadataMessageSchemaAltair ALTAIR_SCHEMA =
-      new MetadataMessageSchemaAltair();
+      new MetadataMessageSchemaAltair(SPEC.getNetworkingConfig());
   private static final Bytes EXPECTED_SSZ =
       Bytes.fromHexString("0x23000000000000000100000000000080");
   private static final MetadataMessage MESSAGE =
@@ -57,7 +59,7 @@ class MetadataMessageTest {
             () ->
                 PHASE0_SCHEMA.create(
                     UInt64.valueOf(15),
-                    IntList.of(Constants.ATTESTATION_SUBNET_COUNT),
+                    IntList.of(SPEC.getNetworkingConfig().getAttestationSubnetCount()),
                     Collections.emptyList()))
         .isInstanceOf(IndexOutOfBoundsException.class);
   }

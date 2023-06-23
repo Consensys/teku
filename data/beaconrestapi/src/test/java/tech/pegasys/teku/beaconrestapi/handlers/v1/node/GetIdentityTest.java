@@ -43,7 +43,7 @@ public class GetIdentityTest extends AbstractMigratedBeaconHandlerTest {
 
   @BeforeEach
   void setUp() {
-    setHandler(new GetIdentity(network));
+    setHandler(new GetIdentity(network, spec.getNetworkingConfig()));
   }
 
   @Test

@@ -61,6 +61,8 @@ public class SpecConfigReader {
           // Unsupported, upcoming fork-related keys
           "SHARDING_FORK_VERSION",
           "SHARDING_FORK_EPOCH",
+          "EIP6110_FORK_VERSION",
+          "EIP6110_FORK_EPOCH",
           // Old merge config item which is no longer used, ignore for backwards compatibility
           "TRANSITION_TOTAL_DIFFICULTY",
           // Deprecated fields
