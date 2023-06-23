@@ -140,11 +140,10 @@ public class BlobSidecarsByRootMessageHandler
                   maybeSidecar ->
                       maybeSidecar
                           .map(
-                              blobSidecar -> {
-                                callback.respond(blobSidecar);
-                                sentBlobSidecars.incrementAndGet();
-                                return SafeFuture.COMPLETE;
-                              })
+                              blobSidecar ->
+                                  callback
+                                      .respond(blobSidecar)
+                                      .thenRun(sentBlobSidecars::incrementAndGet))
                           .orElse(SafeFuture.COMPLETE));
     }
 

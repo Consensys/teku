@@ -120,11 +120,10 @@ public class BeaconBlocksByRootMessageHandler
                               }
                               return block
                                   .map(
-                                      signedBeaconBlock -> {
-                                        callback.respond(signedBeaconBlock);
-                                        sentBlocks.incrementAndGet();
-                                        return SafeFuture.COMPLETE;
-                                      })
+                                      signedBeaconBlock ->
+                                          callback
+                                              .respond(signedBeaconBlock)
+                                              .thenRun(sentBlocks::incrementAndGet))
                                   .orElse(SafeFuture.COMPLETE);
                             }));
       }
