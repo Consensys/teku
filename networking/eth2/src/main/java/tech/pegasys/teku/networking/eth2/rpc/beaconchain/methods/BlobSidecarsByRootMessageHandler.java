@@ -149,7 +149,8 @@ public class BlobSidecarsByRootMessageHandler
 
     future.finish(
         () -> {
-          peer.adjustBlobSidecarRequests(sentBlobSidecars.get(), rateLimiterResponse.getLeft());
+          peer.adjustBlobSidecarRequests(
+              sentBlobSidecars.get(), message.size(), rateLimiterResponse.getLeft());
           totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars.get());
           callback.completeSuccessfully();
         },

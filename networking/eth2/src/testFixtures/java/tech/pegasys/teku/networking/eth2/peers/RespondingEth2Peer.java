@@ -304,21 +304,25 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public Pair<UInt64, Boolean> popBlockRequests(
-      ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
+      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return Pair.of(ZERO, true);
   }
 
   @Override
-  public void adjustBlockRequests(long blobSidecarsCount, final UInt64 time) {}
+  public void adjustBlockRequests(
+      final long returnedBlockCount, final long initialBlockCount, UInt64 time) {}
 
   @Override
   public Pair<UInt64, Boolean> popBlobSidecarRequests(
-      ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
+      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return Pair.of(ZERO, true);
   }
 
   @Override
-  public void adjustBlobSidecarRequests(long blobSidecarsCount, final UInt64 time) {}
+  public void adjustBlobSidecarRequests(
+      final long returnedBlobSidecarsCount,
+      final long initialBlobSidecarCount,
+      final UInt64 time) {}
 
   @Override
   public boolean popRequest() {

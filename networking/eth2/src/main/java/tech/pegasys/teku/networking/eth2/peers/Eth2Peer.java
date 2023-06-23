@@ -105,12 +105,13 @@ public interface Eth2Peer extends Peer, SyncSource {
   Pair<UInt64, Boolean> popBlockRequests(
       ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
 
-  void adjustBlockRequests(long blocksCount, UInt64 time);
+  void adjustBlockRequests(long returnedBlocksCount, long initialBlockCount, UInt64 time);
 
   Pair<UInt64, Boolean> popBlobSidecarRequests(
       ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
 
-  void adjustBlobSidecarRequests(long blobSidecarsCount, UInt64 time);
+  void adjustBlobSidecarRequests(
+      long returnedBlobSidecarCount, long initialBlobSidecarCount, UInt64 time);
 
   boolean popRequest();
 

@@ -48,13 +48,16 @@ public class RateTracker {
     return Pair.of(currentTime, objectCount);
   }
 
-  public synchronized void adjustRequestObjects(final long objectsCount, final UInt64 time) {
+  public synchronized void adjustRequestObjects(
+      final long returnedObjectCount, final long initialObjectCount, final UInt64 time) {
+    pruneRequests(timeProvider.getTimeInSeconds());
     if (requestCount.containsKey(time)) {
-      requestCount.put(time, objectsCount);
+      requestCount.put(time, returnedObjectCount);
+      requestsWithinWindow = requestsWithinWindow - initialObjectCount + returnedObjectCount;
     }
   }
 
-  void pruneRequests(UInt64 time) {
+  void pruneRequests(final UInt64 time) {
     if (time.isLessThan(timeoutSeconds)) {
       return;
     }

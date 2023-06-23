@@ -129,7 +129,8 @@ public class BeaconBlocksByRootMessageHandler
       }
       future.finish(
           () -> {
-            peer.adjustBlockRequests(sentBlocks.get(), rateLimiterResponse.getLeft());
+            peer.adjustBlockRequests(
+                sentBlocks.get(), message.size(), rateLimiterResponse.getLeft());
             totalBlocksRequestedCounter.inc(sentBlocks.get());
             callback.completeSuccessfully();
           },

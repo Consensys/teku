@@ -31,6 +31,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
@@ -84,6 +85,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     when(store.retrieveSignedBlock(any()))
         .thenAnswer(
             i -> storageSystem.recentChainData().getStore().retrieveSignedBlock(i.getArgument(0)));
+    when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test

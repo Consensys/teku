@@ -147,4 +147,25 @@ public class RateTrackerTest {
     trackerResponse = tracker.popObjectRequests(objectCount);
     assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
   }
+
+  @Test
+  public void shouldAdjustObjectsCount() {
+    final RateTracker tracker = new RateTracker(10, 2, timeProvider);
+
+    Pair<UInt64, Long> trackerResponse = tracker.popObjectRequests(10);
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 10L));
+
+    trackerResponse = tracker.popObjectRequests(5);
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), zero));
+
+    tracker.adjustRequestObjects(3, 10, timeProvider.getTimeInSeconds());
+
+    trackerResponse = tracker.popObjectRequests(7);
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 7L));
+
+    tracker.adjustRequestObjects(5, 7, timeProvider.getTimeInSeconds());
+
+    trackerResponse = tracker.popObjectRequests(3);
+    assertThat(trackerResponse).isEqualTo(Pair.of(timeProvider.getTimeInSeconds(), 3L));
+  }
 }

@@ -136,7 +136,9 @@ public class BeaconBlocksByRangeMessageHandler
         .finish(
             requestState -> {
               peer.adjustBlockRequests(
-                  requestState.sentBlocks.get(), rateLimiterResponse.getLeft());
+                  requestState.sentBlocks.get(),
+                  message.getCount().longValue(),
+                  rateLimiterResponse.getLeft());
               totalBlocksRequestedCounter.inc(requestState.sentBlocks.get());
               callback.completeSuccessfully();
             },
