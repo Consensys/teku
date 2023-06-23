@@ -157,9 +157,7 @@ dependencyManagement {
     }
     dependencySet(group: 'org.hyperledger.besu', version: '23.4.3') {
       entry('besu-datatypes')
-      entry('evm') {
-        exclude 'org.apache.logging.log4j:log4j-to-slf4j'
-      }
+      entry('evm')
       entry('plugin-api')
     }
 
