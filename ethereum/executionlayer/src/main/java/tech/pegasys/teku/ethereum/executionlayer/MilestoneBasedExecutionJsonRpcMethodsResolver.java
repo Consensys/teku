@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,8 +123,9 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
       final Supplier<SpecMilestone> milestoneSupplier,
       final Class<T> resultType) {
     final SpecMilestone milestone = milestoneSupplier.get();
-    return Optional.ofNullable(milestoneMethods.get(milestone))
-        .flatMap(methods -> findMethod(methods, method, resultType))
+    final List<EngineJsonRpcMethod<?>> methods =
+        milestoneMethods.getOrDefault(milestone, Collections.emptyList());
+    return findMethod(methods, method, resultType)
         .orElseThrow(
             () ->
                 new IllegalArgumentException(
