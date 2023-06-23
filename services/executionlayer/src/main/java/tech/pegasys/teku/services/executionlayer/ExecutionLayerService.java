@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_E
 
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -43,7 +42,6 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
 import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedExecutionJsonRpcMethodsResolver;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -66,8 +64,6 @@ public class ExecutionLayerService extends Service {
 
     final Path beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
-    final Supplier<AsyncRunner> asyncRunnerSupplier =
-        () -> serviceConfig.createAsyncRunner("executionLayer", 1);
 
     final ExecutionClientEventsChannel executionClientEventsPublisher =
         serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
