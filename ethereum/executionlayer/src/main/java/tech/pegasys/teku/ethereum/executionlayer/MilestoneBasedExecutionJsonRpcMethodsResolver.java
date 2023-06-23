@@ -61,6 +61,9 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
         .forEach(
             milestone -> {
               switch (milestone) {
+                case PHASE0:
+                case ALTAIR:
+                  break;
                 case BELLATRIX:
                   milestoneMethods.put(milestone, bellatrixSupportedMethods());
                   break;
