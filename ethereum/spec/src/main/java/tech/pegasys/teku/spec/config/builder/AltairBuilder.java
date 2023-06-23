@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -75,11 +76,25 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
   @Override
   public void validate() {
     if (altairForkEpoch == null) {
-      altairForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
+      altairForkEpoch = FAR_FUTURE_EPOCH;
       altairForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
       inactivityScoreBias = UInt64.valueOf(4);
       inactivityScoreRecoveryRate = UInt64.valueOf(16);
     }
+
+    // Config items were added after launch so provide defaults to preserve compatibility
+    if (syncCommitteeBranchLength == null) {
+      syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
+    }
+    if (finalityBranchLength == null) {
+      finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
+    }
+
+    // Fill default zeros if fork is unsupported
+    if (altairForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      SpecBuilderUtil.fillMissingValuesWithZeros(this);
+    }
+
     SpecBuilderUtil.validateConstant(
         "inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
     SpecBuilderUtil.validateConstant(
@@ -93,15 +108,10 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
     SpecBuilderUtil.validateConstant("altairForkVersion", altairForkVersion);
     SpecBuilderUtil.validateConstant("altairForkEpoch", altairForkEpoch);
     SpecBuilderUtil.validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+
     // Config items were added after launch so provide defaults to preserve compatibility
     if (updateTimeout == null) {
       updateTimeout = epochsPerSyncCommitteePeriod * 32;
-    }
-    if (syncCommitteeBranchLength == null) {
-      syncCommitteeBranchLength = SYNC_COMMITTEE_BRANCH_LENGTH_DEFAULT;
-    }
-    if (finalityBranchLength == null) {
-      finalityBranchLength = FINALITY_BRANCH_LENGTH_DEFAULT;
     }
   }
 

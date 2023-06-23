@@ -94,7 +94,7 @@ public class SpecConfigBuilder {
   // Fork Choice
   private Integer safeSlotsToUpdateJustified;
   // Added after Phase0 was live, so default to 0 which disables proposer score boosting.
-  private int proposerScoreBoost = 0;
+  private Integer proposerScoreBoost = 0;
 
   // Deposit Contract
   private Long depositChainId;
