@@ -22,7 +22,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -45,17 +44,12 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadRe
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_GET_PAYLOAD.getName();
+    return EngineApiMethod.ENGINE_GET_PAYLOAD.getName();
   }
 
   @Override
   public int getVersion() {
     return 3;
-  }
-
-  @Override
-  public Optional<SpecMilestone> getApplicableMilestone() {
-    return Optional.of(SpecMilestone.DENEB);
   }
 
   @Override

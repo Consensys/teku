@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -22,7 +21,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 
@@ -36,17 +34,12 @@ public class EngineNewPayloadV2 extends AbstractEngineJsonRpcMethod<PayloadStatu
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_NEW_PAYLOAD.getName();
+    return EngineApiMethod.ENGINE_NEW_PAYLOAD.getName();
   }
 
   @Override
   public int getVersion() {
     return 2;
-  }
-
-  @Override
-  public Optional<SpecMilestone> getApplicableMilestone() {
-    return Optional.of(SpecMilestone.CAPELLA);
   }
 
   @Override

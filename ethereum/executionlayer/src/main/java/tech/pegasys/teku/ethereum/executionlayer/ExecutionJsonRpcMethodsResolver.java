@@ -14,17 +14,15 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.function.Function;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public interface ExecutionJsonRpcMethodsResolver {
 
-  <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethods method, Class<T> resultType);
+  <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethod method, Class<T> resultType);
 
   <T> EngineJsonRpcMethod<T> getMilestoneMethod(
-      EngineApiMethods method,
-      Function<Spec, SpecMilestone> milestoneResolver,
-      Class<T> resultType);
+      EngineApiMethod method, Function<Spec, SpecMilestone> milestoneResolver, Class<T> resultType);
 }
