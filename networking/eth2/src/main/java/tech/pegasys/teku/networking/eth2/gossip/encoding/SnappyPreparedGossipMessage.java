@@ -24,6 +24,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDige
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 /**
  * {@link PreparedGossipMessage} implementation which calculates Gossip 'message-id' according to
@@ -37,6 +38,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   private final SszSchema<?> valueType;
   private final Uncompressor snappyCompressor;
   private final MessageIdCalculator messageIdCalculator;
+  private final NetworkingSpecConfig networkingConfig;
 
   private final Supplier<DecodedMessageResult> decodedResult =
       Suppliers.memoize(this::getDecodedMessage);
@@ -44,9 +46,10 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   static SnappyPreparedGossipMessage createUnknown(
       final String topic,
       final Bytes compressedData,
-      final ForkDigestToMilestone forkDigestToMilestone) {
+      final ForkDigestToMilestone forkDigestToMilestone,
+      final NetworkingSpecConfig networkingConfig) {
     return new SnappyPreparedGossipMessage(
-        topic, compressedData, forkDigestToMilestone, null, null);
+        topic, compressedData, forkDigestToMilestone, null, null, networkingConfig);
   }
 
   static SnappyPreparedGossipMessage create(
@@ -54,9 +57,15 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone,
       final SszSchema<?> valueType,
-      final Uncompressor snappyCompressor) {
+      final Uncompressor snappyCompressor,
+      final NetworkingSpecConfig networkingConfig) {
     return new SnappyPreparedGossipMessage(
-        topic, compressedData, forkDigestToMilestone, valueType, snappyCompressor);
+        topic,
+        compressedData,
+        forkDigestToMilestone,
+        valueType,
+        snappyCompressor,
+        networkingConfig);
   }
 
   private SnappyPreparedGossipMessage(
@@ -64,11 +73,12 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone,
       final SszSchema<?> valueType,
-      final Uncompressor snappyCompressor) {
+      final Uncompressor snappyCompressor,
+      final NetworkingSpecConfig networkingConfig) {
     this.compressedData = compressedData;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
-
+    this.networkingConfig = networkingConfig;
     this.messageIdCalculator =
         createMessageIdCalculator(topic, compressedData, forkDigestToMilestone);
   }
@@ -88,10 +98,10 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
 
     switch (milestone) {
       case PHASE0:
-        return new MessageIdCalculatorPhase0(compressedData);
+        return new MessageIdCalculatorPhase0(compressedData, networkingConfig);
       case ALTAIR:
       default:
-        return new MessageIdCalculatorAltair(compressedData, topic);
+        return new MessageIdCalculatorAltair(compressedData, topic, networkingConfig);
     }
   }
 

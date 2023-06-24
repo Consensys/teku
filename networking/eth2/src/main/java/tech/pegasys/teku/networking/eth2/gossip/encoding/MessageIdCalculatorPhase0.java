@@ -14,21 +14,27 @@
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 class MessageIdCalculatorPhase0 extends MessageIdCalculator {
   private final Bytes rawMessageData;
+  private final NetworkingSpecConfig networkingConfig;
 
-  public MessageIdCalculatorPhase0(final Bytes rawMessageData) {
+  public MessageIdCalculatorPhase0(
+      final Bytes rawMessageData, final NetworkingSpecConfig networkingConfig) {
     this.rawMessageData = rawMessageData;
+    this.networkingConfig = networkingConfig;
   }
 
   @Override
   protected Bytes validMessageIdData(final Bytes uncompressedData) {
-    return Bytes.wrap(MESSAGE_DOMAIN_VALID_SNAPPY, uncompressedData);
+    return Bytes.wrap(
+        networkingConfig.getMessageDomainValidSnappy().getWrappedBytes(), uncompressedData);
   }
 
   @Override
   protected Bytes invalidMessageIdData() {
-    return Bytes.wrap(MESSAGE_DOMAIN_INVALID_SNAPPY, rawMessageData);
+    return Bytes.wrap(
+        networkingConfig.getMessageDomainInvalidSnappy().getWrappedBytes(), rawMessageData);
   }
 }

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.synccommittee;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +37,8 @@ public class SyncCommitteeCurrentSlotUtilTest {
                   phase0Builder.altairBuilder(
                       altairBuilder ->
                           altairBuilder.syncCommitteeSize(16).altairForkEpoch(UInt64.ZERO))));
+  private final int maximumGossipClockDisparity =
+      spec.getNetworkingConfig().getMaximumGossipClockDisparity();
   private final StorageSystem storageSystem =
       InMemoryStorageSystemBuilder.create().specProvider(spec).numberOfValidators(17).build();
   private final RecentChainData recentChainData = storageSystem.recentChainData();
@@ -60,7 +61,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
-        slotStartTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).decrement().longValue());
+        slotStartTimeMillis.minus(maximumGossipClockDisparity).decrement().longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isFalse();
   }
 
@@ -70,7 +71,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTime(slot, recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
-        slotStartTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).longValue());
+        slotStartTimeMillis.minus(maximumGossipClockDisparity).longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isTrue();
   }
 
@@ -80,7 +81,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
     final UInt64 nextSlotStartTimeMillis =
         spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
-        nextSlotStartTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).longValue());
+        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isTrue();
   }
 
@@ -90,7 +91,7 @@ public class SyncCommitteeCurrentSlotUtilTest {
     final UInt64 nextSlotStartTimeMillis =
         spec.getSlotStartTime(slot.increment(), recentChainData.getGenesisTime()).times(1000);
     timeProvider.advanceTimeByMillis(
-        nextSlotStartTimeMillis.plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY).increment().longValue());
+        nextSlotStartTimeMillis.plus(maximumGossipClockDisparity).increment().longValue());
     assertThat(slotUtil.isForCurrentSlot(slot)).isFalse();
   }
 }

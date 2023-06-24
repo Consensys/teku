@@ -73,7 +73,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MessageIdCalculatorPhase0(messageBytes);
+        new MessageIdCalculatorPhase0(messageBytes, spec.getNetworkingConfig());
     final Bytes expected = expectedMessageIdCalculator.getValidMessageId(messageBytes);
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);
@@ -87,7 +87,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MessageIdCalculatorPhase0(messageBytes);
+        new MessageIdCalculatorPhase0(messageBytes, spec.getNetworkingConfig());
     final Bytes expected = expectedMessageIdCalculator.getInvalidMessageId();
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);
@@ -101,7 +101,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MessageIdCalculatorAltair(messageBytes, topic);
+        new MessageIdCalculatorAltair(messageBytes, topic, spec.getNetworkingConfig());
     final Bytes expected = expectedMessageIdCalculator.getValidMessageId(messageBytes);
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);
@@ -115,7 +115,7 @@ public class SnappyPreparedGossipMessageTest {
 
     final Bytes actual = message.getMessageId();
     final MessageIdCalculator expectedMessageIdCalculator =
-        new MessageIdCalculatorAltair(messageBytes, topic);
+        new MessageIdCalculatorAltair(messageBytes, topic, spec.getNetworkingConfig());
     final Bytes expected = expectedMessageIdCalculator.getInvalidMessageId();
     assertThat(actual).isEqualTo(expected);
     assertThat(actual.size()).isEqualTo(20);
@@ -158,12 +158,12 @@ public class SnappyPreparedGossipMessageTest {
   private SnappyPreparedGossipMessage getPhase0Message(
       final Bytes rawMessage, final String topic, final Uncompressor uncompressor) {
     return SnappyPreparedGossipMessage.create(
-        topic, rawMessage, forkDigestToMilestone, schema, uncompressor);
+        topic, rawMessage, forkDigestToMilestone, schema, uncompressor, spec.getNetworkingConfig());
   }
 
   private SnappyPreparedGossipMessage getAltairMessage(
       final Bytes rawMessage, final String topic, final Uncompressor uncompressor) {
     return SnappyPreparedGossipMessage.create(
-        topic, rawMessage, forkDigestToMilestone, schema, uncompressor);
+        topic, rawMessage, forkDigestToMilestone, schema, uncompressor, spec.getNetworkingConfig());
   }
 }

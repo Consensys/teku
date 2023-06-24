@@ -32,10 +32,13 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.S
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.SingleProtocolEth2RpcMethod;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 
 public class RpcDecoderTestBase {
+
+  protected static final Spec SPEC = TestSpecFactory.createDefault();
 
   // Message long enough to require a three byte length prefix.
   protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
@@ -75,7 +78,8 @@ public class RpcDecoderTestBase {
               false,
               CONTEXT_ENCODER,
               mock(LocalMessageHandler.class),
-              PEER_LOOKUP);
+              PEER_LOOKUP,
+              SPEC.getNetworkingConfig());
 
   protected List<List<ByteBuf>> testByteBufSlices(final Bytes... bytes) {
     List<List<ByteBuf>> ret = Utils.generateTestSlices(bytes);

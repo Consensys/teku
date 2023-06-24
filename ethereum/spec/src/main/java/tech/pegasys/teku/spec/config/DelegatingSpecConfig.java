@@ -307,6 +307,36 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getTtfbTimeout() {
+    return specConfig.getTtfbTimeout();
+  }
+
+  @Override
+  public int getRespTimeout() {
+    return specConfig.getRespTimeout();
+  }
+
+  @Override
+  public UInt64 getAttestationPropagationSlotRange() {
+    return specConfig.getAttestationPropagationSlotRange();
+  }
+
+  @Override
+  public int getMaximumGossipClockDisparity() {
+    return specConfig.getMaximumGossipClockDisparity();
+  }
+
+  @Override
+  public Bytes4 getMessageDomainInvalidSnappy() {
+    return specConfig.getMessageDomainInvalidSnappy();
+  }
+
+  @Override
+  public Bytes4 getMessageDomainValidSnappy() {
+    return specConfig.getMessageDomainValidSnappy();
+  }
+
+  @Override
   public int getProposerScoreBoost() {
     return specConfig.getProposerScoreBoost();
   }

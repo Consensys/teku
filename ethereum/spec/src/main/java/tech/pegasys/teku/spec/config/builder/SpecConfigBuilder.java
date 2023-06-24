@@ -102,8 +102,13 @@ public class SpecConfigBuilder {
   private Eth1Address depositContractAddress;
 
   private Integer gossipMaxSize;
-
   private Integer maxChunkSize;
+  private Integer ttfbTimeout;
+  private Integer respTimeout;
+  private UInt64 attestationPropagationSlotRange;
+  private Integer maximumGossipClockDisparity;
+  private Bytes4 messageDomainInvalidSnappy;
+  private Bytes4 messageDomainValidSnappy;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -172,7 +177,13 @@ public class SpecConfigBuilder {
             depositNetworkId,
             depositContractAddress,
             gossipMaxSize,
-            maxChunkSize);
+            maxChunkSize,
+            ttfbTimeout,
+            respTimeout,
+            attestationPropagationSlotRange,
+            maximumGossipClockDisparity,
+            messageDomainInvalidSnappy,
+            messageDomainValidSnappy);
 
     return builderChain.build(config);
   }
@@ -233,6 +244,13 @@ public class SpecConfigBuilder {
 
     SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
+    SpecBuilderUtil.validateConstant("ttfbTimeout", ttfbTimeout);
+    SpecBuilderUtil.validateConstant("respTimeout", respTimeout);
+    SpecBuilderUtil.validateConstant(
+        "attestationPropagationSlotRange", attestationPropagationSlotRange);
+    SpecBuilderUtil.validateConstant("maximumGossipClockDisparity", maximumGossipClockDisparity);
+    SpecBuilderUtil.validateConstant("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
+    SpecBuilderUtil.validateConstant("messageDomainValidSnappy", messageDomainValidSnappy);
 
     builderChain.validate();
   }
@@ -548,6 +566,37 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
     this.maxChunkSize = maxChunkSize;
+    return this;
+  }
+
+  public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
+    this.ttfbTimeout = ttfbTimeout;
+    return this;
+  }
+
+  public SpecConfigBuilder respTimeout(final Integer respTimeout) {
+    this.respTimeout = respTimeout;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationPropagationSlotRange(
+      final UInt64 attestationPropagationSlotRange) {
+    this.attestationPropagationSlotRange = attestationPropagationSlotRange;
+    return this;
+  }
+
+  public SpecConfigBuilder maximumGossipClockDisparity(final Integer maximumGossipClockDisparity) {
+    this.maximumGossipClockDisparity = maximumGossipClockDisparity;
+    return this;
+  }
+
+  public SpecConfigBuilder messageDomainInvalidSnappy(final Bytes4 messageDomainInvalidSnappy) {
+    this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
+    return this;
+  }
+
+  public SpecConfigBuilder messageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
+    this.messageDomainValidSnappy = messageDomainValidSnappy;
     return this;
   }
 
