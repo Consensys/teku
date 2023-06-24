@@ -31,35 +31,34 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.vers
 
 class MetadataMessageTest {
 
-  private static final Spec SPEC = TestSpecFactory.createDefault();
-  private static final MetadataMessageSchemaPhase0 PHASE0_SCHEMA =
-      new MetadataMessageSchemaPhase0(SPEC.getNetworkingConfig());
-  private static final MetadataMessageSchemaAltair ALTAIR_SCHEMA =
-      new MetadataMessageSchemaAltair(SPEC.getNetworkingConfig());
-  private static final Bytes EXPECTED_SSZ =
-      Bytes.fromHexString("0x23000000000000000100000000000080");
-  private static final MetadataMessage MESSAGE =
-      PHASE0_SCHEMA.create(UInt64.valueOf(0x23), IntList.of(0, 63), Collections.emptyList());
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final MetadataMessageSchemaPhase0 phase0Schema =
+      new MetadataMessageSchemaPhase0(spec.getNetworkingConfig());
+  private final MetadataMessageSchemaAltair altairSchema =
+      new MetadataMessageSchemaAltair(spec.getNetworkingConfig());
+  private final Bytes expectedSsz = Bytes.fromHexString("0x23000000000000000100000000000080");
+  private final MetadataMessage message =
+      phase0Schema.create(UInt64.valueOf(0x23), IntList.of(0, 63), Collections.emptyList());
 
   @Test
   public void shouldSerializeToSsz() {
-    final Bytes result = MESSAGE.sszSerialize();
-    assertThat(result).isEqualTo(EXPECTED_SSZ);
+    final Bytes result = message.sszSerialize();
+    assertThat(result).isEqualTo(expectedSsz);
   }
 
   @Test
   public void shouldDeserializeFromSsz() {
-    MetadataMessage result = PHASE0_SCHEMA.sszDeserialize(EXPECTED_SSZ);
-    assertThatSszData(result).isEqualByAllMeansTo(MESSAGE);
+    MetadataMessage result = phase0Schema.sszDeserialize(expectedSsz);
+    assertThatSszData(result).isEqualByAllMeansTo(message);
   }
 
   @Test
   public void shouldRejectOutOfBoundsAttnets() {
     assertThatThrownBy(
             () ->
-                PHASE0_SCHEMA.create(
+                phase0Schema.create(
                     UInt64.valueOf(15),
-                    IntList.of(SPEC.getNetworkingConfig().getAttestationSubnetCount()),
+                    IntList.of(spec.getNetworkingConfig().getAttestationSubnetCount()),
                     Collections.emptyList()))
         .isInstanceOf(IndexOutOfBoundsException.class);
   }
@@ -68,7 +67,7 @@ class MetadataMessageTest {
   public void shouldRejectOutOfBoundsSyncnets() {
     assertThatThrownBy(
             () ->
-                ALTAIR_SCHEMA.create(
+                altairSchema.create(
                     UInt64.valueOf(15),
                     Collections.emptyList(),
                     IntList.of(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)))
