@@ -20,21 +20,37 @@ public class SyncConfig {
   public static final boolean DEFAULT_MULTI_PEER_SYNC_ENABLED = true;
   public static final boolean DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED = false;
   public static final boolean DEFAULT_FETCH_ALL_HISTORIC_BLOCKS = true;
+  public static final int DEFAULT_FORWARD_SYNC_BATCH_SIZE = 50;
+  public static final int DEFAULT_HISTORICAL_SYNC_BATCH_SIZE = 50;
+  public static final int DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES = 5;
+  public static final int DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE = 500;
 
   private final boolean isEnabled;
   private final boolean isMultiPeerSyncEnabled;
   private final boolean reconstructHistoricStatesEnabled;
   private final boolean fetchAllHistoricBlocks;
+  private final int historicalSyncBatchSize;
+  private final int forwardSyncBatchSize;
+  private final int forwardSyncMaxPendingBatches;
+  private final int forwardSyncMaxBlocksPerMinute;
 
   private SyncConfig(
       final boolean isEnabled,
       final boolean isMultiPeerSyncEnabled,
       final boolean reconstructHistoricStatesEnabled,
-      final boolean fetchAllHistoricBlocks) {
+      final boolean fetchAllHistoricBlocks,
+      final int historicalSyncBatchSize,
+      final int forwardSyncBatchSize,
+      final int forwardSyncMaxPendingBatches,
+      final int forwardSyncMaxBlocksPerMinute) {
     this.isEnabled = isEnabled;
     this.isMultiPeerSyncEnabled = isMultiPeerSyncEnabled;
     this.reconstructHistoricStatesEnabled = reconstructHistoricStatesEnabled;
     this.fetchAllHistoricBlocks = fetchAllHistoricBlocks;
+    this.historicalSyncBatchSize = historicalSyncBatchSize;
+    this.forwardSyncBatchSize = forwardSyncBatchSize;
+    this.forwardSyncMaxPendingBatches = forwardSyncMaxPendingBatches;
+    this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
   }
 
   public static Builder builder() {
@@ -57,11 +73,31 @@ public class SyncConfig {
     return fetchAllHistoricBlocks;
   }
 
+  public int getHistoricalSyncBatchSize() {
+    return historicalSyncBatchSize;
+  }
+
+  public int getForwardSyncBatchSize() {
+    return forwardSyncBatchSize;
+  }
+
+  public int getForwardSyncMaxPendingBatches() {
+    return forwardSyncMaxPendingBatches;
+  }
+
+  public int getForwardSyncMaxBlocksPerMinute() {
+    return forwardSyncMaxBlocksPerMinute;
+  }
+
   public static class Builder {
     private Boolean isEnabled;
     private Boolean isMultiPeerSyncEnabled = DEFAULT_MULTI_PEER_SYNC_ENABLED;
     private Boolean reconstructHistoricStatesEnabled = DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
     private boolean fetchAllHistoricBlocks = DEFAULT_FETCH_ALL_HISTORIC_BLOCKS;
+    private Integer historicalSyncBatchSize = DEFAULT_HISTORICAL_SYNC_BATCH_SIZE;
+    private Integer forwardSyncBatchSize = DEFAULT_FORWARD_SYNC_BATCH_SIZE;
+    private Integer forwardSyncMaxPendingBatches = DEFAULT_FORWARD_SYNC_MAX_PENDING_BATCHES;
+    private Integer forwardSyncMaxBlocksPerMinute = DEFAULT_FORWARD_SYNC_MAX_BLOCKS_PER_MINUTE;
 
     private Builder() {}
 
@@ -71,7 +107,11 @@ public class SyncConfig {
           isEnabled,
           isMultiPeerSyncEnabled,
           reconstructHistoricStatesEnabled,
-          fetchAllHistoricBlocks);
+          fetchAllHistoricBlocks,
+          historicalSyncBatchSize,
+          forwardSyncBatchSize,
+          forwardSyncMaxPendingBatches,
+          forwardSyncMaxBlocksPerMinute);
     }
 
     private void initMissingDefaults() {
@@ -96,6 +136,30 @@ public class SyncConfig {
     public Builder isMultiPeerSyncEnabled(final Boolean multiPeerSyncEnabled) {
       checkNotNull(multiPeerSyncEnabled);
       isMultiPeerSyncEnabled = multiPeerSyncEnabled;
+      return this;
+    }
+
+    public Builder historicalSyncBatchSize(final Integer historicalSyncBatchSize) {
+      checkNotNull(historicalSyncBatchSize);
+      this.historicalSyncBatchSize = historicalSyncBatchSize;
+      return this;
+    }
+
+    public Builder forwardSyncBatchSize(final Integer forwardSyncBatchSize) {
+      checkNotNull(forwardSyncBatchSize);
+      this.forwardSyncBatchSize = forwardSyncBatchSize;
+      return this;
+    }
+
+    public Builder forwardSyncMaxPendingBatches(final Integer forwardSyncMaxPendingBatches) {
+      checkNotNull(forwardSyncMaxPendingBatches);
+      this.forwardSyncMaxPendingBatches = forwardSyncMaxPendingBatches;
+      return this;
+    }
+
+    public Builder forwardSyncMaxBlocksPerMinute(final Integer forwardSyncMaxBlocksPerMinute) {
+      checkNotNull(forwardSyncMaxBlocksPerMinute);
+      this.forwardSyncMaxBlocksPerMinute = forwardSyncMaxBlocksPerMinute;
       return this;
     }
 

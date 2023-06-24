@@ -46,9 +46,9 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
@@ -249,16 +249,16 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   @Override
-  public SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock,
-      Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+  public SafeFuture<BuilderPayload> builderGetPayload(
+      final SignedBlockContainer signedBlockContainer,
+      final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
     return executionBuilderModule.builderGetPayload(
-        signedBlindedBeaconBlock, getCachedPayloadResultFunction);
+        signedBlockContainer, getCachedPayloadResultFunction);
   }
 
   @Override
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext, BeaconState state) {
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     return executionBuilderModule.builderGetHeader(executionPayloadContext, state);
   }
 

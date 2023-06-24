@@ -70,6 +70,11 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   Eth1Address getDepositContractAddress();
 
+  @Override
+  default int getMinEpochsForBlockRequests() {
+    return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
+  }
+
   // Phase0 non-configurable Misc Constants
   UInt64 getBaseRewardsPerEpoch();
 
@@ -155,13 +160,6 @@ public interface SpecConfig extends NetworkingSpecConfig {
 
   // Misc
   int getSafeSlotsToUpdateJustified();
-
-  ProgressiveBalancesMode getProgressiveBalancesMode();
-
-  @Override
-  default int getMinEpochsForBlockRequests() {
-    return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
-  }
 
   // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {

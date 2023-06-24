@@ -39,7 +39,6 @@ public abstract class AbstractTopicHandlerTest<T> {
   protected final Spec spec =
       TestSpecFactory.createMinimalWithAltairAndBellatrixForkEpoch(
           UInt64.ONE, BELLATRIX_FORK_EPOCH);
-  protected final int gossipMaxSize = spec.getNetworkingConfig().getGossipMaxSize();
   protected final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   protected final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;

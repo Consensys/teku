@@ -17,15 +17,15 @@ import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 
 /**
  * Classes implementing this interface MUST:
  *
- * <p>- expect {@link #setBlobsBundleSupplier( Supplier)} to be called, which provides a future of a
- * BlobsBundle consistent with the blinded blob sidecars
+ * <p>- expect {@link #setBlobsBundleSupplier ( Supplier)} to be called, which provides a future of
+ * a BlobsBundle consistent with the blinded blob sidecars
  *
- * <p>- expect the {@link #unblind()} method to be called after {@link #setBlobsBundleSupplier(
+ * <p>- expect the {@link #unblind()} method to be called after {@link #setBlobsBundleSupplier (
  * Supplier)}.
  *
  * <p>- unblind() has now all the information (blobs bundle + blinded blob sidecars) to construct

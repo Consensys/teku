@@ -174,7 +174,7 @@ public class ReconstructHistoricalStatesServiceTest {
 
   @Test
   void shouldHandleStartWithPartialStorage(@TempDir final Path tempDir) throws IOException {
-    chainBuilder.finalizeCurrentChain();
+    chainBuilder.finalizeCurrentChain(Optional.empty());
     final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     final ChainUpdater updater = storageSystem.chainUpdater();
     updater.initializeGenesis(chainBuilder.getGenesis().getState());

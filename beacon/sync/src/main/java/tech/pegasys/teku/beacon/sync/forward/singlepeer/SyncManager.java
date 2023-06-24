@@ -92,6 +92,7 @@ public class SyncManager extends Service {
       final BlobSidecarManager blobSidecarManager,
       final BlobSidecarPool blobSidecarPool,
       final MetricsSystem metricsSystem,
+      final int batchSize,
       final Spec spec) {
     final PeerSync peerSync =
         new PeerSync(
@@ -100,6 +101,7 @@ public class SyncManager extends Service {
             blockImporter,
             blobSidecarManager,
             blobSidecarPool,
+            batchSize,
             metricsSystem);
     return new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);
   }

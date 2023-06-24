@@ -46,7 +46,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             gossipEncoding,
             forkInfo,
             processor,
-            gossipMaxSize)
+            spec.getNetworkingConfig())
         .getTopicHandler();
   }
 

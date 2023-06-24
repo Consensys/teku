@@ -391,18 +391,31 @@ public class ChainBuilder {
     return appendNewBlockToChain(slot, options);
   }
 
-  public List<SignedBlockAndState> finalizeCurrentChain() {
+  public List<SignedBlockAndState> finalizeCurrentChain(
+      final Optional<BlockOptions> maybeBlockOptions) {
     final UInt64 chainHeadSlot = getLatestSlot();
     final UInt64 finalizeEpoch = spec.computeEpochAtSlot(chainHeadSlot).max(2);
     final UInt64 finalHeadEpoch = finalizeEpoch.plus(3);
     final UInt64 finalHeadSlot = spec.computeStartSlotAtEpoch(finalHeadEpoch);
+
+    // save attestations to be restored at the end
+    final Optional<List<Attestation>> savedAttestations =
+        maybeBlockOptions.map(BlockOptions::getAttestations);
 
     final List<SignedBlockAndState> addedBlockAndStates = new ArrayList<>();
     SignedBlockAndState newChainHead = null;
     for (UInt64 slot = chainHeadSlot.plus(1);
         slot.isLessThan(finalHeadSlot);
         slot = slot.increment()) {
-      final BlockOptions blockOptions = BlockOptions.create();
+      final BlockOptions blockOptions;
+      if (maybeBlockOptions.isPresent()) {
+        blockOptions = maybeBlockOptions.get();
+        // reset to empty
+        blockOptions.setAttestations(new ArrayList<>());
+      } else {
+        blockOptions = BlockOptions.create();
+      }
+
       streamValidAttestationsForBlockAtSlot(slot).forEach(blockOptions::addAttestation);
       newChainHead = generateBlockAtSlot(slot, blockOptions);
       addedBlockAndStates.add(newChainHead);
@@ -414,6 +427,10 @@ public class ChainBuilder {
     assertThat(finalizedCheckpoint.getRoot())
         .describedAs("Failed to finalize epoch %s", finalizeEpoch)
         .isNotEqualTo(Bytes32.ZERO);
+
+    // restore original attestations
+    savedAttestations.ifPresent(
+        attestations -> maybeBlockOptions.orElseThrow().setAttestations(attestations));
     return addedBlockAndStates;
   }
 
@@ -841,7 +858,7 @@ public class ChainBuilder {
 
   public static final class BlockOptions {
 
-    private final List<Attestation> attestations = new ArrayList<>();
+    private List<Attestation> attestations = new ArrayList<>();
     private final List<AttesterSlashing> attesterSlashings = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
@@ -863,6 +880,11 @@ public class ChainBuilder {
 
     public static BlockOptions create() {
       return new BlockOptions();
+    }
+
+    public BlockOptions setAttestations(final List<Attestation> attestations) {
+      this.attestations = attestations;
+      return this;
     }
 
     public BlockOptions addAttestation(final Attestation attestation) {

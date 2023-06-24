@@ -37,4 +37,9 @@ public class ExecutionPayloadAndBlobsBundleSchema
   public ExecutionPayloadAndBlobsBundle createFromBackingNode(final TreeNode node) {
     return new ExecutionPayloadAndBlobsBundle(this, node);
   }
+
+  public ExecutionPayloadAndBlobsBundle create(
+      final ExecutionPayload executionPayload, final BlobsBundle blobsBundle) {
+    return new ExecutionPayloadAndBlobsBundle(this, executionPayload, blobsBundle);
+  }
 }

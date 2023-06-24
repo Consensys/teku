@@ -15,8 +15,8 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Objects;
 import java.util.Optional;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public class LocalValidatorImportResult extends ValidatorImportResult {

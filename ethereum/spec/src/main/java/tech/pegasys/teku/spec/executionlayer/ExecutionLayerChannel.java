@@ -20,9 +20,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -80,15 +80,16 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<ExecutionPayload> builderGetPayload(
-            SignedBeaconBlock signedBlindedBeaconBlock,
-            Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
+        public SafeFuture<BuilderPayload> builderGetPayload(
+            final SignedBlockContainer signedBlockContainer,
+            final Function<UInt64, Optional<ExecutionPayloadResult>>
+                getCachedPayloadResultFunction) {
           return SafeFuture.completedFuture(null);
         }
 
         @Override
         public SafeFuture<HeaderWithFallbackData> builderGetHeader(
-            ExecutionPayloadContext executionPayloadContext, BeaconState state) {
+            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
           return SafeFuture.completedFuture(null);
         }
       };
@@ -121,11 +122,11 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
   /**
-   * This is low level method, use {@link
-   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock)} instead
+   * This is low level method, use {@link ExecutionLayerBlockProductionManager#getUnblindedPayload(
+   * SignedBlockContainer)} instead
    */
-  SafeFuture<ExecutionPayload> builderGetPayload(
-      SignedBeaconBlock signedBlindedBeaconBlock,
+  SafeFuture<BuilderPayload> builderGetPayload(
+      SignedBlockContainer signedBlockContainer,
       Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction);
 
   /**

@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.forkchoice.StubVoteUpdater;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
@@ -61,7 +60,6 @@ class ProtoArrayTest {
           .currentEpoch(ZERO)
           .justifiedCheckpoint(GENESIS_CHECKPOINT)
           .finalizedCheckpoint(GENESIS_CHECKPOINT)
-          .progressiveBalancesMode(ProgressiveBalancesMode.FULL)
           .build();
 
   @BeforeEach
@@ -83,7 +81,6 @@ class ProtoArrayTest {
             .justifiedCheckpoint(justifiedCheckpoint)
             .finalizedCheckpoint(finalizedCheckpoint)
             .initialEpoch(UInt64.ZERO)
-            .progressiveBalancesMode(ProgressiveBalancesMode.FULL)
             .build();
     // Justified block will have justified and finalized epoch of 0 which doesn't match the current
     // so would normally be not viable, but we should allow it anyway.

@@ -13,13 +13,6 @@
 
 package tech.pegasys.teku.spec.config;
 
-/**
- * Networking constants for Deneb. Though it's a part of main config, we put it here to clarify it's
- * read only when Deneb is activated
- *
- * <p>These constants are unified among forks and are not overriden, new constant name is used if
- * it's changed in the new fork
- */
 public interface NetworkingSpecConfig {
 
   int getGossipMaxSize();

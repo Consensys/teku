@@ -15,18 +15,35 @@ package tech.pegasys.teku.spec.datastructures.execution;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
+import java.util.Optional;
 
 public class FallbackData {
-  final ExecutionPayload executionPayload;
-  final FallbackReason reason;
+
+  private final ExecutionPayload executionPayload;
+  private final Optional<BlobsBundle> blobsBundle;
+  private final FallbackReason reason;
 
   public FallbackData(final ExecutionPayload executionPayload, final FallbackReason reason) {
     this.executionPayload = executionPayload;
+    this.blobsBundle = Optional.empty();
+    this.reason = reason;
+  }
+
+  public FallbackData(
+      final ExecutionPayload executionPayload,
+      final Optional<BlobsBundle> blobsBundle,
+      final FallbackReason reason) {
+    this.executionPayload = executionPayload;
+    this.blobsBundle = blobsBundle;
     this.reason = reason;
   }
 
   public ExecutionPayload getExecutionPayload() {
     return executionPayload;
+  }
+
+  public Optional<BlobsBundle> getBlobsBundle() {
+    return blobsBundle;
   }
 
   public FallbackReason getReason() {
@@ -38,22 +55,25 @@ public class FallbackData {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof FallbackData)) {
       return false;
     }
     final FallbackData that = (FallbackData) o;
-    return Objects.equals(executionPayload, that.executionPayload) && reason == that.reason;
+    return Objects.equals(executionPayload, that.executionPayload)
+        && Objects.equals(blobsBundle, that.blobsBundle)
+        && reason == that.reason;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionPayload, reason);
+    return Objects.hash(executionPayload, blobsBundle, reason);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("executionPayload", executionPayload)
+        .add("blobsBundle", blobsBundle)
         .add("reason", reason)
         .toString();
   }
