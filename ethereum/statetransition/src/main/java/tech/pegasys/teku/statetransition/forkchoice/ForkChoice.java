@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
@@ -523,7 +522,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     final UInt64 firstAvailabilityWindowSlot =
         spec.computeStartSlotAtEpoch(
-                currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS))
+                currentEpoch.minusMinZero(
+                    spec.getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests()))
             .max(
                 spec.getForkSchedule()
                     .streamMilestoneBoundarySlots()

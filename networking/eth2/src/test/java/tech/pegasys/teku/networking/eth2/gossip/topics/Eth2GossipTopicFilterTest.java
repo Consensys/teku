@@ -21,7 +21,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.S
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
-import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
@@ -105,7 +104,7 @@ class Eth2GossipTopicFilterTest {
 
   @Test
   void shouldConsiderAllBlobSidecarSubnetsRelevant() {
-    for (int i = 0; i < BLOB_SIDECAR_SUBNET_COUNT; i++) {
+    for (int i = 0; i < spec.getNetworkingConfigDeneb().getBlobSidecarSubnetCount(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarSubnetTopicName(i)))).isTrue();
     }
   }
@@ -114,7 +113,9 @@ class Eth2GossipTopicFilterTest {
   void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
     assertThat(
             filter.isRelevantTopic(
-                getTopicName(getBlobSidecarSubnetTopicName(BLOB_SIDECAR_SUBNET_COUNT + 1))))
+                getTopicName(
+                    getBlobSidecarSubnetTopicName(
+                        spec.getNetworkingConfigDeneb().getBlobSidecarSubnetCount() + 1))))
         .isFalse();
   }
 

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
@@ -33,7 +32,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -81,7 +79,8 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    final UInt64 maxRequestBlobSidecars = getMaxRequestBlobSidecars();
+    final UInt64 maxRequestBlobSidecars =
+        spec.getNetworkingConfigDeneb().getMaxRequestBlobSidecars();
     if (request.size() > maxRequestBlobSidecars.intValue()) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
@@ -134,12 +133,6 @@ public class BlobSidecarsByRootMessageHandler
     future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
   }
 
-  private UInt64 getMaxRequestBlobSidecars() {
-    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    return SpecConfigDeneb.required(spec.atEpoch(currentEpoch).getConfig())
-        .getMaxRequestBlobSidecars();
-  }
-
   private UInt64 getFinalizedEpoch() {
     return combinedChainDataClient
         .getFinalizedBlock()
@@ -185,7 +178,9 @@ public class BlobSidecarsByRootMessageHandler
   private UInt64 computeMinimumRequestEpoch(final UInt64 finalizedEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     return finalizedEpoch
-        .max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS))
+        .max(
+            currentEpoch.minusMinZero(
+                spec.getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests()))
         .max(denebForkEpoch);
   }
 

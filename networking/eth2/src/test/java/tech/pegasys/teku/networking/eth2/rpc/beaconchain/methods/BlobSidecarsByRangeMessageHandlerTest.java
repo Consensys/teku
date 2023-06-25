@@ -127,7 +127,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
-    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final UInt64 maxRequestBlobSidecars =
+        specConfig.getNetworkingConfig().getMaxRequestBlobSidecars();
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);

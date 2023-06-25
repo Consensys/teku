@@ -17,8 +17,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -44,6 +42,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -197,9 +196,20 @@ public class Spec {
     return getGenesisSpec().getConfig();
   }
 
+  /**
+   * Base networking constants
+   *
+   * <p>These constants are unified among forks and are not overriden, new constant name is used if
+   * it's changed in the new fork
+   */
   public NetworkingSpecConfig getNetworkingConfig() {
     // Networking config is constant along forks
     return getGenesisSpec().getConfig().getNetworkingConfig();
+  }
+
+  /** Networking config with Deneb constants */
+  public NetworkingSpecConfigDeneb getNetworkingConfigDeneb() {
+    return SpecConfigDeneb.required(forMilestone(DENEB).getConfig()).getNetworkingConfig();
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -869,7 +879,7 @@ public class Spec {
     }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS);
+        .isLessThanOrEqualTo(getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests());
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {
@@ -884,7 +894,10 @@ public class Spec {
   }
 
   public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
-    return signedBlobSidecar.getBlobSidecar().getIndex().mod(BLOB_SIDECAR_SUBNET_COUNT);
+    return signedBlobSidecar
+        .getBlobSidecar()
+        .getIndex()
+        .mod(getNetworkingConfigDeneb().getBlobSidecarSubnetCount());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {

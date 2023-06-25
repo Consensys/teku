@@ -24,14 +24,21 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class BlobSidecarsByRootRequestMessageTest {
 
+  final Spec spec = TestSpecFactory.createMinimalDeneb();
+
   @Test
   public void shouldRoundTripViaSsz() {
+    final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema =
+        SchemaDefinitionsDeneb.required(
+                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+            .getBlobSidecarsByRootRequestMessageSchema();
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
+            blobSidecarsByRootRequestMessageSchema,
             List.of(
                 new BlobIdentifier(
                     Bytes32.fromHexString(
@@ -43,7 +50,7 @@ class BlobSidecarsByRootRequestMessageTest {
                     UInt64.ONE)));
     final Bytes data = request.sszSerialize();
     final BlobSidecarsByRootRequestMessage result =
-        BlobSidecarsByRootRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
+        blobSidecarsByRootRequestMessageSchema.sszDeserialize(data);
     assertThatSszData(result).isEqualByAllMeansTo(request);
   }
 
@@ -56,8 +63,7 @@ class BlobSidecarsByRootRequestMessageTest {
         milestone -> {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
           final UInt64 maxRequestBlobSidecars =
-              SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig())
-                  .getMaxRequestBlobSidecars();
+              spec.getNetworkingConfigDeneb().getMaxRequestBlobSidecars();
           assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
               .isGreaterThanOrEqualTo(maxRequestBlobSidecars.longValue());
         });

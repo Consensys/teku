@@ -24,11 +24,6 @@ public class Constants {
   public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
   public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
-  // Deneb
-  public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
-  public static final int MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = 4096; // ~18 days
-  public static final int BLOB_SIDECAR_SUBNET_COUNT = 6;
-
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.config;
 
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -37,6 +36,7 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -233,7 +233,12 @@ public class TekuConfiguration {
       final StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
       final SyncConfig syncConfig = syncConfigBuilder.build();
 
-      final long maxAllowedBatchSize = MAX_REQUEST_BLOCKS.min(MAX_REQUEST_BLOCKS_DENEB).longValue();
+      final long maxAllowedBatchSize =
+          spec.isMilestoneSupported(SpecMilestone.DENEB)
+              ? MAX_REQUEST_BLOCKS
+                  .min(spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb())
+                  .longValue()
+              : MAX_REQUEST_BLOCKS.longValue();
 
       if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
         throw new InvalidConfigurationException(

@@ -22,7 +22,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import java.util.Optional;
@@ -96,7 +95,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
             spec, storageSystem.getMetricsSystem(), recentChainData);
 
     final List<Bytes32> roots =
-        UInt64.range(UInt64.ZERO, MAX_REQUEST_BLOCKS_DENEB.increment())
+        UInt64.range(
+                UInt64.ZERO, spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb().increment())
             .map(__ -> Bytes32.ZERO)
             .collect(Collectors.toList());
 
