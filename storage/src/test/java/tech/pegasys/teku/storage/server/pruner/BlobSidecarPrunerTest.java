@@ -88,7 +88,8 @@ public class BlobSidecarPrunerTest {
   void shouldNotPruneWhenLatestPrunableIncludeGenesis() {
     // set current slot inside the availability window
     final UInt64 currentSlot =
-        UInt64.valueOf(spec.getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests())
+        UInt64.valueOf(
+                spec.getNetworkingConfigDeneb().orElseThrow().getMinEpochsForBlobSidecarsRequests())
             .times(slotsPerEpoch);
     final UInt64 currentTime = currentSlot.times(secondsPerSlot);
 
@@ -102,7 +103,9 @@ public class BlobSidecarPrunerTest {
   void shouldPruneWhenLatestPrunableSlotIsGreaterThanOldestDAEpoch() {
     // set current slot to MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1 epoch + half epoch
     final UInt64 currentSlot =
-        UInt64.valueOf(spec.getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests() + 1)
+        UInt64.valueOf(
+                spec.getNetworkingConfigDeneb().orElseThrow().getMinEpochsForBlobSidecarsRequests()
+                    + 1)
             .times(slotsPerEpoch)
             .plus(slotsPerEpoch / 2);
     final UInt64 currentTime = currentSlot.times(secondsPerSlot);

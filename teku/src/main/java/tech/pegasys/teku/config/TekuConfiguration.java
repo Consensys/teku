@@ -36,7 +36,6 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -234,11 +233,13 @@ public class TekuConfiguration {
       final SyncConfig syncConfig = syncConfigBuilder.build();
 
       final long maxAllowedBatchSize =
-          spec.isMilestoneSupported(SpecMilestone.DENEB)
-              ? MAX_REQUEST_BLOCKS
-                  .min(spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb())
-                  .longValue()
-              : MAX_REQUEST_BLOCKS.longValue();
+          spec.getNetworkingConfigDeneb()
+              .map(
+                  networkingSpecConfigDeneb ->
+                      MAX_REQUEST_BLOCKS
+                          .min(networkingSpecConfigDeneb.getMaxRequestBlocksDeneb())
+                          .longValue())
+              .orElse(MAX_REQUEST_BLOCKS.longValue());
 
       if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
         throw new InvalidConfigurationException(

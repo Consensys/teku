@@ -104,7 +104,9 @@ class Eth2GossipTopicFilterTest {
 
   @Test
   void shouldConsiderAllBlobSidecarSubnetsRelevant() {
-    for (int i = 0; i < spec.getNetworkingConfigDeneb().getBlobSidecarSubnetCount(); i++) {
+    for (int i = 0;
+        i < spec.getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount();
+        i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarSubnetTopicName(i)))).isTrue();
     }
   }
@@ -115,7 +117,8 @@ class Eth2GossipTopicFilterTest {
             filter.isRelevantTopic(
                 getTopicName(
                     getBlobSidecarSubnetTopicName(
-                        spec.getNetworkingConfigDeneb().getBlobSidecarSubnetCount() + 1))))
+                        spec.getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount()
+                            + 1))))
         .isFalse();
   }
 

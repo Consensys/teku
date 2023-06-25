@@ -130,7 +130,8 @@ public class BlobSidecarGossipManagerTest {
 
     topicChannels.forEach(
         (subnetId, channel) -> {
-          if (subnetId == 10 % spec.getNetworkingConfigDeneb().getBlobSidecarSubnetCount()) {
+          if (subnetId
+              == 10 % spec.getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount()) {
             verify(channel).gossip(serialized);
           } else {
             verifyNoInteractions(channel);

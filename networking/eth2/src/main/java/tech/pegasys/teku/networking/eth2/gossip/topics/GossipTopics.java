@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -67,7 +68,7 @@ public class GossipTopics {
   public static Set<String> getAllTopics(
       final GossipEncoding gossipEncoding,
       final Bytes4 forkDigest,
-      final NetworkingSpecConfigDeneb networkingSpecConfigDeneb) {
+      final Optional<NetworkingSpecConfigDeneb> networkingSpecConfigDeneb) {
     final Set<String> topics = new HashSet<>();
 
     for (int i = 0; i < Constants.ATTESTATION_SUBNET_COUNT; i++) {
@@ -76,8 +77,10 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-    for (int i = 0; i < networkingSpecConfigDeneb.getBlobSidecarSubnetCount(); i++) {
-      topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+    if (networkingSpecConfigDeneb.isPresent()) {
+      for (int i = 0; i < networkingSpecConfigDeneb.get().getBlobSidecarSubnetCount(); i++) {
+        topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+      }
     }
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));

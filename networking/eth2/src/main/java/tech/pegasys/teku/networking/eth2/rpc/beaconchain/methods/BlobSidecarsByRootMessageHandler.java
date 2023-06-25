@@ -80,7 +80,7 @@ public class BlobSidecarsByRootMessageHandler
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
     final UInt64 maxRequestBlobSidecars =
-        spec.getNetworkingConfigDeneb().getMaxRequestBlobSidecars();
+        spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlobSidecars();
     if (request.size() > maxRequestBlobSidecars.intValue()) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
@@ -180,7 +180,9 @@ public class BlobSidecarsByRootMessageHandler
     return finalizedEpoch
         .max(
             currentEpoch.minusMinZero(
-                spec.getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests()))
+                spec.getNetworkingConfigDeneb()
+                    .orElseThrow()
+                    .getMinEpochsForBlobSidecarsRequests()))
         .max(denebForkEpoch);
   }
 

@@ -194,7 +194,10 @@ class BeaconBlocksByRangeMessageHandlerTest {
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
                 UInt64.valueOf(startBlock),
-                spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb().increment(),
+                spec.getNetworkingConfigDeneb()
+                    .orElseThrow()
+                    .getMaxRequestBlocksDeneb()
+                    .increment(),
                 UInt64.valueOf(skip)));
 
     assertThat(result)

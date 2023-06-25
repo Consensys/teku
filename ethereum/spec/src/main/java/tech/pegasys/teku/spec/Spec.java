@@ -208,8 +208,10 @@ public class Spec {
   }
 
   /** Networking config with Deneb constants */
-  public NetworkingSpecConfigDeneb getNetworkingConfigDeneb() {
-    return SpecConfigDeneb.required(forMilestone(DENEB).getConfig()).getNetworkingConfig();
+  public Optional<NetworkingSpecConfigDeneb> getNetworkingConfigDeneb() {
+    return Optional.ofNullable(forMilestone(DENEB))
+        .map(SpecVersion::getConfig)
+        .map(specConfig -> (SpecConfigDeneb) specConfig.getNetworkingConfig());
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -879,7 +881,8 @@ public class Spec {
     }
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests());
+        .isLessThanOrEqualTo(
+            getNetworkingConfigDeneb().orElseThrow().getMinEpochsForBlobSidecarsRequests());
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {
@@ -897,7 +900,7 @@ public class Spec {
     return signedBlobSidecar
         .getBlobSidecar()
         .getIndex()
-        .mod(getNetworkingConfigDeneb().getBlobSidecarSubnetCount());
+        .mod(getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {

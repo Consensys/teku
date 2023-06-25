@@ -523,7 +523,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final UInt64 firstAvailabilityWindowSlot =
         spec.computeStartSlotAtEpoch(
                 currentEpoch.minusMinZero(
-                    spec.getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests()))
+                    spec.getNetworkingConfigDeneb()
+                        .orElseThrow()
+                        .getMinEpochsForBlobSidecarsRequests()))
             .max(
                 spec.getForkSchedule()
                     .streamMilestoneBoundarySlots()

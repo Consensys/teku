@@ -59,7 +59,7 @@ public class BlobSidecarGossipManager implements GossipManager {
             .getSignedBlobSidecarSchema();
     final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
-    IntStream.range(0, spec.getNetworkingConfigDeneb().getBlobSidecarSubnetCount())
+    IntStream.range(0, spec.getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount())
         .forEach(
             subnetId -> {
               final Eth2TopicHandler<SignedBlobSidecar> topicHandler =

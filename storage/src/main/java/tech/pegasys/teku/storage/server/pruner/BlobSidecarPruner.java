@@ -166,7 +166,11 @@ public class BlobSidecarPruner extends Service {
     //   latest_prunable_slot = 31
 
     return currentSlot.minusMinZero(
-        ((long) (spec.getNetworkingConfigDeneb().getMinEpochsForBlobSidecarsRequests() + 1)
+        ((long)
+                    (spec.getNetworkingConfigDeneb()
+                            .orElseThrow()
+                            .getMinEpochsForBlobSidecarsRequests()
+                        + 1)
                 * spec.atSlot(currentSlot).getSlotsPerEpoch())
             + 1);
   }

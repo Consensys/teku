@@ -63,7 +63,7 @@ class BlobSidecarsByRootRequestMessageTest {
         milestone -> {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
           final UInt64 maxRequestBlobSidecars =
-              spec.getNetworkingConfigDeneb().getMaxRequestBlobSidecars();
+              spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlobSidecars();
           assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
               .isGreaterThanOrEqualTo(maxRequestBlobSidecars.longValue());
         });

@@ -48,6 +48,6 @@ class BeaconBlocksByRootRequestMessageTest {
     assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
         .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
         .isGreaterThanOrEqualTo(
-            spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb().longValue());
+            spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlocksDeneb().longValue());
   }
 }

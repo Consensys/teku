@@ -149,7 +149,7 @@ public class BeaconBlocksByRangeMessageHandler
 
   private UInt64 getMaxRequestBlocks(final SpecMilestone milestone) {
     return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-        ? spec.getNetworkingConfigDeneb().getMaxRequestBlocksDeneb()
+        ? spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlocksDeneb()
         : MAX_REQUEST_BLOCKS;
   }
 
