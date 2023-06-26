@@ -124,7 +124,7 @@ public class LibP2PNetworkBuilder {
     return createLibP2PGossipNetworkBuilder()
         .metricsSystem(metricsSystem)
         .gossipConfig(config.getGossipConfig())
-        .networkingConfig(networkingSpecConfig)
+        .networkingSpecConfig(networkingSpecConfig)
         .defaultMessageFactory(preparedGossipMessageFactory)
         .gossipTopicFilter(gossipTopicFilter)
         .logWireGossip(config.getWireLogsConfig().isLogWireGossip())

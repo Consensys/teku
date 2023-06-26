@@ -60,7 +60,7 @@ public class LibP2PGossipNetworkBuilder {
 
   protected MetricsSystem metricsSystem;
   protected GossipConfig gossipConfig;
-  protected NetworkingSpecConfig networkingConfig;
+  protected NetworkingSpecConfig networkingSpecConfig;
   protected PreparedGossipMessageFactory defaultMessageFactory;
   protected GossipTopicFilter gossipTopicFilter;
   protected boolean logWireGossip;
@@ -116,7 +116,7 @@ public class LibP2PGossipNetworkBuilder {
               topicHandlers
                   .getHandlerForTopic(topic)
                   .map(handler -> handler.prepareMessage(payload))
-                  .orElse(defaultMessageFactory.create(topic, payload, networkingConfig));
+                  .orElse(defaultMessageFactory.create(topic, payload, networkingSpecConfig));
 
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
@@ -154,8 +154,9 @@ public class LibP2PGossipNetworkBuilder {
     return this;
   }
 
-  public LibP2PGossipNetworkBuilder networkingConfig(final NetworkingSpecConfig networkingConfig) {
-    this.networkingConfig = networkingConfig;
+  public LibP2PGossipNetworkBuilder networkingSpecConfig(
+      final NetworkingSpecConfig networkingSpecConfig) {
+    this.networkingSpecConfig = networkingSpecConfig;
     return this;
   }
 
