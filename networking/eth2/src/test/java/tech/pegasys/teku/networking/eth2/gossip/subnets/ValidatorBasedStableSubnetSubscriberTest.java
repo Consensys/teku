@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.intThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriberTest.DEFAULT_SUBNETS_PER_VALIDATOR;
 
 import java.util.Random;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +47,7 @@ public class ValidatorBasedStableSubnetSubscriberTest {
   void shouldSubscribeToExpectedSubnetsWithNoMinimum() {
     final ValidatorBasedStableSubnetSubscriber subscriber = createSubscriber(0);
     subscriber.onSlot(UInt64.ONE, 10);
-    verify(network, times(10 * DEFAULT_SUBNETS_PER_VALIDATOR))
+    verify(network, times(10))
         .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestatonSubnetCount));
   }
 

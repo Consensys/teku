@@ -63,6 +63,8 @@ public class SpecConfigReader {
           "SHARDING_FORK_EPOCH",
           "EIP6110_FORK_VERSION",
           "EIP6110_FORK_EPOCH",
+          "WHISK_FORK_VERSION",
+          "WHISK_FORK_EPOCH",
           // Old merge config item which is no longer used, ignore for backwards compatibility
           "TRANSITION_TOTAL_DIFFICULTY",
           // Deprecated fields
