@@ -18,6 +18,7 @@ import java.util.Set;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 /**
@@ -64,10 +65,12 @@ public class GossipTopics {
   }
 
   public static Set<String> getAllTopics(
-      final GossipEncoding gossipEncoding, final Bytes4 forkDigest) {
+      final GossipEncoding gossipEncoding,
+      final Bytes4 forkDigest,
+      final NetworkingSpecConfig networkingConfig) {
     final Set<String> topics = new HashSet<>();
 
-    for (int i = 0; i < Constants.ATTESTATION_SUBNET_COUNT; i++) {
+    for (int i = 0; i < networkingConfig.getAttestationSubnetCount(); i++) {
       topics.add(getAttestationSubnetTopic(forkDigest, i, gossipEncoding));
     }
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {

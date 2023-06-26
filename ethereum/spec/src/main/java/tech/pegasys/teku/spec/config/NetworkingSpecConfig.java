@@ -22,6 +22,10 @@ public interface NetworkingSpecConfig {
 
   int getMaxChunkSize();
 
+  int getMaxRequestBlocks();
+
+  int getEpochsPerSubnetSubscription();
+
   int getMinEpochsForBlockRequests();
 
   // in seconds
@@ -40,6 +44,16 @@ public interface NetworkingSpecConfig {
 
   // 4-byte domain for gossip message-id isolation of *valid* snappy messages
   Bytes4 getMessageDomainValidSnappy();
+
+  int getSubnetsPerNode();
+
+  int getAttestationSubnetCount();
+
+  // The number of extra bits of a NodeId to use when mapping to a subscribed subnet
+  int getAttestationSubnetExtraBits();
+
+  // int(ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS)
+  int getAttestationSubnetPrefixBits();
 
   default NetworkingSpecConfig getNetworkingConfig() {
     return this;

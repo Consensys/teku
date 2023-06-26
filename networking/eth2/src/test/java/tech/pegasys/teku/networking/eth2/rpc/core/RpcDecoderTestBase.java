@@ -60,7 +60,8 @@ public class RpcDecoderTestBase {
   protected final PeerLookup peerLookup = mock(PeerLookup.class);
 
   protected final RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> contextEncoder =
-      RpcContextCodec.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
+      RpcContextCodec.noop(
+          spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema());
   protected final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes> responseDecoder =
       RpcResponseDecoder.create(encoding, contextEncoder);
 
@@ -73,7 +74,7 @@ public class RpcDecoderTestBase {
               "",
               1,
               encoding,
-              BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
+              spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
               false,
               contextEncoder,
               mock(LocalMessageHandler.class),
@@ -91,7 +92,8 @@ public class RpcDecoderTestBase {
     for (int i = 0; i < blocksRequested; i++) {
       roots.add(Bytes32.leftPad(Bytes.ofUnsignedInt(i)));
     }
-    return new BeaconBlocksByRootRequestMessage(roots);
+    return new BeaconBlocksByRootRequestMessage(
+        spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots);
   }
 
   protected static Bytes getLengthPrefix(final int size) {

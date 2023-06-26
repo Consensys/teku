@@ -101,14 +101,21 @@ public class SpecConfigBuilder {
   private Long depositNetworkId;
   private Eth1Address depositContractAddress;
 
+  // Networking
   private Integer gossipMaxSize;
   private Integer maxChunkSize;
+  private Integer maxRequestBlocks;
+  private Integer epochsPerSubnetSubscription;
   private Integer ttfbTimeout;
   private Integer respTimeout;
   private UInt64 attestationPropagationSlotRange;
   private Integer maximumGossipClockDisparity;
   private Bytes4 messageDomainInvalidSnappy;
   private Bytes4 messageDomainValidSnappy;
+  private Integer subnetsPerNode;
+  private Integer attestationSubnetCount;
+  private Integer attestationSubnetExtraBits;
+  private Integer attestationSubnetPrefixBits;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -178,12 +185,18 @@ public class SpecConfigBuilder {
             depositContractAddress,
             gossipMaxSize,
             maxChunkSize,
+            maxRequestBlocks,
+            epochsPerSubnetSubscription,
             ttfbTimeout,
             respTimeout,
             attestationPropagationSlotRange,
             maximumGossipClockDisparity,
             messageDomainInvalidSnappy,
-            messageDomainValidSnappy);
+            messageDomainValidSnappy,
+            subnetsPerNode,
+            attestationSubnetCount,
+            attestationSubnetExtraBits,
+            attestationSubnetPrefixBits);
 
     return builderChain.build(config);
   }
@@ -244,6 +257,8 @@ public class SpecConfigBuilder {
 
     SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
+    SpecBuilderUtil.validateConstant("maxRequestBlocks", maxRequestBlocks);
+    SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
     SpecBuilderUtil.validateConstant("ttfbTimeout", ttfbTimeout);
     SpecBuilderUtil.validateConstant("respTimeout", respTimeout);
     SpecBuilderUtil.validateConstant(
@@ -251,6 +266,10 @@ public class SpecConfigBuilder {
     SpecBuilderUtil.validateConstant("maximumGossipClockDisparity", maximumGossipClockDisparity);
     SpecBuilderUtil.validateConstant("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
     SpecBuilderUtil.validateConstant("messageDomainValidSnappy", messageDomainValidSnappy);
+    SpecBuilderUtil.validateConstant("subnetsPerNode", subnetsPerNode);
+    SpecBuilderUtil.validateConstant("attestationSubnetCount", attestationSubnetCount);
+    SpecBuilderUtil.validateConstant("attestationSubnetExtraBits", attestationSubnetExtraBits);
+    SpecBuilderUtil.validateConstant("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
 
     builderChain.validate();
   }
@@ -569,6 +588,16 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  public SpecConfigBuilder maxRequestBlocks(final Integer maxRequestBlocks) {
+    this.maxRequestBlocks = maxRequestBlocks;
+    return this;
+  }
+
+  public SpecConfigBuilder epochsPerSubnetSubscription(final Integer epochsPerSubnetSubscription) {
+    this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    return this;
+  }
+
   public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
     this.ttfbTimeout = ttfbTimeout;
     return this;
@@ -597,6 +626,26 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder messageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
     this.messageDomainValidSnappy = messageDomainValidSnappy;
+    return this;
+  }
+
+  public SpecConfigBuilder subnetsPerNode(final Integer subnetsPerNode) {
+    this.subnetsPerNode = subnetsPerNode;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationSubnetCount(final Integer attestationSubnetCount) {
+    this.attestationSubnetCount = attestationSubnetCount;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationSubnetExtraBits(final Integer attestationSubnetExtraBits) {
+    this.attestationSubnetExtraBits = attestationSubnetExtraBits;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
+    this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
   }
 
