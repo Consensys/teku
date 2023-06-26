@@ -129,12 +129,17 @@ public class BeaconBlocksByRootMessageHandler
       }
       future.finish(
           () -> {
-            peer.adjustBlockRequests(
-                sentBlocks.get(), message.size(), rateLimiterResponse.getLeft());
+            if (sentBlocks.get() != message.size()) {
+              peer.adjustBlockRequests(
+                  sentBlocks.get(), message.size(), rateLimiterResponse.getLeft());
+            }
             totalBlocksRequestedCounter.inc(sentBlocks.get());
             callback.completeSuccessfully();
           },
-          err -> handleError(callback, err));
+          err -> {
+            peer.cancelBlockRequests(message.size(), rateLimiterResponse.getLeft());
+            handleError(callback, err);
+          });
     } else {
       requestCounter.labels("ok").inc();
       callback.completeSuccessfully();

@@ -135,14 +135,18 @@ public class BeaconBlocksByRangeMessageHandler
     sendMatchingBlocks(message, callback)
         .finish(
             requestState -> {
-              peer.adjustBlockRequests(
-                  requestState.sentBlocks.get(),
-                  message.getCount().longValue(),
-                  rateLimiterResponse.getLeft());
+              if (requestState.sentBlocks.get() != message.getCount().longValue()) {
+                peer.adjustBlockRequests(
+                    requestState.sentBlocks.get(),
+                    message.getCount().longValue(),
+                    rateLimiterResponse.getLeft());
+              }
               totalBlocksRequestedCounter.inc(requestState.sentBlocks.get());
               callback.completeSuccessfully();
             },
             error -> {
+              peer.cancelBlockRequests(
+                  message.getCount().longValue(), rateLimiterResponse.getLeft());
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context

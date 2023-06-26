@@ -353,6 +353,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
+  public void cancelBlockRequests(final long initialBlockCount, final UInt64 time) {
+    adjustObjectRequests(blockRequestTracker, initialBlockCount, time);
+  }
+
+  @Override
   public Pair<UInt64, Boolean> popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
     return popObjectRequests(
@@ -364,6 +369,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final long returnedBlobSidecarsCount, final long initialBlobSidecarCount, final UInt64 time) {
     adjustObjectRequests(
         blobSidecarsRequestTracker, returnedBlobSidecarsCount, initialBlobSidecarCount, time);
+  }
+
+  @Override
+  public void cancelBlobSidecarRequests(final long initialBlobSidecarCount, final UInt64 time) {
+    adjustObjectRequests(blobSidecarsRequestTracker, initialBlobSidecarCount, time);
   }
 
   @Override
@@ -405,6 +415,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final long initialObjectCount,
       final UInt64 time) {
     requestTracker.adjustRequestObjects(returnedObjectCount, initialObjectCount, time);
+  }
+
+  private void adjustObjectRequests(
+      final RateTracker requestTracker, final long initialObjectCount, final UInt64 time) {
+    requestTracker.adjustRequestObjects(0, initialObjectCount, time);
   }
 
   private <T> Pair<UInt64, Boolean> popObjectRequests(

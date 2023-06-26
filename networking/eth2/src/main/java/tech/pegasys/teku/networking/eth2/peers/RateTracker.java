@@ -37,8 +37,8 @@ public class RateTracker {
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
   public synchronized Pair<UInt64, Long> popObjectRequests(final long objectCount) {
+    pruneRequests();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    pruneRequests(currentTime);
     if ((peerRateLimit - requestsWithinWindow) <= 0) {
       return Pair.of(currentTime, 0L);
     }
@@ -50,19 +50,20 @@ public class RateTracker {
 
   public synchronized void adjustRequestObjects(
       final long returnedObjectCount, final long initialObjectCount, final UInt64 time) {
-    pruneRequests(timeProvider.getTimeInSeconds());
-    if (requestCount.containsKey(time)) {
+    pruneRequests();
+    if (returnedObjectCount != initialObjectCount && requestCount.containsKey(time)) {
       requestCount.put(time, returnedObjectCount);
       requestsWithinWindow = requestsWithinWindow - initialObjectCount + returnedObjectCount;
     }
   }
 
-  void pruneRequests(final UInt64 time) {
-    if (time.isLessThan(timeoutSeconds)) {
+  void pruneRequests() {
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    if (currentTime.isLessThan(timeoutSeconds)) {
       return;
     }
     final NavigableMap<UInt64, Long> headMap =
-        requestCount.headMap(time.minus(timeoutSeconds), false);
+        requestCount.headMap(currentTime.minus(timeoutSeconds), false);
     headMap.values().forEach(value -> requestsWithinWindow -= value);
     headMap.clear();
   }

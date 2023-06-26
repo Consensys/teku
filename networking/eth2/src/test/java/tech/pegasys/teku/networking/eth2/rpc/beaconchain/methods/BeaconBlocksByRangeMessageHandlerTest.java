@@ -16,8 +16,10 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -243,6 +245,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 0 blocks (First block is missing, return error)
+    verify(peer, times(1)).cancelBlockRequests(eq(Long.valueOf(count)), any());
+    // No adjustment
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(
             "Requested historical blocks are currently unavailable");
@@ -263,6 +272,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 0 blocks (First block is missing, return error)
+    verify(peer, times(1)).cancelBlockRequests(eq(Long.valueOf(count)), any());
+    // No adjustment
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(
             "Requested historical blocks are currently unavailable");
@@ -280,6 +296,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 5 blocks as initially requested: No rate limiter adjustment
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+
     verifyBlocksReturned(3, 4, 5, 6, 7);
   }
 
@@ -292,6 +315,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withAncestorRoots(startBlock, count, skip, allBlocks());
 
     requestBlocks(startBlock, count, skip);
+
+    // Requesting 1 block
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 1 block as initially requested: No rate limiter adjustment
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
 
     verifyBlocksReturned(3);
   }
@@ -308,6 +338,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 1 block
+    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(1)), eq(Long.valueOf(count)), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+
     verifyBlocksReturned(2);
   }
 
@@ -321,6 +358,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withAncestorRoots(startBlock, count, skip, hotBlocks(2, 3, 5, 6, 7));
 
     requestBlocks(startBlock, count, skip);
+
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 4 blocks only
+    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(4)), eq(Long.valueOf(count)), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
 
     // Slot 4 is empty so we only return 4 blocks
     verifyBlocksReturned(2, 3, 5, 6);
@@ -336,6 +380,14 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // expect block 4 to be returned in this instance
     withAncestorRoots(startBlock, count, skip, hotBlocks(1, 3, 4, 5, 6, 8, 10));
     requestBlocks(startBlock, count, skip);
+
+    // Requesting 4 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 1 block
+    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(1)), eq(Long.valueOf(count)), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+
     verifyBlocksReturned(4);
   }
 
@@ -355,6 +407,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
             UInt64.valueOf(startBlock), UInt64.valueOf(count), UInt64.valueOf(skip)),
         listener);
 
+    // Requesting 50 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 0 blocks
+    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(0)), eq(Long.valueOf(count)), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+
     verifyNoBlocksReturned();
     // The first block is after the best block available, so we shouldn't request anything
     verify(combinedChainDataClient, never()).getBlockAtSlotExact(any(), any());
@@ -370,6 +429,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
 
     requestBlocks(startBlock, count, skip);
 
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 5 blocks as initially requested: No rate limiter adjustment
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+
     verifyBlocksReturned(1, 2, 3, 4, 5);
     verify(combinedChainDataClient, never()).getAncestorRoots(any(), any(), any());
   }
@@ -384,6 +450,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
     withFinalizedBlocks(0, 1, 2, 3);
 
     requestBlocks(startBlock, count, skip);
+
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
+    // Sending 5 blocks as initially requested: No rate limiter adjustment
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
 
     verifyBlocksReturned(1, 2, 3, 4, 5);
   }

@@ -16,8 +16,10 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -116,6 +118,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
             spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots),
         callback);
 
+    // Rate limiter not invoked
+    verify(peer, never()).popBlockRequests(any(), anyLong());
+
     verify(callback)
         .completeWithErrorResponse(
             new RpcException(
@@ -128,6 +133,13 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
+    // Sending 5 blocks: No rate limiter adjustment required
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    // No cancellation
+    verify(peer, never()).cancelBlockRequests(anyLong(), any());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
@@ -145,6 +157,13 @@ public class BeaconBlocksByRootMessageHandlerTest {
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
 
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
+    // Request cancelled
+    verify(peer, times(1)).cancelBlockRequests(eq(Long.valueOf(blocks.size())), any());
+    // No adjustment
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+
     // Check that we only asked for the first block
     verify(store, times(1)).retrieveSignedBlock(any());
     verify(callback, times(1)).respond(any());
@@ -160,6 +179,13 @@ public class BeaconBlocksByRootMessageHandlerTest {
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
 
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    // Requesting 5 blocks
+    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
+    // Sending 5 blocks: No rate limiter adjustment required
+    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    // No cancellation
+    verify(peer, never()).cancelBlockRequests(anyLong(), any());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());

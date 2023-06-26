@@ -313,6 +313,9 @@ public class RespondingEth2Peer implements Eth2Peer {
       final long returnedBlockCount, final long initialBlockCount, UInt64 time) {}
 
   @Override
+  public void cancelBlockRequests(final long initialBlockCount, UInt64 time) {}
+
+  @Override
   public Pair<UInt64, Boolean> popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return Pair.of(ZERO, true);
@@ -323,6 +326,9 @@ public class RespondingEth2Peer implements Eth2Peer {
       final long returnedBlobSidecarsCount,
       final long initialBlobSidecarCount,
       final UInt64 time) {}
+
+  @Override
+  public void cancelBlobSidecarRequests(final long initialBlobSidecarCount, final UInt64 time) {}
 
   @Override
   public boolean popRequest() {

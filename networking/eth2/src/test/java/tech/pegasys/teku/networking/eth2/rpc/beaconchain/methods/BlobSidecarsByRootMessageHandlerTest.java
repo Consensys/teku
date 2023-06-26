@@ -158,6 +158,13 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
     handler.onIncomingMessage(protocolId, peer, request, callback);
 
+    // Requesting 5 blob sidecars
+    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(5)));
+    // No cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    // No adjustment
+    verify(peer, never()).adjustBlobSidecarRequests(anyLong(), anyLong(), any());
+
     final long rateLimitedCount =
         metricsSystem
             .getCounter(TekuMetricCategory.NETWORK, "rpc_blob_sidecars_by_root_requests_total")
@@ -186,6 +193,14 @@ public class BlobSidecarsByRootMessageHandlerTest {
         peer,
         new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
         callback);
+
+    // Requesting 4 blob sidecars
+    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(4)));
+    // Sending 3 blob sidecars
+    verify(peer, times(1))
+        .adjustBlobSidecarRequests(eq(Long.valueOf(3)), eq(Long.valueOf(4)), any());
+    // no cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
 
     verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(secondBlockRoot);
     verify(callback, times(3)).respond(blobSidecarCaptor.capture());
@@ -228,6 +243,13 @@ public class BlobSidecarsByRootMessageHandlerTest {
         new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
         callback);
 
+    // Requesting 3 blob sidecars
+    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(3)));
+    // Request cancelled due to error
+    verify(peer, times(1)).cancelBlobSidecarRequests(eq(Long.valueOf(3)), any());
+    // No adjustment
+    verify(peer, never()).adjustBlobSidecarRequests(anyLong(), anyLong(), any());
+
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
 
@@ -259,6 +281,13 @@ public class BlobSidecarsByRootMessageHandlerTest {
         new BlobSidecarsByRootRequestMessage(messageSchema, blobIdentifiers),
         callback);
 
+    // Requesting 3 blob sidecars
+    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(3)));
+    // Request cancelled due to error
+    verify(peer, times(1)).cancelBlobSidecarRequests(eq(Long.valueOf(3)), any());
+    // No adjustment
+    verify(peer, never()).adjustBlobSidecarRequests(anyLong(), anyLong(), any());
+
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
 
@@ -284,6 +313,13 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(callback, times(5)).respond(blobSidecarCaptor.capture());
 
     final List<BlobSidecar> sentBlobSidecars = blobSidecarCaptor.getAllValues();
+
+    // Requesting 5 blob sidecars
+    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(5)));
+    // Sending 5 blob sidecars, no adjustment required
+    verify(peer, never()).adjustBlobSidecarRequests(anyLong(), anyLong(), any());
+    // no cancellation
+    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
 
     // verify sent blob sidecars
     IntStream.range(0, 5)

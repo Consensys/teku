@@ -172,13 +172,19 @@ public class BlobSidecarsByRangeMessageHandler
         .finish(
             requestState -> {
               final int sentBlobSidecars = requestState.sentBlobSidecars.get();
-              peer.adjustBlobSidecarRequests(
-                  sentBlobSidecars, requestedCount.longValue(), rateLimiterResponse.getLeft());
+              if (sentBlobSidecars != requestedCount.longValue()) {
+                peer.adjustBlobSidecarRequests(
+                    sentBlobSidecars, requestedCount.longValue(), rateLimiterResponse.getLeft());
+              }
               totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars);
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
-            error -> handleProcessingRequestError(error, callback));
+            error -> {
+              peer.cancelBlobSidecarRequests(
+                  requestedCount.longValue(), rateLimiterResponse.getLeft());
+              handleProcessingRequestError(error, callback);
+            });
   }
 
   private boolean checkBlobSidecarsAreAvailable(
