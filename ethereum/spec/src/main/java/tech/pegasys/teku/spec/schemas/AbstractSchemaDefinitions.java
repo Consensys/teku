@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.schemas;
 
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
@@ -25,8 +24,7 @@ import tech.pegasys.teku.spec.datastructures.state.HistoricalBatch.HistoricalBat
 
 public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
 
-  final SszBitvectorSchema<SszBitvector> attnetsENRFieldSchema =
-      SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT);
+  final SszBitvectorSchema<SszBitvector> attnetsENRFieldSchema;
   final SszBitvectorSchema<SszBitvector> syncnetsENRFieldSchema =
       SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT);
   private final HistoricalBatchSchema historicalBatchSchema;
@@ -39,6 +37,7 @@ public abstract class AbstractSchemaDefinitions implements SchemaDefinitions {
     this.signedAggregateAndProofSchema = new SignedAggregateAndProofSchema(specConfig);
     this.indexedAttestationSchema = new IndexedAttestationSchema(specConfig);
     this.attesterSlashingSchema = new AttesterSlashingSchema(indexedAttestationSchema);
+    this.attnetsENRFieldSchema = SszBitvectorSchema.create(specConfig.getAttestationSubnetCount());
   }
 
   @Override

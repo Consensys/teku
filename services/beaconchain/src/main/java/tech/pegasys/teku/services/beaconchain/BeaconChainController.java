@@ -735,7 +735,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initActiveValidatorTracker");
     final StableSubnetSubscriber stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
-            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
+            ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
             : new ValidatorBasedStableSubnetSubscriber(
                 attestationTopicSubscriber,
                 new Random(),

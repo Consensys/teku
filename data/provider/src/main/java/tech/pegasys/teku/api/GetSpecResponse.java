@@ -36,14 +36,20 @@ public class GetSpecResponse {
         .getRawConfig()
         .forEach((name, value) -> configAttributes.put(name, ConfigProvider.formatValue(value)));
 
-    configAttributes.put("GOSSIP_MAX_SIZE", Integer.toString(specConfig.getGossipMaxSize()));
-    configAttributes.put("MAX_CHUNK_SIZE", Integer.toString(specConfig.getMaxChunkSize()));
+    configAttributes.put(
+        "GOSSIP_MAX_SIZE", Integer.toString(specConfig.getNetworkingConfig().getGossipMaxSize()));
+    configAttributes.put(
+        "MAX_CHUNK_SIZE", Integer.toString(specConfig.getNetworkingConfig().getMaxChunkSize()));
 
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
     configAttributes.put("RANDOM_SUBNETS_PER_VALIDATOR", getRandomSubnetsPerValidator());
+    configAttributes.put("SUBNETS_PER_NODE", getSubnetsPerNode());
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION", getEpochsPerRandomSubnetSubscription());
+    configAttributes.put("ATTESTATION_SUBNET_COUNT", getAttestationSubnetCount());
+    configAttributes.put("ATTESTATION_SUBNET_EXTRA_BITS", getAttestationSubnetExtraBits());
+    configAttributes.put("ATTESTATION_SUBNET_PREFIX_BITS", getAttestationSubnetPrefixBits());
     configAttributes.put("DOMAIN_BEACON_PROPOSER", getDomainBeaconProposer().toHexString());
     configAttributes.put("DOMAIN_BEACON_ATTESTER", getDomainBeaconAttester().toHexString());
     configAttributes.put("DOMAIN_RANDAO", getDomainRandao().toHexString());
@@ -86,8 +92,24 @@ public class GetSpecResponse {
     return Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR);
   }
 
+  private String getSubnetsPerNode() {
+    return Integer.toString(specConfig.getNetworkingConfig().getSubnetsPerNode());
+  }
+
   private String getEpochsPerRandomSubnetSubscription() {
-    return Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION);
+    return Integer.toString(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription());
+  }
+
+  private String getAttestationSubnetCount() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationSubnetCount());
+  }
+
+  private String getAttestationSubnetExtraBits() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationSubnetExtraBits());
+  }
+
+  private String getAttestationSubnetPrefixBits() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationSubnetPrefixBits());
   }
 
   private Bytes4 getDomainBeaconProposer() {
