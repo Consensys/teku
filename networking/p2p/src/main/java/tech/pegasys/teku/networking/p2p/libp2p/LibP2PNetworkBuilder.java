@@ -214,7 +214,8 @@ public class LibP2PNetworkBuilder {
     return this;
   }
 
-  public LibP2PNetworkBuilder networkingSpecConfig(final NetworkingSpecConfig networkingSpecConfig) {
+  public LibP2PNetworkBuilder networkingSpecConfig(
+      final NetworkingSpecConfig networkingSpecConfig) {
     this.networkingSpecConfig = networkingSpecConfig;
     return this;
   }
