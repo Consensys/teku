@@ -154,7 +154,7 @@ public class LibP2PGossipNetworkBuilder {
     return this;
   }
 
-  public LibP2PGossipNetworkBuilder networkingConfig(NetworkingSpecConfig networkingConfig) {
+  public LibP2PGossipNetworkBuilder networkingConfig(final NetworkingSpecConfig networkingConfig) {
     this.networkingConfig = networkingConfig;
     return this;
   }
