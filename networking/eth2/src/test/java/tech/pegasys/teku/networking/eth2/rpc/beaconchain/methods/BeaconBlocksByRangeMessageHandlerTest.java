@@ -25,7 +25,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
@@ -156,7 +155,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
         handler.validateRequest(
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
-                UInt64.valueOf(startBlock), MAX_REQUEST_BLOCKS, UInt64.valueOf(skip)));
+                UInt64.valueOf(startBlock),
+                UInt64.valueOf(spec.getNetworkingConfig().getMaxRequestBlocks()),
+                UInt64.valueOf(skip)));
 
     assertThat(result)
         .hasValue(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
@@ -171,7 +172,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
         handler.validateRequest(
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
-                UInt64.valueOf(startBlock), MAX_REQUEST_BLOCKS.increment(), UInt64.valueOf(skip)));
+                UInt64.valueOf(startBlock),
+                UInt64.valueOf(spec.getNetworkingConfig().getMaxRequestBlocks()).increment(),
+                UInt64.valueOf(skip)));
 
     assertThat(result)
         .hasValue(

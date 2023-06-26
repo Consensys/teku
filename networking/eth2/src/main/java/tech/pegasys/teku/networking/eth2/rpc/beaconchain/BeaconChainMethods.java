@@ -198,7 +198,7 @@ public class BeaconChainMethods {
         new BeaconBlocksByRootMessageHandler(spec, metricsSystem, recentChainData);
 
     final BeaconBlocksByRootRequestMessageSchema requestType =
-        BeaconBlocksByRootRequestMessage.SSZ_SCHEMA;
+        spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema();
     final boolean expectResponseToRequest = true;
 
     final RpcContextCodec<Bytes4, SignedBeaconBlock> forkDigestContextCodec =

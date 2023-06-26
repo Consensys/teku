@@ -103,6 +103,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   // Networking
   private final int gossipMaxSize;
   private final int maxChunkSize;
+  private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
   private final int subnetsPerNode;
   private final int attestationSubnetCount;
@@ -162,6 +163,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Eth1Address depositContractAddress,
       final int gossipMaxSize,
       final int maxChunkSize,
+      final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
       final int subnetsPerNode,
       final int attestationSubnetCount,
@@ -220,6 +222,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.squareRootSlotsPerEpoch = MathHelpers.integerSquareRoot(slotsPerEpoch);
     this.gossipMaxSize = gossipMaxSize;
     this.maxChunkSize = maxChunkSize;
+    this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     this.subnetsPerNode = subnetsPerNode;
     this.attestationSubnetCount = attestationSubnetCount;
@@ -513,6 +516,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public int getMaxRequestBlocks() {
+    return maxRequestBlocks;
+  }
+
+  @Override
   public int getEpochsPerSubnetSubscription() {
     return epochsPerSubnetSubscription;
   }
@@ -582,6 +590,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && depositNetworkId == that.depositNetworkId
         && gossipMaxSize == that.gossipMaxSize
         && maxChunkSize == that.maxChunkSize
+        && maxRequestBlocks == that.maxRequestBlocks
         && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
         && subnetsPerNode == that.subnetsPerNode
         && attestationSubnetCount == that.attestationSubnetCount
@@ -660,6 +669,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         depositContractAddress,
         gossipMaxSize,
         maxChunkSize,
+        maxRequestBlocks,
         epochsPerSubnetSubscription,
         subnetsPerNode,
         attestationSubnetCount,

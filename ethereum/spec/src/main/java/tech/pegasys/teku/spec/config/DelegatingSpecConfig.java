@@ -307,6 +307,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getMaxRequestBlocks() {
+    return specConfig.getMaxRequestBlocks();
+  }
+
+  @Override
   public int getEpochsPerSubnetSubscription() {
     return specConfig.getEpochsPerSubnetSubscription();
   }

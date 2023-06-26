@@ -19,6 +19,8 @@ public interface NetworkingSpecConfig {
 
   int getMaxChunkSize();
 
+  int getMaxRequestBlocks();
+
   int getEpochsPerSubnetSubscription();
 
   int getMinEpochsForBlockRequests();

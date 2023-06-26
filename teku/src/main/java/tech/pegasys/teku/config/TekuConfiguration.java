@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.config;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
 import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.Optional;
@@ -233,7 +232,10 @@ public class TekuConfiguration {
       final StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
       final SyncConfig syncConfig = syncConfigBuilder.build();
 
-      final long maxAllowedBatchSize = MAX_REQUEST_BLOCKS.min(MAX_REQUEST_BLOCKS_DENEB).longValue();
+      final int maxAllowedBatchSize =
+          Math.min(
+              spec.getNetworkingConfig().getMaxRequestBlocks(),
+              MAX_REQUEST_BLOCKS_DENEB.intValue());
 
       if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
         throw new InvalidConfigurationException(
