@@ -232,7 +232,7 @@ public class TekuConfiguration {
       final StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
       final SyncConfig syncConfig = syncConfigBuilder.build();
 
-      final long maxAllowedBatchSize =
+      final int maxAllowedBatchSize =
           Math.min(
               spec.getNetworkingConfig().getMaxRequestBlocks(),
               MAX_REQUEST_BLOCKS_DENEB.intValue());
