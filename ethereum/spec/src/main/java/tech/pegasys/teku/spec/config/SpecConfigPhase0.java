@@ -107,7 +107,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int epochsPerSubnetSubscription;
   private final int ttfbTimeout;
   private final int respTimeout;
-  private final UInt64 attestationPropagationSlotRange;
+  private final int attestationPropagationSlotRange;
   private final int maximumGossipClockDisparity;
   private final Bytes4 messageDomainInvalidSnappy;
   private final Bytes4 messageDomainValidSnappy;
@@ -173,7 +173,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int epochsPerSubnetSubscription,
       final int ttfbTimeout,
       final int respTimeout,
-      final UInt64 attestationPropagationSlotRange,
+      final int attestationPropagationSlotRange,
       final int maximumGossipClockDisparity,
       final Bytes4 messageDomainInvalidSnappy,
       final Bytes4 messageDomainValidSnappy,
@@ -554,7 +554,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public UInt64 getAttestationPropagationSlotRange() {
+  public int getAttestationPropagationSlotRange() {
     return attestationPropagationSlotRange;
   }
 
@@ -646,6 +646,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && attestationSubnetPrefixBits == that.attestationSubnetPrefixBits
         && ttfbTimeout == that.ttfbTimeout
         && respTimeout == that.respTimeout
+        && attestationPropagationSlotRange == that.attestationPropagationSlotRange
         && maximumGossipClockDisparity == that.maximumGossipClockDisparity
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
@@ -663,7 +664,6 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
         && Objects.equals(depositContractAddress, that.depositContractAddress)
-        && Objects.equals(attestationPropagationSlotRange, that.attestationPropagationSlotRange)
         && Objects.equals(messageDomainInvalidSnappy, that.messageDomainInvalidSnappy)
         && Objects.equals(messageDomainValidSnappy, that.messageDomainValidSnappy);
   }

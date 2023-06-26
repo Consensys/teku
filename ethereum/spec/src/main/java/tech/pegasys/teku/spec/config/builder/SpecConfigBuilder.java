@@ -108,7 +108,7 @@ public class SpecConfigBuilder {
   private Integer epochsPerSubnetSubscription;
   private Integer ttfbTimeout;
   private Integer respTimeout;
-  private UInt64 attestationPropagationSlotRange;
+  private Integer attestationPropagationSlotRange;
   private Integer maximumGossipClockDisparity;
   private Bytes4 messageDomainInvalidSnappy;
   private Bytes4 messageDomainValidSnappy;
@@ -609,7 +609,7 @@ public class SpecConfigBuilder {
   }
 
   public SpecConfigBuilder attestationPropagationSlotRange(
-      final UInt64 attestationPropagationSlotRange) {
+      final Integer attestationPropagationSlotRange) {
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
     return this;
   }

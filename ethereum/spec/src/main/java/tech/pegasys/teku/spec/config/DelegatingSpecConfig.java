@@ -317,7 +317,7 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public UInt64 getAttestationPropagationSlotRange() {
+  public int getAttestationPropagationSlotRange() {
     return specConfig.getAttestationPropagationSlotRange();
   }
 

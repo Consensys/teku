@@ -163,7 +163,8 @@ class AttestationValidatorTest {
         attestationGenerator.validAttestation(storageSystem.getChainHead());
 
     // In the first slot after
-    final UInt64 slot = spec.getNetworkingConfig().getAttestationPropagationSlotRange().plus(ONE);
+    final UInt64 slot =
+        UInt64.valueOf(spec.getNetworkingConfig().getAttestationPropagationSlotRange()).increment();
     chainUpdater.setCurrentSlot(slot);
     // Add one more second to get past the MAXIMUM_GOSSIP_CLOCK_DISPARITY
     chainUpdater.setTime(recentChainData.getStore().getTimeSeconds().plus(ONE));
@@ -178,7 +179,8 @@ class AttestationValidatorTest {
 
     // At the very start of the first slot the attestation isn't allowed, but still within
     // the MAXIMUM_GOSSIP_CLOCK_DISPARITY so should be allowed.
-    final UInt64 slot = spec.getNetworkingConfig().getAttestationPropagationSlotRange().plus(ONE);
+    final UInt64 slot =
+        UInt64.valueOf(spec.getNetworkingConfig().getAttestationPropagationSlotRange()).increment();
     chainUpdater.setCurrentSlot(slot);
 
     assertThat(validate(attestation).code()).isEqualTo(ACCEPT);

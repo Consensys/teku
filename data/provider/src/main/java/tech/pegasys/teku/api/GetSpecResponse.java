@@ -119,8 +119,7 @@ public class GetSpecResponse {
   }
 
   private String getAttestationPropagationSlotRange() {
-    return Integer.toString(
-        specConfig.getNetworkingConfig().getAttestationPropagationSlotRange().intValue());
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationPropagationSlotRange());
   }
 
   private String getMaximumGossipClockDisparity() {
