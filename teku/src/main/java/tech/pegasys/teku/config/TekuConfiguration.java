@@ -233,10 +233,9 @@ public class TekuConfiguration {
       final SyncConfig syncConfig = syncConfigBuilder.build();
 
       final long maxAllowedBatchSize =
-          spec.getNetworkingConfig()
-              .getMaxRequestBlocks()
-              .min(MAX_REQUEST_BLOCKS_DENEB)
-              .longValue();
+          Math.min(
+              spec.getNetworkingConfig().getMaxRequestBlocks(),
+              MAX_REQUEST_BLOCKS_DENEB.intValue());
 
       if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
         throw new InvalidConfigurationException(

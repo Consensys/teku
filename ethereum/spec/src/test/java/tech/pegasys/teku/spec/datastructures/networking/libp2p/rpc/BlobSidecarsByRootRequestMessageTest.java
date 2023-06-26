@@ -59,7 +59,7 @@ class BlobSidecarsByRootRequestMessageTest {
               SpecConfigDeneb.required(spec.forMilestone(milestone).getConfig())
                   .getMaxRequestBlobSidecars();
           assertThat(spec.getNetworkingConfig().getMaxRequestBlocks())
-              .isGreaterThanOrEqualTo(maxRequestBlobSidecars);
+              .isGreaterThanOrEqualTo(maxRequestBlobSidecars.intValue());
         });
   }
 }

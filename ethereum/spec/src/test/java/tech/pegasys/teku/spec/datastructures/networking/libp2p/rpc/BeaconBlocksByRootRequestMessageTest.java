@@ -48,7 +48,7 @@ class BeaconBlocksByRootRequestMessageTest {
   @Test
   public void verifyMaxLengthOfContainerIsGreaterOrEqualToMaxRequestBlocks() {
     assertThat(schema.getMaxLength())
-        .isGreaterThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocks().longValue())
+        .isGreaterThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocks())
         .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
   }
 }

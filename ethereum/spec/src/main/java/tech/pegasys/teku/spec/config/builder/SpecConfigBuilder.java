@@ -104,7 +104,7 @@ public class SpecConfigBuilder {
   // Networking
   private Integer gossipMaxSize;
   private Integer maxChunkSize;
-  private UInt64 maxRequestBlocks;
+  private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
   private Integer subnetsPerNode;
   private Integer attestationSubnetCount;
@@ -569,7 +569,7 @@ public class SpecConfigBuilder {
     return this;
   }
 
-  public SpecConfigBuilder maxRequestBlocks(final UInt64 maxRequestBlocks) {
+  public SpecConfigBuilder maxRequestBlocks(final Integer maxRequestBlocks) {
     this.maxRequestBlocks = maxRequestBlocks;
     return this;
   }

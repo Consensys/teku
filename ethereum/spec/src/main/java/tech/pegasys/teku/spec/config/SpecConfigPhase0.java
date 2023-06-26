@@ -103,7 +103,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   // Networking
   private final int gossipMaxSize;
   private final int maxChunkSize;
-  private final UInt64 maxRequestBlocks;
+  private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
   private final int subnetsPerNode;
   private final int attestationSubnetCount;
@@ -163,7 +163,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final Eth1Address depositContractAddress,
       final int gossipMaxSize,
       final int maxChunkSize,
-      final UInt64 maxRequestBlocks,
+      final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
       final int subnetsPerNode,
       final int attestationSubnetCount,
@@ -516,7 +516,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
-  public UInt64 getMaxRequestBlocks() {
+  public int getMaxRequestBlocks() {
     return maxRequestBlocks;
   }
 
@@ -590,6 +590,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && depositNetworkId == that.depositNetworkId
         && gossipMaxSize == that.gossipMaxSize
         && maxChunkSize == that.maxChunkSize
+        && maxRequestBlocks == that.maxRequestBlocks
         && epochsPerSubnetSubscription == that.epochsPerSubnetSubscription
         && subnetsPerNode == that.subnetsPerNode
         && attestationSubnetCount == that.attestationSubnetCount
@@ -610,8 +611,7 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(depositContractAddress, that.depositContractAddress)
-        && Objects.equals(maxRequestBlocks, that.maxRequestBlocks);
+        && Objects.equals(depositContractAddress, that.depositContractAddress);
   }
 
   @Override

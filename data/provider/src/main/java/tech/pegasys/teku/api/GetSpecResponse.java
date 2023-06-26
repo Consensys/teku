@@ -96,7 +96,7 @@ public class GetSpecResponse {
   }
 
   private String getMaxRequestBlocks() {
-    return Integer.toString(specConfig.getNetworkingConfig().getMaxRequestBlocks().intValue());
+    return Integer.toString(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
   private String getRandomSubnetsPerValidator() {

@@ -307,7 +307,7 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
-  public UInt64 getMaxRequestBlocks() {
+  public int getMaxRequestBlocks() {
     return specConfig.getMaxRequestBlocks();
   }
 

@@ -32,7 +32,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
 
     public BeaconBlocksByRootRequestMessageSchema(final SpecConfig specConfig) {
       // size validation according to the spec is done in the RPC handler
-      super(SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxRequestBlocks().longValue());
+      super(SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxRequestBlocks());
     }
 
     @Override

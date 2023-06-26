@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.spec.config;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
 public interface NetworkingSpecConfig {
 
   int getGossipMaxSize();
 
   int getMaxChunkSize();
 
-  UInt64 getMaxRequestBlocks();
+  int getMaxRequestBlocks();
 
   int getEpochsPerSubnetSubscription();
 
