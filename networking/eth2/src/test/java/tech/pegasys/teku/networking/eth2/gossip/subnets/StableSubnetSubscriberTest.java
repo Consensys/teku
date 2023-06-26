@@ -35,8 +35,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
-  public static final int DEFAULT_SUBNETS_PER_VALIDATOR = 2;
-
   private final Spec spec = TestSpecFactory.createDefault();
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);
@@ -51,7 +49,7 @@ public class StableSubnetSubscriberTest {
         ArgumentCaptor.forClass(Set.class);
 
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-    assertThat(subnetSubscriptions.getValue()).hasSize(2 * DEFAULT_SUBNETS_PER_VALIDATOR);
+    assertThat(subnetSubscriptions.getValue()).hasSize(2);
     assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
   }
@@ -85,7 +83,7 @@ public class StableSubnetSubscriberTest {
         ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
 
-    assertThat(subnetSubscriptions.getValue()).hasSize(3 * DEFAULT_SUBNETS_PER_VALIDATOR);
+    assertThat(subnetSubscriptions.getValue()).hasSize(3);
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
   }
 
@@ -134,7 +132,7 @@ public class StableSubnetSubscriberTest {
 
     verify(validatorApiChannel).subscribeToPersistentSubnets(firstSubscriptionUpdate.capture());
 
-    assertThat(firstSubscriptionUpdate.getValue()).hasSize(DEFAULT_SUBNETS_PER_VALIDATOR);
+    assertThat(firstSubscriptionUpdate.getValue()).hasSize(1);
 
     UInt64 firstUnsubscriptionSlot =
         firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();

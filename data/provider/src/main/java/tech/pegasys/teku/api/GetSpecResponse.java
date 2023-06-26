@@ -44,6 +44,7 @@ public class GetSpecResponse {
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
     configAttributes.put("RANDOM_SUBNETS_PER_VALIDATOR", getRandomSubnetsPerValidator());
+    configAttributes.put("SUBNETS_PER_NODE", getSubnetsPerNode());
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION", getEpochsPerRandomSubnetSubscription());
     configAttributes.put("ATTESTATION_SUBNET_COUNT", getAttestationSubnetCount());
@@ -88,6 +89,10 @@ public class GetSpecResponse {
   }
 
   private String getRandomSubnetsPerValidator() {
+    return Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR);
+  }
+
+  private String getSubnetsPerNode() {
     return Integer.toString(specConfig.getNetworkingConfig().getSubnetsPerNode());
   }
 
