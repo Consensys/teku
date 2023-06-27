@@ -521,18 +521,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return Optional.empty();
     }
     final UInt64 firstAvailabilityWindowSlot =
-        spec.computeStartSlotAtEpoch(
-                currentEpoch.minusMinZero(
-                    spec.getNetworkingConfigDeneb()
-                        .orElseThrow()
-                        .getMinEpochsForBlobSidecarsRequests()))
-            .max(
-                spec.getForkSchedule()
-                    .streamMilestoneBoundarySlots()
-                    .filter(pair -> pair.getLeft().isGreaterThanOrEqualTo(DENEB))
-                    .findFirst()
-                    .orElseThrow()
-                    .getRight());
+        spec.atSlot(slot).getForkChoiceUtil().computeFirstAvailabilityWindowSlot(store, spec);
     if (firstAvailabilityWindowSlot.isLessThanOrEqualTo(slot)) {
       return Optional.of(firstAvailabilityWindowSlot);
     } else {

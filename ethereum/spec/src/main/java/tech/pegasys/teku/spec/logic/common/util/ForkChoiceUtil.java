@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static tech.pegasys.teku.infrastructure.time.TimeProvider.MILLIS_PER_SECOND;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import java.time.Instant;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -483,6 +485,25 @@ public class ForkChoiceUtil {
       return true;
     }
     return isBellatrixBlockOld(store, block.getSlot());
+  }
+
+  public UInt64 computeFirstAvailabilityWindowSlot(final ReadOnlyStore store, final Spec spec) {
+    final UInt64 currentEpoch = spec.getCurrentEpoch(store);
+    final UInt64 maybeAvailabilityWindowStartSlot =
+        spec.computeStartSlotAtEpoch(
+            currentEpoch.minusMinZero(
+                spec.getNetworkingConfigDeneb()
+                    .orElseThrow()
+                    .getMinEpochsForBlobSidecarsRequests()));
+    final UInt64 firstDenebSlot =
+        spec.getForkSchedule()
+            .streamMilestoneBoundarySlots()
+            .filter(pair -> pair.getLeft().isGreaterThanOrEqualTo(DENEB))
+            .findFirst()
+            .orElseThrow()
+            .getRight();
+
+    return maybeAvailabilityWindowStartSlot.max(firstDenebSlot);
   }
 
   private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {
