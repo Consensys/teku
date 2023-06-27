@@ -93,7 +93,8 @@ public class BeaconBlocksByRangeMessageHandler
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     }
 
-    final UInt64 maxRequestBlocks = getMaxRequestBlocks(latestMilestoneRequested);
+    final UInt64 maxRequestBlocks =
+        spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks();
 
     if (request.getCount().isGreaterThan(maxRequestBlocks)) {
       requestCounter.labels("count_too_big").inc();
@@ -144,12 +145,6 @@ public class BeaconBlocksByRangeMessageHandler
                 callback.completeWithUnexpectedError(error);
               }
             });
-  }
-
-  private UInt64 getMaxRequestBlocks(final SpecMilestone milestone) {
-    return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-        ? UInt64.valueOf(spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlocksDeneb())
-        : UInt64.valueOf(spec.getNetworkingConfig().getMaxRequestBlocks());
   }
 
   private SafeFuture<?> sendMatchingBlocks(
