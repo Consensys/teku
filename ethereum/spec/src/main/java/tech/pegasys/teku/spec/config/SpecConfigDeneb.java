@@ -58,10 +58,5 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
   boolean isKZGNoop();
 
   @Override
-  default NetworkingSpecConfigDeneb getNetworkingConfig() {
-    return this;
-  }
-
-  @Override
   Optional<SpecConfigDeneb> toVersionDeneb();
 }
