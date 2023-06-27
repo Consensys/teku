@@ -50,7 +50,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -72,9 +71,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
-
-  private final SpecConfigDeneb specConfig =
-      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig());
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
 
