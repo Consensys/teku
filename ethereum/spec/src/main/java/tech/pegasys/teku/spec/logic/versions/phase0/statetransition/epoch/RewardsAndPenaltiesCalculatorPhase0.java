@@ -14,6 +14,9 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import java.util.List;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -30,6 +33,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Validato
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 
 public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalculator {
+  private static final Logger LOG = LogManager.getLogger();
 
   public RewardsAndPenaltiesCalculatorPhase0(
       final SpecConfig specConfig,
@@ -166,8 +170,9 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
       final UInt64 baseReward,
       final UInt64 finalityDelay,
       final RewardAndPenalty delta) {
-
     if (isInactivityLeak(finalityDelay)) {
+      LOG.info("Beacon chain has entered inactivity leak");
+
       // If validator is performing optimally this cancels all rewards for a neutral balance
       delta.penalize(
           RewardComponent.INACTIVITY,
