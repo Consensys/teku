@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.phase0.statetransition.epoch;
 
 import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
