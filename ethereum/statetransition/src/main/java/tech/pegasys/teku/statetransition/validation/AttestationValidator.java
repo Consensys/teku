@@ -14,12 +14,10 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Optional;
 import java.util.OptionalInt;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -30,28 +28,25 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil.SlotInclusionGossipValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationValidator {
-  private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
 
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final AttestationStateSelector stateSelector;
-  private final UInt64 maximumGossipClockDisparity;
 
   public AttestationValidator(
       final Spec spec,
-      RecentChainData recentChainData,
-      AsyncBLSSignatureVerifier signatureVerifier,
-      MetricsSystem metricsSystem) {
+      final RecentChainData recentChainData,
+      final AsyncBLSSignatureVerifier signatureVerifier,
+      final MetricsSystem metricsSystem) {
     this.recentChainData = recentChainData;
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
     this.stateSelector = new AttestationStateSelector(spec, recentChainData, metricsSystem);
-    this.maximumGossipClockDisparity =
-        UInt64.valueOf(spec.getNetworkingConfig().getMaximumGossipClockDisparity());
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -101,17 +96,21 @@ public class AttestationValidator {
               data.getSlot(), data.getTarget().getEpoch()));
     }
 
-    // [IGNORE] 3 - attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE
-    // slots (within a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
-    // ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
-    // queue future attestations for processing at the appropriate slot).
+    final UInt64 genesisTime = recentChainData.getGenesisTime();
     final UInt64 currentTimeMillis = recentChainData.getStore().getTimeMillis();
-    if (isCurrentTimeAfterAttestationPropagationSlotRange(currentTimeMillis, attestation)
-        || isFromFarFuture(attestation, currentTimeMillis)) {
-      return completedFuture(InternalValidationResultWithState.ignore());
-    }
-    if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(attestation, currentTimeMillis)) {
-      return completedFuture(InternalValidationResultWithState.saveForFuture());
+
+    final Optional<SlotInclusionGossipValidationResult> slotInclusionGossipValidationResult =
+        spec.atSlot(data.getSlot())
+            .getAttestationUtil()
+            .performSlotInclusionGossipValidation(attestation, genesisTime, currentTimeMillis);
+
+    if (slotInclusionGossipValidationResult.isPresent()) {
+      switch (slotInclusionGossipValidationResult.get()) {
+        case IGNORE:
+          return completedFuture(InternalValidationResultWithState.ignore());
+        case SAVE_FOR_FUTURE:
+          return completedFuture(InternalValidationResultWithState.saveForFuture());
+      }
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
@@ -198,65 +197,5 @@ public class AttestationValidator {
                         return InternalValidationResultWithState.accept(state);
                       });
             });
-  }
-
-  private boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
-      final Attestation attestation, final UInt64 currentTimeMillis) {
-    final UInt64 minimumBroadcastTimeMillis =
-        minimumBroadcastTimeMillis(attestation.getData().getSlot());
-    return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
-  }
-
-  private boolean isFromFarFuture(final Attestation attestation, final UInt64 currentTimeMillis) {
-    final int secondsPerSlot = secondsPerSlot(attestation);
-    final UInt64 attestationSlotTimeMillis =
-        secondsToMillis(
-            recentChainData
-                .getGenesisTime()
-                .plus(
-                    attestation
-                        .getEarliestSlotForForkChoiceProcessing(spec)
-                        .times(secondsPerSlot)));
-    final UInt64 discardAttestationsAfterMillis =
-        currentTimeMillis.plus(secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(secondsPerSlot)));
-    return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
-  }
-
-  private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
-      final UInt64 currentTimeMillis, final Attestation attestation) {
-    final UInt64 attestationSlot = attestation.getData().getSlot();
-    return maximumBroadcastTimeMillis(attestationSlot).isLessThan(currentTimeMillis);
-  }
-
-  private UInt64 minimumBroadcastTimeMillis(final UInt64 attestationSlot) {
-    final UInt64 lastAllowedTime =
-        recentChainData
-            .getGenesisTime()
-            .plus(attestationSlot.times(secondsPerSlot(attestationSlot)));
-    final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
-    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(maximumGossipClockDisparity)
-        ? lastAllowedTimeMillis.minus(maximumGossipClockDisparity)
-        : ZERO;
-  }
-
-  private UInt64 maximumBroadcastTimeMillis(final UInt64 attestationSlot) {
-    final UInt64 lastAllowedSlot =
-        attestationSlot.plus(spec.getNetworkingConfig().getAttestationPropagationSlotRange());
-    // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
-    final UInt64 lastAllowedTime =
-        recentChainData
-            .getGenesisTime()
-            .plus(lastAllowedSlot.plus(ONE).times(secondsPerSlot(attestationSlot)));
-
-    // Add allowed clock disparity
-    return secondsToMillis(lastAllowedTime).plus(maximumGossipClockDisparity);
-  }
-
-  private int secondsPerSlot(final UInt64 slot) {
-    return spec.getSecondsPerSlot(slot);
-  }
-
-  private int secondsPerSlot(final Attestation attestation) {
-    return spec.getSecondsPerSlot(attestation.getData().getSlot());
   }
 }

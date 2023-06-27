@@ -20,11 +20,11 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.attestation.AttestationWorthinessChecker;
-import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.attestation.AttestationWorthinessCheckerAltair;
+import tech.pegasys.teku.spec.logic.versions.phase0.util.AttestationUtilPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class AttestationUtilAltair extends AttestationUtil {
+public class AttestationUtilAltair extends AttestationUtilPhase0 {
   public AttestationUtilAltair(
       final SpecConfig specConfig,
       final SchemaDefinitions schemaDefinitions,
