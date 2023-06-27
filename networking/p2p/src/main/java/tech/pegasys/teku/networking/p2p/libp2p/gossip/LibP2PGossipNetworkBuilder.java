@@ -43,6 +43,7 @@ import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 /**
  * CAUTION: this API is unstable and primarily intended for debugging and testing purposes this API
@@ -59,6 +60,7 @@ public class LibP2PGossipNetworkBuilder {
 
   protected MetricsSystem metricsSystem;
   protected GossipConfig gossipConfig;
+  protected NetworkingSpecConfig networkingSpecConfig;
   protected PreparedGossipMessageFactory defaultMessageFactory;
   protected GossipTopicFilter gossipTopicFilter;
   protected boolean logWireGossip;
@@ -114,7 +116,7 @@ public class LibP2PGossipNetworkBuilder {
               topicHandlers
                   .getHandlerForTopic(topic)
                   .map(handler -> handler.prepareMessage(payload))
-                  .orElse(defaultMessageFactory.create(topic, payload));
+                  .orElse(defaultMessageFactory.create(topic, payload, networkingSpecConfig));
 
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
@@ -149,6 +151,12 @@ public class LibP2PGossipNetworkBuilder {
 
   public LibP2PGossipNetworkBuilder gossipConfig(GossipConfig gossipConfig) {
     this.gossipConfig = gossipConfig;
+    return this;
+  }
+
+  public LibP2PGossipNetworkBuilder networkingSpecConfig(
+      final NetworkingSpecConfig networkingSpecConfig) {
+    this.networkingSpecConfig = networkingSpecConfig;
     return this;
   }
 

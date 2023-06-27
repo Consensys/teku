@@ -271,6 +271,7 @@ public class Eth2P2PNetworkFactory {
                     LibP2PNetworkBuilder.create()
                         .asyncRunner(DelayedExecutorAsyncRunner.create())
                         .config(config.getNetworkConfig())
+                        .networkingSpecConfig(config.getNetworkingSpecConfig())
                         .privateKeyProvider(PrivateKeyGenerator::generate)
                         .reputationManager(reputationManager)
                         .metricsSystem(METRICS_SYSTEM)

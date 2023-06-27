@@ -119,13 +119,14 @@ public class DiscoveryNetworkFactory {
                     LibP2PNetworkBuilder.create()
                         .asyncRunner(DelayedExecutorAsyncRunner.create())
                         .config(config)
+                        .networkingSpecConfig(spec.getNetworkingConfig())
                         .privateKeyProvider(PrivateKeyGenerator::generate)
                         .reputationManager(reputationManager)
                         .metricsSystem(METRICS_SYSTEM)
                         .rpcMethods(Collections.emptyList())
                         .peerHandlers(Collections.emptyList())
                         .preparedGossipMessageFactory(
-                            (topic, payload) -> {
+                            (topic, payload, networkingSpecConfig) -> {
                               throw new UnsupportedOperationException();
                             })
                         .gossipTopicFilter(topic -> true)

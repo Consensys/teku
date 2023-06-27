@@ -13,13 +13,46 @@
 
 package tech.pegasys.teku.spec.config;
 
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+
 public interface NetworkingSpecConfig {
 
   int getGossipMaxSize();
 
   int getMaxChunkSize();
 
+  int getMaxRequestBlocks();
+
+  int getEpochsPerSubnetSubscription();
+
   int getMinEpochsForBlockRequests();
+
+  // in seconds
+  int getTtfbTimeout();
+
+  // in seconds
+  int getRespTimeout();
+
+  int getAttestationPropagationSlotRange();
+
+  // in millis
+  int getMaximumGossipClockDisparity();
+
+  // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
+  Bytes4 getMessageDomainInvalidSnappy();
+
+  // 4-byte domain for gossip message-id isolation of *valid* snappy messages
+  Bytes4 getMessageDomainValidSnappy();
+
+  int getSubnetsPerNode();
+
+  int getAttestationSubnetCount();
+
+  // The number of extra bits of a NodeId to use when mapping to a subscribed subnet
+  int getAttestationSubnetExtraBits();
+
+  // int(ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS)
+  int getAttestationSubnetPrefixBits();
 
   default NetworkingSpecConfig getNetworkingConfig() {
     return this;

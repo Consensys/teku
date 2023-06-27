@@ -32,50 +32,54 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.compression.snappy.S
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.eth2.rpc.core.methods.SingleProtocolEth2RpcMethod;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 
 public class RpcDecoderTestBase {
 
-  // Message long enough to require a three byte length prefix.
-  protected static final BeaconBlocksByRootRequestMessage MESSAGE = createRequestMessage(600);
-  protected static final RpcEncoding ENCODING =
-      RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
-  protected static final Compressor COMPRESSOR = new SnappyFramedCompressor();
-  protected static final Bytes MESSAGE_PLAIN_DATA = MESSAGE.sszSerialize();
-  protected static final Bytes MESSAGE_DATA = COMPRESSOR.compress(MESSAGE_PLAIN_DATA);
-  protected static final Bytes LENGTH_PREFIX = getLengthPrefix(MESSAGE_PLAIN_DATA.size());
   protected static final String ERROR_MESSAGE = "Bad request";
   protected static final Bytes ERROR_MESSAGE_PLAIN_DATA =
       Bytes.wrap(ERROR_MESSAGE.getBytes(StandardCharsets.UTF_8));
-  protected static final Bytes ERROR_MESSAGE_DATA = COMPRESSOR.compress(ERROR_MESSAGE_PLAIN_DATA);
-  protected static final Bytes ERROR_MESSAGE_LENGTH_PREFIX =
-      getLengthPrefix(ERROR_MESSAGE_PLAIN_DATA.size());
 
-  protected static final AsyncRunner ASYNC_RUNNER = new StubAsyncRunner();
-  protected static final PeerLookup PEER_LOOKUP = mock(PeerLookup.class);
+  protected final Spec spec = TestSpecFactory.createDefault();
 
-  protected static final RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> CONTEXT_ENCODER =
-      RpcContextCodec.noop(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
-  protected static final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes>
-      RESPONSE_DECODER = RpcResponseDecoder.create(ENCODING, CONTEXT_ENCODER);
+  // Message long enough to require a three byte length prefix.
+  protected final BeaconBlocksByRootRequestMessage message = createRequestMessage(600);
+  protected final RpcEncoding encoding =
+      RpcEncoding.createSszSnappyEncoding(
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
+  protected final Compressor compressor = new SnappyFramedCompressor();
+  protected final Bytes messagePlainData = message.sszSerialize();
+  protected final Bytes messageData = compressor.compress(messagePlainData);
+  protected final Bytes lengthPrefix = getLengthPrefix(messagePlainData.size());
+  protected final Bytes errorMessageData = compressor.compress(ERROR_MESSAGE_PLAIN_DATA);
+  protected final Bytes errorMessageLengthPrefix = getLengthPrefix(ERROR_MESSAGE_PLAIN_DATA.size());
+
+  protected final AsyncRunner asyncRunner = new StubAsyncRunner();
+  protected final PeerLookup peerLookup = mock(PeerLookup.class);
+
+  protected final RpcContextCodec<Bytes, BeaconBlocksByRootRequestMessage> contextEncoder =
+      RpcContextCodec.noop(
+          spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema());
+  protected final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, Bytes> responseDecoder =
+      RpcResponseDecoder.create(encoding, contextEncoder);
 
   @SuppressWarnings("unchecked")
-  protected static final Eth2RpcMethod<
-          BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>
-      METHOD =
+  protected final Eth2RpcMethod<BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>
+      method =
           new SingleProtocolEth2RpcMethod<
               BeaconBlocksByRootRequestMessage, BeaconBlocksByRootRequestMessage>(
-              ASYNC_RUNNER,
+              asyncRunner,
               "",
               1,
-              ENCODING,
-              BeaconBlocksByRootRequestMessage.SSZ_SCHEMA,
+              encoding,
+              spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
               false,
-              CONTEXT_ENCODER,
+              contextEncoder,
               mock(LocalMessageHandler.class),
-              PEER_LOOKUP);
+              peerLookup,
+              spec.getNetworkingConfig());
 
   protected List<List<ByteBuf>> testByteBufSlices(final Bytes... bytes) {
     List<List<ByteBuf>> ret = Utils.generateTestSlices(bytes);
@@ -83,13 +87,13 @@ public class RpcDecoderTestBase {
     return ret;
   }
 
-  protected static BeaconBlocksByRootRequestMessage createRequestMessage(
-      final int blocksRequested) {
+  protected BeaconBlocksByRootRequestMessage createRequestMessage(final int blocksRequested) {
     final List<Bytes32> roots = new ArrayList<>();
     for (int i = 0; i < blocksRequested; i++) {
       roots.add(Bytes32.leftPad(Bytes.ofUnsignedInt(i)));
     }
-    return new BeaconBlocksByRootRequestMessage(roots);
+    return new BeaconBlocksByRootRequestMessage(
+        spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots);
   }
 
   protected static Bytes getLengthPrefix(final int size) {

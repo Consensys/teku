@@ -105,7 +105,11 @@ public class BeaconBlocksByRootMessageHandlerTest {
             .collect(Collectors.toList());
 
     handler.onIncomingMessage(
-        V2_PROTOCOL_ID, peer, new BeaconBlocksByRootRequestMessage(roots), callback);
+        V2_PROTOCOL_ID,
+        peer,
+        new BeaconBlocksByRootRequestMessage(
+            spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots),
+        callback);
 
     verify(callback)
         .completeWithErrorResponse(
@@ -186,7 +190,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private BeaconBlocksByRootRequestMessage createRequest(final List<SignedBeaconBlock> forBlocks) {
     final List<Bytes32> blockHashes =
         forBlocks.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toList());
-    return new BeaconBlocksByRootRequestMessage(blockHashes);
+    return new BeaconBlocksByRootRequestMessage(
+        spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
+        blockHashes);
   }
 
   private List<SignedBeaconBlock> buildChain(final int chainSize) {

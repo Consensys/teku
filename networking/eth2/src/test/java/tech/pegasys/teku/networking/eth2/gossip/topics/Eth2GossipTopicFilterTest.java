@@ -32,7 +32,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -88,7 +87,7 @@ class Eth2GossipTopicFilterTest {
 
   @Test
   void shouldConsiderAllAttestationSubnetsRelevant() {
-    for (int i = 0; i < Constants.ATTESTATION_SUBNET_COUNT; i++) {
+    for (int i = 0; i < spec.getNetworkingConfig().getAttestationSubnetCount(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getAttestationSubnetTopicName(i)))).isTrue();
       assertThat(filter.isRelevantTopic(getNextForkTopicName(getAttestationSubnetTopicName(i))))
           .isTrue();

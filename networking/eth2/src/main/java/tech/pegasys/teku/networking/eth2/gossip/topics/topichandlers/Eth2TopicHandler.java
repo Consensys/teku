@@ -179,7 +179,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   @Override
   public PreparedGossipMessage prepareMessage(Bytes payload) {
-    return preparedGossipMessageFactory.create(getTopic(), payload, getMessageType());
+    return preparedGossipMessageFactory.create(
+        getTopic(), payload, getMessageType(), networkingConfig);
   }
 
   @Override

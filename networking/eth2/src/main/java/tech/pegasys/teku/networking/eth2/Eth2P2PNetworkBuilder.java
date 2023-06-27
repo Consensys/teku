@@ -315,6 +315,7 @@ public class Eth2P2PNetworkBuilder {
             .asyncRunner(asyncRunner)
             .metricsSystem(metricsSystem)
             .config(networkConfig)
+            .networkingSpecConfig(config.getNetworkingSpecConfig())
             .privateKeyProvider(
                 new LibP2PPrivateKeyLoader(keyValueStore, networkConfig.getPrivateKeySource()))
             .reputationManager(reputationManager)

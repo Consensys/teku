@@ -22,7 +22,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -282,7 +281,8 @@ class DiscoveryNetworkTest {
         BLSPublicKey.empty().toSSZBytes(),
         InetSocketAddress.createUnresolved("yo", 9999),
         maybeForkId,
-        SszBitvectorSchema.create(ATTESTATION_SUBNET_COUNT).getDefault(),
+        SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
+            .getDefault(),
         syncCommitteeSubnets);
   }
 }

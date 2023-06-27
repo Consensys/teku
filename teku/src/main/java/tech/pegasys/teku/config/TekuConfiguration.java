@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.config;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -236,10 +234,10 @@ public class TekuConfiguration {
           spec.getNetworkingConfigDeneb()
               .map(
                   networkingSpecConfigDeneb ->
-                      MAX_REQUEST_BLOCKS
-                          .min(networkingSpecConfigDeneb.getMaxRequestBlocksDeneb())
-                          .longValue())
-              .orElse(MAX_REQUEST_BLOCKS.longValue());
+                      Math.min(
+                          spec.getNetworkingConfig().getMaxRequestBlocks(),
+                          networkingSpecConfigDeneb.getMaxRequestBlocksDeneb().intValue()))
+              .orElse(spec.getNetworkingConfig().getMaxRequestBlocks());
 
       if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
         throw new InvalidConfigurationException(
