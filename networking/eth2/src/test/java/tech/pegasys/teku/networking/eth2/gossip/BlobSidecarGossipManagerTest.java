@@ -53,8 +53,6 @@ public class BlobSidecarGossipManagerTest {
   private static final Pattern BLOB_SIDECAR_TOPIC_PATTERN = Pattern.compile("blob_sidecar_(\\d+)");
 
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
-
-  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -102,8 +100,7 @@ public class BlobSidecarGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            processor,
-            gossipMaxSize);
+            processor);
     blobSidecarGossipManager.subscribe();
   }
 

@@ -68,7 +68,7 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
         ContributionAndProofSchema.create(syncCommitteeContributionSchema);
     this.signedContributionAndProofSchema =
         SignedContributionAndProofSchema.create(contributionAndProofSchema);
-    this.metadataMessageSchema = new MetadataMessageSchemaAltair();
+    this.metadataMessageSchema = new MetadataMessageSchemaAltair(specConfig.getNetworkingConfig());
     this.lightClientHeaderSchema = new LightClientHeaderSchema();
     this.lightClientBootstrapSchema = new LightClientBootstrapSchema(specConfig);
     this.lightClientUpdateSchema = new LightClientUpdateSchema(specConfig);

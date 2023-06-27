@@ -29,10 +29,10 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
 
   @Test
   public void shouldParseSingleResponse() throws Exception {
-    List<List<ByteBuf>> testByteBufSlices = testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA);
+    List<List<ByteBuf>> testByteBufSlices = testByteBufSlices(lengthPrefix, messageData);
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
-      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder = METHOD.createRequestDecoder();
+      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder = method.createRequestDecoder();
 
       List<BeaconBlocksByRootRequestMessage> msgs = new ArrayList<>();
       for (ByteBuf bufSlice : bufSlices) {
@@ -44,19 +44,19 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
         assertThat(bufSlice.refCnt()).isEqualTo(0);
       }
 
-      assertThat(msgs).containsExactly(MESSAGE);
+      assertThat(msgs).containsExactly(message);
     }
   }
 
   @Test
   public void shouldThrowErrorIfMessagesHaveTrailingData() throws Exception {
     List<List<ByteBuf>> testByteBufSlices =
-        testByteBufSlices(LENGTH_PREFIX, MESSAGE_DATA, Bytes.fromHexString("0x1234"));
+        testByteBufSlices(lengthPrefix, messageData, Bytes.fromHexString("0x1234"));
 
     for (int i = 0; i < testByteBufSlices.size(); i++) {
       List<ByteBuf> bufSlices = testByteBufSlices.get(i);
 
-      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder = METHOD.createRequestDecoder();
+      RpcRequestDecoder<BeaconBlocksByRootRequestMessage> decoder = method.createRequestDecoder();
 
       assertThatThrownBy(
               () -> {
@@ -72,7 +72,7 @@ class RpcRequestDecoderTest extends RpcDecoderTestBase {
   @Test
   public void shouldProcessEmptyMessage() throws Exception {
     RpcRequestDecoder<EmptyMessage> decoder =
-        new RpcRequestDecoder<>(EmptyMessage.SSZ_SCHEMA, ENCODING);
+        new RpcRequestDecoder<>(EmptyMessage.SSZ_SCHEMA, encoding);
     assertThat(decoder.complete()).isNotEmpty().contains(EmptyMessage.EMPTY_MESSAGE);
   }
 }

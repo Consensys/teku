@@ -19,10 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class Constants {
 
   // Networking
-  public static final UInt64 MAX_REQUEST_BLOCKS = UInt64.valueOf(1024);
   public static final int ATTESTATION_SUBNET_COUNT = 64;
-  public static final UInt64 ATTESTATION_PROPAGATION_SLOT_RANGE = UInt64.valueOf(32);
-  public static final int MAXIMUM_GOSSIP_CLOCK_DISPARITY = 500; // in ms
 
   // Deneb
   public static final UInt64 MAX_REQUEST_BLOCKS_DENEB = UInt64.valueOf(128);
@@ -59,11 +56,6 @@ public class Constants {
   public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
   public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
-
-  // Teku Sync
-  public static final UInt64 HISTORICAL_SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final UInt64 FORWARD_SYNC_BATCH_SIZE = UInt64.valueOf(50);
-  public static final int MAX_BLOCKS_PER_MINUTE = 500;
 
   // Teku Validator Client Specific
   public static final Duration GENESIS_DATA_RETRY_DELAY = Duration.ofSeconds(10);

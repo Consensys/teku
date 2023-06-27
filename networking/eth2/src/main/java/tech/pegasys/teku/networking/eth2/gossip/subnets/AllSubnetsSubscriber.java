@@ -14,22 +14,23 @@
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static java.util.stream.Collectors.toSet;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class AllSubnetsSubscriber implements StableSubnetSubscriber {
   private static final Logger LOG = LogManager.getLogger();
 
-  public static StableSubnetSubscriber create(final AttestationTopicSubscriber subscriber) {
+  public static StableSubnetSubscriber create(
+      final AttestationTopicSubscriber subscriber, final NetworkingSpecConfig networkingConfig) {
     LOG.info("Subscribing to all attestation subnets");
     final Set<SubnetSubscription> subscriptions =
-        IntStream.range(0, ATTESTATION_SUBNET_COUNT)
+        IntStream.range(0, networkingConfig.getAttestationSubnetCount())
             .mapToObj(subnetId -> new SubnetSubscription(subnetId, UInt64.MAX_VALUE))
             .collect(toSet());
     subscriber.subscribeToPersistentSubnets(subscriptions);

@@ -33,6 +33,7 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
   }
 
   @Test
+  @Disabled("TODO: Enable after release when new config is part of the release")
   void shouldRunUpdatedValidatorAgainstLastReleaseBeaconNode() throws Exception {
     verifyCompatibility(TekuDockerVersion.LAST_RELEASE, TekuDockerVersion.LOCAL_BUILD);
   }

@@ -98,8 +98,7 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blobSidecarProcessor,
-            getMessageMaxSize());
+            blobSidecarProcessor);
     addGossipManager(blobSidecarGossipManager);
   }
 

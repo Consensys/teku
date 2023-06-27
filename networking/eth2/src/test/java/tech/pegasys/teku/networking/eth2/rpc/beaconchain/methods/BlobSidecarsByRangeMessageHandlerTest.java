@@ -64,7 +64,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();

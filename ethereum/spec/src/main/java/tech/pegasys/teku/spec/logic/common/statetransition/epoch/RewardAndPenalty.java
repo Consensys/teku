@@ -34,6 +34,10 @@ public interface RewardAndPenalty {
 
   UInt64 getPenalty();
 
+  default boolean isZero() {
+    return getReward().isZero() && getPenalty().isZero();
+  }
+
   default Optional<DetailedRewardAndPenalty> asDetailed() {
     if (this.getClass().isAssignableFrom(DetailedRewardAndPenalty.class)) {
       return Optional.of((DetailedRewardAndPenalty) this);

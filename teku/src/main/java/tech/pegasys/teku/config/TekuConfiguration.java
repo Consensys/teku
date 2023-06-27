@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.config;
 
+import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -221,14 +223,29 @@ public class TekuConfiguration {
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
-      DataConfig dataConfig = dataConfigBuilder.build();
-      ValidatorConfig validatorConfig = validatorConfigBuilder.build();
+      final DataConfig dataConfig = dataConfigBuilder.build();
+      final ValidatorConfig validatorConfig = validatorConfigBuilder.build();
 
-      P2PConfig p2PConfig = p2pConfigBuilder.build();
+      final P2PConfig p2PConfig = p2pConfigBuilder.build();
       syncConfigBuilder.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
 
-      StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
-      SyncConfig syncConfig = syncConfigBuilder.build();
+      final StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
+      final SyncConfig syncConfig = syncConfigBuilder.build();
+
+      final int maxAllowedBatchSize =
+          Math.min(
+              spec.getNetworkingConfig().getMaxRequestBlocks(),
+              MAX_REQUEST_BLOCKS_DENEB.intValue());
+
+      if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
+        throw new InvalidConfigurationException(
+            "Forward sync batch size cannot be greater than " + maxAllowedBatchSize);
+      }
+
+      if (syncConfig.getHistoricalSyncBatchSize() > maxAllowedBatchSize) {
+        throw new InvalidConfigurationException(
+            "Historical sync batch size cannot be greater than " + maxAllowedBatchSize);
+      }
 
       // Check for invalid config settings
       if (syncConfig.isReconstructHistoricStatesEnabled()

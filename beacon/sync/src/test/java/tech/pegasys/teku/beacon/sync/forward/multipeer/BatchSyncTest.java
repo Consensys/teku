@@ -87,7 +87,8 @@ class BatchSyncTest {
           recentChainData,
           batchImporter,
           batches,
-          BATCH_SIZE,
+          BATCH_SIZE.intValue(),
+          5,
           commonAncestor,
           timeProvider);
 

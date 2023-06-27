@@ -17,10 +17,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 
 abstract class MessageIdCalculator {
-  // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
-  protected static final Bytes MESSAGE_DOMAIN_INVALID_SNAPPY = Bytes.fromHexString("0x00000000");
-  // 4-byte domain for gossip message-id isolation of *valid* snappy messages
-  protected static final Bytes MESSAGE_DOMAIN_VALID_SNAPPY = Bytes.fromHexString("0x01000000");
 
   protected abstract Bytes validMessageIdData(final Bytes uncompressedData);
 

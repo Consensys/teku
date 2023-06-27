@@ -40,7 +40,7 @@ public class SchemaDefinitionsPhase0 extends AbstractSchemaDefinitions {
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaPhase0.create(
             specConfig, getAttesterSlashingSchema(), "BeaconBlockBodyPhase0");
-    this.metadataMessageSchema = new MetadataMessageSchemaPhase0();
+    this.metadataMessageSchema = new MetadataMessageSchemaPhase0(specConfig.getNetworkingConfig());
     beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockPhase0");
     signedBeaconBlockSchema =
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockPhase0");

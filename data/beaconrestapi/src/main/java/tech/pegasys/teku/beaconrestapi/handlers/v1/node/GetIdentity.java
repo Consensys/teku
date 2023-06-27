@@ -32,92 +32,27 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class GetIdentity extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/identity";
 
-  private static final SerializableTypeDefinition<MetadataMessage> METADATA_TYPE =
-      SerializableTypeDefinition.object(MetadataMessage.class)
-          .name("MetaData")
-          .withField(
-              "seq_number",
-              UINT64_TYPE.withDescription(
-                  "Uint64 starting at 0 used to version the node's metadata. "
-                      + "If any other field in the local MetaData changes, the node MUST increment seq_number by 1."),
-              MetadataMessage::getSeqNumber)
-          .withField(
-              "attnets",
-              SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT)
-                  .getJsonTypeDefinition()
-                  .withDescription(
-                      "Bitvector representing the node's persistent attestation subnet subscriptions."),
-              MetadataMessage::getAttnets)
-          .withOptionalField(
-              "syncnets",
-              SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)
-                  .getJsonTypeDefinition()
-                  .withDescription(
-                      "Bitvector representing the node's persistent sync committee subnet subscriptions."),
-              MetadataMessage::getOptionalSyncnets)
-          .build();
-
-  private static final SerializableTypeDefinition<IdentityData> IDENTITY_DATA_TYPE =
-      SerializableTypeDefinition.object(IdentityData.class)
-          .name("NetworkIdentity")
-          .withField(
-              "peer_id",
-              string(
-                  "Cryptographic hash of a peer’s public key. "
-                      + "[Read more](https://docs.libp2p.io/concepts/peer-id/)",
-                  "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
-              IdentityData::getPeerId)
-          .withOptionalField(
-              "enr",
-              string(
-                  "Ethereum node record. [Read more](https://eips.ethereum.org/EIPS/eip-778)",
-                  "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"),
-              IdentityData::getEnr)
-          .withField(
-              "p2p_addresses",
-              listOf(
-                  string(
-                      "Node's addresses on which eth2 rpc requests are served. "
-                          + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
-                      "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")),
-              IdentityData::getListeningAddresses)
-          .withField(
-              "discovery_addresses",
-              listOf(
-                  string(
-                      "Node's addresses on which is listening for discv5 requests. "
-                          + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
-                      "/ip4/7.7.7.7/udp/30303/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")),
-              IdentityData::getDiscoveryAddresses)
-          .withField("metadata", METADATA_TYPE, IdentityData::getMetadata)
-          .build();
-
-  private static final SerializableTypeDefinition<IdentityData> IDENTITY_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(IdentityData.class)
-          .name("GetNetworkIdentityResponse")
-          .withField("data", IDENTITY_DATA_TYPE, Function.identity())
-          .build();
   private final NetworkDataProvider network;
 
-  public GetIdentity(final DataProvider provider) {
-    this(provider.getNetworkDataProvider());
+  public GetIdentity(final DataProvider provider, final NetworkingSpecConfig networkingSpecConfig) {
+    this(provider.getNetworkDataProvider(), networkingSpecConfig);
   }
 
-  GetIdentity(final NetworkDataProvider provider) {
+  GetIdentity(final NetworkDataProvider provider, final NetworkingSpecConfig networkingConfig) {
     super(
         EndpointMetadata.get(ROUTE)
             .operationId("getNetworkIdentity")
             .summary("Get node network identity")
             .description("Retrieves data about the node's network presence")
             .tags(TAG_NODE)
-            .response(SC_OK, "Request successful", IDENTITY_RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", createIdentityResponseType(networkingConfig))
             .build());
     this.network = provider;
   }
@@ -133,6 +68,78 @@ public class GetIdentity extends RestApiEndpoint {
             network.getMetadata());
 
     request.respondOk(networkIdentity, NO_CACHE);
+  }
+
+  private static SerializableTypeDefinition<IdentityData> createIdentityResponseType(
+      final NetworkingSpecConfig networkingConfig) {
+    return SerializableTypeDefinition.object(IdentityData.class)
+        .name("GetNetworkIdentityResponse")
+        .withField("data", createIdentityDataType(networkingConfig), Function.identity())
+        .build();
+  }
+
+  private static SerializableTypeDefinition<IdentityData> createIdentityDataType(
+      final NetworkingSpecConfig networkingConfig) {
+    return SerializableTypeDefinition.object(IdentityData.class)
+        .name("NetworkIdentity")
+        .withField(
+            "peer_id",
+            string(
+                "Cryptographic hash of a peer’s public key. "
+                    + "[Read more](https://docs.libp2p.io/concepts/peer-id/)",
+                "QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N"),
+            IdentityData::getPeerId)
+        .withOptionalField(
+            "enr",
+            string(
+                "Ethereum node record. [Read more](https://eips.ethereum.org/EIPS/eip-778)",
+                "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrkTfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYpMa2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"),
+            IdentityData::getEnr)
+        .withField(
+            "p2p_addresses",
+            listOf(
+                string(
+                    "Node's addresses on which eth2 rpc requests are served. "
+                        + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
+                    "/ip4/7.7.7.7/tcp/4242/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")),
+            IdentityData::getListeningAddresses)
+        .withField(
+            "discovery_addresses",
+            listOf(
+                string(
+                    "Node's addresses on which is listening for discv5 requests. "
+                        + "[Read more](https://docs.libp2p.io/reference/glossary/#multiaddr)",
+                    "/ip4/7.7.7.7/udp/30303/p2p/QmYyQSo1c1Ym7orWxLYvCrM2EmxFTANf8wXmmE7DWjhx5N")),
+            IdentityData::getDiscoveryAddresses)
+        .withField("metadata", createMetadataType(networkingConfig), IdentityData::getMetadata)
+        .build();
+  }
+
+  private static SerializableTypeDefinition<MetadataMessage> createMetadataType(
+      final NetworkingSpecConfig networkingConfig) {
+    return SerializableTypeDefinition.object(MetadataMessage.class)
+        .name("MetaData")
+        .withField(
+            "seq_number",
+            UINT64_TYPE.withDescription(
+                "Uint64 starting at 0 used to version the node's metadata. "
+                    + "If any other field in the local MetaData changes, the node MUST increment seq_number by 1."),
+            MetadataMessage::getSeqNumber)
+        .withField(
+            "attnets",
+            SszBitvectorSchema.create(networkingConfig.getAttestationSubnetCount())
+                .getJsonTypeDefinition()
+                .withDescription(
+                    "Bitvector representing the node's persistent attestation subnet subscriptions."),
+            MetadataMessage::getAttnets)
+        .withOptionalField(
+            "syncnets",
+            SszBitvectorSchema.create(NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)
+                .getJsonTypeDefinition()
+                .withDescription(
+                    "Bitvector representing the node's persistent sync committee subnet subscriptions."),
+            MetadataMessage::getOptionalSyncnets)
+        .build();
   }
 
   static class IdentityData {

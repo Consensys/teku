@@ -51,10 +51,6 @@ public interface ProgressiveTotalBalancesUpdates {
         public Optional<TotalBalances> getTotalBalances(final SpecConfig specConfig) {
           return Optional.empty();
         }
-
-        @Override
-        public void checkResult(
-            final SpecConfig specConfig, final UInt64 slot, final TotalBalances expected) {}
       };
 
   void onAttestation(
@@ -73,6 +69,4 @@ public interface ProgressiveTotalBalancesUpdates {
   ProgressiveTotalBalancesUpdates copy();
 
   Optional<TotalBalances> getTotalBalances(SpecConfig specConfig);
-
-  void checkResult(SpecConfig specConfig, UInt64 slot, TotalBalances expected);
 }
