@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -489,12 +490,11 @@ public class ForkChoiceUtil {
 
   public UInt64 computeFirstAvailabilityWindowSlot(final ReadOnlyStore store, final Spec spec) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(store);
+    final SpecConfig config = spec.atEpoch(currentEpoch).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final UInt64 maybeAvailabilityWindowStartSlot =
         spec.computeStartSlotAtEpoch(
-            currentEpoch.minusMinZero(
-                spec.getNetworkingConfigDeneb()
-                    .orElseThrow()
-                    .getMinEpochsForBlobSidecarsRequests()));
+            currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
     final UInt64 firstDenebSlot =
         spec.getForkSchedule()
             .streamMilestoneBoundarySlots()

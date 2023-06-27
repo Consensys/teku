@@ -879,10 +879,11 @@ public class Spec {
     if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(DENEB)) {
       return false;
     }
+    final SpecConfig config = atEpoch(epoch).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(
-            getNetworkingConfigDeneb().orElseThrow().getMinEpochsForBlobSidecarsRequests());
+        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {
@@ -897,10 +898,12 @@ public class Spec {
   }
 
   public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
+    final SpecConfig config = atSlot(signedBlobSidecar.getSlot()).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return signedBlobSidecar
         .getBlobSidecar()
         .getIndex()
-        .mod(getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount());
+        .mod(specConfigDeneb.getBlobSidecarSubnetCount());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
