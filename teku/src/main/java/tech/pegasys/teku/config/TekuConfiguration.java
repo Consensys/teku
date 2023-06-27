@@ -236,7 +236,7 @@ public class TekuConfiguration {
                   networkingSpecConfigDeneb ->
                       Math.min(
                           spec.getNetworkingConfig().getMaxRequestBlocks(),
-                          networkingSpecConfigDeneb.getMaxRequestBlocksDeneb().intValue()))
+                          networkingSpecConfigDeneb.getMaxRequestBlocksDeneb()))
               .orElse(spec.getNetworkingConfig().getMaxRequestBlocks());
 
       if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {

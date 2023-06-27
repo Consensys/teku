@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.config;
 
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-
 /**
  * Networking constants
  *
@@ -23,9 +21,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  */
 public interface NetworkingSpecConfigDeneb extends NetworkingSpecConfig {
 
-  UInt64 getMaxRequestBlocksDeneb();
+  int getMaxRequestBlocksDeneb();
 
-  UInt64 getMaxRequestBlobSidecars();
+  int getMaxRequestBlobSidecars();
 
   int getMinEpochsForBlobSidecarsRequests();
 

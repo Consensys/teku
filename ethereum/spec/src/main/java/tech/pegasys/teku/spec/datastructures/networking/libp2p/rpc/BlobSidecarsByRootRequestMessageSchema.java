@@ -25,11 +25,8 @@ public class BlobSidecarsByRootRequestMessageSchema
   public BlobSidecarsByRootRequestMessageSchema(final SpecConfigDeneb specConfigDeneb) {
     super(
         BlobIdentifier.SSZ_SCHEMA,
-        specConfigDeneb
-            .getNetworkingConfig()
-            .getMaxRequestBlocksDeneb()
-            .times(specConfigDeneb.getMaxBlobCommitmentsPerBlock())
-            .longValue());
+        (long) specConfigDeneb.getNetworkingConfig().getMaxRequestBlocksDeneb()
+            * specConfigDeneb.getMaxBlobCommitmentsPerBlock());
   }
 
   @Override

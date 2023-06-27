@@ -90,8 +90,8 @@ public class SpecConfigDenebTest {
         dataStructureUtil.randomPositiveInt(),
         Optional.empty(),
         true,
-        dataStructureUtil.randomUInt64(),
-        dataStructureUtil.randomUInt64(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt(),
         dataStructureUtil.randomPositiveInt());
   }

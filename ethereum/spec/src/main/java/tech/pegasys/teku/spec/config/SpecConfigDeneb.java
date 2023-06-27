@@ -49,8 +49,8 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
   int getMaxBlobsPerBlock();
 
   @Override
-  default UInt64 getMaxRequestBlobSidecars() {
-    return getMaxRequestBlocksDeneb().times(getMaxBlobsPerBlock());
+  default int getMaxRequestBlobSidecars() {
+    return getMaxRequestBlocksDeneb() * getMaxBlobsPerBlock();
   }
 
   Optional<String> getTrustedSetupPath();

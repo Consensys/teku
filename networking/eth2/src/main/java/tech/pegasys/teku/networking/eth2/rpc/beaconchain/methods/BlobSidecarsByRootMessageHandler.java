@@ -79,9 +79,9 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    final UInt64 maxRequestBlobSidecars =
+    final int maxRequestBlobSidecars =
         spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlobSidecars();
-    if (request.size() > maxRequestBlobSidecars.intValue()) {
+    if (request.size() > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(

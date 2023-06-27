@@ -37,8 +37,8 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Optional<String> trustedSetupPath = Optional.empty();
   private Boolean kzgNoop = false;
 
-  private UInt64 maxRequestBlocksDeneb;
-  private UInt64 maxRequestBlobSidecars;
+  private Integer maxRequestBlocksDeneb;
+  private Integer maxRequestBlobSidecars;
   private Integer minEpochsForBlobSidecarsRequests;
   private Integer blobSidecarSubnetCount;
 
@@ -98,12 +98,12 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     return this;
   }
 
-  public DenebBuilder maxRequestBlocksDeneb(final UInt64 maxRequestBlocksDeneb) {
+  public DenebBuilder maxRequestBlocksDeneb(final Integer maxRequestBlocksDeneb) {
     this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
     return this;
   }
 
-  public DenebBuilder maxRequestBlobSidecars(final UInt64 maxRequestBlobSidecars) {
+  public DenebBuilder maxRequestBlobSidecars(final Integer maxRequestBlobSidecars) {
     this.maxRequestBlobSidecars = maxRequestBlobSidecars;
     return this;
   }

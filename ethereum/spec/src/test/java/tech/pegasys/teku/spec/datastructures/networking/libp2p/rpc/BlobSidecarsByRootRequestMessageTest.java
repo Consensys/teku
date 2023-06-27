@@ -62,10 +62,10 @@ class BlobSidecarsByRootRequestMessageTest {
     shardingMilestones.forEach(
         milestone -> {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
-          final UInt64 maxRequestBlobSidecars =
+          final int maxRequestBlobSidecars =
               spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlobSidecars();
           assertThat(spec.getNetworkingConfig().getMaxRequestBlocks())
-              .isGreaterThanOrEqualTo(maxRequestBlobSidecars.intValue());
+              .isGreaterThanOrEqualTo(maxRequestBlobSidecars);
         });
   }
 }
