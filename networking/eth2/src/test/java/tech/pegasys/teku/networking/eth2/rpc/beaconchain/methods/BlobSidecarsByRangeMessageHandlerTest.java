@@ -33,7 +33,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +43,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -101,11 +101,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final BlobSidecarsByRangeMessageHandler handler =
       new BlobSidecarsByRangeMessageHandler(
           spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
+  private final Optional<RateTracker.ObjectsRequestResponse> allowedObjectRequests =
+      Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(100).build());
 
   @BeforeEach
   public void setUp() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlobSidecarRequests(eq(listener), anyLong())).thenReturn(Pair.of(ZERO, true));
+    when(peer.popBlobSidecarRequests(eq(listener), anyLong())).thenReturn(allowedObjectRequests);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
@@ -159,7 +161,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
     when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue()))
-        .thenReturn(Pair.of(ZERO, false));
+        .thenReturn(Optional.empty());
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
@@ -169,10 +171,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // Requesting 5 * maxBlobsPerBlock blob sidecars
     verify(peer, times(1))
         .popBlobSidecarRequests(any(), eq(count.times(maxBlobsPerBlock).longValue()));
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
     // No adjustment
-    verify(peer, never()).adjustBlobSidecarRequests(anyLong(), anyLong(), any());
+    verify(peer, never()).adjustBlobSidecarRequests(any(), anyLong());
 
     final long rateLimitedCount =
         metricsSystem
@@ -208,9 +208,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .popBlobSidecarRequests(any(), eq(count.times(maxBlobsPerBlock).longValue()));
     // Request cancelled
     verify(peer, times(1))
-        .cancelBlobSidecarRequests(eq(count.times(maxBlobsPerBlock).longValue()), any());
-    // No adjustment
-    verify(peer, never()).adjustBlobSidecarRequests(anyLong(), anyLong(), any());
+        .adjustBlobSidecarRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
 
     // blob sidecars should be available from epoch 5000, but they are
     // available from epoch 5010
@@ -234,10 +232,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .popBlobSidecarRequests(any(), eq(count.times(maxBlobsPerBlock).longValue()));
     // Sending 0 blob sidecars
     verify(peer, times(1))
-        .adjustBlobSidecarRequests(
-            eq(Long.valueOf(0)), eq(count.times(maxBlobsPerBlock).longValue()), any());
-    // no cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+        .adjustBlobSidecarRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
 
     verify(combinedChainDataClient, never()).getBlobSidecarByKey(any());
 
@@ -262,11 +257,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // Sending expectedSent blob sidecars
     verify(peer, times(1))
         .adjustBlobSidecarRequests(
-            eq(Long.valueOf(expectedSent.size())),
-            eq(count.times(maxBlobsPerBlock).longValue()),
-            any());
-    // no cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+            eq(allowedObjectRequests.get()), eq(Long.valueOf(expectedSent.size())));
 
     final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
@@ -324,11 +315,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // Sending expectedSent blob sidecars
     verify(peer, times(1))
         .adjustBlobSidecarRequests(
-            eq(Long.valueOf(expectedSent.size())),
-            eq(count.times(maxBlobsPerBlock).longValue()),
-            any());
-    // no cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+            eq(allowedObjectRequests.get()), eq(Long.valueOf(expectedSent.size())));
 
     final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
@@ -347,16 +334,17 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
-    when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(Pair.of(ZERO, true));
+    final Optional<RateTracker.ObjectsRequestResponse> zeroObjectRequests =
+        Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(0).build());
+
+    when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(zeroObjectRequests);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
     // Requesting 5 * maxBlobsPerBlock blob sidecars
     verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(0)));
     // no adjustment
-    verify(peer, never()).adjustBlobSidecarRequests(anyLong(), anyLong(), any());
-    // no cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, never()).adjustBlobSidecarRequests(any(), anyLong());
 
     final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 

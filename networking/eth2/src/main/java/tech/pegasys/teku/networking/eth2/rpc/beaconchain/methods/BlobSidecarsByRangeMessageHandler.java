@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -118,10 +118,10 @@ public class BlobSidecarsByRangeMessageHandler
       return;
     }
 
-    final Pair<UInt64, Boolean> rateLimiterResponse =
+    final Optional<RateTracker.ObjectsRequestResponse> blobSidecarRequests =
         peer.popBlobSidecarRequests(callback, requestedCount.longValue());
 
-    if (!peer.popRequest() || !rateLimiterResponse.getRight()) {
+    if (!peer.popRequest() || blobSidecarRequests.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -173,16 +173,14 @@ public class BlobSidecarsByRangeMessageHandler
             requestState -> {
               final int sentBlobSidecars = requestState.sentBlobSidecars.get();
               if (sentBlobSidecars != requestedCount.longValue()) {
-                peer.adjustBlobSidecarRequests(
-                    sentBlobSidecars, requestedCount.longValue(), rateLimiterResponse.getLeft());
+                peer.adjustBlobSidecarRequests(blobSidecarRequests.get(), sentBlobSidecars);
               }
               totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars);
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
             error -> {
-              peer.cancelBlobSidecarRequests(
-                  requestedCount.longValue(), rateLimiterResponse.getLeft());
+              peer.adjustBlobSidecarRequests(blobSidecarRequests.get(), 0);
               handleProcessingRequestError(error, callback);
             });
   }

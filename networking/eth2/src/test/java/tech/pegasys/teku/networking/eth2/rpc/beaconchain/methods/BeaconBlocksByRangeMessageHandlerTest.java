@@ -34,7 +34,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -45,6 +44,7 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -93,11 +93,13 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private final String protocolId = BeaconChainMethodIds.getBlocksByRangeMethodId(2, RPC_ENCODING);
   private final BeaconBlocksByRangeMessageHandler handler =
       new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
+  private final Optional<RateTracker.ObjectsRequestResponse> allowedObjectRequests =
+      Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(100).build());
 
   @BeforeEach
   public void setup() {
     when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlockRequests(any(), anyLong())).thenReturn(Pair.of(ZERO, true));
+    when(peer.popBlockRequests(any(), anyLong())).thenReturn(allowedObjectRequests);
     when(combinedChainDataClient.getEarliestAvailableBlockSlot())
         .thenReturn(completedFuture(Optional.of(ZERO)));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
@@ -248,9 +250,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 0 blocks (First block is missing, return error)
-    verify(peer, times(1)).cancelBlockRequests(eq(Long.valueOf(count)), any());
-    // No adjustment
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    verify(peer, times(1))
+        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
 
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(
@@ -275,9 +276,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 0 blocks (First block is missing, return error)
-    verify(peer, times(1)).cancelBlockRequests(eq(Long.valueOf(count)), any());
-    // No adjustment
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    verify(peer, times(1))
+        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
 
     final RpcException expectedError =
         new RpcException.ResourceUnavailableException(
@@ -299,9 +299,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 5 blocks as initially requested: No rate limiter adjustment
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, never()).adjustBlockRequests(any(), anyLong());
 
     verifyBlocksReturned(3, 4, 5, 6, 7);
   }
@@ -319,9 +317,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 1 block
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 1 block as initially requested: No rate limiter adjustment
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, never()).adjustBlockRequests(any(), anyLong());
 
     verifyBlocksReturned(3);
   }
@@ -341,9 +337,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 1 block
-    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(1)), eq(Long.valueOf(count)), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, times(1))
+        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(1)));
 
     verifyBlocksReturned(2);
   }
@@ -362,10 +357,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 4 blocks only
-    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(4)), eq(Long.valueOf(count)), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
-
+    verify(peer, times(1))
+        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(4)));
     // Slot 4 is empty so we only return 4 blocks
     verifyBlocksReturned(2, 3, 5, 6);
   }
@@ -384,9 +377,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 4 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 1 block
-    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(1)), eq(Long.valueOf(count)), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, times(1))
+        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(1)));
 
     verifyBlocksReturned(4);
   }
@@ -410,9 +402,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 50 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 0 blocks
-    verify(peer, times(1)).adjustBlockRequests(eq(Long.valueOf(0)), eq(Long.valueOf(count)), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, times(1))
+        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
 
     verifyNoBlocksReturned();
     // The first block is after the best block available, so we shouldn't request anything
@@ -432,9 +423,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 5 blocks as initially requested: No rate limiter adjustment
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, never()).adjustBlockRequests(any(), anyLong());
 
     verifyBlocksReturned(1, 2, 3, 4, 5);
     verify(combinedChainDataClient, never()).getAncestorRoots(any(), any(), any());
@@ -454,9 +443,7 @@ class BeaconBlocksByRangeMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(count)));
     // Sending 5 blocks as initially requested: No rate limiter adjustment
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
-    // No cancellation
-    verify(peer, never()).cancelBlobSidecarRequests(anyLong(), any());
+    verify(peer, never()).adjustBlockRequests(any(), anyLong());
 
     verifyBlocksReturned(1, 2, 3, 4, 5);
   }

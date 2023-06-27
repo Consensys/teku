@@ -24,7 +24,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -35,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -122,10 +122,10 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
 
-    final Pair<UInt64, Boolean> rateLimiterResponse =
+    final Optional<RateTracker.ObjectsRequestResponse> blockRequests =
         peer.popBlockRequests(callback, message.getCount().longValue());
 
-    if (!peer.popRequest() || !rateLimiterResponse.getRight()) {
+    if (!peer.popRequest() || blockRequests.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -136,17 +136,13 @@ public class BeaconBlocksByRangeMessageHandler
         .finish(
             requestState -> {
               if (requestState.sentBlocks.get() != message.getCount().longValue()) {
-                peer.adjustBlockRequests(
-                    requestState.sentBlocks.get(),
-                    message.getCount().longValue(),
-                    rateLimiterResponse.getLeft());
+                peer.adjustBlockRequests(blockRequests.get(), requestState.sentBlocks.get());
               }
               totalBlocksRequestedCounter.inc(requestState.sentBlocks.get());
               callback.completeSuccessfully();
             },
             error -> {
-              peer.cancelBlockRequests(
-                  message.getCount().longValue(), rateLimiterResponse.getLeft());
+              peer.adjustBlockRequests(blockRequests.get(), 0);
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context

@@ -20,7 +20,6 @@ import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -92,10 +92,10 @@ public class BeaconBlocksByRootMessageHandler
 
       SafeFuture<Void> future = SafeFuture.COMPLETE;
 
-      final Pair<UInt64, Boolean> rateLimiterResponse =
+      final Optional<RateTracker.ObjectsRequestResponse> blockRequests =
           peer.popBlockRequests(callback, message.size());
 
-      if (!peer.popRequest() || !rateLimiterResponse.getRight()) {
+      if (!peer.popRequest() || blockRequests.isEmpty()) {
         requestCounter.labels("rate_limited").inc();
         return;
       }
@@ -130,14 +130,13 @@ public class BeaconBlocksByRootMessageHandler
       future.finish(
           () -> {
             if (sentBlocks.get() != message.size()) {
-              peer.adjustBlockRequests(
-                  sentBlocks.get(), message.size(), rateLimiterResponse.getLeft());
+              peer.adjustBlockRequests(blockRequests.get(), sentBlocks.get());
             }
             totalBlocksRequestedCounter.inc(sentBlocks.get());
             callback.completeSuccessfully();
           },
           err -> {
-            peer.cancelBlockRequests(message.size(), rateLimiterResponse.getLeft());
+            peer.adjustBlockRequests(blockRequests.get(), 0);
             handleError(callback, err);
           });
     } else {

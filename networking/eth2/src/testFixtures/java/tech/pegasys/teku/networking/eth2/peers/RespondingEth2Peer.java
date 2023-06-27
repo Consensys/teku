@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,7 +24,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -303,32 +301,25 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Pair<UInt64, Boolean> popBlockRequests(
+  public Optional<RateTracker.ObjectsRequestResponse> popBlockRequests(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return Pair.of(ZERO, true);
+    return Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(0).build());
   }
 
   @Override
   public void adjustBlockRequests(
-      final long returnedBlockCount, final long initialBlockCount, UInt64 time) {}
+      final RateTracker.ObjectsRequestResponse blockRequests, final long returnedBlocksCount) {}
 
   @Override
-  public void cancelBlockRequests(final long initialBlockCount, UInt64 time) {}
-
-  @Override
-  public Pair<UInt64, Boolean> popBlobSidecarRequests(
+  public Optional<RateTracker.ObjectsRequestResponse> popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return Pair.of(ZERO, true);
+    return Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(0).build());
   }
 
   @Override
   public void adjustBlobSidecarRequests(
-      final long returnedBlobSidecarsCount,
-      final long initialBlobSidecarCount,
-      final UInt64 time) {}
-
-  @Override
-  public void cancelBlobSidecarRequests(final long initialBlobSidecarCount, final UInt64 time) {}
+      final RateTracker.ObjectsRequestResponse blobSidecarRequests,
+      final long returnedBlobSidecarsCount) {}
 
   @Override
   public boolean popRequest() {

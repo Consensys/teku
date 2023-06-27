@@ -23,19 +23,18 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RateTracker;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -77,11 +76,14 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @SuppressWarnings("unchecked")
   final ResponseCallback<SignedBeaconBlock> callback = mock(ResponseCallback.class);
 
+  private final Optional<RateTracker.ObjectsRequestResponse> allowedObjectRequests =
+      Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(100).build());
+
   @BeforeEach
   public void setup() {
     chainUpdater.initializeGenesis();
     when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlockRequests(any(), anyLong())).thenReturn(Pair.of(ZERO, true));
+    when(peer.popBlockRequests(any(), anyLong())).thenReturn(allowedObjectRequests);
     when(recentChainData.getStore()).thenReturn(store);
     // Forward block requests from the mock to the actual store
     when(store.retrieveSignedBlock(any()))
@@ -137,9 +139,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
     // Sending 5 blocks: No rate limiter adjustment required
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
-    // No cancellation
-    verify(peer, never()).cancelBlockRequests(anyLong(), any());
+    verify(peer, never()).adjustBlockRequests(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
@@ -160,9 +160,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
     // Request cancelled
-    verify(peer, times(1)).cancelBlockRequests(eq(Long.valueOf(blocks.size())), any());
-    // No adjustment
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
+    verify(peer, times(1))
+        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
 
     // Check that we only asked for the first block
     verify(store, times(1)).retrieveSignedBlock(any());
@@ -183,9 +182,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     // Requesting 5 blocks
     verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
     // Sending 5 blocks: No rate limiter adjustment required
-    verify(peer, never()).adjustBlockRequests(anyLong(), anyLong(), any());
-    // No cancellation
-    verify(peer, never()).cancelBlockRequests(anyLong(), any());
+    verify(peer, never()).adjustBlockRequests(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
