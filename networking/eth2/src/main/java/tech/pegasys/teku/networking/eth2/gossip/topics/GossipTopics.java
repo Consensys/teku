@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.IntStream;
@@ -88,9 +89,9 @@ public class GossipTopics {
                             topics.add(
                                 getBlobSidecarSubnetTopic(
                                     forkDigest, blobSidecarSubnetIndex, gossipEncoding))));
-    for (GossipTopicName topicName : GossipTopicName.values()) {
-      topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
-    }
+    Arrays.stream(GossipTopicName.values())
+        .forEach(
+            topicName -> topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding)));
 
     return topics;
   }

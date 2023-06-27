@@ -31,7 +31,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -103,21 +106,22 @@ class Eth2GossipTopicFilterTest {
 
   @Test
   void shouldConsiderAllBlobSidecarSubnetsRelevant() {
-    for (int i = 0;
-        i < spec.getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount();
-        i++) {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    for (int i = 0; i < specConfigDeneb.getBlobSidecarSubnetCount(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarSubnetTopicName(i)))).isTrue();
     }
   }
 
   @Test
   void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     assertThat(
             filter.isRelevantTopic(
                 getTopicName(
                     getBlobSidecarSubnetTopicName(
-                        spec.getNetworkingConfigDeneb().orElseThrow().getBlobSidecarSubnetCount()
-                            + 1))))
+                        specConfigDeneb.getBlobSidecarSubnetCount() + 1))))
         .isFalse();
   }
 

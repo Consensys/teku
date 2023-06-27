@@ -47,7 +47,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -192,14 +195,14 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final Optional<RpcException> result =
         handler.validateRequest(
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
                 UInt64.valueOf(startBlock),
-                UInt64.valueOf(
-                        spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlocksDeneb())
-                    .increment(),
+                UInt64.valueOf(specConfigDeneb.getMaxRequestBlocksDeneb()).increment(),
                 UInt64.valueOf(skip)));
 
     assertThat(result)

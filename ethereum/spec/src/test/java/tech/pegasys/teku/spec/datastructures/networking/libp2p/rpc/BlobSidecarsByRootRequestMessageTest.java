@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class BlobSidecarsByRootRequestMessageTest {
@@ -62,8 +64,9 @@ class BlobSidecarsByRootRequestMessageTest {
     shardingMilestones.forEach(
         milestone -> {
           final Spec spec = TestSpecFactory.createMainnet(milestone);
-          final int maxRequestBlobSidecars =
-              spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlobSidecars();
+          final SpecConfig config = spec.forMilestone(milestone).getConfig();
+          final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+          final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
           assertThat(spec.getNetworkingConfig().getMaxRequestBlocks())
               .isGreaterThanOrEqualTo(maxRequestBlobSidecars);
         });

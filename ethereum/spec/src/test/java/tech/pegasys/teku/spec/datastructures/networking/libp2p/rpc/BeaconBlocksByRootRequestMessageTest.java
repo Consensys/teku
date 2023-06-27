@@ -21,7 +21,10 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 class BeaconBlocksByRootRequestMessageTest {
 
@@ -46,9 +49,10 @@ class BeaconBlocksByRootRequestMessageTest {
 
   @Test
   public void verifyMaxLengthOfContainerIsGreaterOrEqualToMaxRequestBlocks() {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     assertThat(schema.getMaxLength())
         .isGreaterThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocks())
-        .isGreaterThanOrEqualTo(
-            spec.getNetworkingConfigDeneb().orElseThrow().getMaxRequestBlocksDeneb());
+        .isGreaterThanOrEqualTo(specConfigDeneb.getMaxRequestBlocksDeneb());
   }
 }

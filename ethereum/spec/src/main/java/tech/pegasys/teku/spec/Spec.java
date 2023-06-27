@@ -207,7 +207,10 @@ public class Spec {
     return getGenesisSpec().getConfig().getNetworkingConfig();
   }
 
-  /** Networking config with Deneb constants */
+  /**
+   * Networking config with Deneb constants. Use {@link SpecConfigDeneb#required(SpecConfig)} when
+   * you are sure that Deneb is available, otherwise use this method
+   */
   public Optional<NetworkingSpecConfigDeneb> getNetworkingConfigDeneb() {
     return Optional.ofNullable(forMilestone(DENEB))
         .map(SpecVersion::getConfig)

@@ -29,6 +29,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
@@ -165,12 +167,10 @@ public class BlobSidecarPruner extends Service {
     //   DA_boundary: 64
     //   latest_prunable_slot = 31
 
+    final SpecConfig config = spec.atSlot(currentSlot).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return currentSlot.minusMinZero(
-        ((long)
-                    (spec.getNetworkingConfigDeneb()
-                            .orElseThrow()
-                            .getMinEpochsForBlobSidecarsRequests()
-                        + 1)
+        ((long) (specConfigDeneb.getMinEpochsForBlobSidecarsRequests() + 1)
                 * spec.atSlot(currentSlot).getSlotsPerEpoch())
             + 1);
   }
