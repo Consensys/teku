@@ -122,7 +122,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
-  public int getMaxRequestBlocks() {
-    return SpecConfigDeneb.required(specConfig).getMaxRequestBlocksDeneb();
+  public UInt64 getMaxRequestBlocks() {
+    return UInt64.valueOf(SpecConfigDeneb.required(specConfig).getMaxRequestBlocksDeneb());
   }
 }
