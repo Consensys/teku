@@ -24,15 +24,12 @@ public class SyncCommitteeCurrentSlotUtil {
   private final RecentChainData recentChainData;
   private final Spec spec;
   private final TimeProvider timeProvider;
-  private final int maximumGossipClockDisparityMillis;
 
   public SyncCommitteeCurrentSlotUtil(
       final RecentChainData recentChainData, final Spec spec, final TimeProvider timeProvider) {
     this.recentChainData = recentChainData;
     this.spec = spec;
     this.timeProvider = timeProvider;
-    this.maximumGossipClockDisparityMillis =
-        spec.getNetworkingConfig().getMaximumGossipClockDisparity();
   }
 
   boolean isForCurrentSlot(final UInt64 slot) {
@@ -45,6 +42,8 @@ public class SyncCommitteeCurrentSlotUtil {
         secondsToMillis(spec.getSlotStartTime(slot, recentChainData.getGenesisTime()));
     final UInt64 slotEndTimeMillis = slotStartTimeMillis.plus(slotMillis);
     final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+    final int maximumGossipClockDisparityMillis =
+        spec.getNetworkingConfig().getMaximumGossipClockDisparity();
 
     return currentTimeMillis.isGreaterThanOrEqualTo(
             slotStartTimeMillis.minusMinZero(maximumGossipClockDisparityMillis))
