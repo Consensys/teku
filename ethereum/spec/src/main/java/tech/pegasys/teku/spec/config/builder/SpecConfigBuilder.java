@@ -106,6 +106,12 @@ public class SpecConfigBuilder {
   private Integer maxChunkSize;
   private Integer maxRequestBlocks;
   private Integer epochsPerSubnetSubscription;
+  private Integer ttfbTimeout;
+  private Integer respTimeout;
+  private Integer attestationPropagationSlotRange;
+  private Integer maximumGossipClockDisparity;
+  private Bytes4 messageDomainInvalidSnappy;
+  private Bytes4 messageDomainValidSnappy;
   private Integer subnetsPerNode;
   private Integer attestationSubnetCount;
   private Integer attestationSubnetExtraBits;
@@ -181,6 +187,12 @@ public class SpecConfigBuilder {
             maxChunkSize,
             maxRequestBlocks,
             epochsPerSubnetSubscription,
+            ttfbTimeout,
+            respTimeout,
+            attestationPropagationSlotRange,
+            maximumGossipClockDisparity,
+            messageDomainInvalidSnappy,
+            messageDomainValidSnappy,
             subnetsPerNode,
             attestationSubnetCount,
             attestationSubnetExtraBits,
@@ -247,6 +259,13 @@ public class SpecConfigBuilder {
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
     SpecBuilderUtil.validateConstant("maxRequestBlocks", maxRequestBlocks);
     SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
+    SpecBuilderUtil.validateConstant("ttfbTimeout", ttfbTimeout);
+    SpecBuilderUtil.validateConstant("respTimeout", respTimeout);
+    SpecBuilderUtil.validateConstant(
+        "attestationPropagationSlotRange", attestationPropagationSlotRange);
+    SpecBuilderUtil.validateConstant("maximumGossipClockDisparity", maximumGossipClockDisparity);
+    SpecBuilderUtil.validateConstant("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
+    SpecBuilderUtil.validateConstant("messageDomainValidSnappy", messageDomainValidSnappy);
     SpecBuilderUtil.validateConstant("subnetsPerNode", subnetsPerNode);
     SpecBuilderUtil.validateConstant("attestationSubnetCount", attestationSubnetCount);
     SpecBuilderUtil.validateConstant("attestationSubnetExtraBits", attestationSubnetExtraBits);
@@ -576,6 +595,37 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder epochsPerSubnetSubscription(final Integer epochsPerSubnetSubscription) {
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    return this;
+  }
+
+  public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
+    this.ttfbTimeout = ttfbTimeout;
+    return this;
+  }
+
+  public SpecConfigBuilder respTimeout(final Integer respTimeout) {
+    this.respTimeout = respTimeout;
+    return this;
+  }
+
+  public SpecConfigBuilder attestationPropagationSlotRange(
+      final Integer attestationPropagationSlotRange) {
+    this.attestationPropagationSlotRange = attestationPropagationSlotRange;
+    return this;
+  }
+
+  public SpecConfigBuilder maximumGossipClockDisparity(final Integer maximumGossipClockDisparity) {
+    this.maximumGossipClockDisparity = maximumGossipClockDisparity;
+    return this;
+  }
+
+  public SpecConfigBuilder messageDomainInvalidSnappy(final Bytes4 messageDomainInvalidSnappy) {
+    this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
+    return this;
+  }
+
+  public SpecConfigBuilder messageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
+    this.messageDomainValidSnappy = messageDomainValidSnappy;
     return this;
   }
 

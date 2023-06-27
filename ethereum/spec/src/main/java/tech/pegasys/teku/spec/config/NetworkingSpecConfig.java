@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.config;
 
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+
 public interface NetworkingSpecConfig {
 
   int getGossipMaxSize();
@@ -24,6 +26,23 @@ public interface NetworkingSpecConfig {
   int getEpochsPerSubnetSubscription();
 
   int getMinEpochsForBlockRequests();
+
+  // in seconds
+  int getTtfbTimeout();
+
+  // in seconds
+  int getRespTimeout();
+
+  int getAttestationPropagationSlotRange();
+
+  // in millis
+  int getMaximumGossipClockDisparity();
+
+  // 4-byte domain for gossip message-id isolation of *invalid* snappy messages
+  Bytes4 getMessageDomainInvalidSnappy();
+
+  // 4-byte domain for gossip message-id isolation of *valid* snappy messages
+  Bytes4 getMessageDomainValidSnappy();
 
   int getSubnetsPerNode();
 

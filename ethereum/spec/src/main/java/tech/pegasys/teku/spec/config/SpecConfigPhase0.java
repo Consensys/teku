@@ -105,6 +105,12 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int maxChunkSize;
   private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
+  private final int ttfbTimeout;
+  private final int respTimeout;
+  private final int attestationPropagationSlotRange;
+  private final int maximumGossipClockDisparity;
+  private final Bytes4 messageDomainInvalidSnappy;
+  private final Bytes4 messageDomainValidSnappy;
   private final int subnetsPerNode;
   private final int attestationSubnetCount;
   private final int attestationSubnetExtraBits;
@@ -165,6 +171,12 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxChunkSize,
       final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
+      final int ttfbTimeout,
+      final int respTimeout,
+      final int attestationPropagationSlotRange,
+      final int maximumGossipClockDisparity,
+      final Bytes4 messageDomainInvalidSnappy,
+      final Bytes4 messageDomainValidSnappy,
       final int subnetsPerNode,
       final int attestationSubnetCount,
       final int attestationSubnetExtraBits,
@@ -224,6 +236,12 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxChunkSize = maxChunkSize;
     this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    this.ttfbTimeout = ttfbTimeout;
+    this.respTimeout = respTimeout;
+    this.attestationPropagationSlotRange = attestationPropagationSlotRange;
+    this.maximumGossipClockDisparity = maximumGossipClockDisparity;
+    this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
+    this.messageDomainValidSnappy = messageDomainValidSnappy;
     this.subnetsPerNode = subnetsPerNode;
     this.attestationSubnetCount = attestationSubnetCount;
     this.attestationSubnetExtraBits = attestationSubnetExtraBits;
@@ -526,6 +544,36 @@ public class SpecConfigPhase0 implements SpecConfig {
   }
 
   @Override
+  public int getTtfbTimeout() {
+    return ttfbTimeout;
+  }
+
+  @Override
+  public int getRespTimeout() {
+    return respTimeout;
+  }
+
+  @Override
+  public int getAttestationPropagationSlotRange() {
+    return attestationPropagationSlotRange;
+  }
+
+  @Override
+  public int getMaximumGossipClockDisparity() {
+    return maximumGossipClockDisparity;
+  }
+
+  @Override
+  public Bytes4 getMessageDomainInvalidSnappy() {
+    return messageDomainInvalidSnappy;
+  }
+
+  @Override
+  public Bytes4 getMessageDomainValidSnappy() {
+    return messageDomainValidSnappy;
+  }
+
+  @Override
   public int getSubnetsPerNode() {
     return subnetsPerNode;
   }
@@ -596,6 +644,10 @@ public class SpecConfigPhase0 implements SpecConfig {
         && attestationSubnetCount == that.attestationSubnetCount
         && attestationSubnetExtraBits == that.attestationSubnetExtraBits
         && attestationSubnetPrefixBits == that.attestationSubnetPrefixBits
+        && ttfbTimeout == that.ttfbTimeout
+        && respTimeout == that.respTimeout
+        && attestationPropagationSlotRange == that.attestationPropagationSlotRange
+        && maximumGossipClockDisparity == that.maximumGossipClockDisparity
         && Objects.equals(eth1FollowDistance, that.eth1FollowDistance)
         && Objects.equals(minGenesisTime, that.minGenesisTime)
         && Objects.equals(hysteresisQuotient, that.hysteresisQuotient)
@@ -611,7 +663,9 @@ public class SpecConfigPhase0 implements SpecConfig {
         && Objects.equals(shardCommitteePeriod, that.shardCommitteePeriod)
         && Objects.equals(proposerRewardQuotient, that.proposerRewardQuotient)
         && Objects.equals(inactivityPenaltyQuotient, that.inactivityPenaltyQuotient)
-        && Objects.equals(depositContractAddress, that.depositContractAddress);
+        && Objects.equals(depositContractAddress, that.depositContractAddress)
+        && Objects.equals(messageDomainInvalidSnappy, that.messageDomainInvalidSnappy)
+        && Objects.equals(messageDomainValidSnappy, that.messageDomainValidSnappy);
   }
 
   @Override
@@ -671,6 +725,12 @@ public class SpecConfigPhase0 implements SpecConfig {
         maxChunkSize,
         maxRequestBlocks,
         epochsPerSubnetSubscription,
+        ttfbTimeout,
+        respTimeout,
+        attestationPropagationSlotRange,
+        maximumGossipClockDisparity,
+        messageDomainInvalidSnappy,
+        messageDomainValidSnappy,
         subnetsPerNode,
         attestationSubnetCount,
         attestationSubnetExtraBits,

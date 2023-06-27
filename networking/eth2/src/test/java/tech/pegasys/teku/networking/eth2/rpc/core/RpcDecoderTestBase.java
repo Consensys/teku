@@ -78,7 +78,8 @@ public class RpcDecoderTestBase {
               false,
               contextEncoder,
               mock(LocalMessageHandler.class),
-              peerLookup);
+              peerLookup,
+              spec.getNetworkingConfig());
 
   protected List<List<ByteBuf>> testByteBufSlices(final Bytes... bytes) {
     List<List<ByteBuf>> ret = Utils.generateTestSlices(bytes);

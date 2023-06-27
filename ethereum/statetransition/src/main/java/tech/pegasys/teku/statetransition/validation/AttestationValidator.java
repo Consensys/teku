@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_PROPAGATION_SLOT_RANGE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -26,7 +25,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -36,13 +34,12 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class AttestationValidator {
   private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
-  private static final UInt64 MAXIMUM_GOSSIP_CLOCK_DISPARITY =
-      UInt64.valueOf(Constants.MAXIMUM_GOSSIP_CLOCK_DISPARITY);
 
   private final Spec spec;
   private final RecentChainData recentChainData;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final AttestationStateSelector stateSelector;
+  private final UInt64 maximumGossipClockDisparity;
 
   public AttestationValidator(
       final Spec spec,
@@ -53,6 +50,8 @@ public class AttestationValidator {
     this.spec = spec;
     this.signatureVerifier = signatureVerifier;
     this.stateSelector = new AttestationStateSelector(spec, recentChainData, metricsSystem);
+    this.maximumGossipClockDisparity =
+        UInt64.valueOf(spec.getNetworkingConfig().getMaximumGossipClockDisparity());
   }
 
   public SafeFuture<InternalValidationResult> validate(
@@ -235,13 +234,14 @@ public class AttestationValidator {
             .getGenesisTime()
             .plus(attestationSlot.times(secondsPerSlot(attestationSlot)));
     final UInt64 lastAllowedTimeMillis = secondsToMillis(lastAllowedTime);
-    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
-        ? lastAllowedTimeMillis.minus(MAXIMUM_GOSSIP_CLOCK_DISPARITY)
+    return lastAllowedTimeMillis.isGreaterThanOrEqualTo(maximumGossipClockDisparity)
+        ? lastAllowedTimeMillis.minus(maximumGossipClockDisparity)
         : ZERO;
   }
 
   private UInt64 maximumBroadcastTimeMillis(final UInt64 attestationSlot) {
-    final UInt64 lastAllowedSlot = attestationSlot.plus(ATTESTATION_PROPAGATION_SLOT_RANGE);
+    final UInt64 lastAllowedSlot =
+        attestationSlot.plus(spec.getNetworkingConfig().getAttestationPropagationSlotRange());
     // The last allowed time is the end of the lastAllowedSlot (hence the plus 1).
     final UInt64 lastAllowedTime =
         recentChainData
@@ -249,7 +249,7 @@ public class AttestationValidator {
             .plus(lastAllowedSlot.plus(ONE).times(secondsPerSlot(attestationSlot)));
 
     // Add allowed clock disparity
-    return secondsToMillis(lastAllowedTime).plus(MAXIMUM_GOSSIP_CLOCK_DISPARITY);
+    return secondsToMillis(lastAllowedTime).plus(maximumGossipClockDisparity);
   }
 
   private int secondsPerSlot(final UInt64 slot) {

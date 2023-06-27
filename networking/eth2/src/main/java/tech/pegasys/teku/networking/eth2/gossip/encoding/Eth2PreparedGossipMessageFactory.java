@@ -18,6 +18,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public interface Eth2PreparedGossipMessageFactory extends PreparedGossipMessageFactory {
   /**
@@ -27,5 +28,5 @@ public interface Eth2PreparedGossipMessageFactory extends PreparedGossipMessageF
    * @param valueType The concrete type to deserialize to
    */
   <T extends SszData> PreparedGossipMessage create(
-      String topic, Bytes data, SszSchema<T> valueType);
+      String topic, Bytes data, SszSchema<T> valueType, NetworkingSpecConfig networkingConfig);
 }

@@ -46,6 +46,13 @@ public class GetSpecResponse {
     configAttributes.put("SUBNETS_PER_NODE", getSubnetsPerNode());
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION", getEpochsPerRandomSubnetSubscription());
+    configAttributes.put("TTFB_TIMEOUT", getTtfbTimeout());
+    configAttributes.put("RESP_TIMEOUT", getRespTimeout());
+    configAttributes.put(
+        "ATTESTATION_PROPAGATION_SLOT_RANGE", getAttestationPropagationSlotRange());
+    configAttributes.put("MAXIMUM_GOSSIP_CLOCK_DISPARITY", getMaximumGossipClockDisparity());
+    configAttributes.put("MESSAGE_DOMAIN_INVALID_SNAPPY", getMessageDomainInvalidSnappy());
+    configAttributes.put("MESSAGE_DOMAIN_VALID_SNAPPY", getMessageDomainValidSnappy());
     configAttributes.put("ATTESTATION_SUBNET_COUNT", getAttestationSubnetCount());
     configAttributes.put("ATTESTATION_SUBNET_EXTRA_BITS", getAttestationSubnetExtraBits());
     configAttributes.put("ATTESTATION_SUBNET_PREFIX_BITS", getAttestationSubnetPrefixBits());
@@ -101,6 +108,30 @@ public class GetSpecResponse {
 
   private String getRandomSubnetsPerValidator() {
     return Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR);
+  }
+
+  private String getTtfbTimeout() {
+    return Integer.toString(specConfig.getNetworkingConfig().getTtfbTimeout());
+  }
+
+  private String getRespTimeout() {
+    return Integer.toString(specConfig.getNetworkingConfig().getRespTimeout());
+  }
+
+  private String getAttestationPropagationSlotRange() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationPropagationSlotRange());
+  }
+
+  private String getMaximumGossipClockDisparity() {
+    return Integer.toString(specConfig.getNetworkingConfig().getMaximumGossipClockDisparity());
+  }
+
+  private String getMessageDomainInvalidSnappy() {
+    return specConfig.getNetworkingConfig().getMessageDomainInvalidSnappy().toHexString();
+  }
+
+  private String getMessageDomainValidSnappy() {
+    return specConfig.getNetworkingConfig().getMessageDomainValidSnappy().toHexString();
   }
 
   private String getSubnetsPerNode() {

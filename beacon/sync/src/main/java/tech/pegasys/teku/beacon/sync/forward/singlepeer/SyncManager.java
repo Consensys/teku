@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
-import tech.pegasys.teku.networking.eth2.rpc.core.RpcTimeouts;
+import tech.pegasys.teku.networking.eth2.rpc.core.RpcTimeoutException;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
@@ -228,7 +228,7 @@ public class SyncManager extends Service {
         .exceptionally(
             error -> {
               if (Throwables.getRootCause(error) instanceof PeerDisconnectedException
-                  || Throwables.getRootCause(error) instanceof RpcTimeouts.RpcTimeoutException) {
+                  || Throwables.getRootCause(error) instanceof RpcTimeoutException) {
                 LOG.debug("Peer {} disconnected during sync", syncPeer, error);
 
               } else {
