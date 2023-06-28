@@ -100,6 +100,19 @@ public class RateTracker {
     }
 
     @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+      ObjectRequestsEntryKey that = (ObjectRequestsEntryKey) o;
+      return Objects.equals(this.timeSeconds, that.timeSeconds)
+          && Objects.equals(this.requestId, that.requestId);
+    }
+
+    @Override
     public int compareTo(@NotNull ObjectRequestsEntryKey other) {
       return timeSeconds.compareTo(other.timeSeconds);
     }
