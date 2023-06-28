@@ -41,12 +41,6 @@ public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
   @Override
   public Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
       final Spec spec, final ReadOnlyStore store, final UInt64 slot) {
-    final UInt64 currentEpoch = spec.getCurrentEpoch(store);
-    if (!spec.getForkSchedule()
-        .getSpecMilestoneAtEpoch(currentEpoch)
-        .isGreaterThanOrEqualTo(DENEB)) {
-      return Optional.empty();
-    }
     final UInt64 firstAvailabilityWindowSlot = computeFirstAvailabilityWindowSlot(store, spec);
     if (firstAvailabilityWindowSlot.isLessThanOrEqualTo(slot)) {
       return Optional.of(firstAvailabilityWindowSlot);
