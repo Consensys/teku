@@ -131,7 +131,7 @@ public class BeaconBlocksByRangeMessageHandler
     }
 
     requestCounter.labels("ok").inc();
-
+    totalBlocksRequestedCounter.inc(message.getCount().longValue());
     sendMatchingBlocks(message, callback)
         .finish(
             requestState -> {
@@ -139,7 +139,6 @@ public class BeaconBlocksByRangeMessageHandler
                 peer.adjustBlockRequests(
                     blockRequestsApproval.get(), requestState.sentBlocks.get());
               }
-              totalBlocksRequestedCounter.inc(requestState.sentBlocks.get());
               callback.completeSuccessfully();
             },
             error -> {

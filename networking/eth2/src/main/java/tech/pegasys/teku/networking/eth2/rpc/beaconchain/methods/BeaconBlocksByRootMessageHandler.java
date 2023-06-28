@@ -101,7 +101,7 @@ public class BeaconBlocksByRootMessageHandler
       }
 
       requestCounter.labels("ok").inc();
-
+      totalBlocksRequestedCounter.inc(message.size());
       final AtomicInteger sentBlocks = new AtomicInteger(0);
 
       for (SszBytes32 blockRoot : message) {

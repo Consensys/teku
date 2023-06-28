@@ -121,6 +121,7 @@ public class BlobSidecarsByRootMessageHandler
     }
 
     requestCounter.labels("ok").inc();
+    totalBlobSidecarsRequestedCounter.inc(message.size());
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
     final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
@@ -151,7 +152,6 @@ public class BlobSidecarsByRootMessageHandler
             peer.adjustBlobSidecarRequests(
                 blobSidecarRequestsApproval.get(), sentBlobSidecars.get());
           }
-          totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars.get());
           callback.completeSuccessfully();
         },
         err -> {

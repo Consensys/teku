@@ -127,6 +127,7 @@ public class BlobSidecarsByRangeMessageHandler
     }
 
     requestCounter.labels("ok").inc();
+    totalBlobSidecarsRequestedCounter.inc(message.getCount().longValue());
 
     combinedChainDataClient
         .getEarliestAvailableBlobSidecarSlot()
@@ -175,7 +176,6 @@ public class BlobSidecarsByRangeMessageHandler
               if (sentBlobSidecars != requestedCount.longValue()) {
                 peer.adjustBlobSidecarRequests(blobSidecarRequestsApproval.get(), sentBlobSidecars);
               }
-              totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars);
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
