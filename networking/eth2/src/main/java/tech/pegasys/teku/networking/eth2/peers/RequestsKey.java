@@ -18,11 +18,11 @@ import java.util.Objects;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ObjectRequestsKey implements Comparable<ObjectRequestsKey> {
+public class RequestsKey implements Comparable<RequestsKey> {
   private final UInt64 timeSeconds;
   private final int requestId;
 
-  public ObjectRequestsKey(final UInt64 timeSeconds, final int requestId) {
+  public RequestsKey(final UInt64 timeSeconds, final int requestId) {
     this.timeSeconds = timeSeconds;
     this.requestId = requestId;
   }
@@ -48,14 +48,14 @@ public class ObjectRequestsKey implements Comparable<ObjectRequestsKey> {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ObjectRequestsKey that = (ObjectRequestsKey) o;
+    RequestsKey that = (RequestsKey) o;
     return Objects.equals(this.timeSeconds, that.timeSeconds) && this.requestId == that.requestId;
   }
 
   @Override
-  public int compareTo(@NotNull ObjectRequestsKey other) {
-    return Comparator.comparing(ObjectRequestsKey::getTimeSeconds)
-        .thenComparingInt(ObjectRequestsKey::getRequestId)
+  public int compareTo(@NotNull RequestsKey other) {
+    return Comparator.comparing(RequestsKey::getTimeSeconds)
+        .thenComparingInt(RequestsKey::getRequestId)
         .compare(this, other);
   }
 }

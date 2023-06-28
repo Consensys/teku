@@ -183,6 +183,6 @@ public class RateTrackerTest {
     assertThat(requestApproval).isPresent();
     assertThat(requestApproval.get().getObjectsCount()).isEqualTo(objectCount);
     assertThat(requestApproval.get().getRequestKey())
-        .isEqualTo(new ObjectRequestsKey(timeProvider.getTimeInSeconds(), requestId));
+        .isEqualTo(new RequestsKey(timeProvider.getTimeInSeconds(), requestId));
   }
 }

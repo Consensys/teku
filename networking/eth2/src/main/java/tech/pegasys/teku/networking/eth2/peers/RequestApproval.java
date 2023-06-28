@@ -17,15 +17,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RequestApproval {
 
-  private ObjectRequestsKey requestKey;
+  private RequestsKey requestKey;
   private final long objectsCount;
 
-  private RequestApproval(ObjectRequestsKey requestKey, long objectsCount) {
+  private RequestApproval(RequestsKey requestKey, long objectsCount) {
     this.requestKey = requestKey;
     this.objectsCount = objectsCount;
   }
 
-  public ObjectRequestsKey getRequestKey() {
+  public RequestsKey getRequestKey() {
     return requestKey;
   }
 
@@ -55,7 +55,7 @@ public class RequestApproval {
 
     public RequestApproval build() {
       return new RequestApproval(
-          new ObjectRequestsKey(this.timeSeconds, this.requestId), this.objectsCount);
+          new RequestsKey(this.timeSeconds, this.requestId), this.objectsCount);
     }
   }
 }

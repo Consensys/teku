@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RateTracker {
-  private final NavigableMap<ObjectRequestsKey, Long> requestCount;
+  private final NavigableMap<RequestsKey, Long> requestCount;
   private final int peerRateLimit;
   private final UInt64 timeoutSeconds;
   private long objectsWithinWindow = 0L;
@@ -59,7 +59,7 @@ public class RateTracker {
 
   private void resetRequestId(UInt64 currentTime) {
     if (requestCount.keySet().stream()
-        .noneMatch(objectRequestsKey -> objectRequestsKey.getTimeSeconds().equals(currentTime))) {
+        .noneMatch(requestsKey -> requestsKey.getTimeSeconds().equals(currentTime))) {
       this.newRequestId.set(0);
     }
   }
@@ -79,8 +79,8 @@ public class RateTracker {
     if (currentTime.isLessThan(timeoutSeconds)) {
       return;
     }
-    final NavigableMap<ObjectRequestsKey, Long> headMap =
-        requestCount.headMap(new ObjectRequestsKey(currentTime.minus(timeoutSeconds), 0), false);
+    final NavigableMap<RequestsKey, Long> headMap =
+        requestCount.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
     headMap.values().forEach(value -> objectsWithinWindow -= value);
     headMap.clear();
   }
