@@ -18,6 +18,7 @@ import java.util.Set;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 
 /**
@@ -73,11 +74,14 @@ public class GossipTopics {
     for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
       topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
     }
-    if (spec.getNetworkingConfigDeneb().isPresent()) {
-      for (int i = 0; i < spec.getNetworkingConfigDeneb().get().getBlobSidecarSubnetCount(); i++) {
-        topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
-      }
-    }
+    spec.getNetworkingConfigDeneb()
+        .map(NetworkingSpecConfigDeneb::getBlobSidecarSubnetCount)
+        .ifPresent(
+            blobSidecarSubnetCount -> {
+              for (int i = 0; i < blobSidecarSubnetCount; i++) {
+                topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+              }
+            });
     for (GossipTopicName topicName : GossipTopicName.values()) {
       topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
     }
