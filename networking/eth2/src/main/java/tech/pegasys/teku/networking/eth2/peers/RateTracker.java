@@ -56,7 +56,7 @@ public class RateTracker {
             .timeSeconds(currentTime)
             .objectCount(objectCount)
             .build();
-    requestCount.put(new ObjectRequestsEntryKey(requestApproval), objectCount);
+    requestCount.put(requestApproval.getRequestKey(), objectCount);
     return Optional.of(requestApproval);
   }
 
@@ -72,11 +72,9 @@ public class RateTracker {
   public synchronized void adjustObjectRequests(
       final RequestApproval requestApproval, final long returnedObjectsCount) {
     pruneRequests();
-    final ObjectRequestsEntryKey objectRequestsEntryKey =
-        new ObjectRequestsEntryKey(requestApproval);
-    if (requestCount.containsKey(objectRequestsEntryKey)) {
-      final long initialObjectsCount = requestCount.get(objectRequestsEntryKey);
-      requestCount.put(objectRequestsEntryKey, returnedObjectsCount);
+    if (requestCount.containsKey(requestApproval.getRequestKey())) {
+      final long initialObjectsCount = requestCount.get(requestApproval.getRequestKey());
+      requestCount.put(requestApproval.getRequestKey(), returnedObjectsCount);
       objectsWithinWindow = objectsWithinWindow - initialObjectsCount + returnedObjectsCount;
     }
   }
@@ -100,11 +98,6 @@ public class RateTracker {
     public ObjectRequestsEntryKey(final UInt64 timeSeconds, final int requestId) {
       this.timeSeconds = timeSeconds;
       this.requestId = requestId;
-    }
-
-    public ObjectRequestsEntryKey(final RequestApproval requestApproval) {
-      this.timeSeconds = requestApproval.getTimeSeconds();
-      this.requestId = requestApproval.getRequestId();
     }
 
     public UInt64 getTimeSeconds() {

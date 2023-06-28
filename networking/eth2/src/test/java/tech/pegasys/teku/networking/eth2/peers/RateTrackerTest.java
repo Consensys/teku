@@ -179,6 +179,7 @@ public class RateTrackerTest {
       Optional<RequestApproval> objectRequests, long objectCount, StubTimeProvider timeProvider) {
     assertThat(objectRequests).isPresent();
     assertThat(objectRequests.get().getObjectsCount()).isEqualTo(objectCount);
-    assertThat(objectRequests.get().getTimeSeconds()).isEqualTo(timeProvider.getTimeInSeconds());
+    assertThat(objectRequests.get().getRequestKey().getTimeSeconds())
+        .isEqualTo(timeProvider.getTimeInSeconds());
   }
 }
