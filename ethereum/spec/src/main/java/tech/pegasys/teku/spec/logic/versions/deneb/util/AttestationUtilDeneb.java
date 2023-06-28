@@ -65,20 +65,22 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
 
   private boolean isAttestationSlotAfterCurrentTime(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 currentTimeWithDisparity =
-        millisToSeconds(currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
+    final UInt64 currentTimeWithDisparity = calculateCurrentTimeWithDisparity(currentTimeMillis);
     final UInt64 currentSlot = miscHelpers.computeSlotAtTime(genesisTime, currentTimeWithDisparity);
     return attestationSlot.isGreaterThan(currentSlot);
   }
 
   private boolean isAttestationSlotCurrentOrPreviousEpoch(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 currentTimeWithDisparity =
-        millisToSeconds(currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
+    final UInt64 currentTimeWithDisparity = calculateCurrentTimeWithDisparity(currentTimeMillis);
     final UInt64 currentEpoch =
         miscHelpers.computeEpochAtTime(genesisTime, currentTimeWithDisparity);
     final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationSlot);
     return attestationEpoch.equals(currentEpoch)
         || attestationEpoch.equals(currentEpoch.minusMinZero(1));
+  }
+
+  private UInt64 calculateCurrentTimeWithDisparity(final UInt64 currentTimeMillis) {
+    return millisToSeconds(currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
   }
 }
