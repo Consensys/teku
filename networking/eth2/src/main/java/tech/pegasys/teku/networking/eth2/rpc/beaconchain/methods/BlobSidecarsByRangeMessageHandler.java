@@ -118,10 +118,10 @@ public class BlobSidecarsByRangeMessageHandler
       return;
     }
 
-    final Optional<RequestApproval> blobSidecarRequestsApproval =
+    final Optional<RequestApproval> approveBlobSidecarsRequest =
         peer.popBlobSidecarRequests(callback, requestedCount.longValue());
 
-    if (!peer.popRequest() || blobSidecarRequestsApproval.isEmpty()) {
+    if (!peer.popRequest() || approveBlobSidecarsRequest.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -174,13 +174,13 @@ public class BlobSidecarsByRangeMessageHandler
             requestState -> {
               final int sentBlobSidecars = requestState.sentBlobSidecars.get();
               if (sentBlobSidecars != requestedCount.longValue()) {
-                peer.adjustBlobSidecarRequests(blobSidecarRequestsApproval.get(), sentBlobSidecars);
+                peer.adjustBlobSidecarRequests(approveBlobSidecarsRequest.get(), sentBlobSidecars);
               }
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
             error -> {
-              peer.adjustBlobSidecarRequests(blobSidecarRequestsApproval.get(), 0);
+              peer.adjustBlobSidecarRequests(approveBlobSidecarsRequest.get(), 0);
               handleProcessingRequestError(error, callback);
             });
   }
