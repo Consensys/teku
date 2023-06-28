@@ -83,7 +83,11 @@ public class AttestationUtilPhase0 extends AttestationUtil {
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 attestationSlotTimeMillis =
         secondsToMillis(
-            genesisTime.plus(attestation.getData().getEarliestSlotForForkChoice(miscHelpers)));
+            genesisTime.plus(
+                attestation
+                    .getData()
+                    .getEarliestSlotForForkChoice(miscHelpers)
+                    .times(specConfig.getSecondsPerSlot())));
     final UInt64 discardAttestationsAfterMillis =
         currentTimeMillis.plus(
             secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(specConfig.getSecondsPerSlot())));
