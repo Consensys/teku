@@ -43,7 +43,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RateTracker;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -101,8 +101,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final BlobSidecarsByRangeMessageHandler handler =
       new BlobSidecarsByRangeMessageHandler(
           spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
-  private final Optional<RateTracker.ObjectsRequestResponse> allowedObjectRequests =
-      Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(100).build());
+  private final Optional<RequestApproval> allowedObjectRequests =
+      Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 100).build());
 
   @BeforeEach
   public void setUp() {
@@ -334,8 +334,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
-    final Optional<RateTracker.ObjectsRequestResponse> zeroObjectRequests =
-        Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(0).build());
+    final Optional<RequestApproval> zeroObjectRequests =
+        Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 0).build());
 
     when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(zeroObjectRequests);
 

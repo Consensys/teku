@@ -340,19 +340,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RateTracker.ObjectsRequestResponse> popBlockRequests(
+  public Optional<RequestApproval> popBlockRequests(
       final ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
     return popObjectRequests("blocks", blockRequestTracker, blocksCount, callback);
   }
 
   @Override
   public void adjustBlockRequests(
-      final RateTracker.ObjectsRequestResponse blocksRequest, final long returnedBlocksCount) {
+      final RequestApproval blocksRequest, final long returnedBlocksCount) {
     adjustObjectRequests(blockRequestTracker, blocksRequest, returnedBlocksCount);
   }
 
   @Override
-  public Optional<RateTracker.ObjectsRequestResponse> popBlobSidecarRequests(
+  public Optional<RequestApproval> popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
     return popObjectRequests(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
@@ -360,8 +360,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public void adjustBlobSidecarRequests(
-      final RateTracker.ObjectsRequestResponse blobSidecarsRequest,
-      final long returnedBlobSidecarsCount) {
+      final RequestApproval blobSidecarsRequest, final long returnedBlobSidecarsCount) {
     adjustObjectRequests(
         blobSidecarsRequestTracker, blobSidecarsRequest, returnedBlobSidecarsCount);
   }
@@ -401,18 +400,17 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   private void adjustObjectRequests(
       final RateTracker requestTracker,
-      final RateTracker.ObjectsRequestResponse objectsRequestResponse,
+      final RequestApproval requestApproval,
       final long returnedObjectsCount) {
-    requestTracker.adjustObjectRequests(objectsRequestResponse, returnedObjectsCount);
+    requestTracker.adjustObjectRequests(requestApproval, returnedObjectsCount);
   }
 
-  private <T> Optional<RateTracker.ObjectsRequestResponse> popObjectRequests(
+  private <T> Optional<RequestApproval> popObjectRequests(
       final String requestType,
       final RateTracker requestTracker,
       final long objectCount,
       final ResponseCallback<T> callback) {
-    Optional<RateTracker.ObjectsRequestResponse> objectsRequest =
-        requestTracker.popObjectRequests(objectCount);
+    Optional<RequestApproval> objectsRequest = requestTracker.popObjectRequests(objectCount);
     if (objectsRequest.isEmpty()) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(

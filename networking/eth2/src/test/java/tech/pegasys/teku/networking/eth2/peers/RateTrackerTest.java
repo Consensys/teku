@@ -27,8 +27,7 @@ public class RateTrackerTest {
   public void shouldAllowAddingItemsWithinLimit() {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
     final long objectCount = 1;
-    final Optional<RateTracker.ObjectsRequestResponse> objectRequests =
-        tracker.popObjectRequests(objectCount);
+    final Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
     assertRequestsAllowed(objectRequests, objectCount, timeProvider);
   }
 
@@ -36,8 +35,7 @@ public class RateTrackerTest {
   public void shouldNotUnderflowWhenTimeWindowGreaterThanCurrentTime() {
     final RateTracker tracker = new RateTracker(1, 15000, timeProvider);
     final long objectCount = 1;
-    final Optional<RateTracker.ObjectsRequestResponse> objectRequests =
-        tracker.popObjectRequests(objectCount);
+    final Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
     assertRequestsAllowed(objectRequests, objectCount, timeProvider);
   }
 
@@ -46,8 +44,7 @@ public class RateTrackerTest {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
     long objectCount = 1;
 
-    Optional<RateTracker.ObjectsRequestResponse> objectRequests =
-        tracker.popObjectRequests(objectCount);
+    Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
     assertRequestsAllowed(objectRequests, objectCount, timeProvider);
 
     timeProvider.advanceTimeBySeconds(2L);
@@ -60,8 +57,7 @@ public class RateTrackerTest {
   public void shouldReturnFalseIfCacheFull() {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
     final long objectCount = 1;
-    Optional<RateTracker.ObjectsRequestResponse> objectRequests =
-        tracker.popObjectRequests(objectCount);
+    Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
     assertRequestsAllowed(objectRequests, objectCount, timeProvider);
 
     objectRequests = tracker.popObjectRequests(objectCount);
@@ -72,8 +68,7 @@ public class RateTrackerTest {
   public void shouldAddMultipleValuesToCache() throws InterruptedException {
     final RateTracker tracker = new RateTracker(10, 1, timeProvider);
     long objectCount = 10;
-    Optional<RateTracker.ObjectsRequestResponse> objectRequests =
-        tracker.popObjectRequests(objectCount);
+    Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
     assertRequestsAllowed(objectRequests, objectCount, timeProvider);
 
     objectRequests = tracker.popObjectRequests(objectCount);
@@ -91,8 +86,7 @@ public class RateTrackerTest {
     final RateTracker tracker = new RateTracker(10, 2, timeProvider);
 
     long objectCount = 9;
-    Optional<RateTracker.ObjectsRequestResponse> objectRequests =
-        tracker.popObjectRequests(objectCount);
+    Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
     assertRequestsAllowed(objectRequests, objectCount, timeProvider);
     // time:1000 count:9
 
@@ -157,12 +151,11 @@ public class RateTrackerTest {
     final RateTracker tracker = new RateTracker(10, 2, timeProvider);
 
     // time: 1000, tracker count: 0, limit: 10, remaining: 10
-    Optional<RateTracker.ObjectsRequestResponse> objectRequests = tracker.popObjectRequests(10);
+    Optional<RequestApproval> objectRequests = tracker.popObjectRequests(10);
     assertRequestsAllowed(objectRequests, 10, timeProvider);
 
     // time: 1000, tracker count: 10, limit: 10, remaining: 0
-    Optional<RateTracker.ObjectsRequestResponse> anotherObjectRequests =
-        tracker.popObjectRequests(5);
+    Optional<RequestApproval> anotherObjectRequests = tracker.popObjectRequests(5);
     assertThat(anotherObjectRequests).isEmpty();
 
     tracker.adjustObjectRequests(objectRequests.get(), 3);
@@ -183,9 +176,7 @@ public class RateTrackerTest {
   }
 
   private void assertRequestsAllowed(
-      Optional<RateTracker.ObjectsRequestResponse> objectRequests,
-      long objectCount,
-      StubTimeProvider timeProvider) {
+      Optional<RequestApproval> objectRequests, long objectCount, StubTimeProvider timeProvider) {
     assertThat(objectRequests).isPresent();
     assertThat(objectRequests.get().getObjectsCount()).isEqualTo(objectCount);
     assertThat(objectRequests.get().getTimeSeconds()).isEqualTo(timeProvider.getTimeInSeconds());

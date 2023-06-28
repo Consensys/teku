@@ -101,17 +101,16 @@ public interface Eth2Peer extends Peer, SyncSource {
   <I extends RpcRequest, O extends SszData> SafeFuture<O> requestSingleItem(
       final Eth2RpcMethod<I, O> method, final I request);
 
-  Optional<RateTracker.ObjectsRequestResponse> popBlockRequests(
+  Optional<RequestApproval> popBlockRequests(
       ResponseCallback<SignedBeaconBlock> callback, long blocksCount);
 
-  void adjustBlockRequests(
-      RateTracker.ObjectsRequestResponse blocksRequest, long returnedBlocksCount);
+  void adjustBlockRequests(RequestApproval blocksRequest, long returnedBlocksCount);
 
-  Optional<RateTracker.ObjectsRequestResponse> popBlobSidecarRequests(
+  Optional<RequestApproval> popBlobSidecarRequests(
       ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
 
   void adjustBlobSidecarRequests(
-      RateTracker.ObjectsRequestResponse blobSidecarsRequest, long returnedBlobSidecarsCount);
+      RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);
 
   boolean popRequest();
 

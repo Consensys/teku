@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.Comparator;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -39,7 +40,7 @@ public class RateTracker {
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
-  public synchronized Optional<ObjectsRequestResponse> popObjectRequests(final long objectCount) {
+  public synchronized Optional<RequestApproval> popObjectRequests(final long objectCount) {
     pruneRequests();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     if ((peerRateLimit - objectsWithinWindow) <= 0) {
@@ -47,19 +48,17 @@ public class RateTracker {
     }
 
     objectsWithinWindow += objectCount;
-    final ObjectsRequestResponse objectsRequestResponse =
-        new ObjectsRequestResponse.ObjectsRequestBuilder(objectCount)
-            .timeSeconds(currentTime)
-            .build();
-    requestCount.put(new ObjectRequestsEntryKey(objectsRequestResponse), objectCount);
-    return Optional.of(objectsRequestResponse);
+    final RequestApproval requestApproval =
+        new RequestApproval.RequestApprovalBuilder(currentTime, objectCount).build();
+    requestCount.put(new ObjectRequestsEntryKey(requestApproval), objectCount);
+    return Optional.of(requestApproval);
   }
 
   public synchronized void adjustObjectRequests(
-      final ObjectsRequestResponse objectsRequestResponse, final long returnedObjectsCount) {
+      final RequestApproval requestApproval, final long returnedObjectsCount) {
     pruneRequests();
     final ObjectRequestsEntryKey objectRequestsEntryKey =
-        new ObjectRequestsEntryKey(objectsRequestResponse);
+        new ObjectRequestsEntryKey(requestApproval);
     if (requestCount.containsKey(objectRequestsEntryKey)) {
       final long initialObjectsCount = requestCount.get(objectRequestsEntryKey);
       requestCount.put(objectRequestsEntryKey, returnedObjectsCount);
@@ -89,9 +88,17 @@ public class RateTracker {
       this.requestId = requestId;
     }
 
-    public ObjectRequestsEntryKey(final ObjectsRequestResponse objectsRequestResponse) {
-      this.timeSeconds = objectsRequestResponse.timeSeconds;
-      this.requestId = objectsRequestResponse.requestId;
+    public ObjectRequestsEntryKey(final RequestApproval requestApproval) {
+      this.timeSeconds = requestApproval.getTimeSeconds();
+      this.requestId = requestApproval.getRequestId();
+    }
+
+    public UInt64 getTimeSeconds() {
+      return timeSeconds;
+    }
+
+    public UUID getRequestId() {
+      return requestId;
     }
 
     @Override
@@ -115,45 +122,6 @@ public class RateTracker {
     @Override
     public int compareTo(@NotNull ObjectRequestsEntryKey other) {
       return timeSeconds.compareTo(other.timeSeconds);
-    }
-  }
-
-  public static class ObjectsRequestResponse {
-
-    private final UUID requestId;
-    private final UInt64 timeSeconds;
-    private final long objectsCount;
-
-    private ObjectsRequestResponse(UUID requestId, UInt64 timeSeconds, long objectsCount) {
-      this.requestId = requestId;
-      this.timeSeconds = timeSeconds;
-      this.objectsCount = objectsCount;
-    }
-
-    public UInt64 getTimeSeconds() {
-      return timeSeconds;
-    }
-
-    public long getObjectsCount() {
-      return objectsCount;
-    }
-
-    public static final class ObjectsRequestBuilder {
-      private UInt64 timeSeconds = UInt64.ZERO;
-      private final long objectsCount;
-
-      public ObjectsRequestBuilder(final long objectsCount) {
-        this.objectsCount = objectsCount;
-      }
-
-      ObjectsRequestBuilder timeSeconds(final UInt64 timeSeconds) {
-        this.timeSeconds = timeSeconds;
-        return this;
-      }
-
-      public ObjectsRequestResponse build() {
-        return new ObjectsRequestResponse(UUID.randomUUID(), this.timeSeconds, this.objectsCount);
-      }
     }
   }
 }

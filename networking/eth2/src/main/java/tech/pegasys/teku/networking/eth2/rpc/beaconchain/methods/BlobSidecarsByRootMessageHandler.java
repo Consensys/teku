@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RateTracker;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -112,7 +112,7 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    final Optional<RateTracker.ObjectsRequestResponse> blobSidecarRequests =
+    final Optional<RequestApproval> blobSidecarRequests =
         peer.popBlobSidecarRequests(callback, message.size());
 
     if (!peer.popRequest() || blobSidecarRequests.isEmpty()) {

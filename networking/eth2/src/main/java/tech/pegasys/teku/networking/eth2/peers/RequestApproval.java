@@ -1,0 +1,56 @@
+/*
+ * Copyright ConsenSys Software Inc., 2023
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.networking.eth2.peers;
+
+import java.util.UUID;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+
+public class RequestApproval {
+
+  private final UUID requestId;
+  private final UInt64 timeSeconds;
+  private final long objectsCount;
+
+  private RequestApproval(UUID requestId, UInt64 timeSeconds, long objectsCount) {
+    this.requestId = requestId;
+    this.timeSeconds = timeSeconds;
+    this.objectsCount = objectsCount;
+  }
+
+  public UUID getRequestId() {
+    return requestId;
+  }
+
+  public UInt64 getTimeSeconds() {
+    return timeSeconds;
+  }
+
+  public long getObjectsCount() {
+    return objectsCount;
+  }
+
+  public static final class RequestApprovalBuilder {
+    private UInt64 timeSeconds;
+    private final long objectsCount;
+
+    public RequestApprovalBuilder(final UInt64 timeSeconds, final long objectsCount) {
+      this.timeSeconds = timeSeconds;
+      this.objectsCount = objectsCount;
+    }
+
+    public RequestApproval build() {
+      return new RequestApproval(UUID.randomUUID(), this.timeSeconds, this.objectsCount);
+    }
+  }
+}

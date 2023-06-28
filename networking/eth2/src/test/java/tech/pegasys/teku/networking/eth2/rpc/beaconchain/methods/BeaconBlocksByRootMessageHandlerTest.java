@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.networking.eth2.peers.RateTracker;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -76,8 +76,8 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @SuppressWarnings("unchecked")
   final ResponseCallback<SignedBeaconBlock> callback = mock(ResponseCallback.class);
 
-  private final Optional<RateTracker.ObjectsRequestResponse> allowedObjectRequests =
-      Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(100).build());
+  private final Optional<RequestApproval> allowedObjectRequests =
+      Optional.of(new RequestApproval.RequestApprovalBuilder(UInt64.ZERO, 100).build());
 
   @BeforeEach
   public void setup() {

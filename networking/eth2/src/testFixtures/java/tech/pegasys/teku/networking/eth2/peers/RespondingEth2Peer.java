@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -301,25 +302,24 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RateTracker.ObjectsRequestResponse> popBlockRequests(
+  public Optional<RequestApproval> popBlockRequests(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(0).build());
+    return Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 0).build());
   }
 
   @Override
   public void adjustBlockRequests(
-      final RateTracker.ObjectsRequestResponse blockRequests, final long returnedBlocksCount) {}
+      final RequestApproval blockRequests, final long returnedBlocksCount) {}
 
   @Override
-  public Optional<RateTracker.ObjectsRequestResponse> popBlobSidecarRequests(
+  public Optional<RequestApproval> popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return Optional.of(new RateTracker.ObjectsRequestResponse.ObjectsRequestBuilder(0).build());
+    return Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 0).build());
   }
 
   @Override
   public void adjustBlobSidecarRequests(
-      final RateTracker.ObjectsRequestResponse blobSidecarRequests,
-      final long returnedBlobSidecarsCount) {}
+      final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
 
   @Override
   public boolean popRequest() {
