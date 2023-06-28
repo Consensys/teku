@@ -26,7 +26,7 @@ public class RateTracker {
   private final NavigableMap<ObjectRequestsEntryKey, Long> requestCount;
   private final int peerRateLimit;
   private final UInt64 timeoutSeconds;
-  private long requestsWithinWindow = 0L;
+  private long objectsWithinWindow = 0L;
   private final TimeProvider timeProvider;
 
   public RateTracker(
@@ -42,11 +42,11 @@ public class RateTracker {
   public synchronized Optional<ObjectsRequestResponse> popObjectRequests(final long objectCount) {
     pruneRequests();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    if ((peerRateLimit - requestsWithinWindow) <= 0) {
+    if ((peerRateLimit - objectsWithinWindow) <= 0) {
       return Optional.empty();
     }
 
-    requestsWithinWindow += objectCount;
+    objectsWithinWindow += objectCount;
     final ObjectsRequestResponse objectsRequestResponse =
         new ObjectsRequestResponse.ObjectsRequestBuilder(objectCount)
             .timeSeconds(currentTime)
@@ -63,7 +63,7 @@ public class RateTracker {
     if (requestCount.containsKey(objectRequestsEntryKey)) {
       final long initialObjectsCount = requestCount.get(objectRequestsEntryKey);
       requestCount.put(objectRequestsEntryKey, returnedObjectsCount);
-      requestsWithinWindow = requestsWithinWindow - initialObjectsCount + returnedObjectsCount;
+      objectsWithinWindow = objectsWithinWindow - initialObjectsCount + returnedObjectsCount;
     }
   }
 
@@ -76,7 +76,7 @@ public class RateTracker {
         requestCount.headMap(
             new ObjectRequestsEntryKey(currentTime.minus(timeoutSeconds), UUID.randomUUID()),
             false);
-    headMap.values().forEach(value -> requestsWithinWindow -= value);
+    headMap.values().forEach(value -> objectsWithinWindow -= value);
     headMap.clear();
   }
 
