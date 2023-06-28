@@ -58,9 +58,11 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
     if (!isAttestationSlotCurrentOrPreviousEpoch(attestationSlot, genesisTime, currentTimeMillis)) {
       return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
     }
-    // attestation is after current time, but not from the far future, so can save for future
-    // processing
-    return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
+    if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(
+        attestationSlot, genesisTime, currentTimeMillis)) {
+      return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
+    }
+    return Optional.empty();
   }
 
   private boolean isAttestationSlotAfterCurrentTime(
