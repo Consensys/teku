@@ -52,13 +52,16 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
   public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
-    if (isAttestationSlotAfterCurrentTime(attestationSlot, genesisTime, currentTimeMillis)) {
+    if (isAttestationSlotAfterCurrentTime(attestationSlot, genesisTime, currentTimeMillis)
+        && isFromFarFuture(attestation, genesisTime, currentTimeMillis)) {
       return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
     }
     if (!isAttestationSlotCurrentOrPreviousEpoch(attestationSlot, genesisTime, currentTimeMillis)) {
       return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
     }
-    return Optional.empty();
+    // attestation is after current time, but not from the far future, so can save for future
+    // processing
+    return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
   }
 
   private boolean isAttestationSlotAfterCurrentTime(

@@ -74,12 +74,7 @@ public class AttestationUtilPhase0 extends AttestationUtil {
     return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
   }
 
-  private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
-      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    return maximumBroadcastTimeMillis(attestationSlot, genesisTime).isLessThan(currentTimeMillis);
-  }
-
-  private boolean isFromFarFuture(
+  protected boolean isFromFarFuture(
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 attestationSlotTimeMillis =
         secondsToMillis(
@@ -92,6 +87,11 @@ public class AttestationUtilPhase0 extends AttestationUtil {
         currentTimeMillis.plus(
             secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(specConfig.getSecondsPerSlot())));
     return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
+  }
+
+  private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
+      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+    return maximumBroadcastTimeMillis(attestationSlot, genesisTime).isLessThan(currentTimeMillis);
   }
 
   private UInt64 maximumBroadcastTimeMillis(
