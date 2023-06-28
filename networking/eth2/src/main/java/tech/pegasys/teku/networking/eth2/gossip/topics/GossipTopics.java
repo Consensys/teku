@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.spec.Spec;
@@ -69,29 +67,20 @@ public class GossipTopics {
       final GossipEncoding gossipEncoding, final Bytes4 forkDigest, final Spec spec) {
     final Set<String> topics = new HashSet<>();
 
-    IntStream.range(0, spec.getNetworkingConfig().getAttestationSubnetCount())
-        .forEach(
-            attestationSubnetIndex ->
-                topics.add(
-                    getAttestationSubnetTopic(forkDigest, attestationSubnetIndex, gossipEncoding)));
-    IntStream.range(0, NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT)
-        .forEach(
-            syncCommitteeSubnetIndex ->
-                topics.add(
-                    getSyncCommitteeSubnetTopic(
-                        forkDigest, syncCommitteeSubnetIndex, gossipEncoding)));
-    spec.getNetworkingConfigDeneb()
-        .ifPresent(
-            networkingSpecConfigDeneb ->
-                IntStream.range(0, networkingSpecConfigDeneb.getBlobSidecarSubnetCount())
-                    .forEach(
-                        blobSidecarSubnetIndex ->
-                            topics.add(
-                                getBlobSidecarSubnetTopic(
-                                    forkDigest, blobSidecarSubnetIndex, gossipEncoding))));
-    Arrays.stream(GossipTopicName.values())
-        .forEach(
-            topicName -> topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding)));
+    for (int i = 0; i < spec.getNetworkingConfig().getAttestationSubnetCount(); i++) {
+      topics.add(getAttestationSubnetTopic(forkDigest, i, gossipEncoding));
+    }
+    for (int i = 0; i < NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT; i++) {
+      topics.add(getSyncCommitteeSubnetTopic(forkDigest, i, gossipEncoding));
+    }
+    if (spec.getNetworkingConfigDeneb().isPresent()) {
+      for (int i = 0; i < spec.getNetworkingConfigDeneb().get().getBlobSidecarSubnetCount(); i++) {
+        topics.add(getBlobSidecarSubnetTopic(forkDigest, i, gossipEncoding));
+      }
+    }
+    for (GossipTopicName topicName : GossipTopicName.values()) {
+      topics.add(GossipTopics.getTopic(forkDigest, topicName, gossipEncoding));
+    }
 
     return topics;
   }
