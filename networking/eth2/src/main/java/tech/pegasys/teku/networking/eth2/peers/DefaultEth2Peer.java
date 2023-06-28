@@ -410,7 +410,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final RateTracker requestTracker,
       final long objectCount,
       final ResponseCallback<T> callback) {
-    Optional<RequestApproval> objectsRequest = requestTracker.popObjectRequests(objectCount);
+    final Optional<RequestApproval> objectsRequest = requestTracker.popObjectRequests(objectCount);
     if (objectsRequest.isEmpty()) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
