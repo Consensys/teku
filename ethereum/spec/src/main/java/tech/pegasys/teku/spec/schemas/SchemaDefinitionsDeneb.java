@@ -88,7 +88,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
 
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
-    super(specConfig.toVersionDeneb().orElseThrow());
+    super(specConfig);
     this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
     final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema =
         new SignedBlsToExecutionChangeSchema();
