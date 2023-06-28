@@ -123,7 +123,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processSyncCommitteeUpdates(state);
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
-      LOG.info("Beacon chain has entered inactivity leak");
+      LOG.info("Beacon chain is in activity leak");
     }
   }
 
