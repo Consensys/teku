@@ -122,14 +122,13 @@ public class RateTracker {
         return false;
       }
       ObjectRequestsEntryKey that = (ObjectRequestsEntryKey) o;
-      return Objects.equals(this.timeSeconds, that.timeSeconds)
-          && Objects.equals(this.requestId, that.requestId);
+      return Objects.equals(this.timeSeconds, that.timeSeconds) && this.requestId == that.requestId;
     }
 
     @Override
     public int compareTo(@NotNull ObjectRequestsEntryKey other) {
       return Comparator.comparing(ObjectRequestsEntryKey::getTimeSeconds)
-          .thenComparing(ObjectRequestsEntryKey::getRequestId)
+          .thenComparingInt(ObjectRequestsEntryKey::getRequestId)
           .compare(this, other);
     }
   }
