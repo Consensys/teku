@@ -354,7 +354,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   public void forwardSyncBatchSize_greaterThanMessageSizeShouldThrowException() {
     assertThatThrownBy(() -> createConfigBuilder().sync(s -> s.forwardSyncBatchSize(3000)).build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Forward sync batch size cannot be greater than 128");
+        .hasMessage("Forward sync batch size cannot be greater than 1024");
   }
 
   @Test
@@ -362,6 +362,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(
             () -> createConfigBuilder().sync(s -> s.historicalSyncBatchSize(3000)).build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Historical sync batch size cannot be greater than 128");
+        .hasMessage("Historical sync batch size cannot be greater than 1024");
   }
 }

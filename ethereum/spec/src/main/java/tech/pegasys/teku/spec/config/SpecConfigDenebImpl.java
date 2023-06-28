@@ -28,6 +28,10 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final int maxBlobsPerBlock;
   private final Optional<String> trustedSetupPath;
   private final boolean kzgNoop;
+  private final int maxRequestBlocksDeneb;
+  private final int maxRequestBlobSidecars;
+  private final int minEpochsForBlobSidecarsRequests;
+  private final int blobSidecarSubnetCount;
 
   public SpecConfigDenebImpl(
       final SpecConfigCapella specConfig,
@@ -37,7 +41,11 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final int maxBlobCommitmentsPerBlock,
       final int maxBlobsPerBlock,
       final Optional<String> trustedSetupPath,
-      final boolean kzgNoop) {
+      final boolean kzgNoop,
+      final int maxRequestBlocksDeneb,
+      final int maxRequestBlobSidecars,
+      final int minEpochsForBlobSidecarsRequests,
+      final int blobSidecarSubnetCount) {
     super(specConfig);
     this.denebForkVersion = denebForkVersion;
     this.denebForkEpoch = denebForkEpoch;
@@ -46,6 +54,10 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     this.maxBlobsPerBlock = maxBlobsPerBlock;
     this.trustedSetupPath = trustedSetupPath;
     this.kzgNoop = kzgNoop;
+    this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
+    this.maxRequestBlobSidecars = maxRequestBlobSidecars;
+    this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
+    this.blobSidecarSubnetCount = blobSidecarSubnetCount;
   }
 
   @Override
@@ -84,6 +96,26 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
+  public int getMaxRequestBlocksDeneb() {
+    return maxRequestBlocksDeneb;
+  }
+
+  @Override
+  public int getMaxRequestBlobSidecars() {
+    return maxRequestBlobSidecars;
+  }
+
+  @Override
+  public int getMinEpochsForBlobSidecarsRequests() {
+    return minEpochsForBlobSidecarsRequests;
+  }
+
+  @Override
+  public int getBlobSidecarSubnetCount() {
+    return blobSidecarSubnetCount;
+  }
+
+  @Override
   public Optional<SpecConfigDeneb> toVersionDeneb() {
     return Optional.of(this);
   }
@@ -104,7 +136,11 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         && maxBlobCommitmentsPerBlock == that.maxBlobCommitmentsPerBlock
         && maxBlobsPerBlock == that.maxBlobsPerBlock
         && Objects.equals(trustedSetupPath, that.trustedSetupPath)
-        && kzgNoop == that.kzgNoop;
+        && kzgNoop == that.kzgNoop
+        && maxRequestBlocksDeneb == that.maxRequestBlocksDeneb
+        && maxRequestBlobSidecars == that.maxRequestBlobSidecars
+        && minEpochsForBlobSidecarsRequests == that.minEpochsForBlobSidecarsRequests
+        && blobSidecarSubnetCount == that.blobSidecarSubnetCount;
   }
 
   @Override
@@ -117,6 +153,10 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
         trustedSetupPath,
-        kzgNoop);
+        kzgNoop,
+        maxRequestBlocksDeneb,
+        maxRequestBlobSidecars,
+        minEpochsForBlobSidecarsRequests,
+        blobSidecarSubnetCount);
   }
 }

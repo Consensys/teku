@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.server.pruner;
 
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
-
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
@@ -31,6 +29,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 
@@ -167,8 +167,10 @@ public class BlobSidecarPruner extends Service {
     //   DA_boundary: 64
     //   latest_prunable_slot = 31
 
+    final SpecConfig config = spec.atSlot(currentSlot).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return currentSlot.minusMinZero(
-        ((long) (MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1)
+        ((long) (specConfigDeneb.getMinEpochsForBlobSidecarsRequests() + 1)
                 * spec.atSlot(currentSlot).getSlotsPerEpoch())
             + 1);
   }

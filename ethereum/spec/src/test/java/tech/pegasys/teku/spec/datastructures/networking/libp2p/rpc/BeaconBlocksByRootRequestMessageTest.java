@@ -15,18 +15,20 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 class BeaconBlocksByRootRequestMessageTest {
 
-  final Spec spec = TestSpecFactory.createDefault();
+  final Spec spec = TestSpecFactory.createMinimalDeneb();
   final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema schema =
       spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema();
 
@@ -47,8 +49,10 @@ class BeaconBlocksByRootRequestMessageTest {
 
   @Test
   public void verifyMaxLengthOfContainerIsGreaterOrEqualToMaxRequestBlocks() {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     assertThat(schema.getMaxLength())
         .isGreaterThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocks())
-        .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
+        .isGreaterThanOrEqualTo(specConfigDeneb.getMaxRequestBlocksDeneb());
   }
 }

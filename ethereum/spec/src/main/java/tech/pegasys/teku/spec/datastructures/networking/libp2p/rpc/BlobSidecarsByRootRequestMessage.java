@@ -13,43 +13,21 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
-
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlobSidecarsByRootRequestMessage extends SszListImpl<BlobIdentifier>
     implements SszList<BlobIdentifier>, RpcRequest {
 
-  // size validation according to the spec (MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK) is done
-  // in the RPC handler
-  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOCKS_DENEB.times(128);
-
-  public static class BlobSidecarsByRootRequestMessageSchema
-      extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
-
-    public BlobSidecarsByRootRequestMessageSchema() {
-      super(BlobIdentifier.SSZ_SCHEMA, MAX_LENGTH.longValue());
-    }
-
-    @Override
-    public BlobSidecarsByRootRequestMessage createFromBackingNode(final TreeNode node) {
-      return new BlobSidecarsByRootRequestMessage(this, node);
-    }
+  public BlobSidecarsByRootRequestMessage(
+      final BlobSidecarsByRootRequestMessageSchema schema,
+      final List<BlobIdentifier> blobIdentifiers) {
+    super(schema, schema.createTreeFromElements(blobIdentifiers));
   }
 
-  public static final BlobSidecarsByRootRequestMessageSchema SSZ_SCHEMA =
-      new BlobSidecarsByRootRequestMessageSchema();
-
-  public BlobSidecarsByRootRequestMessage(final List<BlobIdentifier> blobIdentifiers) {
-    super(SSZ_SCHEMA, SSZ_SCHEMA.createTreeFromElements(blobIdentifiers));
-  }
-
-  private BlobSidecarsByRootRequestMessage(
+  BlobSidecarsByRootRequestMessage(
       final BlobSidecarsByRootRequestMessageSchema schema, final TreeNode node) {
     super(schema, node);
   }
