@@ -166,7 +166,6 @@ public class RewardsAndPenaltiesCalculatorPhase0 extends RewardsAndPenaltiesCalc
       final UInt64 baseReward,
       final UInt64 finalityDelay,
       final RewardAndPenalty delta) {
-
     if (isInactivityLeak(finalityDelay)) {
       // If validator is performing optimally this cancels all rewards for a neutral balance
       delta.penalize(
