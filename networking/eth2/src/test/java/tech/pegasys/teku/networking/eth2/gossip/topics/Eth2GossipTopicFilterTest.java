@@ -21,7 +21,6 @@ import static tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.S
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getAttestationSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getBlobSidecarSubnetTopicName;
 import static tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName.getSyncCommitteeSubnetTopicName;
-import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.SYNC_COMMITTEE_SUBNET_COUNT;
 
 import java.util.List;
@@ -32,7 +31,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -104,16 +106,22 @@ class Eth2GossipTopicFilterTest {
 
   @Test
   void shouldConsiderAllBlobSidecarSubnetsRelevant() {
-    for (int i = 0; i < BLOB_SIDECAR_SUBNET_COUNT; i++) {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    for (int i = 0; i < specConfigDeneb.getBlobSidecarSubnetCount(); i++) {
       assertThat(filter.isRelevantTopic(getTopicName(getBlobSidecarSubnetTopicName(i)))).isTrue();
     }
   }
 
   @Test
   void shouldNotConsiderBlobSidecarWithIncorrectSubnetIdRelevant() {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     assertThat(
             filter.isRelevantTopic(
-                getTopicName(getBlobSidecarSubnetTopicName(BLOB_SIDECAR_SUBNET_COUNT + 1))))
+                getTopicName(
+                    getBlobSidecarSubnetTopicName(
+                        specConfigDeneb.getBlobSidecarSubnetCount() + 1))))
         .isFalse();
   }
 

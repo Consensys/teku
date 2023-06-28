@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip;
 
-import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
-
 import com.google.common.annotations.VisibleForTesting;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -31,6 +29,7 @@ import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -61,7 +60,8 @@ public class BlobSidecarGossipManager implements GossipManager {
             .getSignedBlobSidecarSchema();
     final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
-    IntStream.range(0, BLOB_SIDECAR_SUBNET_COUNT)
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(forkSpecVersion.getConfig());
+    IntStream.range(0, specConfigDeneb.getBlobSidecarSubnetCount())
         .forEach(
             subnetId -> {
               final Eth2TopicHandler<SignedBlobSidecar> topicHandler =

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.forktransition.DenebStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.BlindBlockUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SpecLogicDeneb extends AbstractSpecLogic {
@@ -148,7 +149,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             operationValidator,
             schemaDefinitions);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(
+        new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);

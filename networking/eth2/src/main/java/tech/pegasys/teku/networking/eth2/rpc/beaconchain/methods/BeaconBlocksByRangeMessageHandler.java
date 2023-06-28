@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
@@ -94,7 +93,8 @@ public class BeaconBlocksByRangeMessageHandler
       return Optional.of(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
     }
 
-    final UInt64 maxRequestBlocks = getMaxRequestBlocks(latestMilestoneRequested);
+    final UInt64 maxRequestBlocks =
+        spec.forMilestone(latestMilestoneRequested).miscHelpers().getMaxRequestBlocks();
 
     if (request.getCount().isGreaterThan(maxRequestBlocks)) {
       requestCounter.labels("count_too_big").inc();
@@ -145,12 +145,6 @@ public class BeaconBlocksByRangeMessageHandler
                 callback.completeWithUnexpectedError(error);
               }
             });
-  }
-
-  private UInt64 getMaxRequestBlocks(final SpecMilestone milestone) {
-    return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-        ? MAX_REQUEST_BLOCKS_DENEB
-        : UInt64.valueOf(spec.getNetworkingConfig().getMaxRequestBlocks());
   }
 
   private SafeFuture<?> sendMatchingBlocks(
