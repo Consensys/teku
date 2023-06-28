@@ -23,6 +23,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
@@ -95,7 +96,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
           spec, metricsSystem, denebForkEpoch, combinedChainDataClient);
 
   private final Optional<RequestApproval> allowedObjectRequests =
-      Optional.of(new RequestApproval.RequestApprovalBuilder(UInt64.ZERO, 100).build());
+      Optional.of(
+          new RequestApproval.RequestApprovalBuilder().objectCount(100).timeSeconds(ZERO).build());
 
   @BeforeEach
   public void setup() {

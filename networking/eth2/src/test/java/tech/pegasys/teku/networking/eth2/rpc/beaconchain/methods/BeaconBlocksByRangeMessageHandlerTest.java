@@ -94,7 +94,8 @@ class BeaconBlocksByRangeMessageHandlerTest {
   private final BeaconBlocksByRangeMessageHandler handler =
       new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
   private final Optional<RequestApproval> allowedObjectRequests =
-      Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 100).build());
+      Optional.of(
+          new RequestApproval.RequestApprovalBuilder().objectCount(100).timeSeconds(ZERO).build());
 
   @BeforeEach
   public void setup() {

@@ -13,22 +13,21 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import java.util.UUID;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RequestApproval {
 
-  private final UUID requestId;
+  private final int requestId;
   private final UInt64 timeSeconds;
   private final long objectsCount;
 
-  private RequestApproval(UUID requestId, UInt64 timeSeconds, long objectsCount) {
+  private RequestApproval(int requestId, UInt64 timeSeconds, long objectsCount) {
     this.requestId = requestId;
     this.timeSeconds = timeSeconds;
     this.objectsCount = objectsCount;
   }
 
-  public UUID getRequestId() {
+  public int getRequestId() {
     return requestId;
   }
 
@@ -41,16 +40,27 @@ public class RequestApproval {
   }
 
   public static final class RequestApprovalBuilder {
+    private int requestId;
     private UInt64 timeSeconds;
-    private final long objectsCount;
+    private long objectsCount;
 
-    public RequestApprovalBuilder(final UInt64 timeSeconds, final long objectsCount) {
+    public RequestApprovalBuilder requestId(final int requestId) {
+      this.requestId = requestId;
+      return this;
+    }
+
+    public RequestApprovalBuilder timeSeconds(final UInt64 timeSeconds) {
       this.timeSeconds = timeSeconds;
+      return this;
+    }
+
+    public RequestApprovalBuilder objectCount(final long objectsCount) {
       this.objectsCount = objectsCount;
+      return this;
     }
 
     public RequestApproval build() {
-      return new RequestApproval(UUID.randomUUID(), this.timeSeconds, this.objectsCount);
+      return new RequestApproval(this.requestId, this.timeSeconds, this.objectsCount);
     }
   }
 }

@@ -102,7 +102,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       new BlobSidecarsByRangeMessageHandler(
           spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
   private final Optional<RequestApproval> allowedObjectRequests =
-      Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 100).build());
+      Optional.of(
+          new RequestApproval.RequestApprovalBuilder().objectCount(100).timeSeconds(ZERO).build());
 
   @BeforeEach
   public void setUp() {
@@ -335,7 +336,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
     final Optional<RequestApproval> zeroObjectRequests =
-        Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 0).build());
+        Optional.of(
+            new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectCount(0).build());
 
     when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(zeroObjectRequests);
 

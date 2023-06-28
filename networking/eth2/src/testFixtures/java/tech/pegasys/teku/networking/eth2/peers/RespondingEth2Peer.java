@@ -304,7 +304,12 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public Optional<RequestApproval> popBlockRequests(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 0).build());
+    return Optional.of(
+        new RequestApproval.RequestApprovalBuilder()
+            .requestId(0)
+            .timeSeconds(ZERO)
+            .objectCount(0)
+            .build());
   }
 
   @Override
@@ -314,7 +319,8 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public Optional<RequestApproval> popBlobSidecarRequests(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return Optional.of(new RequestApproval.RequestApprovalBuilder(ZERO, 0).build());
+    return Optional.of(
+        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectCount(0).build());
   }
 
   @Override

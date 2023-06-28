@@ -18,7 +18,7 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -29,6 +29,8 @@ public class RateTracker {
   private final UInt64 timeoutSeconds;
   private long objectsWithinWindow = 0L;
   private final TimeProvider timeProvider;
+
+  private final AtomicInteger newRequestId = new AtomicInteger(0);
 
   public RateTracker(
       final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
@@ -46,12 +48,25 @@ public class RateTracker {
     if ((peerRateLimit - objectsWithinWindow) <= 0) {
       return Optional.empty();
     }
-
     objectsWithinWindow += objectCount;
+    resetRequestId(currentTime);
     final RequestApproval requestApproval =
-        new RequestApproval.RequestApprovalBuilder(currentTime, objectCount).build();
+        new RequestApproval.RequestApprovalBuilder()
+            .requestId(newRequestId.getAndIncrement())
+            .timeSeconds(currentTime)
+            .objectCount(objectCount)
+            .build();
     requestCount.put(new ObjectRequestsEntryKey(requestApproval), objectCount);
     return Optional.of(requestApproval);
+  }
+
+  private void resetRequestId(UInt64 currentTime) {
+    if (requestCount.keySet().stream()
+        .noneMatch(
+            objectRequestsEntryKey ->
+                objectRequestsEntryKey.getTimeSeconds().equals(currentTime))) {
+      this.newRequestId.set(0);
+    }
   }
 
   public synchronized void adjustObjectRequests(
@@ -73,17 +88,16 @@ public class RateTracker {
     }
     final NavigableMap<ObjectRequestsEntryKey, Long> headMap =
         requestCount.headMap(
-            new ObjectRequestsEntryKey(currentTime.minus(timeoutSeconds), UUID.randomUUID()),
-            false);
+            new ObjectRequestsEntryKey(currentTime.minus(timeoutSeconds), 0), false);
     headMap.values().forEach(value -> objectsWithinWindow -= value);
     headMap.clear();
   }
 
   public static class ObjectRequestsEntryKey implements Comparable<ObjectRequestsEntryKey> {
     private final UInt64 timeSeconds;
-    private final UUID requestId;
+    private final int requestId;
 
-    public ObjectRequestsEntryKey(final UInt64 timeSeconds, final UUID requestId) {
+    public ObjectRequestsEntryKey(final UInt64 timeSeconds, final int requestId) {
       this.timeSeconds = timeSeconds;
       this.requestId = requestId;
     }
@@ -97,7 +111,7 @@ public class RateTracker {
       return timeSeconds;
     }
 
-    public UUID getRequestId() {
+    public int getRequestId() {
       return requestId;
     }
 
@@ -121,7 +135,9 @@ public class RateTracker {
 
     @Override
     public int compareTo(@NotNull ObjectRequestsEntryKey other) {
-      return timeSeconds.compareTo(other.timeSeconds);
+      return Comparator.comparing(ObjectRequestsEntryKey::getTimeSeconds)
+          .thenComparing(ObjectRequestsEntryKey::getRequestId)
+          .compare(this, other);
     }
   }
 }
