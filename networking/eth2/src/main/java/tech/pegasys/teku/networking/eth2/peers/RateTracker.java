@@ -46,7 +46,6 @@ public class RateTracker {
       return Optional.empty();
     }
     objectsWithinWindow += objectCount;
-    resetRequestId(currentTime);
     final RequestApproval requestApproval =
         new RequestApproval.RequestApprovalBuilder()
             .requestId(newRequestId.getAndIncrement())
@@ -55,13 +54,6 @@ public class RateTracker {
             .build();
     requestCount.put(requestApproval.getRequestKey(), objectCount);
     return Optional.of(requestApproval);
-  }
-
-  private void resetRequestId(UInt64 currentTime) {
-    if (requestCount.keySet().stream()
-        .noneMatch(requestsKey -> requestsKey.getTimeSeconds().equals(currentTime))) {
-      this.newRequestId.set(0);
-    }
   }
 
   public synchronized void adjustObjectRequests(
