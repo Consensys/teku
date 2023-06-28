@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.util;
 
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -66,10 +65,10 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
 
   private boolean isAttestationSlotAfterCurrentTime(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 attestationTimeMillis =
-        secondsToMillis(genesisTime.plus(attestationSlot.times(specConfig.getSecondsPerSlot())));
-    return attestationTimeMillis.isGreaterThan(
-        currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
+    final UInt64 currentTimeWithDisparity =
+        millisToSeconds(currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
+    final UInt64 currentSlot = miscHelpers.computeSlotAtTime(genesisTime, currentTimeWithDisparity);
+    return attestationSlot.isGreaterThan(currentSlot);
   }
 
   private boolean isAttestationSlotCurrentOrPreviousEpoch(

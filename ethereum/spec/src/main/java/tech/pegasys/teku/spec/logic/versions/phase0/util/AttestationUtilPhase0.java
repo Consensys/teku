@@ -30,6 +30,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class AttestationUtilPhase0 extends AttestationUtil {
 
+  /** Attestations with a slot > current_slot + the value of this constant would be ignored */
   private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
 
   public AttestationUtilPhase0(
