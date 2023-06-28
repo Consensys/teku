@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class AttestationUtilPhase0 extends AttestationUtil {
 
-  /** Attestations with a slot > current_slot + the value of this constant would be ignored */
   private static final UInt64 MAX_FUTURE_SLOT_ALLOWANCE = UInt64.valueOf(3);
 
   public AttestationUtilPhase0(
@@ -77,7 +76,7 @@ public class AttestationUtilPhase0 extends AttestationUtil {
 
   protected boolean isFromFarFuture(
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 attestationSlotTimeMillis =
+    final UInt64 attestationForkChoiceEligibleTimeMillis =
         secondsToMillis(
             genesisTime.plus(
                 attestation
@@ -87,7 +86,7 @@ public class AttestationUtilPhase0 extends AttestationUtil {
     final UInt64 discardAttestationsAfterMillis =
         currentTimeMillis.plus(
             secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(specConfig.getSecondsPerSlot())));
-    return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
+    return attestationForkChoiceEligibleTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
   }
 
   private boolean isCurrentTimeAfterAttestationPropagationSlotRange(

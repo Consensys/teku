@@ -70,10 +70,21 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
  *
  * <p>The attestation's committee index (attestation.data.index) is for the correct subnet.
  *
- * <p>attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
- * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
- * ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY queue
- * future attestations for processing at the appropriate slot).
+ * <ul>
+ *   <li>Phase 0
+ *       <p>attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots
+ *       (within a * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot + *
+ *       ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY
+ *       queue * future attestations for processing at the appropriate slot).
+ *   <li>Deneb
+ *       <p>attestation.data.slot is equal to or earlier than the current_slot (with a
+ *       MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot <= current_slot (a
+ *       client MAY queue future attestation for processing at the appropriate slot).
+ *       <p>the epoch of attestation.data.slot is either the current or previous epoch (with a
+ *       MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e.
+ *       compute_epoch_at_slot(attestation.data.slot) in (get_previous_epoch(state),
+ *       get_current_epoch(state))
+ * </ul>
  *
  * <p>The attestation is unaggregated -- that is, it has exactly one participating validator
  * (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
@@ -158,7 +169,7 @@ class AttestationValidatorTest {
   }
 
   @Test
-  public void shouldRejectAttestationFromBeforeAttestationPropagationSlotRange() {
+  public void shouldIgnoreAttestationFromBeforeAttestationPropagationSlotRange() {
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
 
@@ -170,6 +181,39 @@ class AttestationValidatorTest {
     chainUpdater.setTime(recentChainData.getStore().getTimeSeconds().plus(ONE));
 
     assertThat(validate(attestation).code()).isEqualTo(IGNORE);
+  }
+
+  @Test
+  public void postDeneb_shouldIgnoreAttestationAfterCurrentSlot() {
+    final Spec spec = TestSpecFactory.createMinimalDeneb();
+
+    final AttestationValidator validator =
+        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
+
+    // attestation will be fork choice eligible in 12 slots, so more than MAX_FUTURE_SLOT_ALLOWANCE
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead(), UInt64.valueOf(11));
+
+    chainUpdater.setCurrentSlot(ZERO);
+
+    assertThat(validate(validator, attestation).code()).isEqualTo(IGNORE);
+  }
+
+  @Test
+  public void postDeneb_shouldIgnoreAttestationNotInCurrentOrPreviousEpoch() {
+    final Spec spec = TestSpecFactory.createMinimalDeneb();
+
+    final AttestationValidator validator =
+        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
+
+    // attestation in epoch 0
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
+
+    // current epoch is 3
+    chainUpdater.setCurrentSlot(UInt64.valueOf(25));
+
+    assertThat(validate(validator, attestation).code()).isEqualTo(IGNORE);
   }
 
   @Test
@@ -195,6 +239,22 @@ class AttestationValidatorTest {
     chainUpdater.setCurrentSlot(ZERO);
 
     assertThat(validate(attestation).code()).isEqualTo(SAVE_FOR_FUTURE);
+  }
+
+  @Test
+  public void postDeneb_shouldDeferAttestationAfterCurrentSlotButNotTooFarInTheFuture() {
+    final Spec spec = TestSpecFactory.createMinimalDeneb();
+
+    final AttestationValidator validator =
+        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
+
+    // attestation will be fork choice eligible in 3 slots, so within MAX_FUTURE_SLOT_ALLOWANCE
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead(), UInt64.valueOf(2));
+
+    chainUpdater.setCurrentSlot(ZERO);
+
+    assertThat(validate(validator, attestation).code()).isEqualTo(SAVE_FOR_FUTURE);
   }
 
   @Test
@@ -406,6 +466,11 @@ class AttestationValidatorTest {
   }
 
   private InternalValidationResult validate(final Attestation attestation) {
+    return validate(validator, attestation);
+  }
+
+  private InternalValidationResult validate(
+      final AttestationValidator validator, final Attestation attestation) {
     final BeaconState state = safeJoin(recentChainData.getBestState().orElseThrow());
 
     return validator
