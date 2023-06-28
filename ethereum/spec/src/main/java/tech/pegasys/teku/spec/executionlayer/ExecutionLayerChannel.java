@@ -136,10 +136,4 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    */
   SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state);
-
-  enum Version {
-    KILNV2;
-
-    public static final Version DEFAULT_VERSION = KILNV2;
-  }
 }
