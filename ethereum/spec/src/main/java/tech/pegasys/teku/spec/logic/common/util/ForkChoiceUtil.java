@@ -49,11 +49,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 
 public class ForkChoiceUtil {
 
-  private final SpecConfig specConfig;
-  private final BeaconStateAccessors beaconStateAccessors;
-  private final EpochProcessor epochProcessor;
-  private final AttestationUtil attestationUtil;
-  private final MiscHelpers miscHelpers;
+  protected final SpecConfig specConfig;
+  protected final BeaconStateAccessors beaconStateAccessors;
+  protected final EpochProcessor epochProcessor;
+  protected final AttestationUtil attestationUtil;
+  protected final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,

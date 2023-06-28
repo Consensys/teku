@@ -51,8 +51,7 @@ public class ForkChoiceUtilDeneb extends ForkChoiceUtil {
 
   private UInt64 computeFirstAvailabilityWindowSlot(final ReadOnlyStore store, final Spec spec) {
     final UInt64 currentEpoch = spec.getCurrentEpoch(store);
-    final SpecConfig config = spec.atEpoch(currentEpoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(specConfig);
     final UInt64 maybeAvailabilityWindowStartSlot =
         spec.computeStartSlotAtEpoch(
             currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
