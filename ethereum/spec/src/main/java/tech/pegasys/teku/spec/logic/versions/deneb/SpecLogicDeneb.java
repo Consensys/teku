@@ -30,7 +30,6 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.forktransition.DenebStateUpgr
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.operations.validation.AttestationDataValidatorDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.BlindBlockUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -110,7 +110,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
         new BeaconStateUtil(
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
-        new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+        new AttestationUtilDeneb(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
     final AttestationDataValidator attestationDataValidator =
         new AttestationDataValidatorDeneb(config, miscHelpers, beaconStateAccessors);
     final OperationValidator operationValidator =
