@@ -28,7 +28,7 @@ public class RateTrackerTest {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
     final long objectCount = 1;
     final Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
   }
 
   @Test
@@ -36,7 +36,7 @@ public class RateTrackerTest {
     final RateTracker tracker = new RateTracker(1, 15000, timeProvider);
     final long objectCount = 1;
     final Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
   }
 
   @Test
@@ -45,12 +45,12 @@ public class RateTrackerTest {
     long objectCount = 1;
 
     Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
 
     timeProvider.advanceTimeBySeconds(2L);
 
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
   }
 
   @Test
@@ -58,7 +58,7 @@ public class RateTrackerTest {
     final RateTracker tracker = new RateTracker(1, 1, timeProvider);
     final long objectCount = 1;
     Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
 
     objectRequests = tracker.popObjectRequests(objectCount);
     assertThat(objectRequests).isEmpty();
@@ -69,7 +69,7 @@ public class RateTrackerTest {
     final RateTracker tracker = new RateTracker(10, 1, timeProvider);
     long objectCount = 10;
     Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
 
     objectRequests = tracker.popObjectRequests(objectCount);
     assertThat(objectRequests).isEmpty();
@@ -78,7 +78,7 @@ public class RateTrackerTest {
 
     objectCount = 1;
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
   }
 
   @Test
@@ -87,14 +87,14 @@ public class RateTrackerTest {
 
     long objectCount = 9;
     Optional<RequestApproval> objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
     // time:1000 count:9
 
     timeProvider.advanceTimeBySeconds(1L);
 
     objectCount = 5;
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
     // time:1001 count:14
 
     timeProvider.advanceTimeBySeconds(1L);
@@ -108,7 +108,7 @@ public class RateTrackerTest {
 
     objectCount = 5;
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
     // time:1003 count:10 - reject
 
     objectRequests = tracker.popObjectRequests(objectCount);
@@ -118,13 +118,13 @@ public class RateTrackerTest {
     // time:1006 count:0
     objectCount = 9;
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
 
     timeProvider.advanceTimeBySeconds(1L);
     // time:1007 count:9
     objectCount = 5;
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
     // time:1007 count:14 - reject
 
     objectCount = 1;
@@ -135,11 +135,11 @@ public class RateTrackerTest {
     // time:1009 count:5
     objectCount = 4;
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 0, timeProvider);
     // time:1009 count:9
     objectCount = 1;
     objectRequests = tracker.popObjectRequests(objectCount);
-    assertRequestsAllowed(objectRequests, objectCount, timeProvider);
+    assertRequestsAllowed(objectRequests, objectCount, 1, timeProvider);
     // time:1009 count:10 - reject
     objectCount = 1;
     objectRequests = tracker.popObjectRequests(objectCount);
@@ -152,7 +152,7 @@ public class RateTrackerTest {
 
     // time: 1000, tracker count: 0, limit: 10, remaining: 10
     Optional<RequestApproval> objectRequests = tracker.popObjectRequests(10);
-    assertRequestsAllowed(objectRequests, 10, timeProvider);
+    assertRequestsAllowed(objectRequests, 10, 0, timeProvider);
 
     // time: 1000, tracker count: 10, limit: 10, remaining: 0
     Optional<RequestApproval> anotherObjectRequests = tracker.popObjectRequests(5);
@@ -161,12 +161,12 @@ public class RateTrackerTest {
     tracker.adjustObjectRequests(objectRequests.get(), 3);
     // time: 1000, tracker count: 3, limit: 10, remaining: 7
     objectRequests = tracker.popObjectRequests(7);
-    assertRequestsAllowed(objectRequests, 7, timeProvider);
+    assertRequestsAllowed(objectRequests, 7, 1, timeProvider);
     // time: 1000, tracker count: 10, limit: 10, remaining: 0
     tracker.adjustObjectRequests(objectRequests.get(), 5);
     // time: 1000, tracker count: 8, limit: 10, remaining: 2
     objectRequests = tracker.popObjectRequests(3);
-    assertRequestsAllowed(objectRequests, 3, timeProvider);
+    assertRequestsAllowed(objectRequests, 3, 2, timeProvider);
     // respond as long as the remaining capacity is > 0
     // time: 1000, tracker count: 11, limit: 10, remaining: 0
     tracker.adjustObjectRequests(objectRequests.get(), 3);
@@ -176,10 +176,13 @@ public class RateTrackerTest {
   }
 
   private void assertRequestsAllowed(
-      Optional<RequestApproval> objectRequests, long objectCount, StubTimeProvider timeProvider) {
-    assertThat(objectRequests).isPresent();
-    assertThat(objectRequests.get().getObjectsCount()).isEqualTo(objectCount);
-    assertThat(objectRequests.get().getRequestKey().getTimeSeconds())
-        .isEqualTo(timeProvider.getTimeInSeconds());
+      final Optional<RequestApproval> requestApproval,
+      final long objectCount,
+      final int requestId,
+      final StubTimeProvider timeProvider) {
+    assertThat(requestApproval).isPresent();
+    assertThat(requestApproval.get().getObjectsCount()).isEqualTo(objectCount);
+    assertThat(requestApproval.get().getRequestKey())
+        .isEqualTo(new ObjectRequestsKey(timeProvider.getTimeInSeconds(), requestId));
   }
 }

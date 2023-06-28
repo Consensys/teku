@@ -13,18 +13,15 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import java.util.Comparator;
 import java.util.NavigableMap;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RateTracker {
-  private final NavigableMap<ObjectRequestsEntryKey, Long> requestCount;
+  private final NavigableMap<ObjectRequestsKey, Long> requestCount;
   private final int peerRateLimit;
   private final UInt64 timeoutSeconds;
   private long objectsWithinWindow = 0L;
@@ -62,9 +59,7 @@ public class RateTracker {
 
   private void resetRequestId(UInt64 currentTime) {
     if (requestCount.keySet().stream()
-        .noneMatch(
-            objectRequestsEntryKey ->
-                objectRequestsEntryKey.getTimeSeconds().equals(currentTime))) {
+        .noneMatch(objectRequestsKey -> objectRequestsKey.getTimeSeconds().equals(currentTime))) {
       this.newRequestId.set(0);
     }
   }
@@ -84,52 +79,9 @@ public class RateTracker {
     if (currentTime.isLessThan(timeoutSeconds)) {
       return;
     }
-    final NavigableMap<ObjectRequestsEntryKey, Long> headMap =
-        requestCount.headMap(
-            new ObjectRequestsEntryKey(currentTime.minus(timeoutSeconds), 0), false);
+    final NavigableMap<ObjectRequestsKey, Long> headMap =
+        requestCount.headMap(new ObjectRequestsKey(currentTime.minus(timeoutSeconds), 0), false);
     headMap.values().forEach(value -> objectsWithinWindow -= value);
     headMap.clear();
-  }
-
-  public static class ObjectRequestsEntryKey implements Comparable<ObjectRequestsEntryKey> {
-    private final UInt64 timeSeconds;
-    private final int requestId;
-
-    public ObjectRequestsEntryKey(final UInt64 timeSeconds, final int requestId) {
-      this.timeSeconds = timeSeconds;
-      this.requestId = requestId;
-    }
-
-    public UInt64 getTimeSeconds() {
-      return timeSeconds;
-    }
-
-    public int getRequestId() {
-      return requestId;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(timeSeconds, requestId);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-      ObjectRequestsEntryKey that = (ObjectRequestsEntryKey) o;
-      return Objects.equals(this.timeSeconds, that.timeSeconds) && this.requestId == that.requestId;
-    }
-
-    @Override
-    public int compareTo(@NotNull ObjectRequestsEntryKey other) {
-      return Comparator.comparing(ObjectRequestsEntryKey::getTimeSeconds)
-          .thenComparingInt(ObjectRequestsEntryKey::getRequestId)
-          .compare(this, other);
-    }
   }
 }
