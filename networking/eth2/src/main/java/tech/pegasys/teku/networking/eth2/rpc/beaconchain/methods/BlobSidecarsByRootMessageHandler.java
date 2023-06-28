@@ -112,10 +112,10 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    final Optional<RequestApproval> blobSidecarRequests =
+    final Optional<RequestApproval> blobSidecarRequestsApproval =
         peer.popBlobSidecarRequests(callback, message.size());
 
-    if (!peer.popRequest() || blobSidecarRequests.isEmpty()) {
+    if (!peer.popRequest() || blobSidecarRequestsApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -123,9 +123,7 @@ public class BlobSidecarsByRootMessageHandler
     requestCounter.labels("ok").inc();
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
-
     final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
-
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
     for (final BlobIdentifier identifier : message) {
@@ -150,13 +148,14 @@ public class BlobSidecarsByRootMessageHandler
     future.finish(
         () -> {
           if (sentBlobSidecars.get() != message.size()) {
-            peer.adjustBlobSidecarRequests(blobSidecarRequests.get(), sentBlobSidecars.get());
+            peer.adjustBlobSidecarRequests(
+                blobSidecarRequestsApproval.get(), sentBlobSidecars.get());
           }
           totalBlobSidecarsRequestedCounter.inc(sentBlobSidecars.get());
           callback.completeSuccessfully();
         },
         err -> {
-          peer.adjustBlobSidecarRequests(blobSidecarRequests.get(), 0);
+          peer.adjustBlobSidecarRequests(blobSidecarRequestsApproval.get(), 0);
           handleError(callback, err);
         });
   }

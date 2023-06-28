@@ -92,10 +92,10 @@ public class BeaconBlocksByRootMessageHandler
 
       SafeFuture<Void> future = SafeFuture.COMPLETE;
 
-      final Optional<RequestApproval> blockRequests =
+      final Optional<RequestApproval> blockRequestsApproval =
           peer.popBlockRequests(callback, message.size());
 
-      if (!peer.popRequest() || blockRequests.isEmpty()) {
+      if (!peer.popRequest() || blockRequestsApproval.isEmpty()) {
         requestCounter.labels("rate_limited").inc();
         return;
       }
@@ -130,13 +130,13 @@ public class BeaconBlocksByRootMessageHandler
       future.finish(
           () -> {
             if (sentBlocks.get() != message.size()) {
-              peer.adjustBlockRequests(blockRequests.get(), sentBlocks.get());
+              peer.adjustBlockRequests(blockRequestsApproval.get(), sentBlocks.get());
             }
             totalBlocksRequestedCounter.inc(sentBlocks.get());
             callback.completeSuccessfully();
           },
           err -> {
-            peer.adjustBlockRequests(blockRequests.get(), 0);
+            peer.adjustBlockRequests(blockRequestsApproval.get(), 0);
             handleError(callback, err);
           });
     } else {

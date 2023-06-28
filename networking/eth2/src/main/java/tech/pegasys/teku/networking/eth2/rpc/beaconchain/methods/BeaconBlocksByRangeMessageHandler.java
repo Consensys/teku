@@ -122,10 +122,10 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
 
-    final Optional<RequestApproval> blockRequests =
+    final Optional<RequestApproval> blockRequestsApproval =
         peer.popBlockRequests(callback, message.getCount().longValue());
 
-    if (!peer.popRequest() || blockRequests.isEmpty()) {
+    if (!peer.popRequest() || blockRequestsApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -136,13 +136,14 @@ public class BeaconBlocksByRangeMessageHandler
         .finish(
             requestState -> {
               if (requestState.sentBlocks.get() != message.getCount().longValue()) {
-                peer.adjustBlockRequests(blockRequests.get(), requestState.sentBlocks.get());
+                peer.adjustBlockRequests(
+                    blockRequestsApproval.get(), requestState.sentBlocks.get());
               }
               totalBlocksRequestedCounter.inc(requestState.sentBlocks.get());
               callback.completeSuccessfully();
             },
             error -> {
-              peer.adjustBlockRequests(blockRequests.get(), 0);
+              peer.adjustBlockRequests(blockRequestsApproval.get(), 0);
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
