@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.util;
 
-import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -67,22 +67,24 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
 
   private boolean isAttestationSlotAfterCurrentTime(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 currentTimeWithDisparity = calculateCurrentTimeWithDisparity(currentTimeMillis);
-    final UInt64 currentSlot = miscHelpers.computeSlotAtTime(genesisTime, currentTimeWithDisparity);
-    return attestationSlot.isGreaterThan(currentSlot);
+    final UInt64 attestationSlotTimeMillis =
+        secondsToMillis(miscHelpers.computeTimeAtSlot(genesisTime, attestationSlot));
+    return attestationSlotTimeMillis.isGreaterThan(
+        currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
   }
 
   private boolean isAttestationSlotCurrentOrPreviousEpoch(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 currentTimeWithDisparity = calculateCurrentTimeWithDisparity(currentTimeMillis);
-    final UInt64 currentEpoch =
-        miscHelpers.computeEpochAtTime(genesisTime, currentTimeWithDisparity);
     final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestationSlot);
-    return attestationEpoch.equals(currentEpoch)
-        || attestationEpoch.equals(currentEpoch.minusMinZero(1));
-  }
-
-  private UInt64 calculateCurrentTimeWithDisparity(final UInt64 currentTimeMillis) {
-    return millisToSeconds(currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
+    final UInt64 nextEpochStartTimeMillis =
+        secondsToMillis(miscHelpers.computeStartTimeAtEpoch(genesisTime, attestationEpoch.plus(1)));
+    final UInt64 previousEpochStartTimeMillis =
+        secondsToMillis(
+            miscHelpers.computeStartTimeAtEpoch(genesisTime, attestationEpoch.minusMinZero(1)));
+    return currentTimeMillis
+            .minusMinZero(specConfig.getMaximumGossipClockDisparity())
+            .isGreaterThanOrEqualTo(previousEpochStartTimeMillis)
+        && currentTimeMillis.isLessThan(
+            nextEpochStartTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
   }
 }
