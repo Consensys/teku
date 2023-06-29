@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.config;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
-
 import java.util.Optional;
 import java.util.function.Consumer;
 import tech.pegasys.teku.beacon.sync.SyncConfig;
@@ -36,6 +34,7 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -232,10 +231,10 @@ public class TekuConfiguration {
       final StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
       final SyncConfig syncConfig = syncConfigBuilder.build();
 
-      final int maxAllowedBatchSize =
-          Math.min(
-              spec.getNetworkingConfig().getMaxRequestBlocks(),
-              MAX_REQUEST_BLOCKS_DENEB.intValue());
+      final long maxAllowedBatchSize =
+          spec.getNetworkingConfigDeneb()
+              .map(NetworkingSpecConfigDeneb::getMaxRequestBlocksDeneb)
+              .orElse(spec.getNetworkingConfig().getMaxRequestBlocks());
 
       if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
         throw new InvalidConfigurationException(

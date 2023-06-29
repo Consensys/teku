@@ -180,10 +180,7 @@ public class ExecutionLayerService extends Service {
 
     final ExecutionEngineClient executionEngineClient =
         ExecutionLayerManagerImpl.createEngineClient(
-            config.getEngineVersion(),
-            engineWeb3jClientProvider.getWeb3JClient(),
-            timeProvider,
-            metricsSystem);
+            engineWeb3jClientProvider.getWeb3JClient(), timeProvider, metricsSystem);
 
     final EngineApiCapabilitiesProvider localEngineApiCapabilitiesProvider =
         new LocalEngineApiCapabilitiesProvider(config.getSpec(), executionEngineClient);

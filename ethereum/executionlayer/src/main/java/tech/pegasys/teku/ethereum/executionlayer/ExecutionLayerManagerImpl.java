@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
@@ -38,7 +37,6 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -118,15 +116,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   }
 
   public static ExecutionEngineClient createEngineClient(
-      final Version version,
       final Web3JClient web3JClient,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
-    checkNotNull(version);
-    LOG.info("Execution Engine version: {}", version);
-    if (version != Version.KILNV2) {
-      throw new InvalidConfigurationException("Unsupported execution engine version: " + version);
-    }
     final ExecutionEngineClient engineClient = new Web3JExecutionEngineClient(web3JClient);
     final ExecutionEngineClient metricEngineClient =
         new MetricRecordingExecutionEngineClient(engineClient, timeProvider, metricsSystem);

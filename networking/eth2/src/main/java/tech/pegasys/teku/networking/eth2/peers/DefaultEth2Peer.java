@@ -54,6 +54,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksB
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EmptyMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.GoodbyeMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.PingMessage;
@@ -61,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private static final Logger LOG = LogManager.getLogger();
@@ -81,6 +83,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker requestTracker;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
+  private final Supplier<BlobSidecarsByRootRequestMessageSchema>
+      blobSidecarsByRootRequestMessageSchema;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -109,6 +113,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       .getDenebForkEpoch();
               return spec.computeStartSlotAtEpoch(denebForkEpoch);
             });
+    this.blobSidecarsByRootRequestMessageSchema =
+        Suppliers.memoize(
+            () ->
+                SchemaDefinitionsDeneb.required(
+                        spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+                    .getBlobSidecarsByRootRequestMessageSchema());
   }
 
   @Override
@@ -228,7 +238,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .map(
             method ->
                 requestStream(
-                    method, new BlobSidecarsByRootRequestMessage(blobIdentifiers), listener))
+                    method,
+                    new BlobSidecarsByRootRequestMessage(
+                        blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
+                    listener))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
@@ -262,6 +275,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 requestOptionalItem(
                     method,
                     new BlobSidecarsByRootRequestMessage(
+                        blobSidecarsByRootRequestMessageSchema.get(),
                         Collections.singletonList(blobIdentifier))))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }

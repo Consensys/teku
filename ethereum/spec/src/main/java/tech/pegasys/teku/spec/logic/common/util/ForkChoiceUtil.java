@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -48,11 +49,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 
 public class ForkChoiceUtil {
 
-  private final SpecConfig specConfig;
-  private final BeaconStateAccessors beaconStateAccessors;
-  private final EpochProcessor epochProcessor;
-  private final AttestationUtil attestationUtil;
-  private final MiscHelpers miscHelpers;
+  protected final SpecConfig specConfig;
+  protected final BeaconStateAccessors beaconStateAccessors;
+  protected final EpochProcessor epochProcessor;
+  protected final AttestationUtil attestationUtil;
+  protected final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
@@ -483,6 +484,12 @@ public class ForkChoiceUtil {
       return true;
     }
     return isBellatrixBlockOld(store, block.getSlot());
+  }
+
+  /** non-functional in early forks */
+  public Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
+      final Spec spec, final ReadOnlyStore store, final UInt64 slot) {
+    return Optional.empty();
   }
 
   private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {

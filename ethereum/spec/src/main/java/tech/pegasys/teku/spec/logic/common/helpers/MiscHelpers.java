@@ -283,6 +283,10 @@ public class MiscHelpers {
     throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }
 
+  public UInt64 getMaxRequestBlocks() {
+    return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
+  }
+
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
     return Optional.empty();
   }

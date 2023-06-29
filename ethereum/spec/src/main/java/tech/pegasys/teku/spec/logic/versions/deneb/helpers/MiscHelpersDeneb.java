@@ -120,4 +120,9 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
         .orElse(0);
   }
+
+  @Override
+  public UInt64 getMaxRequestBlocks() {
+    return UInt64.valueOf(SpecConfigDeneb.required(specConfig).getMaxRequestBlocksDeneb());
+  }
 }
