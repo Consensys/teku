@@ -23,17 +23,16 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
-import tech.pegasys.teku.spec.logic.common.operations.validation.OperationStateTransitionValidator;
 
-public class AttestationDataValidator
-    implements OperationStateTransitionValidator<AttestationData> {
+public class AttestationDataValidatorPhase0 implements AttestationDataValidator {
 
   private final SpecConfig specConfig;
   private final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;
 
-  AttestationDataValidator(
+  public AttestationDataValidatorPhase0(
       final SpecConfig specConfig,
       final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors) {
@@ -72,12 +71,7 @@ public class AttestationDataValidator
                         .compareTo(state.getSlot())
                     <= 0,
                 AttestationInvalidReason.SUBMITTED_TOO_QUICKLY),
-        () ->
-            check(
-                state
-                    .getSlot()
-                    .isLessThanOrEqualTo(data.getSlot().plus(specConfig.getSlotsPerEpoch())),
-                AttestationInvalidReason.SUBMITTED_TOO_LATE),
+        () -> isSubmittedTooLate(state, data),
         () -> {
           if (data.getTarget().getEpoch().equals(beaconStateAccessors.getCurrentEpoch(state))) {
             return check(
@@ -91,26 +85,10 @@ public class AttestationDataValidator
         });
   }
 
-  public enum AttestationInvalidReason implements OperationInvalidReason {
-    COMMITTEE_INDEX_TOO_HIGH("CommitteeIndex too high"),
-    NOT_FROM_CURRENT_OR_PREVIOUS_EPOCH("Attestation not from current or previous epoch"),
-    SLOT_NOT_IN_EPOCH("Attestation slot not in specified epoch"),
-    SUBMITTED_TOO_QUICKLY("Attestation submitted too quickly"),
-    SUBMITTED_TOO_LATE("Attestation submitted too late"),
-    INCORRECT_CURRENT_JUSTIFIED_CHECKPOINT(
-        "Attestation source does not match current justified checkpoint"),
-    INCORRECT_PREVIOUS_JUSTIFIED_CHECKPOINT(
-        "Attestation source does not match previous justified checkpoint");
-
-    private final String description;
-
-    AttestationInvalidReason(final String description) {
-      this.description = description;
-    }
-
-    @Override
-    public String describe() {
-      return description;
-    }
+  protected Optional<OperationInvalidReason> isSubmittedTooLate(
+      final BeaconState state, final AttestationData data) {
+    return check(
+        state.getSlot().isLessThanOrEqualTo(data.getSlot().plus(specConfig.getSlotsPerEpoch())),
+        AttestationInvalidReason.SUBMITTED_TOO_LATE);
   }
 }

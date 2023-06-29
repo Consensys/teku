@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.forktransition.DenebStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.operations.validation.AttestationDataValidatorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.BlindBlockUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -109,9 +111,11 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+    final AttestationDataValidator attestationDataValidator =
+        new AttestationDataValidatorDeneb(config, miscHelpers, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorCapella(
-            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
+            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,

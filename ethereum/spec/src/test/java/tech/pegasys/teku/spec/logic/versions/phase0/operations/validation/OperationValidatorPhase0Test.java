@@ -23,8 +23,8 @@ import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -35,12 +35,16 @@ public class OperationValidatorPhase0Test {
   void shouldRejectBlsOperationsPhase0() {
     final SpecConfig specConfig = mock(SpecConfig.class);
     final Predicates predicates = mock(Predicates.class);
-    final MiscHelpers miscHelpers = mock(MiscHelpers.class);
     final BeaconStateAccessors beaconStateAccessors = mock(BeaconStateAccessors.class);
+    final AttestationDataValidator attestationDataValidator = mock(AttestationDataValidator.class);
     final AttestationUtil attestationUtil = mock(AttestationUtil.class);
     final OperationValidator operationValidator =
         new OperationValidatorPhase0(
-            specConfig, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
+            specConfig,
+            predicates,
+            beaconStateAccessors,
+            attestationDataValidator,
+            attestationUtil);
 
     assertThat(
             operationValidator.validateBlsToExecutionChange(
@@ -48,8 +52,8 @@ public class OperationValidatorPhase0Test {
         .containsInstanceOf(OperationInvalidReason.class);
     verifyNoInteractions(specConfig);
     verifyNoInteractions(predicates);
-    verifyNoInteractions(miscHelpers);
     verifyNoInteractions(beaconStateAccessors);
+    verifyNoInteractions(attestationDataValidator);
     verifyNoInteractions(attestationUtil);
   }
 }
