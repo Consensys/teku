@@ -320,7 +320,7 @@ public abstract class BeaconStateAccessors {
   }
 
   public Bytes32 getVoluntaryExitDomain(
-      SignedVoluntaryExit signedVoluntaryExit, BeaconState state) {
+      final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
     return getDomain(
         Domain.VOLUNTARY_EXIT,
         signedVoluntaryExit.getMessage().getEpoch(),
