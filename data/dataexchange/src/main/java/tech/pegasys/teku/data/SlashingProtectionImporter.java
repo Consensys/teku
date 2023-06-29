@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -167,7 +168,8 @@ public class SlashingProtectionImporter {
 
   private Optional<String> updateLocalRecord(
       final SigningHistory signingHistory, final Consumer<String> statusConsumer) {
-    String validatorString = signingHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase();
+    String validatorString =
+        signingHistory.pubkey.toBytes().toUnprefixedHexString().toLowerCase(Locale.ROOT);
     final String hexValidatorPubkey = signingHistory.pubkey.toHexString();
 
     statusConsumer.accept("Importing " + validatorString);

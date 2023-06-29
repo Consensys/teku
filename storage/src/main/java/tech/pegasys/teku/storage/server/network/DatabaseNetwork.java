@@ -23,6 +23,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Objects;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -48,8 +49,8 @@ public class DatabaseNetwork {
 
   public static DatabaseNetwork init(
       final File source, Bytes4 forkVersion, Eth1Address depositContract) throws IOException {
-    final String forkVersionString = forkVersion.toHexString().toLowerCase();
-    final String depositContractString = depositContract.toHexString().toLowerCase();
+    final String forkVersionString = forkVersion.toHexString().toLowerCase(Locale.ROOT);
+    final String depositContractString = depositContract.toHexString().toLowerCase(Locale.ROOT);
     final ObjectMapper objectMapper =
         new ObjectMapper(new YAMLFactory().disable(WRITE_DOC_START_MARKER));
     if (source.exists()) {

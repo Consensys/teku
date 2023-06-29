@@ -17,12 +17,13 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
+import java.util.Locale;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 
 public class SszBitvectorSerializer extends JsonSerializer<SszBitvector> {
   @Override
   public void serialize(SszBitvector value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(value.sszSerialize().toHexString().toLowerCase());
+    gen.writeString(value.sszSerialize().toHexString().toLowerCase(Locale.ROOT));
   }
 }

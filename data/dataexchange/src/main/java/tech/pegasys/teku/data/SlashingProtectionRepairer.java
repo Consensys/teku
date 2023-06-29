@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -127,7 +128,7 @@ public class SlashingProtectionRepairer {
   }
 
   private String toDisplayString(final BLSPubKey pubkey) {
-    return pubkey.toBytes().toUnprefixedHexString().toLowerCase();
+    return pubkey.toBytes().toUnprefixedHexString().toLowerCase(Locale.ROOT);
   }
 
   private void displayUpdateErrors() {

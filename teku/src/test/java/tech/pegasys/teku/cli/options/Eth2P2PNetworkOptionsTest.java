@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.URL;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -163,8 +164,8 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(new String[] {"--network", url.toString()});
 
     final TekuConfiguration config = getResultingTekuConfiguration();
-    assertThat(config.eth2NetworkConfiguration().getConstants().toLowerCase())
-        .isEqualToIgnoringWhitespace(url.toString().toLowerCase());
+    assertThat(config.eth2NetworkConfiguration().getConstants().toLowerCase(Locale.ROOT))
+        .isEqualToIgnoringWhitespace(url.toString().toLowerCase(Locale.ROOT));
     assertThat(
             createConfigBuilder()
                 .eth2NetworkConfig(
