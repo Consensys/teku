@@ -41,14 +41,14 @@ public class RequestsKey implements Comparable<RequestsKey> {
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    RequestsKey that = (RequestsKey) o;
+    final RequestsKey that = (RequestsKey) o;
     return Objects.equals(this.timeSeconds, that.timeSeconds) && this.requestId == that.requestId;
   }
 

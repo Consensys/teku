@@ -68,7 +68,7 @@ class StatusMessageHandlerTest {
   @BeforeEach
   public void setUp() {
     when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
-    when(peer.popRequest()).thenReturn(true);
+    when(peer.approveRequest()).thenReturn(true);
   }
 
   @Test
