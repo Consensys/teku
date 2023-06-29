@@ -482,12 +482,9 @@ public class Spec {
   public boolean verifyVoluntaryExitSignature(
       BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
     final UInt64 epoch = signedExit.getMessage().getEpoch();
-    final SpecVersion specVersion = atEpoch(epoch);
-    final Bytes32 voluntaryExitDomain =
-        specVersion.getBlockProcessor().computeVoluntaryExitDomain(signedExit, state);
-    return specVersion
+    return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier, voluntaryExitDomain);
+        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {

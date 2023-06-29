@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
@@ -316,5 +317,14 @@ public abstract class BeaconStateAccessors {
             ? fork.getPreviousVersion()
             : fork.getCurrentVersion();
     return miscHelpers.computeDomain(domainType, forkVersion, genesisValidatorsRoot);
+  }
+
+  public Bytes32 getVoluntaryExitDomain(
+      SignedVoluntaryExit signedVoluntaryExit, BeaconState state) {
+    return getDomain(
+        Domain.VOLUNTARY_EXIT,
+        signedVoluntaryExit.getMessage().getEpoch(),
+        state.getFork(),
+        state.getGenesisValidatorsRoot());
   }
 }
