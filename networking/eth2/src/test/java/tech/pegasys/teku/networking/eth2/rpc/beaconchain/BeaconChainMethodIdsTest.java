@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 public class BeaconChainMethodIdsTest {
   private final Spec spec = TestSpecFactory.createDefault();
   protected final RpcEncoding rpcEncoding =
-      RpcEncoding.createSszSnappyEncoding(spec.getGenesisSpecConfig().getMaxChunkSize());
+      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
 
   @Test
   public void getProtocolId() {

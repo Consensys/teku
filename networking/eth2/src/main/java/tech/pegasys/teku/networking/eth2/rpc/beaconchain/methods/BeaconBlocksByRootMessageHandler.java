@@ -14,8 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -125,9 +123,7 @@ public class BeaconBlocksByRootMessageHandler
   private UInt64 getMaxRequestBlocks() {
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
-    return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-        ? MAX_REQUEST_BLOCKS_DENEB
-        : MAX_REQUEST_BLOCKS;
+    return spec.forMilestone(milestone).miscHelpers().getMaxRequestBlocks();
   }
 
   private void handleError(

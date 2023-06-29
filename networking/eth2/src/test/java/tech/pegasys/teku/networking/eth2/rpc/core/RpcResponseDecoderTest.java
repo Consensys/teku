@@ -43,12 +43,12 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   private static final Bytes SUCCESS_CODE = Bytes.of(RpcResponseStatus.SUCCESS_RESPONSE_CODE);
   private static final Bytes ERROR_CODE = Bytes.of(1);
 
-  private final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, ?> decoder = RESPONSE_DECODER;
+  private final RpcResponseDecoder<BeaconBlocksByRootRequestMessage, ?> decoder = responseDecoder;
 
   @Test
   public void decodeNextResponse_shouldParseSingleResponse() throws Exception {
     for (Iterable<ByteBuf> testByteBufSlice :
-        testByteBufSlices(SUCCESS_CODE, LENGTH_PREFIX, MESSAGE_DATA)) {
+        testByteBufSlices(SUCCESS_CODE, lengthPrefix, messageData)) {
 
       List<BeaconBlocksByRootRequestMessage> results = new ArrayList<>();
       for (ByteBuf byteBuf : testByteBufSlice) {
@@ -56,7 +56,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
         byteBuf.release();
       }
       decoder.complete();
-      assertThat(results).containsExactly(MESSAGE);
+      assertThat(results).containsExactly(message);
       assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
     }
   }
@@ -65,13 +65,13 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   public void decodeNextResponse_shouldParseMultipleResponses() throws Exception {
     final BeaconBlocksByRootRequestMessage secondMessage = createRequestMessage(2);
     final Bytes secondMessageData = secondMessage.sszSerialize();
-    final Bytes compressedPayload = COMPRESSOR.compress(secondMessageData);
+    final Bytes compressedPayload = compressor.compress(secondMessageData);
 
     for (Iterable<ByteBuf> testByteBufSlice :
         testByteBufSlices(
             SUCCESS_CODE,
-            LENGTH_PREFIX,
-            MESSAGE_DATA,
+            lengthPrefix,
+            messageData,
             SUCCESS_CODE,
             getLengthPrefix(secondMessageData.size()),
             compressedPayload)) {
@@ -82,7 +82,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
         byteBuf.release();
       }
       decoder.complete();
-      assertThat(results).containsExactly(MESSAGE, secondMessage);
+      assertThat(results).containsExactly(message, secondMessage);
       assertThat(testByteBufSlice).allSatisfy(b -> assertThat(b.refCnt()).isEqualTo(0));
     }
   }
@@ -90,7 +90,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   @Test
   public void decodeNextResponse_shouldThrowErrorIfStatusCodeIsNotSuccess() throws Exception {
     for (Iterable<ByteBuf> testByteBufSlice :
-        testByteBufSlices(ERROR_CODE, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA)) {
+        testByteBufSlices(ERROR_CODE, errorMessageLengthPrefix, errorMessageData)) {
 
       assertThatThrownBy(
               () -> {
@@ -108,7 +108,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
       throws Exception {
     final Bytes errorCode = Bytes.of(255);
     for (Iterable<ByteBuf> testByteBufSlice :
-        testByteBufSlices(errorCode, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA)) {
+        testByteBufSlices(errorCode, errorMessageLengthPrefix, errorMessageData)) {
 
       assertThatThrownBy(
               () -> {
@@ -164,7 +164,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   public void complete_shouldThrowErrorIfErrorMsgNotFullyProcessed() {
     final Bytes errorCode = Bytes.of(255);
     for (Iterable<ByteBuf> testByteBufSlice :
-        testByteBufSlices(errorCode, ERROR_MESSAGE_LENGTH_PREFIX, ERROR_MESSAGE_DATA.slice(0, 2))) {
+        testByteBufSlices(errorCode, errorMessageLengthPrefix, errorMessageData.slice(0, 2))) {
 
       RpcResponseDecoder<?, ?> decoder = createForkAwareDecoder();
       assertThatThrownBy(
@@ -195,7 +195,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     final Bytes serializedState = state.sszSerialize();
     final Bytes lengthPrefix = getLengthPrefix(serializedState.size());
     final Bytes contextBytes = TestContextCodec.getContextBytes(usePhase0State).getWrappedBytes();
-    final Bytes compressedState = COMPRESSOR.compress(serializedState);
+    final Bytes compressedState = compressor.compress(serializedState);
 
     final RpcResponseDecoder<BeaconState, ?> decoder = createForkAwareDecoder();
 
@@ -233,7 +233,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
     final Bytes lengthPrefix = getLengthPrefix(serializedState.size());
     // Use wrong context for state
     final Bytes contextBytes = TestContextCodec.getContextBytes(!usePhase0).getWrappedBytes();
-    final Bytes compressedState = COMPRESSOR.compress(serializedState);
+    final Bytes compressedState = compressor.compress(serializedState);
 
     for (List<ByteBuf> testByteBufSlice :
         testByteBufSlices(SUCCESS_CODE, contextBytes, lengthPrefix, compressedState)) {
@@ -287,7 +287,7 @@ class RpcResponseDecoderTest extends RpcDecoderTestBase {
   }
 
   private RpcResponseDecoder<BeaconState, Bytes4> createForkAwareDecoder() {
-    return RpcResponseDecoder.create(ENCODING, new TestContextCodec());
+    return RpcResponseDecoder.create(encoding, new TestContextCodec());
   }
 
   private static class TestContextCodec implements RpcContextCodec<Bytes4, BeaconState> {

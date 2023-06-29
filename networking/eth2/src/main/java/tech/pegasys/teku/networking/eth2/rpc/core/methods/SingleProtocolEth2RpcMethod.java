@@ -29,6 +29,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseDecoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseEncoder;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.context.RpcContextCodec;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 
 public class SingleProtocolEth2RpcMethod<
@@ -44,6 +45,7 @@ public class SingleProtocolEth2RpcMethod<
 
   private final LocalMessageHandler<TRequest, TResponse> localMessageHandler;
   private final PeerLookup peerLookup;
+  private final NetworkingSpecConfig networkingConfig;
 
   public SingleProtocolEth2RpcMethod(
       final AsyncRunner asyncRunner,
@@ -54,7 +56,8 @@ public class SingleProtocolEth2RpcMethod<
       final boolean expectResponseToRequest,
       final RpcContextCodec<?, TResponse> contextCodec,
       final LocalMessageHandler<TRequest, TResponse> localMessageHandler,
-      final PeerLookup peerLookup) {
+      final PeerLookup peerLookup,
+      final NetworkingSpecConfig networkingConfig) {
     super(encoding, requestType, expectResponseToRequest);
     this.asyncRunner = asyncRunner;
     this.contextCodec = contextCodec;
@@ -63,6 +66,7 @@ public class SingleProtocolEth2RpcMethod<
     this.protocolVersion = protocolVersion;
     this.localMessageHandler = localMessageHandler;
     this.peerLookup = peerLookup;
+    this.networkingConfig = networkingConfig;
   }
 
   @Override
@@ -87,7 +91,8 @@ public class SingleProtocolEth2RpcMethod<
         createRequestDecoder(),
         asyncRunner,
         peerLookup,
-        localMessageHandler);
+        localMessageHandler,
+        networkingConfig);
   }
 
   @Override
@@ -102,7 +107,8 @@ public class SingleProtocolEth2RpcMethod<
         createResponseDecoder(),
         expectResponseToRequest,
         request,
-        responseHandler);
+        responseHandler,
+        networkingConfig);
   }
 
   @Override

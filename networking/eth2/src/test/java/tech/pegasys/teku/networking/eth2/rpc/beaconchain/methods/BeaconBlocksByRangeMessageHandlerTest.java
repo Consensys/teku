@@ -25,8 +25,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import java.util.NavigableMap;
@@ -49,7 +47,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -60,7 +61,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 class BeaconBlocksByRangeMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
   private static final String V2_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRangeMethodId(2, RPC_ENCODING);
@@ -156,7 +157,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
         handler.validateRequest(
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
-                UInt64.valueOf(startBlock), MAX_REQUEST_BLOCKS, UInt64.valueOf(skip)));
+                UInt64.valueOf(startBlock),
+                UInt64.valueOf(spec.getNetworkingConfig().getMaxRequestBlocks()),
+                UInt64.valueOf(skip)));
 
     assertThat(result)
         .hasValue(new RpcException(INVALID_REQUEST_CODE, "Step must be greater than zero"));
@@ -171,7 +174,9 @@ class BeaconBlocksByRangeMessageHandlerTest {
         handler.validateRequest(
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
-                UInt64.valueOf(startBlock), MAX_REQUEST_BLOCKS.increment(), UInt64.valueOf(skip)));
+                UInt64.valueOf(startBlock),
+                UInt64.valueOf(spec.getNetworkingConfig().getMaxRequestBlocks()).increment(),
+                UInt64.valueOf(skip)));
 
     assertThat(result)
         .hasValue(
@@ -190,12 +195,14 @@ class BeaconBlocksByRangeMessageHandlerTest {
     final BeaconBlocksByRangeMessageHandler handler =
         new BeaconBlocksByRangeMessageHandler(spec, metricsSystem, combinedChainDataClient);
 
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final Optional<RpcException> result =
         handler.validateRequest(
             protocolId,
             new BeaconBlocksByRangeRequestMessage(
                 UInt64.valueOf(startBlock),
-                MAX_REQUEST_BLOCKS_DENEB.increment(),
+                UInt64.valueOf(specConfigDeneb.getMaxRequestBlocksDeneb()).increment(),
                 UInt64.valueOf(skip)));
 
     assertThat(result)

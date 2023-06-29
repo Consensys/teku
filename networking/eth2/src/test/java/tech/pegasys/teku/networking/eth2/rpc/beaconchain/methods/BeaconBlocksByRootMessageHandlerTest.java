@@ -22,7 +22,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +37,10 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -51,7 +53,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 public class BeaconBlocksByRootMessageHandlerTest {
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
   private static final String V2_PROTOCOL_ID =
       BeaconChainMethodIds.getBlocksByRootMethodId(2, RPC_ENCODING);
@@ -95,13 +97,20 @@ public class BeaconBlocksByRootMessageHandlerTest {
         new BeaconBlocksByRootMessageHandler(
             spec, storageSystem.getMetricsSystem(), recentChainData);
 
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final List<Bytes32> roots =
-        UInt64.range(UInt64.ZERO, MAX_REQUEST_BLOCKS_DENEB.increment())
+        UInt64.range(
+                UInt64.ZERO, UInt64.valueOf(specConfigDeneb.getMaxRequestBlocksDeneb()).increment())
             .map(__ -> Bytes32.ZERO)
             .collect(Collectors.toList());
 
     handler.onIncomingMessage(
-        V2_PROTOCOL_ID, peer, new BeaconBlocksByRootRequestMessage(roots), callback);
+        V2_PROTOCOL_ID,
+        peer,
+        new BeaconBlocksByRootRequestMessage(
+            spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots),
+        callback);
 
     verify(callback)
         .completeWithErrorResponse(
@@ -182,7 +191,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
   private BeaconBlocksByRootRequestMessage createRequest(final List<SignedBeaconBlock> forBlocks) {
     final List<Bytes32> blockHashes =
         forBlocks.stream().map(SignedBeaconBlock::getRoot).collect(Collectors.toList());
-    return new BeaconBlocksByRootRequestMessage(blockHashes);
+    return new BeaconBlocksByRootRequestMessage(
+        spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
+        blockHashes);
   }
 
   private List<SignedBeaconBlock> buildChain(final int chainSize) {

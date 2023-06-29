@@ -34,6 +34,7 @@ import tech.pegasys.teku.services.beaconchain.BeaconChainControllerFactory;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
@@ -221,14 +222,29 @@ public class TekuConfiguration {
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
-      DataConfig dataConfig = dataConfigBuilder.build();
-      ValidatorConfig validatorConfig = validatorConfigBuilder.build();
+      final DataConfig dataConfig = dataConfigBuilder.build();
+      final ValidatorConfig validatorConfig = validatorConfigBuilder.build();
 
-      P2PConfig p2PConfig = p2pConfigBuilder.build();
+      final P2PConfig p2PConfig = p2pConfigBuilder.build();
       syncConfigBuilder.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
 
-      StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
-      SyncConfig syncConfig = syncConfigBuilder.build();
+      final StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
+      final SyncConfig syncConfig = syncConfigBuilder.build();
+
+      final long maxAllowedBatchSize =
+          spec.getNetworkingConfigDeneb()
+              .map(NetworkingSpecConfigDeneb::getMaxRequestBlocksDeneb)
+              .orElse(spec.getNetworkingConfig().getMaxRequestBlocks());
+
+      if (syncConfig.getForwardSyncBatchSize() > maxAllowedBatchSize) {
+        throw new InvalidConfigurationException(
+            "Forward sync batch size cannot be greater than " + maxAllowedBatchSize);
+      }
+
+      if (syncConfig.getHistoricalSyncBatchSize() > maxAllowedBatchSize) {
+        throw new InvalidConfigurationException(
+            "Historical sync batch size cannot be greater than " + maxAllowedBatchSize);
+      }
 
       // Check for invalid config settings
       if (syncConfig.isReconstructHistoricStatesEnabled()

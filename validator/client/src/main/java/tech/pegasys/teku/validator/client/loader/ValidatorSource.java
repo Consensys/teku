@@ -16,8 +16,8 @@ package tech.pegasys.teku.validator.client.loader;
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 

@@ -45,7 +45,6 @@ public class ProtoArrayTestUtil {
             .currentEpoch(ZERO)
             .justifiedCheckpoint(new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO))
             .finalizedCheckpoint(new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO))
-            .progressiveBalancesMode(spec.getGenesisSpecConfig().getProgressiveBalancesMode())
             .build();
 
     ForkChoiceStrategy forkChoice = ForkChoiceStrategy.initialize(spec, protoArray);

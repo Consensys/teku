@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.spec.config.Constants.BLOB_SIDECAR_SUBNET_COUNT;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +39,10 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -53,8 +55,6 @@ public class BlobSidecarGossipManagerTest {
   private static final Pattern BLOB_SIDECAR_TOPIC_PATTERN = Pattern.compile("blob_sidecar_(\\d+)");
 
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
-
-  private final int gossipMaxSize = spec.getGenesisSpecConfig().getGossipMaxSize();
   private final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -102,8 +102,7 @@ public class BlobSidecarGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            processor,
-            gossipMaxSize);
+            processor);
     blobSidecarGossipManager.subscribe();
   }
 
@@ -131,10 +130,12 @@ public class BlobSidecarGossipManagerTest {
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
 
     topicChannels.forEach(
         (subnetId, channel) -> {
-          if (subnetId == 10 % BLOB_SIDECAR_SUBNET_COUNT) {
+          if (subnetId == 10 % specConfigDeneb.getBlobSidecarSubnetCount()) {
             verify(channel).gossip(serialized);
           } else {
             verifyNoInteractions(channel);

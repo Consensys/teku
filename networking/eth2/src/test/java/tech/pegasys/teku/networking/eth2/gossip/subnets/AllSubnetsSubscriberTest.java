@@ -24,27 +24,31 @@ import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 class AllSubnetsSubscriberTest {
   private final AttestationTopicSubscriber attestationTopicSubscriber =
       mock(AttestationTopicSubscriber.class);
+  private final Spec spec = TestSpecFactory.createDefault();
 
   @SuppressWarnings("unchecked")
   @Test
   void shouldSubscribeToAllSubnetsWhenCreated() {
     final StableSubnetSubscriber stableSubnetSubscriber =
-        AllSubnetsSubscriber.create(attestationTopicSubscriber);
+        AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig());
     final ArgumentCaptor<Set<SubnetSubscription>> captor = ArgumentCaptor.forClass(Set.class);
     verify(attestationTopicSubscriber).subscribeToPersistentSubnets(captor.capture());
 
     final Set<SubnetSubscription> actual = captor.getValue();
     // Should subscribe to all subnets with a far future unsubscription slot
-    assertThat(actual).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
+    assertThat(actual).hasSize(spec.getNetworkingConfig().getAttestationSubnetCount());
     assertThat(actual.stream().mapToInt(SubnetSubscription::getSubnetId))
         .containsExactlyInAnyOrderElementsOf(
-            IntStream.range(0, Constants.ATTESTATION_SUBNET_COUNT).boxed().collect(toSet()));
+            IntStream.range(0, spec.getNetworkingConfig().getAttestationSubnetCount())
+                .boxed()
+                .collect(toSet()));
     assertThat(actual.stream().map(SubnetSubscription::getUnsubscriptionSlot))
         .containsOnly(UInt64.MAX_VALUE);
 

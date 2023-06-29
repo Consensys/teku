@@ -50,6 +50,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -64,7 +65,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
@@ -72,9 +73,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
-
-  private final SpecConfigDeneb specConfig =
-      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig());
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
 
@@ -127,7 +125,10 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
-    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);

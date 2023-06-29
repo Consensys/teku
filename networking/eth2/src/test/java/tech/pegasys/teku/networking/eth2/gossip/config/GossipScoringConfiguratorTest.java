@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.within;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.time.Duration;
 import java.util.Map;
@@ -43,7 +42,7 @@ public class GossipScoringConfiguratorTest {
   private final Spec spec = TestSpecFactory.createMainnetPhase0();
   private final int genesisMinActiveValidators =
       spec.getGenesisSpecConfig().getMinGenesisActiveValidatorCount();
-
+  private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
   private GossipScoringConfigurator configurator;
 
   @BeforeEach
@@ -88,7 +87,7 @@ public class GossipScoringConfiguratorTest {
     configurator.configureAllTopics(builder, postGenesisEth2Context());
     final Map<String, GossipTopicScoringConfig> allTopics = builder.build().getTopicConfigs();
 
-    final int expectedCount = 5 + ATTESTATION_SUBNET_COUNT;
+    final int expectedCount = 5 + attestationSubnetCount;
     assertThat(allTopics.size()).isEqualTo(expectedCount);
 
     validateVoluntaryExitTopicParams(allTopics);
@@ -104,7 +103,7 @@ public class GossipScoringConfiguratorTest {
     configurator.configureAllTopics(builder, genesisEth2Context());
     final Map<String, GossipTopicScoringConfig> allTopics = builder.build().getTopicConfigs();
 
-    final int expectedCount = 5 + ATTESTATION_SUBNET_COUNT;
+    final int expectedCount = 5 + attestationSubnetCount;
     assertThat(allTopics.size()).isEqualTo(expectedCount);
 
     validateVoluntaryExitTopicParams(allTopics);
@@ -187,7 +186,7 @@ public class GossipScoringConfiguratorTest {
 
   private void validateAllAttestationSubnetTopicParams(
       final Map<String, GossipTopicScoringConfig> allTopics, final boolean penaltiesActive) {
-    IntStream.range(0, ATTESTATION_SUBNET_COUNT)
+    IntStream.range(0, attestationSubnetCount)
         .mapToObj(subnet -> getAttestationSubnetTopicScoring(allTopics, subnet))
         .forEach(params -> validateAttestationSubnetTopicParams(params, penaltiesActive));
   }

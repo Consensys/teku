@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -61,5 +62,22 @@ public class BlobsBundleSchema
   @Override
   public BlobsBundle createFromBackingNode(final TreeNode node) {
     return new BlobsBundle(this, node);
+  }
+
+  public BlobsBundle createFromExecutionBlobsBundle(
+      final tech.pegasys.teku.spec.datastructures.execution.BlobsBundle blobsBundle) {
+    return new BlobsBundle(
+        this,
+        getCommitmentsSchema()
+            .createFromElements(
+                blobsBundle.getCommitments().stream()
+                    .map(SszKZGCommitment::new)
+                    .collect(Collectors.toList())),
+        getProofsSchema()
+            .createFromElements(
+                blobsBundle.getProofs().stream()
+                    .map(SszKZGProof::new)
+                    .collect(Collectors.toList())),
+        getBlobsSchema().createFromElements(blobsBundle.getBlobs()));
   }
 }

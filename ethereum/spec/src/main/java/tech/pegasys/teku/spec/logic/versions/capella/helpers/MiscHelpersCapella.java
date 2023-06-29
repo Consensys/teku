@@ -25,12 +25,12 @@ public class MiscHelpersCapella extends MiscHelpersBellatrix {
   }
 
   @Override
-  public boolean isMergeTransitionComplete(BeaconState genericState) {
+  public boolean isMergeTransitionComplete(final BeaconState genericState) {
     return true;
   }
 
   @Override
-  public boolean isExecutionEnabled(BeaconState genericState, BeaconBlock block) {
+  public boolean isExecutionEnabled(final BeaconState genericState, final BeaconBlock block) {
     return true;
   }
 }

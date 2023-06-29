@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static tech.pegasys.teku.spec.config.Constants.ATTESTATION_SUBNET_COUNT;
 
 import java.util.List;
 import java.util.Optional;
@@ -198,7 +197,10 @@ public class BeaconStateUtil {
       final UInt64 attestationSlot, final UInt64 committeeIndex, final UInt64 committeesPerSlot) {
     final UInt64 slotsSinceEpochStart = attestationSlot.mod(specConfig.getSlotsPerEpoch());
     final UInt64 committeesSinceEpochStart = committeesPerSlot.times(slotsSinceEpochStart);
-    return committeesSinceEpochStart.plus(committeeIndex).mod(ATTESTATION_SUBNET_COUNT).intValue();
+    return committeesSinceEpochStart
+        .plus(committeeIndex)
+        .mod(specConfig.getAttestationSubnetCount())
+        .intValue();
   }
 
   private int computeSubnetForCommittee(

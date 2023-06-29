@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
@@ -99,10 +99,11 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final SpecConfigDeneb specConfig = SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
-    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
-    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
-
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
+    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock());
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final UInt64 requestedCount = message.getCount().times(maxBlobsPerBlock);
 
     if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
@@ -129,7 +130,7 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              if (checkRequestInMinEpochsRange(requestEpoch)
+              if (checkRequestInBlobServeRange(requestEpoch)
                   && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlot)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
@@ -181,10 +182,13 @@ public class BlobSidecarsByRangeMessageHandler
         .orElse(false);
   }
 
-  private boolean checkRequestInMinEpochsRange(final UInt64 requestEpoch) {
+  private boolean checkRequestInBlobServeRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final SpecConfig config = spec.atEpoch(currentEpoch).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final UInt64 minEpochForBlobSidecars =
-        denebForkEpoch.max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS));
+        denebForkEpoch.max(
+            currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }

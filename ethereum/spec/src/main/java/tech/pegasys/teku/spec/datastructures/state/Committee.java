@@ -21,12 +21,11 @@ public class Committee {
   private final UInt64 index;
   private final IntList committee;
 
-  public Committee(UInt64 index, IntList committee) {
+  public Committee(final UInt64 index, final IntList committee) {
     this.index = index;
     this.committee = committee;
   }
 
-  /** ******************* * GETTERS & SETTERS * * ******************* */
   public UInt64 getIndex() {
     return index;
   }

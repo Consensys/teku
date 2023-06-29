@@ -32,8 +32,7 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<AttesterSlashing> processor,
-      final int maxMessageSize) {
+      final OperationProcessor<AttesterSlashing> processor) {
     super(
         recentChainData,
         GossipTopicName.ATTESTER_SLASHING,
@@ -46,7 +45,7 @@ public class AttesterSlashingGossipManager extends AbstractGossipManager<Atteste
             .getSchemaDefinitions()
             .getAttesterSlashingSchema(),
         message -> spec.computeEpochAtSlot(message.getAttestation1().getData().getSlot()),
-        maxMessageSize);
+        spec.getNetworkingConfig());
   }
 
   public void publishAttesterSlashing(final AttesterSlashing message) {
