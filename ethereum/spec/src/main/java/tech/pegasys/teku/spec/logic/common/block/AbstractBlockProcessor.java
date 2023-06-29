@@ -836,25 +836,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       SszList<SignedVoluntaryExit> exits,
       BLSSignatureVerifier signatureVerifier) {
     for (SignedVoluntaryExit signedExit : exits) {
-      final Bytes32 voluntaryExitDomain = computeVoluntaryExitDomain(signedExit, state);
       boolean exitSignatureValid =
           operationSignatureVerifier.verifyVoluntaryExitSignature(
-              state, signedExit, signatureVerifier, voluntaryExitDomain);
+              state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }
     }
     return BlockValidationResult.SUCCESSFUL;
-  }
-
-  @Override
-  public Bytes32 computeVoluntaryExitDomain(
-      final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
-    return beaconStateAccessors.getDomain(
-        Domain.VOLUNTARY_EXIT,
-        signedVoluntaryExit.getMessage().getEpoch(),
-        state.getFork(),
-        state.getGenesisValidatorsRoot());
   }
 
   // Catch generic errors and wrap them in a BlockProcessingException

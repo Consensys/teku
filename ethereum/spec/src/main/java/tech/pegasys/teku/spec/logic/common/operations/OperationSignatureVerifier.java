@@ -95,17 +95,16 @@ public class OperationSignatureVerifier {
   }
 
   public boolean verifyVoluntaryExitSignature(
-      BeaconState state,
-      SignedVoluntaryExit signedExit,
-      BLSSignatureVerifier signatureVerifier,
-      Bytes32 domain) {
+      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
     final VoluntaryExit exit = signedExit.getMessage();
 
-    Optional<BLSPublicKey> maybePublicKey =
+    final Optional<BLSPublicKey> maybePublicKey =
         beaconStateAccessors.getValidatorPubKey(state, exit.getValidatorIndex());
     if (maybePublicKey.isEmpty()) {
       return false;
     }
+
+    final Bytes32 domain = beaconStateAccessors.getVoluntaryExitDomain(signedExit, state);
 
     final Bytes signingRoot = miscHelpers.computeSigningRoot(exit, domain);
     return signatureVerifier.verify(maybePublicKey.get(), signingRoot, signedExit.getSignature());
