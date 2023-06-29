@@ -23,6 +23,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -243,7 +244,7 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
 
-    if (validatorParameter.toLowerCase().startsWith("0x")) {
+    if (validatorParameter.toLowerCase(Locale.ROOT).startsWith("0x")) {
       final Bytes48 keyBytes = getBytes48FromParameter(validatorParameter);
       try {
         return spec.getValidatorIndex(state, BLSPublicKey.fromBytesCompressed(keyBytes));

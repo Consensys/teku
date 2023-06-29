@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -40,7 +41,7 @@ class JsonProviderTest {
   public void bytes32ShouldSerializeToJsonAndBack() throws JsonProcessingException {
     Bytes32 data = Bytes32.random();
     String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(Q + data.toHexString().toLowerCase() + Q, serialized);
+    assertEquals(Q + data.toHexString().toLowerCase(Locale.ROOT) + Q, serialized);
 
     Bytes32 deserialize = jsonProvider.jsonToObject(serialized, Bytes32.class);
     assertEquals(data, deserialize);

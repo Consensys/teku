@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -190,7 +191,8 @@ class KeyGeneratorTest {
     assertKeyStoreFilesExistAndAreEncryptedWithPassword(outputPath);
 
     // select only withdrawal files
-    FilenameFilter withdrawalFilter = (dir, name) -> name.toLowerCase().contains("withdrawal");
+    FilenameFilter withdrawalFilter =
+        (dir, name) -> name.toLowerCase(Locale.ROOT).contains("withdrawal");
 
     // assert that files exist: 1 withdrawal file per validator
     final File[] withdrawalFiles = outputPath.toFile().listFiles(withdrawalFilter);
@@ -198,7 +200,8 @@ class KeyGeneratorTest {
     Arrays.stream(withdrawalFiles).forEach(file -> assertThat(file).isFile());
 
     // select only validator files
-    FilenameFilter validatorFilter = (dir, name) -> name.toLowerCase().contains("validator");
+    FilenameFilter validatorFilter =
+        (dir, name) -> name.toLowerCase(Locale.ROOT).contains("validator");
 
     // assert that files exist: 1 validator file per validator
     final File[] validatorFiles = outputPath.toFile().listFiles(validatorFilter);

@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.netty.buffer.ByteBuf;
+import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -42,7 +43,7 @@ public class RpcResponseEncoderDecoderTest extends RpcDecoderTestBase {
     final Bytes actual = errorMessageResponseEncoder.encodeErrorResponse(ex);
 
     // sanity check that the encoded string is what we expect
-    assertThat(actual.toHexString().toLowerCase())
+    assertThat(actual.toHexString().toLowerCase(Locale.ROOT))
         .isEqualTo("0x010bff060000734e61507059010f0000c839768d4261642072657175657374");
 
     // when we then decode the byte stream, the same RpcException that got encoded is raised

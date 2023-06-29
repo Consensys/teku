@@ -22,6 +22,7 @@ import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,7 +30,8 @@ public class OSUtils {
 
   public static final String CR = System.getProperty("line.separator");
   public static final String SLASH = System.getProperty("file.separator");
-  public static final boolean IS_WIN = System.getProperty("os.name").toLowerCase().contains("win");
+  public static final boolean IS_WIN =
+      System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
 
   public static String toOSPath(String nixPath) {
     if (IS_WIN) {
