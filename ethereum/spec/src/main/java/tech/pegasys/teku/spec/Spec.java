@@ -896,12 +896,9 @@ public class Spec {
   public Optional<Integer> getMaxBlobsPerBlock() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();
-    if (!highestSupportedMilestone.isGreaterThanOrEqualTo(DENEB)) {
-      return Optional.empty();
-    }
-    return forMilestone(highestSupportedMilestone)
-        .getConfig()
-        .toVersionDeneb()
+    return Optional.ofNullable(forMilestone(highestSupportedMilestone))
+        .map(SpecVersion::getConfig)
+        .flatMap(SpecConfig::toVersionDeneb)
         .map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
