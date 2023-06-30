@@ -95,14 +95,15 @@ public class BlobSidecarsByRootMessageHandlerTest {
       new BlobSidecarsByRootMessageHandler(
           spec, metricsSystem, denebForkEpoch, combinedChainDataClient);
 
-  private final Optional<RequestApproval> allowedObjectRequests =
+  private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
-          new RequestApproval.RequestApprovalBuilder().objectCount(100).timeSeconds(ZERO).build());
+          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
 
   @BeforeEach
   public void setup() {
-    when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlobSidecarRequests(eq(callback), anyLong())).thenReturn(allowedObjectRequests);
+    when(peer.approveRequest()).thenReturn(true);
+    when(peer.approveBlobSidecarsRequest(eq(callback), anyLong()))
+        .thenReturn(allowedObjectsRequest);
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -154,7 +155,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.popBlobSidecarRequests(callback, 5)).thenReturn(Optional.empty());
+    when(peer.approveBlobSidecarsRequest(callback, 5)).thenReturn(Optional.empty());
 
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
@@ -163,9 +164,9 @@ public class BlobSidecarsByRootMessageHandlerTest {
     handler.onIncomingMessage(protocolId, peer, request, callback);
 
     // Requesting 5 blob sidecars
-    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(5)));
+    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(5)));
     // No adjustment
-    verify(peer, never()).adjustBlobSidecarRequests(any(), anyLong());
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
         metricsSystem
@@ -197,10 +198,10 @@ public class BlobSidecarsByRootMessageHandlerTest {
         callback);
 
     // Requesting 4 blob sidecars
-    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(4)));
+    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(4)));
     // Sending 3 blob sidecars
     verify(peer, times(1))
-        .adjustBlobSidecarRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(3)));
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(3)));
 
     verify(combinedChainDataClient, times(1)).getBlockByBlockRoot(secondBlockRoot);
     verify(callback, times(3)).respond(blobSidecarCaptor.capture());
@@ -244,10 +245,10 @@ public class BlobSidecarsByRootMessageHandlerTest {
         callback);
 
     // Requesting 3 blob sidecars
-    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(3)));
+    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
     // Request cancelled due to error
     verify(peer, times(1))
-        .adjustBlobSidecarRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -281,10 +282,10 @@ public class BlobSidecarsByRootMessageHandlerTest {
         callback);
 
     // Requesting 3 blob sidecars
-    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(3)));
+    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(3)));
     // Request cancelled due to error
     verify(peer, times(1))
-        .adjustBlobSidecarRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
 
     verify(callback, never()).respond(any());
     verify(callback).completeWithErrorResponse(rpcExceptionCaptor.capture());
@@ -313,9 +314,9 @@ public class BlobSidecarsByRootMessageHandlerTest {
     final List<BlobSidecar> sentBlobSidecars = blobSidecarCaptor.getAllValues();
 
     // Requesting 5 blob sidecars
-    verify(peer, times(1)).popBlobSidecarRequests(any(), eq(Long.valueOf(5)));
+    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(5)));
     // Sending 5 blob sidecars, no adjustment required
-    verify(peer, never()).adjustBlobSidecarRequests(any(), anyLong());
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     // verify sent blob sidecars
     IntStream.range(0, 5)

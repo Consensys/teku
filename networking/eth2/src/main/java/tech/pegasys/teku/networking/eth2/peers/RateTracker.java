@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RateTracker {
-  private final NavigableMap<RequestsKey, Long> requestCount;
+  private final NavigableMap<RequestsKey, Long> requests;
   private final int peerRateLimit;
   private final UInt64 timeoutSeconds;
   private long objectsWithinWindow = 0L;
@@ -32,36 +32,36 @@ public class RateTracker {
   public RateTracker(
       final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
     this.timeoutSeconds = UInt64.valueOf(timeoutSeconds);
-    requestCount = new TreeMap<>();
+    requests = new TreeMap<>();
     this.peerRateLimit = peerRateLimit;
     this.timeProvider = timeProvider;
   }
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
-  public synchronized Optional<RequestApproval> popObjectRequests(final long objectCount) {
+  public synchronized Optional<RequestApproval> approveObjectsRequest(final long objectsCount) {
     pruneRequests();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     if ((peerRateLimit - objectsWithinWindow) <= 0) {
       return Optional.empty();
     }
-    objectsWithinWindow += objectCount;
+    objectsWithinWindow += objectsCount;
     final RequestApproval requestApproval =
         new RequestApproval.RequestApprovalBuilder()
             .requestId(newRequestId.getAndIncrement())
             .timeSeconds(currentTime)
-            .objectCount(objectCount)
+            .objectsCount(objectsCount)
             .build();
-    requestCount.put(requestApproval.getRequestKey(), objectCount);
+    requests.put(requestApproval.getRequestKey(), objectsCount);
     return Optional.of(requestApproval);
   }
 
-  public synchronized void adjustObjectRequests(
+  public synchronized void adjustObjectsRequest(
       final RequestApproval requestApproval, final long returnedObjectsCount) {
     pruneRequests();
-    if (requestCount.containsKey(requestApproval.getRequestKey())) {
-      final long initialObjectsCount = requestCount.get(requestApproval.getRequestKey());
-      requestCount.put(requestApproval.getRequestKey(), returnedObjectsCount);
+    if (requests.containsKey(requestApproval.getRequestKey())) {
+      final long initialObjectsCount = requests.get(requestApproval.getRequestKey());
+      requests.put(requestApproval.getRequestKey(), returnedObjectsCount);
       objectsWithinWindow = objectsWithinWindow - initialObjectsCount + returnedObjectsCount;
     }
   }
@@ -72,7 +72,7 @@ public class RateTracker {
       return;
     }
     final NavigableMap<RequestsKey, Long> headMap =
-        requestCount.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
+        requests.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
     headMap.values().forEach(value -> objectsWithinWindow -= value);
     headMap.clear();
   }

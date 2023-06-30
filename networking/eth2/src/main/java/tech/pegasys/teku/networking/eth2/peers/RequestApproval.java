@@ -13,11 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
+import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class RequestApproval {
 
-  private RequestsKey requestKey;
+  private final RequestsKey requestKey;
   private final long objectsCount;
 
   private RequestApproval(RequestsKey requestKey, long objectsCount) {
@@ -31,6 +32,23 @@ public class RequestApproval {
 
   public long getObjectsCount() {
     return objectsCount;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final RequestApproval that = (RequestApproval) o;
+    return objectsCount == that.objectsCount && Objects.equals(requestKey, that.requestKey);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(requestKey, objectsCount);
   }
 
   public static final class RequestApprovalBuilder {
@@ -48,7 +66,7 @@ public class RequestApproval {
       return this;
     }
 
-    public RequestApprovalBuilder objectCount(final long objectsCount) {
+    public RequestApprovalBuilder objectsCount(final long objectsCount) {
       this.objectsCount = objectsCount;
       return this;
     }

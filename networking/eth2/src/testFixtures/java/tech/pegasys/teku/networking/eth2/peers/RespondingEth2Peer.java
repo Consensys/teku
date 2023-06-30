@@ -302,33 +302,33 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public Optional<RequestApproval> popBlockRequests(
+  public Optional<RequestApproval> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
     return Optional.of(
         new RequestApproval.RequestApprovalBuilder()
             .requestId(0)
             .timeSeconds(ZERO)
-            .objectCount(0)
+            .objectsCount(0)
             .build());
   }
 
   @Override
-  public void adjustBlockRequests(
+  public void adjustBlocksRequest(
       final RequestApproval blockRequests, final long returnedBlocksCount) {}
 
   @Override
-  public Optional<RequestApproval> popBlobSidecarRequests(
+  public Optional<RequestApproval> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
     return Optional.of(
-        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectCount(0).build());
+        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
   }
 
   @Override
-  public void adjustBlobSidecarRequests(
+  public void adjustBlobSidecarsRequest(
       final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
 
   @Override
-  public boolean popRequest() {
+  public boolean approveRequest() {
     return true;
   }
 

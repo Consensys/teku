@@ -77,15 +77,15 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @SuppressWarnings("unchecked")
   final ResponseCallback<SignedBeaconBlock> callback = mock(ResponseCallback.class);
 
-  private final Optional<RequestApproval> allowedObjectRequests =
+  private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
-          new RequestApproval.RequestApprovalBuilder().objectCount(100).timeSeconds(ZERO).build());
+          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
 
   @BeforeEach
   public void setup() {
     chainUpdater.initializeGenesis();
-    when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlockRequests(any(), anyLong())).thenReturn(allowedObjectRequests);
+    when(peer.approveRequest()).thenReturn(true);
+    when(peer.approveBlocksRequest(any(), anyLong())).thenReturn(allowedObjectsRequest);
     when(recentChainData.getStore()).thenReturn(store);
     // Forward block requests from the mock to the actual store
     when(store.retrieveSignedBlock(any()))
@@ -123,7 +123,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
         callback);
 
     // Rate limiter not invoked
-    verify(peer, never()).popBlockRequests(any(), anyLong());
+    verify(peer, never()).approveBlocksRequest(any(), anyLong());
 
     verify(callback)
         .completeWithErrorResponse(
@@ -139,9 +139,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
 
     // Requesting 5 blocks
-    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
+    verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
     // Sending 5 blocks: No rate limiter adjustment required
-    verify(peer, never()).adjustBlockRequests(any(), anyLong());
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
@@ -160,10 +160,10 @@ public class BeaconBlocksByRootMessageHandlerTest {
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
 
     // Requesting 5 blocks
-    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
+    verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
     // Request cancelled
     verify(peer, times(1))
-        .adjustBlockRequests(eq(allowedObjectRequests.get()), eq(Long.valueOf(0)));
+        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
 
     // Check that we only asked for the first block
     verify(store, times(1)).retrieveSignedBlock(any());
@@ -182,9 +182,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
 
     // Requesting 5 blocks
-    verify(peer, times(1)).popBlockRequests(any(), eq(Long.valueOf(blocks.size())));
+    verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
     // Sending 5 blocks: No rate limiter adjustment required
-    verify(peer, never()).adjustBlockRequests(any(), anyLong());
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
