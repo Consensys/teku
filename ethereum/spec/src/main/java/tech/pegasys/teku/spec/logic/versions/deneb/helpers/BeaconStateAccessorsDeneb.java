@@ -14,19 +14,21 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.spec.config.SpecConfigAltair;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
-import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 
 public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
 
   public BeaconStateAccessorsDeneb(
-      SpecConfigAltair config, Predicates predicates, MiscHelpersAltair miscHelpers) {
+      final SpecConfigDeneb config,
+      final Predicates predicates,
+      final MiscHelpersDeneb miscHelpers) {
     super(config, predicates, miscHelpers);
   }
 
@@ -37,5 +39,16 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
         Domain.VOLUNTARY_EXIT,
         SpecConfigCapella.required(config).getCapellaForkVersion(),
         state.getGenesisValidatorsRoot());
+  }
+
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#modified-get_attestation_participation_flag_indices">Modified
+   * get_attestation_participation_flag_indices</a>
+   */
+  @Override
+  protected boolean shouldSetTargetTimelinessFlag(
+      final boolean isMatchingTarget, final UInt64 inclusionDelay) {
+    return isMatchingTarget;
   }
 }

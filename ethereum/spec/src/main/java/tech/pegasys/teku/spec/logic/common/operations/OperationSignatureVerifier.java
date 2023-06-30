@@ -95,7 +95,9 @@ public class OperationSignatureVerifier {
   }
 
   public boolean verifyVoluntaryExitSignature(
-      BeaconState state, SignedVoluntaryExit signedExit, BLSSignatureVerifier signatureVerifier) {
+      final BeaconState state,
+      final SignedVoluntaryExit signedExit,
+      final BLSSignatureVerifier signatureVerifier) {
     final VoluntaryExit exit = signedExit.getMessage();
 
     final Optional<BLSPublicKey> maybePublicKey =

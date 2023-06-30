@@ -23,8 +23,8 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -40,11 +40,10 @@ public class OperationValidatorPhase0 implements OperationValidator {
   public OperationValidatorPhase0(
       final SpecConfig specConfig,
       final Predicates predicates,
-      final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
+      final AttestationDataValidator attestationDataValidator,
       final AttestationUtil attestationUtil) {
-    this.attestationDataValidator =
-        new AttestationDataValidator(specConfig, miscHelpers, beaconStateAccessors);
+    this.attestationDataValidator = attestationDataValidator;
     this.attesterSlashingValidator =
         new AttesterSlashingValidator(predicates, beaconStateAccessors, attestationUtil);
     this.proposerSlashingValidator =

@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.spec.logic.versions.capella.forktransition.CapellaState
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 
 public class SpecLogicCapella extends AbstractSpecLogic {
@@ -110,9 +112,11 @@ public class SpecLogicCapella extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+    final AttestationDataValidator attestationDataValidator =
+        new AttestationDataValidatorPhase0(config, miscHelpers, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorCapella(
-            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
+            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,

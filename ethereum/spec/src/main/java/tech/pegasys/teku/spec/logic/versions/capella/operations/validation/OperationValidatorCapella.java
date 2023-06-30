@@ -19,8 +19,8 @@ import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationInvalidReason;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
@@ -33,10 +33,10 @@ public class OperationValidatorCapella extends OperationValidatorPhase0 {
   public OperationValidatorCapella(
       final SpecConfig specConfig,
       final Predicates predicates,
-      final MiscHelpers miscHelpers,
       final BeaconStateAccessors beaconStateAccessors,
+      final AttestationDataValidator attestationDataValidator,
       final AttestationUtil attestationUtil) {
-    super(specConfig, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
+    super(specConfig, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
   }
 
   @Override

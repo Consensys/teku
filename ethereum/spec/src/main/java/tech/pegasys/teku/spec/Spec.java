@@ -214,7 +214,7 @@ public class Spec {
   public Optional<NetworkingSpecConfigDeneb> getNetworkingConfigDeneb() {
     return Optional.ofNullable(forMilestone(DENEB))
         .map(SpecVersion::getConfig)
-        .map(specConfig -> (SpecConfigDeneb) specConfig.getNetworkingConfig());
+        .map(specConfig -> (NetworkingSpecConfigDeneb) specConfig.getNetworkingConfig());
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
