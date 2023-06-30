@@ -19,7 +19,6 @@ import tech.pegasys.teku.ethtests.TestSpecConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestDefinition {
@@ -92,11 +91,7 @@ public class TestDefinition {
       default:
         throw new IllegalArgumentException("Unknown fork: " + fork);
     }
-    spec =
-        TestSpecFactory.create(
-            highestSupportedMilestone,
-            network,
-            builder -> builder.progressiveBalancesMode(ProgressiveBalancesMode.FULL));
+    spec = TestSpecFactory.create(highestSupportedMilestone, network);
   }
 
   public String getTestType() {

@@ -17,6 +17,7 @@ import io.prometheus.client.Collector;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -203,7 +204,7 @@ public class RocksDbStats implements AutoCloseable {
         () -> getLongProperty(database, "rocksdb.cur-size-all-mem-tables"));
 
     for (final TickerType ticker : TICKERS) {
-      final String promCounterName = ticker.name().toLowerCase();
+      final String promCounterName = ticker.name().toLowerCase(Locale.ROOT);
       metricsSystem.createLongGauge(
           category,
           promCounterName,
@@ -239,7 +240,7 @@ public class RocksDbStats implements AutoCloseable {
           metricCategory.getApplicationPrefix().orElse("")
               + metricCategory.getName()
               + "_"
-              + histogram.name().toLowerCase();
+              + histogram.name().toLowerCase(Locale.ROOT);
 
       @Override
       public List<MetricFamilySamples> collect() {

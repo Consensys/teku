@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2020
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,27 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.bls.keystore.model;
 
-public enum ProgressiveBalancesMode {
-  DISABLED,
-  CHECKED,
-  USED,
-  FULL;
+import com.fasterxml.jackson.annotation.JsonValue;
 
-  public boolean isDisabled() {
-    return this == DISABLED;
+public enum ChecksumFunction {
+  SHA256("sha256");
+  private final String jsonValue;
+
+  ChecksumFunction(final String jsonValue) {
+    this.jsonValue = jsonValue;
   }
 
-  public boolean isChecked() {
-    return ordinal() >= CHECKED.ordinal();
-  }
-
-  public boolean isUsed() {
-    return ordinal() >= USED.ordinal();
-  }
-
-  public boolean isFull() {
-    return ordinal() >= FULL.ordinal();
+  @JsonValue
+  public String getJsonValue() {
+    return this.jsonValue;
   }
 }

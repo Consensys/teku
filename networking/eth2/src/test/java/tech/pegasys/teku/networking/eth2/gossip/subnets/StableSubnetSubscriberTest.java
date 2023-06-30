@@ -31,8 +31,6 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.Constants;
-import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 @SuppressWarnings("unchecked")
@@ -40,6 +38,7 @@ public class StableSubnetSubscriberTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);
+  private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
   @Test
   void shouldCreateEnoughSubscriptionsAtStart() {
@@ -93,12 +92,12 @@ public class StableSubnetSubscriberTest {
     StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
 
     UInt64 slot = UInt64.valueOf(15);
-    stableSubnetSubscriber.onSlot(slot, Constants.ATTESTATION_SUBNET_COUNT + 2);
+    stableSubnetSubscriber.onSlot(slot, attestationSubnetCount + 2);
 
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
         ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-    assertThat(subnetSubscriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
+    assertThat(subnetSubscriptions.getValue()).hasSize(attestationSubnetCount);
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
     assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), UInt64.valueOf(15));
   }
@@ -107,15 +106,15 @@ public class StableSubnetSubscriberTest {
   void shouldStaySubscribedToAllSubnetsEvenIfValidatorNumberIsDecreased() {
     StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
 
-    stableSubnetSubscriber.onSlot(ZERO, Constants.ATTESTATION_SUBNET_COUNT + 8);
+    stableSubnetSubscriber.onSlot(ZERO, attestationSubnetCount + 8);
 
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
         ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
-    assertThat(subnetSubscriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
+    assertThat(subnetSubscriptions.getValue()).hasSize(attestationSubnetCount);
 
-    stableSubnetSubscriber.onSlot(UInt64.valueOf(2), Constants.ATTESTATION_SUBNET_COUNT);
+    stableSubnetSubscriber.onSlot(UInt64.valueOf(2), attestationSubnetCount);
 
     verifyNoMoreInteractions(validatorApiChannel);
   }
@@ -158,14 +157,14 @@ public class StableSubnetSubscriberTest {
   void shouldGenerateLargeNumberOfSubscriptionsAndCheckTheyreAllCorrect() {
     StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
 
-    stableSubnetSubscriber.onSlot(ZERO, Constants.ATTESTATION_SUBNET_COUNT);
+    stableSubnetSubscriber.onSlot(ZERO, attestationSubnetCount);
 
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
         ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
     assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
-    assertThat(subnetSubscriptions.getValue()).hasSize(Constants.ATTESTATION_SUBNET_COUNT);
+    assertThat(subnetSubscriptions.getValue()).hasSize(attestationSubnetCount);
   }
 
   private void assertUnsubscribeSlotsAreInBound(
@@ -173,13 +172,13 @@ public class StableSubnetSubscriberTest {
     UInt64 lowerBound =
         currentSlot.plus(
             UInt64.valueOf(
-                (long) ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
+                (long) spec.getNetworkingConfig().getEpochsPerSubnetSubscription()
                     * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     UInt64 upperBound =
         currentSlot.plus(
             UInt64.valueOf(
                 2L
-                    * ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION
+                    * spec.getNetworkingConfig().getEpochsPerSubnetSubscription()
                     * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
     subnetSubscriptions.forEach(
         subnetSubscription -> {

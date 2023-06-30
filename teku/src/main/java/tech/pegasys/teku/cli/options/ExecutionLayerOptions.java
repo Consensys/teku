@@ -26,7 +26,6 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerOptions {
 
@@ -38,14 +37,6 @@ public class ExecutionLayerOptions {
       description = "URL for Execution Engine node.",
       arity = "1")
   private String executionEngineEndpoint = null;
-
-  @Option(
-      names = {"--Xee-version"},
-      paramLabel = "<EXECUTION_ENGINE_VERSION>",
-      description = "Execution Engine API version. " + "Valid values: ${COMPLETION-CANDIDATES}",
-      arity = "1",
-      hidden = true)
-  private Version executionEngineVersion = Version.DEFAULT_VERSION;
 
   @Option(
       names = {"--ee-jwt-secret-file"},
@@ -139,7 +130,6 @@ public class ExecutionLayerOptions {
     builder.executionLayer(
         b ->
             b.engineEndpoint(executionEngineEndpoint)
-                .engineVersion(executionEngineVersion)
                 .engineJwtSecretFile(engineJwtSecretFile)
                 .builderEndpoint(builderEndpoint)
                 .isBuilderCircuitBreakerEnabled(builderCircuitBreakerEnabled)

@@ -17,12 +17,13 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
+import java.util.Locale;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 
 public class BLSPubKeySerializer extends JsonSerializer<BLSPubKey> {
   @Override
   public void serialize(BLSPubKey value, JsonGenerator gen, SerializerProvider serializers)
       throws IOException {
-    gen.writeString(value.toHexString().toLowerCase());
+    gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
   }
 }

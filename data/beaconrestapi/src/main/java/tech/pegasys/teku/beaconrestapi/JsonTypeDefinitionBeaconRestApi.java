@@ -252,7 +252,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
                     config.getMaxPendingEvents()))
             // Node Handlers
             .endpoint(new GetHealth(dataProvider))
-            .endpoint(new GetIdentity(dataProvider))
+            .endpoint(new GetIdentity(dataProvider, spec.getNetworkingConfig()))
             .endpoint(new GetPeers(dataProvider))
             .endpoint(new GetPeerCount(dataProvider))
             .endpoint(new GetPeerById(dataProvider))

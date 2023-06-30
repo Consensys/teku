@@ -14,11 +14,11 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -28,11 +28,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -81,8 +84,10 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    final UInt64 maxRequestBlobSidecars = getMaxRequestBlobSidecars();
-    if (request.size() > maxRequestBlobSidecars.intValue()) {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
+    if (request.size() > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
           new RpcException(
@@ -107,7 +112,10 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    if (!peer.popRequest() || !peer.popBlobSidecarRequests(callback, message.size())) {
+    final Optional<RequestApproval> blobSidecarsRequestApproval =
+        peer.approveBlobSidecarsRequest(callback, message.size());
+
+    if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -116,7 +124,7 @@ public class BlobSidecarsByRootMessageHandler
     totalBlobSidecarsRequestedCounter.inc(message.size());
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
-
+    final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
     for (final BlobIdentifier identifier : message) {
@@ -128,16 +136,28 @@ public class BlobSidecarsByRootMessageHandler
                       validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
                           .thenApply(__ -> maybeSidecar))
               .thenComposeChecked(
-                  maybeSidecar -> maybeSidecar.map(callback::respond).orElse(SafeFuture.COMPLETE));
+                  maybeSidecar ->
+                      maybeSidecar
+                          .map(
+                              blobSidecar ->
+                                  callback
+                                      .respond(blobSidecar)
+                                      .thenRun(sentBlobSidecars::incrementAndGet))
+                          .orElse(SafeFuture.COMPLETE));
     }
 
-    future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
-  }
-
-  private UInt64 getMaxRequestBlobSidecars() {
-    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    return SpecConfigDeneb.required(spec.atEpoch(currentEpoch).getConfig())
-        .getMaxRequestBlobSidecars();
+    future.finish(
+        () -> {
+          if (sentBlobSidecars.get() != message.size()) {
+            peer.adjustBlobSidecarsRequest(
+                blobSidecarsRequestApproval.get(), sentBlobSidecars.get());
+          }
+          callback.completeSuccessfully();
+        },
+        err -> {
+          peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
+          handleError(callback, err);
+        });
   }
 
   private UInt64 getFinalizedEpoch() {
@@ -184,8 +204,10 @@ public class BlobSidecarsByRootMessageHandler
 
   private UInt64 computeMinimumRequestEpoch(final UInt64 finalizedEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
+    final SpecConfig config = spec.atEpoch(currentEpoch).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return finalizedEpoch
-        .max(currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS))
+        .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()))
         .max(denebForkEpoch);
   }
 

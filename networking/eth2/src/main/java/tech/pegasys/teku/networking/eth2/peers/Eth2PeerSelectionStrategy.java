@@ -139,7 +139,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     return (int)
         network
             .streamPeers()
-            .filter(peer -> peerPools.getPool(peer.getId()) == RANDOMLY_SELECTED)
+            .filter(peer -> peerPools.getPeerConnectionType(peer.getId()) == RANDOMLY_SELECTED)
             .count();
   }
 
@@ -157,7 +157,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     final Map<PeerConnectionType, List<Peer>> peersBySource =
         network
             .streamPeers()
-            .collect(Collectors.groupingBy(peer -> peerPools.getPool(peer.getId())));
+            .collect(Collectors.groupingBy(peer -> peerPools.getPeerConnectionType(peer.getId())));
 
     final List<Peer> randomlySelectedPeers =
         peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());

@@ -49,8 +49,7 @@ def buildAliases = [
     'spotlessApply',
     'build',
     'checkLicense',
-    // TODO - Fix javadoc task
-    /*'javadoc'*/],
+    'javadoc'],
   'mash': [
     'clean',
     'spotlessApply',
@@ -229,7 +228,6 @@ allprojects {
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('StringCaseLocaleUsage', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // These are experimental checks that we want enabled
       check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
@@ -289,14 +287,9 @@ allprojects {
     }
   }
 
-  // Normalize Xdoclint behaviour across JDKs (OpenJDK 8 is more lenient than Oracle JDK by default).
   javadoc {
-    options.addStringOption('Xdoclint:all', '-quiet')
-    if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
-      options.addStringOption('Xwerror', '-quiet')
-    } else {
-      options.addStringOption('Xwerror', '-html5')
-    }
+    options.addStringOption('Xdoclint:all,-missing', '-quiet')
+    options.addStringOption('Xwerror', '-html5')
     options.encoding = 'UTF-8'
   }
 }

@@ -33,6 +33,7 @@ public class SinglePeerSyncServiceFactory {
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final BlobSidecarPool blobSidecarPool,
+      final int batchSize,
       final Spec spec) {
     final SyncManager syncManager =
         SyncManager.create(
@@ -43,6 +44,7 @@ public class SinglePeerSyncServiceFactory {
             blobSidecarManager,
             blobSidecarPool,
             metricsSystem,
+            batchSize,
             spec);
     return new SinglePeerSyncService(syncManager, recentChainData);
   }

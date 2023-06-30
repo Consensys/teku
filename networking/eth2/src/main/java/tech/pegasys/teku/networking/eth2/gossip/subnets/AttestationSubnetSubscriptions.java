@@ -39,7 +39,6 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
   private final RecentChainData recentChainData;
   private final OperationProcessor<ValidatableAttestation> processor;
   private final ForkInfo forkInfo;
-  private final int maxMessageSize;
   private final AttestationSchema attestationSchema;
 
   public AttestationSubnetSubscriptions(
@@ -49,15 +48,13 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
       final OperationProcessor<ValidatableAttestation> processor,
-      final ForkInfo forkInfo,
-      final int maxMessageSize) {
+      final ForkInfo forkInfo) {
     super(gossipNetwork, gossipEncoding);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.processor = processor;
     this.forkInfo = forkInfo;
-    this.maxMessageSize = maxMessageSize;
     attestationSchema =
         spec.atEpoch(forkInfo.getFork().getEpoch()).getSchemaDefinitions().getAttestationSchema();
   }
@@ -96,8 +93,7 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         forkInfo,
         topicName,
         attestationSchema,
-        subnetId,
-        maxMessageSize);
+        subnetId);
   }
 
   private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {

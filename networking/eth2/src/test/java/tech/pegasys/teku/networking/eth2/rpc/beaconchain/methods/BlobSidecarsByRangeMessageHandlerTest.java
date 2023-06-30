@@ -43,6 +43,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -50,6 +51,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -64,7 +66,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
@@ -72,9 +74,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
-
-  private final SpecConfigDeneb specConfig =
-      SpecConfigDeneb.required(spec.atEpoch(denebForkEpoch).getConfig());
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
 
@@ -102,11 +101,15 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final BlobSidecarsByRangeMessageHandler handler =
       new BlobSidecarsByRangeMessageHandler(
           spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
+  private final Optional<RequestApproval> allowedObjectsRequest =
+      Optional.of(
+          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
 
   @BeforeEach
   public void setUp() {
-    when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlobSidecarRequests(eq(listener), anyLong())).thenReturn(true);
+    when(peer.approveRequest()).thenReturn(true);
+    when(peer.approveBlobSidecarsRequest(eq(listener), anyLong()))
+        .thenReturn(allowedObjectsRequest);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
     when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
@@ -127,12 +130,18 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
-    final UInt64 maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Rate limiter not invoked
+    verify(peer, never()).approveBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
         metricsSystem
@@ -153,13 +162,19 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   @Test
   public void shouldNotSendBlobSidecarsIfPeerIsRateLimited() {
 
-    when(peer.popBlobSidecarRequests(listener, count.times(maxBlobsPerBlock).longValue()))
-        .thenReturn(false);
+    when(peer.approveBlobSidecarsRequest(listener, count.times(maxBlobsPerBlock).longValue()))
+        .thenReturn(Optional.empty());
 
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 5 * maxBlobsPerBlock blob sidecars
+    verify(peer, times(1))
+        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    // No adjustment
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final long rateLimitedCount =
         metricsSystem
@@ -190,6 +205,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
+    // Requesting 5 * maxBlobsPerBlock blob sidecars
+    verify(peer, times(1))
+        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    // Request cancelled
+    verify(peer, times(1))
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+
     // blob sidecars should be available from epoch 5000, but they are
     // available from epoch 5010
     verify(listener)
@@ -207,6 +229,13 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
+    // Requesting 5 * maxBlobsPerBlock blob sidecars
+    verify(peer, times(1))
+        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    // Sending 0 blob sidecars
+    verify(peer, times(1))
+        .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+
     verify(combinedChainDataClient, never()).getBlobSidecarByKey(any());
 
     verify(listener, never()).respond(any());
@@ -223,6 +252,14 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 5 * maxBlobsPerBlock blob sidecars
+    verify(peer, times(1))
+        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    // Sending expectedSent blob sidecars
+    verify(peer, times(1))
+        .adjustBlobSidecarsRequest(
+            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
     final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
@@ -274,6 +311,14 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
+    // Requesting 5 * maxBlobsPerBlock blob sidecars
+    verify(peer, times(1))
+        .approveBlobSidecarsRequest(any(), eq(count.times(maxBlobsPerBlock).longValue()));
+    // Sending expectedSent blob sidecars
+    verify(peer, times(1))
+        .adjustBlobSidecarsRequest(
+            eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
+
     final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
@@ -291,9 +336,18 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
-    when(peer.popBlobSidecarRequests(listener, 0)).thenReturn(true);
+    final Optional<RequestApproval> zeroObjectRequests =
+        Optional.of(
+            new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
+
+    when(peer.approveBlobSidecarsRequest(listener, 0)).thenReturn(zeroObjectRequests);
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
+
+    // Requesting 5 * maxBlobsPerBlock blob sidecars
+    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(0)));
+    // no adjustment
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
     final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 

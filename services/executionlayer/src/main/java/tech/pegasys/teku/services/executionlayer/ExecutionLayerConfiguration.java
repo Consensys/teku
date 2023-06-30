@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerConfiguration {
   private static final Logger LOG = LogManager.getLogger();
@@ -43,7 +42,6 @@ public class ExecutionLayerConfiguration {
 
   private final Spec spec;
   private final Optional<String> engineEndpoint;
-  private final Version engineVersion;
   private final Optional<String> engineJwtSecretFile;
   private final Optional<String> builderEndpoint;
   private final boolean isBuilderCircuitBreakerEnabled;
@@ -57,7 +55,6 @@ public class ExecutionLayerConfiguration {
   private ExecutionLayerConfiguration(
       final Spec spec,
       final Optional<String> engineEndpoint,
-      final Version engineVersion,
       final Optional<String> engineJwtSecretFile,
       final Optional<String> builderEndpoint,
       final boolean isBuilderCircuitBreakerEnabled,
@@ -69,7 +66,6 @@ public class ExecutionLayerConfiguration {
       final boolean exchangeCapabilitiesEnabled) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
-    this.engineVersion = engineVersion;
     this.engineJwtSecretFile = engineJwtSecretFile;
     this.builderEndpoint = builderEndpoint;
     this.isBuilderCircuitBreakerEnabled = isBuilderCircuitBreakerEnabled;
@@ -103,10 +99,6 @@ public class ExecutionLayerConfiguration {
 
   public Optional<String> getEngineJwtSecretFile() {
     return engineJwtSecretFile;
-  }
-
-  public Version getEngineVersion() {
-    return engineVersion;
   }
 
   public Optional<String> getBuilderEndpoint() {
@@ -144,7 +136,6 @@ public class ExecutionLayerConfiguration {
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
-    private Version engineVersion = Version.DEFAULT_VERSION;
     private Optional<String> engineJwtSecretFile = Optional.empty();
     private Optional<String> builderEndpoint = Optional.empty();
     private boolean isBuilderCircuitBreakerEnabled = DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
@@ -182,7 +173,6 @@ public class ExecutionLayerConfiguration {
       return new ExecutionLayerConfiguration(
           spec,
           engineEndpoint,
-          engineVersion,
           engineJwtSecretFile,
           builderEndpoint,
           isBuilderCircuitBreakerEnabled,
@@ -196,11 +186,6 @@ public class ExecutionLayerConfiguration {
 
     public Builder engineEndpoint(final String engineEndpoint) {
       this.engineEndpoint = Optional.ofNullable(engineEndpoint);
-      return this;
-    }
-
-    public Builder engineVersion(final Version version) {
-      this.engineVersion = version;
       return this;
     }
 

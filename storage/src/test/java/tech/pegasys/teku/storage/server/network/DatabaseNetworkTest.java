@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
@@ -39,7 +40,8 @@ public class DatabaseNetworkTest {
     assertThat(DatabaseNetwork.init(networkFile, fork, eth1Address))
         .isEqualTo(
             new DatabaseNetwork(
-                fork.toHexString().toLowerCase(), eth1Address.toHexString().toLowerCase()));
+                fork.toHexString().toLowerCase(Locale.ROOT),
+                eth1Address.toHexString().toLowerCase(Locale.ROOT)));
     assertThat(networkFile).exists();
   }
 

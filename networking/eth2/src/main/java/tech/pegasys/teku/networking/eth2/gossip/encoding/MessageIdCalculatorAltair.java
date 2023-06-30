@@ -15,29 +15,41 @@ package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
 import java.nio.charset.StandardCharsets;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.logic.common.helpers.MathHelpers;
 
 class MessageIdCalculatorAltair extends MessageIdCalculator {
   private final Bytes rawMessageData;
   private final String topic;
+  private final NetworkingSpecConfig networkingConfig;
 
-  public MessageIdCalculatorAltair(final Bytes rawMessageData, final String topic) {
+  public MessageIdCalculatorAltair(
+      final Bytes rawMessageData, final String topic, final NetworkingSpecConfig networkingConfig) {
     this.rawMessageData = rawMessageData;
     this.topic = topic;
+    this.networkingConfig = networkingConfig;
   }
 
   @Override
   protected Bytes validMessageIdData(final Bytes uncompressedData) {
     final Bytes topicBytes = getTopicBytes();
     final Bytes topicBytesLength = encodeTopicLength(topicBytes);
-    return Bytes.wrap(MESSAGE_DOMAIN_VALID_SNAPPY, topicBytesLength, topicBytes, uncompressedData);
+    return Bytes.wrap(
+        networkingConfig.getMessageDomainValidSnappy().getWrappedBytes(),
+        topicBytesLength,
+        topicBytes,
+        uncompressedData);
   }
 
   @Override
   protected Bytes invalidMessageIdData() {
     final Bytes topicBytes = getTopicBytes();
     final Bytes topicBytesLength = encodeTopicLength(topicBytes);
-    return Bytes.wrap(MESSAGE_DOMAIN_INVALID_SNAPPY, topicBytesLength, topicBytes, rawMessageData);
+    return Bytes.wrap(
+        networkingConfig.getMessageDomainInvalidSnappy().getWrappedBytes(),
+        topicBytesLength,
+        topicBytes,
+        rawMessageData);
   }
 
   private Bytes getTopicBytes() {

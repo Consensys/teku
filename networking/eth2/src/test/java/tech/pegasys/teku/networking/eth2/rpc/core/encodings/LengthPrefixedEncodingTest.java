@@ -45,10 +45,9 @@ class LengthPrefixedEncodingTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final Bytes prefixExceedingMaxLength =
-      ProtobufEncoder.encodeVarInt(spec.getGenesisSpecConfig().getMaxChunkSize() + 1);
+      ProtobufEncoder.encodeVarInt(spec.getNetworkingConfig().getMaxChunkSize() + 1);
   private final RpcEncoding encoding =
-      RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+      RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
 
   @Test
   public void decodePayload_shouldReturnErrorWhenLengthPrefixIsTooLong() {
@@ -247,8 +246,11 @@ class LengthPrefixedEncodingTest {
 
   @Test
   public void encodePayload_shouldEncodeBlocksByRootRequest() {
+    final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema schema =
+        spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema();
     final Bytes encoded =
-        encoding.encodePayload(new BeaconBlocksByRootRequestMessage(singletonList(Bytes32.ZERO)));
+        encoding.encodePayload(
+            new BeaconBlocksByRootRequestMessage(schema, singletonList(Bytes32.ZERO)));
     // Just the length prefix and the hash itself.
     assertThat(encoded)
         .isEqualTo(
@@ -274,6 +276,7 @@ class LengthPrefixedEncodingTest {
   public void roundtrip_blocksByRootRequest() throws Exception {
     final BeaconBlocksByRootRequestMessage request =
         new BeaconBlocksByRootRequestMessage(
+            spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(),
             List.of(Bytes32.ZERO, Bytes32.fromHexString("0x01"), Bytes32.fromHexString("0x02")));
     final Bytes data = encoding.encodePayload(request);
     final int expectedLengthPrefixLength = 1;
@@ -286,7 +289,8 @@ class LengthPrefixedEncodingTest {
 
     for (Iterable<ByteBuf> bufSlices : testByteBufSlices) {
       RpcByteBufDecoder<BeaconBlocksByRootRequestMessage> decoder =
-          encoding.createDecoder(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA);
+          encoding.createDecoder(
+              spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema());
       Optional<BeaconBlocksByRootRequestMessage> result = Optional.empty();
       for (ByteBuf bufSlice : bufSlices) {
         if (result.isEmpty()) {

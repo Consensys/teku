@@ -15,8 +15,6 @@ package tech.pegasys.teku.spec.logic.common.statetransition.epoch.status;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.ParticipationFlags;
@@ -26,7 +24,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.B
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.MiscHelpersAltair;
 
 public class ProgressiveTotalBalancesAltair implements ProgressiveTotalBalancesUpdates {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final MiscHelpersAltair miscHelpers;
 
@@ -261,19 +258,5 @@ public class ProgressiveTotalBalancesAltair implements ProgressiveTotalBalancesU
             previousEpochSourceAttesters,
             previousEpochTargetAttesters,
             previousEpochHeadAttesters));
-  }
-
-  @Override
-  public void checkResult(
-      final SpecConfig specConfig, final UInt64 slot, final TotalBalances totalBalances) {
-    final TotalBalances actual = getTotalBalances(specConfig).orElseThrow();
-    if (!totalBalances.equals(actual)) {
-      throw new IllegalStateException(
-          String.format(
-              "Progressive balances don't match calculated ones at slot %s.\nExpected: %s\n  Actual: %s",
-              slot, totalBalances, actual));
-    } else {
-      LOG.debug("Progressive balances match at slot {}", slot);
-    }
   }
 }

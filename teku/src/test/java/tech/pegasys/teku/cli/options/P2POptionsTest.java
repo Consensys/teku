@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -36,6 +37,8 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
     final P2PConfig p2pConfig = tekuConfig.p2p();
     assertThat(p2pConfig.getTargetSubnetSubscriberCount()).isEqualTo(5);
+    assertThat(p2pConfig.getPeerRateLimit()).isEqualTo(100);
+    assertThat(p2pConfig.getPeerRequestLimit()).isEqualTo(101);
 
     final DiscoveryConfig discoConfig = tekuConfig.discovery();
     assertThat(discoConfig.isDiscoveryEnabled()).isTrue();
@@ -52,6 +55,12 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(networkConfig.getPrivateKeySource()).containsInstanceOf(FilePrivateKeySource.class);
     assertThat(((FilePrivateKeySource) networkConfig.getPrivateKeySource().get()).getFileName())
         .isEqualTo("/the/file");
+
+    final SyncConfig syncConfig = tekuConfig.sync();
+    assertThat(syncConfig.getHistoricalSyncBatchSize()).isEqualTo(102);
+    assertThat(syncConfig.getForwardSyncBatchSize()).isEqualTo(103);
+    assertThat(syncConfig.getForwardSyncMaxPendingBatches()).isEqualTo(8);
+    assertThat(syncConfig.getForwardSyncMaxBlocksPerMinute()).isEqualTo(80);
   }
 
   @Test
@@ -299,5 +308,60 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xbls-to-execution-changes-subnet-enabled", "false");
     final P2PConfig config = tekuConfiguration.p2p();
     assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isFalse();
+  }
+
+  @Test
+  public void historicalSyncBatchSize_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-historical-sync-batch-size", "10");
+    assertThat(tekuConfiguration.sync().getHistoricalSyncBatchSize()).isEqualTo(10);
+    assertThat(createConfigBuilder().sync(s -> s.historicalSyncBatchSize(10)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void forwardSyncBatchSize_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-sync-batch-size", "10");
+    assertThat(tekuConfiguration.sync().getForwardSyncBatchSize()).isEqualTo(10);
+    assertThat(createConfigBuilder().sync(s -> s.forwardSyncBatchSize(10)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void forwardSyncMaxPendingBatches_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-sync-max-pending-batches", "10");
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxPendingBatches()).isEqualTo(10);
+    assertThat(createConfigBuilder().sync(s -> s.forwardSyncMaxPendingBatches(10)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void forwardSyncRateLimit_shouldBeSettable() {
+    TekuConfiguration tekuConfiguration =
+        getTekuConfigurationFromArguments("--Xp2p-sync-rate-limit", "10");
+    assertThat(tekuConfiguration.sync().getForwardSyncMaxBlocksPerMinute()).isEqualTo(10);
+    assertThat(createConfigBuilder().sync(s -> s.forwardSyncMaxBlocksPerMinute(10)).build())
+        .usingRecursiveComparison()
+        .isEqualTo(tekuConfiguration);
+  }
+
+  @Test
+  public void forwardSyncBatchSize_greaterThanMessageSizeShouldThrowException() {
+    assertThatThrownBy(() -> createConfigBuilder().sync(s -> s.forwardSyncBatchSize(3000)).build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Forward sync batch size cannot be greater than 1024");
+  }
+
+  @Test
+  public void historicalSyncBatchSize_greaterThanMessageSizeShouldThrowException() {
+    assertThatThrownBy(
+            () -> createConfigBuilder().sync(s -> s.historicalSyncBatchSize(3000)).build())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessage("Historical sync batch size cannot be greater than 1024");
   }
 }

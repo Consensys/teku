@@ -36,11 +36,26 @@ public class GetSpecResponse {
         .getRawConfig()
         .forEach((name, value) -> configAttributes.put(name, ConfigProvider.formatValue(value)));
 
+    configAttributes.put("GOSSIP_MAX_SIZE", getGossipMaxSize());
+    configAttributes.put("MAX_CHUNK_SIZE", getMaxChunkSize());
+    configAttributes.put("MAX_REQUEST_BLOCKS", getMaxRequestBlocks());
+
     configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
     configAttributes.put("RANDOM_SUBNETS_PER_VALIDATOR", getRandomSubnetsPerValidator());
+    configAttributes.put("SUBNETS_PER_NODE", getSubnetsPerNode());
     configAttributes.put(
         "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION", getEpochsPerRandomSubnetSubscription());
+    configAttributes.put("TTFB_TIMEOUT", getTtfbTimeout());
+    configAttributes.put("RESP_TIMEOUT", getRespTimeout());
+    configAttributes.put(
+        "ATTESTATION_PROPAGATION_SLOT_RANGE", getAttestationPropagationSlotRange());
+    configAttributes.put("MAXIMUM_GOSSIP_CLOCK_DISPARITY", getMaximumGossipClockDisparity());
+    configAttributes.put("MESSAGE_DOMAIN_INVALID_SNAPPY", getMessageDomainInvalidSnappy());
+    configAttributes.put("MESSAGE_DOMAIN_VALID_SNAPPY", getMessageDomainValidSnappy());
+    configAttributes.put("ATTESTATION_SUBNET_COUNT", getAttestationSubnetCount());
+    configAttributes.put("ATTESTATION_SUBNET_EXTRA_BITS", getAttestationSubnetExtraBits());
+    configAttributes.put("ATTESTATION_SUBNET_PREFIX_BITS", getAttestationSubnetPrefixBits());
     configAttributes.put("DOMAIN_BEACON_PROPOSER", getDomainBeaconProposer().toHexString());
     configAttributes.put("DOMAIN_BEACON_ATTESTER", getDomainBeaconAttester().toHexString());
     configAttributes.put("DOMAIN_RANDAO", getDomainRandao().toHexString());
@@ -79,12 +94,64 @@ public class GetSpecResponse {
     return Integer.toString(ValidatorConstants.TARGET_AGGREGATORS_PER_COMMITTEE);
   }
 
+  private String getGossipMaxSize() {
+    return Integer.toString(specConfig.getNetworkingConfig().getGossipMaxSize());
+  }
+
+  private String getMaxChunkSize() {
+    return Integer.toString(specConfig.getNetworkingConfig().getMaxChunkSize());
+  }
+
+  private String getMaxRequestBlocks() {
+    return Integer.toString(specConfig.getNetworkingConfig().getMaxRequestBlocks());
+  }
+
   private String getRandomSubnetsPerValidator() {
     return Integer.toString(ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR);
   }
 
+  private String getTtfbTimeout() {
+    return Integer.toString(specConfig.getNetworkingConfig().getTtfbTimeout());
+  }
+
+  private String getRespTimeout() {
+    return Integer.toString(specConfig.getNetworkingConfig().getRespTimeout());
+  }
+
+  private String getAttestationPropagationSlotRange() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationPropagationSlotRange());
+  }
+
+  private String getMaximumGossipClockDisparity() {
+    return Integer.toString(specConfig.getNetworkingConfig().getMaximumGossipClockDisparity());
+  }
+
+  private String getMessageDomainInvalidSnappy() {
+    return specConfig.getNetworkingConfig().getMessageDomainInvalidSnappy().toHexString();
+  }
+
+  private String getMessageDomainValidSnappy() {
+    return specConfig.getNetworkingConfig().getMessageDomainValidSnappy().toHexString();
+  }
+
+  private String getSubnetsPerNode() {
+    return Integer.toString(specConfig.getNetworkingConfig().getSubnetsPerNode());
+  }
+
   private String getEpochsPerRandomSubnetSubscription() {
-    return Integer.toString(ValidatorConstants.EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION);
+    return Integer.toString(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription());
+  }
+
+  private String getAttestationSubnetCount() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationSubnetCount());
+  }
+
+  private String getAttestationSubnetExtraBits() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationSubnetExtraBits());
+  }
+
+  private String getAttestationSubnetPrefixBits() {
+    return Integer.toString(specConfig.getNetworkingConfig().getAttestationSubnetPrefixBits());
   }
 
   private Bytes4 getDomainBeaconProposer() {

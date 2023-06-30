@@ -59,8 +59,6 @@ import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 /** @deprecated Prefer ChainBuilder, ChainUpdater, or StorageSystem */
 @Deprecated
 public class BeaconChainUtil {
-  // TODO(#3356) Inject spec provider rather than using this default
-  private static final Spec DEFAULT_SPEC_PROVIDER = TestSpecFactory.createMinimalPhase0();
 
   private final Spec spec;
   private final BeaconBlockBodySchema<?> beaconBlockBodySchema;
@@ -112,14 +110,6 @@ public class BeaconChainUtil {
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
             new StubMetricsSystem()),
         true);
-  }
-
-  @Deprecated
-  public static BeaconChainUtil create(
-      final RecentChainData storageClient,
-      final List<BLSKeyPair> validatorKeys,
-      final boolean signDeposits) {
-    return create(DEFAULT_SPEC_PROVIDER, storageClient, validatorKeys, signDeposits);
   }
 
   public static BeaconChainUtil create(
