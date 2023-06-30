@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -116,7 +117,7 @@ class RestBuilderClientTest {
     schemaDefinitions = SchemaDefinitionsBellatrix.required(specContext.getSchemaDefinitions());
 
     signedValidatorRegistrationsRequest = readResource("builder/signedValidatorRegistrations.json");
-    final String milestoneFolder = "builder/" + milestone.toString().toLowerCase();
+    final String milestoneFolder = "builder/" + milestone.toString().toLowerCase(Locale.ROOT);
     signedBlindedBlockContainerRequest =
         readResource(milestoneFolder + "/signedBlindedBlockContainer.json");
     signedBuilderBidResponse = readResource(milestoneFolder + "/signedBuilderBid.json");
@@ -332,7 +333,7 @@ class RestBuilderClientTest {
     specContext.assumeCapellaActive();
 
     final String milestoneFolder =
-        "builder/" + milestone.getPreviousMilestone().toString().toLowerCase();
+        "builder/" + milestone.getPreviousMilestone().toString().toLowerCase(Locale.ROOT);
 
     signedBuilderBidResponse = readResource(milestoneFolder + "/signedBuilderBid.json");
 
@@ -551,6 +552,7 @@ class RestBuilderClientTest {
   }
 
   private static String changeResponseVersion(final String json, final SpecMilestone newVersion) {
-    return json.replaceFirst("(?<=version\":\\s?\")\\w+", newVersion.toString().toLowerCase());
+    return json.replaceFirst(
+        "(?<=version\":\\s?\")\\w+", newVersion.toString().toLowerCase(Locale.ROOT));
   }
 }

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszDa
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
+import java.util.Locale;
 import java.util.Optional;
 import org.assertj.core.api.Assertions;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -45,7 +46,7 @@ public class TransitionTestExecutor implements TestExecutor {
   }
 
   private void processUpgrade(final TestDefinition testDefinition, final MetaData metadata) {
-    final String postFork = metadata.postFork.toUpperCase();
+    final String postFork = metadata.postFork.toUpperCase(Locale.ROOT);
     final SpecMilestone milestone = SpecMilestone.valueOf(postFork);
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
     final SpecConfig config =

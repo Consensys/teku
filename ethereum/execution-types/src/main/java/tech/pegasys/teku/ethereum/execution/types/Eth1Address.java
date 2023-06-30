@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static org.apache.commons.lang3.StringUtils.isMixedCase;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -75,7 +76,7 @@ public class Eth1Address extends Bytes20 {
    * @return The encoded address with mixed-case checksum.
    */
   private static String toChecksumAddress(String value) {
-    final String address = value.replace("0x", "").toLowerCase();
+    final String address = value.replace("0x", "").toLowerCase(Locale.ROOT);
     final String hashString =
         Hash.keccak256(Bytes.wrap(address.getBytes(StandardCharsets.US_ASCII)))
             .toString()

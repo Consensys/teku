@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.converter;
 
+import java.util.Locale;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.ITypeConverter;
@@ -20,7 +21,7 @@ import picocli.CommandLine.ITypeConverter;
 public class LogTypeConverter implements ITypeConverter<Level> {
   @Override
   public Level convert(String value) {
-    switch (value.toUpperCase()) {
+    switch (value.toUpperCase(Locale.ROOT)) {
       case "OFF":
         return Level.OFF;
       case "FATAL":
