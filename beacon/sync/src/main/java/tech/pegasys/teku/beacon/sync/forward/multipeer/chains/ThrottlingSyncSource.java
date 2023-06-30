@@ -71,7 +71,10 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    if (blobSidecarsRateTracker.orElseThrow().approveObjectsRequest(count.longValue()).isPresent()) {
+    if (blobSidecarsRateTracker
+        .orElseThrow()
+        .approveObjectsRequest(count.longValue())
+        .isPresent()) {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {
