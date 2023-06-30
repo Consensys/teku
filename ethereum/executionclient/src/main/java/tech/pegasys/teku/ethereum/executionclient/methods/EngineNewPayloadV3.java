@@ -47,7 +47,8 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
   public SafeFuture<PayloadStatus> execute(final JsonRpcRequestParams params) {
     final ExecutionPayload executionPayload =
         params.getRequiredParameter(0, ExecutionPayload.class);
-    final List<VersionedHash> blobVersionedHashes = params.getListParameter(1, VersionedHash.class);
+    final List<VersionedHash> blobVersionedHashes =
+        params.getRequiredListParameter(1, VersionedHash.class);
 
     LOG.trace(
         "Calling {}(executionPayload={}, blobVersionedHashes={})",

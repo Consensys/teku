@@ -52,7 +52,7 @@ public class JsonRpcRequestParams {
   }
 
   @SuppressWarnings({"unchecked", "unused"})
-  public <T> List<T> getListParameter(final int index, Class<T> __) {
+  public <T> List<T> getRequiredListParameter(final int index, Class<T> __) {
     return getRequiredParameter(index, (Class<List<T>>) (Object) List.class);
   }
 
