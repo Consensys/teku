@@ -838,7 +838,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     for (SignedVoluntaryExit signedExit : exits) {
       boolean exitSignatureValid =
           operationSignatureVerifier.verifyVoluntaryExitSignature(
-              state.getFork(), state, signedExit, signatureVerifier);
+              state, signedExit, signatureVerifier);
       if (!exitSignatureValid) {
         return BlockValidationResult.failed("Exit signature is invalid: " + signedExit);
       }

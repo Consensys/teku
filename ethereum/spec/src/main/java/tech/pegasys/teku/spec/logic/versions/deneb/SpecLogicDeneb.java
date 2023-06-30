@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.Opera
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.forktransition.DenebStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.BlindBlockUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
@@ -91,8 +92,8 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersDeneb miscHelpers = new MiscHelpersDeneb(config);
-    final BeaconStateAccessorsAltair beaconStateAccessors =
-        new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
+    final BeaconStateAccessorsDeneb beaconStateAccessors =
+        new BeaconStateAccessorsDeneb(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =
         new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
 
