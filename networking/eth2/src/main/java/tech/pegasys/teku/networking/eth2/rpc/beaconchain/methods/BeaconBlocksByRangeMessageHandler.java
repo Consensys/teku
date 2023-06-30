@@ -23,6 +23,7 @@ import java.nio.channels.ClosedChannelException;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -120,7 +122,10 @@ public class BeaconBlocksByRangeMessageHandler
         message.getStartSlot(),
         message.getStep());
 
-    if (!peer.popRequest() || !peer.popBlockRequests(callback, message.getCount().longValue())) {
+    final Optional<RequestApproval> blocksRequestApproval =
+        peer.approveBlocksRequest(callback, message.getCount().longValue());
+
+    if (!peer.approveRequest() || blocksRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -129,8 +134,15 @@ public class BeaconBlocksByRangeMessageHandler
     totalBlocksRequestedCounter.inc(message.getCount().longValue());
     sendMatchingBlocks(message, callback)
         .finish(
-            callback::completeSuccessfully,
+            requestState -> {
+              if (requestState.sentBlocks.get() != message.getCount().longValue()) {
+                peer.adjustBlocksRequest(
+                    blocksRequestApproval.get(), requestState.sentBlocks.get());
+              }
+              callback.completeSuccessfully();
+            },
             error -> {
+              peer.adjustBlocksRequest(blocksRequestApproval.get(), 0);
               final Throwable rootCause = Throwables.getRootCause(error);
               if (rootCause instanceof RpcException) {
                 LOG.trace("Rejecting beacon blocks by range request", error); // Keep full context
@@ -147,7 +159,7 @@ public class BeaconBlocksByRangeMessageHandler
             });
   }
 
-  private SafeFuture<?> sendMatchingBlocks(
+  private SafeFuture<RequestState> sendMatchingBlocks(
       final BeaconBlocksByRangeRequestMessage message,
       final ResponseCallback<SignedBeaconBlock> callback) {
     final UInt64 startSlot = message.getStartSlot();
@@ -184,8 +196,7 @@ public class BeaconBlocksByRangeMessageHandler
               // so we don't need to worry about inconsistent blocks
               final UInt64 headSlot = hotRoots.isEmpty() ? headBlockSlot : hotRoots.lastKey();
               return sendNextBlock(
-                      new RequestState(startSlot, step, count, headSlot, hotRoots, callback))
-                  .toVoid();
+                  new RequestState(startSlot, step, count, headSlot, hotRoots, callback));
             });
   }
 
@@ -236,6 +247,7 @@ public class BeaconBlocksByRangeMessageHandler
     private final NavigableMap<UInt64, Bytes32> knownBlockRoots;
     private UInt64 currentSlot;
     private UInt64 remainingBlocks;
+    private final AtomicInteger sentBlocks = new AtomicInteger(0);
 
     RequestState(
         final UInt64 startSlot,
@@ -272,7 +284,7 @@ public class BeaconBlocksByRangeMessageHandler
       if (step.isGreaterThan(1L)) {
         remainingBlocks = ZERO;
       }
-      return callback.respond(block);
+      return callback.respond(block).thenRun(sentBlocks::incrementAndGet);
     }
 
     void incrementCurrentSlot() {

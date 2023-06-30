@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -110,7 +112,10 @@ public class BlobSidecarsByRootMessageHandler
         message.size(),
         message);
 
-    if (!peer.popRequest() || !peer.popBlobSidecarRequests(callback, message.size())) {
+    final Optional<RequestApproval> blobSidecarsRequestApproval =
+        peer.approveBlobSidecarsRequest(callback, message.size());
+
+    if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
@@ -119,7 +124,7 @@ public class BlobSidecarsByRootMessageHandler
     totalBlobSidecarsRequestedCounter.inc(message.size());
 
     SafeFuture<Void> future = SafeFuture.COMPLETE;
-
+    final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
     final UInt64 finalizedEpoch = getFinalizedEpoch();
 
     for (final BlobIdentifier identifier : message) {
@@ -131,10 +136,28 @@ public class BlobSidecarsByRootMessageHandler
                       validateMinimumRequestEpoch(identifier, maybeSidecar, finalizedEpoch)
                           .thenApply(__ -> maybeSidecar))
               .thenComposeChecked(
-                  maybeSidecar -> maybeSidecar.map(callback::respond).orElse(SafeFuture.COMPLETE));
+                  maybeSidecar ->
+                      maybeSidecar
+                          .map(
+                              blobSidecar ->
+                                  callback
+                                      .respond(blobSidecar)
+                                      .thenRun(sentBlobSidecars::incrementAndGet))
+                          .orElse(SafeFuture.COMPLETE));
     }
 
-    future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
+    future.finish(
+        () -> {
+          if (sentBlobSidecars.get() != message.size()) {
+            peer.adjustBlobSidecarsRequest(
+                blobSidecarsRequestApproval.get(), sentBlobSidecars.get());
+          }
+          callback.completeSuccessfully();
+        },
+        err -> {
+          peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
+          handleError(callback, err);
+        });
   }
 
   private UInt64 getFinalizedEpoch() {

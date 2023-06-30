@@ -16,11 +16,14 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
 
 import java.util.List;
@@ -29,8 +32,10 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -72,16 +77,21 @@ public class BeaconBlocksByRootMessageHandlerTest {
   @SuppressWarnings("unchecked")
   final ResponseCallback<SignedBeaconBlock> callback = mock(ResponseCallback.class);
 
+  private final Optional<RequestApproval> allowedObjectsRequest =
+      Optional.of(
+          new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
+
   @BeforeEach
   public void setup() {
     chainUpdater.initializeGenesis();
-    when(peer.popRequest()).thenReturn(true);
-    when(peer.popBlockRequests(any(), anyLong())).thenReturn(true);
+    when(peer.approveRequest()).thenReturn(true);
+    when(peer.approveBlocksRequest(any(), anyLong())).thenReturn(allowedObjectsRequest);
     when(recentChainData.getStore()).thenReturn(store);
     // Forward block requests from the mock to the actual store
     when(store.retrieveSignedBlock(any()))
         .thenAnswer(
             i -> storageSystem.recentChainData().getStore().retrieveSignedBlock(i.getArgument(0)));
+    when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
   }
 
   @Test
@@ -112,6 +122,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
             spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema(), roots),
         callback);
 
+    // Rate limiter not invoked
+    verify(peer, never()).approveBlocksRequest(any(), anyLong());
+
     verify(callback)
         .completeWithErrorResponse(
             new RpcException(
@@ -124,6 +137,11 @@ public class BeaconBlocksByRootMessageHandlerTest {
 
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    // Requesting 5 blocks
+    verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
+    // Sending 5 blocks: No rate limiter adjustment required
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
@@ -141,6 +159,12 @@ public class BeaconBlocksByRootMessageHandlerTest {
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
 
+    // Requesting 5 blocks
+    verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
+    // Request cancelled
+    verify(peer, times(1))
+        .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
+
     // Check that we only asked for the first block
     verify(store, times(1)).retrieveSignedBlock(any());
     verify(callback, times(1)).respond(any());
@@ -156,6 +180,11 @@ public class BeaconBlocksByRootMessageHandlerTest {
     final BeaconBlocksByRootRequestMessage message = createRequest(blocks);
 
     handler.onIncomingMessage(V2_PROTOCOL_ID, peer, message, callback);
+
+    // Requesting 5 blocks
+    verify(peer, times(1)).approveBlocksRequest(any(), eq(Long.valueOf(blocks.size())));
+    // Sending 5 blocks: No rate limiter adjustment required
+    verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
       verify(store).retrieveSignedBlock(block.getRoot());
