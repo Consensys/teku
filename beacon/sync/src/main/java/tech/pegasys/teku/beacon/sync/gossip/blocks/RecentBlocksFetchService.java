@@ -27,9 +27,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
-public class FetchRecentBlocksService
+public class RecentBlocksFetchService
     extends AbstractFetchService<Bytes32, FetchBlockTask, SignedBeaconBlock>
-    implements RecentBlockFetcher {
+    implements RecentBlocksFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -41,7 +41,7 @@ public class FetchRecentBlocksService
   private final FetchTaskFactory fetchTaskFactory;
   private final Subscribers<BlockSubscriber> blockSubscribers = Subscribers.create(true);
 
-  FetchRecentBlocksService(
+  RecentBlocksFetchService(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlockPool,
       final BlobSidecarPool blobSidecarPool,
@@ -55,13 +55,13 @@ public class FetchRecentBlocksService
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
-  public static FetchRecentBlocksService create(
+  public static RecentBlocksFetchService create(
       final AsyncRunner asyncRunner,
       final PendingPool<SignedBeaconBlock> pendingBlocksPool,
       final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory) {
-    return new FetchRecentBlocksService(
+    return new RecentBlocksFetchService(
         asyncRunner,
         pendingBlocksPool,
         blobSidecarPool,

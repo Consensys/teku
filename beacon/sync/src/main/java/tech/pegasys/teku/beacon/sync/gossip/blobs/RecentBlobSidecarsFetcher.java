@@ -13,13 +13,20 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.blobs;
 
+import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
+import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.service.serviceutils.ServiceFacade;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 
-public interface RecentBlobSidecarFetcher {
+public interface RecentBlobSidecarsFetcher extends ServiceFacade {
 
-  RecentBlobSidecarFetcher NOOP =
-      new RecentBlobSidecarFetcher() {
+  RecentBlobSidecarsFetcher NOOP =
+      new RecentBlobSidecarsFetcher() {
         @Override
         public void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber) {}
 
@@ -38,15 +45,34 @@ public interface RecentBlobSidecarFetcher {
         public SafeFuture<?> stop() {
           return SafeFuture.COMPLETE;
         }
+
+        @Override
+        public boolean isRunning() {
+          return false;
+        }
       };
+
+  static RecentBlobSidecarsFetcher create(
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final BlobSidecarPool blobSidecarPool,
+      final ForwardSyncService forwardSyncService,
+      final FetchTaskFactory fetchTaskFactory) {
+    final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      recentBlobSidecarsFetcher =
+          RecentBlobSidecarsFetcherImpl.create(
+              asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory, spec);
+    } else {
+      recentBlobSidecarsFetcher = RecentBlobSidecarsFetcher.NOOP;
+    }
+
+    return recentBlobSidecarsFetcher;
+  }
 
   void subscribeBlobSidecarFetched(BlobSidecarSubscriber subscriber);
 
   void requestRecentBlobSidecar(BlobIdentifier blobIdentifier);
 
   void cancelRecentBlobSidecarRequest(BlobIdentifier blobIdentifier);
-
-  SafeFuture<?> start();
-
-  SafeFuture<?> stop();
 }

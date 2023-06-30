@@ -19,7 +19,7 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchBlobSidecarTask;
 import tech.pegasys.teku.beacon.sync.fetch.FetchTaskFactory;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.gossip.AbstractFetchService;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
@@ -28,9 +28,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 
-public class FetchRecentBlobSidecarsService
+public class RecentBlobSidecarsFetcherImpl
     extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecar>
-    implements RecentBlobSidecarFetcher {
+    implements RecentBlobSidecarsFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -41,7 +41,7 @@ public class FetchRecentBlobSidecarsService
   private final Subscribers<BlobSidecarSubscriber> blobSidecarSubscribers =
       Subscribers.create(true);
 
-  FetchRecentBlobSidecarsService(
+  RecentBlobSidecarsFetcherImpl(
       final AsyncRunner asyncRunner,
       final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
@@ -53,15 +53,15 @@ public class FetchRecentBlobSidecarsService
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
-  public static FetchRecentBlobSidecarsService create(
+  public static RecentBlobSidecarsFetcherImpl create(
       final AsyncRunner asyncRunner,
       final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final Spec spec) {
     final int maxConcurrentRequests =
-        FetchRecentBlocksService.MAX_CONCURRENT_REQUESTS * spec.getMaxBlobsPerBlock().orElse(1);
-    return new FetchRecentBlobSidecarsService(
+        RecentBlocksFetchService.MAX_CONCURRENT_REQUESTS * spec.getMaxBlobsPerBlock().orElse(1);
+    return new RecentBlobSidecarsFetcherImpl(
         asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
   }
 
