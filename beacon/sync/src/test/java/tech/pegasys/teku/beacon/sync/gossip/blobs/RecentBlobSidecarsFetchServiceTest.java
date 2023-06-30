@@ -65,12 +65,12 @@ class RecentBlobSidecarsFetchServiceTest {
   private final List<SafeFuture<FetchResult<BlobSidecar>>> taskFutures = new ArrayList<>();
   private final List<BlobSidecar> importedBlobSidecars = new ArrayList<>();
 
-  private RecentBlobSidecarsFetcherImpl recentBlobSidecarsFetcher;
+  private RecentBlobSidecarsFetchService recentBlobSidecarsFetcher;
 
   @BeforeEach
   public void setup() {
     recentBlobSidecarsFetcher =
-        new RecentBlobSidecarsFetcherImpl(
+        new RecentBlobSidecarsFetchService(
             asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
 
     lenient()

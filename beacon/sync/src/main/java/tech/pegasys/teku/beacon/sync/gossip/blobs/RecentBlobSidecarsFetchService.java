@@ -28,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 
-public class RecentBlobSidecarsFetcherImpl
+public class RecentBlobSidecarsFetchService
     extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecar>
     implements RecentBlobSidecarsFetcher {
 
@@ -41,7 +41,7 @@ public class RecentBlobSidecarsFetcherImpl
   private final Subscribers<BlobSidecarSubscriber> blobSidecarSubscribers =
       Subscribers.create(true);
 
-  RecentBlobSidecarsFetcherImpl(
+  RecentBlobSidecarsFetchService(
       final AsyncRunner asyncRunner,
       final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
@@ -53,7 +53,7 @@ public class RecentBlobSidecarsFetcherImpl
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
-  public static RecentBlobSidecarsFetcherImpl create(
+  public static RecentBlobSidecarsFetchService create(
       final AsyncRunner asyncRunner,
       final BlobSidecarPool blobSidecarPool,
       final ForwardSync forwardSync,
@@ -61,7 +61,7 @@ public class RecentBlobSidecarsFetcherImpl
       final Spec spec) {
     final int maxConcurrentRequests =
         RecentBlocksFetchService.MAX_CONCURRENT_REQUESTS * spec.getMaxBlobsPerBlock().orElse(1);
-    return new RecentBlobSidecarsFetcherImpl(
+    return new RecentBlobSidecarsFetchService(
         asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
   }
 

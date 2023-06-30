@@ -61,7 +61,7 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade {
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       recentBlobSidecarsFetcher =
-          RecentBlobSidecarsFetcherImpl.create(
+          RecentBlobSidecarsFetchService.create(
               asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory, spec);
     } else {
       recentBlobSidecarsFetcher = RecentBlobSidecarsFetcher.NOOP;
