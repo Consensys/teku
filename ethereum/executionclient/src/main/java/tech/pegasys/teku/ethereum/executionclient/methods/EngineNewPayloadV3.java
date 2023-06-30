@@ -47,15 +47,7 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
   public SafeFuture<PayloadStatus> execute(final JsonRpcRequestParams params) {
     final ExecutionPayload executionPayload =
         params.getRequiredParameter(0, ExecutionPayload.class);
-    final List<VersionedHash> blobVersionedHashes =
-        params
-            .getOptionalListParameter(1, VersionedHash.class)
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        String.format(
-                            "blobVersionedHashes is expected when calling %s",
-                            getVersionedName())));
+    final List<VersionedHash> blobVersionedHashes = params.getListParameter(1, VersionedHash.class);
 
     LOG.trace(
         "Calling {}(executionPayload={}, blobVersionedHashes={})",
