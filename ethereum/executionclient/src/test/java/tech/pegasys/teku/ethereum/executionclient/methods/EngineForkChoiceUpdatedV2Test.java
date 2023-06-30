@@ -31,7 +31,6 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.InvalidRemoteResponseException;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -108,54 +107,17 @@ class EngineForkChoiceUpdatedV2Test {
   }
 
   @Test
-  public void shouldCallForkChoiceUpdateV2WithPayloadAttributesV1WhenInBellatrix() {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtilBellatrix = new DataStructureUtil(bellatrixSpec);
-
-    final ForkChoiceState forkChoiceState = dataStructureUtilBellatrix.randomForkChoiceState(false);
-    final PayloadBuildingAttributes payloadBuildingAttributes =
-        dataStructureUtilBellatrix.randomPayloadBuildingAttributes(false);
-    final ForkChoiceStateV1 forkChoiceStateV1 =
-        ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
-    final Optional<PayloadAttributesV1> payloadAttributesV1 =
-        PayloadAttributesV1.fromInternalPayloadBuildingAttributes(
-            Optional.of(payloadBuildingAttributes));
-    assertThat(payloadAttributesV1).get().isExactlyInstanceOf(PayloadAttributesV1.class);
-
-    jsonRpcMethod = new EngineForkChoiceUpdatedV2(executionEngineClient, bellatrixSpec);
-
-    when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributesV1))
-        .thenReturn(dummySuccessfulResponse());
-
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder()
-            .add(forkChoiceState)
-            .add(payloadBuildingAttributes)
-            .build();
-
-    assertThat(jsonRpcMethod.execute(params)).isCompleted();
-
-    verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributesV1);
-  }
-
-  @Test
   public void shouldCallForkChoiceUpdateV2WithPayloadAttributesV2WhenInCapella() {
-    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtilCapella = new DataStructureUtil(capellaSpec);
-
-    final ForkChoiceState forkChoiceState = dataStructureUtilCapella.randomForkChoiceState(false);
+    final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        dataStructureUtilCapella.randomPayloadBuildingAttributes(false);
+        dataStructureUtil.randomPayloadBuildingAttributes(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
-    final Optional<PayloadAttributesV1> payloadAttributesV2 =
+    final Optional<PayloadAttributesV2> payloadAttributesV2 =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(
             Optional.of(payloadBuildingAttributes));
-    // PayloadAttributesV2 extends PayloadAttributesV1, we want to ensure we are using V2 in this
-    // call
-    assertThat(payloadAttributesV2).get().isExactlyInstanceOf(PayloadAttributesV2.class);
 
-    jsonRpcMethod = new EngineForkChoiceUpdatedV2(executionEngineClient, capellaSpec);
+    jsonRpcMethod = new EngineForkChoiceUpdatedV2(executionEngineClient, spec);
 
     when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributesV2))
         .thenReturn(dummySuccessfulResponse());

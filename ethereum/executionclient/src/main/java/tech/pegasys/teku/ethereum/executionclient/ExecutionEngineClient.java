@@ -24,6 +24,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
@@ -56,7 +57,7 @@ public interface ExecutionEngineClient {
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
 
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV2(
-      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
+      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV2> payloadAttributes);
 
   SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
       TransitionConfigurationV1 transitionConfiguration);
