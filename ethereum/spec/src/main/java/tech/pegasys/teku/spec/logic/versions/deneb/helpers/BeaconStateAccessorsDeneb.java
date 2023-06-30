@@ -32,6 +32,15 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
     super(config, predicates, miscHelpers);
   }
 
+  @Override
+  public Bytes32 getVoluntaryExitDomain(
+      final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
+    return miscHelpers.computeDomain(
+        Domain.VOLUNTARY_EXIT,
+        SpecConfigCapella.required(config).getCapellaForkVersion(),
+        state.getGenesisValidatorsRoot());
+  }
+
   /**
    * <a
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#modified-get_attestation_participation_flag_indices">Modified
@@ -41,14 +50,5 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
   protected boolean shouldSetTargetTimelinessFlag(
       final boolean isMatchingTarget, final UInt64 inclusionDelay) {
     return isMatchingTarget;
-  }
-
-  @Override
-  public Bytes32 getVoluntaryExitDomain(
-      final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
-    return miscHelpers.computeDomain(
-        Domain.VOLUNTARY_EXIT,
-        SpecConfigCapella.required(config).getCapellaForkVersion(),
-        state.getGenesisValidatorsRoot());
   }
 }
