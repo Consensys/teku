@@ -51,7 +51,7 @@ class EngineForkChoiceUpdatedV2Test {
 
   @BeforeEach
   public void setUp() {
-    jsonRpcMethod = new EngineForkChoiceUpdatedV2(executionEngineClient, spec);
+    jsonRpcMethod = new EngineForkChoiceUpdatedV2(executionEngineClient);
   }
 
   @Test
@@ -117,7 +117,7 @@ class EngineForkChoiceUpdatedV2Test {
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(
             Optional.of(payloadBuildingAttributes));
 
-    jsonRpcMethod = new EngineForkChoiceUpdatedV2(executionEngineClient, spec);
+    jsonRpcMethod = new EngineForkChoiceUpdatedV2(executionEngineClient);
 
     when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributesV2))
         .thenReturn(dummySuccessfulResponse());

@@ -94,7 +94,7 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
 
     methods.add(new EngineNewPayloadV2(executionEngineClient));
     methods.add(new EngineGetPayloadV2(executionEngineClient, spec));
-    methods.add(new EngineForkChoiceUpdatedV2(executionEngineClient, spec));
+    methods.add(new EngineForkChoiceUpdatedV2(executionEngineClient));
 
     return methods;
   }
@@ -104,7 +104,7 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
 
     methods.add(new EngineNewPayloadV3(executionEngineClient));
     methods.add(new EngineGetPayloadV3(executionEngineClient, spec));
-    methods.add(new EngineForkChoiceUpdatedV2(executionEngineClient, spec));
+    methods.add(new EngineForkChoiceUpdatedV2(executionEngineClient));
 
     return methods;
   }

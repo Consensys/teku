@@ -22,7 +22,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
@@ -31,12 +30,9 @@ public class EngineForkChoiceUpdatedV2
         tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Spec spec;
 
-  public EngineForkChoiceUpdatedV2(
-      final ExecutionEngineClient executionEngineClient, final Spec spec) {
+  public EngineForkChoiceUpdatedV2(final ExecutionEngineClient executionEngineClient) {
     super(executionEngineClient);
-    this.spec = spec;
   }
 
   @Override
