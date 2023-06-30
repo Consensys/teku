@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.subcommand.internal.validator.tools;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.file.Path;
+import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -89,7 +90,7 @@ class EncryptedKeystoreWriterTest {
   }
 
   private String trimPublicKey(final String publicKey) {
-    if (publicKey.toLowerCase().startsWith("0x")) {
+    if (publicKey.toLowerCase(Locale.ROOT).startsWith("0x")) {
       return publicKey.substring(2, 9);
     }
     return publicKey.substring(0, 7);

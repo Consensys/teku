@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -136,7 +137,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     final Path directory = ValidatorClientService.getManagedRemoteKeyPath(dataDirLayout);
 
     final File[] files =
-        directory.toFile().listFiles((dir, name) -> name.toLowerCase().endsWith("json"));
+        directory.toFile().listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith("json"));
     return files == null ? List.of() : Arrays.asList(files);
   }
 
