@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
 import java.util.List;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -48,14 +47,22 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
   public SafeFuture<PayloadStatus> execute(final JsonRpcRequestParams params) {
     final ExecutionPayload executionPayload =
         params.getRequiredParameter(0, ExecutionPayload.class);
-    final Optional<List<VersionedHash>> blobVersionedHashes =
-        params.getOptionalListParameter(1, VersionedHash.class);
+    final List<VersionedHash> blobVersionedHashes =
+        params
+            .getOptionalListParameter(1, VersionedHash.class)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        String.format(
+                            "blobVersionedHashes is expected when calling %s",
+                            getVersionedName())));
 
     LOG.trace(
         "Calling {}(executionPayload={}, blobVersionedHashes={})",
         getVersionedName(),
         executionPayload,
         blobVersionedHashes);
+
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     return executionEngineClient

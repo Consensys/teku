@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -50,10 +49,7 @@ public class EngineNewPayloadV2 extends AbstractEngineJsonRpcMethod<PayloadStatu
     LOG.trace("Calling {}(executionPayload={})", getVersionedName(), executionPayload);
 
     return executionEngineClient
-        .newPayloadV2(
-            executionPayload.toVersionCapella().isPresent()
-                ? ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload)
-                : ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload))
+        .newPayloadV2(ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload))
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

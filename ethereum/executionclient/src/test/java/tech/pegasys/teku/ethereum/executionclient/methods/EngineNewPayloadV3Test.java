@@ -74,13 +74,17 @@ class EngineNewPayloadV3Test {
   @Test
   public void shouldReturnFailedExecutionWhenEngineClientRequestFails() {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
     final String errorResponseFromClient = "error!";
 
     when(executionEngineClient.newPayloadV3(any(), any()))
         .thenReturn(dummyFailedResponse(errorResponseFromClient));
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+        new JsonRpcRequestParams.Builder()
+            .add(executionPayload)
+            .addOptional(Optional.of(blobVersionedHashes))
+            .build();
 
     assertThat(jsonRpcMethod.execute(params))
         .succeedsWithin(1, TimeUnit.SECONDS)
@@ -100,7 +104,7 @@ class EngineNewPayloadV3Test {
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV3, Optional.of(blobVersionedHashes)))
+    when(executionEngineClient.newPayloadV3(executionPayloadV3, blobVersionedHashes))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
@@ -108,8 +112,7 @@ class EngineNewPayloadV3Test {
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
-    verify(executionEngineClient)
-        .newPayloadV3(eq(executionPayloadV3), eq(Optional.of(blobVersionedHashes)));
+    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV3), eq(blobVersionedHashes));
     verifyNoMoreInteractions(executionEngineClient);
   }
 

@@ -80,10 +80,8 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
   void engineNewPayload_shouldCallNewPayloadV3() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-    final Optional<List<VersionedHash>> versionedHashes =
-        Optional.of(dataStructureUtil.randomVersionedHashes(3));
-    final NewPayloadRequest newPayloadRequest =
-        new NewPayloadRequest(payload, versionedHashes.get());
+    final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(3);
+    final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload, versionedHashes);
     final ExecutionPayloadV3 payloadV3 = ExecutionPayloadV3.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(

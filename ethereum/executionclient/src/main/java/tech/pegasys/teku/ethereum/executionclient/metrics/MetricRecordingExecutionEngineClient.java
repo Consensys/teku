@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -106,14 +107,13 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
-      final ExecutionPayloadV1 executionPayload) {
+      final ExecutionPayloadV2 executionPayload) {
     return countRequest(() -> delegate.newPayloadV2(executionPayload), NEW_PAYLOAD_V2_METHOD);
   }
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV3 executionPayload,
-      final Optional<List<VersionedHash>> blobVersionedHashes) {
+      final ExecutionPayloadV3 executionPayload, final List<VersionedHash> blobVersionedHashes) {
     return countRequest(
         () -> delegate.newPayloadV3(executionPayload, blobVersionedHashes), NEW_PAYLOAD_V3_METHOD);
   }

@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
-import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -110,35 +109,7 @@ class EngineGetPayloadV2Test {
   }
 
   @Test
-  public void shouldCallGetPayloadV2AndParseResponseSuccessfullyWhenInBellatrix() {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtilBellatrix = new DataStructureUtil(bellatrixSpec);
-
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtilBellatrix.randomPayloadExecutionContext(false);
-    final UInt256 blockValue = UInt256.MAX_VALUE;
-    final ExecutionPayload executionPayloadBellatrix =
-        dataStructureUtilBellatrix.randomExecutionPayload();
-    assertThat(executionPayloadBellatrix).isInstanceOf(ExecutionPayloadBellatrix.class);
-
-    when(executionEngineClient.getPayloadV2(eq(executionPayloadContext.getPayloadId())))
-        .thenReturn(dummySuccessfulResponse(executionPayloadBellatrix, blockValue));
-
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
-
-    jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, bellatrixSpec);
-
-    final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponse(executionPayloadBellatrix, blockValue);
-    assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
-
-    verify(executionEngineClient).getPayloadV2(eq(executionPayloadContext.getPayloadId()));
-    verifyNoMoreInteractions(executionEngineClient);
-  }
-
-  @Test
-  public void shouldCallGetPayloadV2AndParseResponseSuccessfullyWhenInCapella() {
+  public void shouldCallGetPayloadV2AndParseResponseSuccessfully() {
     final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
     final DataStructureUtil dataStructureUtilCapella = new DataStructureUtil(capellaSpec);
 

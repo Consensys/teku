@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -22,6 +21,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -75,12 +75,8 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                       .getExecutionPayloadSchema();
               final ExecutionPayload executionPayload =
                   response.executionPayload.asInternalExecutionPayload(payloadSchema);
-              return getBlobsBundle(response, schemaDefinitions)
-                  .map(
-                      blobsBundle ->
-                          new GetPayloadResponse(
-                              executionPayload, response.blockValue, blobsBundle))
-                  .orElse(new GetPayloadResponse(executionPayload, response.blockValue));
+              final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
+              return new GetPayloadResponse(executionPayload, response.blockValue, blobsBundle);
             })
         .thenPeek(
             getPayloadResponse ->
@@ -92,14 +88,10 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadRe
                     getPayloadResponse));
   }
 
-  private Optional<BlobsBundle> getBlobsBundle(
+  private BlobsBundle getBlobsBundle(
       final GetPayloadV3Response response, final SchemaDefinitions schemaDefinitions) {
-    return schemaDefinitions
-        .toVersionDeneb()
-        .map(SchemaDefinitionsDeneb::getBlobSchema)
-        .flatMap(
-            blobSchema ->
-                Optional.ofNullable(response.blobsBundle)
-                    .map(blobsBundleV1 -> blobsBundleV1.asInternalBlobsBundle(blobSchema)));
+    final BlobSchema blobSchema =
+        SchemaDefinitionsDeneb.required(schemaDefinitions).getBlobSchema();
+    return response.blobsBundle.asInternalBlobsBundle(blobSchema);
   }
 }

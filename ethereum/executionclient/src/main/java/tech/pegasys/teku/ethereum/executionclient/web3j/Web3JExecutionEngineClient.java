@@ -29,6 +29,7 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -131,7 +132,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV2(
-      final ExecutionPayloadV1 executionPayload) {
+      final ExecutionPayloadV2 executionPayload) {
     Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV2",
@@ -143,15 +144,13 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV3 executionPayload,
-      final Optional<List<VersionedHash>> blobVersionedHashes) {
-    final Optional<List<String>> blobVersionedHashesData =
-        blobVersionedHashes.map(
-            hashes -> hashes.stream().map(VersionedHash::toHexString).collect(Collectors.toList()));
+      final ExecutionPayloadV3 executionPayload, final List<VersionedHash> blobVersionedHashes) {
+    final List<String> expectedBlobVersionedHashes =
+        blobVersionedHashes.stream().map(VersionedHash::toHexString).collect(Collectors.toList());
     final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV3",
-            list(executionPayload, blobVersionedHashesData.orElse(null)),
+            list(executionPayload, expectedBlobVersionedHashes),
             web3JClient.getWeb3jService(),
             PayloadStatusV1Web3jResponse.class);
     return web3JClient.doRequest(web3jRequest, EL_ENGINE_BLOCK_EXECUTION_TIMEOUT);
