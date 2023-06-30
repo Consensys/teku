@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineNewPayloadV3Test {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
   private EngineNewPayloadV3 jsonRpcMethod;
@@ -93,11 +93,9 @@ class EngineNewPayloadV3Test {
 
   @Test
   public void shouldCallNewPayloadV3WithExecutionPayloadV3AndBlobVersionedHashes() {
-    final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
-    final DataStructureUtil dataStructureUtilDeneb = new DataStructureUtil(denebSpec);
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(4);
 
-    final ExecutionPayload executionPayload = dataStructureUtilDeneb.randomExecutionPayload();
-    final List<VersionedHash> blobVersionedHashes = dataStructureUtilDeneb.randomVersionedHashes(4);
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     assertThat(executionPayloadV3).isExactlyInstanceOf(ExecutionPayloadV3.class);

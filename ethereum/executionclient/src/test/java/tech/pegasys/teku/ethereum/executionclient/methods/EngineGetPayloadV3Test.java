@@ -112,14 +112,11 @@ class EngineGetPayloadV3Test {
 
   @Test
   public void shouldCallGetPayloadV3AndParseResponseSuccessfully() {
-    final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
-    final DataStructureUtil dataStructureUtilDeneb = new DataStructureUtil(denebSpec);
-
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtilDeneb.randomPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final BlobsBundle blobsBundle = dataStructureUtilDeneb.randomBlobsBundle();
-    final ExecutionPayload executionPayloadDeneb = dataStructureUtilDeneb.randomExecutionPayload();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+    final ExecutionPayload executionPayloadDeneb = dataStructureUtil.randomExecutionPayload();
     assertThat(executionPayloadDeneb).isInstanceOf(ExecutionPayloadDeneb.class);
 
     when(executionEngineClient.getPayloadV3(eq(executionPayloadContext.getPayloadId())))
@@ -128,7 +125,7 @@ class EngineGetPayloadV3Test {
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
 
-    jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, denebSpec);
+    jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, spec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
         new GetPayloadResponse(executionPayloadDeneb, blockValue, blobsBundle);

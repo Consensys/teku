@@ -110,14 +110,10 @@ class EngineGetPayloadV2Test {
 
   @Test
   public void shouldCallGetPayloadV2AndParseResponseSuccessfully() {
-    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtilCapella = new DataStructureUtil(capellaSpec);
-
     final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtilCapella.randomPayloadExecutionContext(false);
+        dataStructureUtil.randomPayloadExecutionContext(false);
     final UInt256 blockValue = UInt256.MAX_VALUE;
-    final ExecutionPayload executionPayloadCapella =
-        dataStructureUtilCapella.randomExecutionPayload();
+    final ExecutionPayload executionPayloadCapella = dataStructureUtil.randomExecutionPayload();
     assertThat(executionPayloadCapella).isInstanceOf(ExecutionPayloadCapella.class);
 
     when(executionEngineClient.getPayloadV2(eq(executionPayloadContext.getPayloadId())))
@@ -126,7 +122,7 @@ class EngineGetPayloadV2Test {
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(UInt64.ZERO).build();
 
-    jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, capellaSpec);
+    jsonRpcMethod = new EngineGetPayloadV2(executionEngineClient, spec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
         new GetPayloadResponse(executionPayloadCapella, blockValue);

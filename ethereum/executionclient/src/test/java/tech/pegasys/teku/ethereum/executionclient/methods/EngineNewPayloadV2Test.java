@@ -40,7 +40,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineNewPayloadV2Test {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
   private EngineNewPayloadV2 jsonRpcMethod;
@@ -86,10 +86,8 @@ class EngineNewPayloadV2Test {
 
   @Test
   public void shouldCallNewPayloadV2WithExecutionPayloadV2() {
-    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtilCapella = new DataStructureUtil(capellaSpec);
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
 
-    final ExecutionPayload executionPayload = dataStructureUtilCapella.randomExecutionPayload();
     final ExecutionPayloadV2 executionPayloadV2 =
         ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
     assertThat(executionPayloadV2).isExactlyInstanceOf(ExecutionPayloadV2.class);
