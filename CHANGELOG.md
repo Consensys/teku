@@ -12,13 +12,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Breaking Changes
 
-- The Development options `--Xprogressive-balances-mode` and `--Xee-version` have been removed and will no longer be recognised as command line options.
-- Network configs updated following Consensus Specs changes. If you run custom network, you will need to add [lines with network parameters](https://github.com/Consensys/teku/blob/f80e1de99cdbf50c905682241e24e19291a0881d/ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml#L102-L139) to your custom config including Deneb constants if supported. If you are using a remote validator `auto` network feature, you will need to update both Beacon Node and Validator Client.
-
 ### Additions and Improvements
-
-- Added Gnosis configuration for the 🦉 CAPELLA 🦉 network fork due at epoch 648704, UTC Tue 01/08/2023, 11:34:20
-- Updated Sigmaprime's bootnodes
-- Increased the pending pool size for attestations
 
 ### Bug Fixes

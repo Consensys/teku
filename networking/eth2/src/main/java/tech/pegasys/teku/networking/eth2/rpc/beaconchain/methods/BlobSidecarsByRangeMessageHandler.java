@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
@@ -117,13 +118,16 @@ public class BlobSidecarsByRangeMessageHandler
       return;
     }
 
-    if (!peer.popRequest() || !peer.popBlobSidecarRequests(callback, requestedCount.longValue())) {
+    final Optional<RequestApproval> blobSidecarsRequestApproval =
+        peer.approveBlobSidecarsRequest(callback, requestedCount.longValue());
+
+    if (!peer.approveRequest() || blobSidecarsRequestApproval.isEmpty()) {
       requestCounter.labels("rate_limited").inc();
       return;
     }
 
     requestCounter.labels("ok").inc();
-    totalBlobSidecarsRequestedCounter.inc(requestedCount.longValue());
+    totalBlobSidecarsRequestedCounter.inc(message.getCount().longValue());
 
     combinedChainDataClient
         .getEarliestAvailableBlobSidecarSlot()
@@ -169,10 +173,16 @@ public class BlobSidecarsByRangeMessageHandler
         .finish(
             requestState -> {
               final int sentBlobSidecars = requestState.sentBlobSidecars.get();
+              if (sentBlobSidecars != requestedCount.longValue()) {
+                peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), sentBlobSidecars);
+              }
               LOG.trace("Sent {} blob sidecars to peer {}.", sentBlobSidecars, peer.getId());
               callback.completeSuccessfully();
             },
-            error -> handleProcessingRequestError(error, callback));
+            error -> {
+              peer.adjustBlobSidecarsRequest(blobSidecarsRequestApproval.get(), 0);
+              handleProcessingRequestError(error, callback);
+            });
   }
 
   private boolean checkBlobSidecarsAreAvailable(

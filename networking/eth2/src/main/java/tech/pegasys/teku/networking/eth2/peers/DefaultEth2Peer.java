@@ -340,21 +340,34 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public boolean popBlockRequests(
-      final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return popObjectRequests("block", blockRequestTracker, callback, blocksCount);
+  public Optional<RequestApproval> approveBlocksRequest(
+      final ResponseCallback<SignedBeaconBlock> callback, long blocksCount) {
+    return approveObjectsRequest("blocks", blockRequestTracker, blocksCount, callback);
   }
 
   @Override
-  public boolean popBlobSidecarRequests(
-      final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return popObjectRequests(
-        "blob sidecars", blobSidecarsRequestTracker, callback, blobSidecarsCount);
+  public void adjustBlocksRequest(
+      final RequestApproval blocksRequest, final long returnedBlocksCount) {
+    adjustObjectsRequest(blockRequestTracker, blocksRequest, returnedBlocksCount);
   }
 
   @Override
-  public boolean popRequest() {
-    if (requestTracker.popObjectRequests(1L) == 0L) {
+  public Optional<RequestApproval> approveBlobSidecarsRequest(
+      final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
+    return approveObjectsRequest(
+        "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
+  }
+
+  @Override
+  public void adjustBlobSidecarsRequest(
+      final RequestApproval blobSidecarsRequest, final long returnedBlobSidecarsCount) {
+    adjustObjectsRequest(
+        blobSidecarsRequestTracker, blobSidecarsRequest, returnedBlobSidecarsCount);
+  }
+
+  @Override
+  public boolean approveRequest() {
+    if (requestTracker.approveObjectsRequest(1L).isEmpty()) {
       LOG.debug("Peer {} disconnected due to request rate limits", getId());
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
       return false;
@@ -385,19 +398,27 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .thenCompose(__ -> responseHandler.getResult());
   }
 
-  private <T> boolean popObjectRequests(
+  private void adjustObjectsRequest(
+      final RateTracker requestTracker,
+      final RequestApproval requestApproval,
+      final long returnedObjectsCount) {
+    requestTracker.adjustObjectsRequest(requestApproval, returnedObjectsCount);
+  }
+
+  private <T> Optional<RequestApproval> approveObjectsRequest(
       final String requestType,
       final RateTracker requestTracker,
-      final ResponseCallback<T> callback,
-      final long objectCount) {
-    if (requestTracker.popObjectRequests(objectCount) == 0L) {
+      final long objectsCount,
+      final ResponseCallback<T> callback) {
+    final Optional<RequestApproval> requestApproval =
+        requestTracker.approveObjectsRequest(objectsCount);
+    if (requestApproval.isEmpty()) {
       LOG.debug("Peer {} disconnected due to {} rate limits", getId(), requestType);
       callback.completeWithErrorResponse(
           new RpcException(INVALID_REQUEST_CODE, "Peer has been rate limited"));
       disconnectCleanly(DisconnectReason.RATE_LIMITING).ifExceptionGetsHereRaiseABug();
-      return false;
     }
-    return true;
+    return requestApproval;
   }
 
   private <I extends RpcRequest, O extends SszData> SafeFuture<Optional<O>> requestOptionalItem(
