@@ -17,11 +17,15 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
+import tech.pegasys.teku.beaconrestapi.addon.CapellaRestApiBuilderAddon;
+import tech.pegasys.teku.beaconrestapi.addon.DenebRestApiBuilderAddon;
+import tech.pegasys.teku.beaconrestapi.addon.LightClientRestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
@@ -39,12 +43,10 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetVal
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttesterSlashings;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlindedBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlobSidecars;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockAttestations;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeader;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockRoot;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlsToExecutionChanges;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedCheckpointState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
@@ -63,13 +65,9 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttestation;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlsToExecutionChanges;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient.GetLightClientBootstrap;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.lightclient.GetLightClientUpdatesByRange;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.builder.GetExpectedWithdrawals;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetForkSchedule;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetSpec;
@@ -113,7 +111,6 @@ import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
@@ -303,24 +300,29 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetGlobalValidatorInclusion(dataProvider))
             .endpoint(new GetValidatorInclusion(dataProvider));
 
-    if (spec.isMilestoneSupported(SpecMilestone.CAPELLA)) {
-      builder =
-          builder
-              .endpoint(new PostBlsToExecutionChanges(dataProvider, schemaCache))
-              .endpoint(new GetBlsToExecutionChanges(dataProvider, schemaCache))
-              .endpoint(new GetExpectedWithdrawals(dataProvider, schemaCache));
-    }
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      builder = builder.endpoint(new GetBlobSidecars(dataProvider, schemaCache));
-    }
-
-    if (config.isRestApiLightClientEnabled()) {
-      builder =
-          builder
-              .endpoint(new GetLightClientBootstrap(dataProvider, schemaCache))
-              .endpoint(new GetLightClientUpdatesByRange(schemaCache));
-    }
-
+    builder = applyAddons(builder, config, spec, dataProvider, schemaCache);
     return builder.build();
+  }
+
+  private static RestApiBuilder applyAddons(
+      final RestApiBuilder builder,
+      final BeaconRestApiConfig config,
+      final Spec spec,
+      final DataProvider dataProvider,
+      final SchemaDefinitionCache schemaCache) {
+    final List<RestApiBuilderAddon> addons =
+        List.of(
+            new CapellaRestApiBuilderAddon(spec, dataProvider, schemaCache),
+            new DenebRestApiBuilderAddon(spec, dataProvider, schemaCache),
+            new LightClientRestApiBuilderAddon(config, dataProvider, schemaCache));
+
+    RestApiBuilder builderUpdated = builder;
+    for (RestApiBuilderAddon addon : addons) {
+      if (addon.isEnabled()) {
+        builderUpdated = addon.apply(builderUpdated);
+      }
+    }
+
+    return builderUpdated;
   }
 }
