@@ -720,7 +720,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
       if (signatureAlreadyVerified || depositSignatureIsValid(deposit, pubkey)) {
-        processNewValidator(state, deposit);
+        addValidatorToRegistry(state, deposit);
       } else {
         handleInvalidDeposit(deposit, pubkey, pubKeyToIndexMap);
       }
@@ -766,13 +766,14 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
     return miscHelpers.computeSigningRoot(depositMessage, domain);
   }
 
-  protected void processNewValidator(final MutableBeaconState state, final Deposit deposit) {
+  protected void addValidatorToRegistry(final MutableBeaconState state, final Deposit deposit) {
+    final Validator validator = getValidatorFromDeposit(deposit);
     LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
-    state.getValidators().append(getValidatorFromDeposit(deposit));
+    state.getValidators().append(validator);
     state.getBalances().appendElement(deposit.getData().getAmount());
   }
 
-  private Validator getValidatorFromDeposit(Deposit deposit) {
+  private Validator getValidatorFromDeposit(final Deposit deposit) {
     final UInt64 amount = deposit.getData().getAmount();
     final UInt64 effectiveBalance =
         amount
