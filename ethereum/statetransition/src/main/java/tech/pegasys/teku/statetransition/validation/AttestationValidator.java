@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil.SlotInclusionGossipValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -99,10 +100,11 @@ public class AttestationValidator {
     final UInt64 genesisTime = recentChainData.getGenesisTime();
     final UInt64 currentTimeMillis = recentChainData.getStore().getTimeMillis();
 
+    final AttestationUtil attestationUtil = spec.atSlot(data.getSlot()).getAttestationUtil();
+
     final Optional<SlotInclusionGossipValidationResult> slotInclusionGossipValidationResult =
-        spec.atSlot(data.getSlot())
-            .getAttestationUtil()
-            .performSlotInclusionGossipValidation(attestation, genesisTime, currentTimeMillis);
+        attestationUtil.performSlotInclusionGossipValidation(
+            attestation, genesisTime, currentTimeMillis);
 
     if (slotInclusionGossipValidationResult.isPresent()) {
       switch (slotInclusionGossipValidationResult.get()) {
@@ -130,6 +132,20 @@ public class AttestationValidator {
                 return completedFuture(InternalValidationResultWithState.ignore());
               }
               final BeaconState state = maybeState.get();
+
+              final Optional<SlotInclusionGossipValidationResult>
+                  slotInclusionGossipValidationWithStateResult =
+                      attestationUtil.performSlotInclusionGossipValidation(attestation, state);
+
+              if (slotInclusionGossipValidationWithStateResult.isPresent()) {
+                switch (slotInclusionGossipValidationWithStateResult.get()) {
+                  case IGNORE:
+                    return completedFuture(InternalValidationResultWithState.ignore());
+                  case SAVE_FOR_FUTURE:
+                    break;
+                }
+              }
+
               // The committee index is within the expected range
               if (data.getIndex()
                   .isGreaterThanOrEqualTo(

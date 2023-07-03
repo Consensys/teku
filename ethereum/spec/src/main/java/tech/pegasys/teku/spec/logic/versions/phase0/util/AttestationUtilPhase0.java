@@ -67,6 +67,12 @@ public class AttestationUtilPhase0 extends AttestationUtil {
     return Optional.empty();
   }
 
+  @Override
+  public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
+      final Attestation attestation, final BeaconState state) {
+    return Optional.empty();
+  }
+
   protected boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 minimumBroadcastTimeMillis =
