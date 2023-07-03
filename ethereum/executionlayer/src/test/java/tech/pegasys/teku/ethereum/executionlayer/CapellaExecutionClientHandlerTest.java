@@ -100,6 +100,28 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
+    final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
+        SafeFuture.completedFuture(
+            new Response<>(
+                new ForkChoiceUpdatedResult(
+                    new PayloadStatusV1(
+                        ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
+                    dataStructureUtil.randomBytes8())));
+    when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, Optional.empty()))
+        .thenReturn(dummyResponse);
+    final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
+        handler.engineForkChoiceUpdated(forkChoiceState, Optional.empty());
+    verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, Optional.empty());
+    assertThat(future).isCompleted();
+  }
+
+  @Test
+  void engineForkChoiceUpdatedBuildingBlockOnForkTransition_shouldCallEngineForkChoiceUpdatedV2() {
+    final UInt64 capellaForkEpoch = UInt64.valueOf(42);
+    spec = TestSpecFactory.createMinimalWithCapellaForkEpoch(capellaForkEpoch);
+    final ExecutionClientHandler handler = getHandler();
+    // building block for Capella
+    final UInt64 blockSlot = spec.computeStartSlotAtEpoch(capellaForkEpoch);
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
@@ -107,9 +129,15 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            dataStructureUtil.randomUInt64());
+            blockSlot);
     final Optional<PayloadAttributesV2> payloadAttributes =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
+    // headBlockSlot in ForkChoiceState is still in Bellatrix
+    final ForkChoiceState forkChoiceState =
+        dataStructureUtil.randomForkChoiceState(
+            blockSlot.minusMinZero(1), dataStructureUtil.randomBytes32(), false);
+    final ForkChoiceStateV1 forkChoiceStateV1 =
+        ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(

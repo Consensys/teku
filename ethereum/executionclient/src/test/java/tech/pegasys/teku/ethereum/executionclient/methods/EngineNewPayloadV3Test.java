@@ -24,7 +24,6 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,10 +80,7 @@ class EngineNewPayloadV3Test {
         .thenReturn(dummyFailedResponse(errorResponseFromClient));
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder()
-            .add(executionPayload)
-            .addOptional(Optional.of(blobVersionedHashes))
-            .build();
+        new JsonRpcRequestParams.Builder().add(executionPayload).add(blobVersionedHashes).build();
 
     assertThat(jsonRpcMethod.execute(params))
         .succeedsWithin(1, TimeUnit.SECONDS)

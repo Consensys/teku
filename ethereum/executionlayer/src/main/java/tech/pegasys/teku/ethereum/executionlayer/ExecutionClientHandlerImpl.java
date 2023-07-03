@@ -72,7 +72,13 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     return methodsResolver
         .getMilestoneMethod(
             EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED,
-            () -> spec.atSlot(forkChoiceState.getHeadBlockSlot()).getMilestone(),
+            () -> {
+              final UInt64 slot =
+                  payloadBuildingAttributes
+                      .map(PayloadBuildingAttributes::getBlockSlot)
+                      .orElse(forkChoiceState.getHeadBlockSlot());
+              return spec.atSlot(slot).getMilestone();
+            },
             ForkChoiceUpdatedResult.class)
         .execute(params);
   }
