@@ -120,8 +120,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final UInt64 capellaForkEpoch = UInt64.valueOf(42);
     spec = TestSpecFactory.createMinimalWithCapellaForkEpoch(capellaForkEpoch);
     final ExecutionClientHandler handler = getHandler();
-    // building block for Capella
-    final UInt64 blockSlot = spec.computeStartSlotAtEpoch(capellaForkEpoch);
+    final UInt64 capellaStartSlot = spec.computeStartSlotAtEpoch(capellaForkEpoch);
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
@@ -129,13 +128,14 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            blockSlot);
+            // building block for Capella
+            capellaStartSlot.plus(1));
     final Optional<PayloadAttributesV2> payloadAttributes =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
     // headBlockSlot in ForkChoiceState is still in Bellatrix
     final ForkChoiceState forkChoiceState =
         dataStructureUtil.randomForkChoiceState(
-            blockSlot.minusMinZero(1), dataStructureUtil.randomBytes32(), false);
+            capellaStartSlot.minusMinZero(1), dataStructureUtil.randomBytes32(), false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
         ForkChoiceStateV1.fromInternalForkChoiceState(forkChoiceState);
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
