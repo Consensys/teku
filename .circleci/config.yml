@@ -315,7 +315,7 @@ jobs:
           name: IntegrationTests
           no_output_timeout: 20m
           command: |
-            circleci tests run --command="xargs ./gradlew --no-daemon --parallel integrationTest"
+            circleci tests run --command="./gradlew --no-daemon --parallel integrationTest"
       - notify
       - capture_test_results
       - store_artifacts:
