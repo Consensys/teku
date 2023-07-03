@@ -184,7 +184,7 @@ jobs:
             - ./
       - store_artifacts:
           name: Distribution artifacts
-          path:  /tmp/teku-distributions
+          path: /tmp/teku-distributions
           destination: distributions
           when: always
 
@@ -345,7 +345,7 @@ jobs:
               echo "Failed to determine correct distribution of tests across nodes"
               exit 1
             fi
-            ./gradlew --no-daemon --parallel acceptanceTest $GRADLE_ARGS
+            echo $GRADLE_ARGS | circleci tests run --command="xargs ./gradlew --no-daemon --parallel acceptanceTest" --split-by=timings
       - notify
       - capture_test_results
       - capture_test_artifacts
