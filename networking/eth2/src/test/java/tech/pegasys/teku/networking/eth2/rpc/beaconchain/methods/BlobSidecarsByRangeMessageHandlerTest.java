@@ -382,7 +382,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
               UInt64.rangeClosed(
                       ZERO,
                       dataStructureUtil
-                          .randomUInt64(miscHelpers.getBlobSidecarsCount(Optional.of(block)))
+                          .randomUInt64(miscHelpers.getBlobKzgCommitmentsCount(block))
                           .minusMinZero(1))
                   .forEach(
                       index ->
