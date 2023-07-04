@@ -103,6 +103,11 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
+  public UInt64 getMaxRequestBlocks() {
+    return UInt64.valueOf(SpecConfigDeneb.required(specConfig).getMaxRequestBlocksDeneb());
+  }
+
+  @Override
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
     return Optional.of(this);
   }
@@ -123,10 +128,5 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
         .map(SszList::size)
         .orElse(0);
-  }
-
-  @Override
-  public UInt64 getMaxRequestBlocks() {
-    return UInt64.valueOf(SpecConfigDeneb.required(specConfig).getMaxRequestBlocksDeneb());
   }
 }
