@@ -156,6 +156,29 @@ public class EndpointMetadata {
     }
   }
 
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  public <T> T getRequestBody(final InputStream body, final Map<String, String> headers)
+      throws JsonProcessingException {
+    checkArgument(!requestBodyTypes.isEmpty(), "requestBodyType has not been defined");
+
+    final Optional<String> maybeContentType = Optional.ofNullable(headers.get("Content-Type"));
+
+    try {
+      final String contentType = selectRequestContentType(maybeContentType);
+      final RequestContentTypeDefinition<T> requestContentTypeDefinition =
+          (RequestContentTypeDefinition<T>) requestBodyTypes.get(contentType);
+      final T result = requestContentTypeDefinition.deserialize(body, headers);
+      if (result == null) {
+        throw new MissingRequestBodyException();
+      }
+      return result;
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
   private String selectRequestContentType(final Optional<String> maybeContentType)
       throws BadRequestException {
     return ContentTypes.getRequestContentType(

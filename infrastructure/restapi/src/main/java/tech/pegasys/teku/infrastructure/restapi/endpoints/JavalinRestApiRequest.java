@@ -48,8 +48,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   @Override
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
-    return metadata.getRequestBody(
-        context.bodyInputStream(), Optional.ofNullable(context.header("Content-Type")));
+    return metadata.getRequestBody(context.bodyInputStream(), context.headerMap());
   }
 
   public JavalinRestApiRequest(final Context context, final EndpointMetadata metadata) {
