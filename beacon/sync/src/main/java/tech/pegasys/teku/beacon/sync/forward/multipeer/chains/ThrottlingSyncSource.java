@@ -37,7 +37,7 @@ public class ThrottlingSyncSource implements SyncSource {
   private final SyncSource delegate;
 
   private final RateTracker blocksRateTracker;
-  private final Optional<RateTracker> blobSidecarsRateTracker;
+  private final RateTracker blobSidecarsRateTracker;
 
   public ThrottlingSyncSource(
       final AsyncRunner asyncRunner,
@@ -47,11 +47,13 @@ public class ThrottlingSyncSource implements SyncSource {
       final Optional<Integer> maybeMaxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, TIME_OUT, timeProvider);
+    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider);
     this.blobSidecarsRateTracker =
-        maybeMaxBlobSidecarsPerMinute.map(
-            maxBlobSidecarsPerMinute ->
-                new RateTracker(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider));
+        maybeMaxBlobSidecarsPerMinute
+            .map(
+                maxBlobSidecarsPerMinute ->
+                    RateTracker.create(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider))
+            .orElse(RateTracker.NOOP);
   }
 
   @Override
@@ -71,10 +73,7 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    if (blobSidecarsRateTracker
-        .orElseThrow()
-        .approveObjectsRequest(count.longValue())
-        .isPresent()) {
+    if (blobSidecarsRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {
