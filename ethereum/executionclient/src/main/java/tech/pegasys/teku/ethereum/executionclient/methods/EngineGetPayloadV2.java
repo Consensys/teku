@@ -38,7 +38,7 @@ public class EngineGetPayloadV2 extends AbstractEngineJsonRpcMethod<GetPayloadRe
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_GET_PAYLOAD.getName();
+    return EngineApiMethod.ENGINE_GET_PAYLOAD.getName();
   }
 
   @Override

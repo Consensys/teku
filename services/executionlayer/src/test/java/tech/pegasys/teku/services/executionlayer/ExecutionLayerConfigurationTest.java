@@ -87,19 +87,4 @@ public class ExecutionLayerConfigurationTest {
 
     assertThatCode(config::getEngineEndpoint).doesNotThrowAnyException();
   }
-
-  @Test
-  public void exchangeCapabilitiesToggleIsEnabledByDefault() {
-    final ExecutionLayerConfiguration config = configBuilder.build();
-
-    assertThat(config.isExchangeCapabilitiesEnabled()).isTrue();
-  }
-
-  @Test
-  public void exchangeCapabilitiesToggleCanBeToggledOn() {
-    final ExecutionLayerConfiguration config =
-        configBuilder.exchangeCapabilitiesEnabled(true).build();
-
-    assertThat(config.isExchangeCapabilitiesEnabled()).isTrue();
-  }
 }
