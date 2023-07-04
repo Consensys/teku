@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -21,12 +20,9 @@ import static org.mockito.Mockito.when;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public abstract class ExecutionHandlerClientTest {
@@ -34,25 +30,6 @@ public abstract class ExecutionHandlerClientTest {
   protected Spec spec;
   protected DataStructureUtil dataStructureUtil;
   protected final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
-
-  @SuppressWarnings("FutureReturnValueIgnored")
-  @Test
-  void engineExchangeTransitionConfiguration_shouldCallExecutionClient() {
-    ExecutionClientHandler handler = getHandler();
-    TransitionConfiguration config =
-        new TransitionConfiguration(
-            dataStructureUtil.randomUInt256(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
-    TransitionConfigurationV1 v1Config =
-        TransitionConfigurationV1.fromInternalTransitionConfiguration(config);
-
-    when(executionEngineClient.exchangeTransitionConfiguration(v1Config))
-        .thenReturn(SafeFuture.completedFuture(new Response<>(v1Config)));
-    handler.engineExchangeTransitionConfiguration(config);
-    verify(executionEngineClient)
-        .exchangeTransitionConfiguration(any(TransitionConfigurationV1.class));
-  }
 
   @SuppressWarnings("FutureReturnValueIgnored")
   @Test

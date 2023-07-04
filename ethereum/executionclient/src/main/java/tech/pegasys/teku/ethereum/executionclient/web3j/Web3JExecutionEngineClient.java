@@ -39,7 +39,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,7 +47,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
-  private static final Duration EXCHANGE_TRANSITION_CONFIGURATION_TIMEOUT = Duration.ofSeconds(8);
   private static final Duration EXCHANGE_CAPABILITIES_TIMEOUT = Duration.ofSeconds(8);
 
   private final Web3JClient web3JClient;
@@ -183,18 +181,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
   }
 
   @Override
-  public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
-      TransitionConfigurationV1 transitionConfiguration) {
-    Request<?, TransitionConfigurationV1Web3jResponse> web3jRequest =
-        new Request<>(
-            "engine_exchangeTransitionConfigurationV1",
-            Collections.singletonList(transitionConfiguration),
-            web3JClient.getWeb3jService(),
-            TransitionConfigurationV1Web3jResponse.class);
-    return web3JClient.doRequest(web3jRequest, EXCHANGE_TRANSITION_CONFIGURATION_TIMEOUT);
-  }
-
-  @Override
   public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
     Request<?, ExchangeCapabilitiesWeb3jResponse> web3jRequest =
         new Request<>(
@@ -219,9 +205,6 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
 
   static class ForkChoiceUpdatedResultWeb3jResponse
       extends org.web3j.protocol.core.Response<ForkChoiceUpdatedResult> {}
-
-  static class TransitionConfigurationV1Web3jResponse
-      extends org.web3j.protocol.core.Response<TransitionConfigurationV1> {}
 
   static class ExchangeCapabilitiesWeb3jResponse
       extends org.web3j.protocol.core.Response<List<String>> {}

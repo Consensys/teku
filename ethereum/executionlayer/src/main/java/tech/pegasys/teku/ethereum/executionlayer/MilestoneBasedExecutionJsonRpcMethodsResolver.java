@@ -22,7 +22,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
@@ -55,7 +54,6 @@ public class MilestoneBasedExecutionJsonRpcMethodsResolver
     // Non-milestone specific methods
     nonMilestoneMethods.add(new EthGetBlockByHash(executionEngineClient));
     nonMilestoneMethods.add(new EthGetBlockByNumber(executionEngineClient));
-    nonMilestoneMethods.add(new EngineExchangeTransitionConfigurationV1(executionEngineClient));
 
     // Milestone specific methods
     spec.getEnabledMilestones().stream()
