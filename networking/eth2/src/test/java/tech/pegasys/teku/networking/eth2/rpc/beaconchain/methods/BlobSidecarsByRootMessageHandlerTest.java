@@ -47,7 +47,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -62,6 +61,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
 
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+  private final SpecConfigDeneb specConfig =
+      SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
   private final int maxChunkSize = spec.getNetworkingConfig().getMaxChunkSize();
   private final BlobSidecarsByRootRequestMessageSchema messageSchema =
       SchemaDefinitionsDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
@@ -93,7 +94,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final BlobSidecarsByRootMessageHandler handler =
       new BlobSidecarsByRootMessageHandler(
-          spec, metricsSystem, denebForkEpoch, combinedChainDataClient);
+          spec, specConfig, metricsSystem, combinedChainDataClient);
 
   private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
@@ -127,7 +128,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   @Test
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
-    final int maxRequestBlobSidecars = getMaxRequestBlobSidecars();
+    final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
             messageSchema, dataStructureUtil.randomBlobIdentifiers(maxRequestBlobSidecars + 1));
@@ -329,11 +330,5 @@ public class BlobSidecarsByRootMessageHandlerTest {
             });
 
     verify(callback).completeSuccessfully();
-  }
-
-  private int getMaxRequestBlobSidecars() {
-    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return specConfigDeneb.getMaxRequestBlobSidecars();
   }
 }

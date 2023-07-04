@@ -48,11 +48,6 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
 
   int getMaxBlobsPerBlock();
 
-  @Override
-  default int getMaxRequestBlobSidecars() {
-    return getMaxRequestBlocksDeneb() * getMaxBlobsPerBlock();
-  }
-
   Optional<String> getTrustedSetupPath();
 
   boolean isKZGNoop();

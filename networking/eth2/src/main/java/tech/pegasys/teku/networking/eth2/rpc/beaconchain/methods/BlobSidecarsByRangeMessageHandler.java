@@ -41,7 +41,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailableException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
@@ -59,18 +58,18 @@ public class BlobSidecarsByRangeMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final UInt64 denebForkEpoch;
+  private final SpecConfigDeneb specConfig;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobSidecarsRequestedCounter;
 
   public BlobSidecarsByRangeMessageHandler(
       final Spec spec,
-      final UInt64 denebForkEpoch,
+      final SpecConfigDeneb specConfig,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
-    this.denebForkEpoch = denebForkEpoch;
+    this.specConfig = specConfig;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -100,11 +99,8 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final SpecConfigDeneb specConfigDeneb =
-        SpecConfigDeneb.required(spec.atSlot(endSlot).getConfig());
-    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock());
-    final UInt64 maxRequestBlobSidecars =
-        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
+    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
+    final UInt64 maxRequestBlobSidecars = UInt64.valueOf(specConfig.getMaxRequestBlobSidecars());
     final UInt64 requestedCount = message.getCount().times(maxBlobsPerBlock);
 
     if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
@@ -194,11 +190,10 @@ public class BlobSidecarsByRangeMessageHandler
 
   private boolean checkRequestInBlobServeRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final SpecConfig config = spec.atEpoch(currentEpoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final UInt64 minEpochForBlobSidecars =
-        denebForkEpoch.max(
-            currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
+        specConfig
+            .getDenebForkEpoch()
+            .max(currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests()));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }
