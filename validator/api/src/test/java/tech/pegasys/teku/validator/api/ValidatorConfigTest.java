@@ -19,6 +19,7 @@ import java.nio.file.Path;
 import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
@@ -65,6 +66,37 @@ class ValidatorConfigTest {
         .isThrownBy(builder::build)
         .withMessageContaining(
             "Invalid configuration. '--validators-external-signer-keystore' and '--validators-external-signer-keystore-password-file' must be specified together");
+  }
+
+  @Test
+  public void shouldLogWarnIfExternalPublicKeysContainsURLReferringToExternalSignerUrlHost()
+      throws MalformedURLException {
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(ValidatorConfig.class)) {
+      final ValidatorConfig.Builder builder =
+          configBuilder
+              .validatorExternalSignerPublicKeySources(List.of("http://localhost:9000/test"))
+              .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
+
+      Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
+
+      logCaptor.assertWarnLog(
+          "'--validators-external-signer-public-keys' contains an URL matching the external-signer-url host and port. Use 'external-signer' instead if you want to use all public keys exposed by the external-signer");
+    }
+  }
+
+  @Test
+  public void shouldNotThrowIfExternalPublicKeysContainsMalformedURLs()
+      throws MalformedURLException {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerPublicKeySources(List.of("invalid:url"))
+            .validatorExternalSignerUrl(URI.create("http://localhost:9000").toURL());
+
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Invalid configuration. '--validators-external-signer-public-keys' contains a malformed URL: invalid:url");
   }
 
   @Test

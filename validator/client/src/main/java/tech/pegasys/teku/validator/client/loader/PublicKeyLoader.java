@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -38,6 +40,7 @@ import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 public class PublicKeyLoader {
   public static final String EXTERNAL_SIGNER_PUBKEYS_ENDPOINT = "/api/v1/eth2/publicKeys";
   public static final String EXTERNAL_SIGNER_SOURCE_ID = "external-signer";
+  private static final Logger LOG = LogManager.getLogger();
 
   final ObjectMapper objectMapper;
   final Supplier<HttpClient> externalSignerHttpClientFactory;
@@ -95,12 +98,14 @@ public class PublicKeyLoader {
     }
   }
 
-  private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
+  private Stream<BLSPublicKey> readKeysFromUrl(final String urlString) {
     try {
-      final String[] keys = objectMapper.readValue(new URL(url), String[].class);
+      final URL url = new URL(urlString);
+      final String[] keys = objectMapper.readValue(url, String[].class);
       return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
     } catch (IOException ex) {
-      throw new InvalidConfigurationException("Failed to load public keys from URL " + url, ex);
+      throw new InvalidConfigurationException(
+          "Failed to load public keys from URL " + urlString, ex);
     }
   }
 

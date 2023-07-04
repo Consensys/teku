@@ -15,12 +15,14 @@ package tech.pegasys.teku.validator.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
@@ -593,6 +595,36 @@ public class ValidatorConfig {
             "Invalid configuration. '--validators-external-signer-url' and '--validators-external-signer-public-keys' must be specified together";
         throw new InvalidConfigurationException(errorMessage);
       }
+
+      validatorExternalSignerPublicKeySources.forEach(
+          source -> {
+            if (source.contains(":")) {
+              try {
+                final URL url = new URL(source);
+                if (hostAndPortMatching(url, validatorExternalSignerUrl)) {
+                  LOG.warn(
+                      "'--validators-external-signer-public-keys' contains an URL matching the external-signer-url host and port. Use 'external-signer' instead if you want to use all public keys exposed by the external-signer");
+                }
+              } catch (MalformedURLException e) {
+                throw new InvalidConfigurationException(
+                    "Invalid configuration. '--validators-external-signer-public-keys' contains a malformed URL: "
+                        + source);
+              }
+            }
+          });
+    }
+
+    private boolean hostAndPortMatching(final URL url1, final URL url2) {
+      return urlToMatchingPart(url1).equals(urlToMatchingPart(url2));
+    }
+
+    private String urlToMatchingPart(final URL url) {
+      int port = url.getPort();
+      if (port == -1) {
+        port = url.getDefaultPort();
+      }
+
+      return url.getHost().toLowerCase(Locale.ROOT) + port;
     }
 
     private void validateExternalSignerKeystoreAndPasswordFileConfig() {
