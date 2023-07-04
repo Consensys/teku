@@ -214,7 +214,7 @@ public final class KZGTest {
         .forEach(
             ex ->
                 assertThat(ex)
-                    .rootCause()
+                    .cause()
                     .isInstanceOf(CKZGException.class)
                     .hasMessageMatching(
                         "Invalid .+ size. Expected \\d+ bytes but got \\d+. \\(C_KZG_BADARGS\\)"));
