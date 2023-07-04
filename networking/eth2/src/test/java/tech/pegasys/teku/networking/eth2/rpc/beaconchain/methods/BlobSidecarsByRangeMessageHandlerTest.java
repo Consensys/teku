@@ -51,7 +51,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -68,12 +67,16 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       RpcEncoding.createSszSnappyEncoding(
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
-  private final Spec spec = TestSpecFactory.createMinimalDeneb();
-  private final int maxBlobsPerBlock = spec.getMaxBlobsPerBlock().orElseThrow();
+  private final UInt64 denebForkEpoch = UInt64.valueOf(1);
+
+  private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
+
+  private final SpecConfigDeneb specConfigDeneb =
+      SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final UInt64 denebForkEpoch = UInt64.valueOf(1);
+  private final int maxBlobsPerBlock = specConfigDeneb.getMaxBlobsPerBlock();
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
 
@@ -86,6 +89,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
+
   private final MiscHelpersDeneb miscHelpers =
       spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
 
@@ -100,7 +104,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final BlobSidecarsByRangeMessageHandler handler =
       new BlobSidecarsByRangeMessageHandler(
-          spec, denebForkEpoch, metricsSystem, combinedChainDataClient);
+          spec, specConfigDeneb, metricsSystem, combinedChainDataClient);
   private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
           new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
@@ -130,8 +134,6 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
-    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final UInt64 maxRequestBlobSidecars =
         UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
@@ -381,7 +383,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
               UInt64.rangeClosed(
                       ZERO,
                       dataStructureUtil
-                          .randomUInt64(miscHelpers.getBlobSidecarsCount(Optional.of(block)))
+                          .randomUInt64(miscHelpers.getBlobKzgCommitmentsCount(block))
                           .minusMinZero(1))
                   .forEach(
                       index ->

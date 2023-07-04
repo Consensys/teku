@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -101,6 +103,11 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   @Override
+  public UInt64 getMaxRequestBlocks() {
+    return UInt64.valueOf(SpecConfigDeneb.required(specConfig).getMaxRequestBlocksDeneb());
+  }
+
+  @Override
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
     return Optional.of(this);
   }
@@ -113,16 +120,13 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
   }
 
-  public int getBlobSidecarsCount(final Optional<SignedBeaconBlock> signedBeaconBlock) {
+  public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {
     return signedBeaconBlock
-        .flatMap(SignedBeaconBlock::getBeaconBlock)
-        .flatMap(beaconBlock -> beaconBlock.getBody().toVersionDeneb())
-        .map(beaconBlockBodyDeneb -> beaconBlockBodyDeneb.getBlobKzgCommitments().size())
+        .getMessage()
+        .getBody()
+        .toVersionDeneb()
+        .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+        .map(SszList::size)
         .orElse(0);
-  }
-
-  @Override
-  public UInt64 getMaxRequestBlocks() {
-    return UInt64.valueOf(SpecConfigDeneb.required(specConfig).getMaxRequestBlocksDeneb());
   }
 }

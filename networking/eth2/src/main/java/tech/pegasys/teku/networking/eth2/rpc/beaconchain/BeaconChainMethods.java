@@ -22,7 +22,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.PeerLookup;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRangeMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BeaconBlocksByRootMessageHandler;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.VersionedEth2RpcMethod
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
@@ -285,7 +285,7 @@ public class BeaconChainMethods {
 
     final BlobSidecarsByRootMessageHandler blobSidecarsByRootHandler =
         new BlobSidecarsByRootMessageHandler(
-            spec, metricsSystem, getDenebForkEpoch(spec), combinedChainDataClient);
+            spec, getSpecConfigDeneb(spec), metricsSystem, combinedChainDataClient);
     final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema =
         SchemaDefinitionsDeneb.required(
                 spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
@@ -327,7 +327,7 @@ public class BeaconChainMethods {
 
     final BlobSidecarsByRangeMessageHandler blobSidecarsByRangeHandler =
         new BlobSidecarsByRangeMessageHandler(
-            spec, getDenebForkEpoch(spec), metricsSystem, combinedChainDataClient);
+            spec, getSpecConfigDeneb(spec), metricsSystem, combinedChainDataClient);
 
     return Optional.of(
         new SingleProtocolEth2RpcMethod<>(
@@ -426,12 +426,8 @@ public class BeaconChainMethods {
         spec.getNetworkingConfig());
   }
 
-  private static UInt64 getDenebForkEpoch(final Spec spec) {
-    return spec.forMilestone(SpecMilestone.DENEB)
-        .getConfig()
-        .toVersionDeneb()
-        .orElseThrow()
-        .getDenebForkEpoch();
+  private static SpecConfigDeneb getSpecConfigDeneb(final Spec spec) {
+    return SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
   }
 
   public Collection<RpcMethod<?, ?, ?>> all() {
