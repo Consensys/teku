@@ -30,8 +30,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -40,7 +38,6 @@ import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
 public class PublicKeyLoader {
   public static final String EXTERNAL_SIGNER_PUBKEYS_ENDPOINT = "/api/v1/eth2/publicKeys";
   public static final String EXTERNAL_SIGNER_SOURCE_ID = "external-signer";
-  private static final Logger LOG = LogManager.getLogger();
 
   final ObjectMapper objectMapper;
   final Supplier<HttpClient> externalSignerHttpClientFactory;

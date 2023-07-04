@@ -81,7 +81,7 @@ class ValidatorConfigTest {
       Assertions.assertThatCode(builder::build).doesNotThrowAnyException();
 
       logCaptor.assertWarnLog(
-          "'--validators-external-signer-public-keys' contains an URL matching the external-signer-url host and port. Use 'external-signer' instead if you want to use all public keys exposed by the external-signer");
+          "'--validators-external-signer-public-keys' contains an URL matching the external-signer-url host and port. Use 'external-signer' instead if you want to use all public keys exposed by the external signer");
     }
   }
 
