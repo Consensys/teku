@@ -14,4 +14,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 
+- `--validators-external-signer-public-keys` parameter now accepts `external-signer` value. It will enable public key retrieval from external signer standard API, making sure that configured keystore and trustStore will be used, if any.
+
 ### Bug Fixes
