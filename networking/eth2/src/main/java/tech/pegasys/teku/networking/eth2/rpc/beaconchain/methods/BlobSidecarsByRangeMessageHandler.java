@@ -58,18 +58,18 @@ public class BlobSidecarsByRangeMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final SpecConfigDeneb specConfig;
+  private final SpecConfigDeneb specConfigDeneb;
   private final CombinedChainDataClient combinedChainDataClient;
   private final LabelledMetric<Counter> requestCounter;
   private final Counter totalBlobSidecarsRequestedCounter;
 
   public BlobSidecarsByRangeMessageHandler(
       final Spec spec,
-      final SpecConfigDeneb specConfig,
+      final SpecConfigDeneb specConfigDeneb,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
-    this.specConfig = specConfig;
+    this.specConfigDeneb = specConfigDeneb;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -99,8 +99,9 @@ public class BlobSidecarsByRangeMessageHandler
         message.getCount(),
         startSlot);
 
-    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfig.getMaxBlobsPerBlock());
-    final UInt64 maxRequestBlobSidecars = UInt64.valueOf(specConfig.getMaxRequestBlobSidecars());
+    final UInt64 maxBlobsPerBlock = UInt64.valueOf(specConfigDeneb.getMaxBlobsPerBlock());
+    final UInt64 maxRequestBlobSidecars =
+        UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final UInt64 requestedCount = message.getCount().times(maxBlobsPerBlock);
 
     if (requestedCount.isGreaterThan(maxRequestBlobSidecars)) {
@@ -191,9 +192,9 @@ public class BlobSidecarsByRangeMessageHandler
   private boolean checkRequestInBlobServeRange(final UInt64 requestEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     final UInt64 minEpochForBlobSidecars =
-        specConfig
+        specConfigDeneb
             .getDenebForkEpoch()
-            .max(currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests()));
+            .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }

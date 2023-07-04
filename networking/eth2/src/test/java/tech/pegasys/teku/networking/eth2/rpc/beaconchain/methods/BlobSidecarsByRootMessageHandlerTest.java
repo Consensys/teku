@@ -61,7 +61,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
 
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
-  private final SpecConfigDeneb specConfig =
+  private final SpecConfigDeneb specConfigDeneb =
       SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
   private final int maxChunkSize = spec.getNetworkingConfig().getMaxChunkSize();
   private final BlobSidecarsByRootRequestMessageSchema messageSchema =
@@ -94,7 +94,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final BlobSidecarsByRootMessageHandler handler =
       new BlobSidecarsByRootMessageHandler(
-          spec, specConfig, metricsSystem, combinedChainDataClient);
+          spec, specConfigDeneb, metricsSystem, combinedChainDataClient);
 
   private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
@@ -128,7 +128,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   @Test
   public void validateRequest_shouldNotAllowRequestLargerThanMaximumAllowed() {
-    final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
     final BlobSidecarsByRootRequestMessage request =
         new BlobSidecarsByRootRequestMessage(
             messageSchema, dataStructureUtil.randomBlobIdentifiers(maxRequestBlobSidecars + 1));

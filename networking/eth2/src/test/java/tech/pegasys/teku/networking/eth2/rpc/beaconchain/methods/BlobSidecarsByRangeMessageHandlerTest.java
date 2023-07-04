@@ -71,12 +71,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
 
-  private final SpecConfigDeneb specConfig =
+  private final SpecConfigDeneb specConfigDeneb =
       SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final int maxBlobsPerBlock = specConfig.getMaxBlobsPerBlock();
+  private final int maxBlobsPerBlock = specConfigDeneb.getMaxBlobsPerBlock();
 
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(ZERO);
 
@@ -104,7 +104,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final BlobSidecarsByRangeMessageHandler handler =
       new BlobSidecarsByRangeMessageHandler(
-          spec, specConfig, metricsSystem, combinedChainDataClient);
+          spec, specConfigDeneb, metricsSystem, combinedChainDataClient);
   private final Optional<RequestApproval> allowedObjectsRequest =
       Optional.of(
           new RequestApproval.RequestApprovalBuilder().objectsCount(100).timeSeconds(ZERO).build());
@@ -134,7 +134,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   @Test
   public void shouldNotSendBlobSidecarsIfCountIsTooBig() {
-    final UInt64 maxRequestBlobSidecars = UInt64.valueOf(specConfig.getMaxRequestBlobSidecars());
+    final UInt64 maxRequestBlobSidecars = UInt64.valueOf(specConfigDeneb.getMaxRequestBlobSidecars());
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(
             startSlot, maxRequestBlobSidecars.increment(), maxBlobsPerBlock);

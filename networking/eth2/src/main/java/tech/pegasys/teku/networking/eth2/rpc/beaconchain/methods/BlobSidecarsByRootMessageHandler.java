@@ -52,7 +52,7 @@ public class BlobSidecarsByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final SpecConfigDeneb specConfig;
+  private final SpecConfigDeneb specConfigDeneb;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final LabelledMetric<Counter> requestCounter;
@@ -60,11 +60,11 @@ public class BlobSidecarsByRootMessageHandler
 
   public BlobSidecarsByRootMessageHandler(
       final Spec spec,
-      final SpecConfigDeneb specConfig,
+      final SpecConfigDeneb specConfigDeneb,
       final MetricsSystem metricsSystem,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
-    this.specConfig = specConfig;
+    this.specConfigDeneb = specConfigDeneb;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -82,7 +82,7 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    final int maxRequestBlobSidecars = specConfig.getMaxRequestBlobSidecars();
+    final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
     if (request.size() > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
       return Optional.of(
@@ -201,8 +201,8 @@ public class BlobSidecarsByRootMessageHandler
   private UInt64 computeMinimumRequestEpoch(final UInt64 finalizedEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     return finalizedEpoch
-        .max(currentEpoch.minusMinZero(specConfig.getMinEpochsForBlobSidecarsRequests()))
-        .max(specConfig.getDenebForkEpoch());
+        .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()))
+        .max(specConfigDeneb.getDenebForkEpoch());
   }
 
   private SafeFuture<Optional<BlobSidecar>> retrieveBlobSidecar(final BlobIdentifier identifier) {
