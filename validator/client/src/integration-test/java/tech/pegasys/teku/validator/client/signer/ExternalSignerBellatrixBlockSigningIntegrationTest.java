@@ -22,9 +22,11 @@ import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.v
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,13 +75,13 @@ public class ExternalSignerBellatrixBlockSigningIntegrationTest {
             .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
             .validatorExternalSignerTimeout(TIMEOUT)
             .build();
-    final HttpClientExternalSignerFactory httpClientExternalSignerFactory =
-        new HttpClientExternalSignerFactory(config);
+    final Supplier<HttpClient> externalSignerHttpClientFactory =
+        HttpClientExternalSignerFactory.create(config);
 
     externalSigner =
         new ExternalSigner(
             spec,
-            httpClientExternalSignerFactory.get(),
+            externalSignerHttpClientFactory.get(),
             config.getValidatorExternalSignerUrl(),
             KEYPAIR.getPublicKey(),
             TIMEOUT,

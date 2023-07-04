@@ -20,9 +20,11 @@ import com.google.common.io.Resources;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -90,11 +92,11 @@ public class ExternalSignerUpcheckTLSIntegrationTest {
             .validatorExternalSignerTruststorePasswordFile(PASSWORD_FILE)
             .build();
 
-    final HttpClientExternalSignerFactory httpClientExternalSignerFactory =
-        new HttpClientExternalSignerFactory(config);
+    final Supplier<HttpClient> externalSignerHttpClientFactory =
+        HttpClientExternalSignerFactory.create(config);
 
     return new ExternalSignerUpcheck(
-        httpClientExternalSignerFactory.get(),
+        externalSignerHttpClientFactory.get(),
         config.getValidatorExternalSignerUrl(),
         config.getValidatorExternalSignerTimeout());
   }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import com.google.common.base.Suppliers;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,7 +38,11 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
   private final ValidatorConfig validatorConfig;
 
-  public HttpClientExternalSignerFactory(final ValidatorConfig validatorConfig) {
+  public static Supplier<HttpClient> create(final ValidatorConfig validatorConfig) {
+    return Suppliers.memoize(new HttpClientExternalSignerFactory(validatorConfig)::get);
+  }
+
+  private HttpClientExternalSignerFactory(final ValidatorConfig validatorConfig) {
     this.validatorConfig = validatorConfig;
   }
 
