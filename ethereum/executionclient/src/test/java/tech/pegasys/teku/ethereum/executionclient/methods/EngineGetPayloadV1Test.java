@@ -104,7 +104,7 @@ class EngineGetPayloadV1Test {
   }
 
   @Test
-  public void shouldCallExecutionEngineClientGetPayloadV1() {
+  public void shouldCallGetPayloadV1AndParseResponseSuccessfully() {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false);
 

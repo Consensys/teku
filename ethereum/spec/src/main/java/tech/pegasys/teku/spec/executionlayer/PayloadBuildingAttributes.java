@@ -74,11 +74,6 @@ public class PayloadBuildingAttributes {
         signedValidatorRegistration -> signedValidatorRegistration.getMessage().getPublicKey());
   }
 
-  public Optional<UInt64> getValidatorRegistrationGasLimit() {
-    return validatorRegistration.map(
-        signedValidatorRegistration -> signedValidatorRegistration.getMessage().getGasLimit());
-  }
-
   public Optional<List<Withdrawal>> getWithdrawals() {
     return maybeWithdrawals;
   }

@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
@@ -206,7 +207,7 @@ public class Web3JExecutionEngineClientTest {
   @TestTemplate
   @SuppressWarnings("unchecked")
   public void newPayloadV3_shouldBuildRequestAndResponseSuccessfully() {
-    final boolean isDeneb = spec.isMilestoneSupported(DENEB);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final Bytes32 latestValidHash = dataStructureUtil.randomBytes32();
     final PayloadStatus payloadStatusResponse =
         PayloadStatus.valid(Optional.of(latestValidHash), Optional.empty());
@@ -223,8 +224,7 @@ public class Web3JExecutionEngineClientTest {
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
 
-    final Optional<List<VersionedHash>> blobVersionedHashes =
-        isDeneb ? Optional.of(dataStructureUtil.randomVersionedHashes(3)) : Optional.empty();
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
 
     final SafeFuture<Response<PayloadStatusV1>> futureResponse =
         eeClient.newPayloadV3(executionPayloadV3, blobVersionedHashes);
@@ -246,25 +246,19 @@ public class Web3JExecutionEngineClientTest {
     assertThat(executionPayloadV3Parameter.get("parentHash"))
         .isEqualTo(executionPayloadV3.parentHash.toHexString());
 
-    if (isDeneb) {
-      assertThat(executionPayloadV3Parameter.get("dataGasUsed"))
-          .isEqualTo(
-              Bytes.ofUnsignedLong(executionPayloadV3.dataGasUsed.longValue())
-                  .toQuantityHexString());
-      assertThat(executionPayloadV3Parameter.get("excessDataGas"))
-          .isEqualTo(
-              Bytes.ofUnsignedLong(executionPayloadV3.excessDataGas.longValue())
-                  .toQuantityHexString());
-      assertThat(((List<Object>) requestData.get("params")).get(1))
-          .asInstanceOf(LIST)
-          .containsExactlyElementsOf(
-              blobVersionedHashes.get().stream()
-                  .map(VersionedHash::toHexString)
-                  .collect(Collectors.toList()));
-    } else {
-      // pre-deneb versionedHashes param must be null
-      assertThat(((List<Object>) requestData.get("params")).get(1)).isNull();
-    }
+    assertThat(executionPayloadV3Parameter.get("dataGasUsed"))
+        .isEqualTo(
+            Bytes.ofUnsignedLong(executionPayloadV3.dataGasUsed.longValue()).toQuantityHexString());
+    assertThat(executionPayloadV3Parameter.get("excessDataGas"))
+        .isEqualTo(
+            Bytes.ofUnsignedLong(executionPayloadV3.excessDataGas.longValue())
+                .toQuantityHexString());
+    assertThat(((List<Object>) requestData.get("params")).get(1))
+        .asInstanceOf(LIST)
+        .containsExactlyElementsOf(
+            blobVersionedHashes.stream()
+                .map(VersionedHash::toHexString)
+                .collect(Collectors.toList()));
   }
 
   private void mockSuccessfulResponse(final String responseBody) {

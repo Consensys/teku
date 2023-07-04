@@ -34,8 +34,6 @@ import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -54,7 +52,7 @@ public class BlobSidecarsByRootMessageHandler
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final UInt64 denebForkEpoch;
+  private final SpecConfigDeneb specConfigDeneb;
   private final CombinedChainDataClient combinedChainDataClient;
 
   private final LabelledMetric<Counter> requestCounter;
@@ -62,11 +60,11 @@ public class BlobSidecarsByRootMessageHandler
 
   public BlobSidecarsByRootMessageHandler(
       final Spec spec,
+      final SpecConfigDeneb specConfigDeneb,
       final MetricsSystem metricsSystem,
-      final UInt64 denebForkEpoch,
       final CombinedChainDataClient combinedChainDataClient) {
     this.spec = spec;
-    this.denebForkEpoch = denebForkEpoch;
+    this.specConfigDeneb = specConfigDeneb;
     this.combinedChainDataClient = combinedChainDataClient;
     requestCounter =
         metricsSystem.createLabelledCounter(
@@ -84,8 +82,6 @@ public class BlobSidecarsByRootMessageHandler
   @Override
   public Optional<RpcException> validateRequest(
       final String protocolId, final BlobSidecarsByRootRequestMessage request) {
-    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final int maxRequestBlobSidecars = specConfigDeneb.getMaxRequestBlobSidecars();
     if (request.size() > maxRequestBlobSidecars) {
       requestCounter.labels("count_too_big").inc();
@@ -204,11 +200,9 @@ public class BlobSidecarsByRootMessageHandler
 
   private UInt64 computeMinimumRequestEpoch(final UInt64 finalizedEpoch) {
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final SpecConfig config = spec.atEpoch(currentEpoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return finalizedEpoch
         .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()))
-        .max(denebForkEpoch);
+        .max(specConfigDeneb.getDenebForkEpoch());
   }
 
   private SafeFuture<Optional<BlobSidecar>> retrieveBlobSidecar(final BlobIdentifier identifier) {

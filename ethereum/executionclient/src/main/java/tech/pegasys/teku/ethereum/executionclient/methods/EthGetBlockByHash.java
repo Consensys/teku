@@ -30,7 +30,7 @@ public class EthGetBlockByHash extends AbstractEngineJsonRpcMethod<PowBlock> {
 
   @Override
   public String getName() {
-    return EngineApiMethods.ETH_GET_BLOCK_BY_HASH.getName();
+    return EngineApiMethod.ETH_GET_BLOCK_BY_HASH.getName();
   }
 
   @Override

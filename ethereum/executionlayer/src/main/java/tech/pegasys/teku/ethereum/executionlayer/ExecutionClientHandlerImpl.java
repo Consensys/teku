@@ -15,10 +15,11 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethods;
+import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -31,9 +32,12 @@ import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
+  private final Spec spec;
   private final ExecutionJsonRpcMethodsResolver methodsResolver;
 
-  public ExecutionClientHandlerImpl(final ExecutionJsonRpcMethodsResolver methodsResolver) {
+  public ExecutionClientHandlerImpl(
+      final Spec spec, final ExecutionJsonRpcMethodsResolver methodsResolver) {
+    this.spec = spec;
     this.methodsResolver = methodsResolver;
   }
 
@@ -42,7 +46,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ETH_GET_BLOCK_BY_HASH, PowBlock.class)
+        .getMethod(EngineApiMethod.ETH_GET_BLOCK_BY_HASH, PowBlock.class)
         .execute(params)
         .thenApply(Optional::ofNullable);
   }
@@ -51,7 +55,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
     // uses LATEST as default block parameter on Eth1 JSON-RPC call
     return methodsResolver
-        .getMethod(EngineApiMethods.ETH_GET_BLOCK_BY_NUMBER, PowBlock.class)
+        .getMethod(EngineApiMethod.ETH_GET_BLOCK_BY_NUMBER, PowBlock.class)
         .execute(JsonRpcRequestParams.NO_PARAMS);
   }
 
@@ -66,7 +70,16 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .build();
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED, ForkChoiceUpdatedResult.class)
+        .getMilestoneMethod(
+            EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED,
+            () -> {
+              final UInt64 slot =
+                  payloadBuildingAttributes
+                      .map(PayloadBuildingAttributes::getBlockSlot)
+                      .orElse(forkChoiceState.getHeadBlockSlot());
+              return spec.atSlot(slot).getMilestone();
+            },
+            ForkChoiceUpdatedResult.class)
         .execute(params);
   }
 
@@ -77,7 +90,10 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(slot).build();
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_GET_PAYLOAD, GetPayloadResponse.class)
+        .getMilestoneMethod(
+            EngineApiMethod.ENGINE_GET_PAYLOAD,
+            () -> spec.atSlot(slot).getMilestone(),
+            GetPayloadResponse.class)
         .execute(params);
   }
 
@@ -89,7 +105,10 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     newPayloadRequest.getVersionedHashes().ifPresent(paramsBuilder::add);
 
     return methodsResolver
-        .getMethod(EngineApiMethods.ENGINE_NEW_PAYLOAD, PayloadStatus.class)
+        .getMilestoneMethod(
+            EngineApiMethod.ENGINE_NEW_PAYLOAD,
+            () -> newPayloadRequest.getExecutionPayload().getMilestone(),
+            PayloadStatus.class)
         .execute(paramsBuilder.build());
   }
 
@@ -101,8 +120,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
     return methodsResolver
         .getMethod(
-            EngineApiMethods.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION,
-            TransitionConfiguration.class)
+            EngineApiMethod.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION, TransitionConfiguration.class)
         .execute(params);
   }
 }

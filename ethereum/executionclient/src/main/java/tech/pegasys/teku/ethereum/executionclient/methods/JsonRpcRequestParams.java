@@ -52,8 +52,8 @@ public class JsonRpcRequestParams {
   }
 
   @SuppressWarnings({"unchecked", "unused"})
-  public <T> Optional<List<T>> getOptionalListParameter(final int index, Class<T> __) {
-    return getOptionalParameter(index, (Class<List<T>>) (Object) List.class);
+  public <T> List<T> getRequiredListParameter(final int index, Class<T> __) {
+    return getRequiredParameter(index, (Class<List<T>>) (Object) List.class);
   }
 
   public static class Builder {

@@ -214,7 +214,7 @@ public class Spec {
   public Optional<NetworkingSpecConfigDeneb> getNetworkingConfigDeneb() {
     return Optional.ofNullable(forMilestone(DENEB))
         .map(SpecVersion::getConfig)
-        .map(specConfig -> (SpecConfigDeneb) specConfig.getNetworkingConfig());
+        .map(specConfig -> (NetworkingSpecConfigDeneb) specConfig.getNetworkingConfig());
   }
 
   public SchemaDefinitions getGenesisSchemaDefinitions() {
@@ -488,7 +488,7 @@ public class Spec {
     final UInt64 epoch = signedExit.getMessage().getEpoch();
     return atEpoch(epoch)
         .operationSignatureVerifier()
-        .verifyVoluntaryExitSignature(state.getFork(), state, signedExit, signatureVerifier);
+        .verifyVoluntaryExitSignature(state, signedExit, signatureVerifier);
   }
 
   public Bytes32 getPreviousDutyDependentRoot(BeaconState state) {

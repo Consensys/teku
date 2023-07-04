@@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.net.ConnectException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -59,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.RejectingSlashingProtector;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -306,14 +309,20 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       dataDirLayout = Optional.of(DataDirLayout.createFrom(dataOptions.getDataConfig()));
     }
 
+    final Supplier<HttpClient> externalSignerHttpClientFactory =
+        HttpClientExternalSignerFactory.create(config.validatorClient().getValidatorConfig());
+
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
             config.validatorClient().getValidatorConfig(),
             config.validatorClient().getInteropConfig(),
+            externalSignerHttpClientFactory,
             new RejectingSlashingProtector(),
             slashingProtectionLogger,
-            new PublicKeyLoader(),
+            new PublicKeyLoader(
+                externalSignerHttpClientFactory,
+                config.validatorClient().getValidatorConfig().getValidatorExternalSignerUrl()),
             asyncRunner,
             metricsSystem,
             dataDirLayout);

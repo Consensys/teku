@@ -20,11 +20,8 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
@@ -33,17 +30,14 @@ public class EngineForkChoiceUpdatedV2
         tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> {
 
   private static final Logger LOG = LogManager.getLogger();
-  private final Spec spec;
 
-  public EngineForkChoiceUpdatedV2(
-      final ExecutionEngineClient executionEngineClient, final Spec spec) {
+  public EngineForkChoiceUpdatedV2(final ExecutionEngineClient executionEngineClient) {
     super(executionEngineClient);
-    this.spec = spec;
   }
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED.getName();
+    return EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED.getName();
   }
 
   @Override
@@ -64,16 +58,11 @@ public class EngineForkChoiceUpdatedV2
         forkChoiceState,
         payloadBuildingAttributes);
 
-    final Optional<PayloadAttributesV1> maybePayloadAttributes =
+    final Optional<PayloadAttributesV2> maybePayloadAttributes =
         payloadBuildingAttributes.flatMap(
             attributes ->
-                spec.atSlot(attributes.getBlockSlot())
-                        .getMilestone()
-                        .isGreaterThanOrEqualTo(SpecMilestone.CAPELLA)
-                    ? PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(
-                        payloadBuildingAttributes)
-                    : PayloadAttributesV1.fromInternalPayloadBuildingAttributes(
-                        payloadBuildingAttributes));
+                PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(
+                    payloadBuildingAttributes));
 
     return executionEngineClient
         .forkChoiceUpdatedV2(

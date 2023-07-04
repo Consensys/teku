@@ -497,8 +497,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
         .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
-        .executionLayer(
-            b -> b.engineEndpoint("http://localhost:8550").exchangeCapabilitiesEnabled(true))
+        .executionLayer(b -> b.engineEndpoint("http://localhost:8550"))
         .powchain(
             b ->
                 b.eth1Endpoints(List.of("http://localhost:8545"))

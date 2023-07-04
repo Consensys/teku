@@ -14,6 +14,7 @@
 package tech.pegasys.teku.kzg;
 
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -33,7 +34,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -213,9 +213,11 @@ public final class KZGTest {
     Stream.of(kzgException1, kzgException2, kzgException3)
         .forEach(
             ex ->
-                AssertionsForClassTypes.assertThat(ex)
-                    .hasMessageContaining(
-                        "Expecting equal number of blobs, commitments and proofs for verification"));
+                assertThat(ex)
+                    .cause()
+                    .isInstanceOf(CKZGException.class)
+                    .hasMessageMatching(
+                        "Invalid .+ size. Expected \\d+ bytes but got \\d+. \\(C_KZG_BADARGS\\)"));
   }
 
   @ParameterizedTest(name = "blob={0}")

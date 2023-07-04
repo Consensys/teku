@@ -10,6 +10,7 @@ dependencies {
   implementation project(':data:serializer')
 
   testImplementation testFixtures(project(':infrastructure:bls'))
+  testImplementation testFixtures(project(':infrastructure:logging'))
   testImplementation testFixtures(project(':ethereum:spec'))
 }
 
