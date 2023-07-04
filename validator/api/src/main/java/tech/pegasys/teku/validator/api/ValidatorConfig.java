@@ -603,7 +603,7 @@ public class ValidatorConfig {
                 final URL url = new URL(source);
                 if (hostAndPortMatching(url, validatorExternalSignerUrl)) {
                   LOG.warn(
-                      "'--validators-external-signer-public-keys' contains an URL matching the external-signer-url host and port. Use 'external-signer' instead if you want to use all public keys exposed by the external-signer");
+                      "'--validators-external-signer-public-keys' contains an URL matching the external-signer-url host and port. Use 'external-signer' instead if you want to use all public keys exposed by the external signer");
                 }
               } catch (MalformedURLException e) {
                 throw new InvalidConfigurationException(

@@ -95,14 +95,12 @@ public class PublicKeyLoader {
     }
   }
 
-  private Stream<BLSPublicKey> readKeysFromUrl(final String urlString) {
+  private Stream<BLSPublicKey> readKeysFromUrl(final String url) {
     try {
-      final URL url = new URL(urlString);
-      final String[] keys = objectMapper.readValue(url, String[].class);
+      final String[] keys = objectMapper.readValue(new URL(url), String[].class);
       return Arrays.stream(keys).map(key -> BLSPublicKey.fromSSZBytes(Bytes.fromHexString(key)));
     } catch (IOException ex) {
-      throw new InvalidConfigurationException(
-          "Failed to load public keys from URL " + urlString, ex);
+      throw new InvalidConfigurationException("Failed to load public keys from URL " + url, ex);
     }
   }
 
