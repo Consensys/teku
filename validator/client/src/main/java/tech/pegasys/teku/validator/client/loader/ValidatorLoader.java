@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Suppliers;
 import java.net.URL;
 import java.net.http.HttpClient;
 import java.util.HashMap;
@@ -69,31 +68,6 @@ public class ValidatorLoader {
     this.graffitiProvider = graffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
-  }
-
-  public static ValidatorLoader create(
-      final Spec spec,
-      final ValidatorConfig config,
-      final InteropConfig interopConfig,
-      final SlashingProtector slashingProtector,
-      final SlashingProtectionLogger slashingProtectorLogger,
-      final PublicKeyLoader publicKeyLoader,
-      final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem,
-      final Optional<DataDirLayout> maybeMutableDir) {
-    final Supplier<HttpClient> externalSignerHttpClientFactory =
-        Suppliers.memoize(new HttpClientExternalSignerFactory(config)::get);
-    return create(
-        spec,
-        config,
-        interopConfig,
-        externalSignerHttpClientFactory,
-        slashingProtector,
-        slashingProtectorLogger,
-        publicKeyLoader,
-        asyncRunner,
-        metricsSystem,
-        maybeMutableDir);
   }
 
   // synchronized to ensure that only one load is active at a time
@@ -239,8 +213,7 @@ public class ValidatorLoader {
     return ownedValidators;
   }
 
-  @VisibleForTesting
-  static ValidatorLoader create(
+  public static ValidatorLoader create(
       final Spec spec,
       final ValidatorConfig config,
       final InteropConfig interopConfig,

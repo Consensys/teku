@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -53,6 +55,7 @@ import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
+import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
@@ -332,13 +335,18 @@ public class ValidatorClientService extends Service {
     final SlashingProtectionLogger slashingProtectionLogger =
         new SlashingProtectionLogger(
             slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
+    final Supplier<HttpClient> externalSignerHttpClientFactory =
+        HttpClientExternalSignerFactory.create(config.getValidatorConfig());
     return ValidatorLoader.create(
         config.getSpec(),
         config.getValidatorConfig(),
         config.getInteropConfig(),
+        externalSignerHttpClientFactory,
         slashingProtector,
         slashingProtectionLogger,
-        new PublicKeyLoader(),
+        new PublicKeyLoader(
+            externalSignerHttpClientFactory,
+            config.getValidatorConfig().getValidatorExternalSignerUrl()),
         asyncRunner,
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()
