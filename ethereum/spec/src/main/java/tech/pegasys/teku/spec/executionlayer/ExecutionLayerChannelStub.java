@@ -454,12 +454,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final SpecConfigBellatrix specConfigBellatrix =
         specVersion.getConfig().toVersionBellatrix().orElseThrow();
 
-    final Bytes32 configTerminalBlockHash;
-    final UInt256 terminalTotalDifficulty;
-
     LOG.info("Preparing transition blocks using spec");
-    configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
-    terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
+    final Bytes32 configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
+    final UInt256 terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
 
     if (configTerminalBlockHash.isZero()) {
       // TTD emulation
