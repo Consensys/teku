@@ -18,10 +18,8 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.spec.SpecMilestone;
 
-public interface ExecutionJsonRpcMethodsResolver {
+public interface EngineJsonRpcMethodsResolver {
 
-  <T> EngineJsonRpcMethod<T> getMethod(EngineApiMethod method, Class<T> resultType);
-
-  <T> EngineJsonRpcMethod<T> getMilestoneMethod(
+  <T> EngineJsonRpcMethod<T> getMethod(
       EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
 }
