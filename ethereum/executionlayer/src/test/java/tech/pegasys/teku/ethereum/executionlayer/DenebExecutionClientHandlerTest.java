@@ -106,6 +106,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
+            dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomUInt64());
     final Optional<PayloadAttributesV2> payloadAttributes =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
