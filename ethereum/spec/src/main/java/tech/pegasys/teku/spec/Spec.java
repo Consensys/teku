@@ -25,11 +25,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -326,24 +328,43 @@ public class Spec {
   }
 
   public SignedBlockContainer deserializeSignedBlockContainer(
-      final Bytes serializedSignedBlockContainer) {
-    final UInt64 slot =
-        BeaconBlockInvariants.extractSignedBlockContainerSlot(serializedSignedBlockContainer);
-    return atSlot(slot)
-        .getSchemaDefinitions()
+      final Bytes serializedSignedBlockContainer, final Optional<String> milestone) {
+
+    final SchemaDefinitions schemaDefinition =
+        milestone
+            .map(v -> SpecMilestone.valueOf(v.toUpperCase(Locale.ROOT)))
+            .map(specVersions::get)
+            .map(SpecVersion::getSchemaDefinitions)
+            .orElseGet(getSchemaDefinitionForSignedBlockSSZ(serializedSignedBlockContainer));
+
+    return schemaDefinition
         .getSignedBlockContainerSchema()
         .sszDeserialize(serializedSignedBlockContainer);
   }
 
   public SignedBlockContainer deserializeSignedBlindedBlockContainer(
-      final Bytes serializedSignedBlindedBlockContainer) {
-    final UInt64 slot =
-        BeaconBlockInvariants.extractSignedBlockContainerSlot(
-            serializedSignedBlindedBlockContainer);
-    return atSlot(slot)
-        .getSchemaDefinitions()
+      final Bytes serializedSignedBlindedBlockContainer, final Optional<String> milestone) {
+
+    final SchemaDefinitions schemaDefinition =
+        milestone
+            .map(v -> SpecMilestone.valueOf(v.toUpperCase(Locale.ROOT)))
+            .map(specVersions::get)
+            .map(SpecVersion::getSchemaDefinitions)
+            .orElseGet(getSchemaDefinitionForSignedBlockSSZ(serializedSignedBlindedBlockContainer));
+
+    return schemaDefinition
         .getSignedBlindedBlockContainerSchema()
         .sszDeserialize(serializedSignedBlindedBlockContainer);
+  }
+
+  private Supplier<SchemaDefinitions> getSchemaDefinitionForSignedBlockSSZ(
+      final Bytes serializedSignedBlindedBlockContainer) {
+    return () -> {
+      final UInt64 slot =
+          BeaconBlockInvariants.extractSignedBlockContainerSlot(
+              serializedSignedBlindedBlockContainer);
+      return atSlot(slot).getSchemaDefinitions();
+    };
   }
 
   public BeaconBlock deserializeBeaconBlock(final Bytes serializedBlock) {

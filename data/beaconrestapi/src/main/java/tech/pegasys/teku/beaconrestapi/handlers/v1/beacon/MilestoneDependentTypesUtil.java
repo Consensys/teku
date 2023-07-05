@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import java.util.function.BiPredicate;
@@ -25,7 +23,6 @@ import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefinitionBuilder;
-import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition.BodyTypeSelectorContext;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -53,7 +50,7 @@ public class MilestoneDependentTypesUtil {
     return builder.build();
   }
 
-  private static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
+  public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
       final String json,
       final SchemaDefinitionCache schemaDefinitionCache,
       final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
@@ -78,27 +75,5 @@ public class MilestoneDependentTypesUtil {
     } catch (final JsonProcessingException e) {
       throw new BadRequestException(e.getMessage());
     }
-  }
-
-  /*
-   Tries retrieving the value for Eth-Consensus-Header from the context to choose the deserializer function.
-   If it can't find the value, it fallbacks into the slot-based approach.
-  */
-  public static <T extends SszData>
-      DeserializableTypeDefinition<? extends T> consensusVersionBasedSelector(
-          final BodyTypeSelectorContext context,
-          final SchemaDefinitionCache schemaDefinitionCache,
-          final Function<SchemaDefinitions, SszSchema<? extends T>> getSchema) {
-
-    final String version = context.getHeaders().get(HEADER_CONSENSUS_VERSION);
-
-    if (version == null) {
-      return slotBasedSelector(context.getBody(), schemaDefinitionCache, getSchema);
-    }
-
-    final SchemaDefinitions schemaDefinition =
-        schemaDefinitionCache.getSchemaDefinition(SpecMilestone.valueOf(version.toUpperCase()));
-
-    return getSchema.apply(schemaDefinition).getJsonTypeDefinition();
   }
 }

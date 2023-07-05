@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.consensusVersionBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
@@ -84,8 +86,8 @@ public class PostBlock extends RestApiEndpoint {
                         .milestoneAtSlot(blockContainer.getSlot())
                         .equals(milestone)),
             context ->
-                consensusVersionBasedSelector(
-                    context,
+                slotBasedSelector(
+                    context.getBody(),
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedBlockContainerSchema),
             spec::deserializeSignedBlockContainer)
