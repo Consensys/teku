@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
@@ -53,6 +54,7 @@ import picocli.CommandLine.Model.OptionSpec;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
@@ -370,6 +372,39 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 .getValidatorConfig()
                 .isDoppelgangerDetectionEnabled())
         .isFalse();
+  }
+
+  @Test
+  public void shouldFailWithSmallDenebMinBlobEpochsOverride() {
+    final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "2000"};
+    beaconNodeCommand.parse(args);
+    assertThatThrownBy(() -> beaconNodeCommand.tekuConfiguration())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("override should be >");
+  }
+
+  @Test
+  public void shouldMaxDenebBlobEpochsOverride() {
+    final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "MAX"};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .eth2NetworkConfiguration()
+                .getMinEpochsForBlobSidecarsRequestsOverride())
+        .contains(Integer.MAX_VALUE);
+  }
+
+  @Test
+  public void shouldParseDenebBlobEpochsOverride() {
+    final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "12345"};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .eth2NetworkConfiguration()
+                .getMinEpochsForBlobSidecarsRequestsOverride())
+        .contains(12345);
   }
 
   private Path createConfigFile() throws IOException {

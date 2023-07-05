@@ -31,6 +31,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -72,6 +73,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
   private final Optional<Eth2Network> eth2Network;
+  private final Optional<Integer> minEpochsForBlobSidecarsRequestsOverride;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -93,7 +95,8 @@ public class Eth2NetworkConfiguration {
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
-      final Optional<Eth2Network> eth2Network) {
+      final Optional<Eth2Network> eth2Network,
+      final Optional<Integer> minEpochsForBlobSidecarsRequestsOverride) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -117,6 +120,7 @@ public class Eth2NetworkConfiguration {
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
     this.eth2Network = eth2Network;
+    this.minEpochsForBlobSidecarsRequestsOverride = minEpochsForBlobSidecarsRequestsOverride;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -215,12 +219,17 @@ public class Eth2NetworkConfiguration {
     return eth2Network;
   }
 
+  public Optional<Integer> getMinEpochsForBlobSidecarsRequestsOverride() {
+    return minEpochsForBlobSidecarsRequestsOverride;
+  }
+
   @Override
   public String toString() {
     return constants;
   }
 
   public static class Builder {
+    private static final String EPOCHS_MAX_KEYWORD = "MAX";
     private String constants;
     private Optional<String> initialState = Optional.empty();
     private boolean usingCustomInitialState = false;
@@ -239,6 +248,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
+    private String minEpochsForBlobSidecarsRequestsOverride;
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
@@ -251,6 +261,9 @@ public class Eth2NetworkConfiguration {
       checkNotNull(constants, "Missing constants");
       checkArgument(
           safeSlotsToImportOptimistically >= 0, "Safe slots to import optimistically must be >= 0");
+      final Optional<Integer> maybeMinEpochsForBlobSidecarsOverride =
+          validateAndParseMinEpochsForBlobSidecarsOverride(
+              minEpochsForBlobSidecarsRequestsOverride);
       if (spec == null) {
         spec =
             SpecFactory.create(
@@ -278,6 +291,10 @@ public class Eth2NetworkConfiguration {
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         trustedSetup.ifPresent(denebBuilder::trustedSetupPath);
+                        if (maybeMinEpochsForBlobSidecarsOverride.isPresent()) {
+                          denebBuilder.minEpochsForBlobSidecarsRequestsOverride(
+                              maybeMinEpochsForBlobSidecarsOverride);
+                        }
                       });
                 });
       }
@@ -306,7 +323,8 @@ public class Eth2NetworkConfiguration {
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
-          eth2Network);
+          eth2Network,
+          maybeMinEpochsForBlobSidecarsOverride);
     }
 
     public Builder constants(final String constants) {
@@ -445,6 +463,12 @@ public class Eth2NetworkConfiguration {
 
     public Builder terminalBlockHashEpochOverride(final UInt64 terminalBlockHashEpochOverride) {
       this.terminalBlockHashEpochOverride = Optional.of(terminalBlockHashEpochOverride);
+      return this;
+    }
+
+    public Builder minEpochsForBlobSidecarsRequestsOverride(
+        final String minEpochsForBlobSidecarsRequestsOverride) {
+      this.minEpochsForBlobSidecarsRequestsOverride = minEpochsForBlobSidecarsRequestsOverride;
       return this;
     }
 
@@ -676,6 +700,29 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QAtr21x5Ps7HYhdZkIBRBgcBkvlIfEel1YNjtFWf4cV3au2LgBGICz9PtEs9-p2HUl_eME8m1WImxTxSB3AkCMwBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAxNnBDAgAAb___________gmlkgnY0gmlwhANHhOeJc2VjcDI1NmsxoQNLp1QPV8-pyMCohOtj6xGtSBM_GtVTqzlbvNsCF4ezkYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               // GnosisDAO Bootnode: 3.69.35.13
               "enr:-Ly4QLgn8Bx6faigkKUGZQvd1HDToV2FAxZIiENK-lczruzQb90qJK-4E65ADly0s4__dQOW7IkLMW7ZAyJy2vtiLy8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAxNnBDAgAAb___________gmlkgnY0gmlwhANFIw2Jc2VjcDI1NmsxoQMa-fWEy9UJHfOl_lix3wdY5qust78sHAqZnWwEiyqKgYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
+    }
+
+    private Optional<Integer> validateAndParseMinEpochsForBlobSidecarsOverride(
+        final String minEpochsForBlobSidecarsOverride) {
+      if (minEpochsForBlobSidecarsOverride == null || minEpochsForBlobSidecarsOverride.isBlank()) {
+        return Optional.empty();
+      }
+      if (minEpochsForBlobSidecarsOverride.toUpperCase(Locale.ROOT).equals(EPOCHS_MAX_KEYWORD)) {
+        // 26 thousand years should be enough
+        return Optional.of(Integer.MAX_VALUE);
+      }
+      final int minEpochsForBlobSidecarsInt;
+      try {
+        minEpochsForBlobSidecarsInt = Integer.parseInt(minEpochsForBlobSidecarsOverride);
+      } catch (final NumberFormatException ex) {
+        throw new InvalidConfigurationException(
+            "Expecting number or "
+                + EPOCHS_MAX_KEYWORD
+                + " keyword for MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS override");
+      }
+      checkArgument(
+          minEpochsForBlobSidecarsInt > 0, "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS should be > 0");
+      return Optional.of(minEpochsForBlobSidecarsInt);
     }
   }
 }

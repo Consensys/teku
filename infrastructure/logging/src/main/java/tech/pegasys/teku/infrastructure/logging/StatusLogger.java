@@ -78,6 +78,15 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
+  public void warnDenebMinBlobEpochsParameterChanged(final String newValue) {
+    log.warn(
+        print(
+            "Deneb parameter MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS has been overridden to "
+                + newValue
+                + " for storage and sync",
+            Color.YELLOW));
+  }
+
   public void warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled() {
     log.warn(
         print(

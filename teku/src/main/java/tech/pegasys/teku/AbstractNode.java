@@ -152,6 +152,12 @@ public abstract class AbstractNode implements Node {
             tbheo ->
                 STATUS_LOG.warnBellatrixParameterChanged(
                     "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
+
+    tekuConfig
+        .eth2NetworkConfiguration()
+        .getMinEpochsForBlobSidecarsRequestsOverride()
+        .ifPresent(
+            minEpochs -> STATUS_LOG.warnDenebMinBlobEpochsParameterChanged(minEpochs.toString()));
   }
 
   @Override

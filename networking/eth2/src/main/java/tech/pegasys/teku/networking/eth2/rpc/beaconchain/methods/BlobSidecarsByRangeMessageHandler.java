@@ -194,7 +194,9 @@ public class BlobSidecarsByRangeMessageHandler
     final UInt64 minEpochForBlobSidecars =
         specConfigDeneb
             .getDenebForkEpoch()
-            .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
+            .max(
+                currentEpoch.minusMinZero(
+                    specConfigDeneb.getMinEpochsForBlobSidecarsRequestsDefault()));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }

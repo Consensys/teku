@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -40,6 +41,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Integer maxRequestBlocksDeneb;
   private Integer maxRequestBlobSidecars;
   private Integer minEpochsForBlobSidecarsRequests;
+  private Optional<Integer> minEpochsForBlobSidecarsRequestsOverride = Optional.empty();
   private Integer blobSidecarSubnetCount;
 
   DenebBuilder() {}
@@ -58,7 +60,8 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         maxRequestBlocksDeneb,
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,
-        blobSidecarSubnetCount);
+        blobSidecarSubnetCount,
+        minEpochsForBlobSidecarsRequestsOverride);
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
@@ -119,6 +122,12 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     return this;
   }
 
+  public DenebBuilder minEpochsForBlobSidecarsRequestsOverride(
+      final Optional<Integer> minEpochsForBlobSidecarsRequestsOverride) {
+    this.minEpochsForBlobSidecarsRequestsOverride = minEpochsForBlobSidecarsRequestsOverride;
+    return this;
+  }
+
   @Override
   public void validate() {
     if (denebForkEpoch == null) {
@@ -144,6 +153,11 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
     }
+    minEpochsForBlobSidecarsRequestsOverride.ifPresent(
+        minBlobEpochsOverride ->
+            checkArgument(
+                minBlobEpochsOverride > minEpochsForBlobSidecarsRequests,
+                "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS override should be > MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS spec value"));
   }
 
   @Override
