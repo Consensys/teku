@@ -20,17 +20,17 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.gossip.blobs.BlobSidecarSubscriber;
-import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.BlockSubscriber;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 
 public class NoopSyncService
     implements ForwardSync,
-        RecentBlockFetcher,
-        RecentBlobSidecarFetcher,
+        RecentBlocksFetcher,
+        RecentBlobSidecarsFetcher,
         SyncService,
         OptimisticHeadSubscriber {
 
@@ -50,12 +50,12 @@ public class NoopSyncService
   }
 
   @Override
-  public RecentBlockFetcher getRecentBlockFetcher() {
+  public RecentBlocksFetcher getRecentBlocksFetcher() {
     return this;
   }
 
   @Override
-  public RecentBlobSidecarFetcher getRecentBlobSidecarFetcher() {
+  public RecentBlobSidecarsFetcher getRecentBlobSidecarsFetcher() {
     return this;
   }
 
@@ -136,6 +136,11 @@ public class NoopSyncService
 
   @Override
   public boolean unsubscribeFromSyncStateChanges(final long subscriberId) {
+    return false;
+  }
+
+  @Override
+  public boolean isRunning() {
     return false;
   }
 }

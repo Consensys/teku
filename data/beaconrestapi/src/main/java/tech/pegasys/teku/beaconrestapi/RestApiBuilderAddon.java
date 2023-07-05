@@ -11,15 +11,13 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip.blocks;
+package tech.pegasys.teku.beaconrestapi;
 
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 
-public interface RecentBlockFetcher {
+public interface RestApiBuilderAddon {
 
-  void subscribeBlockFetched(BlockSubscriber subscriber);
+  boolean isEnabled();
 
-  void requestRecentBlock(Bytes32 blockRoot);
-
-  void cancelRecentBlockRequest(Bytes32 blockRoot);
+  RestApiBuilder apply(RestApiBuilder builder);
 }

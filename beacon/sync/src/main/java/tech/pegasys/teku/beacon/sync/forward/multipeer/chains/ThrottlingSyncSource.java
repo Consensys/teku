@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
 import java.time.Duration;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -43,12 +44,16 @@ public class ThrottlingSyncSource implements SyncSource {
       final TimeProvider timeProvider,
       final SyncSource delegate,
       final int maxBlocksPerMinute,
-      final int maxBlobSidecarsPerMinute) {
+      final Optional<Integer> maybeMaxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, TIME_OUT, timeProvider);
+    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider);
     this.blobSidecarsRateTracker =
-        new RateTracker(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider);
+        maybeMaxBlobSidecarsPerMinute
+            .map(
+                maxBlobSidecarsPerMinute ->
+                    RateTracker.create(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider))
+            .orElse(RateTracker.NOOP);
   }
 
   @Override

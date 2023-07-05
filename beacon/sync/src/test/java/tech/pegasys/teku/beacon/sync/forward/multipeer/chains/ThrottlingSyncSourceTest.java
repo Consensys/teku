@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.FutureUtil.ignoreFuture;
 
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -49,7 +50,11 @@ class ThrottlingSyncSourceTest {
 
   private final ThrottlingSyncSource source =
       new ThrottlingSyncSource(
-          asyncRunner, timeProvider, delegate, MAX_BLOCKS_PER_MINUTE, MAX_BLOB_SIDECARS_PER_MINUTE);
+          asyncRunner,
+          timeProvider,
+          delegate,
+          MAX_BLOCKS_PER_MINUTE,
+          Optional.of(MAX_BLOB_SIDECARS_PER_MINUTE));
 
   @Test
   void shouldDelegateDisconnectImmediately() {

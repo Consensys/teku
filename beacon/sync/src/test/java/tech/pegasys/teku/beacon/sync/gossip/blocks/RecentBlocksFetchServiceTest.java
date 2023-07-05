@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
-public class FetchRecentBlocksServiceTest {
+public class RecentBlocksFetchServiceTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
@@ -65,12 +65,12 @@ public class FetchRecentBlocksServiceTest {
   private final List<SafeFuture<FetchResult<SignedBeaconBlock>>> taskFutures = new ArrayList<>();
   private final List<SignedBeaconBlock> importedBlocks = new ArrayList<>();
 
-  private FetchRecentBlocksService recentBlockFetcher;
+  private RecentBlocksFetchService recentBlocksFetcher;
 
   @BeforeEach
   public void setup() {
-    recentBlockFetcher =
-        new FetchRecentBlocksService(
+    recentBlocksFetcher =
+        new RecentBlocksFetchService(
             asyncRunner,
             pendingBlockPool,
             blobSidecarPool,
@@ -81,13 +81,13 @@ public class FetchRecentBlocksServiceTest {
     // blobs pool doesn't contain blocks by default
     when(blobSidecarPool.containsBlock(any())).thenReturn(false);
     lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
-    recentBlockFetcher.subscribeBlockFetched(importedBlocks::add);
+    recentBlocksFetcher.subscribeBlockFetched(importedBlocks::add);
   }
 
   @Test
   public void fetchSingleBlockSuccessfully() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -103,8 +103,8 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void handleDuplicateRequiredBlocks() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
-    recentBlockFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -121,7 +121,7 @@ public class FetchRecentBlocksServiceTest {
   public void ignoreKnownBlock() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
     when(pendingBlockPool.contains(root)).thenReturn(true);
-    recentBlockFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.requestRecentBlock(root);
 
     assertTaskCounts(0, 0, 0);
     assertThat(importedBlocks).isEmpty();
@@ -130,8 +130,8 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void cancelBlockRequest() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
-    recentBlockFetcher.cancelRecentBlockRequest(root);
+    recentBlocksFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.cancelRecentBlockRequest(root);
 
     verify(tasks.get(0)).cancel();
     // Manually cancel future
@@ -145,7 +145,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void fetchSingleBlockWithRetry() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -167,7 +167,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void cancelTaskWhileWaitingToRetry() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -181,7 +181,7 @@ public class FetchRecentBlocksServiceTest {
     assertTaskCounts(1, 0, 0);
 
     // Cancel task
-    recentBlockFetcher.cancelRecentBlockRequest(root);
+    recentBlocksFetcher.cancelRecentBlockRequest(root);
     verify(tasks.get(0)).cancel();
     when(tasks.get(0).run())
         .thenReturn(SafeFuture.completedFuture(FetchResult.createFailed(Status.CANCELLED)));
@@ -194,7 +194,7 @@ public class FetchRecentBlocksServiceTest {
   @Test
   public void handlesPeersUnavailable() {
     final Bytes32 root = dataStructureUtil.randomBytes32();
-    recentBlockFetcher.requestRecentBlock(root);
+    recentBlocksFetcher.requestRecentBlock(root);
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlocks).isEmpty();
@@ -218,7 +218,7 @@ public class FetchRecentBlocksServiceTest {
     final int taskCount = maxConcurrentRequests + 1;
     for (int i = 0; i < taskCount; i++) {
       final Bytes32 root = dataStructureUtil.randomBytes32();
-      recentBlockFetcher.requestRecentBlock(root);
+      recentBlocksFetcher.requestRecentBlock(root);
     }
 
     assertTaskCounts(taskCount, taskCount - 1, 1);
@@ -236,7 +236,7 @@ public class FetchRecentBlocksServiceTest {
   void shouldNotFetchBlocksWhileForwardSyncIsInProgress() {
     when(forwardSync.isSyncActive()).thenReturn(true);
 
-    recentBlockFetcher.requestRecentBlock(dataStructureUtil.randomBytes32());
+    recentBlocksFetcher.requestRecentBlock(dataStructureUtil.randomBytes32());
     assertTaskCounts(0, 0, 0);
   }
 
@@ -245,7 +245,7 @@ public class FetchRecentBlocksServiceTest {
     Bytes32 blockRoot = dataStructureUtil.randomBytes32();
     when(blobSidecarPool.containsBlock(blockRoot)).thenReturn(true);
 
-    recentBlockFetcher.requestRecentBlock(blockRoot);
+    recentBlocksFetcher.requestRecentBlock(blockRoot);
     assertTaskCounts(0, 0, 0);
   }
 
@@ -257,7 +257,7 @@ public class FetchRecentBlocksServiceTest {
 
     final ArgumentCaptor<SyncSubscriber> syncListenerCaptor =
         ArgumentCaptor.forClass(SyncSubscriber.class);
-    assertThat(recentBlockFetcher.start()).isCompleted();
+    assertThat(recentBlocksFetcher.start()).isCompleted();
     verify(forwardSync).subscribeToSyncChanges(syncListenerCaptor.capture());
     final SyncSubscriber syncSubscriber = syncListenerCaptor.getValue();
 
@@ -284,13 +284,13 @@ public class FetchRecentBlocksServiceTest {
 
   private void assertTaskCounts(
       final int totalTasks, final int activeTasks, final int queuedTasks) {
-    assertThat(recentBlockFetcher.countTrackedTasks())
+    assertThat(recentBlocksFetcher.countTrackedTasks())
         .describedAs("Tracked tasks")
         .isEqualTo(totalTasks);
-    assertThat(recentBlockFetcher.countActiveTasks())
+    assertThat(recentBlocksFetcher.countActiveTasks())
         .describedAs("Active tasks")
         .isEqualTo(activeTasks);
-    assertThat(recentBlockFetcher.countPendingTasks())
+    assertThat(recentBlocksFetcher.countPendingTasks())
         .describedAs("Pending tasks")
         .isEqualTo(queuedTasks);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,67 +13,35 @@
 
 package tech.pegasys.teku.networking.eth2.peers;
 
-import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class RateTracker {
-  private final NavigableMap<RequestsKey, Long> requests;
-  private final int peerRateLimit;
-  private final UInt64 timeoutSeconds;
-  private long objectsWithinWindow = 0L;
-  private final TimeProvider timeProvider;
+public interface RateTracker {
+  RateTracker NOOP =
+      new RateTracker() {
+        @Override
+        public Optional<RequestApproval> approveObjectsRequest(long objectsCount) {
+          return Optional.empty();
+        }
 
-  private final AtomicInteger newRequestId = new AtomicInteger(0);
+        @Override
+        public void adjustObjectsRequest(
+            RequestApproval requestApproval, long returnedObjectsCount) {}
 
-  public RateTracker(
-      final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
-    this.timeoutSeconds = UInt64.valueOf(timeoutSeconds);
-    requests = new TreeMap<>();
-    this.peerRateLimit = peerRateLimit;
-    this.timeProvider = timeProvider;
-  }
+        @Override
+        public void pruneRequests() {}
+      };
 
   // boundary: if a request comes in and remaining capacity is at least 1, then
   // they can have the objects they request otherwise they get none.
-  public synchronized Optional<RequestApproval> approveObjectsRequest(final long objectsCount) {
-    pruneRequests();
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    if ((peerRateLimit - objectsWithinWindow) <= 0) {
-      return Optional.empty();
-    }
-    objectsWithinWindow += objectsCount;
-    final RequestApproval requestApproval =
-        new RequestApproval.RequestApprovalBuilder()
-            .requestId(newRequestId.getAndIncrement())
-            .timeSeconds(currentTime)
-            .objectsCount(objectsCount)
-            .build();
-    requests.put(requestApproval.getRequestKey(), objectsCount);
-    return Optional.of(requestApproval);
-  }
+  Optional<RequestApproval> approveObjectsRequest(long objectsCount);
 
-  public synchronized void adjustObjectsRequest(
-      final RequestApproval requestApproval, final long returnedObjectsCount) {
-    pruneRequests();
-    if (requests.containsKey(requestApproval.getRequestKey())) {
-      final long initialObjectsCount = requests.get(requestApproval.getRequestKey());
-      requests.put(requestApproval.getRequestKey(), returnedObjectsCount);
-      objectsWithinWindow = objectsWithinWindow - initialObjectsCount + returnedObjectsCount;
-    }
-  }
+  void adjustObjectsRequest(RequestApproval requestApproval, long returnedObjectsCount);
 
-  void pruneRequests() {
-    final UInt64 currentTime = timeProvider.getTimeInSeconds();
-    if (currentTime.isLessThan(timeoutSeconds)) {
-      return;
-    }
-    final NavigableMap<RequestsKey, Long> headMap =
-        requests.headMap(new RequestsKey(currentTime.minus(timeoutSeconds), 0), false);
-    headMap.values().forEach(value -> objectsWithinWindow -= value);
-    headMap.clear();
+  void pruneRequests();
+
+  static RateTracker create(
+      final int peerRateLimit, final long timeoutSeconds, final TimeProvider timeProvider) {
+    return new RateTrackerImpl(peerRateLimit, timeoutSeconds, timeProvider);
   }
 }
