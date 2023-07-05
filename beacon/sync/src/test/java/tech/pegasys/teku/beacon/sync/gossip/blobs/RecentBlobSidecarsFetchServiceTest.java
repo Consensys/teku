@@ -45,7 +45,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 
-class FetchRecentBlobSidecarsServiceTest {
+class RecentBlobSidecarsFetchServiceTest {
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
 
@@ -65,12 +65,12 @@ class FetchRecentBlobSidecarsServiceTest {
   private final List<SafeFuture<FetchResult<BlobSidecar>>> taskFutures = new ArrayList<>();
   private final List<BlobSidecar> importedBlobSidecars = new ArrayList<>();
 
-  private FetchRecentBlobSidecarsService recentBlobSidecarsFetcher;
+  private RecentBlobSidecarsFetchService recentBlobSidecarsFetcher;
 
   @BeforeEach
   public void setup() {
     recentBlobSidecarsFetcher =
-        new FetchRecentBlobSidecarsService(
+        new RecentBlobSidecarsFetchService(
             asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
 
     lenient()

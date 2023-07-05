@@ -34,7 +34,6 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -90,7 +89,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private PowBlock terminalBlock;
   private boolean terminalBlockSent;
   private UInt64 transitionTime;
-  private Optional<TransitionConfiguration> transitionConfiguration = Optional.empty();
 
   // block, payload and blobs tracking
   private Optional<ExecutionPayload> lastBuilderPayloadToBeUnblinded = Optional.empty();
@@ -297,30 +295,6 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   }
 
   @Override
-  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      final TransitionConfiguration transitionConfiguration) {
-    final TransitionConfiguration transitionConfigurationResponse;
-
-    this.transitionConfiguration = Optional.of(transitionConfiguration);
-
-    if (transitionConfiguration.getTerminalBlockHash().isZero()) {
-      transitionConfigurationResponse = transitionConfiguration;
-    } else {
-      transitionConfigurationResponse =
-          new TransitionConfiguration(
-              transitionConfiguration.getTerminalTotalDifficulty(),
-              transitionConfiguration.getTerminalBlockHash(),
-              UInt64.ONE);
-    }
-    EventLogger.EVENT_LOG.executionLayerStubEnabled();
-    LOG.info(
-        "exchangeTransitionConfiguration: {} -> {}",
-        transitionConfiguration,
-        transitionConfigurationResponse);
-    return SafeFuture.completedFuture(transitionConfigurationResponse);
-  }
-
-  @Override
   public SafeFuture<Void> builderRegisterValidators(
       final SszList<SignedValidatorRegistration> signedValidatorRegistrations, final UInt64 slot) {
     return SafeFuture.COMPLETE;
@@ -480,21 +454,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final SpecConfigBellatrix specConfigBellatrix =
         specVersion.getConfig().toVersionBellatrix().orElseThrow();
 
-    final Bytes32 configTerminalBlockHash;
-    final UInt256 terminalTotalDifficulty;
-
-    // let's try to use last received transition configuration, otherwise fallback to spec
-    // we can't wait for transitionConfiguration because we may receive it too late,
-    // so we may not be able to respond do transition block validation
-    if (transitionConfiguration.isPresent()) {
-      LOG.info("Preparing transition blocks using received transitionConfiguration");
-      configTerminalBlockHash = transitionConfiguration.get().getTerminalBlockHash();
-      terminalTotalDifficulty = transitionConfiguration.get().getTerminalTotalDifficulty();
-    } else {
-      LOG.info("Preparing transition blocks using spec");
-      configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
-      terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
-    }
+    LOG.info("Preparing transition blocks using spec");
+    final Bytes32 configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
+    final UInt256 terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
 
     if (configTerminalBlockHash.isZero()) {
       // TTD emulation

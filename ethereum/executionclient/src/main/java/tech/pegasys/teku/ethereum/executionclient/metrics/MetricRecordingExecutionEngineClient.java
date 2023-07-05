@@ -30,7 +30,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
@@ -139,12 +138,6 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
         payloadAttributes.isPresent()
             ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V2_METHOD
             : FORKCHOICE_UPDATED_V2_METHOD);
-  }
-
-  @Override
-  public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
-      final TransitionConfigurationV1 transitionConfiguration) {
-    return delegate.exchangeTransitionConfiguration(transitionConfiguration);
   }
 
   @Override

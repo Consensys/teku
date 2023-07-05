@@ -28,7 +28,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
@@ -110,13 +109,6 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final Optional<PayloadAttributesV2> payloadAttributes) {
     return taskQueue.queueTask(
         () -> delegate.forkChoiceUpdatedV2(forkChoiceState, payloadAttributes));
-  }
-
-  @Override
-  public SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
-      final TransitionConfigurationV1 transitionConfiguration) {
-    return taskQueue.queueTask(
-        () -> delegate.exchangeTransitionConfiguration(transitionConfiguration));
   }
 
   @Override

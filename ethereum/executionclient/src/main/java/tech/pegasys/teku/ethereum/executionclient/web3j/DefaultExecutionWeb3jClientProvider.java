@@ -50,7 +50,7 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
     if (alreadyBuilt) {
       return;
     }
-    Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
+    final Web3jClientBuilder web3JClientBuilder = new Web3jClientBuilder();
     this.web3JClient =
         web3JClientBuilder
             .endpoint(eeEndpoint)
@@ -58,8 +58,7 @@ public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClient
             .jwtConfigOpt(jwtConfig)
             .timeProvider(timeProvider)
             .executionClientEventsPublisher(executionClientEventsPublisher)
-            .nonCriticalMethods(
-                "engine_exchangeCapabilities", "engine_exchangeTransitionConfigurationV1")
+            .nonCriticalMethods("engine_exchangeCapabilities")
             .build();
     this.alreadyBuilt = true;
   }

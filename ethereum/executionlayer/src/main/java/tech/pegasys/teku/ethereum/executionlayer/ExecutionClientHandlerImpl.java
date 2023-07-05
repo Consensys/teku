@@ -15,11 +15,13 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
@@ -28,35 +30,31 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
   private final Spec spec;
-  private final ExecutionJsonRpcMethodsResolver methodsResolver;
+  private final ExecutionEngineClient executionEngineClient;
+  private final EngineJsonRpcMethodsResolver engineMethodsResolver;
 
   public ExecutionClientHandlerImpl(
-      final Spec spec, final ExecutionJsonRpcMethodsResolver methodsResolver) {
+      final Spec spec,
+      final ExecutionEngineClient executionEngineClient,
+      final EngineJsonRpcMethodsResolver engineMethodsResolver) {
     this.spec = spec;
-    this.methodsResolver = methodsResolver;
+    this.executionEngineClient = executionEngineClient;
+    this.engineMethodsResolver = engineMethodsResolver;
   }
 
   @Override
   public SafeFuture<Optional<PowBlock>> eth1GetPowBlock(final Bytes32 blockHash) {
-    final JsonRpcRequestParams params = new JsonRpcRequestParams.Builder().add(blockHash).build();
-
-    return methodsResolver
-        .getMethod(EngineApiMethod.ETH_GET_BLOCK_BY_HASH, PowBlock.class)
-        .execute(params)
-        .thenApply(Optional::ofNullable);
+    return executionEngineClient.getPowBlock(blockHash).thenApply(Optional::ofNullable);
   }
 
   @Override
   public SafeFuture<PowBlock> eth1GetPowChainHead() {
     // uses LATEST as default block parameter on Eth1 JSON-RPC call
-    return methodsResolver
-        .getMethod(EngineApiMethod.ETH_GET_BLOCK_BY_NUMBER, PowBlock.class)
-        .execute(JsonRpcRequestParams.NO_PARAMS);
+    return executionEngineClient.getPowChainHead();
   }
 
   @Override
@@ -69,8 +67,8 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             .addOptional(payloadBuildingAttributes)
             .build();
 
-    return methodsResolver
-        .getMilestoneMethod(
+    return engineMethodsResolver
+        .getMethod(
             EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED,
             () -> {
               final UInt64 slot =
@@ -89,8 +87,8 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     final JsonRpcRequestParams params =
         new JsonRpcRequestParams.Builder().add(executionPayloadContext).add(slot).build();
 
-    return methodsResolver
-        .getMilestoneMethod(
+    return engineMethodsResolver
+        .getMethod(
             EngineApiMethod.ENGINE_GET_PAYLOAD,
             () -> spec.atSlot(slot).getMilestone(),
             GetPayloadResponse.class)
@@ -99,28 +97,15 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
   @Override
   public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
+    final ExecutionPayload executionPayload = newPayloadRequest.getExecutionPayload();
     final JsonRpcRequestParams.Builder paramsBuilder =
-        new JsonRpcRequestParams.Builder().add(newPayloadRequest.getExecutionPayload());
+        new JsonRpcRequestParams.Builder()
+            .add(executionPayload)
+            .addOptional(newPayloadRequest.getVersionedHashes());
 
-    newPayloadRequest.getVersionedHashes().ifPresent(paramsBuilder::add);
-
-    return methodsResolver
-        .getMilestoneMethod(
-            EngineApiMethod.ENGINE_NEW_PAYLOAD,
-            () -> newPayloadRequest.getExecutionPayload().getMilestone(),
-            PayloadStatus.class)
-        .execute(paramsBuilder.build());
-  }
-
-  @Override
-  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      final TransitionConfiguration transitionConfiguration) {
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(transitionConfiguration).build();
-
-    return methodsResolver
+    return engineMethodsResolver
         .getMethod(
-            EngineApiMethod.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION, TransitionConfiguration.class)
-        .execute(params);
+            EngineApiMethod.ENGINE_NEW_PAYLOAD, executionPayload::getMilestone, PayloadStatus.class)
+        .execute(paramsBuilder.build());
   }
 }

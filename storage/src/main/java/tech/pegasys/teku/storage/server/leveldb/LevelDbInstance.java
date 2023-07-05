@@ -343,7 +343,6 @@ public class LevelDbInstance implements KvStoreAccessor {
 
   private synchronized <T> T withIterator(final Function<DBIterator, T> action) {
     assertOpen();
-    openedIteratorsCounter.inc();
     final DBIterator iterator = createIterator();
     try {
       return action.apply(iterator);
@@ -375,6 +374,7 @@ public class LevelDbInstance implements KvStoreAccessor {
   private DBIterator createIterator() {
     final DBIterator iterator = db.iterator(new ReadOptions().fillCache(false));
     openIterators.add(iterator);
+    openedIteratorsCounter.inc();
     return iterator;
   }
 

@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v2.validator;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -84,7 +84,7 @@ public class GetNewBlock extends RestApiEndpoint {
                 .name("ProduceBlockV2Response")
                 .withField(
                     "data",
-                    getSchemaDefinitionForAllMilestones(
+                    getSchemaDefinitionForAllSupportedMilestones(
                         schemaDefinitionCache,
                         "Block",
                         SchemaDefinitions::getBlockContainerSchema,
