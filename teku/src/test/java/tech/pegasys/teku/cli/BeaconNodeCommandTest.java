@@ -380,11 +380,11 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     beaconNodeCommand.parse(args);
     assertThatThrownBy(() -> beaconNodeCommand.tekuConfiguration())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessageContaining("override should be >");
+        .hasMessageContaining("override should be > spec value");
   }
 
   @Test
-  public void shouldMaxDenebBlobEpochsOverride() {
+  public void shouldMaxDenebMinBlobEpochsOverride() {
     final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "MAX"};
     beaconNodeCommand.parse(args);
     assertThat(
@@ -396,7 +396,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldParseDenebBlobEpochsOverride() {
+  public void shouldParseDenebMinBlobEpochsOverride() {
     final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "12345"};
     beaconNodeCommand.parse(args);
     assertThat(

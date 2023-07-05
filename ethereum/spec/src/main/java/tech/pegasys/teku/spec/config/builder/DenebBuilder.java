@@ -157,7 +157,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         minBlobEpochsOverride ->
             checkArgument(
                 minBlobEpochsOverride > minEpochsForBlobSidecarsRequests,
-                "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS override should be > MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS spec value"));
+                "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS override should be > spec value"));
   }
 
   @Override
