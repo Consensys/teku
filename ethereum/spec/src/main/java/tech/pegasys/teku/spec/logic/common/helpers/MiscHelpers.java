@@ -122,8 +122,17 @@ public class MiscHelpers {
     return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
-  public UInt64 computeTimeAtSlot(final UInt64 genesisTime, final UInt64 slot) {
+  public UInt64 computeStartTimeAtEpoch(final UInt64 genesisTime, final UInt64 epoch) {
+    final UInt64 epochStartSlot = computeStartSlotAtEpoch(epoch);
+    return computeStartTimeAtSlot(genesisTime, epochStartSlot);
+  }
+
+  public UInt64 computeStartTimeAtSlot(final UInt64 genesisTime, final UInt64 slot) {
     return genesisTime.plus(slot.times(specConfig.getSecondsPerSlot()));
+  }
+
+  public UInt64 computeSlotAtTime(final UInt64 genesisTime, final UInt64 currentTime) {
+    return currentTime.minusMinZero(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
   }
 
   public UInt64 computeTimeAtSlot(final BeaconState state, final UInt64 slot) {

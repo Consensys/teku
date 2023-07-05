@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.util;
 
+import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.altair.util.AttestationUtilAltair;
@@ -39,12 +39,18 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
    * [IGNORE] attestation.data.slot is equal to or earlier than the current_slot (with a
    * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot <= current_slot (a
    * client MAY queue future attestation for processing at the appropriate slot).
+   *
+   * <p>[IGNORE] the epoch of attestation.data.slot is either the current or previous epoch (with a
+   * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. compute_epoch_at_slot(attestation.data.slot)
+   * in (get_previous_epoch(state), get_current_epoch(state))
    */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
-    if (isAttestationSlotAfterCurrentTime(attestationSlot, genesisTime, currentTimeMillis)
+    final UInt64 attestationSlotTimeMillis =
+        secondsToMillis(miscHelpers.computeStartTimeAtSlot(genesisTime, attestationSlot));
+    if (isAttestationSlotAfterCurrentTime(attestationSlotTimeMillis, currentTimeMillis)
         && isFromFarFuture(attestation, genesisTime, currentTimeMillis)) {
       return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
     }
@@ -52,31 +58,41 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
         attestationSlot, genesisTime, currentTimeMillis)) {
       return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
     }
-    return Optional.empty();
-  }
-
-  /**
-   * [IGNORE] the epoch of aggregate.data.slot is either the current or previous epoch (with a
-   * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. compute_epoch_at_slot(aggregate.data.slot) in
-   * (get_previous_epoch(state), get_current_epoch(state))
-   */
-  @Override
-  public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
-      final Attestation attestation, final BeaconState state) {
-    final UInt64 attestationEpoch = miscHelpers.computeEpochAtSlot(attestation.getData().getSlot());
-
-    if (attestationEpoch.isGreaterThanOrEqualTo(beaconStateAccessors.getPreviousEpoch(state))
-        && attestationEpoch.isLessThanOrEqualTo(beaconStateAccessors.getCurrentEpoch(state))) {
+    if (!isAttestationSlotInCurrentOrPreviousEpoch(
+        attestationSlot, genesisTime, currentTimeMillis)) {
       return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
     }
     return Optional.empty();
   }
 
   private boolean isAttestationSlotAfterCurrentTime(
-      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 attestationSlotTimeMillis =
-        secondsToMillis(miscHelpers.computeTimeAtSlot(genesisTime, attestationSlot));
+      final UInt64 attestationSlotTimeMillis, final UInt64 currentTimeMillis) {
     return attestationSlotTimeMillis.isGreaterThan(
         currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
+  }
+
+  private boolean isAttestationSlotInCurrentOrPreviousEpoch(
+      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+    final UInt64 currentSlot =
+        miscHelpers.computeSlotAtTime(genesisTime, millisToSeconds(currentTimeMillis));
+    final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
+    final UInt64 previousEpoch = currentEpoch.minusMinZero(1);
+    final UInt64 previousEpochStartTimeMillisWithDisparity =
+        secondsToMillis(miscHelpers.computeStartTimeAtEpoch(genesisTime, previousEpoch))
+            .minusMinZero(specConfig.getMaximumGossipClockDisparity());
+    // current epoch end time is the start of the new epoch
+    final UInt64 currentEpochEndTimeMillisWithDisparity =
+        secondsToMillis(miscHelpers.computeStartTimeAtEpoch(genesisTime, currentEpoch.increment()))
+            .plus(specConfig.getMaximumGossipClockDisparity());
+    // min and max slot based on previous and current epoch with MAXIMUM_GOSSIP_CLOCK_DISPARITY
+    final UInt64 minSlot =
+        miscHelpers.computeSlotAtTime(
+            genesisTime, millisToSeconds(previousEpochStartTimeMillisWithDisparity));
+    final UInt64 maxSlot =
+        miscHelpers.computeSlotAtTime(
+            genesisTime, millisToSeconds(currentEpochEndTimeMillisWithDisparity));
+
+    return attestationSlot.isGreaterThanOrEqualTo(minSlot)
+        && attestationSlot.isLessThanOrEqualTo(maxSlot);
   }
 }

@@ -303,9 +303,6 @@ public abstract class AttestationUtil {
       performSlotInclusionGossipValidation(
           Attestation attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
 
-  public abstract Optional<SlotInclusionGossipValidationResult>
-      performSlotInclusionGossipValidation(Attestation attestation, BeaconState state);
-
   public enum SlotInclusionGossipValidationResult {
     IGNORE,
     SAVE_FOR_FUTURE
