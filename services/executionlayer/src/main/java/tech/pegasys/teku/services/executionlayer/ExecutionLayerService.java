@@ -41,7 +41,7 @@ import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandlerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
-import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedExecutionJsonRpcMethodsResolver;
+import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedEngineJsonRpcMethodsResolver;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -172,11 +172,12 @@ public class ExecutionLayerService extends Service {
         ExecutionLayerManagerImpl.createEngineClient(
             engineWeb3jClientProvider.getWeb3JClient(), timeProvider, metricsSystem);
 
-    final MilestoneBasedExecutionJsonRpcMethodsResolver methodsResolver =
-        new MilestoneBasedExecutionJsonRpcMethodsResolver(config.getSpec(), executionEngineClient);
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(config.getSpec(), executionEngineClient);
 
     final ExecutionClientHandler executionClientHandler =
-        new ExecutionClientHandlerImpl(config.getSpec(), methodsResolver);
+        new ExecutionClientHandlerImpl(
+            config.getSpec(), executionEngineClient, engineMethodsResolver);
 
     final Optional<BuilderClient> builderClient =
         builderRestClientProvider.map(
