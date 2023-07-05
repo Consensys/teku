@@ -14,51 +14,36 @@
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
-public class PayloadAttributesV2 extends PayloadAttributesV1 {
+public class PayloadAttributesV3 extends PayloadAttributesV2 {
 
-  public final List<WithdrawalV1> withdrawals;
+  public final Bytes32 parentBeaconBlockRoot;
 
-  public PayloadAttributesV2(
+  public PayloadAttributesV3(
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("prevRandao") Bytes32 prevRandao,
       @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
-      @JsonProperty("withdrawals") final List<WithdrawalV1> withdrawals) {
-    super(timestamp, prevRandao, suggestedFeeRecipient);
-    this.withdrawals = withdrawals;
+      @JsonProperty("withdrawals") final List<WithdrawalV1> withdrawals,
+      @JsonProperty("parentBeaconBlockRoot") final Bytes32 parentBeaconBlockRoot) {
+    super(timestamp, prevRandao, suggestedFeeRecipient, withdrawals);
+    this.parentBeaconBlockRoot = parentBeaconBlockRoot;
   }
 
-  public static Optional<PayloadAttributesV2> fromInternalPayloadBuildingAttributesV2(
+  public static Optional<PayloadAttributesV3> fromInternalPayloadBuildingAttributesV3(
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
         (payloadAttributes) ->
-            new PayloadAttributesV2(
+            new PayloadAttributesV3(
                 payloadAttributes.getTimestamp(),
                 payloadAttributes.getPrevRandao(),
                 payloadAttributes.getFeeRecipient(),
-                PayloadAttributesV2.getWithdrawals(payloadAttributes.getWithdrawals())));
-  }
-
-  public static List<WithdrawalV1> getWithdrawals(
-      final Optional<List<Withdrawal>> maybeWithdrawals) {
-    if (maybeWithdrawals.isEmpty()) {
-      return null;
-    }
-
-    final List<WithdrawalV1> withdrawals = new ArrayList<>();
-
-    for (final Withdrawal w : maybeWithdrawals.get()) {
-      withdrawals.add(
-          new WithdrawalV1(w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()));
-    }
-    return withdrawals;
+                getWithdrawals(payloadAttributes.getWithdrawals()),
+                payloadAttributes.getParentBeaconBlockRoot()));
   }
 }

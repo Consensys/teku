@@ -29,8 +29,8 @@ public class PayloadBuildingAttributes {
   private final Bytes32 prevRandao;
   private final Eth1Address feeRecipient;
   private final Optional<SignedValidatorRegistration> validatorRegistration;
-
   private final Optional<List<Withdrawal>> maybeWithdrawals;
+  private final Bytes32 parentBeaconBlockRoot;
 
   private final UInt64 blockSlot;
 
@@ -40,12 +40,14 @@ public class PayloadBuildingAttributes {
       final Eth1Address feeRecipient,
       final Optional<SignedValidatorRegistration> validatorRegistration,
       final Optional<List<Withdrawal>> maybeWithdrawals,
+      final Bytes32 parentBeaconBlockRoot,
       final UInt64 blockSlot) {
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
     this.validatorRegistration = validatorRegistration;
     this.maybeWithdrawals = maybeWithdrawals;
+    this.parentBeaconBlockRoot = parentBeaconBlockRoot;
     this.blockSlot = blockSlot;
   }
 
@@ -63,6 +65,10 @@ public class PayloadBuildingAttributes {
 
   public UInt64 getBlockSlot() {
     return blockSlot;
+  }
+
+  public Bytes32 getParentBeaconBlockRoot() {
+    return parentBeaconBlockRoot;
   }
 
   public Optional<SignedValidatorRegistration> getValidatorRegistration() {
@@ -91,12 +97,19 @@ public class PayloadBuildingAttributes {
         && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(validatorRegistration, that.validatorRegistration)
-        && Objects.equals(maybeWithdrawals, that.maybeWithdrawals);
+        && Objects.equals(maybeWithdrawals, that.maybeWithdrawals)
+        && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(timestamp, prevRandao, feeRecipient, validatorRegistration);
+    return Objects.hash(
+        timestamp,
+        prevRandao,
+        feeRecipient,
+        validatorRegistration,
+        maybeWithdrawals,
+        parentBeaconBlockRoot);
   }
 
   @Override
@@ -107,6 +120,7 @@ public class PayloadBuildingAttributes {
         .add("feeRecipient", feeRecipient)
         .add("validatorRegistration", validatorRegistration)
         .add("withdrawals", maybeWithdrawals)
+        .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .toString();
   }
 }
