@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
 
@@ -110,17 +109,5 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             () -> newPayloadRequest.getExecutionPayload().getMilestone(),
             PayloadStatus.class)
         .execute(paramsBuilder.build());
-  }
-
-  @Override
-  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      final TransitionConfiguration transitionConfiguration) {
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(transitionConfiguration).build();
-
-    return methodsResolver
-        .getMethod(
-            EngineApiMethod.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION, TransitionConfiguration.class)
-        .execute(params);
   }
 }

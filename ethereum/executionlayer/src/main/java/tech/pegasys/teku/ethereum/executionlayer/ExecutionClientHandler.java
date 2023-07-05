@@ -25,7 +25,6 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public interface ExecutionClientHandler {
 
@@ -41,7 +40,4 @@ public interface ExecutionClientHandler {
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
 
   SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
-
-  SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      TransitionConfiguration transitionConfiguration);
 }

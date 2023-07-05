@@ -125,7 +125,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
@@ -253,8 +252,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile GossipValidationHelper gossipValidationHelper;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
-  protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
-      Optional.empty();
   protected volatile Optional<DataUnavailableBlockPool> dataUnavailableBlockPool = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -329,10 +326,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockManager.start(),
             syncService.start(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)),
-            mergeTransitionConfigCheck
-                .map(MergeTransitionConfigCheck::start)
-                .orElse(SafeFuture.completedFuture(null)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -360,10 +354,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.stop(),
             timerService.stop(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)),
-            mergeTransitionConfigCheck
-                .map(MergeTransitionConfigCheck::stop)
-                .orElse(SafeFuture.completedFuture(null)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -500,10 +491,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconAsyncRunner,
                   EVENT_LOG,
                   timeProvider));
-
-      mergeTransitionConfigCheck =
-          Optional.of(
-              new MergeTransitionConfigCheck(EVENT_LOG, spec, executionLayer, beaconAsyncRunner));
     }
   }
 
