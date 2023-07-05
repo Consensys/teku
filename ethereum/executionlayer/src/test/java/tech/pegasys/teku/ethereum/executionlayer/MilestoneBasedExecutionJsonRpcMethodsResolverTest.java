@@ -26,7 +26,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
-import tech.pegasys.teku.ethereum.executionclient.methods.EngineExchangeTransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineGetPayloadV1;
@@ -68,10 +67,7 @@ class MilestoneBasedExecutionJsonRpcMethodsResolverTest {
   private static Stream<Arguments> nonMilestoneMethods() {
     return Stream.of(
         arguments(EngineApiMethod.ETH_GET_BLOCK_BY_HASH, EthGetBlockByHash.class),
-        arguments(EngineApiMethod.ETH_GET_BLOCK_BY_NUMBER, EthGetBlockByNumber.class),
-        arguments(
-            EngineApiMethod.ENGINE_EXCHANGE_TRANSITION_CONFIGURATION,
-            EngineExchangeTransitionConfigurationV1.class));
+        arguments(EngineApiMethod.ETH_GET_BLOCK_BY_NUMBER, EthGetBlockByNumber.class));
   }
 
   @ParameterizedTest

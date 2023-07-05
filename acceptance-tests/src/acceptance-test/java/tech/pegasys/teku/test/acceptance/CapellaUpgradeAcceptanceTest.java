@@ -78,8 +78,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
                   .withRealNetwork()
                   .withStartupTargetPeerCount(0)
                   .withExecutionEngine(primaryEL)
-                  .withJwtSecretFile(JWT_FILE)
-                  .withEngineApiMethodNegotiation();
+                  .withJwtSecretFile(JWT_FILE);
               applyMilestoneConfig(config);
             });
 
@@ -96,8 +95,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
                   .withPeers(primaryNode)
                   .withInteropValidators(0, 0)
                   .withExecutionEngine(secondaryEL)
-                  .withJwtSecretFile(JWT_FILE)
-                  .withEngineApiMethodNegotiation();
+                  .withJwtSecretFile(JWT_FILE);
               applyMilestoneConfig(c);
             });
 

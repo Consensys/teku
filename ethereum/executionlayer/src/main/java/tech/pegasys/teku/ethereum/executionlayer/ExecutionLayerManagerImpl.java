@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
@@ -226,12 +225,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
     LOG.trace("calling engineNewPayload(newPayloadRequest={})", newPayloadRequest);
     return executionClientHandler.engineNewPayload(newPayloadRequest);
-  }
-
-  @Override
-  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      final TransitionConfiguration transitionConfiguration) {
-    return executionClientHandler.engineExchangeTransitionConfiguration(transitionConfiguration);
   }
 
   @Override
