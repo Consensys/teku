@@ -114,7 +114,7 @@ public class ReconstructHistoricalStatesService extends Service {
               final UInt64 anchorSlot = checkpoint.get().getEpochStartSlot(spec);
 
               chainDataClient
-                  .getLatestAvailableFinalizedState(anchorSlot.decrement())
+                  .getLatestAvailableFinalizedState(anchorSlot.minusMinZero(1))
                   .thenComposeChecked(
                       latestState -> {
                         if (latestState.isPresent()) {
