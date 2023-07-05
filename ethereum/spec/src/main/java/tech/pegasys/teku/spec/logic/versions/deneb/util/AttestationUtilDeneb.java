@@ -84,7 +84,8 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
     final UInt64 currentEpochEndTimeMillisWithDisparity =
         secondsToMillis(miscHelpers.computeStartTimeAtEpoch(genesisTime, currentEpoch.increment()))
             .plus(specConfig.getMaximumGossipClockDisparity());
-    // min and max slot based on previous and current epoch with MAXIMUM_GOSSIP_CLOCK_DISPARITY
+    // min and max slot for the given attestation slot based on previous and current epoch with
+    // MAXIMUM_GOSSIP_CLOCK_DISPARITY
     final UInt64 minSlot =
         miscHelpers.computeSlotAtTime(
             genesisTime, millisToSeconds(previousEpochStartTimeMillisWithDisparity));
