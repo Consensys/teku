@@ -28,6 +28,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -53,6 +54,9 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String FORKCHOICE_UPDATED_V2_METHOD = "forkchoice_updatedV2";
   public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V2_METHOD =
       "forkchoice_updated_with_attributesV2";
+  public static final String FORKCHOICE_UPDATED_V3_METHOD = "forkchoice_updatedV3";
+  public static final String FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V3_METHOD =
+      "forkchoice_updated_with_attributesV3";
   public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
 
@@ -141,6 +145,17 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
         payloadAttributes.isPresent()
             ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V2_METHOD
             : FORKCHOICE_UPDATED_V2_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV3(
+      final ForkChoiceStateV1 forkChoiceState,
+      final Optional<PayloadAttributesV3> payloadAttributes) {
+    return countRequest(
+        () -> delegate.forkChoiceUpdatedV3(forkChoiceState, payloadAttributes),
+        payloadAttributes.isPresent()
+            ? FORKCHOICE_UPDATED_WITH_ATTRIBUTES_V3_METHOD
+            : FORKCHOICE_UPDATED_V3_METHOD);
   }
 
   @Override
