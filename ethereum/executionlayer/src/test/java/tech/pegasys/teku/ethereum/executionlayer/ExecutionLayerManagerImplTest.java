@@ -65,7 +65,7 @@ class ExecutionLayerManagerImplTest {
 
   private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
-  private Spec spec = TestSpecFactory.createMinimalDeneb();
+  private Spec spec = TestSpecFactory.createMinimalCapella();
 
   private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -443,6 +443,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void
       builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfShouldOverrideBuilderIsSetToTrue() {
+    setupDeneb();
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -755,6 +756,12 @@ class ExecutionLayerManagerImplTest {
     // we expect both builder and local engine have been called
     verify(builderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionClientHandler);
+  }
+
+  private void setupDeneb() {
+    spec = TestSpecFactory.createMinimalDeneb();
+    dataStructureUtil = new DataStructureUtil(spec);
+    setup();
   }
 
   private BuilderBid prepareBuilderGetHeaderResponse(
