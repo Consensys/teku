@@ -101,7 +101,8 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
     final JsonRpcRequestParams.Builder paramsBuilder =
         new JsonRpcRequestParams.Builder()
             .add(executionPayload)
-            .addOptional(newPayloadRequest.getVersionedHashes());
+            .addOptional(newPayloadRequest.getVersionedHashes())
+            .addOptional(newPayloadRequest.getParentBeaconBlockRoot());
 
     return engineMethodsResolver
         .getMethod(
