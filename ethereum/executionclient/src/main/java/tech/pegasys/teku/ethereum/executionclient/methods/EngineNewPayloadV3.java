@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.methods;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
@@ -49,17 +50,19 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
         params.getRequiredParameter(0, ExecutionPayload.class);
     final List<VersionedHash> blobVersionedHashes =
         params.getRequiredListParameter(1, VersionedHash.class);
+    final Bytes32 parentBeaconBlockRoot = params.getRequiredParameter(2, Bytes32.class);
 
     LOG.trace(
-        "Calling {}(executionPayload={}, blobVersionedHashes={})",
+        "Calling {}(executionPayload={}, blobVersionedHashes={}, parentBeaconBlockRoot={})",
         getVersionedName(),
         executionPayload,
-        blobVersionedHashes);
+        blobVersionedHashes,
+        parentBeaconBlockRoot);
 
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     return executionEngineClient
-        .newPayloadV3(executionPayloadV3, blobVersionedHashes)
+        .newPayloadV3(executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

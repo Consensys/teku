@@ -295,9 +295,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         Optional.ofNullable(knownPosBlocks.get(executionPayload.getBlockHash()))
             .orElse(payloadStatus);
     LOG.info(
-        "newPayload: executionPayload blockHash: {}  versionedHashes: {} -> {}",
+        "newPayload: executionPayload blockHash: {}  versionedHashes: {} parentBeaconBlockRoot: {} -> {}",
         executionPayload.getBlockHash(),
         newPayloadRequest.getVersionedHashes(),
+        newPayloadRequest.getParentBeaconBlockRoot(),
         returnedStatus);
     return SafeFuture.completedFuture(returnedStatus);
   }

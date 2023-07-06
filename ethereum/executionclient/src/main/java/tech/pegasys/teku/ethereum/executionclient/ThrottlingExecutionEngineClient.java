@@ -92,8 +92,11 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV3 executionPayload, final List<VersionedHash> blobVersionedHashes) {
-    return taskQueue.queueTask(() -> delegate.newPayloadV3(executionPayload, blobVersionedHashes));
+      final ExecutionPayloadV3 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot) {
+    return taskQueue.queueTask(
+        () -> delegate.newPayloadV3(executionPayload, blobVersionedHashes, parentBeaconBlockRoot));
   }
 
   @Override

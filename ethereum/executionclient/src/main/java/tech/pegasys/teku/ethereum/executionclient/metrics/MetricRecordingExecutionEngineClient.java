@@ -117,9 +117,12 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      final ExecutionPayloadV3 executionPayload, final List<VersionedHash> blobVersionedHashes) {
+      final ExecutionPayloadV3 executionPayload,
+      final List<VersionedHash> blobVersionedHashes,
+      final Bytes32 parentBeaconBlockRoot) {
     return countRequest(
-        () -> delegate.newPayloadV3(executionPayload, blobVersionedHashes), NEW_PAYLOAD_V3_METHOD);
+        () -> delegate.newPayloadV3(executionPayload, blobVersionedHashes, parentBeaconBlockRoot),
+        NEW_PAYLOAD_V3_METHOD);
   }
 
   @Override
