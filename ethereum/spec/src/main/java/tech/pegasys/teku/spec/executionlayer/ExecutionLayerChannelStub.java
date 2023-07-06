@@ -183,7 +183,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       checkBellatrixActivation();
     }
 
-    return SafeFuture.completedFuture(
+    final ForkChoiceUpdatedResult forkChoiceUpdatedResult =
         new ForkChoiceUpdatedResult(
             PayloadStatus.VALID,
             payloadBuildingAttributes.map(
@@ -195,7 +195,15 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                       new HeadAndAttributes(
                           forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes1));
                   return payloadId;
-                })));
+                }));
+
+    LOG.info(
+        "forkChoiceUpdated: forkChoiceState: {} payloadBuildingAttributes: {} -> forkChoiceUpdatedResult: {}",
+        forkChoiceState,
+        payloadBuildingAttributes,
+        forkChoiceUpdatedResult);
+
+    return SafeFuture.completedFuture(forkChoiceUpdatedResult);
   }
 
   @Override
