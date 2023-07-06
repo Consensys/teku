@@ -128,11 +128,6 @@ abstract class AbstractAttestationValidatorTest {
   }
 
   protected InternalValidationResult validate(final Attestation attestation) {
-    return validate(validator, attestation);
-  }
-
-  protected InternalValidationResult validate(
-      final AttestationValidator validator, final Attestation attestation) {
     final BeaconState state = safeJoin(recentChainData.getBestState().orElseThrow());
 
     return validator

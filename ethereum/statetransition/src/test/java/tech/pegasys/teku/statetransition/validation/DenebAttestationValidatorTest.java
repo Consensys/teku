@@ -15,11 +15,11 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -33,9 +33,18 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
   }
 
   @Test
+  public void shouldAcceptValidAttestation() {
+
+    final Attestation attestation =
+        attestationGenerator.validAttestation(storageSystem.getChainHead());
+
+    chainUpdater.setCurrentSlot(UInt64.valueOf(1));
+
+    assertThat(validate(attestation).code()).isEqualTo(ACCEPT);
+  }
+
+  @Test
   public void shouldIgnoreAttestationAfterCurrentSlot() {
-    final AttestationValidator validator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
 
     // attestation will be fork choice eligible in 12 slots, so more than MAX_FUTURE_SLOT_ALLOWANCE
     final Attestation attestation =
@@ -43,13 +52,11 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
 
     chainUpdater.setCurrentSlot(ZERO);
 
-    assertThat(validate(validator, attestation).code()).isEqualTo(IGNORE);
+    assertThat(validate(attestation).code()).isEqualTo(IGNORE);
   }
 
   @Test
   public void shouldIgnoreAttestationNotInCurrentOrPreviousEpoch() {
-    final AttestationValidator validator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
 
     // attestation in epoch 0
     final Attestation attestation =
@@ -58,13 +65,11 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
     // current epoch is 3
     chainUpdater.setCurrentSlot(UInt64.valueOf(25));
 
-    assertThat(validate(validator, attestation).code()).isEqualTo(IGNORE);
+    assertThat(validate(attestation).code()).isEqualTo(IGNORE);
   }
 
   @Test
   public void shouldDeferAttestationAfterCurrentSlotButNotTooFarInTheFuture() {
-    final AttestationValidator validator =
-        new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
 
     // attestation will be fork choice eligible in 3 slots, so within MAX_FUTURE_SLOT_ALLOWANCE
     final Attestation attestation =
@@ -72,6 +77,6 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
 
     chainUpdater.setCurrentSlot(ZERO);
 
-    assertThat(validate(validator, attestation).code()).isEqualTo(SAVE_FOR_FUTURE);
+    assertThat(validate(attestation).code()).isEqualTo(SAVE_FOR_FUTURE);
   }
 }
