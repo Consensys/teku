@@ -158,15 +158,15 @@ public abstract class AbstractNode implements Node {
     final Optional<NetworkingSpecConfigDeneb> networkingConfigDeneb =
         tekuConfig.eth2NetworkConfiguration().getSpec().getNetworkingConfigDeneb();
     networkingConfigDeneb
-        .flatMap(
-            networkingSpecConfigDeneb ->
-                tekuConfig.eth2NetworkConfiguration().getEpochsStoreBlobs())
+        .flatMap(__ -> tekuConfig.eth2NetworkConfiguration().getEpochsStoreBlobs())
         .ifPresent(
-            minEpochs ->
+            epochsStoreBlobsInput ->
                 STATUS_LOG.warnDenebEpochsStoreBlobsParameterSet(
-                    minEpochs.toString(),
-                    minEpochs > networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests(),
-                    String.valueOf(networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests())));
+                    epochsStoreBlobsInput.toString(),
+                    networkingConfigDeneb.get().getEpochsStoreBlobs()
+                        != networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests(),
+                    String.valueOf(
+                        networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests())));
   }
 
   @Override

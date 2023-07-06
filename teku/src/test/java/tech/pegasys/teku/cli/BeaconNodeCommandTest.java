@@ -391,7 +391,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             .getNetworkingConfigDeneb()
             .orElseThrow();
     // not overriden in spec however
-    assertThat(networkingSpecConfigDeneb.epochsStoreBlobs()).isEqualTo(4096);
+    assertThat(networkingSpecConfigDeneb.getEpochsStoreBlobs()).isEqualTo(4096);
   }
 
   @Test
@@ -417,7 +417,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
             .getSpec()
             .getNetworkingConfigDeneb()
             .orElseThrow();
-    assertThat(networkingSpecConfigDeneb.epochsStoreBlobs()).isEqualTo(12345);
+    assertThat(networkingSpecConfigDeneb.getEpochsStoreBlobs()).isEqualTo(12345);
   }
 
   private Path createConfigFile() throws IOException {

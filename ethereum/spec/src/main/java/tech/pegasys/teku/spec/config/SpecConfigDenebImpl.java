@@ -119,7 +119,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
-  public int epochsStoreBlobs() {
+  public int getEpochsStoreBlobs() {
     return maybeEpochsStoreBlobs.orElse(minEpochsForBlobSidecarsRequests);
   }
 

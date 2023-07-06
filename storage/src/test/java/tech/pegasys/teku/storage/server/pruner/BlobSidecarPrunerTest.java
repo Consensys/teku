@@ -95,8 +95,7 @@ public class BlobSidecarPrunerTest {
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     // set current slot inside the availability window
     final UInt64 currentSlot =
-        UInt64.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests())
-            .times(slotsPerEpoch);
+        UInt64.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()).times(slotsPerEpoch);
     final UInt64 currentTime = currentSlot.times(secondsPerSlot);
 
     timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
@@ -123,7 +122,7 @@ public class BlobSidecarPrunerTest {
   }
 
   @Test
-  void shouldRespectMinBlobEpochsOverride() {
+  void shouldUseEpochsStoreBlobs() {
     final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final int defaultValue = specConfigDeneb.getMinEpochsForBlobSidecarsRequests();
@@ -166,8 +165,7 @@ public class BlobSidecarPrunerTest {
 
     // move more to open pruning zone near genesis
     final UInt64 slotDelta =
-        UInt64.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests())
-            .times(slotsPerEpoch);
+        UInt64.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()).times(slotsPerEpoch);
     final UInt64 timeDelta = slotDelta.times(secondsPerSlot);
 
     timeProvider.advanceTimeBy(Duration.ofSeconds(timeDelta.longValue()));
@@ -178,7 +176,7 @@ public class BlobSidecarPrunerTest {
   }
 
   @Test
-  void shouldNotPruneWhenMinBlobEpochsOverridenToMax() {
+  void shouldNotPruneWhenEpochsStoreBlobsIsMax() {
     final Spec specOverride =
         TestSpecFactory.createMinimalDeneb(
             builder ->
@@ -188,7 +186,7 @@ public class BlobSidecarPrunerTest {
         SpecConfigDeneb.required(specOverride.forMilestone(SpecMilestone.DENEB).getConfig());
     assertNotEquals(
         specConfigDenebOverride.getMinEpochsForBlobSidecarsRequests(),
-        specConfigDenebOverride.epochsStoreBlobs());
+        specConfigDenebOverride.getEpochsStoreBlobs());
 
     final Database databaseOverride = mock(Database.class);
     final BlobSidecarPruner blobsPrunerOverride =
