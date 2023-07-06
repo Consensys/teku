@@ -196,15 +196,13 @@ public class ProposersDataManager implements SlotEventsChannel {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
+    final Bytes32 currentHeadBlockRoot =
+        forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot();
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState ->
                 calculatePayloadBuildingAttributes(
-                    forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot(),
-                    blockSlot,
-                    epoch,
-                    maybeState,
-                    mandatory),
+                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory),
             eventThread);
   }
 

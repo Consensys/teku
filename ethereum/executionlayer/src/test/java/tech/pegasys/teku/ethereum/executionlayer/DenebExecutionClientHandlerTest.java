@@ -94,7 +94,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
   }
 
   @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV2() {
+  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV3() {
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =

@@ -98,6 +98,7 @@ public class PayloadBuildingAttributes {
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(validatorRegistration, that.validatorRegistration)
         && Objects.equals(maybeWithdrawals, that.maybeWithdrawals)
+        && Objects.equals(blockSlot, that.blockSlot)
         && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
   }
 
@@ -109,6 +110,7 @@ public class PayloadBuildingAttributes {
         feeRecipient,
         validatorRegistration,
         maybeWithdrawals,
+        blockSlot,
         parentBeaconBlockRoot);
   }
 
@@ -120,6 +122,7 @@ public class PayloadBuildingAttributes {
         .add("feeRecipient", feeRecipient)
         .add("validatorRegistration", validatorRegistration)
         .add("withdrawals", maybeWithdrawals)
+        .add("blockSlot", blockSlot)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .toString();
   }
