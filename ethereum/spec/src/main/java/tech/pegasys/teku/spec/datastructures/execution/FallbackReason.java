@@ -23,6 +23,7 @@ public enum FallbackReason {
   BUILDER_NOT_CONFIGURED("builder_not_configured"),
   BUILDER_HEADER_NOT_AVAILABLE("builder_header_not_available"),
   LOCAL_BLOCK_VALUE_WON("local_block_value_won"),
+  SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE("should_override_builder_flag_is_true"),
   BUILDER_ERROR("builder_error"),
   NONE("");
 

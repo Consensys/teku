@@ -491,7 +491,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final GetPayloadResponse getPayloadResponse =
-        new GetPayloadResponse(payload, blockValue, blobsBundle);
+        new GetPayloadResponse(payload, blockValue, blobsBundle, false);
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
     return getPayloadResponse;
@@ -511,7 +511,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
         BlobsBundleValidator.NOOP,
-        Optional.of(100));
+        Optional.of(100),
+        true);
   }
 
   private void updateBuilderStatus(SafeFuture<Response<Void>> builderClientResponse, UInt64 slot) {
