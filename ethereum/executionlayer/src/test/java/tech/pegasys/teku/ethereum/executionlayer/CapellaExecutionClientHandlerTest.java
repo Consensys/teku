@@ -128,6 +128,7 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
+            dataStructureUtil.randomBytes32(),
             // building block for Capella
             capellaStartSlot.plus(1));
     final Optional<PayloadAttributesV2> payloadAttributes =

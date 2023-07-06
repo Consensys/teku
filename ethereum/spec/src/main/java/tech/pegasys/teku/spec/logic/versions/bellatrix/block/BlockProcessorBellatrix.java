@@ -160,7 +160,8 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     validateExecutionPayloadHeader(state, executionPayloadHeader);
 
     if (payloadExecutor.isPresent()) {
-      final NewPayloadRequest payloadToExecute = computeNewPayloadRequest(beaconBlockBody);
+      final NewPayloadRequest payloadToExecute =
+          computeNewPayloadRequest(genericState, beaconBlockBody);
       final boolean optimisticallyAccept =
           payloadExecutor
               .get()
@@ -200,7 +201,8 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
   }
 
   @Override
-  public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
+  public NewPayloadRequest computeNewPayloadRequest(
+      final BeaconState state, final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     return new NewPayloadRequest(executionPayload);

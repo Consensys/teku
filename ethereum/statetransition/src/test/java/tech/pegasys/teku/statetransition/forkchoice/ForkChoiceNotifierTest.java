@@ -208,7 +208,7 @@ class ForkChoiceNotifierTest {
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(1);
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
 
     notifyForkChoiceUpdated(forkChoiceState);
     verify(executionLayerChannel)
@@ -222,7 +222,7 @@ class ForkChoiceNotifierTest {
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(1);
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
@@ -268,7 +268,7 @@ class ForkChoiceNotifierTest {
 
     // proposer index 1 and 0 will propose slot 2 and 3
     final List<PayloadBuildingAttributes> payloadBuildingAttributes =
-        withProposerForTwoSlots(headState, blockSlot, blockSlot.plus(1));
+        withProposerForTwoSlots(forkChoiceState, headState, blockSlot, blockSlot.plus(1));
 
     // current slot is 1
 
@@ -320,7 +320,7 @@ class ForkChoiceNotifierTest {
 
     // proposer index 1 and 0 will propose slot 2 and 3
     final List<PayloadBuildingAttributes> payloadBuildingAttributes =
-        withProposerForTwoSlots(headState, blockSlot, blockSlot.plus(1));
+        withProposerForTwoSlots(forkChoiceState, headState, blockSlot, blockSlot.plus(1));
 
     // current slot is 1
 
@@ -351,11 +351,11 @@ class ForkChoiceNotifierTest {
     UInt64 blockSlot = headState.getSlot().plus(1); // slot 2
 
     final List<PayloadBuildingAttributes> payloadBuildingAttributesArr =
-        withProposerForTwoSlots(headState, blockSlot, blockSlot.plus(1));
+        withProposerForTwoSlots(forkChoiceState, headState, blockSlot, blockSlot.plus(1));
 
     // proposer index 1 and 0 will propose slot 2 and 3
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
 
     // current slot is 1
 
@@ -372,14 +372,15 @@ class ForkChoiceNotifierTest {
     blockSlot = headState.getSlot().plus(1);
 
     // new attributes for new state block production at slot 3
+    final ForkChoiceState forkChoiceStateSlot3 = getCurrentForkChoiceState();
     final PayloadBuildingAttributes payloadBuildingAttributesSlot3 =
         withProposerForSlot(
+            forkChoiceStateSlot3,
             headState,
             blockSlot,
             false,
             Optional.of(payloadBuildingAttributesArr.get(1).getFeeRecipient()),
             Optional.empty());
-    final ForkChoiceState forkChoiceStateSlot3 = getCurrentForkChoiceState();
 
     // store real payload attributes and return an incomplete future
     AtomicReference<SafeFuture<Optional<PayloadBuildingAttributes>>> actualResponseA =
@@ -441,15 +442,15 @@ class ForkChoiceNotifierTest {
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot1 = headState.getSlot().plus(1); // slot 2
     final UInt64 blockSlot2 = headState.getSlot().plus(2); // slot 3
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final List<PayloadBuildingAttributes> payloadBuildingAttributes =
-        withProposerForTwoSlots(headState, blockSlot1, blockSlot2);
+        withProposerForTwoSlots(forkChoiceState, headState, blockSlot1, blockSlot2);
     // context:
     //  current slot is 1
     //  proposer index 1 proposes on slot 2
     //  proposer index 0 proposes on slot 3
 
     // slot is 1 and is not empty -> sending forkChoiceUpdated
-    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     notifyForkChoiceUpdated(forkChoiceState);
     // We are proposing block on slot 2
     verify(executionLayerChannel)
@@ -529,7 +530,7 @@ class ForkChoiceNotifierTest {
     verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
 
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
   }
@@ -542,7 +543,7 @@ class ForkChoiceNotifierTest {
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final UInt64 blockSlot = headState.getSlot().plus(1);
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
 
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
     when(executionLayerChannel.engineForkChoiceUpdated(
@@ -572,6 +573,7 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(1);
     final PayloadBuildingAttributes payloadBuildingAttributes =
         withProposerForSlot(
+            forkChoiceState,
             headState,
             blockSlot,
             true,
@@ -609,7 +611,7 @@ class ForkChoiceNotifierTest {
     final Bytes32 wrongBlockRoot = dataStructureUtil.randomBytes32();
 
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
 
     final SafeFuture<ForkChoiceUpdatedResult> responseFuture = new SafeFuture<>();
     when(executionLayerChannel.engineForkChoiceUpdated(
@@ -651,7 +653,7 @@ class ForkChoiceNotifierTest {
             Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, Bytes32.ZERO, Bytes32.ZERO, false);
 
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
 
     notifier.onTerminalBlockReached(terminalBlockHash);
 
@@ -671,7 +673,7 @@ class ForkChoiceNotifierTest {
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(3); // proposing slot 5
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(getCurrentForkChoiceState(), headState, blockSlot);
 
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
 
@@ -712,7 +714,7 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(finalizedForkChoiceState, headState, blockSlot);
 
     validateGetPayloadIdOnTheFlyRetrieval(
         blockSlot,
@@ -741,7 +743,8 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlotButDoNotPrepare(headState, blockSlot, defaultFeeRecipient);
+        withProposerForSlotButDoNotPrepare(
+            finalizedForkChoiceState, headState, blockSlot, defaultFeeRecipient);
 
     validateGetPayloadIdOnTheFlyRetrieval(
         blockSlot,
@@ -771,7 +774,8 @@ class ForkChoiceNotifierTest {
     final UInt64 blockSlot = headState.getSlot().plus(2); // proposing slot 3
     final Bytes32 blockRoot = recentChainData.getBestBlockRoot().orElseThrow();
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlotButDoNotPrepare(headState, blockSlot, Optional.empty());
+        withProposerForSlotButDoNotPrepare(
+            getCurrentForkChoiceState(), headState, blockSlot, Optional.empty());
 
     validateGetPayloadIdOnTheFlyRetrieval(
         blockSlot, blockRoot, finalizedForkChoiceState, payloadId, payloadBuildingAttributes, true);
@@ -786,7 +790,7 @@ class ForkChoiceNotifierTest {
 
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
     when(executionLayerChannel.engineForkChoiceUpdated(
             forkChoiceState, Optional.of(payloadBuildingAttributes)))
         .thenReturn(responseFuture);
@@ -808,7 +812,7 @@ class ForkChoiceNotifierTest {
 
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(headState, blockSlot);
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
     when(executionLayerChannel.engineForkChoiceUpdated(
             forkChoiceState, Optional.of(payloadBuildingAttributes)))
         .thenReturn(responseFuture);
@@ -875,22 +879,26 @@ class ForkChoiceNotifierTest {
             .retrieveStateAtSlot(new SlotAndBlockRoot(blockSlot, bestBlockRoot))
             .join()
             .orElseThrow();
-    return withProposerForSlot(state, blockSlot);
+    return withProposerForSlot(getCurrentForkChoiceState(), state, blockSlot);
   }
 
   private PayloadBuildingAttributes withProposerForSlotButDoNotPrepare(
+      final ForkChoiceState forkChoiceState,
       final BeaconState headState,
       final UInt64 blockSlot,
       final Optional<Eth1Address> overrideFeeRecipient) {
-    return withProposerForSlot(headState, blockSlot, false, overrideFeeRecipient, Optional.empty());
+    return withProposerForSlot(
+        forkChoiceState, headState, blockSlot, false, overrideFeeRecipient, Optional.empty());
   }
 
   private PayloadBuildingAttributes withProposerForSlot(
-      final BeaconState headState, final UInt64 blockSlot) {
-    return withProposerForSlot(headState, blockSlot, true, Optional.empty(), Optional.empty());
+      final ForkChoiceState forkChoiceState, final BeaconState headState, final UInt64 blockSlot) {
+    return withProposerForSlot(
+        forkChoiceState, headState, blockSlot, true, Optional.empty(), Optional.empty());
   }
 
   private PayloadBuildingAttributes withProposerForSlot(
+      final ForkChoiceState forkChoiceState,
       final BeaconState headState,
       final UInt64 blockSlot,
       final boolean doPrepare,
@@ -899,7 +907,7 @@ class ForkChoiceNotifierTest {
     final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
     final PayloadBuildingAttributes payloadBuildingAttributes =
         getExpectedPayloadBuildingAttributes(
-            headState, blockSlot, overrideFeeRecipient, validatorRegistration);
+            forkChoiceState, headState, blockSlot, overrideFeeRecipient, validatorRegistration);
     if (doPrepare) {
       proposersDataManager.updatePreparedProposers(
           List.of(
@@ -918,15 +926,18 @@ class ForkChoiceNotifierTest {
   }
 
   private List<PayloadBuildingAttributes> withProposerForTwoSlots(
-      final BeaconState headState, final UInt64 blockSlot1, UInt64 blockSlot2) {
+      final ForkChoiceState forkChoiceState,
+      final BeaconState headState,
+      final UInt64 blockSlot1,
+      final UInt64 blockSlot2) {
     final int block2Proposer1 = spec.getBeaconProposerIndex(headState, blockSlot1);
     final int block2Proposer2 = spec.getBeaconProposerIndex(headState, blockSlot2);
     final PayloadBuildingAttributes payloadBuildingAttributes1 =
         getExpectedPayloadBuildingAttributes(
-            headState, blockSlot1, Optional.empty(), Optional.empty());
+            forkChoiceState, headState, blockSlot1, Optional.empty(), Optional.empty());
     final PayloadBuildingAttributes payloadBuildingAttributes2 =
         getExpectedPayloadBuildingAttributes(
-            headState, blockSlot2, Optional.empty(), Optional.empty());
+            forkChoiceState, headState, blockSlot2, Optional.empty(), Optional.empty());
 
     if (block2Proposer1 == block2Proposer2) {
       throw new UnsupportedOperationException(
@@ -943,6 +954,7 @@ class ForkChoiceNotifierTest {
   }
 
   private PayloadBuildingAttributes getExpectedPayloadBuildingAttributes(
+      final ForkChoiceState forkChoiceState,
       final BeaconState headState,
       final UInt64 blockSlot,
       final Optional<Eth1Address> overrideFeeRecipient,
@@ -957,6 +969,7 @@ class ForkChoiceNotifierTest {
         feeRecipient,
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
+        forkChoiceState.getHeadBlockRoot(),
         blockSlot);
   }
 

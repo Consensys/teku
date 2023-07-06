@@ -321,7 +321,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
+  public NewPayloadRequest computeNewPayloadRequest(
+      final BeaconState state, final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No NewPayloadRequest in Altair");
   }

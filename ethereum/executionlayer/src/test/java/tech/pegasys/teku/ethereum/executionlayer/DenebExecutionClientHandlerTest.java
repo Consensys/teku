@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -79,22 +80,25 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
   void engineNewPayload_shouldCallNewPayloadV3() {
     final ExecutionClientHandler handler = getHandler();
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+    final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
     final List<VersionedHash> versionedHashes = dataStructureUtil.randomVersionedHashes(3);
-    final NewPayloadRequest newPayloadRequest = new NewPayloadRequest(payload, versionedHashes);
+    final NewPayloadRequest newPayloadRequest =
+        new NewPayloadRequest(payload, versionedHashes, parentBeaconBlockRoot);
     final ExecutionPayloadV3 payloadV3 = ExecutionPayloadV3.fromInternalExecutionPayload(payload);
     final SafeFuture<Response<PayloadStatusV1>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(
                 new PayloadStatusV1(
                     ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), null)));
-    when(executionEngineClient.newPayloadV3(payloadV3, versionedHashes)).thenReturn(dummyResponse);
+    when(executionEngineClient.newPayloadV3(payloadV3, versionedHashes, parentBeaconBlockRoot))
+        .thenReturn(dummyResponse);
     final SafeFuture<PayloadStatus> future = handler.engineNewPayload(newPayloadRequest);
-    verify(executionEngineClient).newPayloadV3(payloadV3, versionedHashes);
+    verify(executionEngineClient).newPayloadV3(payloadV3, versionedHashes, parentBeaconBlockRoot);
     assertThat(future).isCompleted();
   }
 
   @Test
-  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV2() {
+  void engineForkChoiceUpdated_shouldCallEngineForkChoiceUpdatedV3() {
     final ExecutionClientHandler handler = getHandler();
     final ForkChoiceState forkChoiceState = dataStructureUtil.randomForkChoiceState(false);
     final ForkChoiceStateV1 forkChoiceStateV1 =
@@ -106,9 +110,10 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
+            dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomUInt64());
-    final Optional<PayloadAttributesV2> payloadAttributes =
-        PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
+    final Optional<PayloadAttributesV3> payloadAttributes =
+        PayloadAttributesV3.fromInternalPayloadBuildingAttributesV3(Optional.of(attributes));
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =
         SafeFuture.completedFuture(
             new Response<>(
@@ -116,11 +121,11 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                     new PayloadStatusV1(
                         ExecutionPayloadStatus.ACCEPTED, dataStructureUtil.randomBytes32(), ""),
                     dataStructureUtil.randomBytes8())));
-    when(executionEngineClient.forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes))
+    when(executionEngineClient.forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes))
         .thenReturn(dummyResponse);
     final SafeFuture<tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult> future =
         handler.engineForkChoiceUpdated(forkChoiceState, Optional.of(attributes));
-    verify(executionEngineClient).forkChoiceUpdatedV2(forkChoiceStateV1, payloadAttributes);
+    verify(executionEngineClient).forkChoiceUpdatedV3(forkChoiceStateV1, payloadAttributes);
     assertThat(future).isCompleted();
   }
 

@@ -38,7 +38,7 @@ public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
 
   @Test
   void shouldRejectAltairBlock() {
-    BeaconState preState = createBeaconState();
+    final BeaconState preState = createBeaconState();
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(preState.getSlot().increment());
     assertThatThrownBy(
@@ -48,10 +48,11 @@ public class BlockProcessorBellatrixTest extends BlockProcessorAltairTest {
 
   @Test
   public void shouldCreateNewPayloadRequest() throws BlockProcessingException {
+    final BeaconState preState = createBeaconState();
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBody();
 
     final NewPayloadRequest newPayloadRequest =
-        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(blockBody);
+        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());

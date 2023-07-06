@@ -70,6 +70,7 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
   @Test
   @Override
   public void shouldCreateNewPayloadRequest() throws BlockProcessingException {
+    final BeaconState preState = createBeaconState();
     final BeaconBlockBody blockBody = dataStructureUtil.randomBeaconBlockBodyWithCommitments(3);
     final MiscHelpers miscHelpers = spec.atSlot(UInt64.ONE).miscHelpers();
     final List<VersionedHash> expectedVersionedHashes =
@@ -79,7 +80,7 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
             .collect(Collectors.toList());
 
     final NewPayloadRequest newPayloadRequest =
-        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(blockBody);
+        spec.getBlockProcessor(UInt64.ONE).computeNewPayloadRequest(preState, blockBody);
 
     assertThat(newPayloadRequest.getExecutionPayload())
         .isEqualTo(blockBody.getOptionalExecutionPayload().orElseThrow());
@@ -91,5 +92,8 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
                 assertThat(versionedHash.getVersion())
                     .isEqualTo(SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG))
         .hasSameElementsAs(expectedVersionedHashes);
+    assertThat(newPayloadRequest.getParentBeaconBlockRoot()).isPresent();
+    assertThat(newPayloadRequest.getParentBeaconBlockRoot().get())
+        .isEqualTo(preState.getLatestBlockHeader().getParentRoot());
   }
 }
