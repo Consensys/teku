@@ -331,10 +331,7 @@ public class Spec {
       final Bytes serializedSignedBlockContainer, final Optional<String> milestone) {
 
     final SchemaDefinitions schemaDefinition =
-        milestone
-            .map(v -> SpecMilestone.valueOf(v.toUpperCase(Locale.ROOT)))
-            .map(specVersions::get)
-            .map(SpecVersion::getSchemaDefinitions)
+        getSchemaDefinitionsForMilestone(milestone)
             .orElseGet(getSchemaDefinitionForSignedBlockSSZ(serializedSignedBlockContainer));
 
     return schemaDefinition
@@ -346,15 +343,20 @@ public class Spec {
       final Bytes serializedSignedBlindedBlockContainer, final Optional<String> milestone) {
 
     final SchemaDefinitions schemaDefinition =
-        milestone
-            .map(v -> SpecMilestone.valueOf(v.toUpperCase(Locale.ROOT)))
-            .map(specVersions::get)
-            .map(SpecVersion::getSchemaDefinitions)
+        getSchemaDefinitionsForMilestone(milestone)
             .orElseGet(getSchemaDefinitionForSignedBlockSSZ(serializedSignedBlindedBlockContainer));
 
     return schemaDefinition
         .getSignedBlindedBlockContainerSchema()
         .sszDeserialize(serializedSignedBlindedBlockContainer);
+  }
+
+  private Optional<SchemaDefinitions> getSchemaDefinitionsForMilestone(
+      final Optional<String> milestone) {
+    return milestone
+        .map(v -> SpecMilestone.valueOf(v.toUpperCase(Locale.ROOT)))
+        .map(specVersions::get)
+        .map(SpecVersion::getSchemaDefinitions);
   }
 
   private Supplier<SchemaDefinitions> getSchemaDefinitionForSignedBlockSSZ(

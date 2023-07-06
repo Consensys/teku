@@ -33,7 +33,7 @@ public class MilestoneSpecificOctetStreamRequestContentTypeDefinition<T>
 
   private final BiFunction<InputStream, Optional<String>, T> parser;
 
-  public MilestoneSpecificOctetStreamRequestContentTypeDefinition(
+  private MilestoneSpecificOctetStreamRequestContentTypeDefinition(
       final BiFunction<InputStream, Optional<String>, T> parser) {
     super(OctetStreamResponseContentTypeDefinition.OCTET_STREAM_BYTES_TYPE);
     this.parser = parser;
@@ -42,11 +42,11 @@ public class MilestoneSpecificOctetStreamRequestContentTypeDefinition<T>
   public static <T> RequestContentTypeDefinition<T> parseBytes(
       final BiFunction<Bytes, Optional<String>, T> parser) {
     return new MilestoneSpecificOctetStreamRequestContentTypeDefinition<>(
-        (in, s) -> {
+        (in, version) -> {
           try {
-            return parser.apply(Bytes.wrap(in.readAllBytes()), s);
+            return parser.apply(Bytes.wrap(in.readAllBytes()), version);
           } catch (IOException e) {
-            throw new RuntimeException(e); // TODO-lucas better way of handling this error?
+            throw new RuntimeException("Error deserializing content", e);
           }
         });
   }

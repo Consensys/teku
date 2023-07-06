@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Request.Builder;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
@@ -384,14 +385,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return client.newCall(request).execute();
   }
 
-  protected Response postSsz(final String route, final byte[] postData) throws IOException {
+  protected Response postSsz(
+      final String route, final byte[] postData, final Optional<String> milestone)
+      throws IOException {
     final RequestBody body = RequestBody.create(postData, SSZ);
-    final Request request =
-        new Request.Builder()
-            .url(getUrl() + route)
-            .header(HEADER_CONSENSUS_VERSION, "deneb")
-            .post(body)
-            .build();
+
+    final Builder requestBuilder = new Builder().url(getUrl() + route).post(body);
+    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+
+    final Request request = requestBuilder.build();
     return client.newCall(request).execute();
   }
 
