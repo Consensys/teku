@@ -42,7 +42,8 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
+import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
@@ -154,19 +155,22 @@ public abstract class AbstractNode implements Node {
                 STATUS_LOG.warnBellatrixParameterChanged(
                     "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
 
-    // epochsStoreBlobs warning, which is not actually a full override
-    final Optional<NetworkingSpecConfigDeneb> networkingConfigDeneb =
-        tekuConfig.eth2NetworkConfiguration().getSpec().getNetworkingConfigDeneb();
-    networkingConfigDeneb
+    // Deneb's epochsStoreBlobs warning, which is not actually a full override
+    final Optional<SpecVersion> specVersionDeneb =
+        Optional.ofNullable(
+            tekuConfig.eth2NetworkConfiguration().getSpec().forMilestone(SpecMilestone.DENEB));
+    specVersionDeneb
         .flatMap(__ -> tekuConfig.eth2NetworkConfiguration().getEpochsStoreBlobs())
         .ifPresent(
-            epochsStoreBlobsInput ->
-                STATUS_LOG.warnDenebEpochsStoreBlobsParameterSet(
-                    epochsStoreBlobsInput.toString(),
-                    networkingConfigDeneb.get().getEpochsStoreBlobs()
-                        != networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests(),
-                    String.valueOf(
-                        networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests())));
+            epochsStoreBlobsInput -> {
+              final SpecConfigDeneb specConfigDeneb =
+                  SpecConfigDeneb.required(specVersionDeneb.get().getConfig());
+              STATUS_LOG.warnDenebEpochsStoreBlobsParameterSet(
+                  epochsStoreBlobsInput.toString(),
+                  specConfigDeneb.getEpochsStoreBlobs()
+                      != specConfigDeneb.getMinEpochsForBlobSidecarsRequests(),
+                  String.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
+            });
   }
 
   @Override

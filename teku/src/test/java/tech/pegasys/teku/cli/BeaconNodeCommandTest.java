@@ -57,7 +57,8 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -383,15 +384,17 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(
             beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
         .contains(2000);
-    final NetworkingSpecConfigDeneb networkingSpecConfigDeneb =
-        beaconNodeCommand
-            .tekuConfiguration()
-            .eth2NetworkConfiguration()
-            .getSpec()
-            .getNetworkingConfigDeneb()
-            .orElseThrow();
+
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .eth2NetworkConfiguration()
+                .getSpec()
+                .forMilestone(SpecMilestone.DENEB)
+                .getConfig());
     // not overriden in spec however
-    assertThat(networkingSpecConfigDeneb.getEpochsStoreBlobs()).isEqualTo(4096);
+    assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(4096);
   }
 
   @Test
@@ -410,14 +413,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(
             beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
         .contains(12345);
-    final NetworkingSpecConfigDeneb networkingSpecConfigDeneb =
-        beaconNodeCommand
-            .tekuConfiguration()
-            .eth2NetworkConfiguration()
-            .getSpec()
-            .getNetworkingConfigDeneb()
-            .orElseThrow();
-    assertThat(networkingSpecConfigDeneb.getEpochsStoreBlobs()).isEqualTo(12345);
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .eth2NetworkConfiguration()
+                .getSpec()
+                .forMilestone(SpecMilestone.DENEB)
+                .getConfig());
+    assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(12345);
   }
 
   private Path createConfigFile() throws IOException {

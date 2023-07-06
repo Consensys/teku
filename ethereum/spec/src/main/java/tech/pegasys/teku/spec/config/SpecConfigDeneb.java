@@ -52,6 +52,11 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
 
   boolean isKZGNoop();
 
+  int getEpochsStoreBlobs();
+
+  /** Maybe user input, use {@link #getEpochsStoreBlobs()} instead */
+  Optional<Integer> getMaybeEpochsStoreBlobs();
+
   @Override
   Optional<SpecConfigDeneb> toVersionDeneb();
 }
