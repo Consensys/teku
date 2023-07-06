@@ -150,7 +150,7 @@ public interface BlockProcessor {
       Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException;
 
-  NewPayloadRequest computeNewPayloadRequest(BeaconBlockBody beaconBlockBody)
+  NewPayloadRequest computeNewPayloadRequest(BeaconState state, BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException;
 
   void validateExecutionPayloadHeader(
