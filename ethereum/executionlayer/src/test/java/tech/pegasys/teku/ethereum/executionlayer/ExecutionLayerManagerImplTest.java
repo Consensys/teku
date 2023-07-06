@@ -443,6 +443,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void
       builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfShouldOverrideBuilderIsSetToTrue() {
+    // the shouldOverrideBuilder flag is available only from Deneb
     setupDeneb();
     setBuilderOnline();
 
