@@ -890,7 +890,7 @@ public class Spec {
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return getCurrentEpoch(store)
         .minusMinZero(epoch)
-        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
+        .isLessThanOrEqualTo(specConfigDeneb.epochsStoreBlobs());
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {

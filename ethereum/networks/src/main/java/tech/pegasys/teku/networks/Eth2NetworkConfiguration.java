@@ -73,7 +73,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
   private final Optional<Eth2Network> eth2Network;
-  private final Optional<Integer> minEpochsForBlobSidecarsRequestsOverride;
+  private final Optional<Integer> epochsStoreBlobs;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -96,7 +96,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
       final Optional<Eth2Network> eth2Network,
-      final Optional<Integer> minEpochsForBlobSidecarsRequestsOverride) {
+      final Optional<Integer> epochsStoreBlobs) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -120,7 +120,7 @@ public class Eth2NetworkConfiguration {
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
     this.eth2Network = eth2Network;
-    this.minEpochsForBlobSidecarsRequestsOverride = minEpochsForBlobSidecarsRequestsOverride;
+    this.epochsStoreBlobs = epochsStoreBlobs;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -219,8 +219,8 @@ public class Eth2NetworkConfiguration {
     return eth2Network;
   }
 
-  public Optional<Integer> getMinEpochsForBlobSidecarsRequestsOverride() {
-    return minEpochsForBlobSidecarsRequestsOverride;
+  public Optional<Integer> getEpochsStoreBlobs() {
+    return epochsStoreBlobs;
   }
 
   @Override
@@ -248,7 +248,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
-    private String minEpochsForBlobSidecarsRequestsOverride;
+    private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
@@ -261,9 +261,8 @@ public class Eth2NetworkConfiguration {
       checkNotNull(constants, "Missing constants");
       checkArgument(
           safeSlotsToImportOptimistically >= 0, "Safe slots to import optimistically must be >= 0");
-      final Optional<Integer> maybeMinEpochsForBlobSidecarsOverride =
-          validateAndParseMinEpochsForBlobSidecarsOverride(
-              minEpochsForBlobSidecarsRequestsOverride);
+      final Optional<Integer> maybeEpochsStoreBlobs =
+          validateAndParseEpochsStoreBlobs(epochsStoreBlobs);
       if (spec == null) {
         spec =
             SpecFactory.create(
@@ -291,9 +290,8 @@ public class Eth2NetworkConfiguration {
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         trustedSetup.ifPresent(denebBuilder::trustedSetupPath);
-                        if (maybeMinEpochsForBlobSidecarsOverride.isPresent()) {
-                          denebBuilder.minEpochsForBlobSidecarsRequestsOverride(
-                              maybeMinEpochsForBlobSidecarsOverride);
+                        if (maybeEpochsStoreBlobs.isPresent()) {
+                          denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
                       });
                 });
@@ -324,7 +322,7 @@ public class Eth2NetworkConfiguration {
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
           eth2Network,
-          maybeMinEpochsForBlobSidecarsOverride);
+          maybeEpochsStoreBlobs);
     }
 
     public Builder constants(final String constants) {
@@ -466,9 +464,8 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder minEpochsForBlobSidecarsRequestsOverride(
-        final String minEpochsForBlobSidecarsRequestsOverride) {
-      this.minEpochsForBlobSidecarsRequestsOverride = minEpochsForBlobSidecarsRequestsOverride;
+    public Builder epochsStoreBlobs(final String epochsStoreBlobs) {
+      this.epochsStoreBlobs = epochsStoreBlobs;
       return this;
     }
 
@@ -702,27 +699,26 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QLgn8Bx6faigkKUGZQvd1HDToV2FAxZIiENK-lczruzQb90qJK-4E65ADly0s4__dQOW7IkLMW7ZAyJy2vtiLy8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAxNnBDAgAAb___________gmlkgnY0gmlwhANFIw2Jc2VjcDI1NmsxoQMa-fWEy9UJHfOl_lix3wdY5qust78sHAqZnWwEiyqKgYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
     }
 
-    private Optional<Integer> validateAndParseMinEpochsForBlobSidecarsOverride(
-        final String minEpochsForBlobSidecarsOverride) {
-      if (minEpochsForBlobSidecarsOverride == null || minEpochsForBlobSidecarsOverride.isBlank()) {
+    private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {
+      if (epochsStoreBlobs == null || epochsStoreBlobs.isBlank()) {
         return Optional.empty();
       }
-      if (minEpochsForBlobSidecarsOverride.toUpperCase(Locale.ROOT).equals(EPOCHS_MAX_KEYWORD)) {
+      if (epochsStoreBlobs.toUpperCase(Locale.ROOT).equals(EPOCHS_MAX_KEYWORD)) {
         // 26 thousand years should be enough
         return Optional.of(Integer.MAX_VALUE);
       }
-      final int minEpochsForBlobSidecarsInt;
+      final int epochsStoreBlobsInt;
       try {
-        minEpochsForBlobSidecarsInt = Integer.parseInt(minEpochsForBlobSidecarsOverride);
+        epochsStoreBlobsInt = Integer.parseInt(epochsStoreBlobs);
       } catch (final NumberFormatException ex) {
         throw new InvalidConfigurationException(
             "Expecting number or "
                 + EPOCHS_MAX_KEYWORD
-                + " keyword for MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS override");
+                + " keyword for the number of the epochs to store blobs for");
       }
       checkArgument(
-          minEpochsForBlobSidecarsInt > 0, "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS should be > 0");
-      return Optional.of(minEpochsForBlobSidecarsInt);
+          epochsStoreBlobsInt > 0, "Number of the epochs to store blobs for should be > 0");
+      return Optional.of(epochsStoreBlobsInt);
     }
   }
 }

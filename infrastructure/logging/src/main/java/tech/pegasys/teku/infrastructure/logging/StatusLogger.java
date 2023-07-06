@@ -78,13 +78,24 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
-  public void warnDenebMinBlobEpochsParameterChanged(final String newValue) {
-    log.warn(
-        print(
-            "Deneb parameter MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS has been overridden to "
-                + newValue
-                + " for storage and sync",
-            Color.YELLOW));
+  public void warnDenebEpochsStoreBlobsParameterSet(
+      final String epochsStoreBlobs, final boolean valid, final String specValue) {
+    if (valid) {
+      final boolean isMax = String.valueOf(Integer.MAX_VALUE).equals(epochsStoreBlobs);
+      log.warn(
+          print(
+              "Xepochs-store-blobs sets the number of epochs blob sidecars are stored and requested during the sync to: "
+                  + (isMax ? "MAX" : epochsStoreBlobs),
+              Color.YELLOW));
+    } else {
+      log.warn(
+          print(
+              "Ignoring Xepochs-store-blobs value "
+                  + epochsStoreBlobs
+                  + " since it is less than MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = "
+                  + specValue,
+              Color.YELLOW));
+    }
   }
 
   public void warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled() {

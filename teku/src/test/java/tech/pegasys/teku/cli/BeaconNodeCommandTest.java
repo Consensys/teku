@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.JVM;
 import static org.hyperledger.besu.metrics.StandardMetricCategory.PROCESS;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.CONFIG_FILE_OPTION_NAME;
@@ -54,11 +53,11 @@ import picocli.CommandLine.Model.OptionSpec;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -72,6 +71,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_SUFFIX;
   private static final String LOG_PATTERN =
       LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
+  private static final String XEPOCHS_STORE_BLOBS = "--Xepochs-store-blobs";
+  private static final String DOPPELGANGER_DETECTION_ENABLED = "--doppelganger-detection-enabled";
+  private static final String DENEB_FORK_EPOCH = "--Xnetwork-deneb-fork-epoch";
 
   final Eth1Address address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
@@ -350,7 +352,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableDoppelgangerDetection() {
-    final String[] args = {"--doppelganger-detection-enabled", "true"};
+    final String[] args = {DOPPELGANGER_DETECTION_ENABLED, "true"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
@@ -363,7 +365,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldDisableDoppelgangerDetection() {
-    final String[] args = {"--doppelganger-detection-enabled", "false"};
+    final String[] args = {DOPPELGANGER_DETECTION_ENABLED, "false"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
@@ -375,36 +377,47 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldFailWithSmallDenebMinBlobEpochsOverride() {
-    final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "2000"};
+  public void shouldIgnoreSmallDenebEpochsStoreBlobs() {
+    final String[] args = {XEPOCHS_STORE_BLOBS, "2000", DENEB_FORK_EPOCH, "200000"};
     beaconNodeCommand.parse(args);
-    assertThatThrownBy(() -> beaconNodeCommand.tekuConfiguration())
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessageContaining("override should be > spec value");
+    assertThat(
+            beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
+        .contains(2000);
+    final NetworkingSpecConfigDeneb networkingSpecConfigDeneb =
+        beaconNodeCommand
+            .tekuConfiguration()
+            .eth2NetworkConfiguration()
+            .getSpec()
+            .getNetworkingConfigDeneb()
+            .orElseThrow();
+    // not overriden in spec however
+    assertThat(networkingSpecConfigDeneb.epochsStoreBlobs()).isEqualTo(4096);
   }
 
   @Test
-  public void shouldMaxDenebMinBlobEpochsOverride() {
-    final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "MAX"};
+  public void shouldMaxDenebEpochsStoreBlobs() {
+    final String[] args = {XEPOCHS_STORE_BLOBS, "MAX"};
     beaconNodeCommand.parse(args);
     assertThat(
-            beaconNodeCommand
-                .tekuConfiguration()
-                .eth2NetworkConfiguration()
-                .getMinEpochsForBlobSidecarsRequestsOverride())
+            beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
         .contains(Integer.MAX_VALUE);
   }
 
   @Test
-  public void shouldParseDenebMinBlobEpochsOverride() {
-    final String[] args = {"--Xmin-epochs-for-blob-sidecars-requests-override", "12345"};
+  public void shouldParseDenebEpochsStoreBlobs() {
+    final String[] args = {XEPOCHS_STORE_BLOBS, "12345", DENEB_FORK_EPOCH, "200000"};
     beaconNodeCommand.parse(args);
     assertThat(
-            beaconNodeCommand
-                .tekuConfiguration()
-                .eth2NetworkConfiguration()
-                .getMinEpochsForBlobSidecarsRequestsOverride())
+            beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
         .contains(12345);
+    final NetworkingSpecConfigDeneb networkingSpecConfigDeneb =
+        beaconNodeCommand
+            .tekuConfiguration()
+            .eth2NetworkConfiguration()
+            .getSpec()
+            .getNetworkingConfigDeneb()
+            .orElseThrow();
+    assertThat(networkingSpecConfigDeneb.epochsStoreBlobs()).isEqualTo(12345);
   }
 
   private Path createConfigFile() throws IOException {

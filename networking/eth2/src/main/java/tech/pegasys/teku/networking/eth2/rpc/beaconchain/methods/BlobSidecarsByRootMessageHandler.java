@@ -202,7 +202,7 @@ public class BlobSidecarsByRootMessageHandler
     final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
     return finalizedEpoch
         .max(
-            currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequestsDefault()))
+            currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()))
         .max(specConfigDeneb.getDenebForkEpoch());
   }
 

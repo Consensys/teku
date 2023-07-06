@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -41,7 +40,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Integer maxRequestBlocksDeneb;
   private Integer maxRequestBlobSidecars;
   private Integer minEpochsForBlobSidecarsRequests;
-  private Optional<Integer> minEpochsForBlobSidecarsRequestsOverride = Optional.empty();
+  private Optional<Integer> epochsStoreBlobs = Optional.empty();
   private Integer blobSidecarSubnetCount;
 
   DenebBuilder() {}
@@ -61,7 +60,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,
         blobSidecarSubnetCount,
-        minEpochsForBlobSidecarsRequestsOverride);
+        epochsStoreBlobs);
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
@@ -122,9 +121,8 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     return this;
   }
 
-  public DenebBuilder minEpochsForBlobSidecarsRequestsOverride(
-      final Optional<Integer> minEpochsForBlobSidecarsRequestsOverride) {
-    this.minEpochsForBlobSidecarsRequestsOverride = minEpochsForBlobSidecarsRequestsOverride;
+  public DenebBuilder epochsStoreBlobs(final Optional<Integer> epochsStoreBlobs) {
+    this.epochsStoreBlobs = epochsStoreBlobs;
     return this;
   }
 
@@ -153,11 +151,10 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
     }
-    minEpochsForBlobSidecarsRequestsOverride.ifPresent(
-        minBlobEpochsOverride ->
-            checkArgument(
-                minBlobEpochsOverride > minEpochsForBlobSidecarsRequests,
-                "MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS override should be > spec value"));
+    // Erase epochsStoreBlobs if it's smaller than the spec value, we are able to check it only here
+    if (epochsStoreBlobs.filter(epochs -> epochs <= minEpochsForBlobSidecarsRequests).isPresent()) {
+      epochsStoreBlobs = Optional.empty();
+    }
   }
 
   @Override

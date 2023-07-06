@@ -196,7 +196,7 @@ public class BlobSidecarsByRangeMessageHandler
             .getDenebForkEpoch()
             .max(
                 currentEpoch.minusMinZero(
-                    specConfigDeneb.getMinEpochsForBlobSidecarsRequestsDefault()));
+                    specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
     return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
         && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }

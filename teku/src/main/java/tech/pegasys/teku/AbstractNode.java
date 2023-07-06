@@ -42,6 +42,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.services.ServiceController;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
@@ -153,11 +154,19 @@ public abstract class AbstractNode implements Node {
                 STATUS_LOG.warnBellatrixParameterChanged(
                     "TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH", tbheo.toString()));
 
-    tekuConfig
-        .eth2NetworkConfiguration()
-        .getMinEpochsForBlobSidecarsRequestsOverride()
+    // epochsStoreBlobs warning, which is not actually a full override
+    final Optional<NetworkingSpecConfigDeneb> networkingConfigDeneb =
+        tekuConfig.eth2NetworkConfiguration().getSpec().getNetworkingConfigDeneb();
+    networkingConfigDeneb
+        .flatMap(
+            networkingSpecConfigDeneb ->
+                tekuConfig.eth2NetworkConfiguration().getEpochsStoreBlobs())
         .ifPresent(
-            minEpochs -> STATUS_LOG.warnDenebMinBlobEpochsParameterChanged(minEpochs.toString()));
+            minEpochs ->
+                STATUS_LOG.warnDenebEpochsStoreBlobsParameterSet(
+                    minEpochs.toString(),
+                    minEpochs > networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests(),
+                    String.valueOf(networkingConfigDeneb.get().getMinEpochsForBlobSidecarsRequests())));
   }
 
   @Override

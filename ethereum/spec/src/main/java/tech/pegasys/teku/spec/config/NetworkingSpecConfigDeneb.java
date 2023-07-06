@@ -25,9 +25,9 @@ public interface NetworkingSpecConfigDeneb extends NetworkingSpecConfig {
 
   int getMaxRequestBlobSidecars();
 
-  int getMinEpochsForBlobSidecarsRequestsDefault();
-
   int getMinEpochsForBlobSidecarsRequests();
+
+  int epochsStoreBlobs();
 
   int getBlobSidecarSubnetCount();
 }

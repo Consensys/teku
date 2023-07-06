@@ -175,15 +175,15 @@ public class Eth2NetworkOptions {
   private Long eth1DepositContractDeployBlockOverride;
 
   @CommandLine.Option(
-      names = {"--Xmin-epochs-for-blob-sidecars-requests-override"},
+      names = {"--Xepochs-store-blobs"},
       hidden = true,
       paramLabel = "<STRING>",
       description =
-          "Overrides MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS, number of epochs blob sidecars are kept. Use MAX to store all blob sidecars. The value cannot be set to be lower than the spec value.",
+          "Sets the number of epochs blob sidecars are stored and requested during the sync. Use MAX to store all blob sidecars. The value cannot be set to be lower than the spec's MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS.",
       fallbackValue = "",
       showDefaultValue = Visibility.ALWAYS,
       arity = "0..1")
-  private String minEpochsForBlobSidecarsRequestsOverride;
+  private String epochsStoreBlobs;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
@@ -246,7 +246,7 @@ public class Eth2NetworkOptions {
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
-        .minEpochsForBlobSidecarsRequestsOverride(minEpochsForBlobSidecarsRequestsOverride);
+        .epochsStoreBlobs(epochsStoreBlobs);
   }
 
   public String getNetwork() {
