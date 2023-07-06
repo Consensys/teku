@@ -92,5 +92,8 @@ public class BlockProcessorDenebTest extends BlockProcessorCapellaTest {
                 assertThat(versionedHash.getVersion())
                     .isEqualTo(SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG))
         .hasSameElementsAs(expectedVersionedHashes);
+    assertThat(newPayloadRequest.getParentBeaconBlockRoot()).isPresent();
+    assertThat(newPayloadRequest.getParentBeaconBlockRoot().get())
+        .isEqualTo(preState.getLatestBlockHeader().getParentRoot());
   }
 }
