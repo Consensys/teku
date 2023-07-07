@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -180,7 +181,7 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
-  public Optional<Bytes> getDiscoveryNodeId() {
+  public Optional<UInt256> getDiscoveryNodeId() {
     return Optional.empty();
   }
 

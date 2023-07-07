@@ -20,7 +20,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBy
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.math.BigInteger;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -33,11 +32,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.bouncycastle.math.ec.ECPoint;
-import org.ethereum.beacon.discovery.util.Functions;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -62,14 +58,14 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private final int epochsPerSubnetSubscription;
   private final int subnetsPerNode;
 
-  private final Optional<Bytes> discoveryNodeId;
+  private final Optional<UInt256> discoveryNodeId;
 
   public ValidatorBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber,
       final Random random,
       final Spec spec,
       final int minimumSubnetSubscriptions,
-      final Optional<Bytes> discoveryNodeId) {
+      final Optional<UInt256> discoveryNodeId) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.random = random;
     this.spec = spec;
@@ -128,7 +124,10 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
         totalNumberOfSubscriptions);
 
     final List<UInt64> subscribedSubnets =
-        computeSubscribedSubnets(extractNodeId(), spec.computeEpochAtSlot(currentSlot));
+        computeSubscribedSubnets(
+            discoveryNodeId.orElseThrow(
+                () -> new IllegalArgumentException("Unable to get discovery node id")),
+            spec.computeEpochAtSlot(currentSlot));
 
     final Set<SubnetSubscription> newSubnetSubscriptions =
         subscribedSubnets.stream()
@@ -143,16 +142,6 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
       }
     }
     return newSubnetSubscriptions;
-  }
-
-  private UInt256 extractNodeId() {
-    final ECPoint ecPoint =
-        Functions.publicKeyToPoint(
-            discoveryNodeId.orElseThrow(
-                () -> new IllegalArgumentException("Unable to get discovery node id")));
-    final Bytes pubKeyUncompressed = Bytes.wrap(ecPoint.getEncoded(false)).slice(1);
-    BigInteger nodeId = new BigInteger(pubKeyUncompressed.toArray());
-    return UInt256.valueOf(nodeId);
   }
 
   private List<UInt64> computeSubscribedSubnets(final UInt256 nodeId, final UInt64 epoch) {
