@@ -23,9 +23,13 @@ import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -33,6 +37,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
@@ -175,6 +180,42 @@ public class MiscHelpers {
         .getCommitteeShuffle()
         .get(seed, s -> shuffleList(indices, s))
         .subList(fromIndex, toIndex);
+  }
+
+  public List<UInt64> computeSubscribedSubnets(final UInt256 nodeId, final UInt64 epoch) {
+    return IntStream.range(0, specConfig.getNetworkingConfig().getSubnetsPerNode())
+        .mapToObj(index -> computeSubscribedSubnet(nodeId, epoch, index))
+        .collect(Collectors.toList());
+  }
+
+  public UInt64 computeSubscribedSubnet(final UInt256 nodeId, final UInt64 epoch, final int index) {
+
+    final int nodeIdPrefix =
+        nodeId
+            .shiftRight(
+                NetworkConstants.NODE_ID_BITS
+                    - specConfig.getNetworkingConfig().getAttestationSubnetPrefixBits())
+            .intValue();
+
+    final UInt64 nodeOffset =
+        UInt64.valueOf(
+            nodeId.mod(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription()).toLong());
+
+    final Bytes32 permutationSeed =
+        Hash.sha256(
+            uint64ToBytes(
+                epoch
+                    .plus(nodeOffset)
+                    .dividedBy(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription())));
+
+    final int permutedPrefix =
+        computeShuffledIndex(
+            nodeIdPrefix,
+            1 << specConfig.getNetworkingConfig().getAttestationSubnetPrefixBits(),
+            permutationSeed);
+
+    return UInt64.valueOf(
+        permutedPrefix + index % specConfig.getNetworkingConfig().getAttestationSubnetCount());
   }
 
   IntList shuffleList(IntList input, Bytes32 seed) {

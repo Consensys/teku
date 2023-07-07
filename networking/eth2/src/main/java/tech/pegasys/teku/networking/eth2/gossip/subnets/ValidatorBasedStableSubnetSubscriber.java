@@ -16,7 +16,6 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import static java.lang.Integer.max;
 import static java.lang.Integer.min;
 import static java.util.Collections.emptySet;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
@@ -32,13 +31,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.constants.ValidatorConstants;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscriber {
@@ -54,8 +50,6 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private final Spec spec;
   private final int minimumSubnetSubscriptions;
   private final int attestationSubnetCount;
-  private final int attestationSubnetPrefixBits;
-  private final int epochsPerSubnetSubscription;
   private final int subnetsPerNode;
 
   private final Optional<UInt256> discoveryNodeId;
@@ -70,8 +64,6 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
     this.random = random;
     this.spec = spec;
     this.attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
-    this.attestationSubnetPrefixBits = spec.getNetworkingConfig().getAttestationSubnetPrefixBits();
-    this.epochsPerSubnetSubscription = spec.getNetworkingConfig().getEpochsPerSubnetSubscription();
     this.subnetsPerNode = spec.getNetworkingConfig().getSubnetsPerNode();
     IntStream.range(0, attestationSubnetCount).forEach(availableSubnetIndices::add);
     this.minimumSubnetSubscriptions = min(minimumSubnetSubscriptions, attestationSubnetCount);
@@ -124,10 +116,12 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
         totalNumberOfSubscriptions);
 
     final List<UInt64> subscribedSubnets =
-        computeSubscribedSubnets(
-            discoveryNodeId.orElseThrow(
-                () -> new IllegalArgumentException("Unable to get discovery node id")),
-            spec.computeEpochAtSlot(currentSlot));
+        spec.getGenesisSpec()
+            .miscHelpers()
+            .computeSubscribedSubnets(
+                discoveryNodeId.orElseThrow(
+                    () -> new IllegalArgumentException("Unable to get discovery node id")),
+                spec.computeEpochAtSlot(currentSlot));
 
     final Set<SubnetSubscription> newSubnetSubscriptions =
         subscribedSubnets.stream()
@@ -142,31 +136,6 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
       }
     }
     return newSubnetSubscriptions;
-  }
-
-  private List<UInt64> computeSubscribedSubnets(final UInt256 nodeId, final UInt64 epoch) {
-    return IntStream.range(0, subnetsPerNode)
-        .mapToObj(index -> computeSubscribedSubnet(nodeId, epoch, index))
-        .collect(Collectors.toList());
-  }
-
-  private UInt64 computeSubscribedSubnet(
-      final UInt256 nodeId, final UInt64 epoch, final int index) {
-
-    final int nodeIdPrefix =
-        nodeId.shiftRight(ValidatorConstants.NODE_ID_BITS - attestationSubnetPrefixBits).intValue();
-
-    final UInt64 nodeOffset = UInt64.valueOf(nodeId.mod(epochsPerSubnetSubscription).toLong());
-
-    final Bytes32 permutationSeed =
-        Hash.sha256(uint64ToBytes(epoch.plus(nodeOffset).dividedBy(epochsPerSubnetSubscription)));
-
-    final int permutedPrefix =
-        spec.atEpoch(epoch)
-            .miscHelpers()
-            .computeShuffledIndex(nodeIdPrefix, 1 << attestationSubnetPrefixBits, permutationSeed);
-
-    return UInt64.valueOf(permutedPrefix + index % attestationSubnetCount);
   }
 
   /**
