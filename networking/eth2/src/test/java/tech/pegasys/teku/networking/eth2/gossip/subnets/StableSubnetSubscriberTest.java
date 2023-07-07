@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
@@ -40,6 +41,9 @@ public class StableSubnetSubscriberTest {
   private final AttestationTopicSubscriber validatorApiChannel =
       mock(AttestationTopicSubscriber.class);
   private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
+
+  final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
   void shouldCreateEnoughSubscriptionsAtStart() {
@@ -50,7 +54,7 @@ public class StableSubnetSubscriberTest {
         ArgumentCaptor.forClass(Set.class);
 
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-    assertThat(subnetSubscriptions.getValue()).hasSize(2);
+    assertThat(subnetSubscriptions.getValue()).hasSize(4);
     assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
   }
@@ -84,7 +88,7 @@ public class StableSubnetSubscriberTest {
         ArgumentCaptor.forClass(Set.class);
     verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
 
-    assertThat(subnetSubscriptions.getValue()).hasSize(3);
+    assertThat(subnetSubscriptions.getValue()).hasSize(6);
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
   }
 
@@ -133,7 +137,7 @@ public class StableSubnetSubscriberTest {
 
     verify(validatorApiChannel).subscribeToPersistentSubnets(firstSubscriptionUpdate.capture());
 
-    assertThat(firstSubscriptionUpdate.getValue()).hasSize(1);
+    assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
 
     UInt64 firstUnsubscriptionSlot =
         firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
@@ -198,6 +202,10 @@ public class StableSubnetSubscriberTest {
 
   private StableSubnetSubscriber createStableSubnetSubscriber() {
     return new ValidatorBasedStableSubnetSubscriber(
-        validatorApiChannel, new Random(13241234L), spec, 0, Optional.empty());
+        validatorApiChannel,
+        new Random(13241234L),
+        spec,
+        0,
+        Optional.of(dataStructureUtil.randomUInt256()));
   }
 }

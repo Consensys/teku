@@ -27,19 +27,23 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ValidatorBasedStableSubnetSubscriberTest {
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
-  private final int attestatonSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
+  private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
+
+  final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
   void shouldSubscribeToNoMoreThanAttestationSubnetCount() {
     final ValidatorBasedStableSubnetSubscriber subscriber = createSubscriber(256);
     subscriber.onSlot(UInt64.ONE, 2);
-    verify(network, times(attestatonSubnetCount))
-        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestatonSubnetCount));
-    for (int i = 0; i < attestatonSubnetCount; i++) {
+    verify(network, times(attestationSubnetCount))
+        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
+    for (int i = 0; i < attestationSubnetCount; i++) {
       verify(network).subscribeToAttestationSubnetId(eq(i));
     }
   }
@@ -48,8 +52,8 @@ public class ValidatorBasedStableSubnetSubscriberTest {
   void shouldSubscribeToExpectedSubnetsWithNoMinimum() {
     final ValidatorBasedStableSubnetSubscriber subscriber = createSubscriber(0);
     subscriber.onSlot(UInt64.ONE, 10);
-    verify(network, times(10))
-        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestatonSubnetCount));
+    verify(network, times(20))
+        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
   }
 
   @NotNull
@@ -60,6 +64,6 @@ public class ValidatorBasedStableSubnetSubscriberTest {
         new Random(),
         spec,
         minimumSubnetSubscriptions,
-        Optional.empty());
+        Optional.of(dataStructureUtil.randomUInt256()));
   }
 }
