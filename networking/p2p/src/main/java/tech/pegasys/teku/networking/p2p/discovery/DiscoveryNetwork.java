@@ -21,8 +21,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.bouncycastle.math.ec.ECPoint;
-import org.ethereum.beacon.discovery.util.Functions;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -111,14 +109,12 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   @Override
   public Optional<UInt256> getDiscoveryNodeId() {
-    final ECPoint ecPoint =
-        Functions.publicKeyToPoint(
+    BigInteger nodeId =
+        new BigInteger(
             discoveryService
                 .getNodeId()
-                .orElseThrow(
-                    () -> new IllegalArgumentException("Unable to get discovery node id")));
-    final Bytes pubKeyUncompressed = Bytes.wrap(ecPoint.getEncoded(false)).slice(1);
-    BigInteger nodeId = new BigInteger(pubKeyUncompressed.toArray());
+                .orElseThrow(() -> new IllegalArgumentException("Unable to get discovery node id"))
+                .toArray());
     return Optional.of(UInt256.valueOf(nodeId));
   }
 
