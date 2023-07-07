@@ -123,7 +123,7 @@ public class MiscHelpers {
   }
 
   public UInt64 computeEndSlotAtEpoch(final UInt64 epoch) {
-    return computeStartSlotAtEpoch(epoch.plus(1)).minusMinZero(1);
+    return computeStartSlotAtEpoch(epoch).plus(specConfig.getSlotsPerEpoch() - 1);
   }
 
   public UInt64 computeSlotAtTime(final UInt64 genesisTime, final UInt64 currentTime) {
