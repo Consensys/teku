@@ -108,6 +108,11 @@ public class MockP2PNetwork<P extends Peer> implements P2PNetwork<P> {
   }
 
   @Override
+  public Optional<Bytes> getDiscoveryNodeId() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<String> getDiscoveryAddress() {
     return Optional.empty();
   }

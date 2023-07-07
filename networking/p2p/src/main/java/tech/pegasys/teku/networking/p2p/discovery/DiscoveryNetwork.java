@@ -106,6 +106,11 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   }
 
   @Override
+  public Optional<Bytes> getDiscoveryNodeId() {
+    return discoveryService.getNodeId();
+  }
+
+  @Override
   public Optional<String> getDiscoveryAddress() {
     return discoveryService.getDiscoveryAddress();
   }

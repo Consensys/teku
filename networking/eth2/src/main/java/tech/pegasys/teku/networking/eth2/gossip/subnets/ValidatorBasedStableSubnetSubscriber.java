@@ -16,20 +16,29 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 import static java.lang.Integer.max;
 import static java.lang.Integer.min;
 import static java.util.Collections.emptySet;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.math.BigInteger;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
+import org.bouncycastle.math.ec.ECPoint;
+import org.ethereum.beacon.discovery.util.Functions;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -49,18 +58,28 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private final Spec spec;
   private final int minimumSubnetSubscriptions;
   private final int attestationSubnetCount;
+  private final int attestationSubnetPrefixBits;
+  private final int epochsPerSubnetSubscription;
+  private final int subnetsPerNode;
+
+  private final Optional<Bytes> discoveryNodeId;
 
   public ValidatorBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber,
       final Random random,
       final Spec spec,
-      final int minimumSubnetSubscriptions) {
+      final int minimumSubnetSubscriptions,
+      final Optional<Bytes> discoveryNodeId) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.random = random;
     this.spec = spec;
     this.attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
+    this.attestationSubnetPrefixBits = spec.getNetworkingConfig().getAttestationSubnetPrefixBits();
+    this.epochsPerSubnetSubscription = spec.getNetworkingConfig().getEpochsPerSubnetSubscription();
+    this.subnetsPerNode = spec.getNetworkingConfig().getSubnetsPerNode();
     IntStream.range(0, attestationSubnetCount).forEach(availableSubnetIndices::add);
     this.minimumSubnetSubscriptions = min(minimumSubnetSubscriptions, attestationSubnetCount);
+    this.discoveryNodeId = discoveryNodeId;
   }
 
   @Override
@@ -95,9 +114,8 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
   private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNumberOfValidators(
       UInt64 currentSlot, int validatorCount) {
 
-    final int randomSubnetsPerValidator = ValidatorConstants.RANDOM_SUBNETS_PER_VALIDATOR;
     final int requiredSubnetSubscriptions =
-        min(attestationSubnetCount, randomSubnetsPerValidator * validatorCount);
+        min(attestationSubnetCount, subnetsPerNode * validatorCount);
     final int totalNumberOfSubscriptions =
         max(requiredSubnetSubscriptions, minimumSubnetSubscriptions);
 
@@ -108,7 +126,14 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
         "Updating number of persistent subnet subscriptions from {} to {}",
         subnetSubscriptions.size(),
         totalNumberOfSubscriptions);
-    final Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
+
+    final List<UInt64> subscribedSubnets =
+        computeSubscribedSubnets(extractNodeId(), spec.computeEpochAtSlot(currentSlot));
+
+    final Set<SubnetSubscription> newSubnetSubscriptions =
+        subscribedSubnets.stream()
+            .map(subnetId -> subscribeToSubnet(currentSlot, subnetId.intValue()))
+            .collect(Collectors.toSet());
 
     while (subnetSubscriptions.size() != totalNumberOfSubscriptions) {
       if (subnetSubscriptions.size() < totalNumberOfSubscriptions) {
@@ -120,8 +145,43 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
     return newSubnetSubscriptions;
   }
 
+  private UInt256 extractNodeId() {
+    final ECPoint ecPoint =
+        Functions.publicKeyToPoint(
+            discoveryNodeId.orElseThrow(
+                () -> new IllegalArgumentException("Unable to get discovery node id")));
+    final Bytes pubKeyUncompressed = Bytes.wrap(ecPoint.getEncoded(false)).slice(1);
+    BigInteger nodeId = new BigInteger(pubKeyUncompressed.toArray());
+    return UInt256.valueOf(nodeId);
+  }
+
+  private List<UInt64> computeSubscribedSubnets(final UInt256 nodeId, final UInt64 epoch) {
+    return IntStream.range(0, subnetsPerNode)
+        .mapToObj(index -> computeSubscribedSubnet(nodeId, epoch, index))
+        .collect(Collectors.toList());
+  }
+
+  private UInt64 computeSubscribedSubnet(
+      final UInt256 nodeId, final UInt64 epoch, final int index) {
+
+    final int nodeIdPrefix =
+        nodeId.shiftRight(ValidatorConstants.NODE_ID_BITS - attestationSubnetPrefixBits).intValue();
+
+    final UInt64 nodeOffset = UInt64.valueOf(nodeId.mod(epochsPerSubnetSubscription).toLong());
+
+    final Bytes32 permutationSeed =
+        Hash.sha256(uint64ToBytes(epoch.plus(nodeOffset).dividedBy(epochsPerSubnetSubscription)));
+
+    final int permutedPrefix =
+        spec.atEpoch(epoch)
+            .miscHelpers()
+            .computeShuffledIndex(nodeIdPrefix, 1 << attestationSubnetPrefixBits, permutationSeed);
+
+    return UInt64.valueOf(permutedPrefix + index % attestationSubnetCount);
+  }
+
   /**
-   * Subscribes to a new random subnetId, if any subnetID is available. Returns the new
+   * Subscribes to a new random subnetId, if any subnetId is available. Returns the new
    * SubnetSubscription object.
    *
    * @param currentSlot the current slot
@@ -134,6 +194,14 @@ public class ValidatorBasedStableSubnetSubscriber implements StableSubnetSubscri
     availableSubnetIndices.remove(newSubnetId);
     SubnetSubscription subnetSubscription =
         new SubnetSubscription(newSubnetId, getRandomUnsubscriptionSlot(currentSlot));
+    subnetSubscriptions.add(subnetSubscription);
+    return subnetSubscription;
+  }
+
+  private SubnetSubscription subscribeToSubnet(UInt64 currentSlot, int subnetId) {
+    availableSubnetIndices.remove(subnetId);
+    SubnetSubscription subnetSubscription =
+        new SubnetSubscription(subnetId, getRandomUnsubscriptionSlot(currentSlot));
     subnetSubscriptions.add(subnetSubscription);
     return subnetSubscription;
   }

@@ -180,6 +180,11 @@ public class LibP2PNetwork implements P2PNetwork<Peer> {
   }
 
   @Override
+  public Optional<Bytes> getDiscoveryNodeId() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<String> getDiscoveryAddress() {
     return Optional.empty();
   }

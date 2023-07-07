@@ -203,6 +203,11 @@ public class DiscV5Service extends Service implements DiscoveryService {
   }
 
   @Override
+  public Optional<Bytes> getNodeId() {
+    return Optional.of(discoverySystem.getLocalNodeRecord().getNodeId());
+  }
+
+  @Override
   public Optional<String> getDiscoveryAddress() {
     final NodeRecord nodeRecord = discoverySystem.getLocalNodeRecord();
     if (nodeRecord.getUdpAddress().isEmpty()) {

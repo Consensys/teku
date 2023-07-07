@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.util.Optional;
 import java.util.Random;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,7 @@ public class ValidatorBasedStableSubnetSubscriberTest {
         new AttestationTopicSubscriber(spec, network),
         new Random(),
         spec,
-        minimumSubnetSubscriptions);
+        minimumSubnetSubscriptions,
+        Optional.empty());
   }
 }

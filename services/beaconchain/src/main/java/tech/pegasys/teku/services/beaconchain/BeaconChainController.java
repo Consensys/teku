@@ -720,6 +720,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initActiveValidatorTracker() {
     LOG.debug("BeaconChainController.initActiveValidatorTracker");
+
     final StableSubnetSubscriber stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
@@ -727,7 +728,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 attestationTopicSubscriber,
                 new Random(),
                 spec,
-                beaconConfig.p2pConfig().getMinimumSubnetSubscriptions());
+                beaconConfig.p2pConfig().getMinimumSubnetSubscriptions(),
+                p2pNetwork.getDiscoveryNodeId());
     this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber, spec);
   }
 

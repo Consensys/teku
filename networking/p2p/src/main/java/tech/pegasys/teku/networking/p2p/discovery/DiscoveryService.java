@@ -34,6 +34,8 @@ public interface DiscoveryService {
 
   Optional<String> getEnr();
 
+  Optional<Bytes> getNodeId();
+
   Optional<String> getDiscoveryAddress();
 
   void updateCustomENRField(String fieldName, Bytes value);

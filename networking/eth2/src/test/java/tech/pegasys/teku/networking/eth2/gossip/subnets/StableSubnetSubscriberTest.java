@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -197,6 +198,6 @@ public class StableSubnetSubscriberTest {
 
   private StableSubnetSubscriber createStableSubnetSubscriber() {
     return new ValidatorBasedStableSubnetSubscriber(
-        validatorApiChannel, new Random(13241234L), spec, 0);
+        validatorApiChannel, new Random(13241234L), spec, 0, Optional.empty());
   }
 }

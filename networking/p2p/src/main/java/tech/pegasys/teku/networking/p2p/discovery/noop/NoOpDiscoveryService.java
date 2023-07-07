@@ -50,6 +50,11 @@ public class NoOpDiscoveryService implements DiscoveryService {
   }
 
   @Override
+  public Optional<Bytes> getNodeId() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<String> getDiscoveryAddress() {
     return Optional.empty();
   }
