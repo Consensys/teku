@@ -49,9 +49,9 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
     final UInt64 attestationSlotTimeMillis =
-        secondsToMillis(miscHelpers.computeStartTimeAtSlot(genesisTime, attestationSlot));
-    if (isAttestationSlotAfterCurrentTime(attestationSlotTimeMillis, currentTimeMillis)
-        && isFromFarFuture(attestation, genesisTime, currentTimeMillis)) {
+        secondsToMillis(miscHelpers.computeTimeAtSlot(genesisTime, attestationSlot));
+    if (isFromFarFuture(attestation, genesisTime, currentTimeMillis)
+        && isAttestationSlotAfterCurrentTime(attestationSlotTimeMillis, currentTimeMillis)) {
       return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
     }
     if (isCurrentTimeBeforeMinimumAttestationBroadcastTime(
@@ -77,23 +77,20 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
         miscHelpers.computeSlotAtTime(genesisTime, millisToSeconds(currentTimeMillis));
     final UInt64 currentEpoch = miscHelpers.computeEpochAtSlot(currentSlot);
     final UInt64 previousEpoch = currentEpoch.minusMinZero(1);
-    final UInt64 previousEpochStartTimeMillisWithDisparity =
-        secondsToMillis(miscHelpers.computeStartTimeAtEpoch(genesisTime, previousEpoch))
-            .minusMinZero(specConfig.getMaximumGossipClockDisparity());
-    // current epoch end time is the start of the new epoch
-    final UInt64 currentEpochEndTimeMillisWithDisparity =
-        secondsToMillis(miscHelpers.computeStartTimeAtEpoch(genesisTime, currentEpoch.increment()))
-            .plus(specConfig.getMaximumGossipClockDisparity());
+    final UInt64 slotDisparity = calculateMaximumGossipClockDisparityInSlots();
     // min and max slot for the given attestation slot based on previous and current epoch with
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY
     final UInt64 minSlot =
-        miscHelpers.computeSlotAtTime(
-            genesisTime, millisToSeconds(previousEpochStartTimeMillisWithDisparity));
-    final UInt64 maxSlot =
-        miscHelpers.computeSlotAtTime(
-            genesisTime, millisToSeconds(currentEpochEndTimeMillisWithDisparity));
+        miscHelpers.computeStartSlotAtEpoch(previousEpoch).minusMinZero(slotDisparity);
+    final UInt64 maxSlot = miscHelpers.computeEndSlotAtEpoch(currentEpoch).plus(slotDisparity);
 
     return attestationSlot.isGreaterThanOrEqualTo(minSlot)
         && attestationSlot.isLessThanOrEqualTo(maxSlot);
+  }
+
+  private UInt64 calculateMaximumGossipClockDisparityInSlots() {
+    return UInt64.valueOf(
+            specConfig.getMaximumGossipClockDisparity() / specConfig.getMillisPerSlot())
+        .plus(1);
   }
 }
