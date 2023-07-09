@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.Test;
 
 class MilestoneSpecificOctetStreamRequestContentTypeDefinitionTest {
 
-  final byte[] data = "hello".getBytes();
+  final byte[] data = "hello".getBytes(StandardCharsets.UTF_8);
   final InputStream input = new ByteArrayInputStream(data);
 
   private final RequestContentTypeDefinition<String> typeDefinition =
@@ -50,7 +51,7 @@ class MilestoneSpecificOctetStreamRequestContentTypeDefinitionTest {
     return (bytes, version) -> {
       final StringBuilder sb = new StringBuilder();
 
-      sb.append(new String(bytes.toArray()));
+      sb.append(new String(bytes.toArray(), StandardCharsets.UTF_8));
       sb.append("_");
       version.ifPresent(sb::append);
 
