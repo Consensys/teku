@@ -390,7 +390,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
       throws IOException {
     final RequestBody body = RequestBody.create(postData, SSZ);
 
-    final Request.Builder requestBuilder = new Builder().url(getUrl() + route).post(body);
+    final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
     milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
 
     final Request request = requestBuilder.build();
