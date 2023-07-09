@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Objects;
@@ -354,7 +353,7 @@ public class Spec {
   private Optional<SchemaDefinitions> getSchemaDefinitionsForMilestone(
       final Optional<String> milestone) {
     return milestone
-        .map(v -> SpecMilestone.valueOf(v.toUpperCase(Locale.ROOT)))
+        .map(SpecMilestone::forName)
         .map(specVersions::get)
         .map(SpecVersion::getSchemaDefinitions);
   }

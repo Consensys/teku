@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszDa
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
-import java.util.Locale;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
@@ -39,8 +38,7 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final MetaData metadata = TestDataUtils.loadYaml(testDefinition, "meta.yaml", MetaData.class);
-    final String fork = metadata.fork.toUpperCase(Locale.ROOT);
-    final SpecMilestone specMilestone = SpecMilestone.valueOf(fork);
+    final SpecMilestone specMilestone = SpecMilestone.forName(metadata.fork);
     processUpgrade(testDefinition, specMilestone);
   }
 

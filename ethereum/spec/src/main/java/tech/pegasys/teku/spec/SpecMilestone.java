@@ -13,8 +13,11 @@
 
 package tech.pegasys.teku.spec;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -132,5 +135,10 @@ public enum SpecMilestone {
       default:
         throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
     }
+  }
+
+  public static SpecMilestone forName(final String milestoneName) {
+    checkNotNull(milestoneName, "Milestone name can't be null");
+    return SpecMilestone.valueOf(milestoneName.toUpperCase(Locale.ROOT));
   }
 }
