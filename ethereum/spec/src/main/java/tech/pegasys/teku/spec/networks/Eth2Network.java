@@ -22,7 +22,6 @@ public enum Eth2Network {
   PRATER("prater"),
   ROPSTEN("ropsten"),
   SEPOLIA("sepolia"),
-  KILN("kiln"),
   GNOSIS("gnosis"),
   CHIADO("chiado"),
   // Test networks
