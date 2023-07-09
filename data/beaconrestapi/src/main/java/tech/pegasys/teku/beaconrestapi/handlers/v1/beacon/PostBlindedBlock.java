@@ -113,9 +113,9 @@ public class PostBlindedBlock extends RestApiEndpoint {
                     schemaDefinitionCache
                         .milestoneAtSlot(blockContainer.getSlot())
                         .equals(milestone)),
-            json ->
+            context ->
                 slotBasedSelector(
-                    json,
+                    context.getBody(),
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedBlindedBlockContainerSchema),
             spec::deserializeSignedBlindedBlockContainer)

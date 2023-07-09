@@ -15,9 +15,14 @@ package tech.pegasys.teku.infrastructure.restapi.openapi.request;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 
 public interface RequestContentTypeDefinition<T> extends OpenApiTypeDefinition {
 
   T deserialize(InputStream in) throws IOException;
+
+  default T deserialize(InputStream in, final Map<String, String> headers) throws IOException {
+    return deserialize(in);
+  }
 }

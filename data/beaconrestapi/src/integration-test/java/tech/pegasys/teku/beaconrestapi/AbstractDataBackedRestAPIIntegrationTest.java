@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_GONE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -383,9 +384,15 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     return client.newCall(request).execute();
   }
 
-  protected Response postSsz(final String route, final byte[] postData) throws IOException {
+  protected Response postSsz(
+      final String route, final byte[] postData, final Optional<String> milestone)
+      throws IOException {
     final RequestBody body = RequestBody.create(postData, SSZ);
-    final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
+
+    final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
+    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+
+    final Request request = requestBuilder.build();
     return client.newCall(request).execute();
   }
 

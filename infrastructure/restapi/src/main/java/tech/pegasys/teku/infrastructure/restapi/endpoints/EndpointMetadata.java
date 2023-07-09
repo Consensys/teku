@@ -45,6 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.io.function.IOFunction;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableOneOfTypeDefiniti
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiResponse;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.MilestoneSpecificOctetStreamRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OctetStreamRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition.BodyTypeSelector;
@@ -145,6 +147,29 @@ public class EndpointMetadata {
       final RequestContentTypeDefinition<T> requestContentTypeDefinition =
           (RequestContentTypeDefinition<T>) requestBodyTypes.get(contentType);
       final T result = requestContentTypeDefinition.deserialize(body);
+      if (result == null) {
+        throw new MissingRequestBodyException();
+      }
+      return result;
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
+  public <T> T getRequestBody(final InputStream body, final Map<String, String> headers)
+      throws JsonProcessingException {
+    checkArgument(!requestBodyTypes.isEmpty(), "requestBodyType has not been defined");
+
+    final Optional<String> maybeContentType = Optional.ofNullable(headers.get("Content-Type"));
+
+    try {
+      final String contentType = selectRequestContentType(maybeContentType);
+      final RequestContentTypeDefinition<T> requestContentTypeDefinition =
+          (RequestContentTypeDefinition<T>) requestBodyTypes.get(contentType);
+      final T result = requestContentTypeDefinition.deserialize(body, headers);
       if (result == null) {
         throw new MissingRequestBodyException();
       }
@@ -532,6 +557,24 @@ public class EndpointMetadata {
       this.requestBodyTypes.put(
           ContentTypes.OCTET_STREAM,
           OctetStreamRequestContentTypeDefinition.parseBytes(octetStreamParser));
+      return this;
+    }
+
+    public <T> EndpointMetaDataBuilder requestBodyType(
+        final SerializableOneOfTypeDefinition<T> requestBodyType,
+        final BodyTypeSelector<T> bodyTypeSelector,
+        final BiFunction<Bytes, Optional<String>, T> milestoneSpecificOctetStreamParser) {
+      // any time we're setting a request body type, it's possible to get unsupported media-type, so
+      // add implicitly
+      response(
+          SC_UNSUPPORTED_MEDIA_TYPE, "Unsupported media-type supplied", HTTP_ERROR_RESPONSE_TYPE);
+      this.requestBodyTypes.put(
+          ContentTypes.JSON,
+          new OneOfJsonRequestContentTypeDefinition<>(requestBodyType, bodyTypeSelector));
+      this.requestBodyTypes.put(
+          ContentTypes.OCTET_STREAM,
+          MilestoneSpecificOctetStreamRequestContentTypeDefinition.parseBytes(
+              milestoneSpecificOctetStreamParser));
       return this;
     }
 
