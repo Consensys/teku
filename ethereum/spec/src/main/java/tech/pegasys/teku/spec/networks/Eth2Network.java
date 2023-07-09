@@ -20,7 +20,6 @@ public enum Eth2Network {
   // Live networks
   MAINNET("mainnet"),
   PRATER("prater"),
-  ROPSTEN("ropsten"),
   SEPOLIA("sepolia"),
   GNOSIS("gnosis"),
   CHIADO("chiado"),
