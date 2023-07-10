@@ -900,7 +900,7 @@ public class Spec {
   // Deneb Utils
   public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
       final ReadOnlyStore store, final UInt64 epoch) {
-    final UInt64 currentEpoch = getCurrentSlot(store);
+    final UInt64 currentEpoch = getCurrentEpoch(store);
     final SpecConfig config = atEpoch(epoch).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     final UInt64 minEpochForBlobSidecars =
