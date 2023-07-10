@@ -55,9 +55,11 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsB
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BlobSidecarsByRootMessageHandlerTest {
 
+  private final UInt64 genesisTime = UInt64.valueOf(1982239L);
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
 
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
@@ -87,6 +89,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
 
   private final Eth2Peer peer = mock(Eth2Peer.class);
 
@@ -112,8 +115,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     // deneb fork epoch is finalized
     when(combinedChainDataClient.getFinalizedBlock())
         .thenReturn(Optional.of(dataStructureUtil.randomSignedBeaconBlock(denebFirstSlot)));
-    // current epoch is deneb fork epoch + 1
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.plus(1));
+    when(combinedChainDataClient.getStore()).thenReturn(store);
     // mock the blob sidecars storage
     when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(any(), any()))
         .thenAnswer(
@@ -121,9 +123,18 @@ public class BlobSidecarsByRootMessageHandlerTest {
               final Bytes32 blockRoot = i.getArgument(0);
               final UInt64 index = i.getArgument(1);
               return SafeFuture.completedFuture(
-                  Optional.of(dataStructureUtil.randomBlobSidecar(blockRoot, index)));
+                  Optional.of(
+                      dataStructureUtil.randomBlobSidecar(denebFirstSlot, blockRoot, index)));
             });
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
+
+    // mock store
+    when(store.getGenesisTime()).thenReturn(genesisTime);
+    // current epoch is deneb fork epoch + 1
+    when(store.getTimeSeconds())
+        .thenReturn(
+            spec.getSlotStartTime(
+                denebForkEpoch.increment().times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
   }
 
   @Test
@@ -259,8 +270,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch (%s)",
-            blobIdentifiers.get(0).getBlockRoot(), denebForkEpoch);
+            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            blobIdentifiers.get(0).getBlockRoot());
   }
 
   @Test
@@ -296,8 +307,8 @@ public class BlobSidecarsByRootMessageHandlerTest {
     assertThat(rpcException.getResponseCode()).isEqualTo(INVALID_REQUEST_CODE);
     assertThat(rpcException.getErrorMessageString())
         .isEqualTo(
-            "Block root (%s) references a block earlier than the minimum_request_epoch (%s)",
-            blobIdentifiers.get(0).getBlockRoot(), denebForkEpoch);
+            "Block root (%s) references a block earlier than the minimum_request_epoch",
+            blobIdentifiers.get(0).getBlockRoot());
   }
 
   @Test
