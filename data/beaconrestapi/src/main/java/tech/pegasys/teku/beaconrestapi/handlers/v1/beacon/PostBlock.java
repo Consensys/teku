@@ -83,9 +83,11 @@ public class PostBlock extends RestApiEndpoint {
                     schemaDefinitionCache
                         .milestoneAtSlot(blockContainer.getSlot())
                         .equals(milestone)),
-            json ->
+            context ->
                 slotBasedSelector(
-                    json, schemaDefinitionCache, SchemaDefinitions::getSignedBlockContainerSchema),
+                    context.getBody(),
+                    schemaDefinitionCache,
+                    SchemaDefinitions::getSignedBlockContainerSchema),
             spec::deserializeSignedBlockContainer)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
