@@ -299,7 +299,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     chainUpdater.setCurrentSlot(UInt64.valueOf(slot));
   }
 
-  public ArrayList<SignedBlockAndState> createBlocksAtSlots(UInt64... slots) {
+  public List<SignedBlockAndState> createBlocksAtSlots(UInt64... slots) {
     final ArrayList<SignedBlockAndState> results = new ArrayList<>();
     for (UInt64 slot : slots) {
       final SignedBlockAndState block = chainUpdater.advanceChain(slot);

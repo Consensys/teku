@@ -36,7 +36,8 @@ public class MetricsCountersByIntervals {
   private final LabelledMetric<Counter> labelledMetricCounter;
 
   private MetricsCountersByIntervals(
-      final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels,
+      @SuppressWarnings("NonApiType")
+          final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels,
       final List<Integer> labelValuesListSizes,
       final LabelledMetric<Counter> labelledMetricCounter) {
     this.labelsToBoundariesToIntervalLabels = labelsToBoundariesToIntervalLabels;
@@ -138,6 +139,7 @@ public class MetricsCountersByIntervals {
                         .toArray(String[]::new)));
   }
 
+  @SuppressWarnings("NonApiType")
   private Optional<TreeMap<UInt64, String>> lookupIntervalLabels(
       final List<String> customLabelValuesList) {
     return labelValuesListSizes.stream()
@@ -150,6 +152,7 @@ public class MetricsCountersByIntervals {
         .findFirst();
   }
 
+  @SuppressWarnings("NonApiType")
   protected static TreeMap<UInt64, String> boundariesToIntervalLabels(final List<Long> boundaries) {
     UInt64 previous = UInt64.ZERO;
     final TreeMap<UInt64, String> boundariesToLabels = new TreeMap<>();
