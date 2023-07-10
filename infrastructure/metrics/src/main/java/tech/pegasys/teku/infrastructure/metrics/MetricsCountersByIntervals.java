@@ -35,9 +35,9 @@ public class MetricsCountersByIntervals {
   private final List<Integer> labelValuesListSizes;
   private final LabelledMetric<Counter> labelledMetricCounter;
 
+  @SuppressWarnings("NonApiType")
   private MetricsCountersByIntervals(
-      @SuppressWarnings("NonApiType")
-          final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels,
+      final Map<List<String>, TreeMap<UInt64, String>> labelsToBoundariesToIntervalLabels,
       final List<Integer> labelValuesListSizes,
       final LabelledMetric<Counter> labelledMetricCounter) {
     this.labelsToBoundariesToIntervalLabels = labelsToBoundariesToIntervalLabels;
