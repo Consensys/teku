@@ -23,26 +23,31 @@ public class GetPayloadResponse {
   private final ExecutionPayload executionPayload;
   private final UInt256 blockValue;
   private final Optional<BlobsBundle> blobsBundle;
+  private final boolean shouldOverrideBuilder;
 
   public GetPayloadResponse(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     this.blockValue = UInt256.ZERO;
     this.blobsBundle = Optional.empty();
+    this.shouldOverrideBuilder = false;
   }
 
   public GetPayloadResponse(final ExecutionPayload executionPayload, final UInt256 blockValue) {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
     this.blobsBundle = Optional.empty();
+    this.shouldOverrideBuilder = false;
   }
 
   public GetPayloadResponse(
       final ExecutionPayload executionPayload,
       final UInt256 blockValue,
-      final BlobsBundle blobsBundle) {
+      final BlobsBundle blobsBundle,
+      final boolean shouldOverrideBuilder) {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
     this.blobsBundle = Optional.of(blobsBundle);
+    this.shouldOverrideBuilder = shouldOverrideBuilder;
   }
 
   public ExecutionPayload getExecutionPayload() {
@@ -57,6 +62,10 @@ public class GetPayloadResponse {
     return blobsBundle;
   }
 
+  public boolean getShouldOverrideBuilder() {
+    return shouldOverrideBuilder;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -66,14 +75,15 @@ public class GetPayloadResponse {
       return false;
     }
     final GetPayloadResponse that = (GetPayloadResponse) o;
-    return Objects.equals(executionPayload, that.executionPayload)
+    return shouldOverrideBuilder == that.shouldOverrideBuilder
+        && Objects.equals(executionPayload, that.executionPayload)
         && Objects.equals(blockValue, that.blockValue)
         && Objects.equals(blobsBundle, that.blobsBundle);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionPayload, blockValue, blobsBundle);
+    return Objects.hash(executionPayload, blockValue, blobsBundle, shouldOverrideBuilder);
   }
 
   @Override
@@ -82,6 +92,7 @@ public class GetPayloadResponse {
         .add("executionPayload", executionPayload)
         .add("blockValue", blockValue)
         .add("blobsBundle", blobsBundle)
+        .add("shouldOverrideBuilder", shouldOverrideBuilder)
         .toString();
   }
 }

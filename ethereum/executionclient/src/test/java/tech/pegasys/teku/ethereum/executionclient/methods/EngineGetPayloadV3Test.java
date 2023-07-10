@@ -128,7 +128,7 @@ class EngineGetPayloadV3Test {
     jsonRpcMethod = new EngineGetPayloadV3(executionEngineClient, spec);
 
     final GetPayloadResponse expectedGetPayloadResponse =
-        new GetPayloadResponse(executionPayloadDeneb, blockValue, blobsBundle);
+        new GetPayloadResponse(executionPayloadDeneb, blockValue, blobsBundle, false);
     assertThat(jsonRpcMethod.execute(params)).isCompletedWithValue(expectedGetPayloadResponse);
 
     verify(executionEngineClient).getPayloadV3(eq(executionPayloadContext.getPayloadId()));
@@ -144,7 +144,8 @@ class EngineGetPayloadV3Test {
             new GetPayloadV3Response(
                 ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload),
                 blockValue,
-                BlobsBundleV1.fromInternalBlobsBundle(blobsBundle))));
+                BlobsBundleV1.fromInternalBlobsBundle(blobsBundle),
+                false)));
   }
 
   private SafeFuture<Response<GetPayloadV3Response>> dummyFailedResponse(

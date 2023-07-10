@@ -29,12 +29,16 @@ public class GetPayloadV3Response {
 
   public final BlobsBundleV1 blobsBundle;
 
+  public final boolean shouldOverrideBuilder;
+
   public GetPayloadV3Response(
       @JsonProperty("executionPayload") final ExecutionPayloadV3 executionPayload,
       @JsonProperty("blockValue") final UInt256 blockValue,
-      @JsonProperty("blobsBundle") final BlobsBundleV1 blobsBundle) {
+      @JsonProperty("blobsBundle") final BlobsBundleV1 blobsBundle,
+      @JsonProperty("shouldOverrideBuilder") final boolean shouldOverrideBuilder) {
     this.executionPayload = executionPayload;
     this.blockValue = blockValue;
     this.blobsBundle = blobsBundle;
+    this.shouldOverrideBuilder = shouldOverrideBuilder;
   }
 }
