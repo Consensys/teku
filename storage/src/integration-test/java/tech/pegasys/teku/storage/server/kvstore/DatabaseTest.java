@@ -97,7 +97,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 @TestDatabaseContext
-@Execution(ExecutionMode.CONCURRENT)
+@Execution(ExecutionMode.SAME_THREAD)
 public class DatabaseTest {
 
   private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(3);
@@ -391,10 +391,9 @@ public class DatabaseTest {
     final ChainBuilder forkB = chainBuilder.fork();
 
     // Add base blocks
-    addBlocks(chainBuilder.streamBlocksAndStates().collect(toList()));
-
-    // add blob sidecars
-    addBlobSidecars(chainBuilder.streamBlobSidecars().collect(toList()));
+    addBlocksAndBlobSidecars(
+        chainBuilder.streamBlocksAndStates().collect(toList()),
+        chainBuilder.streamBlobSidecars().collect(toList()));
 
     // Set target slot at which to create duplicate blocks
     // and generate block options to make each block unique
@@ -416,14 +415,9 @@ public class DatabaseTest {
     assertThat(block10Roots.size()).isEqualTo(3);
 
     // Add blocks at same height sequentially
-    add(List.of(blockA));
-    add(List.of(blockB));
-    add(List.of(blockC));
-
-    // Add corresponding blob sidecars
-    addBlobSidecars(forkA.getBlobSidecars(blockA.getRoot()));
-    addBlobSidecars(forkB.getBlobSidecars(blockB.getRoot()));
-    addBlobSidecars(chainBuilder.getBlobSidecars(blockC.getRoot()));
+    add(List.of(blockA), forkA.getBlobSidecars(blockA.getRoot()));
+    add(List.of(blockB), forkB.getBlobSidecars(blockB.getRoot()));
+    add(List.of(blockC), chainBuilder.getBlobSidecars(blockC.getRoot()));
 
     // Verify all blocks are available
     assertThat(store.retrieveBlock(blockA.getRoot()))
@@ -447,8 +441,7 @@ public class DatabaseTest {
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateBlockAtSlot(11, randomBlobsOptions);
-    add(List.of(finalBlock));
-    addBlobSidecars(chainBuilder.getBlobSidecars(finalBlock.getRoot()));
+    add(List.of(finalBlock), chainBuilder.getBlobSidecars(finalBlock.getRoot()));
 
     final UInt64 finalEpoch = chainBuilder.getLatestEpoch().plus(ONE);
     final SignedBlockAndState finalizedBlock =
@@ -1243,7 +1236,7 @@ public class DatabaseTest {
 
     // Save new blocks and finalized checkpoint
     final StoreTransaction tx = recentChainData.startStoreTransaction();
-    chainBuilder.streamBlocksAndStates(1).forEach(b -> add(tx, List.of(b)));
+    chainBuilder.streamBlocksAndStates(1).forEach(b -> add(tx, List.of(b), List.of()));
     justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock, tx);
     tx.commit().join();
 
@@ -1993,7 +1986,7 @@ public class DatabaseTest {
 
     if (batchUpdate) {
       final StoreTransaction transaction = recentChainData.startStoreTransaction();
-      add(transaction, allBlocksAndStates);
+      add(transaction, allBlocksAndStates, List.of());
       justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock, transaction);
       assertThat(transaction.commit()).isCompleted();
     } else {
@@ -2214,13 +2207,9 @@ public class DatabaseTest {
       final Collection<SignedBeaconBlock> availableBlocksSidecars,
       final Collection<SignedBeaconBlock> prunedBlocksSidecars) {
     availableBlocksSidecars.forEach(
-        block -> {
-          assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isNotEmpty();
-        });
+        block -> assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isNotEmpty());
     prunedBlocksSidecars.forEach(
-        block -> {
-          assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isEmpty();
-        });
+        block -> assertThat(database.getBlobSidecarKeys(block.getSlotAndBlockRoot())).isEmpty());
   }
 
   private void addBlocks(final SignedBlockAndState... blocks) {
@@ -2228,31 +2217,52 @@ public class DatabaseTest {
   }
 
   private void addBlocks(final List<SignedBlockAndState> blocks) {
+    addBlocksAndBlobSidecars(blocks, List.of());
+  }
+
+  private void addBlocksAndBlobSidecars(
+      final List<SignedBlockAndState> blocks, final List<BlobSidecar> blobSidecars) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
-      transaction.putBlockAndState(block, spec.calculateBlockCheckpoints(block.getState()));
+      transaction.putBlockAndState(
+          block,
+          blobSidecars.stream()
+              .filter(blobSidecar -> blobSidecar.getBlockRoot().equals(block.getRoot()))
+              .collect(Collectors.toUnmodifiableList()),
+          spec.calculateBlockCheckpoints(block.getState()));
     }
     commit(transaction);
   }
 
-  private void addBlobSidecars(final List<BlobSidecar> blobSidecars) {
-    blobSidecars.forEach(blobSidecar -> database.storeBlobSidecar(blobSidecar));
-  }
-
   private void add(final Collection<SignedBlockAndState> blocks) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    add(transaction, blocks);
+    add(transaction, blocks, List.of());
     commit(transaction);
   }
 
   private void add(
-      final StoreTransaction transaction, final Collection<SignedBlockAndState> blocksAndStates) {
+      final Collection<SignedBlockAndState> blocks, final List<BlobSidecar> blobSidecars) {
+    final StoreTransaction transaction = recentChainData.startStoreTransaction();
+    add(transaction, blocks, blobSidecars);
+    commit(transaction);
+  }
+
+  private void add(
+      final StoreTransaction transaction,
+      final Collection<SignedBlockAndState> blocksAndStates,
+      final List<BlobSidecar> blobSidecars) {
     blocksAndStates.stream()
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
         .forEach(
             blockAndState ->
                 transaction.putBlockAndState(
-                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
+                    blockAndState,
+                    blobSidecars.stream()
+                        .filter(
+                            blobSidecar ->
+                                blobSidecar.getBlockRoot().equals(blockAndState.getRoot()))
+                        .collect(Collectors.toUnmodifiableList()),
+                    spec.calculateBlockCheckpoints(blockAndState.getState())));
   }
 
   private void justifyAndFinalizeEpoch(final UInt64 epoch, final SignedBlockAndState block) {
