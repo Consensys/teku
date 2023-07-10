@@ -42,7 +42,7 @@ public class StorageUpdate {
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Map<Bytes32, UInt64> deletedHotBlocks;
-  private final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars;
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
@@ -56,7 +56,7 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
@@ -69,7 +69,7 @@ public class StorageUpdate {
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.hotBlocks = hotBlocks;
     this.hotStates = hotStates;
-    this.hotBlobSidecars = hotBlobSidecars;
+    this.blobSidecars = blobSidecars;
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.deletedHotBlocks = deletedHotBlocks;
     this.stateRoots = stateRoots;
@@ -89,7 +89,7 @@ public class StorageUpdate {
             && hotStates.isEmpty()
             && deletedHotBlocks.isEmpty()
             && stateRoots.isEmpty()
-            && hotBlobSidecars.isEmpty()
+            && blobSidecars.isEmpty()
             && maybeEarliestBlobSidecarSlot.isEmpty()
             && !optimisticTransitionBlockRootSet;
   }
@@ -118,8 +118,8 @@ public class StorageUpdate {
     return hotBlocks;
   }
 
-  public Map<SlotAndBlockRoot, List<BlobSidecar>> getHotBlobSidecars() {
-    return hotBlobSidecars;
+  public Map<SlotAndBlockRoot, List<BlobSidecar>> getBlobSidecars() {
+    return blobSidecars;
   }
 
   public Optional<UInt64> getEarliestBlobSidecarSlot() {

@@ -131,16 +131,6 @@ public class RetryingStorageUpdateChannel implements StorageUpdateChannel {
         .ifExceptionGetsHereRaiseABug();
   }
 
-  @Override
-  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
-    return retry(() -> delegate.onBlobSidecar(blobSidecar));
-  }
-
-  @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
-    return retry(() -> delegate.onBlobSidecarsRemoval(slotAndBlockRoot));
-  }
-
   private <O> SafeFuture<O> retry(final Supplier<SafeFuture<O>> method) {
     final UInt64 startTime = timeProvider.getTimeInMillis();
     while (!aborting.get()) {
