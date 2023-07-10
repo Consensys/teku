@@ -51,14 +51,14 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.11') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.15') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:4.19.0'
+    dependency 'org.webjars:swagger-ui:5.1.0'
     dependency 'org.thymeleaf:thymeleaf:3.1.1.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.161'
     dependencySet(group: 'com.github.oshi', version: '6.4.4') {
