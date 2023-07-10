@@ -751,8 +751,7 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
-    return new AttestationData(
-        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
+    return randomAttestationData(slot, randomBytes32());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {

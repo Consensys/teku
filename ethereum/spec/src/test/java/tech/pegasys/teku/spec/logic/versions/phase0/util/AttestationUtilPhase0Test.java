@@ -21,19 +21,37 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AttestationUtilPhase0Test {
 
-  private static final SpecVersion SPEC_VERSION =
-      TestSpecFactory.createMinimalPhase0().forMilestone(SpecMilestone.PHASE0);
+  private static final Spec SPEC = TestSpecFactory.createMinimalPhase0();
+
+  private static final SpecVersion SPEC_VERSION = SPEC.forMilestone(SpecMilestone.PHASE0);
 
   private static final int SECONDS_PER_SLOT = SPEC_VERSION.getConfig().getSecondsPerSlot();
 
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(SPEC);
+
   private final AttestationUtilPhase0 attestationUtilPhase0 =
       (AttestationUtilPhase0) SPEC_VERSION.getAttestationUtil();
+
+  @ParameterizedTest
+  @MethodSource("provideIsFromFarFutureArguments")
+  public void testIsFromFarFuture(
+      final int attestationSlot, final UInt64 currentTimeMillis, final boolean expectedResult) {
+    final Attestation attestation = dataStructureUtil.randomAttestation(attestationSlot);
+    // set genesisTime as 0 for simplification
+    final UInt64 genesisTime = UInt64.ZERO;
+    final boolean actualResult =
+        attestationUtilPhase0.isFromFarFuture(attestation, genesisTime, currentTimeMillis);
+    assertThat(actualResult).isEqualTo(expectedResult);
+  }
 
   @ParameterizedTest
   @MethodSource("provideCurrentTimeAfterAttestationPropagationSlotRangeArguments")
@@ -57,6 +75,15 @@ class AttestationUtilPhase0Test {
         attestationUtilPhase0.isCurrentTimeBeforeMinimumAttestationBroadcastTime(
             UInt64.valueOf(attestationSlot), genesisTime, currentTimeMillis);
     assertThat(actualResult).isEqualTo(expectedResult);
+  }
+
+  // attestation is fork choice eligible in attestationSlot + 1, MAX_FUTURE_SLOT_ALLOWANCE is 3
+  private static Stream<Arguments> provideIsFromFarFutureArguments() {
+    return Stream.of(
+        Arguments.of(4, getTimeForSlotInMillis(2), false),
+        Arguments.of(5, getTimeForSlotInMillis(2), true),
+        Arguments.of(30, getTimeForSlotInMillis(10), true),
+        Arguments.of(0, getTimeForSlotInMillis(10), false));
   }
 
   // ATTESTATION_PROPAGATION_SLOT_RANGE is 32
