@@ -17,7 +17,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHand
 import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.CLOSED;
 import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.DATA_COMPLETED;
 import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.EXPECT_DATA;
-import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.INITIAL;
 import static tech.pegasys.teku.networking.eth2.rpc.core.Eth2OutgoingRequestHandler.State.READ_COMPLETE;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -48,7 +47,6 @@ public class Eth2OutgoingRequestHandler<
 
   @VisibleForTesting
   enum State {
-    INITIAL,
     EXPECT_DATA,
     DATA_COMPLETED,
     READ_COMPLETE,
@@ -58,6 +56,7 @@ public class Eth2OutgoingRequestHandler<
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final AsyncRunner asyncRunner;
   private final int maximumResponseChunks;
   private final Eth2RpcResponseHandler<TResponse, ?> responseHandler;
   private final ResponseStream<TResponse> responseStream;
@@ -65,16 +64,15 @@ public class Eth2OutgoingRequestHandler<
   private final AsyncRunner timeoutRunner;
   private final AtomicBoolean hasReceivedInitialBytes = new AtomicBoolean(false);
   private final AtomicInteger currentChunkCount = new AtomicInteger(0);
-  private final AtomicReference<State> state = new AtomicReference<>(INITIAL);
+  private final AtomicReference<State> state;
+  private final AtomicReference<AsyncResponseProcessor<TResponse>> responseProcessor =
+      new AtomicReference<>();
 
   private final String protocolId;
   private final RpcResponseDecoder<TResponse, ?> responseDecoder;
   private final boolean shouldReceiveResponse;
-  private final AsyncResponseProcessor<TResponse> responseProcessor;
   private final Duration ttbfTimeout;
   private final Duration respTimeout;
-
-  private volatile RpcStream rpcStream;
 
   public Eth2OutgoingRequestHandler(
       final AsyncRunner asyncRunner,
@@ -85,28 +83,21 @@ public class Eth2OutgoingRequestHandler<
       final TRequest request,
       final Eth2RpcResponseHandler<TResponse, ?> responseHandler,
       final NetworkingSpecConfig networkingConfig) {
+    this.asyncRunner = asyncRunner;
     this.timeoutRunner = timeoutRunner;
     this.maximumResponseChunks = request.getMaximumResponseChunks();
 
     this.responseHandler = responseHandler;
     responseStream = new ResponseStream<>(responseHandler);
-    responseProcessor =
-        new AsyncResponseProcessor<>(asyncRunner, responseStream, this::onAsyncProcessorError);
     this.responseDecoder = responseDecoder;
     this.shouldReceiveResponse = shouldReceiveResponse;
     this.protocolId = protocolId;
     this.ttbfTimeout = Duration.of(networkingConfig.getTtfbTimeout(), ChronoUnit.SECONDS);
     this.respTimeout = Duration.of(networkingConfig.getRespTimeout(), ChronoUnit.SECONDS);
+    this.state = new AtomicReference<>(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED);
   }
 
   public void handleInitialPayloadSent(final RpcStream stream) {
-    if (!transferToState(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED, List.of(INITIAL))) {
-      abortRequest(stream, new IllegalStateException("Unexpected state: " + state));
-      return;
-    }
-
-    this.rpcStream = stream;
-
     // Close the write side of the stream
     stream.closeWriteStream().ifExceptionGetsHereRaiseABug();
 
@@ -123,8 +114,6 @@ public class Eth2OutgoingRequestHandler<
 
   @Override
   public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
-    this.rpcStream = rpcStream;
-
     if (!data.isReadable()) {
       return;
     }
@@ -134,7 +123,7 @@ public class Eth2OutgoingRequestHandler<
         throw new RpcException.ExtraDataAppendedException(" extra data: " + bufToString(data));
       }
 
-      onFirstByteReceived();
+      onFirstByteReceived(rpcStream);
 
       List<TResponse> maybeResponses = responseDecoder.decodeNextResponses(data);
       final int chunksReceived = currentChunkCount.addAndGet(maybeResponses.size());
@@ -144,7 +133,7 @@ public class Eth2OutgoingRequestHandler<
       }
 
       for (TResponse maybeResponse : maybeResponses) {
-        responseProcessor.processResponse(maybeResponse);
+        getResponseProcessor(rpcStream).processResponse(maybeResponse);
       }
       if (chunksReceived < maximumResponseChunks) {
         if (!maybeResponses.isEmpty()) {
@@ -163,6 +152,18 @@ public class Eth2OutgoingRequestHandler<
       LOG.error("Encountered error while processing response", t);
       abortRequest(rpcStream, t);
     }
+  }
+
+  private AsyncResponseProcessor<TResponse> getResponseProcessor(final RpcStream rpcStream) {
+    return responseProcessor.updateAndGet(
+        oldVal -> {
+          if (oldVal == null) {
+            return new AsyncResponseProcessor<>(
+                asyncRunner, responseStream, throwable -> abortRequest(rpcStream, throwable));
+          } else {
+            return oldVal;
+          }
+        });
   }
 
   private String bufToString(ByteBuf buf) {
@@ -215,19 +216,15 @@ public class Eth2OutgoingRequestHandler<
     return false;
   }
 
-  private void onFirstByteReceived() {
+  private void onFirstByteReceived(final RpcStream rpcStream) {
     if (hasReceivedInitialBytes.compareAndSet(false, true)) {
       // Setup initial chunk timeout
       ensureNextResponseArrivesInTime(rpcStream, currentChunkCount.get(), currentChunkCount);
     }
   }
 
-  private void onAsyncProcessorError(final Throwable throwable) {
-    abortRequest(rpcStream, throwable);
-  }
-
   private void completeRequest(final RpcStream rpcStream) {
-    responseProcessor
+    getResponseProcessor(rpcStream)
         .finishProcessing()
         .thenAccept(
             (__) -> {
@@ -252,8 +249,7 @@ public class Eth2OutgoingRequestHandler<
   }
 
   private void abortRequest(final RpcStream rpcStream, Throwable error, final boolean force) {
-    if (!transferToState(ABORTED, List.of(INITIAL, EXPECT_DATA, DATA_COMPLETED, READ_COMPLETE))
-        && !force) {
+    if (!transferToState(ABORTED, List.of(EXPECT_DATA, DATA_COMPLETED, READ_COMPLETE)) && !force) {
       return;
     }
 
@@ -264,7 +260,9 @@ public class Eth2OutgoingRequestHandler<
       responseDecoder.close();
       rpcStream.closeAbruptly().ifExceptionGetsHereRaiseABug();
     } finally {
-      responseProcessor.finishProcessing().always(() -> responseStream.completeWithError(error));
+      getResponseProcessor(rpcStream)
+          .finishProcessing()
+          .always(() -> responseStream.completeWithError(error));
     }
   }
 
