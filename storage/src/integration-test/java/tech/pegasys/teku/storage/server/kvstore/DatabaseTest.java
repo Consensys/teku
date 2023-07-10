@@ -2235,9 +2235,7 @@ public class DatabaseTest {
   }
 
   private void add(final Collection<SignedBlockAndState> blocks) {
-    final StoreTransaction transaction = recentChainData.startStoreTransaction();
-    add(transaction, blocks, List.of());
-    commit(transaction);
+    add(blocks, List.of());
   }
 
   private void add(

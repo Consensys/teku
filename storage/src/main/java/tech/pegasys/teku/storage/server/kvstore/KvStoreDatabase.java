@@ -913,6 +913,10 @@ public class KvStoreDatabase implements Database {
     if (update.isBlobSidecarsEnabled()) {
       removeNonCanonicalBlobSidecars(
           update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
+
+      updateBlobSidecarData(
+          update.getEarliestBlobSidecarSlot(),
+          update.getBlobSidecars().values().stream().flatMap(Collection::stream));
     }
 
     LOG.trace("Applying hot updates");
@@ -946,12 +950,6 @@ public class KvStoreDatabase implements Database {
 
       LOG.trace("Committing hot db changes");
       updater.commit();
-    }
-
-    if (update.isBlobSidecarsEnabled()) {
-      updateBlobSidecarData(
-          update.getEarliestBlobSidecarSlot(),
-          update.getBlobSidecars().values().stream().flatMap(Collection::stream));
     }
 
     long endTime = System.nanoTime();
