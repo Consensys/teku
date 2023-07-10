@@ -26,7 +26,6 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -34,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.server.kvstore.ColumnEntry;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor;
 import tech.pegasys.teku.storage.server.kvstore.KvStoreAccessor.KvStoreTransaction;
@@ -263,20 +261,6 @@ public class V4HotKvStoreDao {
     public void addVotes(final Map<UInt64, VoteTracker> votes) {
       votes.forEach(
           (validatorIndex, vote) -> transaction.put(schema.getColumnVotes(), validatorIndex, vote));
-    }
-
-    @Override
-    public void addHotBlobSidecarsForBlock(
-        final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
-      blobSidecars.forEach(
-          blobSidecar ->
-              transaction.put(
-                  schema.getColumnBlobSidecarBySlotRootBlobIndex(),
-                  new SlotAndBlockRootAndBlobIndex(
-                      slotAndBlockRoot.getSlot(),
-                      slotAndBlockRoot.getBlockRoot(),
-                      blobSidecar.getIndex()),
-                  blobSidecar.sszSerialize()));
     }
 
     @Override

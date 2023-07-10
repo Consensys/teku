@@ -281,7 +281,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .map(
                 blobsBundle -> {
                   LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
-                  return new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle);
+                  return new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle, false);
                 })
             .orElse(new GetPayloadResponse(executionPayload));
 

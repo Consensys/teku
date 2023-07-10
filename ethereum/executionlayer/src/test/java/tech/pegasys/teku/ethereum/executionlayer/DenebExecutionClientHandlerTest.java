@@ -66,7 +66,8 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
                     ExecutionPayloadV3.fromInternalExecutionPayload(
                         dataStructureUtil.randomExecutionPayload()),
                     UInt256.MAX_VALUE,
-                    BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()))));
+                    BlobsBundleV1.fromInternalBlobsBundle(dataStructureUtil.randomBlobsBundle()),
+                    true)));
     when(executionEngineClient.getPayloadV3(context.getPayloadId())).thenReturn(dummyResponse);
 
     final UInt64 slot = dataStructureUtil.randomUInt64(1_000_000);
@@ -74,6 +75,9 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     assertThat(future).isCompleted();
     assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadDeneb.class);
+    assertThat(future.get().getBlockValue()).isEqualTo(UInt256.MAX_VALUE);
+    assertThat(future.get().getBlobsBundle()).isPresent();
+    assertThat(future.get().getShouldOverrideBuilder()).isTrue();
   }
 
   @Test
