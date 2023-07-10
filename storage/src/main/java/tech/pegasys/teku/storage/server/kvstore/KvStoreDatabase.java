@@ -913,6 +913,10 @@ public class KvStoreDatabase implements Database {
     if (update.isBlobSidecarsEnabled()) {
       removeNonCanonicalBlobSidecars(
           update.getDeletedHotBlocks(), update.getFinalizedChildToParentMap());
+
+      updateBlobSidecarData(
+          update.getEarliestBlobSidecarSlot(),
+          update.getBlobSidecars().values().stream().flatMap(Collection::stream));
     }
 
     LOG.trace("Applying hot updates");
@@ -937,10 +941,7 @@ public class KvStoreDatabase implements Database {
 
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
-      if (update.isBlobSidecarsEnabled()) {
-        updater.addHotBlobSidecars(update.getHotBlobSidecars());
-        update.getEarliestBlobSidecarSlot().ifPresent(this::updateEarliestBlobSidecarSlotIfNeeded);
-      }
+
       if (update.getStateRoots().size() > 0) {
         updater.addHotStateRoots(update.getStateRoots());
       }
@@ -950,23 +951,36 @@ public class KvStoreDatabase implements Database {
       LOG.trace("Committing hot db changes");
       updater.commit();
     }
+
     long endTime = System.nanoTime();
     DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
 
-  private void updateEarliestBlobSidecarSlotIfNeeded(final UInt64 earliestBlobSidecarSlot) {
-    if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
-      try (final FinalizedUpdater finalizedUpdater = finalizedUpdater()) {
-        finalizedUpdater.setEarliestBlobSidecarSlot(earliestBlobSidecarSlot);
-        finalizedUpdater.commit();
-      }
+  private void updateBlobSidecarData(
+      final Optional<UInt64> getEarliestBlobSidecarSlot, final Stream<BlobSidecar> blobSidecars) {
+    LOG.trace("Applying blob sidecar updates");
+
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      // add blob sidecars
+      blobSidecars.forEach(updater::addBlobSidecar);
+
+      // update the earliest blob sidecar slot if needed
+      getEarliestBlobSidecarSlot.ifPresent(
+          earliestSlot -> {
+            if (dao.getEarliestBlobSidecarSlot().isEmpty()) {
+              updater.setEarliestBlobSidecarSlot(earliestSlot);
+            }
+          });
+
+      LOG.trace("Committing blob sidecar updates");
+      updater.commit();
     }
   }
 
   private Optional<SlotAndExecutionPayloadSummary> updateFinalizedData(
-      Map<Bytes32, Bytes32> finalizedChildToParentMap,
+      final Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates,
       final Map<Bytes32, UInt64> deletedHotBlocksRootsWithSlot,
