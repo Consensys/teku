@@ -1578,7 +1578,7 @@ public final class DataStructureUtil {
     return randomDepositEvent(randomUInt64());
   }
 
-  public ArrayList<DepositWithIndex> randomDeposits(int num) {
+  public List<DepositWithIndex> randomDeposits(int num) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
     for (int i = 0; i < num; i++) {
