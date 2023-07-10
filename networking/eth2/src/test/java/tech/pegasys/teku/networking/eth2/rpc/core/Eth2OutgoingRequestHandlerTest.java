@@ -395,6 +395,29 @@ public class Eth2OutgoingRequestHandlerTest
     assertThat(blocks.size()).isEqualTo(2);
   }
 
+  @Test
+  public void shouldWorkWhenInitialPayloadEventIsLate() throws Exception {
+    deliverChunk(0);
+
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    for (int i = 1; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+    complete();
+    close();
+
+    asyncRequestRunner.waitForExactly(maxChunks);
+    timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
+    assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
+    assertThat(blocks.size()).isEqualTo(3);
+    verify(rpcStream, never()).closeAbruptly();
+  }
+
   private void sendInitialPayload() {
     reqHandler.handleInitialPayloadSent(rpcStream);
   }

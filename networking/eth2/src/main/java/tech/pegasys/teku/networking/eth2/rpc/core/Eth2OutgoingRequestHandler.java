@@ -100,21 +100,25 @@ public class Eth2OutgoingRequestHandler<
   }
 
   public void handleInitialPayloadSent(final RpcStream stream) {
-    if (!transferToState(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED, List.of(INITIAL))) {
-      abortRequest(stream, new IllegalStateException("Unexpected state: " + state));
-      return;
-    }
+    maybeInitiateResponseHandling(stream);
+  }
 
-    this.rpcStream = stream;
+  // processData() might occur prior to handleInitialPayloadSent() so treat them both as 'request
+  // has been sent'
+  private void maybeInitiateResponseHandling(RpcStream stream) {
+    if (transferToState(shouldReceiveResponse ? EXPECT_DATA : DATA_COMPLETED, List.of(INITIAL))) {
 
-    // Close the write side of the stream
-    stream.closeWriteStream().ifExceptionGetsHereRaiseABug();
+      this.rpcStream = stream;
 
-    if (shouldReceiveResponse) {
-      // Start timer for first bytes
-      ensureFirstBytesArriveWithinTimeLimit(stream);
-    } else {
-      ensureReadCompleteArrivesInTime(stream);
+      // Close the write side of the stream
+      stream.closeWriteStream().ifExceptionGetsHereRaiseABug();
+
+      if (shouldReceiveResponse) {
+        // Start timer for first bytes
+        ensureFirstBytesArriveWithinTimeLimit(stream);
+      } else {
+        ensureReadCompleteArrivesInTime(stream);
+      }
     }
   }
 
@@ -123,7 +127,7 @@ public class Eth2OutgoingRequestHandler<
 
   @Override
   public void processData(final NodeId nodeId, final RpcStream rpcStream, final ByteBuf data) {
-    this.rpcStream = rpcStream;
+    maybeInitiateResponseHandling(rpcStream);
 
     if (!data.isReadable()) {
       return;
