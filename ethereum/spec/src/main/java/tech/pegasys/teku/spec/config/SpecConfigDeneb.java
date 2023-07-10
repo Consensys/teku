@@ -54,9 +54,6 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
 
   int getEpochsStoreBlobs();
 
-  /** Maybe user input, use {@link #getEpochsStoreBlobs()} instead */
-  Optional<Integer> getMaybeEpochsStoreBlobs();
-
   @Override
   Optional<SpecConfigDeneb> toVersionDeneb();
 }

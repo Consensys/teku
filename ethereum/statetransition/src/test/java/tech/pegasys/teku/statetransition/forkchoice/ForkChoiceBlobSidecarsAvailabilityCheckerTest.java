@@ -443,7 +443,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
             .map(SszKZGCommitment::getKZGCommitment)
             .collect(Collectors.toUnmodifiableList());
 
-    when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(true);
+    when(spec.isStorageOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(true);
 
     switch (blobsAvailability) {
       case FULL:
@@ -530,7 +530,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     blobSidecarsComplete.forEach(
         blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
-    when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(false);
+    when(spec.isStorageOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(false);
     when(blockBlobSidecarsTracker.getBlockBody())
         .thenReturn(block.getMessage().getBody().toVersionDeneb());
     when(blockBlobSidecarsTracker.getCompletionFuture()).thenReturn(SafeFuture.COMPLETE);

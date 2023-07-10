@@ -227,7 +227,7 @@ public class Eth2NetworkConfiguration {
   }
 
   public static class Builder {
-    private static final String EPOCHS_MAX_KEYWORD = "MAX";
+    private static final String EPOCHS_STORE_BLOBS_MAX_KEYWORD = "MAX";
     private String constants;
     private Optional<String> initialState = Optional.empty();
     private boolean usingCustomInitialState = false;
@@ -658,7 +658,7 @@ public class Eth2NetworkConfiguration {
       if (epochsStoreBlobs == null || epochsStoreBlobs.isBlank()) {
         return Optional.empty();
       }
-      if (epochsStoreBlobs.toUpperCase(Locale.ROOT).equals(EPOCHS_MAX_KEYWORD)) {
+      if (epochsStoreBlobs.toUpperCase(Locale.ROOT).equals(EPOCHS_STORE_BLOBS_MAX_KEYWORD)) {
         // 26 thousand years should be enough
         return Optional.of(Integer.MAX_VALUE);
       }
@@ -668,7 +668,7 @@ public class Eth2NetworkConfiguration {
       } catch (final NumberFormatException ex) {
         throw new InvalidConfigurationException(
             "Expecting number or "
-                + EPOCHS_MAX_KEYWORD
+                + EPOCHS_STORE_BLOBS_MAX_KEYWORD
                 + " keyword for the number of the epochs to store blobs for");
       }
       checkArgument(

@@ -119,11 +119,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
-  public Optional<Integer> getMaybeEpochsStoreBlobs() {
-    return maybeEpochsStoreBlobs;
-  }
-
-  @Override
   public int getEpochsStoreBlobs() {
     return maybeEpochsStoreBlobs
         .filter(epochsStoreBlobsInput -> epochsStoreBlobsInput > minEpochsForBlobSidecarsRequests)

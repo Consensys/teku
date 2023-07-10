@@ -224,7 +224,7 @@ public class HistoricalBatchFetcher {
             requestParams.getStartSlot(), requestParams.getCount(), requestManager::processBlock);
 
     final SafeFuture<Void> blobSidecarsRequest;
-    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+    if (blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(endSlot)) {
       maybeEarliestBlobSidecarSlot =
           Optional.of(
               requestParams
@@ -272,7 +272,7 @@ public class HistoricalBatchFetcher {
 
   private SafeFuture<Void> processReceivedBlockByRoot(final SignedBeaconBlock block) {
     blocksToImport.add(block);
-    if (blobSidecarManager.isAvailabilityRequiredAtSlot(block.getSlot())) {
+    if (blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(block.getSlot())) {
       final int numberOfKzgCommitments =
           block
               .getMessage()
@@ -392,7 +392,7 @@ public class HistoricalBatchFetcher {
 
   private void validateBlobSidecars(
       final UInt64 latestSlotInBatch, final Collection<SignedBeaconBlock> blocks) {
-    if (!blobSidecarManager.isAvailabilityRequiredAtSlot(latestSlotInBatch)) {
+    if (!blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(latestSlotInBatch)) {
       return;
     }
     LOG.trace("Validating blob sidecars for a batch");

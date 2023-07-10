@@ -230,7 +230,7 @@ public class SyncSourceBatch implements Batch {
     final SafeFuture<Void> blobSidecarsRequest;
     final Optional<BlobSidecarRequestHandler> maybeBlobSidecarRequestHandler;
 
-    if (blobSidecarManager.isAvailabilityRequiredAtSlot(endSlot)) {
+    if (blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(endSlot)) {
       LOG.debug(
           "Requesting blob sidecars for {} slots starting at {} from peer {}",
           remainingSlots,

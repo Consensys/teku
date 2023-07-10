@@ -115,8 +115,8 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public boolean isAvailabilityRequiredAtSlot(final UInt64 slot) {
-    return spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(recentChainData.getStore(), slot);
+  public boolean isStorageOfBlobSidecarsRequiredAtSlot(final UInt64 slot) {
+    return spec.isStorageOfBlobSidecarsRequiredAtSlot(recentChainData.getStore(), slot);
   }
 
   @Override
