@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -82,16 +83,18 @@ public class AttestationUtilPhase0 extends AttestationUtil {
     return attestationForkChoiceEligibleTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
   }
 
-  private boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
+  @VisibleForTesting
+  boolean isCurrentTimeAfterAttestationPropagationSlotRange(
+      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+    return maximumBroadcastTimeMillis(attestationSlot, genesisTime).isLessThan(currentTimeMillis);
+  }
+
+  @VisibleForTesting
+  boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 minimumBroadcastTimeMillis =
         minimumBroadcastTimeMillis(attestationSlot, genesisTime);
     return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
-  }
-
-  private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
-      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    return maximumBroadcastTimeMillis(attestationSlot, genesisTime).isLessThan(currentTimeMillis);
   }
 
   private UInt64 maximumBroadcastTimeMillis(

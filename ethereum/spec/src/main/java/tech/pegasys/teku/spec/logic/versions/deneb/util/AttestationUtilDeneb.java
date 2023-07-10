@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.deneb.util;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -69,7 +70,8 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
         currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
   }
 
-  private boolean isAttestationSlotInCurrentOrPreviousEpoch(
+  @VisibleForTesting
+  boolean isAttestationSlotInCurrentOrPreviousEpoch(
       final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 currentSlot =
         miscHelpers.computeSlotAtTime(genesisTime, millisToSeconds(currentTimeMillis));
@@ -80,7 +82,8 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY
     final UInt64 minSlot =
         miscHelpers.computeStartSlotAtEpoch(previousEpoch).minusMinZero(slotDisparity);
-    final UInt64 maxSlot = miscHelpers.computeEndSlotAtEpoch(currentEpoch).plus(slotDisparity);
+    final UInt64 maxSlot =
+        miscHelpers.computeStartSlotAtEpoch(currentEpoch.plus(1)).plus(slotDisparity);
 
     return attestationSlot.isGreaterThanOrEqualTo(minSlot)
         && attestationSlot.isLessThanOrEqualTo(maxSlot);

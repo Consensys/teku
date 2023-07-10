@@ -122,10 +122,6 @@ public class MiscHelpers {
     return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
-  public UInt64 computeEndSlotAtEpoch(final UInt64 epoch) {
-    return computeStartSlotAtEpoch(epoch).plus(specConfig.getSlotsPerEpoch() - 1);
-  }
-
   public UInt64 computeSlotAtTime(final UInt64 genesisTime, final UInt64 currentTime) {
     return currentTime.minusMinZero(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
   }
