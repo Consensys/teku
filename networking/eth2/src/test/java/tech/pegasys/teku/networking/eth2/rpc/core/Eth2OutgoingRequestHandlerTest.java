@@ -408,13 +408,30 @@ public class Eth2OutgoingRequestHandlerTest
     complete();
     close();
 
-    asyncRequestRunner.waitForExactly(maxChunks);
+    assertAllReceivedSuccessfully(maxChunks);
+  }
+
+  @Test
+  public void shouldWorkWhenInitialPayloadEventAfterReadCompleteWithEmptyResponse()
+      throws Exception {
+    complete();
+
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    close();
+
+    assertAllReceivedSuccessfully(0);
+  }
+
+  private void assertAllReceivedSuccessfully(int chunkCount) throws InterruptedException {
+    asyncRequestRunner.waitForExactly(chunkCount);
     timeoutRunner.executeUntilDone();
     Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
 
     assertThat(finishedProcessingFuture).isCompletedWithValue(null);
     assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
-    assertThat(blocks.size()).isEqualTo(3);
+    assertThat(blocks.size()).isEqualTo(chunkCount);
     verify(rpcStream, never()).closeAbruptly();
   }
 

@@ -186,6 +186,8 @@ public class Eth2OutgoingRequestHandler<
 
   @Override
   public void readComplete(NodeId nodeId, RpcStream rpcStream) {
+    maybeInitiateResponseHandling(rpcStream);
+
     if (!transferToState(READ_COMPLETE, List.of(DATA_COMPLETED, EXPECT_DATA))) {
       abortRequest(rpcStream, new IllegalStateException("Unexpected state: " + state));
       return;
