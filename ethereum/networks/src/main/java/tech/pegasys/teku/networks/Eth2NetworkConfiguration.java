@@ -19,12 +19,10 @@ import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
-import static tech.pegasys.teku.spec.networks.Eth2Network.KILN;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
-import static tech.pegasys.teku.spec.networks.Eth2Network.ROPSTEN;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SEPOLIA;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
@@ -488,12 +486,8 @@ public class Eth2NetworkConfiguration {
           return applyMinimalNetworkDefaults();
         case PRATER:
           return applyPraterNetworkDefaults();
-        case ROPSTEN:
-          return applyRopstenNetworkDefaults();
         case SEPOLIA:
           return applySepoliaNetworkDefaults();
-        case KILN:
-          return applyKilnNetworkDefaults();
         case GNOSIS:
           return applyGnosisNetworkDefaults();
         case CHIADO:
@@ -596,30 +590,6 @@ public class Eth2NetworkConfiguration {
               "enr:-LK4QLM_pPHa78R8xlcU_s40Y3XhFjlb3kPddW9lRlY67N5qeFE2Wo7RgzDgRs2KLCXODnacVHMFw1SfpsW3R474RZEBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpB53wQoAAAQIP__________gmlkgnY0gmlwhANBY-yJc2VjcDI1NmsxoQNsZkFXgKbTzuxF7uwxlGauTGJelE6HD269CcFlZ_R7A4N0Y3CCI4yDdWRwgiOM");
     }
 
-    public Builder applyRopstenNetworkDefaults() {
-      return applyTestnetDefaults()
-          .constants(ROPSTEN.configName())
-          .startupTimeoutSeconds(120)
-          .eth1DepositContractDeployBlock(12269949)
-          .defaultInitialState(
-              "https://github.com/eth-clients/merge-testnets/raw/5b1b44aa912dd3433ba30d381345659c53918955/ropsten-beacon-chain/genesis.ssz")
-          .customGenesisState(
-              "https://github.com/eth-clients/merge-testnets/raw/5b1b44aa912dd3433ba30d381345659c53918955/ropsten-beacon-chain/genesis.ssz")
-          .discoveryBootnodes(
-              // Teku bootnode
-              "enr:-KG4QMJSJ7DHk6v2p-W8zQ3Xv7FfssZ_1E3p2eY6kN13staMObUonAurqyWhODoeY6edXtV8e9eL9RnhgZ9va2SMDRQMhGV0aDKQS-iVMYAAAHD0AQAAAAAAAIJpZIJ2NIJpcIQDhAAhiXNlY3AyNTZrMaEDXBVUZhhmdy1MYor1eGdRJ4vHYghFKDgjyHgt6sJ-IlCDdGNwgiMog3VkcIIjKA",
-              // EF bootnodes
-              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
-              "enr:-L64QLKGahA2AQwFUrX1rpad2zfSgtSwdFUSAH2vLwYkFaGIFtaCKwllLVeRyaxm_EiJA_AnIut11VBWssanktwEzmOCAQyHYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEojetBIlzZWNwMjU2azGhAmIKKR-unrW_VMUSW9ctYQVt4rYRD7HmQ48xkM-yNyxKiHN5bmNuZXRzBoN0Y3CCIyiDdWRwgiMo",
-              "enr:-Ly4QBKxH0EE-Z1VHY7GbxgV6axbnD0jJoeHsj0tOY7DeOyqW1GhIrgEyxb6Rl_rS10qrgrBtJOI8Yt3bd7rXHk3GBlsh2F0dG5ldHOI__________-EZXRoMpA8-jusgAAAcf__________gmlkgnY0gmlwhKfr5v6Jc2VjcDI1NmsxoQPmax4TV2mAzlHJV1J0l-6tQkHui-iIJ7mcCiyE9YREMohzeW5jbmV0cwyDdGNwgiMog3VkcIIjKA",
-              "enr:-Ly4QKEbHPy_jbA3xy_ZR04LVyJ8x2vGoVSUZ2QvoLHTHiCoeWraxyWwl3MhRupM0aXbr8U_OBJ2GkqZAxbY1I5boJtRh2F0dG5ldHOI__________-EZXRoMpA8-jusgAAAcf__________gmlkgnY0gmlwhAWhjUqJc2VjcDI1NmsxoQLTpctSHKHGN7nGTQmCP4-PSTtSYcppPqGTkvCbR-iUAIhzeW5jbmV0cw-DdGNwgiMog3VkcIIjKA",
-              "enr:-Ly4QBPqYWxS4x6UuU2IbDFGRYpMj-z1-rtoRFXGw6uJ0fQ0Rix0Vtak2dSl0SO0w50WKTSmFubSpHkxLmeHJ7kZ-S1Rh2F0dG5ldHOI__________-EZXRoMpA8-jusgAAAcf__________gmlkgnY0gmlwhAWhhAmJc2VjcDI1NmsxoQPpPhUwcdObdY1ERHpiR2X7vaAZ05xwHs1uLEIUjea044hzeW5jbmV0cwmDdGNwgiMog3VkcIIjKA",
-              "enr:-L64QOfVzGCvyI73fW6IFzugYZr0QfYItn0j19P8zgbmgFdJKIdFLUp7lynEwy0U9YgFhKF4NF4PumailtLAmUv4bM2CApmHYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEh7WWsIlzZWNwMjU2azGhAsMdsKC6SYYlIN7huLAhhxxRzOJOka7gpfnFZ2Auq0kiiHN5bmNuZXRzBoN0Y3CCIyiDdWRwgiMo",
-              "enr:-L64QNCPH53Je5MJ_TbKHnPSqKO1XZtywJK4gF4UA3UcQyHZEJKpcPHbXYnibrDUB7XEbZ1NW2INUK9uSD2ecOVVXfmCARCHYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEQWz6UYlzZWNwMjU2azGhAovELkeemN_zzm-wEyQJo8p0DgiM4o32zSDQkiR1LOIIiHN5bmNuZXRzA4N0Y3CCIyiDdWRwgiMo",
-              "enr:-L64QESLzEbBz8I38oLg1PX1ATTGZUQ5KUadgy4UAZqSsutLdW4rSASTCFKL0ssqmq0lUXEF7aP-4gvuDB9IvVb42syCAx6HYXR0bmV0c4j__________4RldGgykDz6O6yAAABx__________-CaWSCdjSCaXCEw8ndRIlzZWNwMjU2azGhAirZcWMVxDPb5T4exQOfGRxIHICCcAxSpi1_mCaehUgyiHN5bmNuZXRzDIN0Y3CCIyiDdWRwgiMo",
-              "enr:-L24QN8Y-8WTMuwF8ePM2wOjzlMdLOYwl3QJmXs1KILv6ZZwVovYC822cb-nh1R2U3Hi6AiHS5SsINNrHzLQVzFrsduBg4dhdHRuZXRziP__________hGV0aDKQPPo7rIAAAHH__________4JpZIJ2NIJpcITDyd1CiXNlY3AyNTZrMaECroNSTYv0Gy272DBfn-in38LLREpMwzOP18LoLrYJ4jeIc3luY25ldHMJg3RjcIIjKIN1ZHCCIyg");
-    }
-
     private Builder applySepoliaNetworkDefaults() {
       return applyTestnetDefaults()
           .constants(SEPOLIA.configName())
@@ -637,21 +607,6 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QFoZTWR8ulxGVsWydTNGdwEESueIdj-wB6UmmjUcm-AOPxnQi7wprzwcdo7-1jBW_JxELlUKJdJES8TDsbl1EdNlh2F0dG5ldHOI__78_v2bsV-EZXRoMpA2-lATkAAAcf__________gmlkgnY0gmlwhBLYJjGJc2VjcDI1NmsxoQI0gujXac9rMAb48NtMqtSTyHIeNYlpjkbYpWJw46PmYYhzeW5jbmV0cw-DdGNwgiMog3VkcIIjKA",
               // Another bootnode
               "enr:-L64QC9Hhov4DhQ7mRukTOz4_jHm4DHlGL726NWH4ojH1wFgEwSin_6H95Gs6nW2fktTWbPachHJ6rUFu0iJNgA0SB2CARqHYXR0bmV0c4j__________4RldGgykDb6UBOQAABx__________-CaWSCdjSCaXCEA-2vzolzZWNwMjU2azGhA17lsUg60R776rauYMdrAz383UUgESoaHEzMkvm4K6k6iHN5bmNuZXRzD4N0Y3CCIyiDdWRwgiMo");
-    }
-
-    public Builder applyKilnNetworkDefaults() {
-      return applyTestnetDefaults()
-          .constants(KILN.configName())
-          .startupTimeoutSeconds(120)
-          .eth1DepositContractDeployBlock(0)
-          .defaultInitialState(
-              "https://github.com/eth-clients/merge-testnets/raw/a44b13a8d495984f4bc9770348a1c451f615be76/kiln/genesis.ssz")
-          .customGenesisState(
-              "https://github.com/eth-clients/merge-testnets/raw/a44b13a8d495984f4bc9770348a1c451f615be76/kiln/genesis.ssz")
-          .discoveryBootnodes(
-              "enr:-Iq4QMCTfIMXnow27baRUb35Q8iiFHSIDBJh6hQM5Axohhf4b6Kr_cOCu0htQ5WvVqKvFgY28893DHAg8gnBAXsAVqmGAX53x8JggmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
-              "enr:-KG4QFkPJUFWuONp5grM94OJvNht9wX6N36sA4wqucm6Z02ECWBQRmh6AzndaLVGYBHWre67mjK-E0uKt2CIbWrsZ_8DhGV0aDKQc6pfXHAAAHAyAAAAAAAAAIJpZIJ2NIJpcISl6LTmiXNlY3AyNTZrMaEDHlSNOgYrNWP8_l_WXqDMRvjv6gUAvHKizfqDDVc8feaDdGNwgiMog3VkcIIjKA",
-              "enr:-MK4QI-wkVW1PxL4ksUM4H_hMgTTwxKMzvvDMfoiwPBuRxcsGkrGPLo4Kho3Ri1DEtJG4B6pjXddbzA9iF2gVctxv42GAX9v5WG5h2F0dG5ldHOIAAAAAAAAAACEZXRoMpBzql9ccAAAcDIAAAAAAAAAgmlkgnY0gmlwhKRcjMiJc2VjcDI1NmsxoQK1fc46pmVHKq8HNYLkSVaUv4uK2UBsGgjjGWU6AAhAY4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
     }
 
     public Builder applyGnosisNetworkDefaults() {

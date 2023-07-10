@@ -52,6 +52,7 @@ import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition.T
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.CustomResponseTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata.EndpointMetaDataBuilder;
+import tech.pegasys.teku.infrastructure.restapi.openapi.request.OneOfJsonRequestContentTypeDefinition.BodyTypeSelectorContext;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.JsonResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
@@ -408,10 +409,11 @@ class EndpointMetadataTest {
     return new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8));
   }
 
-  private DeserializableTypeDefinition<? extends TestType> selector(final String jsonData) {
+  private DeserializableTypeDefinition<? extends TestType> selector(
+      final BodyTypeSelectorContext context) {
     final ObjectMapper mapper = new ObjectMapper();
     try {
-      final JsonNode jsonNode = mapper.readTree(jsonData);
+      final JsonNode jsonNode = mapper.readTree(context.getBody());
       if (jsonNode.has("value1")) {
         return TYPE_A;
       }
