@@ -41,7 +41,7 @@ public interface BlobSidecarManager {
             final ReceivedBlobSidecarListener receivedBlobSidecarListener) {}
 
         @Override
-        public boolean isStorageOfBlobSidecarsRequiredAtSlot(final UInt64 slot) {
+        public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(final UInt64 slot) {
           return false;
         }
 
@@ -65,7 +65,7 @@ public interface BlobSidecarManager {
 
   void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 
-  boolean isStorageOfBlobSidecarsRequiredAtSlot(UInt64 slot);
+  boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(UInt64 slot);
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 

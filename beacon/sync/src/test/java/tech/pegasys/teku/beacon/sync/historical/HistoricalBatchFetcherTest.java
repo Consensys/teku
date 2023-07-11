@@ -93,7 +93,7 @@ public class HistoricalBatchFetcherTest {
   @BeforeEach
   public void setup() {
     storageSystem.chainUpdater().initializeGenesis();
-    when(blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(any())).thenReturn(false);
+    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(false);
     when(storageUpdateChannel.onFinalizedBlocks(any(), any(), any()))
         .thenReturn(SafeFuture.COMPLETE);
 
@@ -185,7 +185,7 @@ public class HistoricalBatchFetcherTest {
 
   @Test
   public void run_returnAllBlocksAndBlobSidecarsOnFirstRequest() {
-    when(blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
 
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     final SafeFuture<BeaconBlockSummary> future = fetcher.run();
@@ -207,7 +207,7 @@ public class HistoricalBatchFetcherTest {
 
   @Test
   public void run_failsOnBlobSidecarsValidationFailure() {
-    when(blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
     when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))
         .thenAnswer(
             i ->
@@ -293,7 +293,7 @@ public class HistoricalBatchFetcherTest {
   @ValueSource(booleans = {true, false})
   public void run_requestBatchForRangeOfEmptyBlocks(final boolean blobSidecarsRequired) {
     if (blobSidecarsRequired) {
-      when(blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(any())).thenReturn(true);
+      when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
     }
     final int batchSize = 10;
     // Slot & batch size define an empty set of blocks

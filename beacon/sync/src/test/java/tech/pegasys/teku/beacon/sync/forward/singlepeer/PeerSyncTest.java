@@ -89,7 +89,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     final SafeFuture<BlockImportResult> result =
         SafeFuture.completedFuture(BlockImportResult.successful(block));
     when(blockImporter.importBlock(any())).thenReturn(result);
-    when(blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(any())).thenReturn(false);
+    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(false);
 
     peerSync =
         new PeerSync(
@@ -511,7 +511,7 @@ public class PeerSyncTest extends AbstractSyncTest {
   @Test
   void sync_blocksAndBlobSidecarsForDeneb() {
     when(recentChainData.getFinalizedEpoch()).thenReturn(denebForkEpoch);
-    when(blobSidecarManager.isStorageOfBlobSidecarsRequiredAtSlot(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
 
     final UInt64 denebSecondSlot = denebFirstSlot.plus(1);
 
