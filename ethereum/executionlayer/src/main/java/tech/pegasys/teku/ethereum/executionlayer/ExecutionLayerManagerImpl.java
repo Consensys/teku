@@ -82,7 +82,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final BlobsBundleValidator blobsBundleValidator,
-      final Optional<Integer> builderBidCompareFactor) {
+      final Optional<Integer> builderBidCompareFactor,
+      final boolean useShouldOverrideBuilderFlag) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -111,7 +112,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderCircuitBreaker,
         executionPayloadSourceCounter,
         blobsBundleValidator,
-        builderBidCompareFactor);
+        builderBidCompareFactor,
+        useShouldOverrideBuilderFlag);
   }
 
   public static ExecutionEngineClient createEngineClient(
@@ -149,7 +151,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
       final BlobsBundleValidator blobsBundleValidator,
-      final Optional<Integer> builderBidCompareFactor) {
+      final Optional<Integer> builderBidCompareFactor,
+      final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
     this.blobsBundleValidator = blobsBundleValidator;
@@ -162,7 +165,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             builderCircuitBreaker,
             builderClient,
             eventLogger,
-            builderBidCompareFactor);
+            builderBidCompareFactor,
+            useShouldOverrideBuilderFlag);
   }
 
   @Override

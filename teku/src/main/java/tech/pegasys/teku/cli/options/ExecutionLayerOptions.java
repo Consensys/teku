@@ -21,6 +21,7 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
@@ -115,6 +116,17 @@ public class ExecutionLayerOptions {
       hidden = true)
   private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 
+  @Option(
+      names = {"--Xuse-should-override-builder-flag"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Whether or not to use the shouldOverrideBuilder flag provided by the Engine API.",
+      arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
+      hidden = true)
+  private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
+
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -127,7 +139,8 @@ public class ExecutionLayerOptions {
                 .builderCircuitBreakerAllowedConsecutiveFaults(
                     builderCircuitBreakerAllowedConsecutiveFaults)
                 .builderBidCompareFactor(builderBidCompareFactor)
-                .builderSetUserAgentHeader(builderSetUserAgentHeader));
+                .builderSetUserAgentHeader(builderSetUserAgentHeader)
+                .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag));
     depositOptions.configure(builder);
   }
 }

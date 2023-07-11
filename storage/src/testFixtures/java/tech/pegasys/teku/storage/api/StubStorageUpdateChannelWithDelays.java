@@ -73,15 +73,5 @@ public class StubStorageUpdateChannelWithDelays implements StorageUpdateChannel 
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
-    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
-  }
-
-  @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
-    return asyncRunner.runAsync(() -> SafeFuture.COMPLETE);
-  }
-
-  @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {}
 }

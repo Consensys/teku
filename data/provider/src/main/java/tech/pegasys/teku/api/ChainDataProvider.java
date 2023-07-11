@@ -614,46 +614,31 @@ public class ChainDataProvider {
           "Can't calculate attestation rewards for for epoch " + epoch + " pre Altair");
     }
 
-    return getBlockAndMetaData(slot.toString())
-        .thenCompose(
-            maybeBlockAndMetadata -> {
-              if (maybeBlockAndMetadata.isEmpty()
-                  || maybeBlockAndMetadata.get().getData().getBeaconBlock().isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-
-              final BlockAndMetaData blockAndMetaData = maybeBlockAndMetadata.get();
-
-              return defaultStateSelectorFactory
-                  .forSlot(slot)
-                  .getState()
-                  .thenApply(
-                      maybeState -> {
-                        final StateAndMetaData stateAndMetadata =
-                            maybeState.orElseThrow(
-                                () -> {
-                                  final String availableEpochString =
-                                      findLatestAvailableEpochForRewardCalculation()
-                                          .map(UInt64::toString)
-                                          .orElse("<unknown>");
-                                  return new BadRequestException(
-                                      "Invalid epoch range. Latest available epoch for reward calculation is "
-                                          + availableEpochString);
-                                });
-
-                        final AttestationRewardsData attestationRewardsData =
-                            new EpochAttestationRewardsCalculator(
-                                    spec.atSlot(slot),
-                                    stateAndMetadata.getData(),
-                                    validatorsPubKeys)
-                                .calculate();
-
-                        return Optional.of(
-                            new GetAttestationRewardsResponse(
-                                blockAndMetaData.isExecutionOptimistic(),
-                                blockAndMetaData.isFinalized(),
-                                attestationRewardsData));
+    return getBeaconStateAndMetadata(slot.toString())
+        .thenApply(
+            maybeState -> {
+              final StateAndMetaData stateAndMetadata =
+                  maybeState.orElseThrow(
+                      () -> {
+                        final String availableEpochString =
+                            findLatestAvailableEpochForRewardCalculation()
+                                .map(UInt64::toString)
+                                .orElse("<unknown>");
+                        return new BadRequestException(
+                            "Invalid epoch range. Latest available epoch for reward calculation is "
+                                + availableEpochString);
                       });
+
+              final AttestationRewardsData attestationRewardsData =
+                  new EpochAttestationRewardsCalculator(
+                          spec.atSlot(slot), stateAndMetadata.getData(), validatorsPubKeys)
+                      .calculate();
+
+              return Optional.of(
+                  new GetAttestationRewardsResponse(
+                      stateAndMetadata.isExecutionOptimistic(),
+                      stateAndMetadata.isFinalized(),
+                      attestationRewardsData));
             });
   }
 
