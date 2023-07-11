@@ -52,10 +52,10 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
     final UInt64 attestationSlotTimeMillis =
         secondsToMillis(miscHelpers.computeTimeAtSlot(genesisTime, attestationSlot));
     if (isAttestationSlotAfterCurrentTime(attestationSlotTimeMillis, currentTimeMillis)) {
-      if (isFromFarFuture(attestation, genesisTime, currentTimeMillis)) {
-        return Optional.of(SlotInclusionGossipValidationResult.IGNORE);
-      }
-      return Optional.of(SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
+      return Optional.of(
+          isFromFarFuture(attestation, genesisTime, currentTimeMillis)
+              ? SlotInclusionGossipValidationResult.IGNORE
+              : SlotInclusionGossipValidationResult.SAVE_FOR_FUTURE);
     }
     if (!isAttestationSlotInCurrentOrPreviousEpoch(
         attestationSlot, genesisTime, currentTimeMillis)) {
