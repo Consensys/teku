@@ -427,7 +427,8 @@ public class DebugDbCommand implements Runnable {
 
   @Command(
       name = "delete-hot-blocks",
-      description = "Deletes all non-justified blocks from an invalid hard fork in the database",
+      description =
+          "Deletes all non-justified blocks from the database which are from an invalid hard fork",
       mixinStandardHelpOptions = true,
       showDefaultValues = true,
       abbreviateSynopsis = true,
