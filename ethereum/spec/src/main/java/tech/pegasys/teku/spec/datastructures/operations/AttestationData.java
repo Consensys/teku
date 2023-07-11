@@ -82,7 +82,7 @@ public class AttestationData
   public UInt64 getEarliestSlotForForkChoice(final UInt64 targetEpochStartSlot) {
     // Attestations can't be processed by fork choice until their slot is in the past and until we
     // are in the same epoch as their target.
-    return getSlot().plus(1).max(targetEpochStartSlot);
+    return getSlot().plus(UInt64.ONE).max(targetEpochStartSlot);
   }
 
   public UInt64 getSlot() {

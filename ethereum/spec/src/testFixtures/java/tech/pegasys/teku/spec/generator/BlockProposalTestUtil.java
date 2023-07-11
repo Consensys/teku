@@ -265,7 +265,8 @@ public class BlockProposalTestUtil {
                 .blockNumber(newSlot)
                 .gasLimit(UInt64.valueOf(30_000_000L))
                 .gasUsed(UInt64.valueOf(30_000_000L))
-                .timestamp(specVersion.miscHelpers().computeTimeAtSlot(state, newSlot))
+                .timestamp(
+                    specVersion.miscHelpers().computeTimeAtSlot(state.getGenesisTime(), newSlot))
                 .extraData(dataStructureUtil.randomBytes32())
                 .baseFeePerGas(UInt256.ONE)
                 .blockHash(dataStructureUtil.randomBytes32())
