@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Map;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
@@ -106,7 +107,7 @@ public class JsonProviderPropertyTest {
   void roundTripBytes32(@ForAll @Size(32) final byte[] value) throws JsonProcessingException {
     Bytes32 data = Bytes32.wrap(value);
     String serialized = jsonProvider.objectToJSON(data);
-    assertEquals(Q + data.toHexString().toLowerCase() + Q, serialized);
+    assertEquals(Q + data.toHexString().toLowerCase(Locale.ROOT) + Q, serialized);
     Bytes32 deserialize = jsonProvider.jsonToObject(serialized, Bytes32.class);
     assertEquals(data, deserialize);
   }

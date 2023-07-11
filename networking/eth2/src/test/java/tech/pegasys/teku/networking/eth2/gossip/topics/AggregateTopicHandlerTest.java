@@ -30,14 +30,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
   @Override
   protected Eth2TopicHandler<?> createHandler() {
     return new AggregateGossipManager(
-            spec,
-            recentChainData,
-            asyncRunner,
-            gossipNetwork,
-            gossipEncoding,
-            forkInfo,
-            processor,
-            gossipMaxSize)
+            spec, recentChainData, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
         .getTopicHandler();
   }
 

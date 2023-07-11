@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.stream.Stream;
 import okhttp3.Response;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,19 +40,27 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPIIntegrationTest {
+
   private DataStructureUtil dataStructureUtil;
 
   public static Stream<Arguments> postBlockCases() {
     return Stream.of(
-        Arguments.of(PostBlock.ROUTE, false, false),
-        Arguments.of(PostBlock.ROUTE, false, true),
-        Arguments.of(PostBlindedBlock.ROUTE, true, false),
-        Arguments.of(PostBlindedBlock.ROUTE, true, true));
+        Arguments.of(PostBlock.ROUTE, false, false, false),
+        Arguments.of(PostBlock.ROUTE, false, true, false),
+        Arguments.of(PostBlindedBlock.ROUTE, true, false, false),
+        Arguments.of(PostBlindedBlock.ROUTE, true, true, false),
+        // Methods using Eth-Consensus-Version header (only for SSZ)
+        Arguments.of(PostBlock.ROUTE, false, true, true),
+        Arguments.of(PostBlindedBlock.ROUTE, true, true, true));
   }
 
-  @ParameterizedTest(name = "blinded:{1}_ssz:{2}")
+  @ParameterizedTest(name = "blinded:{1}_ssz:{2}_version:{3}")
   @MethodSource("postBlockCases")
-  void shouldReturnOk(final String route, final boolean isBlindedBlock, final boolean useSsz)
+  void shouldReturnOk(
+      final String route,
+      final boolean isBlindedBlock,
+      final boolean useSsz,
+      final boolean useVersionHeader)
       throws IOException {
     startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
     dataStructureUtil = new DataStructureUtil(spec);
@@ -74,9 +83,14 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
     when(validatorApiChannel.sendSignedBlock(request))
         .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
 
+    Optional<String> milestone = Optional.empty();
     if (useSsz) {
+      if (useVersionHeader) {
+        milestone = Optional.of("bellatrix");
+      }
       try (final Response response =
-          postSsz(route, signedBeaconBlockSchema.sszSerialize(request).toArrayUnsafe())) {
+          postSsz(
+              route, signedBeaconBlockSchema.sszSerialize(request).toArrayUnsafe(), milestone)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     } else {
@@ -89,10 +103,14 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
     }
   }
 
-  @ParameterizedTest(name = "blinded:{1}_ssz:{2}")
+  @ParameterizedTest(name = "blinded:{1}_ssz:{2}_version:{3}")
   @MethodSource("postBlockCases")
   void shouldReturnOkPostDeneb(
-      final String route, final boolean isBlindedBlock, final boolean useSsz) throws IOException {
+      final String route,
+      final boolean isBlindedBlock,
+      final boolean useSsz,
+      final boolean useVersionHeader)
+      throws IOException {
     startRestAPIAtGenesis(SpecMilestone.DENEB);
     dataStructureUtil = new DataStructureUtil(spec);
 
@@ -114,9 +132,15 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
     when(validatorApiChannel.sendSignedBlock(request))
         .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
 
+    Optional<String> milestone = Optional.empty();
     if (useSsz) {
+      if (useVersionHeader) {
+        milestone = Optional.of("deneb");
+      }
+
       try (final Response response =
-          postSsz(route, signedBlockContainerSchema.sszSerialize(request).toArrayUnsafe())) {
+          postSsz(
+              route, signedBlockContainerSchema.sszSerialize(request).toArrayUnsafe(), milestone)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     } else {

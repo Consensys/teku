@@ -12,12 +12,14 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Breaking Changes
 
-- The Development option `--Xprogressive-balances-mode` has been removed and will no longer be recognised as a command line option.
-- Network configs updated following Consensus Specs changes. If you run custom network, you will need to add [lines with network parameters](https://github.com/ConsenSys/teku/blob/475986c523b606c6936d7b4207c1da920ad82ea0/ethereum/spec/src/main/resources/tech/pegasys/teku/spec/config/configs/mainnet.yaml#L98-L125) to your custom config. If you are using a remote validator `auto` network feature, you will need to update both Beacon Node and Validator Client.  
+- `--exchange-capabilities-enabled` option has been removed since it is no longer applicable because of [execution-apis](https://github.com/ethereum/execution-apis/pull/418) spec change.
+- Removed kiln and ropsten as `--network` options
 
 ### Additions and Improvements
 
-- Added Gnosis configuration for the 🦉 CAPELLA 🦉 network fork due at epoch 648704, UTC Tue 01/08/2023, 11:34:20
-- Updated Sigmaprime's bootnodes
+- `--validators-external-signer-public-keys` parameter now accepts `external-signer` value. It will enable public key retrieval from external signer standard API, making sure that configured keystore and trustStore will be used, if any.
+- Stopped calling `engine_exchangeTransitionConfigurationV1` Engine API method, since the method will be deprecated in the future.
 
 ### Bug Fixes
+
+- Fix Get Attestation Rewards API to fetch beacon state instead of block and beacon state (fixes #7338)

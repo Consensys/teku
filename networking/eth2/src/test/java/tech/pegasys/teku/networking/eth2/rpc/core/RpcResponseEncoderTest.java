@@ -44,7 +44,7 @@ final class RpcResponseEncoderTest {
   private final RpcResponseEncoder<StatusMessage, ?> responseEncoder =
       new RpcResponseEncoder<>(
           RpcEncoding.createSszSnappyEncoding(
-              TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize()),
+              TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize()),
           contextCodec);
 
   @Test

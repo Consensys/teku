@@ -95,14 +95,13 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             gossipEncoding,
             forkInfo,
             signedContributionAndProofOperationProcessor,
-            specConfig.getGossipMaxSize());
+            specConfig.getNetworkingConfig());
     addGossipManager(syncCommitteeContributionGossipManager);
   }
 
   void addSyncCommitteeMessageGossipManager(final ForkInfo forkInfo) {
     final SchemaDefinitionsAltair schemaDefinitions =
         SchemaDefinitionsAltair.required(spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
-    final SpecConfig specConfig = spec.atEpoch(getActivationEpoch()).getConfig();
     final SyncCommitteeSubnetSubscriptions syncCommitteeSubnetSubscriptions =
         new SyncCommitteeSubnetSubscriptions(
             spec,
@@ -112,8 +111,7 @@ public class GossipForkSubscriptionsAltair extends GossipForkSubscriptionsPhase0
             schemaDefinitions,
             asyncRunner,
             syncCommitteeMessageOperationProcessor,
-            forkInfo,
-            specConfig.getGossipMaxSize());
+            forkInfo);
     syncCommitteeMessageGossipManager =
         new SyncCommitteeMessageGossipManager(
             metricsSystem,

@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransiti
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.MiscHelpersBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
+import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.OperationValidatorPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 
@@ -110,9 +112,11 @@ public class SpecLogicBellatrix extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+    final AttestationDataValidator attestationDataValidator =
+        new AttestationDataValidatorPhase0(config, miscHelpers, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorPhase0(
-            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
+            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,

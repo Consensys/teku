@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,7 +38,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
@@ -58,7 +56,6 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
@@ -448,83 +445,6 @@ public class SchemaSerializationTests {
     String serialized = objectMapper.writeValueAsString(payloadAttributes);
 
     assertThat(serialized).isNotEmpty();
-  }
-
-  @TestTemplate
-  void shouldSerializeTransitionConfigurationV1() throws IOException {
-    final TransitionConfigurationV1 externalTransitionConfiguration =
-        new TransitionConfigurationV1(
-            dataStructureUtil.randomUInt256(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
-
-    String serialized = objectMapper.writeValueAsString(externalTransitionConfiguration);
-
-    assertThat(serialized).isNotEmpty();
-  }
-
-  @TestTemplate
-  void shouldDeserializeTransitionConfigurationV1() throws IOException {
-    final String json =
-        "{\"terminalTotalDifficulty\": \"0xF123657934589000000000000000001\", "
-            + "\"terminalBlockHash\": \"0x95b8e2ba063ab62f68ebe7db0a9669ab9e7906aa4e060e1cc0b67b294ce8c5e4\", "
-            + "\"terminalBlockNumber\": \"0xa79345890\" }";
-
-    final TransitionConfigurationV1 externalTransitionConfiguration =
-        objectMapper.readValue(json, TransitionConfigurationV1.class);
-
-    assertThat(externalTransitionConfiguration.terminalTotalDifficulty)
-        .isEqualTo(UInt256.fromHexString("0xF123657934589000000000000000001"));
-    assertThat(externalTransitionConfiguration.terminalBlockHash)
-        .isEqualTo(
-            Bytes32.fromHexString(
-                "0x95b8e2ba063ab62f68ebe7db0a9669ab9e7906aa4e060e1cc0b67b294ce8c5e4"));
-    assertThat(externalTransitionConfiguration.terminalBlockNumber)
-        .isEqualTo(
-            UInt64.valueOf(Bytes.fromHexStringLenient("0xa79345890").toUnsignedBigInteger()));
-  }
-
-  @TestTemplate
-  void shouldSerializeDeserializeTransitionConfigurationV1() throws IOException {
-    final TransitionConfigurationV1 externalTransitionConfiguration =
-        new TransitionConfigurationV1(
-            dataStructureUtil.randomUInt256(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
-
-    String serialized = objectMapper.writeValueAsString(externalTransitionConfiguration);
-
-    assertThat(serialized).isNotEmpty();
-
-    TransitionConfigurationV1 externalTransitionConfiguration2 =
-        objectMapper.readValue(serialized, TransitionConfigurationV1.class);
-
-    assertThat(externalTransitionConfiguration).isEqualTo(externalTransitionConfiguration2);
-  }
-
-  @TestTemplate
-  void shouldTransitionConfigurationRoundtrip() {
-    final TransitionConfigurationV1 externalTransitionConfiguration =
-        new TransitionConfigurationV1(
-            dataStructureUtil.randomUInt256(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
-
-    final TransitionConfiguration internalTransitionConfiguration =
-        externalTransitionConfiguration.asInternalTransitionConfiguration();
-
-    assertThat(internalTransitionConfiguration.getTerminalBlockHash())
-        .isEqualTo(externalTransitionConfiguration.terminalBlockHash);
-    assertThat(internalTransitionConfiguration.getTerminalBlockNumber())
-        .isEqualTo(externalTransitionConfiguration.terminalBlockNumber);
-    assertThat(internalTransitionConfiguration.getTerminalTotalDifficulty())
-        .isEqualTo(externalTransitionConfiguration.terminalTotalDifficulty);
-
-    final TransitionConfigurationV1 externalTransitionConfiguration2 =
-        TransitionConfigurationV1.fromInternalTransitionConfiguration(
-            internalTransitionConfiguration);
-
-    assertThat(externalTransitionConfiguration2).isEqualTo(externalTransitionConfiguration);
   }
 
   private ForkChoiceUpdatedResult createExternalForkChoiceUpdatedResult(

@@ -27,14 +27,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import picocli.CommandLine;
 import picocli.CommandLine.Model.CommandSpec;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.bls.keystore.KeyStore;
+import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.ValidatorPasswordOptions;
 import tech.pegasys.teku.cli.subcommand.internal.validator.options.WithdrawalPasswordOptions;
 
@@ -190,7 +191,8 @@ class KeyGeneratorTest {
     assertKeyStoreFilesExistAndAreEncryptedWithPassword(outputPath);
 
     // select only withdrawal files
-    FilenameFilter withdrawalFilter = (dir, name) -> name.toLowerCase().contains("withdrawal");
+    FilenameFilter withdrawalFilter =
+        (dir, name) -> name.toLowerCase(Locale.ROOT).contains("withdrawal");
 
     // assert that files exist: 1 withdrawal file per validator
     final File[] withdrawalFiles = outputPath.toFile().listFiles(withdrawalFilter);
@@ -198,7 +200,8 @@ class KeyGeneratorTest {
     Arrays.stream(withdrawalFiles).forEach(file -> assertThat(file).isFile());
 
     // select only validator files
-    FilenameFilter validatorFilter = (dir, name) -> name.toLowerCase().contains("validator");
+    FilenameFilter validatorFilter =
+        (dir, name) -> name.toLowerCase(Locale.ROOT).contains("validator");
 
     // assert that files exist: 1 validator file per validator
     final File[] validatorFiles = outputPath.toFile().listFiles(validatorFilter);
@@ -211,7 +214,7 @@ class KeyGeneratorTest {
     for (File file : keyStoreFiles) {
       assertThat(
               KeyStore.validatePassword(
-                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toPath())))
+                  EXPECTED_PASSWORD, KeyStoreLoader.loadFromFile(file.toURI())))
           .isTrue();
     }
   }

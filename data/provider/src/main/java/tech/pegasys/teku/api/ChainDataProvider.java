@@ -23,6 +23,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -243,7 +244,7 @@ public class ChainDataProvider {
       throw new ChainDataUnavailableException();
     }
 
-    if (validatorParameter.toLowerCase().startsWith("0x")) {
+    if (validatorParameter.toLowerCase(Locale.ROOT).startsWith("0x")) {
       final Bytes48 keyBytes = getBytes48FromParameter(validatorParameter);
       try {
         return spec.getValidatorIndex(state, BLSPublicKey.fromBytesCompressed(keyBytes));
@@ -613,46 +614,31 @@ public class ChainDataProvider {
           "Can't calculate attestation rewards for for epoch " + epoch + " pre Altair");
     }
 
-    return getBlockAndMetaData(slot.toString())
-        .thenCompose(
-            maybeBlockAndMetadata -> {
-              if (maybeBlockAndMetadata.isEmpty()
-                  || maybeBlockAndMetadata.get().getData().getBeaconBlock().isEmpty()) {
-                return SafeFuture.completedFuture(Optional.empty());
-              }
-
-              final BlockAndMetaData blockAndMetaData = maybeBlockAndMetadata.get();
-
-              return defaultStateSelectorFactory
-                  .forSlot(slot)
-                  .getState()
-                  .thenApply(
-                      maybeState -> {
-                        final StateAndMetaData stateAndMetadata =
-                            maybeState.orElseThrow(
-                                () -> {
-                                  final String availableEpochString =
-                                      findLatestAvailableEpochForRewardCalculation()
-                                          .map(UInt64::toString)
-                                          .orElse("<unknown>");
-                                  return new BadRequestException(
-                                      "Invalid epoch range. Latest available epoch for reward calculation is "
-                                          + availableEpochString);
-                                });
-
-                        final AttestationRewardsData attestationRewardsData =
-                            new EpochAttestationRewardsCalculator(
-                                    spec.atSlot(slot),
-                                    stateAndMetadata.getData(),
-                                    validatorsPubKeys)
-                                .calculate();
-
-                        return Optional.of(
-                            new GetAttestationRewardsResponse(
-                                blockAndMetaData.isExecutionOptimistic(),
-                                blockAndMetaData.isFinalized(),
-                                attestationRewardsData));
+    return getBeaconStateAndMetadata(slot.toString())
+        .thenApply(
+            maybeState -> {
+              final StateAndMetaData stateAndMetadata =
+                  maybeState.orElseThrow(
+                      () -> {
+                        final String availableEpochString =
+                            findLatestAvailableEpochForRewardCalculation()
+                                .map(UInt64::toString)
+                                .orElse("<unknown>");
+                        return new BadRequestException(
+                            "Invalid epoch range. Latest available epoch for reward calculation is "
+                                + availableEpochString);
                       });
+
+              final AttestationRewardsData attestationRewardsData =
+                  new EpochAttestationRewardsCalculator(
+                          spec.atSlot(slot), stateAndMetadata.getData(), validatorsPubKeys)
+                      .calculate();
+
+              return Optional.of(
+                  new GetAttestationRewardsResponse(
+                      stateAndMetadata.isExecutionOptimistic(),
+                      stateAndMetadata.isFinalized(),
+                      attestationRewardsData));
             });
   }
 

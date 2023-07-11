@@ -56,7 +56,7 @@ public class Eth2IncomingRequestHandlerTest
     lenient()
         .when(combinedChainDataClient.getBlockAtSlotExact(any(), any()))
         .thenAnswer(i -> getBlockAtSlot(i.getArgument(0)));
-    when(peer.popRequest()).thenReturn(true);
+    when(peer.approveRequest()).thenReturn(true);
   }
 
   @Override
@@ -113,6 +113,6 @@ public class Eth2IncomingRequestHandlerTest
   @Override
   protected RpcEncoding getRpcEncoding() {
     return RpcEncoding.createSszSnappyEncoding(
-        TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+        TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
   }
 }

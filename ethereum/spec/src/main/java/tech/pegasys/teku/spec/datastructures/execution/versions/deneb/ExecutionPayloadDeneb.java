@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 
@@ -37,5 +38,10 @@ public interface ExecutionPayloadDeneb extends ExecutionPayload, ExecutionPayloa
   @Override
   default Optional<ExecutionPayloadDeneb> toVersionDeneb() {
     return Optional.of(this);
+  }
+
+  @Override
+  default SpecMilestone getMilestone() {
+    return SpecMilestone.DENEB;
   }
 }

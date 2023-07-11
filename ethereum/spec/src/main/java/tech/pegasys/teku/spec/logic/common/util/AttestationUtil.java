@@ -21,6 +21,7 @@ import com.google.common.collect.Comparators;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -297,4 +298,13 @@ public abstract class AttestationUtil {
 
   public abstract AttestationWorthinessChecker createAttestationWorthinessChecker(
       BeaconState state);
+
+  public abstract Optional<SlotInclusionGossipValidationResult>
+      performSlotInclusionGossipValidation(
+          Attestation attestation, UInt64 genesisTime, UInt64 currentTimeMillis);
+
+  public enum SlotInclusionGossipValidationResult {
+    IGNORE,
+    SAVE_FOR_FUTURE
+  }
 }

@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 
-public interface SpecConfig {
+public interface SpecConfig extends NetworkingSpecConfig {
   // Non-configurable constants
   UInt64 GENESIS_SLOT = UInt64.ZERO;
   UInt64 GENESIS_EPOCH = UInt64.ZERO;
@@ -33,29 +33,66 @@ public interface SpecConfig {
 
   Map<String, Object> getRawConfig();
 
+  // Config: Genesis
+  int getMinGenesisActiveValidatorCount();
+
+  UInt64 getMinGenesisTime();
+
+  Bytes4 getGenesisForkVersion();
+
+  UInt64 getGenesisDelay();
+
+  // Config: Time parameters
+  int getSecondsPerSlot();
+
+  int getSecondsPerEth1Block();
+
+  int getMinValidatorWithdrawabilityDelay();
+
+  UInt64 getShardCommitteePeriod();
+
+  UInt64 getEth1FollowDistance();
+
+  // Config: Validator cycle
+  UInt64 getEjectionBalance();
+
+  int getMinPerEpochChurnLimit();
+
+  int getChurnLimitQuotient();
+
+  // Config: Fork choice
+  int getProposerScoreBoost();
+
+  // Config: Deposit contract
+  long getDepositChainId();
+
+  long getDepositNetworkId();
+
+  Eth1Address getDepositContractAddress();
+
+  @Override
+  default int getMinEpochsForBlockRequests() {
+    return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
+  }
+
+  // Phase0 non-configurable Misc Constants
   UInt64 getBaseRewardsPerEpoch();
 
   int getDepositContractTreeDepth();
 
   int getJustificationBitsLength();
 
-  UInt64 getEth1FollowDistance();
+  // Phase0 non-configurable Withdrawal prefixes Constants
+  Bytes getBlsWithdrawalPrefix();
 
+  // Phase0 Misc preset
   int getMaxCommitteesPerSlot();
 
   int getTargetCommitteeSize();
 
   int getMaxValidatorsPerCommittee();
 
-  int getMinPerEpochChurnLimit();
-
-  int getChurnLimitQuotient();
-
   int getShuffleRoundCount();
-
-  int getMinGenesisActiveValidatorCount();
-
-  UInt64 getMinGenesisTime();
 
   UInt64 getHysteresisQuotient();
 
@@ -63,24 +100,14 @@ public interface SpecConfig {
 
   UInt64 getHysteresisUpwardMultiplier();
 
-  int getProportionalSlashingMultiplier();
-
+  // Phase0 Gwei values preset
   UInt64 getMinDepositAmount();
 
   UInt64 getMaxEffectiveBalance();
 
-  UInt64 getEjectionBalance();
-
   UInt64 getEffectiveBalanceIncrement();
 
-  Bytes4 getGenesisForkVersion();
-
-  Bytes getBlsWithdrawalPrefix();
-
-  UInt64 getGenesisDelay();
-
-  int getSecondsPerSlot();
-
+  // Phase0 Time parameters preset
   int getMinAttestationInclusionDelay();
 
   int getSlotsPerEpoch();
@@ -98,10 +125,7 @@ public interface SpecConfig {
 
   int getSlotsPerHistoricalRoot();
 
-  int getMinValidatorWithdrawabilityDelay();
-
-  UInt64 getShardCommitteePeriod();
-
+  // Phase0 State list lengths preset
   int getEpochsPerHistoricalVector();
 
   int getEpochsPerSlashingsVector();
@@ -110,6 +134,7 @@ public interface SpecConfig {
 
   long getValidatorRegistryLimit();
 
+  // Phase0 Rewards and penalties preset
   int getBaseRewardFactor();
 
   int getWhistleblowerRewardQuotient();
@@ -120,6 +145,9 @@ public interface SpecConfig {
 
   int getMinSlashingPenaltyQuotient();
 
+  int getProportionalSlashingMultiplier();
+
+  // Phase0 Max operations per block preset
   int getMaxProposerSlashings();
 
   int getMaxAttesterSlashings();
@@ -130,26 +158,10 @@ public interface SpecConfig {
 
   int getMaxVoluntaryExits();
 
-  int getSecondsPerEth1Block();
-
+  // Misc
   int getSafeSlotsToUpdateJustified();
 
-  int getProposerScoreBoost();
-
-  long getDepositChainId();
-
-  long getDepositNetworkId();
-
-  Eth1Address getDepositContractAddress();
-
-  int getGossipMaxSize();
-
-  int getMaxChunkSize();
-
-  default int getMinEpochsForBlockRequests() {
-    return getMinValidatorWithdrawabilityDelay() + getChurnLimitQuotient() / 2;
-  }
-
+  // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();
   }

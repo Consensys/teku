@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -48,7 +47,6 @@ import tech.pegasys.teku.spec.config.builder.BellatrixBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -74,7 +72,6 @@ public class TerminalPowBlockMonitorTest {
   private StorageSystem storageSystem;
   private RecentChainData recentChainData;
   private TerminalPowBlockMonitor terminalPowBlockMonitor;
-  private TransitionConfiguration localTransitionConfiguration;
 
   @BeforeAll
   public static void initSession() {
@@ -94,23 +91,12 @@ public class TerminalPowBlockMonitorTest {
                 .bellatrixForkEpoch(BELLATRIX_FORK_EPOCH)
                 .terminalBlockHash(TERMINAL_BLOCK_HASH)
                 .terminalBlockHashActivationEpoch(TERMINAL_BLOCK_EPOCH));
-
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(
-            SafeFuture.completedFuture(
-                new TransitionConfiguration(
-                    localTransitionConfiguration.getTerminalTotalDifficulty(),
-                    localTransitionConfiguration.getTerminalBlockHash(),
-                    dataStructureUtil.randomUInt64())));
   }
 
   private void setUpTTDConfig() {
     setUpCommon(
         bellatrixBuilder ->
             bellatrixBuilder.bellatrixForkEpoch(BELLATRIX_FORK_EPOCH).terminalTotalDifficulty(TTD));
-
-    when(executionLayer.engineExchangeTransitionConfiguration(localTransitionConfiguration))
-        .thenReturn(SafeFuture.completedFuture(localTransitionConfiguration));
   }
 
   private void setUpCommon(Consumer<BellatrixBuilder> bellatrixBuilder) {
@@ -126,15 +112,6 @@ public class TerminalPowBlockMonitorTest {
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
-
-    localTransitionConfiguration =
-        new TransitionConfiguration(
-            spec.getGenesisSpecConfig()
-                .toVersionBellatrix()
-                .orElseThrow()
-                .getTerminalTotalDifficulty(),
-            spec.getGenesisSpecConfig().toVersionBellatrix().orElseThrow().getTerminalBlockHash(),
-            UInt64.ZERO);
 
     terminalPowBlockMonitor =
         new TerminalPowBlockMonitor(

@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Locale;
 import java.util.Objects;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.versions.altair.MetadataMessageAltair;
@@ -67,14 +68,14 @@ public class Metadata {
   public Metadata(final MetadataMessage metadataMessage) {
     this.sequenceNumber = metadataMessage.getSeqNumber().toString();
     this.attestationSubnetSubscriptions =
-        metadataMessage.getAttnets().sszSerialize().toHexString().toLowerCase();
+        metadataMessage.getAttnets().sszSerialize().toHexString().toLowerCase(Locale.ROOT);
     if (metadataMessage instanceof MetadataMessageAltair) {
       this.syncCommitteeSubscriptions =
           ((MetadataMessageAltair) metadataMessage)
               .getSyncnets()
               .sszSerialize()
               .toHexString()
-              .toLowerCase();
+              .toLowerCase(Locale.ROOT);
     } else {
       this.syncCommitteeSubscriptions = null;
     }

@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 
@@ -205,5 +206,10 @@ public class ExecutionPayloadBellatrix
   @Override
   public Optional<ExecutionPayloadBellatrix> toVersionBellatrix() {
     return Optional.of(this);
+  }
+
+  @Override
+  public SpecMilestone getMilestone() {
+    return SpecMilestone.BELLATRIX;
   }
 }

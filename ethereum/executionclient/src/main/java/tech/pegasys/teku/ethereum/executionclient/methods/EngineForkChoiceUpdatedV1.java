@@ -37,7 +37,7 @@ public class EngineForkChoiceUpdatedV1
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_FORK_CHOICE_UPDATED.getName();
+    return EngineApiMethod.ENGINE_FORK_CHOICE_UPDATED.getName();
   }
 
   @Override

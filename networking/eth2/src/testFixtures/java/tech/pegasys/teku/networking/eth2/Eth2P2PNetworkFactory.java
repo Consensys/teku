@@ -78,7 +78,6 @@ import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -206,10 +205,7 @@ public class Eth2P2PNetworkFactory {
 
         if (rpcEncoding == null) {
           rpcEncoding =
-              RpcEncoding.createSszSnappyEncoding(
-                  spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
-                      ? spec.forMilestone(SpecMilestone.BELLATRIX).getConfig().getMaxChunkSize()
-                      : spec.forMilestone(SpecMilestone.PHASE0).getConfig().getMaxChunkSize());
+              RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
         }
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
@@ -275,6 +271,7 @@ public class Eth2P2PNetworkFactory {
                     LibP2PNetworkBuilder.create()
                         .asyncRunner(DelayedExecutorAsyncRunner.create())
                         .config(config.getNetworkConfig())
+                        .networkingSpecConfig(config.getNetworkingSpecConfig())
                         .privateKeyProvider(PrivateKeyGenerator::generate)
                         .reputationManager(reputationManager)
                         .metricsSystem(METRICS_SYSTEM)

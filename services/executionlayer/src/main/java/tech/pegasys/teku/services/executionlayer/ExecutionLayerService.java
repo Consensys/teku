@@ -21,7 +21,6 @@ import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_E
 
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -37,17 +36,12 @@ import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
-import tech.pegasys.teku.ethereum.executionlayer.EngineApiCapabilitiesProvider;
-import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientEngineApiCapabilitiesProvider;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandler;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandlerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerStub;
-import tech.pegasys.teku.ethereum.executionlayer.LocalEngineApiCapabilitiesProvider;
-import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedExecutionJsonRpcMethodsResolver;
-import tech.pegasys.teku.ethereum.executionlayer.NegotiatedExecutionJsonRpcMethodsResolver;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.ethereum.executionlayer.MilestoneBasedEngineJsonRpcMethodsResolver;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -70,8 +64,6 @@ public class ExecutionLayerService extends Service {
 
     final Path beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     final TimeProvider timeProvider = serviceConfig.getTimeProvider();
-    final Supplier<AsyncRunner> asyncRunnerSupplier =
-        () -> serviceConfig.createAsyncRunner("executionLayer", 1);
 
     final ExecutionClientEventsChannel executionClientEventsPublisher =
         serviceConfig.getEventChannels().getPublisher(ExecutionClientEventsChannel.class);
@@ -131,7 +123,6 @@ public class ExecutionLayerService extends Service {
           createRealExecutionLayerManager(
               serviceConfig,
               config,
-              asyncRunnerSupplier,
               engineWeb3jClientProvider,
               builderRestClientProvider,
               builderCircuitBreaker);
@@ -171,7 +162,6 @@ public class ExecutionLayerService extends Service {
   private static ExecutionLayerManager createRealExecutionLayerManager(
       final ServiceConfig serviceConfig,
       final ExecutionLayerConfiguration config,
-      final Supplier<AsyncRunner> asyncRunnerSupplier,
       final ExecutionWeb3jClientProvider engineWeb3jClientProvider,
       final Optional<RestClientProvider> builderRestClientProvider,
       final BuilderCircuitBreaker builderCircuitBreaker) {
@@ -180,38 +170,14 @@ public class ExecutionLayerService extends Service {
 
     final ExecutionEngineClient executionEngineClient =
         ExecutionLayerManagerImpl.createEngineClient(
-            config.getEngineVersion(),
-            engineWeb3jClientProvider.getWeb3JClient(),
-            timeProvider,
-            metricsSystem);
+            engineWeb3jClientProvider.getWeb3JClient(), timeProvider, metricsSystem);
 
-    final EngineApiCapabilitiesProvider localEngineApiCapabilitiesProvider =
-        new LocalEngineApiCapabilitiesProvider(config.getSpec(), executionEngineClient);
-    final MilestoneBasedExecutionJsonRpcMethodsResolver milestoneBasedMethodResolver =
-        new MilestoneBasedExecutionJsonRpcMethodsResolver(
-            config.getSpec(), localEngineApiCapabilitiesProvider);
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(config.getSpec(), executionEngineClient);
 
-    final ExecutionClientHandler executionClientHandler;
-    if (config.isExchangeCapabilitiesEnabled()) {
-      LOG.info("Negotiating Engine API methods to use with execution client");
-
-      final ExecutionClientEngineApiCapabilitiesProvider remoteEngineApiCapabilitiesProvider =
-          new ExecutionClientEngineApiCapabilitiesProvider(
-              asyncRunnerSupplier.get(),
-              executionEngineClient,
-              localEngineApiCapabilitiesProvider,
-              serviceConfig.getEventChannels());
-
-      final NegotiatedExecutionJsonRpcMethodsResolver negotiatedMethodsResolver =
-          new NegotiatedExecutionJsonRpcMethodsResolver(
-              localEngineApiCapabilitiesProvider,
-              remoteEngineApiCapabilitiesProvider,
-              milestoneBasedMethodResolver);
-
-      executionClientHandler = new ExecutionClientHandlerImpl(negotiatedMethodsResolver);
-    } else {
-      executionClientHandler = new ExecutionClientHandlerImpl(milestoneBasedMethodResolver);
-    }
+    final ExecutionClientHandler executionClientHandler =
+        new ExecutionClientHandlerImpl(
+            config.getSpec(), executionEngineClient, engineMethodsResolver);
 
     final Optional<BuilderClient> builderClient =
         builderRestClientProvider.map(
@@ -238,7 +204,8 @@ public class ExecutionLayerService extends Service {
         new BuilderBidValidatorImpl(EVENT_LOG),
         builderCircuitBreaker,
         blobsBundleValidator,
-        config.getBuilderBidCompareFactor());
+        config.getBuilderBidCompareFactor(),
+        config.getUseShouldOverrideBuilderFlag());
   }
 
   ExecutionLayerService(

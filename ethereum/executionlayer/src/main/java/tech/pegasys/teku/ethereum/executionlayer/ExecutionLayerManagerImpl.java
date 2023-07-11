@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EB_REQUESTS;
 import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQUESTS;
 
@@ -38,7 +37,6 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -61,7 +59,6 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
-import tech.pegasys.teku.spec.executionlayer.TransitionConfiguration;
 
 public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
@@ -85,7 +82,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final BlobsBundleValidator blobsBundleValidator,
-      final Optional<Integer> builderBidCompareFactor) {
+      final Optional<Integer> builderBidCompareFactor,
+      final boolean useShouldOverrideBuilderFlag) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -114,19 +112,14 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderCircuitBreaker,
         executionPayloadSourceCounter,
         blobsBundleValidator,
-        builderBidCompareFactor);
+        builderBidCompareFactor,
+        useShouldOverrideBuilderFlag);
   }
 
   public static ExecutionEngineClient createEngineClient(
-      final Version version,
       final Web3JClient web3JClient,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {
-    checkNotNull(version);
-    LOG.info("Execution Engine version: {}", version);
-    if (version != Version.KILNV2) {
-      throw new InvalidConfigurationException("Unsupported execution engine version: " + version);
-    }
     final ExecutionEngineClient engineClient = new Web3JExecutionEngineClient(web3JClient);
     final ExecutionEngineClient metricEngineClient =
         new MetricRecordingExecutionEngineClient(engineClient, timeProvider, metricsSystem);
@@ -158,7 +151,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
       final BlobsBundleValidator blobsBundleValidator,
-      final Optional<Integer> builderBidCompareFactor) {
+      final Optional<Integer> builderBidCompareFactor,
+      final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
     this.blobsBundleValidator = blobsBundleValidator;
@@ -171,7 +165,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
             builderCircuitBreaker,
             builderClient,
             eventLogger,
-            builderBidCompareFactor);
+            builderBidCompareFactor,
+            useShouldOverrideBuilderFlag);
   }
 
   @Override
@@ -234,12 +229,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
     LOG.trace("calling engineNewPayload(newPayloadRequest={})", newPayloadRequest);
     return executionClientHandler.engineNewPayload(newPayloadRequest);
-  }
-
-  @Override
-  public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      final TransitionConfiguration transitionConfiguration) {
-    return executionClientHandler.engineExchangeTransitionConfiguration(transitionConfiguration);
   }
 
   @Override

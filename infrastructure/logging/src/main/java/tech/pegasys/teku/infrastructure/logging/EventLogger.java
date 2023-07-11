@@ -247,26 +247,6 @@ public class EventLogger {
     log.info(String.format("TTD ETA: %s - Current Total Difficulty: %s", etaString, ttd));
   }
 
-  public void transitionConfigurationTtdTbhMismatch(
-      final String localConfig, final String remoteConfig) {
-    final String configurationErrorEventLog =
-        String.format(
-            "Merge       *** Transition Configuration error: local TerminalTotalDifficulty and TerminalBlockHash not matching remote Execution Client values\n"
-                + "  local  configuration: %s\n"
-                + "  remote configuration: %s",
-            localConfig, remoteConfig);
-    error(configurationErrorEventLog, Color.RED);
-  }
-
-  public void transitionConfigurationRemoteTbhTbnInconsistency(final String remoteConfig) {
-    final String configurationErrorEventLog =
-        String.format(
-            "Merge       *** Transition Configuration error: remote Execution Client TerminalBlockHash and TerminalBlockNumber are inconsistent\n"
-                + "  remote configuration: %s",
-            remoteConfig);
-    warn(configurationErrorEventLog, Color.YELLOW);
-  }
-
   public void lateBlockImport(
       final Bytes32 root, final UInt64 slot, final UInt64 proposer, final String timings) {
     String slowBlockLog =

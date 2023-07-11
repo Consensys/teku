@@ -196,14 +196,18 @@ public class ProposersDataManager implements SlotEventsChannel {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
+    final Bytes32 currentHeadBlockRoot =
+        forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot();
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState ->
-                calculatePayloadBuildingAttributes(blockSlot, epoch, maybeState, mandatory),
+                calculatePayloadBuildingAttributes(
+                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory),
             eventThread);
   }
 
   private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
+      final Bytes32 currentHeadBlockRoot,
       final UInt64 blockSlot,
       final UInt64 epoch,
       final Optional<BeaconState> maybeState,
@@ -233,6 +237,7 @@ public class ProposersDataManager implements SlotEventsChannel {
             getFeeRecipient(proposerInfo, blockSlot),
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
+            currentHeadBlockRoot,
             blockSlot));
   }
 

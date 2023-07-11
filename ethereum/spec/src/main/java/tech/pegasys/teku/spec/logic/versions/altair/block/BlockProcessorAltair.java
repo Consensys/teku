@@ -215,8 +215,9 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  protected void processNewValidator(final MutableBeaconState genericState, final Deposit deposit) {
-    super.processNewValidator(genericState, deposit);
+  protected void addValidatorToRegistry(
+      final MutableBeaconState genericState, final Deposit deposit) {
+    super.addValidatorToRegistry(genericState, deposit);
     final MutableBeaconStateAltair state = MutableBeaconStateAltair.required(genericState);
 
     state.getPreviousEpochParticipation().append(SszByte.ZERO);
@@ -320,7 +321,8 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
   }
 
   @Override
-  public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
+  public NewPayloadRequest computeNewPayloadRequest(
+      final BeaconState state, final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
     throw new UnsupportedOperationException("No NewPayloadRequest in Altair");
   }

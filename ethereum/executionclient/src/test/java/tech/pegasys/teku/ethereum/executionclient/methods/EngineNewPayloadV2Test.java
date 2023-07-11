@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -41,7 +40,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineNewPayloadV2Test {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
   private EngineNewPayloadV2 jsonRpcMethod;
@@ -86,35 +85,9 @@ class EngineNewPayloadV2Test {
   }
 
   @Test
-  public void shouldCallNewPayloadV2WithExecutionPayloadV1WhenInBellatrix() {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtilBellatrix = new DataStructureUtil(bellatrixSpec);
+  public void shouldCallNewPayloadV2WithExecutionPayloadV2() {
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
 
-    final ExecutionPayload executionPayload = dataStructureUtilBellatrix.randomExecutionPayload();
-    final ExecutionPayloadV1 executionPayloadV1 =
-        ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
-    assertThat(executionPayloadV1).isExactlyInstanceOf(ExecutionPayloadV1.class);
-
-    jsonRpcMethod = new EngineNewPayloadV2(executionEngineClient);
-
-    when(executionEngineClient.newPayloadV2(executionPayloadV1))
-        .thenReturn(dummySuccessfulResponse());
-
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).build();
-
-    assertThat(jsonRpcMethod.execute(params)).isCompleted();
-
-    verify(executionEngineClient).newPayloadV2(eq(executionPayloadV1));
-    verifyNoMoreInteractions(executionEngineClient);
-  }
-
-  @Test
-  public void shouldCallNewPayloadV2WithExecutionPayloadV2WhenInCapella() {
-    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtilCapella = new DataStructureUtil(capellaSpec);
-
-    final ExecutionPayload executionPayload = dataStructureUtilCapella.randomExecutionPayload();
     final ExecutionPayloadV2 executionPayloadV2 =
         ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
     assertThat(executionPayloadV2).isExactlyInstanceOf(ExecutionPayloadV2.class);

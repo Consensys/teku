@@ -62,13 +62,13 @@ class StatusMessageHandlerTest {
       BeaconChainMethodIds.getStatusMethodId(
           1,
           RpcEncoding.createSszSnappyEncoding(
-              TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize()));
+              TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize()));
   private final StatusMessageHandler handler = new StatusMessageHandler(statusMessageFactory);
 
   @BeforeEach
   public void setUp() {
     when(statusMessageFactory.createStatusMessage()).thenReturn(Optional.of(LOCAL_STATUS));
-    when(peer.popRequest()).thenReturn(true);
+    when(peer.approveRequest()).thenReturn(true);
   }
 
   @Test

@@ -67,15 +67,5 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.COMPLETE;
-  }
-
-  @Override
   public void onChainInitialized(final AnchorPoint initialAnchor) {}
 }

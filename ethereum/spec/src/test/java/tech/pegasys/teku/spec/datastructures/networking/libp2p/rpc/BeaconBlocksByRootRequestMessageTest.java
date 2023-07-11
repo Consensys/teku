@@ -15,35 +15,44 @@ package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 class BeaconBlocksByRootRequestMessageTest {
+
+  final Spec spec = TestSpecFactory.createMinimalDeneb();
+  final BeaconBlocksByRootRequestMessage.BeaconBlocksByRootRequestMessageSchema schema =
+      spec.getGenesisSchemaDefinitions().getBeaconBlocksByRootRequestMessageSchema();
 
   @Test
   public void shouldRoundTripViaSsz() {
     final BeaconBlocksByRootRequestMessage request =
         new BeaconBlocksByRootRequestMessage(
+            schema,
             List.of(
                 Bytes32.fromHexString(
                     "0x1111111111111111111111111111111111111111111111111111111111111111"),
                 Bytes32.fromHexString(
                     "0x2222222222222222222222222222222222222222222222222222222222222222")));
     final Bytes data = request.sszSerialize();
-    final BeaconBlocksByRootRequestMessage result =
-        BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.sszDeserialize(data);
+    final BeaconBlocksByRootRequestMessage result = schema.sszDeserialize(data);
     assertThatSszData(result).isEqualByAllMeansTo(request);
   }
 
   @Test
   public void verifyMaxLengthOfContainerIsGreaterOrEqualToMaxRequestBlocks() {
-    assertThat(BeaconBlocksByRootRequestMessage.SSZ_SCHEMA.getMaxLength())
-        .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS.longValue())
-        .isGreaterThanOrEqualTo(MAX_REQUEST_BLOCKS_DENEB.longValue());
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    assertThat(schema.getMaxLength())
+        .isGreaterThanOrEqualTo(spec.getNetworkingConfig().getMaxRequestBlocks())
+        .isGreaterThanOrEqualTo(specConfigDeneb.getMaxRequestBlocksDeneb());
   }
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.restapi.openapi.request;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyException;
@@ -37,8 +38,14 @@ public class OneOfJsonRequestContentTypeDefinition<T> extends DelegatingOpenApiT
 
   @Override
   public T deserialize(final InputStream in) throws IOException {
+    return deserialize(in, Map.of());
+  }
+
+  @Override
+  public T deserialize(final InputStream in, final Map<String, String> headers) throws IOException {
     final String json = IOUtils.toString(in, StandardCharsets.UTF_8);
-    final DeserializableTypeDefinition<? extends T> type = bodyTypeSelector.selectType(json);
+    final DeserializableTypeDefinition<? extends T> type =
+        bodyTypeSelector.selectType(new BodyTypeSelectorContext(json, headers));
 
     if (type == null) {
       throw new MissingRequestBodyException();
@@ -52,6 +59,24 @@ public class OneOfJsonRequestContentTypeDefinition<T> extends DelegatingOpenApiT
   }
 
   public interface BodyTypeSelector<T> {
-    DeserializableTypeDefinition<? extends T> selectType(final String jsonContent);
+    DeserializableTypeDefinition<? extends T> selectType(final BodyTypeSelectorContext context);
+  }
+
+  public static class BodyTypeSelectorContext {
+    final String body;
+    final Map<String, String> headers;
+
+    public BodyTypeSelectorContext(final String body, final Map<String, String> headers) {
+      this.body = body;
+      this.headers = headers;
+    }
+
+    public String getBody() {
+      return body;
+    }
+
+    public Map<String, String> getHeaders() {
+      return headers;
+    }
   }
 }

@@ -1,6 +1,6 @@
 # teku
 
- [![Build Status](https://circleci.com/gh/ConsenSys/teku.svg?style=svg)](https://circleci.com/gh/ConsenSys/workflows/teku)
+ [![Build Status](https://circleci.com/gh/Consensys/teku.svg?style=svg)](https://circleci.com/gh/ConsenSys/workflows/teku)
  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ConsenSys/teku/blob/master/LICENSE)
  [![GitHub release (latest by date)](https://img.shields.io/github/v/release/ConsenSys/teku)](https://github.com/ConsenSys/teku/releases/latest)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/7hPv2T6)

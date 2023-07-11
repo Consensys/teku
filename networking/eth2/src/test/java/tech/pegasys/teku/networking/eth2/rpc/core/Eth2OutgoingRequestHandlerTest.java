@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -64,6 +65,10 @@ public class Eth2OutgoingRequestHandlerTest
       Eth2RpcResponseHandler.expectMultipleResponses(res -> responseListener.get().onResponse(res));
   private final int maxChunks = 3;
   private final SafeFuture<Void> finishedProcessingFuture = responseHandler.getCompletedFuture();
+  private final Duration ttbfTimeout =
+      Duration.ofSeconds(spec.getGenesisSpecConfig().getTtfbTimeout());
+  private final Duration respTimeout =
+      Duration.ofSeconds(spec.getGenesisSpecConfig().getRespTimeout());
 
   private RpcResponseEncoder<SignedBeaconBlock, ?> responseEncoder;
   private List<Bytes> chunks;
@@ -101,13 +106,14 @@ public class Eth2OutgoingRequestHandlerTest
         responseDecoder,
         method.shouldReceiveResponse(),
         request,
-        responseHandler);
+        responseHandler,
+        spec.getNetworkingConfig());
   }
 
   @Override
   protected RpcEncoding getRpcEncoding() {
     return RpcEncoding.createSszSnappyEncoding(
-        TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
+        TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
   }
 
   @Test
@@ -270,7 +276,7 @@ public class Eth2OutgoingRequestHandlerTest
     verify(rpcStream, never()).closeAbruptly();
 
     // Run async tasks
-    timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis());
+    timeProvider.advanceTimeByMillis(ttbfTimeout.toMillis());
     timeoutRunner.executeDueActions();
     verify(rpcStream).closeAbruptly();
   }
@@ -282,7 +288,7 @@ public class Eth2OutgoingRequestHandlerTest
     verify(rpcStream, never()).closeAbruptly();
 
     // Deliver some bytes just in time
-    timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(ttbfTimeout.toMillis() - 1);
     timeoutRunner.executeDueActions();
     deliverInitialBytes();
 
@@ -299,7 +305,7 @@ public class Eth2OutgoingRequestHandlerTest
     deliverInitialBytes();
 
     // Run timeouts
-    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
+    timeProvider.advanceTimeByMillis(respTimeout.toMillis());
     timeoutRunner.executeDueActions();
     verify(rpcStream).closeAbruptly();
   }
@@ -309,12 +315,12 @@ public class Eth2OutgoingRequestHandlerTest
     sendInitialPayload();
 
     // First byte is received just in time
-    timeProvider.advanceTimeByMillis(RpcTimeouts.TTFB_TIMEOUT.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(ttbfTimeout.toMillis() - 1);
     deliverChunk(0);
 
     // Go past the time the first chunk would have timed out but not enough to trigger timeout on
     // the second chunk and ensure the timeout never fires.
-    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(respTimeout.toMillis() - 1);
     timeoutRunner.executeDueActions();
     verify(rpcStream, never()).closeAbruptly();
   }
@@ -329,7 +335,7 @@ public class Eth2OutgoingRequestHandlerTest
     assertThat(blocks.size()).isEqualTo(1);
 
     // Run timeouts
-    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
+    timeProvider.advanceTimeByMillis(respTimeout.toMillis());
     timeoutRunner.executeDueActions();
     verify(rpcStream).closeAbruptly();
   }
@@ -346,7 +352,7 @@ public class Eth2OutgoingRequestHandlerTest
     asyncRequestRunner.executeQueuedActions();
 
     // Run timeouts
-    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis());
+    timeProvider.advanceTimeByMillis(respTimeout.toMillis());
     timeoutRunner.executeDueActions();
     verify(rpcStream).closeAbruptly();
   }
@@ -376,17 +382,57 @@ public class Eth2OutgoingRequestHandlerTest
     assertThat(blocks.size()).isEqualTo(1);
 
     // Second chunk is received just in time
-    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(respTimeout.toMillis() - 1);
     timeoutRunner.executeDueActions();
     deliverChunk(1);
     asyncRequestRunner.executeQueuedActions();
 
     // Go past the time the second chunk would have timed out but not enough to trigger timeout on
     // the third chunk and ensure the timeout never fires.
-    timeProvider.advanceTimeByMillis(RpcTimeouts.RESP_TIMEOUT.toMillis() - 1);
+    timeProvider.advanceTimeByMillis(respTimeout.toMillis() - 1);
     timeoutRunner.executeDueActions();
     verify(rpcStream, never()).closeAbruptly();
     assertThat(blocks.size()).isEqualTo(2);
+  }
+
+  @Test
+  public void shouldWorkWhenInitialPayloadEventIsLate() throws Exception {
+    deliverChunk(0);
+
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    for (int i = 1; i < maxChunks; i++) {
+      deliverChunk(i);
+    }
+    complete();
+    close();
+
+    assertAllReceivedSuccessfully(maxChunks);
+  }
+
+  @Test
+  public void shouldWorkWhenInitialPayloadEventAfterReadCompleteWithEmptyResponse()
+      throws Exception {
+    complete();
+
+    sendInitialPayload();
+    verify(rpcStream).closeWriteStream();
+
+    close();
+
+    assertAllReceivedSuccessfully(0);
+  }
+
+  private void assertAllReceivedSuccessfully(int chunkCount) throws InterruptedException {
+    asyncRequestRunner.waitForExactly(chunkCount);
+    timeoutRunner.executeUntilDone();
+    Waiter.waitFor(() -> assertThat(finishedProcessingFuture).isDone());
+
+    assertThat(finishedProcessingFuture).isCompletedWithValue(null);
+    assertThat(reqHandler.getState()).isIn(State.CLOSED, State.READ_COMPLETE);
+    assertThat(blocks.size()).isEqualTo(chunkCount);
+    verify(rpcStream, never()).closeAbruptly();
   }
 
   private void sendInitialPayload() {

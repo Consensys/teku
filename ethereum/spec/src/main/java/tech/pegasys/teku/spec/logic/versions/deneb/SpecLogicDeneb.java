@@ -18,6 +18,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.logic.common.AbstractSpecLogic;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
+import tech.pegasys.teku.spec.logic.common.operations.validation.AttestationDataValidator;
 import tech.pegasys.teku.spec.logic.common.operations.validation.OperationValidator;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
@@ -37,8 +38,11 @@ import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.Opera
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.block.BlockProcessorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.forktransition.DenebStateUpgrade;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.operations.validation.AttestationDataValidatorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.BlindBlockUtilDeneb;
+import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SpecLogicDeneb extends AbstractSpecLogic {
@@ -90,8 +94,8 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
     // Helpers
     final Predicates predicates = new Predicates(config);
     final MiscHelpersDeneb miscHelpers = new MiscHelpersDeneb(config);
-    final BeaconStateAccessorsAltair beaconStateAccessors =
-        new BeaconStateAccessorsAltair(config, predicates, miscHelpers);
+    final BeaconStateAccessorsDeneb beaconStateAccessors =
+        new BeaconStateAccessorsDeneb(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =
         new BeaconStateMutatorsBellatrix(config, miscHelpers, beaconStateAccessors);
 
@@ -107,9 +111,11 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             config, schemaDefinitions, predicates, miscHelpers, beaconStateAccessors);
     final AttestationUtil attestationUtil =
         new AttestationUtilAltair(config, schemaDefinitions, beaconStateAccessors, miscHelpers);
+    final AttestationDataValidator attestationDataValidator =
+        new AttestationDataValidatorDeneb(config, miscHelpers, beaconStateAccessors);
     final OperationValidator operationValidator =
         new OperationValidatorCapella(
-            config, predicates, miscHelpers, beaconStateAccessors, attestationUtil);
+            config, predicates, beaconStateAccessors, attestationDataValidator, attestationUtil);
     final ValidatorStatusFactoryAltair validatorStatusFactory =
         new ValidatorStatusFactoryAltair(
             config,
@@ -148,7 +154,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
             operationValidator,
             schemaDefinitions);
     final ForkChoiceUtil forkChoiceUtil =
-        new ForkChoiceUtil(
+        new ForkChoiceUtilDeneb(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);

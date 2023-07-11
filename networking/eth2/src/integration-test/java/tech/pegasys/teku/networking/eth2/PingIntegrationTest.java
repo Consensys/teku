@@ -30,7 +30,8 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManagerAccess;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
-import tech.pegasys.teku.spec.config.Constants;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class PingIntegrationTest {
@@ -39,6 +40,8 @@ public class PingIntegrationTest {
   private Eth2P2PNetwork network2;
   private Eth2Peer peer1;
   private Eth2Peer peer2;
+  private final Spec spec = TestSpecFactory.createDefault();
+  private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
   public void setUp(Duration pingInterval) throws Exception {
     network1 = networkFactory.builder().eth2RpcPingInterval(pingInterval).startNetwork();
@@ -92,7 +95,7 @@ public class PingIntegrationTest {
     assertThat(thirdPing1).isGreaterThan(secondPing1);
 
     SszBitvector expectedBitvector1 =
-        SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(0, 1, 8);
+        SszBitvectorSchema.create(attestationSubnetCount).ofBits(0, 1, 8);
 
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));
     waitFor(() -> assertThat(peer2.getRemoteAttestationSubnets()).isNotEmpty());
@@ -103,7 +106,7 @@ public class PingIntegrationTest {
     assertThat(thirdPing2).isEqualTo(secondPing2);
 
     SszBitvector expectedBitvector2 =
-        SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(2, 4);
+        SszBitvectorSchema.create(attestationSubnetCount).ofBits(2, 4);
 
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector2));
   }
@@ -114,7 +117,7 @@ public class PingIntegrationTest {
 
     network1.setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
     SszBitvector expectedBitvector1 =
-        SszBitvectorSchema.create(Constants.ATTESTATION_SUBNET_COUNT).ofBits(0, 1, 8);
+        SszBitvectorSchema.create(attestationSubnetCount).ofBits(0, 1, 8);
 
     // detecting that ping was automatically sent via updated att subnets of the remote peer
     waitFor(() -> assertThat(peer1.getRemoteAttestationSubnets()).contains(expectedBitvector1));

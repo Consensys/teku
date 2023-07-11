@@ -33,8 +33,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ValidatableAttestation> processor,
-      final int maxMessageSize) {
+      final OperationProcessor<ValidatableAttestation> processor) {
     super(
         recentChainData,
         GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
@@ -50,7 +49,7 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
             .getSchemaDefinitions()
             .getSignedAggregateAndProofSchema(),
         message -> spec.computeEpochAtSlot(message.getMessage().getAggregate().getData().getSlot()),
-        maxMessageSize);
+        spec.getNetworkingConfig());
   }
 
   public void onNewAggregate(final ValidatableAttestation validatableAttestation) {

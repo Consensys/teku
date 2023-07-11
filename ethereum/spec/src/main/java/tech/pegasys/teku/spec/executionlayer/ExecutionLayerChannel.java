@@ -67,12 +67,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-            final TransitionConfiguration transitionConfiguration) {
-          return SafeFuture.completedFuture(transitionConfiguration);
-        }
-
-        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -106,9 +100,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
   SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
 
-  SafeFuture<TransitionConfiguration> engineExchangeTransitionConfiguration(
-      TransitionConfiguration transitionConfiguration);
-
   /**
    * This is low level method, use {@link
    * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
@@ -136,10 +127,4 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    */
   SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext, BeaconState state);
-
-  enum Version {
-    KILNV2;
-
-    public static final Version DEFAULT_VERSION = KILNV2;
-  }
 }

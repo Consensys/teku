@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.peers;
 
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -301,19 +302,33 @@ public class RespondingEth2Peer implements Eth2Peer {
   }
 
   @Override
-  public boolean popBlockRequests(
+  public Optional<RequestApproval> approveBlocksRequest(
       final ResponseCallback<SignedBeaconBlock> callback, final long blocksCount) {
-    return true;
+    return Optional.of(
+        new RequestApproval.RequestApprovalBuilder()
+            .requestId(0)
+            .timeSeconds(ZERO)
+            .objectsCount(0)
+            .build());
   }
 
   @Override
-  public boolean popBlobSidecarRequests(
+  public void adjustBlocksRequest(
+      final RequestApproval blockRequests, final long returnedBlocksCount) {}
+
+  @Override
+  public Optional<RequestApproval> approveBlobSidecarsRequest(
       final ResponseCallback<BlobSidecar> callback, final long blobSidecarsCount) {
-    return true;
+    return Optional.of(
+        new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
   }
 
   @Override
-  public boolean popRequest() {
+  public void adjustBlobSidecarsRequest(
+      final RequestApproval blobSidecarRequests, final long returnedBlobSidecarsCount) {}
+
+  @Override
+  public boolean approveRequest() {
     return true;
   }
 

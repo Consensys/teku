@@ -196,7 +196,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
         && inclusionDelay.isLessThanOrEqualTo(config.getSquareRootSlotsPerEpoch())) {
       participationFlagIndices.add(ParticipationFlags.TIMELY_SOURCE_FLAG_INDEX);
     }
-    if (isMatchingTarget && inclusionDelay.isLessThanOrEqualTo(config.getSlotsPerEpoch())) {
+    if (shouldSetTargetTimelinessFlag(isMatchingTarget, inclusionDelay)) {
       participationFlagIndices.add(ParticipationFlags.TIMELY_TARGET_FLAG_INDEX);
     }
     if (isMatchingHead
@@ -204,6 +204,11 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
       participationFlagIndices.add(ParticipationFlags.TIMELY_HEAD_FLAG_INDEX);
     }
     return participationFlagIndices;
+  }
+
+  protected boolean shouldSetTargetTimelinessFlag(
+      final boolean isMatchingTarget, final UInt64 inclusionDelay) {
+    return isMatchingTarget && inclusionDelay.isLessThanOrEqualTo(config.getSlotsPerEpoch());
   }
 
   public static BeaconStateAccessorsAltair required(

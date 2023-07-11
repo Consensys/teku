@@ -14,13 +14,12 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVALID_REQUEST_CODE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS_DENEB;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.nio.channels.ClosedChannelException;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -31,6 +30,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.eth2.peers.RequestApproval;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethodIds;
 import tech.pegasys.teku.networking.eth2.rpc.core.PeerRequiredLocalMessageHandler;
 import tech.pegasys.teku.networking.eth2.rpc.core.ResponseCallback;
@@ -91,13 +91,19 @@ public class BeaconBlocksByRootMessageHandler
       }
 
       SafeFuture<Void> future = SafeFuture.COMPLETE;
-      if (!peer.popRequest() || !peer.popBlockRequests(callback, message.size())) {
+
+      final Optional<RequestApproval> blocksRequestApproval =
+          peer.approveBlocksRequest(callback, message.size());
+
+      if (!peer.approveRequest() || blocksRequestApproval.isEmpty()) {
         requestCounter.labels("rate_limited").inc();
         return;
       }
 
       requestCounter.labels("ok").inc();
       totalBlocksRequestedCounter.inc(message.size());
+      final AtomicInteger sentBlocks = new AtomicInteger(0);
+
       for (SszBytes32 blockRoot : message) {
         future =
             future.thenCompose(
@@ -112,10 +118,26 @@ public class BeaconBlocksByRootMessageHandler
                               if (validationResult.isPresent()) {
                                 return SafeFuture.failedFuture(validationResult.get());
                               }
-                              return block.map(callback::respond).orElse(SafeFuture.COMPLETE);
+                              return block
+                                  .map(
+                                      signedBeaconBlock ->
+                                          callback
+                                              .respond(signedBeaconBlock)
+                                              .thenRun(sentBlocks::incrementAndGet))
+                                  .orElse(SafeFuture.COMPLETE);
                             }));
       }
-      future.finish(callback::completeSuccessfully, err -> handleError(callback, err));
+      future.finish(
+          () -> {
+            if (sentBlocks.get() != message.size()) {
+              peer.adjustBlocksRequest(blocksRequestApproval.get(), sentBlocks.get());
+            }
+            callback.completeSuccessfully();
+          },
+          err -> {
+            peer.adjustBlocksRequest(blocksRequestApproval.get(), 0);
+            handleError(callback, err);
+          });
     } else {
       requestCounter.labels("ok").inc();
       callback.completeSuccessfully();
@@ -125,9 +147,7 @@ public class BeaconBlocksByRootMessageHandler
   private UInt64 getMaxRequestBlocks() {
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
-    return milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
-        ? MAX_REQUEST_BLOCKS_DENEB
-        : MAX_REQUEST_BLOCKS;
+    return spec.forMilestone(milestone).miscHelpers().getMaxRequestBlocks();
   }
 
   private void handleError(

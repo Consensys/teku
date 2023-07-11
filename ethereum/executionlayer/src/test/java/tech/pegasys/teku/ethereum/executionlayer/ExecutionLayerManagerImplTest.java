@@ -41,8 +41,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -52,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionLayerManagerImplTest {
@@ -60,7 +65,7 @@ class ExecutionLayerManagerImplTest {
 
   private final BuilderClient builderClient = Mockito.mock(BuilderClient.class);
 
-  private Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private Spec spec = TestSpecFactory.createMinimalCapella();
 
   private DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -437,6 +442,53 @@ class ExecutionLayerManagerImplTest {
 
   @Test
   public void
+      builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineIfShouldOverrideBuilderIsSetToTrue() {
+    // the shouldOverrideBuilder flag is available only from Deneb
+    setupDeneb();
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    prepareBuilderGetHeaderResponse(executionPayloadContext, false);
+
+    final GetPayloadResponse getPayloadResponse =
+        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, true, slot);
+
+    // we expect result from the local engine
+    final ExecutionPayloadHeader expectedHeader =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(getPayloadResponse.getExecutionPayload());
+    final BlindedBlobsBundle expectedBlindedBlobsBundle =
+        spec.atSlot(slot)
+            .getSchemaDefinitions()
+            .toVersionDeneb()
+            .orElseThrow()
+            .getBlindedBlobsBundleSchema()
+            .createFromExecutionBlobsBundle(getPayloadResponse.getBlobsBundle().orElseThrow());
+
+    // we expect local engine header as result
+    final HeaderWithFallbackData expectedResult =
+        HeaderWithFallbackData.create(
+            expectedHeader,
+            Optional.of(expectedBlindedBlobsBundle),
+            new FallbackData(
+                getPayloadResponse.getExecutionPayload(),
+                getPayloadResponse.getBlobsBundle(),
+                FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
+    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+        .isCompletedWithValue(expectedResult);
+    verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
+  }
+
+  @Test
+  public void
       builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineOnBidValidationFailure() {
     executionLayerManager = createExecutionLayerChannelImpl(true, true);
     setBuilderOnline();
@@ -707,6 +759,12 @@ class ExecutionLayerManagerImplTest {
     verifyNoMoreInteractions(executionClientHandler);
   }
 
+  private void setupDeneb() {
+    spec = TestSpecFactory.createMinimalDeneb();
+    dataStructureUtil = new DataStructureUtil(spec);
+    setup();
+  }
+
   private BuilderBid prepareBuilderGetHeaderResponse(
       final ExecutionPayloadContext executionPayloadContext, final boolean prepareEmptyResponse) {
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
@@ -739,9 +797,9 @@ class ExecutionLayerManagerImplTest {
     final FallbackData fallbackData =
         headerWithFallbackData.getFallbackDataOptional().orElseThrow();
     final FallbackReason fallbackReason = fallbackData.getReason();
-    final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
+        || fallbackReason == FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE
         || fallbackReason == FallbackReason.LOCAL_BLOCK_VALUE_WON) {
       // we expect both builder and local engine have been called
       verifyBuilderCalled(slot, executionPayloadContext);
@@ -751,13 +809,33 @@ class ExecutionLayerManagerImplTest {
     }
     verifyEngineCalled(executionPayloadContext, slot);
 
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+    final BuilderPayload builderPayload =
+        fallbackData
+            .getBlobsBundle()
+            .map(
+                executionBlobsBundle -> {
+                  final SchemaDefinitionsDeneb schemaDefinitions =
+                      SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions());
+                  final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+                      schemaDefinitions
+                          .getBlobsBundleSchema()
+                          .createFromExecutionBlobsBundle(executionBlobsBundle);
+                  return (BuilderPayload)
+                      schemaDefinitions
+                          .getExecutionPayloadAndBlobsBundleSchema()
+                          .create(fallbackData.getExecutionPayload(), blobsBundle);
+                })
+            .orElse(fallbackData.getExecutionPayload());
+
+    final SignedBlockContainer signedBlindedBlockContainer =
+        fallbackData.getBlobsBundle().isPresent()
+            ? dataStructureUtil.randomSignedBlindedBlockContents(slot)
+            : dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
 
     // we expect result from the cached payload
     assertThat(
             executionLayerManager.builderGetPayload(
-                signedBlindedBeaconBlock,
+                signedBlindedBlockContainer,
                 (aSlot) ->
                     Optional.of(
                         new ExecutionPayloadResult(
@@ -765,7 +843,7 @@ class ExecutionLayerManagerImplTest {
                             Optional.empty(),
                             Optional.empty(),
                             Optional.of(SafeFuture.completedFuture(headerWithFallbackData))))))
-        .isCompletedWithValue(executionPayload);
+        .isCompletedWithValue(builderPayload);
 
     // we expect no additional calls
     verifyNoMoreInteractions(builderClient);
@@ -810,6 +888,20 @@ class ExecutionLayerManagerImplTest {
     return getPayloadResponse;
   }
 
+  private GetPayloadResponse prepareEngineGetPayloadResponse(
+      final ExecutionPayloadContext executionPayloadContext,
+      final UInt256 blockValue,
+      final boolean shouldOverrideBuilder,
+      final UInt64 slot) {
+    final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+    final GetPayloadResponse getPayloadResponse =
+        new GetPayloadResponse(payload, blockValue, blobsBundle, shouldOverrideBuilder);
+    when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
+        .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
+    return getPayloadResponse;
+  }
+
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled, final boolean builderValidatorEnabled) {
     return createExecutionLayerChannelImpl(
@@ -832,7 +924,8 @@ class ExecutionLayerManagerImplTest {
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
         BlobsBundleValidator.NOOP,
-        builderBidCompareFactor);
+        builderBidCompareFactor,
+        true);
   }
 
   private void updateBuilderStatus(final SafeFuture<Response<Void>> builderClientResponse) {

@@ -85,7 +85,7 @@ class EngineNewPayloadV1Test {
   }
 
   @Test
-  public void shouldCallExecutionEngineClientNewPayloadV1() {
+  public void shouldCallNewPayloadV1WithExecutionPayloadV1() {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
     final ExecutionPayloadV1 executionPayloadV1 =
         ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
