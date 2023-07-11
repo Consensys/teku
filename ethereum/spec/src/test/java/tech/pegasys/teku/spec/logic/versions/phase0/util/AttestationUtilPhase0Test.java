@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class AttestationUtilPhase0Test {
@@ -45,7 +46,9 @@ class AttestationUtilPhase0Test {
   @MethodSource("provideIsFromFarFutureArguments")
   public void testIsFromFarFuture(
       final int attestationSlot, final UInt64 currentTimeMillis, final boolean expectedResult) {
-    final Attestation attestation = dataStructureUtil.randomAttestation(attestationSlot);
+    final AttestationData attestationData =
+        dataStructureUtil.randomAttestationData(UInt64.valueOf(attestationSlot), true);
+    final Attestation attestation = dataStructureUtil.randomAttestation(attestationData);
     // set genesisTime as 0 for simplification
     final UInt64 genesisTime = UInt64.ZERO;
     final boolean actualResult =

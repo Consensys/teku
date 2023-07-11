@@ -105,7 +105,7 @@ class DeferredAttestationsTest {
   private IndexedAttestation createAttestation(
       final UInt64 slot, final Bytes32 root, final int... attestingValidators) {
     return dataStructureUtil.randomIndexedAttestation(
-        dataStructureUtil.randomAttestationData(slot, root),
+        dataStructureUtil.randomAttestationData(slot, root, true),
         IntStream.of(attestingValidators).mapToObj(UInt64::valueOf).toArray(UInt64[]::new));
   }
 }

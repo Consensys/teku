@@ -754,20 +754,31 @@ public final class DataStructureUtil {
     return randomAttestationData(slot, randomBytes32());
   }
 
+  public AttestationData randomAttestationData(
+      final UInt64 slot, final boolean realisticCheckpointEpochs) {
+    return randomAttestationData(slot, randomBytes32(), realisticCheckpointEpochs);
+  }
+
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
+    return randomAttestationData(slot, blockRoot, false);
+  }
+
+  public AttestationData randomAttestationData(
+      final UInt64 slot, final Bytes32 blockRoot, final boolean realisticCheckpointEpochs) {
     return new AttestationData(
         slot,
         randomUInt64(),
         blockRoot,
-        // Make checkpoint epochs realistic
-        randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1)),
-        randomCheckpoint(spec.computeEpochAtSlot(slot)));
+        realisticCheckpointEpochs
+            ? randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1))
+            : randomCheckpoint(),
+        realisticCheckpointEpochs
+            ? randomCheckpoint(spec.computeEpochAtSlot(slot))
+            : randomCheckpoint());
   }
 
   public Attestation randomAttestation() {
-    return spec.getGenesisSchemaDefinitions()
-        .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(), randomSignature());
+    return randomAttestation(randomAttestationData());
   }
 
   public Attestation randomAttestation(final long slot) {
@@ -775,9 +786,13 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation(final UInt64 slot) {
+    return randomAttestation(randomAttestationData(slot));
+  }
+
+  public Attestation randomAttestation(final AttestationData attestationData) {
     return spec.getGenesisSchemaDefinitions()
         .getAttestationSchema()
-        .create(randomBitlist(), randomAttestationData(slot), randomSignature());
+        .create(randomBitlist(), attestationData, randomSignature());
   }
 
   public AggregateAndProof randomAggregateAndProof() {

@@ -223,6 +223,6 @@ class AttestationStateSelectorTest {
   }
 
   private AttestationData attestationFor(final UInt64 slot, final Bytes32 blockRoot) {
-    return dataStructureUtil.randomAttestationData(slot, blockRoot);
+    return dataStructureUtil.randomAttestationData(slot, blockRoot, true);
   }
 }
