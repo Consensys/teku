@@ -2,8 +2,6 @@
 
 ## Upcoming Breaking Changes
 
-- Upgrading the minimum Java version to Java 17, which means users will need to upgrade their Java installation to at least `Java 17`.  The docker versions relying on `jdk16` will no longer be published, so docker users explicitly referencing the `jdk16` build need to update their package to reference `jdk17`, as tags `develop-jdk16`, `develop-jdk16-arm64`, `latest-jdk16` will no longer be updated.
-
 ## Current Releases
 
 For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
@@ -14,6 +12,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 - `--exchange-capabilities-enabled` option has been removed since it is no longer applicable because of [execution-apis](https://github.com/ethereum/execution-apis/pull/418) spec change.
 - Removed kiln and ropsten as `--network` options
+- Upgrading the minimum Java version to Java 17, which means users will need to upgrade their Java installation to at least `Java 17`.  The docker versions relying on `jdk16` will no longer be published, so docker users explicitly referencing the `jdk16` build need to update their package to reference `jdk17`, as tags `develop-jdk16`, `develop-jdk16-arm64`, `latest-jdk16` will no longer be updated.
 
 ### Additions and Improvements
 
