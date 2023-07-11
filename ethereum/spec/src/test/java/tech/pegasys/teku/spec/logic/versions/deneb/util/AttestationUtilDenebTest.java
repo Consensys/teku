@@ -48,18 +48,25 @@ public class AttestationUtilDenebTest {
     assertThat(actualResult).isEqualTo(expectedResult);
   }
 
-  // minimal is 6 seconds per slot, 8 slots per epoch
+  // minimal is 6 seconds per slot, 8 slots per epoch, MAXIMUM_GOSSIP_CLOCK_DISPARITY is 500 ms (1
+  // slot disparity)
   private static Stream<Arguments> provideAttestationSlotInCurrentOrPreviousEpochArguments() {
     return Stream.of(
-        Arguments.of(6, getTimeForSlot(10), true),
-        Arguments.of(6, getTimeForSlot(3), true),
-        Arguments.of(6, getTimeForSlot(26), false),
-        Arguments.of(10, getTimeForSlot(6), false),
-        // testing MAXIMUM_GOSSIP_CLOCK_DISPARITY
-        // current time is in epoch 3 and attestation slot is in the last slot of epoch 1
-        Arguments.of(7, getTimeForSlot(22), true),
-        // current time is in epoch 1 and attestation slot is in the first slot of epoch 2
-        Arguments.of(17, getTimeForSlot(10), true));
+        // lower_bound pass
+        Arguments.of(7, getTimeForSlot(17), true),
+        Arguments.of(8, getTimeForSlot(17), true),
+        Arguments.of(15, getTimeForSlot(17), true),
+        Arguments.of(16, getTimeForSlot(17), true),
+        // lower_bound fail
+        Arguments.of(6, getTimeForSlot(17), false),
+        // upper_bound pass
+        Arguments.of(23, getTimeForSlot(17), true),
+        Arguments.of(24, getTimeForSlot(17), true),
+        Arguments.of(22, getTimeForSlot(17), true),
+        // upper_bound fail
+        Arguments.of(25, getTimeForSlot(17), false),
+        // edge case
+        Arguments.of(0, getTimeForSlot(0), true));
   }
 
   private static UInt64 getTimeForSlot(final int slot) {

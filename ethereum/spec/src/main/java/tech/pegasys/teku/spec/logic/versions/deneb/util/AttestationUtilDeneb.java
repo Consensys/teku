@@ -82,8 +82,7 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
     // MAXIMUM_GOSSIP_CLOCK_DISPARITY
     final UInt64 minSlot =
         miscHelpers.computeStartSlotAtEpoch(previousEpoch).minusMinZero(slotDisparity);
-    final UInt64 maxSlot =
-        miscHelpers.computeStartSlotAtEpoch(currentEpoch.plus(1)).plus(slotDisparity);
+    final UInt64 maxSlot = miscHelpers.computeEndSlotAtEpoch(currentEpoch).plus(slotDisparity);
 
     return attestationSlot.isGreaterThanOrEqualTo(minSlot)
         && attestationSlot.isLessThanOrEqualTo(maxSlot);
