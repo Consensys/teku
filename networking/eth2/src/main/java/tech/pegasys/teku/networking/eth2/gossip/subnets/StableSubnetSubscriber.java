@@ -17,5 +17,5 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface StableSubnetSubscriber {
 
-  void onSlot(UInt64 slot, int validatorCount);
+  void onSlot(UInt64 slot);
 }

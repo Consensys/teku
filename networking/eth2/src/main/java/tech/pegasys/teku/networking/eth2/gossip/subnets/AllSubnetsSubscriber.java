@@ -38,7 +38,7 @@ public class AllSubnetsSubscriber implements StableSubnetSubscriber {
   }
 
   @Override
-  public void onSlot(final UInt64 slot, final int validatorCount) {
+  public void onSlot(final UInt64 slot) {
     // Already subscribed to all subnets
   }
 }

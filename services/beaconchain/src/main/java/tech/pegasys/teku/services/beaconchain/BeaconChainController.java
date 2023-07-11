@@ -73,9 +73,9 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -724,12 +724,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final StableSubnetSubscriber stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
-            : new ValidatorBasedStableSubnetSubscriber(
-                attestationTopicSubscriber,
-                new Random(),
-                spec,
-                beaconConfig.p2pConfig().getMinimumSubnetSubscriptions(),
-                p2pNetwork.getDiscoveryNodeId());
+            : new NodeBasedStableSubnetSubscriber(
+                attestationTopicSubscriber, new Random(), spec, p2pNetwork.getDiscoveryNodeId());
     this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber, spec);
   }
 

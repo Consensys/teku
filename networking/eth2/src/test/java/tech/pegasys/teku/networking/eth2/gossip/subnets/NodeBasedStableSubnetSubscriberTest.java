@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class ValidatorBasedStableSubnetSubscriberTest {
+public class NodeBasedStableSubnetSubscriberTest {
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
   private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
@@ -39,8 +39,8 @@ public class ValidatorBasedStableSubnetSubscriberTest {
 
   @Test
   void shouldSubscribeToNoMoreThanAttestationSubnetCount() {
-    final ValidatorBasedStableSubnetSubscriber subscriber = createSubscriber(256);
-    subscriber.onSlot(UInt64.ONE, 2);
+    final NodeBasedStableSubnetSubscriber subscriber = createSubscriber();
+    subscriber.onSlot(UInt64.ONE);
     verify(network, times(attestationSubnetCount))
         .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
     for (int i = 0; i < attestationSubnetCount; i++) {
@@ -50,20 +50,18 @@ public class ValidatorBasedStableSubnetSubscriberTest {
 
   @Test
   void shouldSubscribeToExpectedSubnetsWithNoMinimum() {
-    final ValidatorBasedStableSubnetSubscriber subscriber = createSubscriber(0);
-    subscriber.onSlot(UInt64.ONE, 10);
-    verify(network, times(20))
+    final NodeBasedStableSubnetSubscriber subscriber = createSubscriber();
+    subscriber.onSlot(UInt64.ONE);
+    verify(network, times(2))
         .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
   }
 
   @NotNull
-  private ValidatorBasedStableSubnetSubscriber createSubscriber(
-      final int minimumSubnetSubscriptions) {
-    return new ValidatorBasedStableSubnetSubscriber(
+  private NodeBasedStableSubnetSubscriber createSubscriber() {
+    return new NodeBasedStableSubnetSubscriber(
         new AttestationTopicSubscriber(spec, network),
         new Random(),
         spec,
-        minimumSubnetSubscriptions,
         Optional.of(dataStructureUtil.randomUInt256()));
   }
 }

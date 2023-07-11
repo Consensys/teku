@@ -164,6 +164,13 @@ class MiscHelpersTest {
         .hasMessageContaining("Parameter n must be greater than 0");
   }
 
+  @Test
+  public void testNodeIdBasedSubnetSubscription() {
+    assertThatThrownBy(() -> miscHelpers.isSlotAtNthEpochBoundary(UInt64.ONE, UInt64.ZERO, -1))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Parameter n must be greater than 0");
+  }
+
   @ParameterizedTest
   @MethodSource("getComputesSlotAtTimeArguments")
   public void computesSlotAtTime(final long currentTime, final UInt64 expectedSlot) {

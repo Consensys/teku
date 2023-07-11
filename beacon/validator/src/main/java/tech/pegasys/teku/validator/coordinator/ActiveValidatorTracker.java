@@ -54,7 +54,7 @@ public class ActiveValidatorTracker implements SlotEventsChannel {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final int validatorCount = getNumberOfValidatorsForEpoch(epoch);
     LOG.debug("{} active validators counted for epoch {}", validatorCount, epoch);
-    stableSubnetSubscriber.onSlot(slot, validatorCount);
+    stableSubnetSubscriber.onSlot(slot);
 
     // PerformanceTracker uses validator counts to determine expected attestation count.
     // Thus we wait ATTESTATION_INCLUSION_RANGE epochs, after which the performance is determined,

@@ -21,15 +21,15 @@ import static tech.pegasys.teku.validator.coordinator.performance.DefaultPerform
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 
 class ActiveValidatorTrackerTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final StableSubnetSubscriber stableSubnetSubscriber =
-      mock(ValidatorBasedStableSubnetSubscriber.class);
+      mock(NodeBasedStableSubnetSubscriber.class);
 
   private final ActiveValidatorTracker tracker =
       new ActiveValidatorTracker(stableSubnetSubscriber, spec);
@@ -46,7 +46,7 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot);
 
     final InOrder inOrder = inOrder(stableSubnetSubscriber);
-    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot, 3);
+    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot);
   }
 
   @Test
@@ -61,7 +61,7 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot);
 
     final InOrder inOrder = inOrder(stableSubnetSubscriber);
-    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot, 1);
+    inOrder.verify(stableSubnetSubscriber).onSlot(epochStartSlot);
   }
 
   @Test
@@ -81,8 +81,8 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot);
 
     // And both slot updates wind up setting 0 validators
-    verify(stableSubnetSubscriber).onSlot(afterInclusionRangeStartSlot, 0);
-    verify(stableSubnetSubscriber).onSlot(epochStartSlot, 0);
+    verify(stableSubnetSubscriber).onSlot(afterInclusionRangeStartSlot);
+    verify(stableSubnetSubscriber).onSlot(epochStartSlot);
   }
 
   @Test
@@ -102,6 +102,6 @@ class ActiveValidatorTrackerTest {
     tracker.onSlot(epochStartSlot);
 
     // And both slot updates wind up setting 3 validators
-    verify(stableSubnetSubscriber).onSlot(epochStartSlot, 3);
+    verify(stableSubnetSubscriber).onSlot(epochStartSlot);
   }
 }

@@ -52,7 +52,7 @@ class AllSubnetsSubscriberTest {
     assertThat(actual.stream().map(SubnetSubscription::getUnsubscriptionSlot))
         .containsOnly(UInt64.MAX_VALUE);
 
-    stableSubnetSubscriber.onSlot(UInt64.ONE, 1);
+    stableSubnetSubscriber.onSlot(UInt64.ONE);
     verifyNoMoreInteractions(attestationTopicSubscriber);
   }
 }
