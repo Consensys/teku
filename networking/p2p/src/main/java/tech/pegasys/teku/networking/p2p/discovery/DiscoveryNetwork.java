@@ -111,6 +111,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public Optional<UInt256> getDiscoveryNodeId() {
     BigInteger nodeId =
         new BigInteger(
+            1,
             discoveryService
                 .getNodeId()
                 .orElseThrow(() -> new IllegalArgumentException("Unable to get discovery node id"))
