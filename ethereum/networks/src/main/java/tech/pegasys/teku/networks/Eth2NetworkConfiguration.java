@@ -29,7 +29,6 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -658,7 +657,7 @@ public class Eth2NetworkConfiguration {
       if (epochsStoreBlobs == null || epochsStoreBlobs.isBlank()) {
         return Optional.empty();
       }
-      if (epochsStoreBlobs.toUpperCase(Locale.ROOT).equals(EPOCHS_STORE_BLOBS_MAX_KEYWORD)) {
+      if (epochsStoreBlobs.equalsIgnoreCase(EPOCHS_STORE_BLOBS_MAX_KEYWORD)) {
         // 26 thousand years should be enough
         return Optional.of(Integer.MAX_VALUE);
       }
