@@ -56,6 +56,18 @@ public interface MutableStore extends ReadOnlyStore {
         Optional.empty());
   }
 
+  default void putBlockAndState(
+      final SignedBlockAndState blockAndState,
+      final List<BlobSidecar> blobSidecars,
+      final BlockCheckpoints checkpoints) {
+    putBlockAndState(
+        blockAndState.getBlock(),
+        blockAndState.getState(),
+        checkpoints,
+        blobSidecars,
+        Optional.empty());
+  }
+
   void putStateRoot(Bytes32 stateRoot, SlotAndBlockRoot slotAndBlockRoot);
 
   void pullUpBlockCheckpoints(Bytes32 blockRoot);

@@ -13,6 +13,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 - `--exchange-capabilities-enabled` option has been removed since it is no longer applicable because of [execution-apis](https://github.com/ethereum/execution-apis/pull/418) spec change.
+- Removed kiln and ropsten as `--network` options
 
 ### Additions and Improvements
 

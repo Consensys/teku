@@ -66,6 +66,7 @@ public class ExecutionBuilderModule {
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
   private final Optional<Integer> builderBidCompareFactor;
+  private final boolean useShouldOverrideBuilderFlag;
 
   public ExecutionBuilderModule(
       final Spec spec,
@@ -74,7 +75,8 @@ public class ExecutionBuilderModule {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
-      final Optional<Integer> builderBidCompareFactor) {
+      final Optional<Integer> builderBidCompareFactor,
+      final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
@@ -83,6 +85,7 @@ public class ExecutionBuilderModule {
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
     this.builderBidCompareFactor = builderBidCompareFactor;
+    this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
@@ -167,6 +170,18 @@ public class ExecutionBuilderModule {
                 return getResultFromLocalGetPayloadResponse(
                     localGetPayloadResponse, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
               } else {
+                // Treat the shouldOverrideBuilder flag as false if local payload is unavailable
+                final boolean shouldOverrideBuilder =
+                    maybeLocalGetPayloadResponse
+                        .map(GetPayloadResponse::getShouldOverrideBuilder)
+                        .orElse(false);
+                if (useShouldOverrideBuilderFlag && shouldOverrideBuilder) {
+                  return getResultFromLocalGetPayloadResponse(
+                      localGetPayloadResponse,
+                      slot,
+                      FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE);
+                }
+
                 final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
                 // Treat the local block value as zero if local payload is unavailable
                 final UInt256 localBlockValue =

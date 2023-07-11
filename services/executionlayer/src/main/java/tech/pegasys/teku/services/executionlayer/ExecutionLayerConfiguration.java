@@ -36,6 +36,7 @@ public class ExecutionLayerConfiguration {
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
   public static final int DEFAULT_BUILDER_BID_COMPARE_FACTOR = 100;
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
+  public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
   public static final String BUILDER_ALWAYS_KEYWORD = "BUILDER_ALWAYS";
 
   private final Spec spec;
@@ -48,6 +49,7 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
   private final Optional<Integer> builderBidCompareFactor;
   private final boolean builderSetUserAgentHeader;
+  private final boolean useShouldOverrideBuilderFlag;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -59,7 +61,8 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
       final Optional<Integer> builderBidCompareFactor,
-      final boolean builderSetUserAgentHeader) {
+      final boolean builderSetUserAgentHeader,
+      final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineJwtSecretFile = engineJwtSecretFile;
@@ -71,6 +74,7 @@ public class ExecutionLayerConfiguration {
         builderCircuitBreakerAllowedConsecutiveFaults;
     this.builderBidCompareFactor = builderBidCompareFactor;
     this.builderSetUserAgentHeader = builderSetUserAgentHeader;
+    this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
   public static Builder builder() {
@@ -124,6 +128,10 @@ public class ExecutionLayerConfiguration {
     return builderSetUserAgentHeader;
   }
 
+  public boolean getUseShouldOverrideBuilderFlag() {
+    return useShouldOverrideBuilderFlag;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
@@ -136,6 +144,7 @@ public class ExecutionLayerConfiguration {
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
     private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
     private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
+    private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
     private Builder() {}
 
@@ -170,7 +179,8 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerAllowedFaults,
           builderCircuitBreakerAllowedConsecutiveFaults,
           builderBidCompareFactor,
-          builderSetUserAgentHeader);
+          builderSetUserAgentHeader,
+          useShouldOverrideBuilderFlag);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -223,6 +233,11 @@ public class ExecutionLayerConfiguration {
 
     public Builder builderSetUserAgentHeader(final boolean builderSetUserAgentHeader) {
       this.builderSetUserAgentHeader = builderSetUserAgentHeader;
+      return this;
+    }
+
+    public Builder useShouldOverrideBuilderFlag(final boolean useShouldOverrideBuilderFlag) {
+      this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
       return this;
     }
 

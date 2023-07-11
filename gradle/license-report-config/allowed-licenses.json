@@ -73,6 +73,9 @@
     },
     {
       "moduleName": "com.squareup.okio:okio"
+    },
+    {
+      "moduleName": "com.google.guava:guava-parent"
     }
   ],
   "overrideLicenses" : [
@@ -217,6 +220,10 @@
     {
       "moduleName": "jakarta.annotation:jakarta.annotation-api",
       "moduleLicense": "Eclipse Public License - v 2.0"
+    },
+    {
+      "moduleName": "com.google.guava:guava-parent",
+      "moduleLicense": "Apache License, Version 2.0"
     }
   ]
 }

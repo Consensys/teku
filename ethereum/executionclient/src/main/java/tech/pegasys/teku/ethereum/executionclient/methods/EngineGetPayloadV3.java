@@ -76,7 +76,11 @@ public class EngineGetPayloadV3 extends AbstractEngineJsonRpcMethod<GetPayloadRe
               final ExecutionPayload executionPayload =
                   response.executionPayload.asInternalExecutionPayload(payloadSchema);
               final BlobsBundle blobsBundle = getBlobsBundle(response, schemaDefinitions);
-              return new GetPayloadResponse(executionPayload, response.blockValue, blobsBundle);
+              return new GetPayloadResponse(
+                  executionPayload,
+                  response.blockValue,
+                  blobsBundle,
+                  response.shouldOverrideBuilder);
             })
         .thenPeek(
             getPayloadResponse ->

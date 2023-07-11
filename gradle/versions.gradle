@@ -8,7 +8,7 @@ dependencyManagement {
 
     dependency 'com.google.auto.service:auto-service:1.0-rc7'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.19.1') {
+    dependencySet(group: 'com.google.errorprone', version: '2.20.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -17,16 +17,16 @@ dependencyManagement {
 
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
-    dependency 'com.google.guava:guava:32.0.1-jre'
+    dependency 'com.google.guava:guava:32.1.1-jre'
     dependency 'com.google.code.gson:gson:2.10.1'
 
     dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.16.1'
 
-    dependency 'com.launchdarkly:okhttp-eventsource:4.1.0'
+    dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
 
-    dependency 'com.squareup.okhttp3:okhttp:4.10.0'
-    dependency 'com.squareup.okhttp3:mockwebserver:4.10.0'
+    dependency 'com.squareup.okhttp3:okhttp:4.11.0'
+    dependency 'com.squareup.okhttp3:mockwebserver:4.11.0'
 
     dependency 'commons-cli:commons-cli:1.4'
 
@@ -45,23 +45,23 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.8.21'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
 
     dependency 'io.pkts:pkts-core:3.0.3'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.11') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.15') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:4.19.0'
+    dependency 'org.webjars:swagger-ui:5.1.0'
     dependency 'org.thymeleaf:thymeleaf:3.1.1.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.160'
-    dependencySet(group: 'com.github.oshi', version: '6.4.3') {
+    dependency 'io.github.classgraph:classgraph:4.8.161'
+    dependencySet(group: 'com.github.oshi', version: '6.4.4') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
@@ -73,7 +73,7 @@ dependencyManagement {
       }
     }
 
-    dependencySet(group: 'io.vertx', version: '4.4.2') {
+    dependencySet(group: 'io.vertx', version: '4.4.4') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
@@ -174,8 +174,8 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'org.jupnp:org.jupnp.support:2.7.0'
-    dependency 'org.jupnp:org.jupnp:2.7.0'
+    dependency 'org.jupnp:org.jupnp.support:2.7.1'
+    dependency 'org.jupnp:org.jupnp:2.7.1'
 
     dependencySet(group: 'io.jsonwebtoken', version: '0.11.5') {
       entry 'jjwt-api'
@@ -183,7 +183,7 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.7.3'
+    dependency 'net.jqwik:jqwik:1.7.4'
     dependency 'io.github.hakky54:logcaptor:2.9.0'
   }
 }
