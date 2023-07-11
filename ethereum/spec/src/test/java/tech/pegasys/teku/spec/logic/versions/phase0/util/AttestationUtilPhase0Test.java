@@ -47,7 +47,8 @@ class AttestationUtilPhase0Test {
   public void testIsFromFarFuture(
       final int attestationSlot, final UInt64 currentTimeMillis, final boolean expectedResult) {
     final AttestationData attestationData =
-        dataStructureUtil.randomAttestationData(UInt64.valueOf(attestationSlot), true);
+        dataStructureUtil.randomAttestationData(
+            UInt64.valueOf(attestationSlot), dataStructureUtil.randomBytes32());
     final Attestation attestation = dataStructureUtil.randomAttestation(attestationData);
     // set genesisTime as 0 for simplification
     final UInt64 genesisTime = UInt64.ZERO;

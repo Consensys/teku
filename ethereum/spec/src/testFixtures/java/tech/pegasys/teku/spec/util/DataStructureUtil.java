@@ -751,34 +751,24 @@ public final class DataStructureUtil {
   }
 
   public AttestationData randomAttestationData(final UInt64 slot) {
-    return randomAttestationData(slot, randomBytes32());
-  }
-
-  public AttestationData randomAttestationData(
-      final UInt64 slot, final boolean realisticCheckpointEpochs) {
-    return randomAttestationData(slot, randomBytes32(), realisticCheckpointEpochs);
+    return new AttestationData(
+        slot, randomUInt64(), randomBytes32(), randomCheckpoint(), randomCheckpoint());
   }
 
   public AttestationData randomAttestationData(final UInt64 slot, final Bytes32 blockRoot) {
-    return randomAttestationData(slot, blockRoot, false);
-  }
-
-  public AttestationData randomAttestationData(
-      final UInt64 slot, final Bytes32 blockRoot, final boolean realisticCheckpointEpochs) {
     return new AttestationData(
         slot,
         randomUInt64(),
         blockRoot,
-        realisticCheckpointEpochs
-            ? randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1))
-            : randomCheckpoint(),
-        realisticCheckpointEpochs
-            ? randomCheckpoint(spec.computeEpochAtSlot(slot))
-            : randomCheckpoint());
+        // Make checkpoint epochs realistic
+        randomCheckpoint(spec.computeEpochAtSlot(slot).minusMinZero(1)),
+        randomCheckpoint(spec.computeEpochAtSlot(slot)));
   }
 
   public Attestation randomAttestation() {
-    return randomAttestation(randomAttestationData());
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), randomAttestationData(), randomSignature());
   }
 
   public Attestation randomAttestation(final long slot) {
