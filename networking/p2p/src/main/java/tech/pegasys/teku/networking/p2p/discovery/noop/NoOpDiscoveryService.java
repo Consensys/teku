@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.discovery.noop;
 
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -51,7 +52,7 @@ public class NoOpDiscoveryService implements DiscoveryService {
 
   @Override
   public Optional<Bytes> getNodeId() {
-    return Optional.empty();
+    return Optional.of(Bytes.wrap(BigInteger.valueOf(1).toByteArray()));
   }
 
   @Override
