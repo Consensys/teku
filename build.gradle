@@ -774,6 +774,12 @@ subprojects {
     acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
     propertyTestRuntimeOnly.extendsFrom testRuntimeOnly
     referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
+
+    // LogCaptor uses log4j-to-slf4j which couldn't be used along with log4j-slf4j-impl going to infinite loop
+    testImplementation {
+      exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j-impl")
+      exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j2-impl")
+    }
   }
 
   def jarName = project.name
