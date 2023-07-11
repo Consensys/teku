@@ -21,3 +21,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - Stopped calling `engine_exchangeTransitionConfigurationV1` Engine API method, since the method will be deprecated in the future.
 
 ### Bug Fixes
+
+- Fix Get Attestation Rewards API to fetch beacon state instead of block and beacon state (fixes #7338)
