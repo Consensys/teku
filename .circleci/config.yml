@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   slack: circleci/slack@3.4.2
-  win: circleci/windows@5.0.0
+  win: circleci/windows@5.0
 executors:
   small_executor:
     docker:
