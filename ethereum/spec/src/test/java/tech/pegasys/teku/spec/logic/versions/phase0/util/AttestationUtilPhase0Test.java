@@ -84,9 +84,13 @@ class AttestationUtilPhase0Test {
   // attestation is fork choice eligible in attestationSlot + 1, MAX_FUTURE_SLOT_ALLOWANCE is 3
   private static Stream<Arguments> provideIsFromFarFutureArguments() {
     return Stream.of(
+        // close future
         Arguments.of(4, getTimeForSlotInMillis(2), false),
+        // boundary (still considered far)
         Arguments.of(5, getTimeForSlotInMillis(2), true),
+        // very far
         Arguments.of(30, getTimeForSlotInMillis(10), true),
+        // in the past
         Arguments.of(0, getTimeForSlotInMillis(10), false));
   }
 
@@ -94,10 +98,14 @@ class AttestationUtilPhase0Test {
   private static Stream<Arguments>
       provideCurrentTimeAfterAttestationPropagationSlotRangeArguments() {
     return Stream.of(
+        // current time after
         Arguments.of(0, getTimeForSlotInMillis(34), true),
+        Arguments.of(12, getTimeForSlotInMillis(46), true),
+        // boundary
+        Arguments.of(0, getTimeForSlotInMillis(33), false),
+        // current time before
         Arguments.of(0, getTimeForSlotInMillis(32), false),
         Arguments.of(12, getTimeForSlotInMillis(26), false),
-        Arguments.of(12, getTimeForSlotInMillis(46), true),
         // testing MAXIMUM_GOSSIP_CLOCK_DISPARITY
         Arguments.of(12, getTimeForSlotInMillis(45).plus(500), false),
         Arguments.of(12, getTimeForSlotInMillis(45).plus(501), true));
@@ -108,6 +116,7 @@ class AttestationUtilPhase0Test {
     return Stream.of(
         Arguments.of(0, UInt64.ZERO, false),
         Arguments.of(8, getTimeForSlotInMillis(7), true),
+        Arguments.of(7, getTimeForSlotInMillis(7), false),
         Arguments.of(7, getTimeForSlotInMillis(8), false),
         // testing MAXIMUM_GOSSIP_CLOCK_DISPARITY
         Arguments.of(7, getTimeForSlotInMillis(7).minus(501), true),
