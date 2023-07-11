@@ -34,7 +34,6 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
 
   @Test
   public void shouldAcceptValidAttestation() {
-
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
 
@@ -45,7 +44,6 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
 
   @Test
   public void shouldIgnoreAttestationAfterCurrentSlot() {
-
     // attestation will be fork choice eligible in 12 slots, so more than MAX_FUTURE_SLOT_ALLOWANCE
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead(), UInt64.valueOf(11));
@@ -57,7 +55,6 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
 
   @Test
   public void shouldIgnoreAttestationNotInCurrentOrPreviousEpoch() {
-
     // attestation in epoch 0
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
@@ -70,7 +67,6 @@ public class DenebAttestationValidatorTest extends AbstractAttestationValidatorT
 
   @Test
   public void shouldDeferAttestationAfterCurrentSlotButNotTooFarInTheFuture() {
-
     // attestation will be fork choice eligible in 3 slots, so within MAX_FUTURE_SLOT_ALLOWANCE
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead(), UInt64.valueOf(2));
