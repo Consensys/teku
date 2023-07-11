@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.intThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -38,21 +37,10 @@ public class NodeBasedStableSubnetSubscriberTest {
       new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
-  void shouldSubscribeToNoMoreThanAttestationSubnetCount() {
+  void shouldSubscribeToExpectedSubnets() {
     final NodeBasedStableSubnetSubscriber subscriber = createSubscriber();
     subscriber.onSlot(UInt64.ONE);
-    verify(network, times(attestationSubnetCount))
-        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
-    for (int i = 0; i < attestationSubnetCount; i++) {
-      verify(network).subscribeToAttestationSubnetId(eq(i));
-    }
-  }
-
-  @Test
-  void shouldSubscribeToExpectedSubnetsWithNoMinimum() {
-    final NodeBasedStableSubnetSubscriber subscriber = createSubscriber();
-    subscriber.onSlot(UInt64.ONE);
-    verify(network, times(2))
+    verify(network, times(spec.getNetworkingConfig().getSubnetsPerNode()))
         .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
   }
 

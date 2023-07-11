@@ -17,9 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -38,23 +36,23 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @SuppressWarnings("unchecked")
 public class StableSubnetSubscriberTest {
   private final Spec spec = TestSpecFactory.createDefault();
-  private final AttestationTopicSubscriber validatorApiChannel =
+  private final AttestationTopicSubscriber attestationTopicSubscriber =
       mock(AttestationTopicSubscriber.class);
-  private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
   final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
 
   @Test
-  void shouldCreateEnoughSubscriptionsAtStart() {
+  void shouldSubscribeToSubnetsPerNodeAtStart() {
     StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
 
     stableSubnetSubscriber.onSlot(ZERO);
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
         ArgumentCaptor.forClass(Set.class);
 
-    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-    assertThat(subnetSubscriptions.getValue()).hasSize(4);
+    verify(attestationTopicSubscriber).subscribeToPersistentSubnets(subnetSubscriptions.capture());
+    assertThat(subnetSubscriptions.getValue())
+        .hasSize(spec.getNetworkingConfig().getSubnetsPerNode());
     assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
   }
@@ -66,88 +64,41 @@ public class StableSubnetSubscriberTest {
         ArgumentCaptor.forClass(Set.class);
 
     stableSubnetSubscriber.onSlot(ZERO);
-    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
+    verify(attestationTopicSubscriber).subscribeToPersistentSubnets(subnetSubscriptions.capture());
 
     assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
 
     stableSubnetSubscriber.onSlot(UInt64.ONE);
-    verifyNoMoreInteractions(validatorApiChannel);
-  }
-
-  @Test
-  void shouldIncreaseNumberOfSubscriptionsWhenNumberOfValidatorsIncrease() {
-    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
-
-    stableSubnetSubscriber.onSlot(ZERO);
-    verifyNoInteractions(validatorApiChannel);
-
-    stableSubnetSubscriber.onSlot(ONE);
-
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
-        ArgumentCaptor.forClass(Set.class);
-    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-
-    assertThat(subnetSubscriptions.getValue()).hasSize(6);
-    assertSubnetsAreDistinct(subnetSubscriptions.getValue());
-  }
-
-  @Test
-  void shouldSubscribeToAllSubnetsWhenNecessary() {
-    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
-
-    UInt64 slot = UInt64.valueOf(15);
-    stableSubnetSubscriber.onSlot(slot);
-
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
-        ArgumentCaptor.forClass(Set.class);
-    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-    assertThat(subnetSubscriptions.getValue()).hasSize(attestationSubnetCount);
-    assertSubnetsAreDistinct(subnetSubscriptions.getValue());
-    assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), UInt64.valueOf(15));
-  }
-
-  @Test
-  void shouldStaySubscribedToAllSubnetsEvenIfValidatorNumberIsDecreased() {
-    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
-
-    stableSubnetSubscriber.onSlot(ZERO);
-
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
-        ArgumentCaptor.forClass(Set.class);
-    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-    assertSubnetsAreDistinct(subnetSubscriptions.getValue());
-    assertThat(subnetSubscriptions.getValue()).hasSize(attestationSubnetCount);
-
-    stableSubnetSubscriber.onSlot(UInt64.valueOf(2));
-
-    verifyNoMoreInteractions(validatorApiChannel);
+    verifyNoMoreInteractions(attestationTopicSubscriber);
   }
 
   @Test
   void shouldReplaceExpiredSubscriptionsWithNewOnes() {
     StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
 
-    stableSubnetSubscriber.onSlot(UInt64.valueOf(0));
+    stableSubnetSubscriber.onSlot(ZERO);
 
     ArgumentCaptor<Set<SubnetSubscription>> firstSubscriptionUpdate =
         ArgumentCaptor.forClass(Set.class);
     ArgumentCaptor<Set<SubnetSubscription>> secondSubscriptionUpdate =
         ArgumentCaptor.forClass(Set.class);
 
-    verify(validatorApiChannel).subscribeToPersistentSubnets(firstSubscriptionUpdate.capture());
+    verify(attestationTopicSubscriber)
+        .subscribeToPersistentSubnets(firstSubscriptionUpdate.capture());
 
-    assertThat(firstSubscriptionUpdate.getValue()).hasSize(2);
+    assertThat(firstSubscriptionUpdate.getValue())
+        .hasSize(spec.getNetworkingConfig().getSubnetsPerNode());
 
     UInt64 firstUnsubscriptionSlot =
         firstSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
 
     stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot.minus(UInt64.ONE));
 
-    verifyNoMoreInteractions(validatorApiChannel);
+    verifyNoMoreInteractions(attestationTopicSubscriber);
     stableSubnetSubscriber.onSlot(firstUnsubscriptionSlot);
 
-    verify(validatorApiChannel, times(2))
+    verify(attestationTopicSubscriber, times(spec.getNetworkingConfig().getSubnetsPerNode()))
         .subscribeToPersistentSubnets(secondSubscriptionUpdate.capture());
 
     UInt64 secondUnsubscriptionSlot =
@@ -166,10 +117,11 @@ public class StableSubnetSubscriberTest {
 
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
         ArgumentCaptor.forClass(Set.class);
-    verify(validatorApiChannel).subscribeToPersistentSubnets(subnetSubscriptions.capture());
+    verify(attestationTopicSubscriber).subscribeToPersistentSubnets(subnetSubscriptions.capture());
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
     assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
-    assertThat(subnetSubscriptions.getValue()).hasSize(attestationSubnetCount);
+    assertThat(subnetSubscriptions.getValue())
+        .hasSize(spec.getNetworkingConfig().getSubnetsPerNode());
   }
 
   private void assertUnsubscribeSlotsAreInBound(
@@ -202,7 +154,7 @@ public class StableSubnetSubscriberTest {
 
   private StableSubnetSubscriber createStableSubnetSubscriber() {
     return new NodeBasedStableSubnetSubscriber(
-        validatorApiChannel,
+        attestationTopicSubscriber,
         new Random(13241234L),
         spec,
         Optional.of(dataStructureUtil.randomUInt256()));

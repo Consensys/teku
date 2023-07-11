@@ -48,7 +48,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private final Spec spec;
   private final int attestationSubnetCount;
   private final int subnetsPerNode;
-  private final int epochsPerSubnetSubscription;
   private final Optional<UInt256> discoveryNodeId;
 
   public NodeBasedStableSubnetSubscriber(
@@ -61,7 +60,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     this.spec = spec;
     this.attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
     this.subnetsPerNode = spec.getNetworkingConfig().getSubnetsPerNode();
-    this.epochsPerSubnetSubscription = spec.getNetworkingConfig().getEpochsPerSubnetSubscription();
     IntStream.range(0, attestationSubnetCount).forEach(availableSubnetIndices::add);
     this.discoveryNodeId = discoveryNodeId;
   }
@@ -124,7 +122,9 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
           newSubnetSubscriptions.add(
               subscribeToSubnet(
                   nodeSubscribedSubnetsIterator.next().intValue(),
-                  calculateNodeSubnetUnsubscriptionSlot(currentSlot)));
+                  spec.getGenesisSpec()
+                      .miscHelpers()
+                      .calculateNodeSubnetUnsubscriptionSlot(currentSlot)));
         } else {
           LOG.warn(
               "Unable to get enough subnet ids based on node id. Subscribing to a random subnet instead.");
@@ -135,15 +135,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       }
     }
     return newSubnetSubscriptions;
-  }
-
-  private UInt64 calculateNodeSubnetUnsubscriptionSlot(final UInt64 currentSlot) {
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
-    final UInt64 currentEpochStartSlot = spec.computeStartSlotAtEpoch(currentEpoch);
-    final UInt64 unsubscriptionEpoch =
-        spec.computeEpochAtSlot(currentSlot).plus(epochsPerSubnetSubscription);
-    return spec.computeStartSlotAtEpoch(unsubscriptionEpoch)
-        .plus(currentSlot.minus(currentEpochStartSlot));
   }
 
   /**

@@ -166,31 +166,16 @@ class MiscHelpersTest {
         .hasMessageContaining("Parameter n must be greater than 0");
   }
 
-  @Test
-  public void testNodeIdBasedSubnetSubscription() {
-    List<UInt64> subnetIds =
+  @ParameterizedTest
+  @MethodSource("provideSubnetsForNodeIds")
+  public void testDiscoveryNodeBasedSubnetIds(
+      final String nodeId, final String epoch, int firstSubnetId, int secondSubnetId) {
+    final List<UInt64> nodeSubnetIds =
         miscHelpers.computeSubscribedSubnets(
-            UInt256.valueOf(434726285098L), UInt64.valueOf(6717051035888874875L));
-    assertThat(subnetIds).hasSize(specConfig.getSubnetsPerNode());
-    assertThat(subnetIds).contains(UInt64.valueOf(28));
-    assertThat(subnetIds).contains(UInt64.valueOf(29));
-
-    subnetIds =
-        miscHelpers.computeSubscribedSubnets(
-            UInt256.valueOf(288055627580L), UInt64.valueOf("13392352527348795112"));
-    assertThat(subnetIds).hasSize(specConfig.getSubnetsPerNode());
-    assertThat(subnetIds).contains(UInt64.valueOf(8));
-    assertThat(subnetIds).contains(UInt64.valueOf(9));
-
-    subnetIds =
-        miscHelpers.computeSubscribedSubnets(
-            UInt256.valueOf(
-                new BigInteger(
-                    "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
-            UInt64.valueOf("6226203858325459337"));
-    assertThat(subnetIds).hasSize(specConfig.getSubnetsPerNode());
-    assertThat(subnetIds).contains(UInt64.valueOf(44));
-    assertThat(subnetIds).contains(UInt64.valueOf(45));
+            UInt256.valueOf(new BigInteger(nodeId)), UInt64.valueOf(epoch));
+    assertThat(nodeSubnetIds).hasSize(specConfig.getSubnetsPerNode());
+    assertThat(nodeSubnetIds).contains(UInt64.valueOf(firstSubnetId));
+    assertThat(nodeSubnetIds).contains(UInt64.valueOf(secondSubnetId));
   }
 
   @ParameterizedTest
@@ -229,5 +214,16 @@ class MiscHelpersTest {
   public static Stream<Arguments> getNValues() {
     return Stream.of(
         Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));
+  }
+
+  public static Stream<Arguments> provideSubnetsForNodeIds() {
+    return Stream.of(
+        Arguments.of("434726285098", "6717051035888874875", 28, 29),
+        Arguments.of("288055627580", "13392352527348795112", 8, 9),
+        Arguments.of(
+            "57467522110468688239177851250859789869070302005900722885377252304169193209346",
+            "6226203858325459337",
+            44,
+            45));
   }
 }
