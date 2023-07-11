@@ -19,12 +19,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -166,9 +168,29 @@ class MiscHelpersTest {
 
   @Test
   public void testNodeIdBasedSubnetSubscription() {
-    assertThatThrownBy(() -> miscHelpers.isSlotAtNthEpochBoundary(UInt64.ONE, UInt64.ZERO, -1))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Parameter n must be greater than 0");
+    List<UInt64> subnetIds =
+        miscHelpers.computeSubscribedSubnets(
+            UInt256.valueOf(434726285098L), UInt64.valueOf(6717051035888874875L));
+    assertThat(subnetIds).hasSize(specConfig.getSubnetsPerNode());
+    assertThat(subnetIds).contains(UInt64.valueOf(28));
+    assertThat(subnetIds).contains(UInt64.valueOf(29));
+
+    subnetIds =
+        miscHelpers.computeSubscribedSubnets(
+            UInt256.valueOf(288055627580L), UInt64.valueOf("13392352527348795112"));
+    assertThat(subnetIds).hasSize(specConfig.getSubnetsPerNode());
+    assertThat(subnetIds).contains(UInt64.valueOf(8));
+    assertThat(subnetIds).contains(UInt64.valueOf(9));
+
+    subnetIds =
+        miscHelpers.computeSubscribedSubnets(
+            UInt256.valueOf(
+                new BigInteger(
+                    "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
+            UInt64.valueOf("6226203858325459337"));
+    assertThat(subnetIds).hasSize(specConfig.getSubnetsPerNode());
+    assertThat(subnetIds).contains(UInt64.valueOf(44));
+    assertThat(subnetIds).contains(UInt64.valueOf(45));
   }
 
   @ParameterizedTest
