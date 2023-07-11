@@ -36,6 +36,18 @@ public class AttestationUtilDenebTest {
       (AttestationUtilDeneb) SPEC_VERSION.getAttestationUtil();
 
   @ParameterizedTest
+  @MethodSource("provideAttestationSlotIsAfterCurrentTimeArguments")
+  public void testAttestationSlotIsAfterCurrentTime(
+      final int attestationSlot, final UInt64 currentTimeMillis, final boolean expectedResult) {
+    // set genesisTime as 0 for simplification
+    final UInt64 genesisTime = UInt64.ZERO;
+    final boolean actualResult =
+        attestationUtilDeneb.isAttestationSlotAfterCurrentTime(
+            UInt64.valueOf(attestationSlot), genesisTime, currentTimeMillis);
+    assertThat(actualResult).isEqualTo(expectedResult);
+  }
+
+  @ParameterizedTest
   @MethodSource("provideAttestationSlotInCurrentOrPreviousEpochArguments")
   public void testAttestationSlotInCurrentOrPreviousEpoch(
       final int attestationSlot, final UInt64 currentTime, final boolean expectedResult) {
@@ -46,6 +58,15 @@ public class AttestationUtilDenebTest {
         attestationUtilDeneb.isAttestationSlotInCurrentOrPreviousEpoch(
             UInt64.valueOf(attestationSlot), genesisTime, currentTimeMillis);
     assertThat(actualResult).isEqualTo(expectedResult);
+  }
+
+  private static Stream<Arguments> provideAttestationSlotIsAfterCurrentTimeArguments() {
+    return Stream.of(
+        Arguments.of(3, getTimeForSlotInMillis(2), true),
+        Arguments.of(1, getTimeForSlotInMillis(2), false),
+        // testing MAXIMUM_GOSSIP_CLOCK_DISPARITY)
+        Arguments.of(2, getTimeForSlotInMillis(2).minus(500), false),
+        Arguments.of(2, getTimeForSlotInMillis(2).minus(501), true));
   }
 
   // minimal is 6 seconds per slot, 8 slots per epoch, MAXIMUM_GOSSIP_CLOCK_DISPARITY is 500 ms (1
@@ -71,5 +92,9 @@ public class AttestationUtilDenebTest {
 
   private static UInt64 getTimeForSlot(final int slot) {
     return UInt64.valueOf(slot).times(SECONDS_PER_SLOT);
+  }
+
+  private static UInt64 getTimeForSlotInMillis(final int slot) {
+    return secondsToMillis(getTimeForSlot(slot));
   }
 }

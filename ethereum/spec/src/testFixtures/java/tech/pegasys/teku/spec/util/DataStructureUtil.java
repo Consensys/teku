@@ -776,7 +776,9 @@ public final class DataStructureUtil {
   }
 
   public Attestation randomAttestation(final UInt64 slot) {
-    return randomAttestation(randomAttestationData(slot));
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), randomAttestationData(slot), randomSignature());
   }
 
   public Attestation randomAttestation(final AttestationData attestationData) {

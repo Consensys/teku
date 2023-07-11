@@ -49,9 +49,7 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
   public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
     final UInt64 attestationSlot = attestation.getData().getSlot();
-    final UInt64 attestationSlotTimeMillis =
-        secondsToMillis(miscHelpers.computeTimeAtSlot(genesisTime, attestationSlot));
-    if (isAttestationSlotAfterCurrentTime(attestationSlotTimeMillis, currentTimeMillis)) {
+    if (isAttestationSlotAfterCurrentTime(attestationSlot, genesisTime, currentTimeMillis)) {
       return Optional.of(
           isFromFarFuture(attestation, genesisTime, currentTimeMillis)
               ? SlotInclusionGossipValidationResult.IGNORE
@@ -64,8 +62,11 @@ public class AttestationUtilDeneb extends AttestationUtilAltair {
     return Optional.empty();
   }
 
-  private boolean isAttestationSlotAfterCurrentTime(
-      final UInt64 attestationSlotTimeMillis, final UInt64 currentTimeMillis) {
+  @VisibleForTesting
+  boolean isAttestationSlotAfterCurrentTime(
+      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+    final UInt64 attestationSlotTimeMillis =
+        secondsToMillis(miscHelpers.computeTimeAtSlot(genesisTime, attestationSlot));
     return attestationSlotTimeMillis.isGreaterThan(
         currentTimeMillis.plus(specConfig.getMaximumGossipClockDisparity()));
   }
