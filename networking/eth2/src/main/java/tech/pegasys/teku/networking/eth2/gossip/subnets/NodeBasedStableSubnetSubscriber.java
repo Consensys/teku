@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.IntStream;
@@ -32,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
@@ -44,7 +42,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       new TreeSet<>(
           Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
               .thenComparing(SubnetSubscription::getSubnetId));
-  private final Random random;
   private final Spec spec;
   private final int attestationSubnetCount;
   private final int subnetsPerNode;
@@ -52,11 +49,9 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
 
   public NodeBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber,
-      final Random random,
       final Spec spec,
       final Optional<UInt256> discoveryNodeId) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
-    this.random = random;
     this.spec = spec;
     this.attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
     this.subnetsPerNode = spec.getNetworkingConfig().getSubnetsPerNode();
@@ -96,7 +91,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNodeRequirement(
       final UInt64 currentSlot) {
 
-    if (subnetSubscriptions.size() == subnetsPerNode) {
+    if (subnetSubscriptions.size() >= subnetsPerNode) {
       return emptySet();
     }
     LOG.info(
@@ -116,38 +111,22 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
 
     final Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
 
-    while (subnetSubscriptions.size() != subnetsPerNode) {
-      if (subnetSubscriptions.size() < subnetsPerNode) {
-        if (nodeSubscribedSubnetsIterator.hasNext()) {
-          newSubnetSubscriptions.add(
-              subscribeToSubnet(
-                  nodeSubscribedSubnetsIterator.next().intValue(),
-                  spec.getGenesisSpec()
-                      .miscHelpers()
-                      .calculateNodeSubnetUnsubscriptionSlot(currentSlot)));
-        } else {
-          LOG.warn(
-              "Unable to get enough subnet ids based on node id. Subscribing to a random subnet instead.");
-          newSubnetSubscriptions.add(subscribeToNewRandomSubnet(currentSlot));
-        }
+    while (subnetSubscriptions.size() < subnetsPerNode) {
+      if (nodeSubscribedSubnetsIterator.hasNext()) {
+        newSubnetSubscriptions.add(
+            subscribeToSubnet(
+                nodeSubscribedSubnetsIterator.next().intValue(),
+                spec.getGenesisSpec()
+                    .miscHelpers()
+                    .calculateNodeSubnetUnsubscriptionSlot(currentSlot)));
       } else {
-        unsubscribeFromOldestSubnet();
+        throw new IllegalArgumentException(
+            String.format(
+                "Unable to get enough subnet ids based on node id. Expecting %d subnet ids but got %d",
+                subnetsPerNode, nodeSubscribedSubnets.size()));
       }
     }
     return newSubnetSubscriptions;
-  }
-
-  /**
-   * Subscribes to a new random subnetId, if any subnetId is available. Returns the new
-   * SubnetSubscription object.
-   *
-   * @param currentSlot the current slot
-   */
-  private SubnetSubscription subscribeToNewRandomSubnet(final UInt64 currentSlot) {
-    int newSubnetId =
-        getRandomAvailableSubnetId()
-            .orElseThrow(() -> new IllegalStateException("No available subnetId found"));
-    return subscribeToSubnet(newSubnetId, getRandomUnsubscriptionSlot(currentSlot));
   }
 
   private SubnetSubscription subscribeToSubnet(
@@ -156,33 +135,5 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     SubnetSubscription subnetSubscription = new SubnetSubscription(subnetId, unsubscriptionSlot);
     subnetSubscriptions.add(subnetSubscription);
     return subnetSubscription;
-  }
-
-  private void unsubscribeFromOldestSubnet() {
-    SubnetSubscription subnetSubscription = subnetSubscriptions.first();
-    subnetSubscriptions.remove(subnetSubscription);
-    availableSubnetIndices.add(subnetSubscription.getSubnetId());
-  }
-
-  private Optional<Integer> getRandomAvailableSubnetId() {
-    return getRandomSetElement(availableSubnetIndices);
-  }
-
-  private <T> Optional<T> getRandomSetElement(Set<T> set) {
-    return set.stream().skip(random.nextInt(set.size())).findFirst();
-  }
-
-  private UInt64 getRandomUnsubscriptionSlot(UInt64 currentSlot) {
-    return currentSlot.plus(getRandomSubscriptionLength(currentSlot));
-  }
-
-  private UInt64 getRandomSubscriptionLength(final UInt64 currentSlot) {
-    final SpecConfig config = spec.atSlot(currentSlot).getConfig();
-
-    return UInt64.valueOf(
-        (long)
-                (config.getEpochsPerSubnetSubscription()
-                    + random.nextInt(config.getEpochsPerSubnetSubscription()))
-            * config.getSlotsPerEpoch());
   }
 }

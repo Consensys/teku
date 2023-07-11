@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -154,9 +153,6 @@ public class StableSubnetSubscriberTest {
 
   private StableSubnetSubscriber createStableSubnetSubscriber() {
     return new NodeBasedStableSubnetSubscriber(
-        attestationTopicSubscriber,
-        new Random(13241234L),
-        spec,
-        Optional.of(dataStructureUtil.randomUInt256()));
+        attestationTopicSubscriber, spec, Optional.of(dataStructureUtil.randomUInt256()));
   }
 }

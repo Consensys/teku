@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import org.apache.logging.log4j.LogManager;
@@ -725,7 +724,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
             : new NodeBasedStableSubnetSubscriber(
-                attestationTopicSubscriber, new Random(), spec, p2pNetwork.getDiscoveryNodeId());
+                attestationTopicSubscriber, spec, p2pNetwork.getDiscoveryNodeId());
     this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber, spec);
   }
 

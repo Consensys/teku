@@ -19,7 +19,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
-import java.util.Random;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -48,7 +47,6 @@ public class NodeBasedStableSubnetSubscriberTest {
   private NodeBasedStableSubnetSubscriber createSubscriber() {
     return new NodeBasedStableSubnetSubscriber(
         new AttestationTopicSubscriber(spec, network),
-        new Random(),
         spec,
         Optional.of(dataStructureUtil.randomUInt256()));
   }
