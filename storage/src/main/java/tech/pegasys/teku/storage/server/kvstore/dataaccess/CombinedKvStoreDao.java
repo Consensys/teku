@@ -355,6 +355,16 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
 
   @MustBeClosed
   @Override
+  public Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.streamKeys(
+        schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
+        new SlotAndBlockRootAndBlobIndex(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
+        new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
+  }
+
+  @MustBeClosed
+  @Override
   public Stream<Bytes> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return db.stream(
             schema.getColumnBlobSidecarBySlotRootBlobIndex(),

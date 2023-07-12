@@ -61,6 +61,7 @@ public class BlobSidecarPrunerTest {
           timeProvider,
           PRUNE_INTERVAL,
           PRUNE_LIMIT,
+          false,
           false);
 
   @BeforeEach

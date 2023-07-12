@@ -100,7 +100,8 @@ public class StorageService extends Service implements StorageServiceFacade {
                             serviceConfig.getTimeProvider(),
                             config.getBlobsPruningInterval(),
                             config.getBlobsPruningLimit(),
-                            blobSidecarsStorageCountersEnabled));
+                            blobSidecarsStorageCountersEnabled,
+                            config.isStoreNonCanonicalBlocksEnabled()));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage = ChainStorage.create(database, config.getSpec());

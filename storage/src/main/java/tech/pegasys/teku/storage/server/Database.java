@@ -82,8 +82,14 @@ public interface Database extends AutoCloseable {
    */
   boolean pruneOldestBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
 
+  boolean pruneOldestNonCanonicalBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
+
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
   Stream<BlobSidecar> streamBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);

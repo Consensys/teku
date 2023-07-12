@@ -50,6 +50,7 @@ public class BlobSidecarPruner extends Service {
 
   private final AtomicLong blobColumnSize = new AtomicLong(0);
   private final AtomicLong earliestBlobSidecarSlot = new AtomicLong(-1);
+  private final boolean storeNonCanonicalBlobSidecars;
 
   public BlobSidecarPruner(
       final Spec spec,
@@ -59,7 +60,8 @@ public class BlobSidecarPruner extends Service {
       final TimeProvider timeProvider,
       final Duration pruneInterval,
       final int pruneLimit,
-      final boolean blobSidecarsStorageCountersEnabled) {
+      final boolean blobSidecarsStorageCountersEnabled,
+      final boolean storeNonCanonicalBlobSidecars) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
@@ -67,6 +69,7 @@ public class BlobSidecarPruner extends Service {
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
+    this.storeNonCanonicalBlobSidecars = storeNonCanonicalBlobSidecars;
 
     if (blobSidecarsStorageCountersEnabled) {
       LabelledGauge labelledGauge =
@@ -127,15 +130,31 @@ public class BlobSidecarPruner extends Service {
     }
     LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
     try {
-      final long start = System.currentTimeMillis();
-      final boolean limitReached = database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit);
-      LOG.debug(
+      final long blobsPruningStart = System.currentTimeMillis();
+      final boolean blobsPruningLimitReached =
+          database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit);
+      logPruningResult(
           "Blobs pruning finished in {} ms. Limit reached: {}",
-          () -> System.currentTimeMillis() - start,
-          () -> limitReached);
+          blobsPruningStart,
+          blobsPruningLimitReached);
+
+      if (storeNonCanonicalBlobSidecars) {
+        final long nonCanonicalBlobsPruningStart = System.currentTimeMillis();
+        final boolean nonCanonicalBlobsLimitReached =
+            database.pruneOldestNonCanonicalBlobSidecars(latestPrunableSlot, pruneLimit);
+        logPruningResult(
+            "Non canonical Blobs pruning finished in {} ms. Limit reached: {}",
+            nonCanonicalBlobsPruningStart,
+            nonCanonicalBlobsLimitReached);
+      }
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
+  }
+
+  private void logPruningResult(
+      final String message, final long start, final boolean limitReached) {
+    LOG.debug(message, () -> System.currentTimeMillis() - start, () -> limitReached);
   }
 
   private Optional<UInt64> getGenesisTime() {

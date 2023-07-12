@@ -820,28 +820,51 @@ public class KvStoreDatabase implements Database {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
             streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
-      int remaining = pruneLimit;
-      int pruned = 0;
-      Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
-      for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
-          it.hasNext(); ) {
-        --remaining;
-        final boolean finished = remaining < 0;
-        final SlotAndBlockRootAndBlobIndex key = it.next();
-        // Before we finish we should check that there are no BlobSidecars left in the same slot
-        if (finished && key.getBlobIndex().equals(ZERO)) {
-          break;
-        }
-        updater.removeBlobSidecar(key);
-        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
-        ++pruned;
-      }
-      earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
-      updater.commit();
-
-      // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
-      return pruned >= pruneLimit;
+      return pruneBlobSidecars(pruneLimit, prunableBlobKeys, updater, false);
     }
+  }
+
+  @Override
+  public boolean pruneOldestNonCanonicalBlobSidecars(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
+    try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
+            streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
+        final FinalizedUpdater updater = finalizedUpdater()) {
+      return pruneBlobSidecars(pruneLimit, prunableNoncanonicalBlobKeys, updater, true);
+    }
+  }
+
+  private boolean pruneBlobSidecars(
+      final int pruneLimit,
+      final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
+      final FinalizedUpdater updater,
+      final boolean nonCanonicalblobSidecars) {
+    int remaining = pruneLimit;
+    int pruned = 0;
+    Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
+    for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
+        it.hasNext(); ) {
+      --remaining;
+      final boolean finished = remaining < 0;
+      final SlotAndBlockRootAndBlobIndex key = it.next();
+      // Before we finish we should check that there are no BlobSidecars left in the same slot
+      if (finished && key.getBlobIndex().equals(ZERO)) {
+        break;
+      }
+      if (nonCanonicalblobSidecars) {
+        updater.removeNonCanonicalBlobSidecar(key);
+      } else {
+        updater.removeBlobSidecar(key);
+      }
+      earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
+      ++pruned;
+    }
+    earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
+    updater.commit();
+
+    // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar
+    // in a slot
+    return pruned >= pruneLimit;
   }
 
   @MustBeClosed
@@ -849,6 +872,13 @@ public class KvStoreDatabase implements Database {
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobSidecarKeys(startSlot, endSlot);
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamNonCanonicalBlobSidecarKeys(startSlot, endSlot);
   }
 
   @MustBeClosed

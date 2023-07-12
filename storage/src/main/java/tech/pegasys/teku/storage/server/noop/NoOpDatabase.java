@@ -291,6 +291,12 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
   public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return Stream.empty();
   }
@@ -308,6 +314,12 @@ public class NoOpDatabase implements Database {
 
   @Override
   public boolean pruneOldestBlobSidecars(final UInt64 lastSlotToPrune, final int pruneLimit) {
+    return false;
+  }
+
+  @Override
+  public boolean pruneOldestNonCanonicalBlobSidecars(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
     return false;
   }
 
