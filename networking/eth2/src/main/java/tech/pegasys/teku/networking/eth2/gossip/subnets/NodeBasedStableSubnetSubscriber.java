@@ -15,8 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static java.util.Collections.emptySet;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,7 +23,6 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -37,7 +34,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AttestationTopicSubscriber persistentSubnetSubscriber;
-  private final IntSet availableSubnetIndices = new IntOpenHashSet();
   private final NavigableSet<SubnetSubscription> subnetSubscriptions =
       new TreeSet<>(
           Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
@@ -55,7 +51,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     this.spec = spec;
     this.attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
     this.subnetsPerNode = spec.getNetworkingConfig().getSubnetsPerNode();
-    IntStream.range(0, attestationSubnetCount).forEach(availableSubnetIndices::add);
     this.discoveryNodeId = discoveryNodeId;
   }
 
@@ -71,7 +66,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
 
       iterator.remove();
       int subnetId = subnetSubscription.getSubnetId();
-      availableSubnetIndices.add(subnetId);
     }
 
     // Adjust the number of subscriptions
@@ -123,7 +117,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
 
   private SubnetSubscription subscribeToSubnet(
       final int subnetId, final UInt64 unsubscriptionSlot) {
-    availableSubnetIndices.remove(subnetId);
     SubnetSubscription subnetSubscription = new SubnetSubscription(subnetId, unsubscriptionSlot);
     subnetSubscriptions.add(subnetSubscription);
     return subnetSubscription;
