@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
@@ -26,20 +25,9 @@ import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.SAVE_FOR_FUTURE;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Predicate;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.bls.BLSKeyGenerator;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
@@ -51,75 +39,16 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
-import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
-import tech.pegasys.teku.spec.generator.ChainBuilder;
-import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
-import tech.pegasys.teku.storage.client.ChainUpdater;
-import tech.pegasys.teku.storage.client.RecentChainData;
-import tech.pegasys.teku.storage.server.StateStorageMode;
-import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
-import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
-/**
- * The following validations MUST pass before forwarding the attestation on the subnet.
- *
- * <p>The attestation's committee index (attestation.data.index) is for the correct subnet.
- *
- * <p>attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (within a
- * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
- * ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY queue
- * future attestations for processing at the appropriate slot).
- *
- * <p>The attestation is unaggregated -- that is, it has exactly one participating validator
- * (len([bit for bit in attestation.aggregation_bits if bit == 0b1]) == 1).
- *
- * <p>The attestation is the first valid attestation received for the participating validator for
- * the slot, attestation.data.slot.
- *
- * <p>The block being voted for (attestation.data.beacon_block_root) passes validation.
- *
- * <p>The signature of attestation is valid.
- */
-class AttestationValidatorTest {
-  private static final Logger LOG = LogManager.getLogger();
+public class Phase0AttestationValidatorTest extends AbstractAttestationValidatorTest {
 
-  private static final List<BLSKeyPair> VALIDATOR_KEYS = BLSKeyGenerator.generateKeyPairs(64);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final AttestationSchema attestationSchema =
-      spec.getGenesisSchemaDefinitions().getAttestationSchema();
-  private final StorageSystem storageSystem =
-      InMemoryStorageSystemBuilder.buildDefault(StateStorageMode.ARCHIVE);
-  private final RecentChainData recentChainData = storageSystem.recentChainData();
-  private final ChainBuilder chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
-  private final ChainUpdater chainUpdater =
-      new ChainUpdater(storageSystem.recentChainData(), chainBuilder);
-  private final AttestationGenerator attestationGenerator =
-      new AttestationGenerator(spec, chainBuilder.getValidatorKeys());
-  private final AsyncBLSSignatureVerifier signatureVerifier =
-      AsyncBLSSignatureVerifier.wrap(BLSSignatureVerifier.SIMPLE);
-
-  private final AttestationValidator validator =
-      new AttestationValidator(spec, recentChainData, signatureVerifier, new StubMetricsSystem());
-
-  @BeforeAll
-  public static void init() {
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-  }
-
-  @AfterAll
-  public static void reset() {
-    AbstractBlockProcessor.depositSignatureVerifier =
-        AbstractBlockProcessor.DEFAULT_DEPOSIT_SIGNATURE_VERIFIER;
-  }
-
-  @BeforeEach
-  public void setUp() {
-    chainUpdater.initializeGenesis(false);
+  @Override
+  public Spec createSpec() {
+    return TestSpecFactory.createMinimalPhase0();
   }
 
   @Test
@@ -158,7 +87,7 @@ class AttestationValidatorTest {
   }
 
   @Test
-  public void shouldRejectAttestationFromBeforeAttestationPropagationSlotRange() {
+  public void shouldIgnoreAttestationFromBeforeAttestationPropagationSlotRange() {
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
 
@@ -389,33 +318,5 @@ class AttestationValidatorTest {
                     expectedSubnetId)))
         .matches(
             rejected("descend from target block"), "Rejected does not descend from target block");
-  }
-
-  private Predicate<? super CompletableFuture<InternalValidationResult>> rejected(
-      final String messageContents) {
-    return result -> {
-      try {
-        InternalValidationResult internalValidationResult = result.get();
-        return internalValidationResult.isReject()
-            && internalValidationResult.getDescription().orElseThrow().contains(messageContents);
-      } catch (Exception e) {
-        LOG.error("failed to evaluate rejected predicate", e);
-        return false;
-      }
-    };
-  }
-
-  private InternalValidationResult validate(final Attestation attestation) {
-    final BeaconState state = safeJoin(recentChainData.getBestState().orElseThrow());
-
-    return validator
-        .validate(
-            ValidatableAttestation.fromNetwork(
-                spec, attestation, spec.computeSubnetForAttestation(state, attestation)))
-        .join();
-  }
-
-  private boolean hasSameValidators(final Attestation attestation1, final Attestation attestation) {
-    return attestation.getAggregationBits().equals(attestation1.getAggregationBits());
   }
 }

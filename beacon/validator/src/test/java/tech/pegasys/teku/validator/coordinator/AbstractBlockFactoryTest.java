@@ -327,7 +327,8 @@ public abstract class AbstractBlockFactoryTest {
                     .prevRandao(
                         beaconStateAccessors.getRandaoMix(
                             state, beaconStateAccessors.getCurrentEpoch(state)))
-                    .timestamp(miscHelpers.computeTimeAtSlot(state, state.getSlot()))
+                    .timestamp(
+                        miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot()))
                     .withdrawals(Collections::emptyList));
     executionPayloadHeader =
         SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
