@@ -161,16 +161,6 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onBlobSidecar(final BlobSidecar blobSidecar) {
-    return SafeFuture.fromRunnable(() -> database.storeBlobSidecar(blobSidecar));
-  }
-
-  @Override
-  public SafeFuture<Void> onBlobSidecarsRemoval(final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.fromRunnable(() -> database.removeBlobSidecars(slotAndBlockRoot));
-  }
-
-  @Override
   public SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UInt64 slot) {
     return SafeFuture.of(() -> database.getLatestFinalizedBlockAtSlot(slot));
   }

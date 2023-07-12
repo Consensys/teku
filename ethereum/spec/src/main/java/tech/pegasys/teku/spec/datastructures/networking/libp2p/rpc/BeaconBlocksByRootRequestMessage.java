@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
-import static tech.pegasys.teku.spec.config.Constants.MAX_REQUEST_BLOCKS;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
@@ -24,39 +22,36 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.config.SpecConfig;
 
 public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
     implements SszList<SszBytes32>, RpcRequest {
 
-  // size validation according to the spec is done in the RPC handler
-  public static final UInt64 MAX_LENGTH = MAX_REQUEST_BLOCKS;
-
   public static class BeaconBlocksByRootRequestMessageSchema
       extends AbstractSszListSchema<SszBytes32, BeaconBlocksByRootRequestMessage> {
 
-    private BeaconBlocksByRootRequestMessageSchema() {
-      super(SszPrimitiveSchemas.BYTES32_SCHEMA, MAX_LENGTH.longValue());
+    public BeaconBlocksByRootRequestMessageSchema(final SpecConfig specConfig) {
+      // size validation according to the spec is done in the RPC handler
+      super(SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxRequestBlocks());
     }
 
     @Override
     public BeaconBlocksByRootRequestMessage createFromBackingNode(TreeNode node) {
-      return new BeaconBlocksByRootRequestMessage(node);
+      return new BeaconBlocksByRootRequestMessage(this, node);
     }
   }
 
-  public static final BeaconBlocksByRootRequestMessageSchema SSZ_SCHEMA =
-      new BeaconBlocksByRootRequestMessageSchema();
-
-  public BeaconBlocksByRootRequestMessage(List<Bytes32> roots) {
+  public BeaconBlocksByRootRequestMessage(
+      final BeaconBlocksByRootRequestMessageSchema schema, List<Bytes32> roots) {
     super(
-        SSZ_SCHEMA,
-        SSZ_SCHEMA.createTreeFromElements(
+        schema,
+        schema.createTreeFromElements(
             roots.stream().map(SszBytes32::of).collect(Collectors.toList())));
   }
 
-  private BeaconBlocksByRootRequestMessage(TreeNode node) {
-    super(SSZ_SCHEMA, node);
+  private BeaconBlocksByRootRequestMessage(
+      BeaconBlocksByRootRequestMessageSchema schema, TreeNode node) {
+    super(schema, node);
   }
 
   @Override

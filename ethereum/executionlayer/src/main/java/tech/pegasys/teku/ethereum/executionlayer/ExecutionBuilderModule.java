@@ -35,6 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -48,6 +50,8 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionBuilderModule {
 
@@ -62,6 +66,7 @@ public class ExecutionBuilderModule {
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
   private final Optional<Integer> builderBidCompareFactor;
+  private final boolean useShouldOverrideBuilderFlag;
 
   public ExecutionBuilderModule(
       final Spec spec,
@@ -70,7 +75,8 @@ public class ExecutionBuilderModule {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
-      final Optional<Integer> builderBidCompareFactor) {
+      final Optional<Integer> builderBidCompareFactor,
+      final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
     this.executionLayerManager = executionLayerManager;
@@ -79,6 +85,7 @@ public class ExecutionBuilderModule {
     this.builderClient = builderClient;
     this.eventLogger = eventLogger;
     this.builderBidCompareFactor = builderBidCompareFactor;
+    this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
@@ -108,14 +115,13 @@ public class ExecutionBuilderModule {
 
     if (fallbackReason != null) {
       return Optional.of(
-          getResultFromLocalExecutionPayload(
+          getResultFromLocalGetPayloadResponse(
               localGetPayloadResponse, state.getSlot(), fallbackReason));
     }
 
     return Optional.empty();
   }
 
-  // TODO: Implement for Deneb
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
 
@@ -161,9 +167,21 @@ public class ExecutionBuilderModule {
             safeLocalGetPayloadResponse,
             (signedBuilderBidMaybe, maybeLocalGetPayloadResponse) -> {
               if (signedBuilderBidMaybe.isEmpty()) {
-                return getResultFromLocalExecutionPayload(
+                return getResultFromLocalGetPayloadResponse(
                     localGetPayloadResponse, slot, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE);
               } else {
+                // Treat the shouldOverrideBuilder flag as false if local payload is unavailable
+                final boolean shouldOverrideBuilder =
+                    maybeLocalGetPayloadResponse
+                        .map(GetPayloadResponse::getShouldOverrideBuilder)
+                        .orElse(false);
+                if (useShouldOverrideBuilderFlag && shouldOverrideBuilder) {
+                  return getResultFromLocalGetPayloadResponse(
+                      localGetPayloadResponse,
+                      slot,
+                      FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE);
+                }
+
                 final SignedBuilderBid signedBuilderBid = signedBuilderBidMaybe.get();
                 // Treat the local block value as zero if local payload is unavailable
                 final UInt256 localBlockValue =
@@ -176,7 +194,7 @@ public class ExecutionBuilderModule {
 
                 if (isLocalPayloadValueWinning(builderBidValue, localBlockValue)) {
                   logLocalPayloadWin(builderBidValue, localBlockValue);
-                  return getResultFromLocalExecutionPayload(
+                  return getResultFromLocalGetPayloadResponse(
                       localGetPayloadResponse, slot, FallbackReason.LOCAL_BLOCK_VALUE_WON);
                 }
 
@@ -194,7 +212,7 @@ public class ExecutionBuilderModule {
               LOG.error(
                   "Unable to obtain a valid bid from builder. Falling back to local execution engine.",
                   error);
-              return getResultFromLocalExecutionPayload(
+              return getResultFromLocalGetPayloadResponse(
                   localGetPayloadResponse, slot, FallbackReason.BUILDER_ERROR);
             });
   }
@@ -216,7 +234,10 @@ public class ExecutionBuilderModule {
     final ExecutionPayloadHeader executionPayloadHeader =
         builderBidValidator.validateAndGetPayloadHeader(
             spec, signedBuilderBid, validatorRegistration, state, localExecutionPayload);
-    return SafeFuture.completedFuture(HeaderWithFallbackData.create(executionPayloadHeader));
+    final Optional<BlindedBlobsBundle> blindedBlobsBundle =
+        signedBuilderBid.getMessage().getOptionalBlindedBlobsBundle();
+    return SafeFuture.completedFuture(
+        HeaderWithFallbackData.create(executionPayloadHeader, blindedBlobsBundle));
   }
 
   public SafeFuture<Void> builderRegisterValidators(
@@ -274,7 +295,8 @@ public class ExecutionBuilderModule {
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         maybeProcessedSlot.get();
 
-    return getPayloadFromFallbackData(signedBlindedBlockContainer, headerWithFallbackDataFuture);
+    return getPayloadFromBuilderOrFallbackData(
+        signedBlindedBlockContainer, headerWithFallbackDataFuture);
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
@@ -297,22 +319,35 @@ public class ExecutionBuilderModule {
     }
   }
 
-  private SafeFuture<HeaderWithFallbackData> getResultFromLocalExecutionPayload(
+  private SafeFuture<HeaderWithFallbackData> getResultFromLocalGetPayloadResponse(
       final SafeFuture<GetPayloadResponse> localGetPayloadResponse,
       final UInt64 slot,
       final FallbackReason reason) {
     return localGetPayloadResponse.thenApply(
         getPayloadResponse -> {
-          ExecutionPayloadHeader executionPayloadHeader =
-              spec.atSlot(slot)
-                  .getSchemaDefinitions()
+          final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
+          final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
+          final ExecutionPayloadHeader executionPayloadHeader =
+              schemaDefinitions
                   .toVersionBellatrix()
                   .orElseThrow()
                   .getExecutionPayloadHeaderSchema()
-                  .createFromExecutionPayload(getPayloadResponse.getExecutionPayload());
+                  .createFromExecutionPayload(executionPayload);
+          final Optional<BlindedBlobsBundle> blindedBlobsBundle =
+              getPayloadResponse
+                  .getBlobsBundle()
+                  .map(
+                      executionBlobsBundle -> {
+                        final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+                            SchemaDefinitionsDeneb.required(schemaDefinitions);
+                        return schemaDefinitionsDeneb
+                            .getBlindedBlobsBundleSchema()
+                            .createFromExecutionBlobsBundle(executionBlobsBundle);
+                      });
+          final FallbackData fallbackData =
+              new FallbackData(executionPayload, getPayloadResponse.getBlobsBundle(), reason);
           return HeaderWithFallbackData.create(
-              executionPayloadHeader,
-              new FallbackData(getPayloadResponse.getExecutionPayload(), reason));
+              executionPayloadHeader, blindedBlobsBundle, fallbackData);
         });
   }
 
@@ -332,6 +367,9 @@ public class ExecutionBuilderModule {
             builderPayload -> {
               final ExecutionPayload executionPayload = builderPayload.getExecutionPayload();
               logReceivedBuilderExecutionPayload(executionPayload);
+              builderPayload
+                  .getOptionalBlobsBundle()
+                  .ifPresent(this::logReceivedBuilderBlobsBundle);
               executionLayerManager.recordExecutionPayloadFallbackSource(
                   Source.BUILDER, FallbackReason.NONE);
               LOG.trace(
@@ -341,12 +379,12 @@ public class ExecutionBuilderModule {
             });
   }
 
-  // TODO: Implement for Deneb
-  private SafeFuture<BuilderPayload> getPayloadFromFallbackData(
+  private SafeFuture<BuilderPayload> getPayloadFromBuilderOrFallbackData(
       final SignedBlindedBlockContainer signedBlindedBlockContainer,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
+    // the blobs bundle compatibility is done by SignedBlobSidecarsUnblinder
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackDataOptional().isEmpty()) {
@@ -354,10 +392,29 @@ public class ExecutionBuilderModule {
           } else {
             final FallbackData fallbackData =
                 headerWithFallbackData.getFallbackDataOptional().get();
-            logFallbackToLocalExecutionPayload(fallbackData);
+            logFallbackToLocalExecutionPayloadAndBlobsBundle(fallbackData);
             executionLayerManager.recordExecutionPayloadFallbackSource(
                 Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.getReason());
-            return SafeFuture.completedFuture(fallbackData.getExecutionPayload());
+            final BuilderPayload builderPayload =
+                fallbackData
+                    .getBlobsBundle()
+                    .map(
+                        executionBlobsBundle -> {
+                          final SchemaDefinitionsDeneb schemaDefinitions =
+                              SchemaDefinitionsDeneb.required(
+                                  spec.atSlot(signedBlindedBlockContainer.getSlot())
+                                      .getSchemaDefinitions());
+                          final BlobsBundle blobsBundle =
+                              schemaDefinitions
+                                  .getBlobsBundleSchema()
+                                  .createFromExecutionBlobsBundle(executionBlobsBundle);
+                          return (BuilderPayload)
+                              schemaDefinitions
+                                  .getExecutionPayloadAndBlobsBundleSchema()
+                                  .create(fallbackData.getExecutionPayload(), blobsBundle);
+                        })
+                    .orElseGet(fallbackData::getExecutionPayload);
+            return SafeFuture.completedFuture(builderPayload);
           }
         });
   }
@@ -391,31 +448,57 @@ public class ExecutionBuilderModule {
     eventLogger.builderIsNotAvailable(errorMessage);
   }
 
-  private void logFallbackToLocalExecutionPayload(final FallbackData fallbackData) {
-    LOG.log(
-        fallbackData.getReason() == FallbackReason.NOT_NEEDED ? Level.DEBUG : Level.INFO,
-        "Falling back to locally produced execution payload (Block Number {}, Block Hash = {}, Fallback Reason = {})",
-        fallbackData.getExecutionPayload().getBlockNumber(),
-        fallbackData.getExecutionPayload().getBlockHash(),
-        fallbackData.getReason());
+  private void logFallbackToLocalExecutionPayloadAndBlobsBundle(final FallbackData fallbackData) {
+    final Level logLevel =
+        fallbackData.getReason() == FallbackReason.NOT_NEEDED ? Level.DEBUG : Level.INFO;
+    final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
+    fallbackData
+        .getBlobsBundle()
+        .ifPresentOrElse(
+            blobsBundle ->
+                LOG.log(
+                    logLevel,
+                    "Falling back to locally produced execution payload and blobs bundle (Block Number {}, Block Hash = {}, Blobs = {}, Fallback Reason = {})",
+                    executionPayload.getBlockNumber(),
+                    executionPayload.getBlockHash(),
+                    blobsBundle.getNumberOfBlobs(),
+                    fallbackData.getReason()),
+            () ->
+                LOG.log(
+                    logLevel,
+                    "Falling back to locally produced execution payload (Block Number {}, Block Hash = {}, Fallback Reason = {})",
+                    executionPayload.getBlockNumber(),
+                    executionPayload.getBlockHash(),
+                    fallbackData.getReason()));
   }
 
   private void logReceivedBuilderExecutionPayload(final ExecutionPayload executionPayload) {
     LOG.info(
-        "Received execution payload from Builder (Block Number {}, Block Hash = {})",
+        "Received execution payload from Builder (Block Number = {}, Block Hash = {})",
         executionPayload.getBlockNumber(),
         executionPayload.getBlockHash());
   }
 
+  private void logReceivedBuilderBlobsBundle(final BlobsBundle blobsBundle) {
+    LOG.info(
+        "Received blobs bundle from Builder (Blobs count = {})", blobsBundle.getNumberOfBlobs());
+  }
+
   private void logReceivedBuilderBid(final BuilderBid builderBid) {
     final ExecutionPayloadHeader payloadHeader = builderBid.getHeader();
+    final String blobsLog =
+        builderBid
+            .getOptionalBlindedBlobsBundle()
+            .map(blindedBlobsBundle -> ", Blobs count = " + blindedBlobsBundle.getNumberOfBlobs())
+            .orElse("");
     LOG.info(
-        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (ETH) = {}, Gas Limit = {}, Gas Used = {})",
+        "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (ETH) = {}, Gas Limit = {}, Gas Used = {}{})",
         payloadHeader.getBlockNumber(),
         payloadHeader.getBlockHash(),
         weiToEth(builderBid.getValue()),
         payloadHeader.getGasLimit(),
-        payloadHeader.getGasUsed());
+        payloadHeader.getGasUsed(),
+        blobsLog);
   }
 
   private void logLocalPayloadWin(final UInt256 builderBidValue, final UInt256 localPayloadValue) {

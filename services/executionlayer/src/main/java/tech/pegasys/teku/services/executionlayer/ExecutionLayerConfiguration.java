@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerConfiguration {
   private static final Logger LOG = LogManager.getLogger();
@@ -37,13 +36,11 @@ public class ExecutionLayerConfiguration {
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
   public static final int DEFAULT_BUILDER_BID_COMPARE_FACTOR = 100;
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
+  public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
   public static final String BUILDER_ALWAYS_KEYWORD = "BUILDER_ALWAYS";
-
-  public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_ENABLED = true;
 
   private final Spec spec;
   private final Optional<String> engineEndpoint;
-  private final Version engineVersion;
   private final Optional<String> engineJwtSecretFile;
   private final Optional<String> builderEndpoint;
   private final boolean isBuilderCircuitBreakerEnabled;
@@ -52,12 +49,11 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
   private final Optional<Integer> builderBidCompareFactor;
   private final boolean builderSetUserAgentHeader;
-  private final boolean exchangeCapabilitiesEnabled;
+  private final boolean useShouldOverrideBuilderFlag;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
       final Optional<String> engineEndpoint,
-      final Version engineVersion,
       final Optional<String> engineJwtSecretFile,
       final Optional<String> builderEndpoint,
       final boolean isBuilderCircuitBreakerEnabled,
@@ -66,10 +62,9 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerAllowedConsecutiveFaults,
       final Optional<Integer> builderBidCompareFactor,
       final boolean builderSetUserAgentHeader,
-      final boolean exchangeCapabilitiesEnabled) {
+      final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
-    this.engineVersion = engineVersion;
     this.engineJwtSecretFile = engineJwtSecretFile;
     this.builderEndpoint = builderEndpoint;
     this.isBuilderCircuitBreakerEnabled = isBuilderCircuitBreakerEnabled;
@@ -79,7 +74,7 @@ public class ExecutionLayerConfiguration {
         builderCircuitBreakerAllowedConsecutiveFaults;
     this.builderBidCompareFactor = builderBidCompareFactor;
     this.builderSetUserAgentHeader = builderSetUserAgentHeader;
-    this.exchangeCapabilitiesEnabled = exchangeCapabilitiesEnabled;
+    this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
   public static Builder builder() {
@@ -105,10 +100,6 @@ public class ExecutionLayerConfiguration {
     return engineJwtSecretFile;
   }
 
-  public Version getEngineVersion() {
-    return engineVersion;
-  }
-
   public Optional<String> getBuilderEndpoint() {
     return builderEndpoint;
   }
@@ -129,10 +120,6 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
-  public boolean isExchangeCapabilitiesEnabled() {
-    return exchangeCapabilitiesEnabled;
-  }
-
   public Optional<Integer> getBuilderBidCompareFactor() {
     return builderBidCompareFactor;
   }
@@ -141,10 +128,13 @@ public class ExecutionLayerConfiguration {
     return builderSetUserAgentHeader;
   }
 
+  public boolean getUseShouldOverrideBuilderFlag() {
+    return useShouldOverrideBuilderFlag;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
-    private Version engineVersion = Version.DEFAULT_VERSION;
     private Optional<String> engineJwtSecretFile = Optional.empty();
     private Optional<String> builderEndpoint = Optional.empty();
     private boolean isBuilderCircuitBreakerEnabled = DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
@@ -154,7 +144,7 @@ public class ExecutionLayerConfiguration {
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
     private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
     private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
-    private boolean exchangeCapabilitiesEnabled = DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
+    private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
     private Builder() {}
 
@@ -182,7 +172,6 @@ public class ExecutionLayerConfiguration {
       return new ExecutionLayerConfiguration(
           spec,
           engineEndpoint,
-          engineVersion,
           engineJwtSecretFile,
           builderEndpoint,
           isBuilderCircuitBreakerEnabled,
@@ -191,16 +180,11 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerAllowedConsecutiveFaults,
           builderBidCompareFactor,
           builderSetUserAgentHeader,
-          exchangeCapabilitiesEnabled);
+          useShouldOverrideBuilderFlag);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
       this.engineEndpoint = Optional.ofNullable(engineEndpoint);
-      return this;
-    }
-
-    public Builder engineVersion(final Version version) {
-      this.engineVersion = version;
       return this;
     }
 
@@ -252,8 +236,8 @@ public class ExecutionLayerConfiguration {
       return this;
     }
 
-    public Builder exchangeCapabilitiesEnabled(boolean enabled) {
-      this.exchangeCapabilitiesEnabled = enabled;
+    public Builder useShouldOverrideBuilderFlag(final boolean useShouldOverrideBuilderFlag) {
+      this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
       return this;
     }
 

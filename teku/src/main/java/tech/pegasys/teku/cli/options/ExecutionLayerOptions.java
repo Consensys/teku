@@ -21,12 +21,11 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
-import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.Version;
 
 public class ExecutionLayerOptions {
 
@@ -38,14 +37,6 @@ public class ExecutionLayerOptions {
       description = "URL for Execution Engine node.",
       arity = "1")
   private String executionEngineEndpoint = null;
-
-  @Option(
-      names = {"--Xee-version"},
-      paramLabel = "<EXECUTION_ENGINE_VERSION>",
-      description = "Execution Engine API version. " + "Valid values: ${COMPLETION-CANDIDATES}",
-      arity = "1",
-      hidden = true)
-  private Version executionEngineVersion = Version.DEFAULT_VERSION;
 
   @Option(
       names = {"--ee-jwt-secret-file"},
@@ -126,20 +117,20 @@ public class ExecutionLayerOptions {
   private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 
   @Option(
-      hidden = true,
-      names = {"--exchange-capabilities-enabled"},
+      names = {"--Xuse-should-override-builder-flag"},
       paramLabel = "<BOOLEAN>",
-      fallbackValue = "true",
+      description =
+          "Whether or not to use the shouldOverrideBuilder flag provided by the Engine API.",
+      arity = "1",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Enables Engine API capabilities negotiation with Execution Client",
-      arity = "0..1")
-  private boolean exchangeCapabilitiesEnabled = DEFAULT_EXCHANGE_CAPABILITIES_ENABLED;
+      fallbackValue = "true",
+      hidden = true)
+  private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
             b.engineEndpoint(executionEngineEndpoint)
-                .engineVersion(executionEngineVersion)
                 .engineJwtSecretFile(engineJwtSecretFile)
                 .builderEndpoint(builderEndpoint)
                 .isBuilderCircuitBreakerEnabled(builderCircuitBreakerEnabled)
@@ -149,7 +140,7 @@ public class ExecutionLayerOptions {
                     builderCircuitBreakerAllowedConsecutiveFaults)
                 .builderBidCompareFactor(builderBidCompareFactor)
                 .builderSetUserAgentHeader(builderSetUserAgentHeader)
-                .exchangeCapabilitiesEnabled(exchangeCapabilitiesEnabled));
+                .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag));
     depositOptions.configure(builder);
   }
 }

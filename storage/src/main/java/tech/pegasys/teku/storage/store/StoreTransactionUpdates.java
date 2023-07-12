@@ -39,7 +39,7 @@ class StoreTransactionUpdates {
   private final Map<Bytes32, SignedBlockAndState> hotBlockAndStates;
   // A subset of hot states to be persisted to disk
   private final Map<Bytes32, BeaconState> hotStatesToPersist;
-  private final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars;
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final Map<Bytes32, SlotAndBlockRoot> stateRoots;
   private final Map<Bytes32, UInt64> prunedHotBlockRoots;
@@ -53,7 +53,7 @@ class StoreTransactionUpdates {
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, SignedBlockAndState> hotBlockAndStates,
       final Map<Bytes32, BeaconState> hotStatesToPersist,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> hotBlobSidecars,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> prunedHotBlockRoots,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
@@ -65,7 +65,7 @@ class StoreTransactionUpdates {
     checkNotNull(hotBlocks, "Hot blocks are required");
     checkNotNull(hotBlockAndStates, "Hot states are required");
     checkNotNull(hotStatesToPersist, "Hot states to persist are required");
-    checkNotNull(hotBlobSidecars, "Hot blobSidecars are required");
+    checkNotNull(blobSidecars, "BlobSidecars are required");
     checkNotNull(maybeEarliestBlobSidecarSlot, "Hot maybe earliest blobSidecar slot is required");
     checkNotNull(prunedHotBlockRoots, "Pruned roots are required");
     checkNotNull(stateRoots, "State roots are required");
@@ -75,7 +75,7 @@ class StoreTransactionUpdates {
     this.hotBlocks = hotBlocks;
     this.hotBlockAndStates = hotBlockAndStates;
     this.hotStatesToPersist = hotStatesToPersist;
-    this.hotBlobSidecars = hotBlobSidecars;
+    this.blobSidecars = blobSidecars;
     this.maybeEarliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     this.prunedHotBlockRoots = prunedHotBlockRoots;
     this.stateRoots = stateRoots;
@@ -92,7 +92,7 @@ class StoreTransactionUpdates {
         tx.bestJustifiedCheckpoint,
         hotBlocks,
         hotStatesToPersist,
-        hotBlobSidecars,
+        blobSidecars,
         maybeEarliestBlobSidecarSlot,
         prunedHotBlockRoots,
         stateRoots,

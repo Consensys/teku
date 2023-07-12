@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
 import java.time.Duration;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -43,12 +44,16 @@ public class ThrottlingSyncSource implements SyncSource {
       final TimeProvider timeProvider,
       final SyncSource delegate,
       final int maxBlocksPerMinute,
-      final int maxBlobSidecarsPerMinute) {
+      final Optional<Integer> maybeMaxBlobSidecarsPerMinute) {
     this.asyncRunner = asyncRunner;
     this.delegate = delegate;
-    this.blocksRateTracker = new RateTracker(maxBlocksPerMinute, TIME_OUT, timeProvider);
+    this.blocksRateTracker = RateTracker.create(maxBlocksPerMinute, TIME_OUT, timeProvider);
     this.blobSidecarsRateTracker =
-        new RateTracker(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider);
+        maybeMaxBlobSidecarsPerMinute
+            .map(
+                maxBlobSidecarsPerMinute ->
+                    RateTracker.create(maxBlobSidecarsPerMinute, TIME_OUT, timeProvider))
+            .orElse(RateTracker.NOOP);
   }
 
   @Override
@@ -56,7 +61,7 @@ public class ThrottlingSyncSource implements SyncSource {
       final UInt64 startSlot,
       final UInt64 count,
       final RpcResponseListener<SignedBeaconBlock> listener) {
-    if (blocksRateTracker.popObjectRequests(count.longValue()) > 0) {
+    if (blocksRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
       LOG.debug("Sending request for {} blocks", count);
       return delegate.requestBlocksByRange(startSlot, count, listener);
     } else {
@@ -68,7 +73,7 @@ public class ThrottlingSyncSource implements SyncSource {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
       final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
-    if (blobSidecarsRateTracker.popObjectRequests(count.longValue()) > 0) {
+    if (blobSidecarsRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);
     } else {

@@ -14,13 +14,11 @@
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
 import java.util.List;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,7 +36,7 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_NEW_PAYLOAD.getName();
+    return EngineApiMethod.ENGINE_NEW_PAYLOAD.getName();
   }
 
   @Override
@@ -50,24 +48,21 @@ public class EngineNewPayloadV3 extends AbstractEngineJsonRpcMethod<PayloadStatu
   public SafeFuture<PayloadStatus> execute(final JsonRpcRequestParams params) {
     final ExecutionPayload executionPayload =
         params.getRequiredParameter(0, ExecutionPayload.class);
-    final Optional<List<VersionedHash>> blobVersionedHashes =
-        params.getOptionalListParameter(1, VersionedHash.class);
+    final List<VersionedHash> blobVersionedHashes =
+        params.getRequiredListParameter(1, VersionedHash.class);
+    final Bytes32 parentBeaconBlockRoot = params.getRequiredParameter(2, Bytes32.class);
 
     LOG.trace(
-        "Calling {}(executionPayload={}, blobVersionedHashes={})",
+        "Calling {}(executionPayload={}, blobVersionedHashes={}, parentBeaconBlockRoot={})",
         getVersionedName(),
         executionPayload,
-        blobVersionedHashes);
-    final ExecutionPayloadV1 executionPayloadV1;
-    if (executionPayload.toVersionDeneb().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
-    } else if (executionPayload.toVersionCapella().isPresent()) {
-      executionPayloadV1 = ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
-    } else {
-      executionPayloadV1 = ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
-    }
+        blobVersionedHashes,
+        parentBeaconBlockRoot);
+
+    final ExecutionPayloadV3 executionPayloadV3 =
+        ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     return executionEngineClient
-        .newPayloadV3(executionPayloadV1, blobVersionedHashes)
+        .newPayloadV3(executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot)
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenApply(PayloadStatusV1::asInternalExecutionPayload)
         .thenPeek(

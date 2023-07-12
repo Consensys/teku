@@ -19,10 +19,10 @@ import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class PeerPools {
 
-  private static final PeerPool DEFAULT_POOL = PeerPool.SCORE_BASED;
-  private final Map<NodeId, PeerPool> knownSources = new ConcurrentHashMap<>();
+  private static final PeerConnectionType DEFAULT_POOL = PeerConnectionType.SCORE_BASED;
+  private final Map<NodeId, PeerConnectionType> knownSources = new ConcurrentHashMap<>();
 
-  public void addPeerToPool(final NodeId nodeId, final PeerPool peerPool) {
+  public void addPeerToPool(final NodeId nodeId, final PeerConnectionType peerPool) {
     if (peerPool == DEFAULT_POOL) {
       // No need to record the peer if it's in the default pool anyway.
       forgetPeer(nodeId);
@@ -35,19 +35,7 @@ public class PeerPools {
     knownSources.remove(nodeId);
   }
 
-  public PeerPool getPool(final NodeId nodeId) {
+  public PeerConnectionType getPeerConnectionType(final NodeId nodeId) {
     return knownSources.getOrDefault(nodeId, DEFAULT_POOL);
-  }
-
-  public enum PeerPool {
-    /** Default pool where peers are ranked based on their usefulness */
-    SCORE_BASED,
-    /**
-     * Pool of peers we randomly selected which are kept connected to provide Sybil resistance
-     * regardless of their usefulness
-     */
-    RANDOMLY_SELECTED,
-    /** Static peers which we maintain persistent connections to */
-    STATIC
   }
 }

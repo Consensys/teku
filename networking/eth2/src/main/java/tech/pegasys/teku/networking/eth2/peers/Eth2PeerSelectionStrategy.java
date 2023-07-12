@@ -16,8 +16,8 @@ package tech.pegasys.teku.networking.eth2.peers;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool.RANDOMLY_SELECTED;
-import static tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool.SCORE_BASED;
+import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.RANDOMLY_SELECTED;
+import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.SCORE_BASED;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,8 +32,8 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
+import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
 import tech.pegasys.teku.networking.p2p.connection.PeerPools;
-import tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryPeer;
@@ -139,7 +139,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
     return (int)
         network
             .streamPeers()
-            .filter(peer -> peerPools.getPool(peer.getId()) == RANDOMLY_SELECTED)
+            .filter(peer -> peerPools.getPeerConnectionType(peer.getId()) == RANDOMLY_SELECTED)
             .count();
   }
 
@@ -154,10 +154,10 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
   public List<Peer> selectPeersToDisconnect(
       final P2PNetwork<?> network, final PeerPools peerPools) {
 
-    final Map<PeerPool, List<Peer>> peersBySource =
+    final Map<PeerConnectionType, List<Peer>> peersBySource =
         network
             .streamPeers()
-            .collect(Collectors.groupingBy(peer -> peerPools.getPool(peer.getId())));
+            .collect(Collectors.groupingBy(peer -> peerPools.getPeerConnectionType(peer.getId())));
 
     final List<Peer> randomlySelectedPeers =
         peersBySource.getOrDefault(RANDOMLY_SELECTED, new ArrayList<>());

@@ -21,11 +21,9 @@ public interface EngineJsonRpcMethod<T> {
 
   int getVersion();
 
-  String getVersionedName();
-
   SafeFuture<T> execute(JsonRpcRequestParams params);
 
-  default boolean isNegotiable() {
-    return getVersion() != 0;
+  default String getVersionedName() {
+    return getVersion() == 0 ? getName() : getName() + "V" + getVersion();
   }
 }

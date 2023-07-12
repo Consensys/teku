@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.math.BigInteger;
@@ -46,10 +47,7 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
   private UInt64 terminalBlockHashActivationEpoch;
 
   // Optimistic Sync
-  private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
-
-  private int gossipMaxSizeBellatrix;
-  private int maxChunkSizeBellatrix;
+  private Integer safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
   BellatrixBuilder() {}
 
@@ -78,20 +76,6 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
       bellatrixForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
       bellatrixForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
-    SpecBuilderUtil.validateConstant("bellatrixForkVersion", bellatrixForkVersion);
-    SpecBuilderUtil.validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
-    SpecBuilderUtil.validateConstant(
-        "inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
-    SpecBuilderUtil.validateConstant(
-        "minSlashingPenaltyQuotientBellatrix", minSlashingPenaltyQuotientBellatrix);
-    SpecBuilderUtil.validateConstant(
-        "proportionalSlashingMultiplierBellatrix", proportionalSlashingMultiplierBellatrix);
-    SpecBuilderUtil.validateConstant("maxBytesPerTransaction", maxBytesPerTransaction);
-    SpecBuilderUtil.validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
-    SpecBuilderUtil.validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
-    SpecBuilderUtil.validateConstant("maxExtraDataBytes", maxExtraDataBytes);
-    SpecBuilderUtil.validateConstant("gossipMaxSizeBellatrix", gossipMaxSizeBellatrix);
-    SpecBuilderUtil.validateConstant("maxChunkSizeBellatrix", maxChunkSizeBellatrix);
 
     // temporary, provide default values for backward compatibility
     if (terminalTotalDifficulty == null) {
@@ -106,6 +90,24 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     if (terminalBlockHashActivationEpoch == null) {
       terminalBlockHashActivationEpoch = UInt64.valueOf("18446744073709551615");
     }
+
+    // Fill default zeros if fork is unsupported
+    if (bellatrixForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      SpecBuilderUtil.fillMissingValuesWithZeros(this);
+    }
+
+    SpecBuilderUtil.validateConstant("bellatrixForkVersion", bellatrixForkVersion);
+    SpecBuilderUtil.validateConstant("bellatrixForkEpoch", bellatrixForkEpoch);
+    SpecBuilderUtil.validateConstant(
+        "inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
+    SpecBuilderUtil.validateConstant(
+        "minSlashingPenaltyQuotientBellatrix", minSlashingPenaltyQuotientBellatrix);
+    SpecBuilderUtil.validateConstant(
+        "proportionalSlashingMultiplierBellatrix", proportionalSlashingMultiplierBellatrix);
+    SpecBuilderUtil.validateConstant("maxBytesPerTransaction", maxBytesPerTransaction);
+    SpecBuilderUtil.validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
+    SpecBuilderUtil.validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
+    SpecBuilderUtil.validateConstant("maxExtraDataBytes", maxExtraDataBytes);
   }
 
   @Override
@@ -146,17 +148,17 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     return this;
   }
 
-  public BellatrixBuilder maxBytesPerTransaction(final int maxBytesPerTransaction) {
+  public BellatrixBuilder maxBytesPerTransaction(final Integer maxBytesPerTransaction) {
     this.maxBytesPerTransaction = maxBytesPerTransaction;
     return this;
   }
 
-  public BellatrixBuilder maxTransactionsPerPayload(final int maxTransactionsPerPayload) {
+  public BellatrixBuilder maxTransactionsPerPayload(final Integer maxTransactionsPerPayload) {
     this.maxTransactionsPerPayload = maxTransactionsPerPayload;
     return this;
   }
 
-  public BellatrixBuilder bytesPerLogsBloom(final int bytesPerLogsBloom) {
+  public BellatrixBuilder bytesPerLogsBloom(final Integer bytesPerLogsBloom) {
     this.bytesPerLogsBloom = bytesPerLogsBloom;
     return this;
   }
@@ -177,24 +179,14 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     return this;
   }
 
-  public BellatrixBuilder maxExtraDataBytes(final int maxExtraDataBytes) {
+  public BellatrixBuilder maxExtraDataBytes(final Integer maxExtraDataBytes) {
     this.maxExtraDataBytes = maxExtraDataBytes;
     return this;
   }
 
   public BellatrixBuilder safeSlotsToImportOptimistically(
-      final int safeSlotsToImportOptimistically) {
+      final Integer safeSlotsToImportOptimistically) {
     this.safeSlotsToImportOptimistically = safeSlotsToImportOptimistically;
-    return this;
-  }
-
-  public BellatrixBuilder gossipMaxSizeBellatrix(final int gossipMaxSizeBellatrix) {
-    this.gossipMaxSizeBellatrix = gossipMaxSizeBellatrix;
-    return this;
-  }
-
-  public BellatrixBuilder maxChunkSizeBellatrix(final int maxChunkSizeBellatrix) {
-    this.maxChunkSizeBellatrix = maxChunkSizeBellatrix;
     return this;
   }
 }

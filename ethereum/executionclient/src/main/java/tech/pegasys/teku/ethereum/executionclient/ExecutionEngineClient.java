@@ -17,14 +17,17 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
+import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
+import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
-import tech.pegasys.teku.ethereum.executionclient.schema.TransitionConfigurationV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -45,19 +48,21 @@ public interface ExecutionEngineClient {
 
   SafeFuture<Response<PayloadStatusV1>> newPayloadV1(ExecutionPayloadV1 executionPayload);
 
-  SafeFuture<Response<PayloadStatusV1>> newPayloadV2(ExecutionPayloadV1 executionPayload);
+  SafeFuture<Response<PayloadStatusV1>> newPayloadV2(ExecutionPayloadV2 executionPayload);
 
   SafeFuture<Response<PayloadStatusV1>> newPayloadV3(
-      ExecutionPayloadV1 executionPayload, Optional<List<VersionedHash>> blobVersionedHashes);
+      ExecutionPayloadV3 executionPayload,
+      List<VersionedHash> blobVersionedHashes,
+      Bytes32 parentBeaconBlockRoot);
 
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
 
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV2(
-      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
+      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV2> payloadAttributes);
 
-  SafeFuture<Response<TransitionConfigurationV1>> exchangeTransitionConfiguration(
-      TransitionConfigurationV1 transitionConfiguration);
+  SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV3(
+      ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV3> payloadAttributes);
 
   SafeFuture<Response<List<String>>> exchangeCapabilities(List<String> capabilities);
 }

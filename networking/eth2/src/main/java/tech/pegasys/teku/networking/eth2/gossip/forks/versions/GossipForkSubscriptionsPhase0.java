@@ -32,7 +32,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscri
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -122,8 +121,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             recentChainData,
             attestationProcessor,
-            forkInfo,
-            getMessageMaxSize());
+            forkInfo);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
@@ -139,8 +137,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blockProcessor,
-            getMessageMaxSize());
+            blockProcessor);
     addGossipManager(blockGossipManager);
   }
 
@@ -153,8 +150,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            aggregateProcessor,
-            getMessageMaxSize());
+            aggregateProcessor);
     addGossipManager(aggregateGossipManager);
   }
 
@@ -167,7 +163,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             voluntaryExitProcessor,
-            getMessageMaxSize());
+            spec.getNetworkingConfig());
     addGossipManager(voluntaryExitGossipManager);
   }
 
@@ -180,7 +176,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             proposerSlashingProcessor,
-            getMessageMaxSize());
+            spec.getNetworkingConfig());
     addGossipManager(proposerSlashingGossipManager);
   }
 
@@ -193,8 +189,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            attesterSlashingProcessor,
-            getMessageMaxSize());
+            attesterSlashingProcessor);
     addGossipManager(attesterSlashingGossipManager);
   }
 
@@ -257,9 +252,5 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   @Override
   public void unsubscribeFromAttestationSubnetId(final int subnetId) {
     attestationGossipManager.unsubscribeFromSubnetId(subnetId);
-  }
-
-  protected int getMessageMaxSize() {
-    return spec.forMilestone(SpecMilestone.PHASE0).getConfig().getGossipMaxSize();
   }
 }

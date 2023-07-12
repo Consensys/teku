@@ -45,8 +45,8 @@ import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.events.CoalescingChainHeadChannel;
-import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -125,7 +125,6 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionConfigCheck;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.TerminalPowBlockMonitor;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessingPerformance;
@@ -253,8 +252,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile GossipValidationHelper gossipValidationHelper;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
-  protected volatile Optional<MergeTransitionConfigCheck> mergeTransitionConfigCheck =
-      Optional.empty();
   protected volatile Optional<DataUnavailableBlockPool> dataUnavailableBlockPool = Optional.empty();
   protected volatile ProposersDataManager proposersDataManager;
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
@@ -307,21 +304,21 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void startServices() {
-    final RecentBlockFetcher recentBlockFetcher = syncService.getRecentBlockFetcher();
-    recentBlockFetcher.subscribeBlockFetched(
+    final RecentBlocksFetcher recentBlocksFetcher = syncService.getRecentBlocksFetcher();
+    recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
             blockManager
                 .importBlock(block)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
-        (block, __) -> recentBlockFetcher.cancelRecentBlockRequest(block.getRoot()));
-    final RecentBlobSidecarFetcher recentBlobSidecarFetcher =
-        syncService.getRecentBlobSidecarFetcher();
-    recentBlobSidecarFetcher.subscribeBlobSidecarFetched(
+        (block, __) -> recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));
+    final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
+        syncService.getRecentBlobSidecarsFetcher();
+    recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(
         (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar));
     blobSidecarManager.subscribeToReceivedBlobSidecar(
         blobSidecar ->
-            recentBlobSidecarFetcher.cancelRecentBlobSidecarRequest(
+            recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
                 new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex())));
     SafeFuture.allOfFailFast(
             attestationManager.start(),
@@ -329,10 +326,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockManager.start(),
             syncService.start(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)),
-            mergeTransitionConfigCheck
-                .map(MergeTransitionConfigCheck::start)
-                .orElse(SafeFuture.completedFuture(null)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::start)))
         .finish(
             error -> {
               Throwable rootCause = Throwables.getRootCause(error);
@@ -360,10 +354,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             p2pNetwork.stop(),
             timerService.stop(),
             SafeFuture.fromRunnable(
-                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)),
-            mergeTransitionConfigCheck
-                .map(MergeTransitionConfigCheck::stop)
-                .orElse(SafeFuture.completedFuture(null)))
+                () -> terminalPowBlockMonitor.ifPresent(TerminalPowBlockMonitor::stop)))
         .thenRun(forkChoiceExecutor::stop);
   }
 
@@ -479,8 +470,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               blobSidecarPool,
               blobSidecarValidator,
               futureBlobSidecars,
-              invalidBlobSidecarRoots,
-              storageQueryChannel);
+              invalidBlobSidecarRoots);
       eventChannels.subscribe(SlotEventsChannel.class, blobSidecarManagerImpl);
 
       blobSidecarManager = blobSidecarManagerImpl;
@@ -501,10 +491,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                   beaconAsyncRunner,
                   EVENT_LOG,
                   timeProvider));
-
-      mergeTransitionConfigCheck =
-          Optional.of(
-              new MergeTransitionConfigCheck(EVENT_LOG, spec, executionLayer, beaconAsyncRunner));
     }
   }
 
@@ -736,7 +722,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initActiveValidatorTracker");
     final StableSubnetSubscriber stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
-            ? AllSubnetsSubscriber.create(attestationTopicSubscriber)
+            ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
             : new ValidatorBasedStableSubnetSubscriber(
                 attestationTopicSubscriber,
                 new Random(),

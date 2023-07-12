@@ -114,17 +114,25 @@ public class MiscHelpers {
     }
   }
 
-  public UInt64 computeEpochAtSlot(UInt64 slot) {
+  public UInt64 computeEpochAtSlot(final UInt64 slot) {
     return slot.dividedBy(specConfig.getSlotsPerEpoch());
   }
 
-  public UInt64 computeStartSlotAtEpoch(UInt64 epoch) {
+  public UInt64 computeStartSlotAtEpoch(final UInt64 epoch) {
     return epoch.times(specConfig.getSlotsPerEpoch());
   }
 
-  public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
-    UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
-    return state.getGenesisTime().plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
+  public UInt64 computeEndSlotAtEpoch(final UInt64 epoch) {
+    return computeStartSlotAtEpoch(epoch.plus(1)).minusMinZero(1);
+  }
+
+  public UInt64 computeSlotAtTime(final UInt64 genesisTime, final UInt64 currentTime) {
+    return currentTime.minusMinZero(genesisTime).dividedBy(specConfig.getSecondsPerSlot());
+  }
+
+  public UInt64 computeTimeAtSlot(final UInt64 genesisTime, final UInt64 slot) {
+    final UInt64 slotsSinceGenesis = slot.minus(SpecConfig.GENESIS_SLOT);
+    return genesisTime.plus(slotsSinceGenesis.times(specConfig.getSecondsPerSlot()));
   }
 
   public boolean isSlotAtNthEpochBoundary(
@@ -281,6 +289,10 @@ public class MiscHelpers {
 
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
     throw new UnsupportedOperationException("No KZGCommitments before Deneb");
+  }
+
+  public UInt64 getMaxRequestBlocks() {
+    return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }
 
   public Optional<MiscHelpersDeneb> toVersionDeneb() {

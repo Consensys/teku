@@ -57,7 +57,6 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.config.ProgressiveBalancesMode;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -497,13 +496,8 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   private TekuConfiguration.Builder expectedConfigurationBuilder() {
     return TekuConfiguration.builder()
-        .eth2NetworkConfig(
-            b ->
-                b.applyMinimalNetworkDefaults()
-                    .eth1DepositContractAddress(address)
-                    .progressiveBalancesEnabled(ProgressiveBalancesMode.FULL))
-        .executionLayer(
-            b -> b.engineEndpoint("http://localhost:8550").exchangeCapabilitiesEnabled(true))
+        .eth2NetworkConfig(b -> b.applyMinimalNetworkDefaults().eth1DepositContractAddress(address))
+        .executionLayer(b -> b.engineEndpoint("http://localhost:8550"))
         .powchain(
             b ->
                 b.eth1Endpoints(List.of("http://localhost:8545"))

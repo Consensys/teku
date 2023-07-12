@@ -781,6 +781,12 @@ public final class DataStructureUtil {
         .create(randomBitlist(), randomAttestationData(slot), randomSignature());
   }
 
+  public Attestation randomAttestation(final AttestationData attestationData) {
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), attestationData, randomSignature());
+  }
+
   public AggregateAndProof randomAggregateAndProof() {
     return randomAggregateAndProof(randomUInt64());
   }
@@ -1578,7 +1584,7 @@ public final class DataStructureUtil {
     return randomDepositEvent(randomUInt64());
   }
 
-  public ArrayList<DepositWithIndex> randomDeposits(int num) {
+  public List<DepositWithIndex> randomDeposits(int num) {
     ArrayList<DepositWithIndex> deposits = new ArrayList<>();
 
     for (int i = 0; i < num; i++) {
@@ -1722,6 +1728,7 @@ public final class DataStructureUtil {
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
+        randomBytes32(),
         randomUInt64());
   }
 
@@ -2191,18 +2198,20 @@ public final class DataStructureUtil {
         randomSszList(schema.getBlobsSchema(), this::randomBlob, numberOfBlobs));
   }
 
-  public BlindedBlobsBundle randomBlindedBlobsBundle() {
+  public BlindedBlobsBundle randomBlindedBlobsBundle(final int count) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
     final BlindedBlobsBundleSchema schema = schemaDefinitions.getBlindedBlobsBundleSchema();
 
-    final int numberOfBlobs = randomNumberOfBlobsPerBlock();
-
     return new BlindedBlobsBundle(
         schema,
-        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, numberOfBlobs),
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, numberOfBlobs),
-        randomSszList(schema.getBlobRootsSchema(), numberOfBlobs, this::randomSszBytes32));
+        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, count),
+        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, count),
+        randomSszList(schema.getBlobRootsSchema(), count, this::randomSszBytes32));
+  }
+
+  public BlindedBlobsBundle randomBlindedBlobsBundle() {
+    return randomBlindedBlobsBundle(randomNumberOfBlobsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {

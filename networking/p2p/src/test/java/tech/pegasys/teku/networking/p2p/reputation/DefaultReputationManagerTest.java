@@ -22,11 +22,14 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.metrics.StubGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.networking.p2p.connection.PeerConnectionType;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.mock.MockNodeId;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -41,8 +44,9 @@ class DefaultReputationManagerTest {
   private final PeerAddress peerAddress = new PeerAddress(new MockNodeId(1));
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
+  private final PeerPools peerPools = new PeerPools();
   private final ReputationManager reputationManager =
-      new DefaultReputationManager(metricsSystem, timeProvider, 5);
+      new DefaultReputationManager(metricsSystem, timeProvider, 5, peerPools);
 
   @Test
   public void shouldDisallowConnectionInitiationWhenConnectionHasFailedRecently() {
@@ -195,5 +199,13 @@ class DefaultReputationManagerTest {
   void shouldBeUnsuitableToConnectToAfterBeingDisconnected() {
     assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
     assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
+  }
+
+  @ParameterizedTest
+  @EnumSource(PeerConnectionType.class)
+  void checkReputationNotAdjustedWhenStaticType(final PeerConnectionType type) {
+    peerPools.addPeerToPool(peerAddress.getId(), type);
+    assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY))
+        .isEqualTo(!type.equals(PeerConnectionType.STATIC));
   }
 }

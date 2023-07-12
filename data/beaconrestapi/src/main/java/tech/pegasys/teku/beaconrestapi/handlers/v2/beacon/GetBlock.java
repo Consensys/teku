@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BLOCK_ID;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -91,7 +91,7 @@ public class GetBlock extends RestApiEndpoint {
   private static SerializableTypeDefinition<ObjectAndMetaData<SignedBeaconBlock>> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<SignedBeaconBlock> signedBeaconBlockType =
-        getSchemaDefinitionForAllMilestones(
+        getSchemaDefinitionForAllSupportedMilestones(
             schemaDefinitionCache,
             "SignedBeaconBlock",
             SchemaDefinitions::getSignedBeaconBlockSchema,

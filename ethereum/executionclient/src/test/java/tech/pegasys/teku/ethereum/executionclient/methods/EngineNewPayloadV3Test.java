@@ -24,13 +24,11 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
-import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
@@ -45,7 +43,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class EngineNewPayloadV3Test {
 
-  private final Spec spec = TestSpecFactory.createMinimalBellatrix();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ExecutionEngineClient executionEngineClient = mock(ExecutionEngineClient.class);
   private EngineNewPayloadV3 jsonRpcMethod;
@@ -76,13 +74,19 @@ class EngineNewPayloadV3Test {
   @Test
   public void shouldReturnFailedExecutionWhenEngineClientRequestFails() {
     final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(3);
+    final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
     final String errorResponseFromClient = "error!";
 
-    when(executionEngineClient.newPayloadV3(any(), any()))
+    when(executionEngineClient.newPayloadV3(any(), any(), any()))
         .thenReturn(dummyFailedResponse(errorResponseFromClient));
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).build();
+        new JsonRpcRequestParams.Builder()
+            .add(executionPayload)
+            .add(blobVersionedHashes)
+            .add(parentBeaconBlockRoot)
+            .build();
 
     assertThat(jsonRpcMethod.execute(params))
         .succeedsWithin(1, TimeUnit.SECONDS)
@@ -90,76 +94,32 @@ class EngineNewPayloadV3Test {
   }
 
   @Test
-  public void shouldCallNewPayloadV3WithExecutionPayloadV1WhenInBellatrix() {
-    final Spec bellatrixSpec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtilBellatrix = new DataStructureUtil(bellatrixSpec);
+  public void shouldCallNewPayloadV3WithExecutionPayloadV3AndBlobVersionedHashes() {
+    final ExecutionPayload executionPayload = dataStructureUtil.randomExecutionPayload();
+    final List<VersionedHash> blobVersionedHashes = dataStructureUtil.randomVersionedHashes(4);
+    final Bytes32 parentBeaconBlockRoot = dataStructureUtil.randomBytes32();
 
-    final ExecutionPayload executionPayload = dataStructureUtilBellatrix.randomExecutionPayload();
-    final ExecutionPayloadV1 executionPayloadV1 =
-        ExecutionPayloadV1.fromInternalExecutionPayload(executionPayload);
-    assertThat(executionPayloadV1).isExactlyInstanceOf(ExecutionPayloadV1.class);
-
-    jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
-
-    when(executionEngineClient.newPayloadV3(executionPayloadV1, Optional.empty()))
-        .thenReturn(dummySuccessfulResponse());
-
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).build();
-
-    assertThat(jsonRpcMethod.execute(params)).isCompleted();
-
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV1), eq(Optional.empty()));
-    verifyNoMoreInteractions(executionEngineClient);
-  }
-
-  @Test
-  public void shouldCallNewPayloadV3WithExecutionPayloadV2WhenInCapella() {
-    final Spec capellaSpec = TestSpecFactory.createMinimalCapella();
-    final DataStructureUtil dataStructureUtilCapella = new DataStructureUtil(capellaSpec);
-
-    final ExecutionPayload executionPayload = dataStructureUtilCapella.randomExecutionPayload();
-    final ExecutionPayloadV2 executionPayloadV2 =
-        ExecutionPayloadV2.fromInternalExecutionPayload(executionPayload);
-    assertThat(executionPayloadV2).isExactlyInstanceOf(ExecutionPayloadV2.class);
-
-    jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
-
-    when(executionEngineClient.newPayloadV3(executionPayloadV2, Optional.empty()))
-        .thenReturn(dummySuccessfulResponse());
-
-    final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).build();
-
-    assertThat(jsonRpcMethod.execute(params)).isCompleted();
-
-    verify(executionEngineClient).newPayloadV3(eq(executionPayloadV2), eq(Optional.empty()));
-    verifyNoMoreInteractions(executionEngineClient);
-  }
-
-  @Test
-  public void shouldCallNewPayloadV3WithExecutionPayloadV3AndBlobVersionedHashesWhenInDeneb() {
-    final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
-    final DataStructureUtil dataStructureUtilDeneb = new DataStructureUtil(denebSpec);
-
-    final ExecutionPayload executionPayload = dataStructureUtilDeneb.randomExecutionPayload();
-    final List<VersionedHash> blobVersionedHashes = dataStructureUtilDeneb.randomVersionedHashes(4);
     final ExecutionPayloadV3 executionPayloadV3 =
         ExecutionPayloadV3.fromInternalExecutionPayload(executionPayload);
     assertThat(executionPayloadV3).isExactlyInstanceOf(ExecutionPayloadV3.class);
 
     jsonRpcMethod = new EngineNewPayloadV3(executionEngineClient);
 
-    when(executionEngineClient.newPayloadV3(executionPayloadV3, Optional.of(blobVersionedHashes)))
+    when(executionEngineClient.newPayloadV3(
+            executionPayloadV3, blobVersionedHashes, parentBeaconBlockRoot))
         .thenReturn(dummySuccessfulResponse());
 
     final JsonRpcRequestParams params =
-        new JsonRpcRequestParams.Builder().add(executionPayload).add(blobVersionedHashes).build();
+        new JsonRpcRequestParams.Builder()
+            .add(executionPayload)
+            .add(blobVersionedHashes)
+            .add(parentBeaconBlockRoot)
+            .build();
 
     assertThat(jsonRpcMethod.execute(params)).isCompleted();
 
     verify(executionEngineClient)
-        .newPayloadV3(eq(executionPayloadV3), eq(Optional.of(blobVersionedHashes)));
+        .newPayloadV3(eq(executionPayloadV3), eq(blobVersionedHashes), eq(parentBeaconBlockRoot));
     verifyNoMoreInteractions(executionEngineClient);
   }
 

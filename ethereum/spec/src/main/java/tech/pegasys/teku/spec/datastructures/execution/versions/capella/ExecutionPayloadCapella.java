@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 
 public interface ExecutionPayloadCapella extends ExecutionPayload {
@@ -39,5 +40,10 @@ public interface ExecutionPayloadCapella extends ExecutionPayload {
   @Override
   default Optional<ExecutionPayloadCapella> toVersionCapella() {
     return Optional.of(this);
+  }
+
+  @Override
+  default SpecMilestone getMilestone() {
+    return SpecMilestone.CAPELLA;
   }
 }

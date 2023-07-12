@@ -26,7 +26,11 @@ public class StorageConfiguration {
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
-  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 32;
+
+  // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
+  // target. Let's configure 48 pruning per minute, so we have some room for catching up.
+  public static final int DEFAULT_BLOBS_PRUNING_LIMIT = 48;
+
   private final Eth1Address eth1DepositContract;
 
   private final StateStorageMode dataStorageMode;

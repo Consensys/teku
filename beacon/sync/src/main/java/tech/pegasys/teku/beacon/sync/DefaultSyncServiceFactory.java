@@ -26,8 +26,8 @@ import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSyncService;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.MultipeerSyncService;
 import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFactory;
-import tech.pegasys.teku.beacon.sync.gossip.blobs.FetchRecentBlobSidecarsService;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.FetchRecentBlocksService;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -123,13 +123,12 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     final FetchTaskFactory fetchTaskFactory = new DefaultFetchTaskFactory(p2pNetwork);
 
-    final FetchRecentBlocksService fetchRecentBlocksService =
-        FetchRecentBlocksService.create(
+    final RecentBlocksFetchService recentBlocksFetchService =
+        RecentBlocksFetchService.create(
             asyncRunner, pendingBlocks, blobSidecarPool, forwardSyncService, fetchTaskFactory);
-
-    final FetchRecentBlobSidecarsService fetchRecentBlobSidecarsService =
-        FetchRecentBlobSidecarsService.create(
-            asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory, spec);
+    final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
+        RecentBlobSidecarsFetcher.create(
+            spec, asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
 
@@ -140,8 +139,8 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     return new DefaultSyncService(
         forwardSyncService,
-        fetchRecentBlocksService,
-        fetchRecentBlobSidecarsService,
+        recentBlocksFetchService,
+        recentBlobSidecarsFetcher,
         syncStateTracker,
         historicalBlockSyncService);
   }
@@ -163,7 +162,8 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
         syncStateProvider,
         syncConfig.isReconstructHistoricStatesEnabled(),
         genesisStateResource,
-        syncConfig.fetchAllHistoricBlocks());
+        syncConfig.fetchAllHistoricBlocks(),
+        syncConfig.getHistoricalSyncBatchSize());
   }
 
   protected SyncStateTracker createSyncStateTracker(final ForwardSync forwardSync) {
@@ -187,6 +187,9 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blobSidecarPool,
+              syncConfig.getForwardSyncBatchSize(),
+              syncConfig.getForwardSyncMaxPendingBatches(),
+              syncConfig.getForwardSyncMaxBlocksPerMinute(),
               spec);
     } else {
       LOG.info("Using single peer sync");
@@ -199,6 +202,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               blockImporter,
               blobSidecarManager,
               blobSidecarPool,
+              syncConfig.getForwardSyncBatchSize(),
               spec);
     }
     return forwardSync;

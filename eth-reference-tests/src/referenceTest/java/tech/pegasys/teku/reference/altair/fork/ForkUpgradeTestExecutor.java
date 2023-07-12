@@ -38,8 +38,7 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
   @Override
   public void runTest(final TestDefinition testDefinition) throws Throwable {
     final MetaData metadata = TestDataUtils.loadYaml(testDefinition, "meta.yaml", MetaData.class);
-    final String fork = metadata.fork.toUpperCase();
-    final SpecMilestone specMilestone = SpecMilestone.valueOf(fork);
+    final SpecMilestone specMilestone = SpecMilestone.forName(metadata.fork);
     processUpgrade(testDefinition, specMilestone);
   }
 

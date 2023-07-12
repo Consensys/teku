@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.p2p.connection.ConnectionManager;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.PeerSelectionStrategy;
 import tech.pegasys.teku.networking.p2p.discovery.discv5.DiscV5Service;
 import tech.pegasys.teku.networking.p2p.discovery.noop.NoOpDiscoveryService;
@@ -43,6 +44,7 @@ public class DiscoveryNetworkBuilder {
   protected AsyncRunner asyncRunner;
   protected KeyValueStore<String, Bytes> kvStore;
   protected P2PNetwork<?> p2pNetwork;
+  protected PeerPools peerPools;
   protected PeerSelectionStrategy peerSelectionStrategy;
   protected DiscoveryConfig discoveryConfig;
   protected NetworkConfig p2pConfig;
@@ -93,7 +95,8 @@ public class DiscoveryNetworkBuilder {
         peerSelectionStrategy,
         discoveryConfig.getStaticPeers().stream()
             .map(p2pNetwork::createPeerAddress)
-            .collect(toList()));
+            .collect(toList()),
+        peerPools);
   }
 
   protected DiscoveryService createDiscoveryService() {
@@ -142,6 +145,11 @@ public class DiscoveryNetworkBuilder {
 
   public DiscoveryNetworkBuilder p2pNetwork(P2PNetwork<?> p2pNetwork) {
     this.p2pNetwork = p2pNetwork;
+    return this;
+  }
+
+  public DiscoveryNetworkBuilder peerPools(PeerPools peerPools) {
+    this.peerPools = peerPools;
     return this;
   }
 

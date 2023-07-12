@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
@@ -84,9 +85,10 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobsBundleSchema blobsBundleSchema;
   private final BlindedBlobsBundleSchema blindedBlobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
+  private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
 
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
-    super(specConfig.toVersionDeneb().orElseThrow());
+    super(specConfig);
     this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
     final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema =
         new SignedBlsToExecutionChangeSchema();
@@ -150,6 +152,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blobsBundleSchema = new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, specConfig);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
+    this.blobSidecarsByRootRequestMessageSchema =
+        new BlobSidecarsByRootRequestMessageSchema(specConfig);
   }
 
   public static SchemaDefinitionsDeneb required(final SchemaDefinitions schemaDefinitions) {
@@ -288,6 +292,10 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
     return executionPayloadAndBlobsBundleSchema;
+  }
+
+  public BlobSidecarsByRootRequestMessageSchema getBlobSidecarsByRootRequestMessageSchema() {
+    return blobSidecarsByRootRequestMessageSchema;
   }
 
   @Override

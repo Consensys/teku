@@ -24,6 +24,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public class P2PConfig {
 
@@ -43,6 +44,7 @@ public class P2PConfig {
   private final NetworkConfig networkConfig;
   private final DiscoveryConfig discoveryConfig;
   private final GossipConfigurator gossipConfigurator;
+  private final NetworkingSpecConfig networkingSpecConfig;
 
   private final GossipEncoding gossipEncoding;
   private final int targetSubnetSubscriberCount;
@@ -87,6 +89,7 @@ public class P2PConfig {
     this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
     this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
     this.blsToExecutionChangesSubnetEnabled = blsToExecutionChangesSubnetEnabled;
+    this.networkingSpecConfig = spec.getNetworkingConfig();
   }
 
   public static Builder builder() {
@@ -151,6 +154,10 @@ public class P2PConfig {
 
   public boolean isBlsToExecutionChangesSubnetEnabled() {
     return blsToExecutionChangesSubnetEnabled;
+  }
+
+  public NetworkingSpecConfig getNetworkingSpecConfig() {
+    return networkingSpecConfig;
   }
 
   public static class Builder {

@@ -33,7 +33,7 @@ public class EngineNewPayloadV1 extends AbstractEngineJsonRpcMethod<PayloadStatu
 
   @Override
   public String getName() {
-    return EngineApiMethods.ENGINE_NEW_PAYLOAD.getName();
+    return EngineApiMethod.ENGINE_NEW_PAYLOAD.getName();
   }
 
   @Override

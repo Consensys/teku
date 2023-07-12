@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.statetransition.validation.GossipValidationHelper.MAX_OFFSET_TIME_IN_SECONDS;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -96,11 +95,13 @@ public class GossipValidationHelperTest {
         spec.computeTimeAtSlot(
             recentChainData.getBestState().orElseThrow().getImmediately(), slot2);
 
-    final UInt64 notYetInsideTolerance = slot2Time.minus(MAX_OFFSET_TIME_IN_SECONDS).minus(1);
+    final UInt64 notYetInsideTolerance =
+        slot2Time.minus(gossipValidationHelper.getMaxOffsetTimeInSeconds()).minus(1);
     storageSystem.chainUpdater().setTime(notYetInsideTolerance);
     assertThat(gossipValidationHelper.isSlotFromFuture(slot2)).isTrue();
 
-    final UInt64 insideTolerance = slot2Time.minus(MAX_OFFSET_TIME_IN_SECONDS);
+    final UInt64 insideTolerance =
+        slot2Time.minus(gossipValidationHelper.getMaxOffsetTimeInSeconds());
     storageSystem.chainUpdater().setTime(insideTolerance);
     assertThat(gossipValidationHelper.isSlotFromFuture(slot2)).isFalse();
   }

@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -105,7 +105,7 @@ public class PostBlindedBlock extends RestApiEndpoint {
                 + " The beacon node performs the required validation.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
-            getSchemaDefinitionForAllMilestones(
+            getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
                 "SignedBlindedBlock",
                 SchemaDefinitions::getSignedBlindedBlockContainerSchema,
@@ -113,9 +113,9 @@ public class PostBlindedBlock extends RestApiEndpoint {
                     schemaDefinitionCache
                         .milestoneAtSlot(blockContainer.getSlot())
                         .equals(milestone)),
-            json ->
+            context ->
                 slotBasedSelector(
-                    json,
+                    context.getBody(),
                     schemaDefinitionCache,
                     SchemaDefinitions::getSignedBlindedBlockContainerSchema),
             spec::deserializeSignedBlindedBlockContainer)

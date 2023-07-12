@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class AttestationData
     extends Container5<AttestationData, SszUInt64, SszUInt64, SszBytes32, Checkpoint, Checkpoint> {
@@ -69,9 +70,19 @@ public class AttestationData
   }
 
   public UInt64 getEarliestSlotForForkChoice(final Spec spec) {
+    final UInt64 targetEpochStartSlot = getTarget().getEpochStartSlot(spec);
+    return getEarliestSlotForForkChoice(targetEpochStartSlot);
+  }
+
+  public UInt64 getEarliestSlotForForkChoice(final MiscHelpers miscHelpers) {
+    final UInt64 targetEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(getTarget().getEpoch());
+    return getEarliestSlotForForkChoice(targetEpochStartSlot);
+  }
+
+  public UInt64 getEarliestSlotForForkChoice(final UInt64 targetEpochStartSlot) {
     // Attestations can't be processed by fork choice until their slot is in the past and until we
     // are in the same epoch as their target.
-    return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot(spec));
+    return getSlot().plus(UInt64.ONE).max(targetEpochStartSlot);
   }
 
   public UInt64 getSlot() {

@@ -27,6 +27,7 @@ public abstract class Service implements ServiceFacade {
 
   private final AtomicReference<State> state = new AtomicReference<>(State.IDLE);
 
+  @Override
   public SafeFuture<?> start() {
     if (!state.compareAndSet(State.IDLE, State.RUNNING)) {
       return SafeFuture.failedFuture(
@@ -37,6 +38,7 @@ public abstract class Service implements ServiceFacade {
 
   protected abstract SafeFuture<?> doStart();
 
+  @Override
   public SafeFuture<?> stop() {
     if (state.compareAndSet(State.RUNNING, State.STOPPED)) {
       return doStop();

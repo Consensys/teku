@@ -32,13 +32,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.signers.bls.keystore.KeyStore;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.signers.bls.keystore.KeyStoreValidationException;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
+import tech.pegasys.teku.bls.keystore.KeyStore;
+import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.bls.keystore.KeyStoreValidationException;
+import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -160,7 +160,7 @@ public class LocalValidatorSource extends AbstractValidatorSource implements Val
     final Path keystorePath = keystorePasswordFilePair.getLeft();
     final Path passwordPath = keystorePasswordFilePair.getRight();
     try {
-      final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath);
+      final KeyStoreData keyStoreData = KeyStoreLoader.loadFromFile(keystorePath.toUri());
       final BLSPublicKey publicKey =
           BLSPublicKey.fromBytesCompressedValidate(Bytes48.wrap(keyStoreData.getPubkey()));
       final String password = loadPassword(passwordPath);

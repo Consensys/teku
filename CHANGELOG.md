@@ -12,6 +12,14 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Breaking Changes
 
+- `--exchange-capabilities-enabled` option has been removed since it is no longer applicable because of [execution-apis](https://github.com/ethereum/execution-apis/pull/418) spec change.
+- Removed kiln and ropsten as `--network` options
+
 ### Additions and Improvements
 
+- `--validators-external-signer-public-keys` parameter now accepts `external-signer` value. It will enable public key retrieval from external signer standard API, making sure that configured keystore and trustStore will be used, if any.
+- Stopped calling `engine_exchangeTransitionConfigurationV1` Engine API method, since the method will be deprecated in the future.
+
 ### Bug Fixes
+
+- Fix Get Attestation Rewards API to fetch beacon state instead of block and beacon state (fixes #7338)

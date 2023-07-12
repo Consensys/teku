@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import io.netty.buffer.ByteBuf;
+import java.util.Locale;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
@@ -30,19 +31,19 @@ public class RpcResponseEncoderDecoderTest extends RpcDecoderTestBase {
       RpcContextCodec.noop(RpcErrorMessage.SSZ_SCHEMA);
   private final RpcEncoding rpcEncoding =
       RpcEncoding.createSszSnappyEncoding(
-          TestSpecFactory.createDefault().getGenesisSpecConfig().getMaxChunkSize());
-  private final RpcResponseEncoder<RpcErrorMessage, ?> responseEncoder =
+          TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
+  private final RpcResponseEncoder<RpcErrorMessage, ?> errorMessageResponseEncoder =
       new RpcResponseEncoder<>(rpcEncoding, contextCodec);
-  private final RpcResponseDecoder<RpcErrorMessage, ?> responseDecoder =
+  private final RpcResponseDecoder<RpcErrorMessage, ?> errorMessageResponseDecoder =
       RpcResponseDecoder.create(rpcEncoding, contextCodec);
 
   @Test
   public void shouldEncodeErrorResponse() {
     final RpcException ex = new RpcException(ERROR_CODE.get(0), ERROR_MESSAGE);
-    final Bytes actual = responseEncoder.encodeErrorResponse(ex);
+    final Bytes actual = errorMessageResponseEncoder.encodeErrorResponse(ex);
 
     // sanity check that the encoded string is what we expect
-    assertThat(actual.toHexString().toLowerCase())
+    assertThat(actual.toHexString().toLowerCase(Locale.ROOT))
         .isEqualTo("0x010bff060000734e61507059010f0000c839768d4261642072657175657374");
 
     // when we then decode the byte stream, the same RpcException that got encoded is raised
@@ -50,10 +51,10 @@ public class RpcResponseEncoderDecoderTest extends RpcDecoderTestBase {
             () -> {
               for (Iterable<ByteBuf> testByteBufSlice : testByteBufSlices(actual)) {
                 for (ByteBuf byteBuf : testByteBufSlice) {
-                  responseDecoder.decodeNextResponses(byteBuf);
+                  errorMessageResponseDecoder.decodeNextResponses(byteBuf);
                   byteBuf.release();
                 }
-                responseDecoder.complete();
+                errorMessageResponseDecoder.complete();
               }
             })
         .isEqualTo(ex);

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.cli.BeaconNodeCommand.LOG_FILE_PREFIX;
 import static tech.pegasys.teku.cli.OSUtils.SLASH;
 import static tech.pegasys.teku.infrastructure.logging.LoggingDestination.DEFAULT_BOTH;
 
+import java.util.Locale;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -176,7 +177,8 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
   public void loglevel_shouldAcceptValuesMixedCase(String level) {
     final String[] args = {"--logging", level};
     final LoggingConfig config = getLoggingConfigurationFromArguments(args);
-    assertThat(config.getLogLevel().orElseThrow().toString()).isEqualTo(level.toUpperCase());
+    assertThat(config.getLogLevel().orElseThrow().toString())
+        .isEqualTo(level.toUpperCase(Locale.ROOT));
   }
 
   @Test

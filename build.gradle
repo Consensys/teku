@@ -21,8 +21,8 @@ buildscript {
 
 plugins {
   id 'com.diffplug.spotless' version '6.19.0'
-  id 'com.github.ben-manes.versions' version '0.46.0'
-  id 'com.github.jk1.dependency-license-report' version '2.4'
+  id 'com.github.ben-manes.versions' version '0.47.0'
+  id 'com.github.jk1.dependency-license-report' version '2.5'
   id 'io.spring.dependency-management' version '1.1.0'
   id 'net.ltgt.errorprone' version '3.1.0' apply false
   id 'de.undercouch.download' version '5.4.0'
@@ -49,8 +49,7 @@ def buildAliases = [
     'spotlessApply',
     'build',
     'checkLicense',
-    // TODO - Fix javadoc task
-    /*'javadoc'*/],
+    'javadoc'],
   'mash': [
     'clean',
     'spotlessApply',
@@ -229,7 +228,6 @@ allprojects {
       check('MethodInputParametersMustBeFinal', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('BannedMethod', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
       check('ExperimentalCliOptionMustBeCorrectlyDisplayed', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-      check('StringCaseLocaleUsage', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 
       // These are experimental checks that we want enabled
       check('MissingBraces', net.ltgt.gradle.errorprone.CheckSeverity.WARN)
@@ -289,19 +287,14 @@ allprojects {
     }
   }
 
-  // Normalize Xdoclint behaviour across JDKs (OpenJDK 8 is more lenient than Oracle JDK by default).
   javadoc {
-    options.addStringOption('Xdoclint:all', '-quiet')
-    if (JavaVersion.current() == JavaVersion.VERSION_1_8) {
-      options.addStringOption('Xwerror', '-quiet')
-    } else {
-      options.addStringOption('Xwerror', '-html5')
-    }
+    options.addStringOption('Xdoclint:all,-missing', '-quiet')
+    options.addStringOption('Xwerror', '-html5')
     options.encoding = 'UTF-8'
   }
 }
 
-def refTestVersion = 'v1.4.0-alpha.3' // Arbitrary change to refresh cache number: 1
+def refTestVersion = 'v1.4.0-beta.0' // Arbitrary change to refresh cache number: 1
 def blsRefTestVersion = 'v0.1.2'
 def refTestBaseUrl = 'https://github.com/ethereum/consensus-spec-tests/releases/download'
 def blsRefTestBaseUrl = 'https://github.com/ethereum/bls12-381-tests/releases/download'

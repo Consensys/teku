@@ -31,14 +31,14 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import tech.pegasys.signers.bls.keystore.KeyStoreLoader;
-import tech.pegasys.signers.bls.keystore.model.KeyStoreData;
 import tech.pegasys.techu.service.serviceutils.layout.SimpleDataDirLayout;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
+import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -177,7 +177,8 @@ class LocalValidatorSourceTest {
 
     assertThatThrownBy(validatorSource::getAvailableValidators)
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("KeyStore file not found: " + scryptKeystore);
+        .hasMessageStartingWith("KeyStore file not found: file:")
+        .hasMessageEndingWith(scryptKeystore.getFileName().toString());
   }
 
   private void assertProviderMatchesKey(

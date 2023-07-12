@@ -45,8 +45,7 @@ public class TransitionTestExecutor implements TestExecutor {
   }
 
   private void processUpgrade(final TestDefinition testDefinition, final MetaData metadata) {
-    final String postFork = metadata.postFork.toUpperCase();
-    final SpecMilestone milestone = SpecMilestone.valueOf(postFork);
+    final SpecMilestone milestone = SpecMilestone.forName(metadata.postFork);
     final UInt64 forkEpoch = UInt64.valueOf(metadata.forkEpoch);
     final SpecConfig config =
         SpecConfigLoader.loadConfig(

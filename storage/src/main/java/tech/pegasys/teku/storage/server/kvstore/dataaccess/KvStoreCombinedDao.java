@@ -189,13 +189,6 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addHotStateRoots(Map<Bytes32, SlotAndBlockRoot> stateRootToSlotAndBlockRootMap);
 
-    default void addHotBlobSidecars(final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
-      blobSidecars.forEach(this::addHotBlobSidecarsForBlock);
-    }
-
-    void addHotBlobSidecarsForBlock(
-        SlotAndBlockRoot slotAndBlockRoot, List<BlobSidecar> blobSidecars);
-
     void pruneHotStateRoots(List<Bytes32> stateRoots);
 
     void deleteHotState(Bytes32 blockRoot);

@@ -13,11 +13,9 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer.chains;
 
-import static tech.pegasys.teku.spec.config.Constants.FORWARD_SYNC_BATCH_SIZE;
-import static tech.pegasys.teku.spec.config.Constants.MAX_BLOCKS_PER_MINUTE;
-
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
@@ -29,16 +27,25 @@ public class SyncSourceFactory {
   private final AsyncRunner asyncRunner;
   private final TimeProvider timeProvider;
   private final Map<Eth2Peer, SyncSource> syncSourcesByPeer = new HashMap<>();
+  private final int maxBlocksPerMinute;
+  private final int batchSize;
 
-  public SyncSourceFactory(final AsyncRunner asyncRunner, final TimeProvider timeProvider) {
+  public SyncSourceFactory(
+      final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
+      final int maxBlocksPerMinute,
+      final int batchSize) {
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
+    this.maxBlocksPerMinute = maxBlocksPerMinute;
+    this.batchSize = batchSize;
   }
 
   public SyncSource getOrCreateSyncSource(final Eth2Peer peer, final Spec spec) {
     // Limit request rate to just a little under what we'd accept
-    final int maxBlocksPerMinute = MAX_BLOCKS_PER_MINUTE - FORWARD_SYNC_BATCH_SIZE.intValue() - 1;
-    final int maxBlobSidecarsPerMinute = maxBlocksPerMinute * spec.getMaxBlobsPerBlock().orElse(1);
+    final int maxBlocksPerMinute = this.maxBlocksPerMinute - batchSize - 1;
+    final Optional<Integer> maxBlobSidecarsPerMinute =
+        spec.getMaxBlobsPerBlock().map(maxBlobsPerBlock -> maxBlocksPerMinute * maxBlobsPerBlock);
 
     return syncSourcesByPeer.computeIfAbsent(
         peer,

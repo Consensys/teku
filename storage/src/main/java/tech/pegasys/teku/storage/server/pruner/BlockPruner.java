@@ -74,7 +74,8 @@ public class BlockPruner extends Service {
       return;
     }
     final UInt64 finalizedEpoch = finalizedCheckpoint.get().getEpoch();
-    final UInt64 earliestEpochToKeep = finalizedEpoch.minusMinZero(getEpochsToKeep(finalizedEpoch));
+    final UInt64 earliestEpochToKeep =
+        finalizedEpoch.minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
       LOG.debug("Not pruning as epochs to keep includes genesis");
@@ -87,9 +88,5 @@ public class BlockPruner extends Service {
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }
-  }
-
-  private int getEpochsToKeep(final UInt64 finalizedEpoch) {
-    return spec.getSpecConfig(finalizedEpoch).getMinEpochsForBlockRequests();
   }
 }

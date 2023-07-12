@@ -24,8 +24,10 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -47,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -67,6 +71,7 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
@@ -97,8 +102,11 @@ public abstract class AbstractBlockFactoryTest {
   protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
 
   protected ExecutionPayload executionPayload = null;
-  protected ExecutionPayloadHeader executionPayloadHeader = null;
   protected Optional<BlobsBundle> blobsBundle = Optional.empty();
+
+  protected ExecutionPayloadHeader executionPayloadHeader = null;
+  protected Optional<BlindedBlobsBundle> blindedBlobsBundle = Optional.empty();
+
   protected ExecutionPayloadResult cachedExecutionPayloadResult = null;
 
   @BeforeAll
@@ -220,8 +228,8 @@ public abstract class AbstractBlockFactoryTest {
       assertThat(block.getBody().getOptionalBlobKzgCommitments())
           .hasValueSatisfying(
               blobKzgCommitments ->
-                  assertThat(blobKzgCommitments.stream().map(SszKZGCommitment::getKZGCommitment))
-                      .hasSameElementsAs(blobsBundle.orElseThrow().getCommitments()));
+                  assertThat(blobKzgCommitments)
+                      .hasSameElementsAs(getCommitmentsFromBlobsBundle()));
     } else {
       assertThat(block.getBody().getOptionalBlobKzgCommitments()).isEmpty();
     }
@@ -240,8 +248,12 @@ public abstract class AbstractBlockFactoryTest {
       final SignedBlockContainer blindedBlockContainer, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
+    final BuilderPayload builderPayload = getBuilderPayload(spec);
     when(executionLayer.getUnblindedPayload(blindedBlockContainer))
-        .thenReturn(SafeFuture.completedFuture(executionPayload));
+        .thenReturn(SafeFuture.completedFuture(builderPayload));
+    // simulate caching of the unblinded payload
+    when(executionLayer.getCachedUnblindedPayload(blindedBlockContainer.getSlot()))
+        .thenReturn(Optional.ofNullable(builderPayload));
     // used for unblinding the blob sidecars
     setupCachedBlobsBundle(blindedBlockContainer.getSlot());
 
@@ -315,7 +327,8 @@ public abstract class AbstractBlockFactoryTest {
                     .prevRandao(
                         beaconStateAccessors.getRandaoMix(
                             state, beaconStateAccessors.getCurrentEpoch(state)))
-                    .timestamp(miscHelpers.computeTimeAtSlot(state, state.getSlot()))
+                    .timestamp(
+                        miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot()))
                     .withdrawals(Collections::emptyList));
     executionPayloadHeader =
         SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
@@ -328,6 +341,13 @@ public abstract class AbstractBlockFactoryTest {
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(count);
     this.blobsBundle = Optional.of(blobsBundle);
     return blobsBundle;
+  }
+
+  protected BlindedBlobsBundle prepareBlindedBlobsBundle(final Spec spec, final int count) {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle(count);
+    this.blindedBlobsBundle = Optional.of(blindedBlobsBundle);
+    return blindedBlobsBundle;
   }
 
   private void setupExecutionLayerBlockAndBlobsProduction() {
@@ -381,7 +401,8 @@ public abstract class AbstractBlockFactoryTest {
                       Optional.empty(),
                       Optional.of(
                           SafeFuture.completedFuture(
-                              HeaderWithFallbackData.create(executionPayloadHeader))));
+                              HeaderWithFallbackData.create(
+                                  executionPayloadHeader, blindedBlobsBundle))));
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
@@ -400,5 +421,39 @@ public abstract class AbstractBlockFactoryTest {
             Optional.empty());
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(Optional.of(executionPayloadResult));
+  }
+
+  private List<SszKZGCommitment> getCommitmentsFromBlobsBundle() {
+    return blobsBundle
+        .map(
+            blobsBundle ->
+                blobsBundle.getCommitments().stream()
+                    .map(SszKZGCommitment::new)
+                    .collect(Collectors.toList()))
+        .or(
+            () ->
+                blindedBlobsBundle.map(
+                    blindedBlobsBundle -> blindedBlobsBundle.getCommitments().asList()))
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "Neither BlobsBundle or BlindedBlobsBundle were prepared"));
+  }
+
+  private BuilderPayload getBuilderPayload(final Spec spec) {
+    // pre Deneb
+    if (blobsBundle.isEmpty()) {
+      return executionPayload;
+    }
+    // post Deneb
+    final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle builderBlobsBundle =
+        schemaDefinitionsDeneb
+            .getBlobsBundleSchema()
+            .createFromExecutionBlobsBundle(blobsBundle.orElseThrow());
+    return schemaDefinitionsDeneb
+        .getExecutionPayloadAndBlobsBundleSchema()
+        .create(executionPayload, builderBlobsBundle);
   }
 }

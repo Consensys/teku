@@ -14,14 +14,10 @@
 package tech.pegasys.teku.ethereum.executionclient.methods;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 public class JsonRpcRequestParams {
-
-  public static final JsonRpcRequestParams NO_PARAMS =
-      new JsonRpcRequestParams(Collections.emptyList());
 
   private final List<Object> params;
 
@@ -52,43 +48,21 @@ public class JsonRpcRequestParams {
   }
 
   @SuppressWarnings({"unchecked", "unused"})
-  public <T> Optional<List<T>> getOptionalListParameter(final int index, Class<T> __) {
-    return getOptionalParameter(index, (Class<List<T>>) (Object) List.class);
+  public <T> List<T> getRequiredListParameter(final int index, final Class<T> __) {
+    return getRequiredParameter(index, (Class<List<T>>) (Object) List.class);
   }
 
   public static class Builder {
 
     private final List<Object> params = new ArrayList<>();
 
-    public Builder add(Object param) {
+    public Builder add(final Object param) {
       this.params.add(param);
       return this;
     }
 
-    public Builder add(int index, Object param) {
-      if (params.get(index) != null) {
-        params.remove(index);
-      }
-
-      this.params.add(index, param);
-
-      return this;
-    }
-
-    public Builder addOptional(Optional<?> param) {
+    public Builder addOptional(final Optional<?> param) {
       param.ifPresent(this::add);
-      return this;
-    }
-
-    public Builder addOptional(int index, Optional<?> param) {
-      param.ifPresent(
-          p -> {
-            if (params.get(index) != null) {
-              params.remove(index);
-            }
-
-            params.add(index, p);
-          });
       return this;
     }
 

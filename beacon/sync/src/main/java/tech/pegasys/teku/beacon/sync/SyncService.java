@@ -16,8 +16,8 @@ package tech.pegasys.teku.beacon.sync;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncingStatus;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
-import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarFetcher;
-import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlockFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
+import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 
@@ -30,9 +30,9 @@ public interface SyncService extends SyncStateProvider {
 
   OptimisticHeadSubscriber getOptimisticSyncSubscriber();
 
-  RecentBlockFetcher getRecentBlockFetcher();
+  RecentBlocksFetcher getRecentBlocksFetcher();
 
-  RecentBlobSidecarFetcher getRecentBlobSidecarFetcher();
+  RecentBlobSidecarsFetcher getRecentBlobSidecarsFetcher();
 
   default boolean isSyncActive() {
     return getForwardSync().isSyncActive();

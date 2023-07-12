@@ -16,8 +16,6 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
-import static tech.pegasys.teku.spec.config.Constants.MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
@@ -506,36 +504,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .orElse(block.getSlot());
 
     final Optional<UInt64> maybeEarliestAvailabilityWindowSlotBeforeBlock =
-        getEarliestAvailabilityWindowSlotBeforeBlock(store, block.getSlot());
+        spec.atSlot(block.getSlot())
+            .getForkChoiceUtil()
+            .getEarliestAvailabilityWindowSlotBeforeBlock(spec, store, block.getSlot());
 
     return maybeEarliestAvailabilityWindowSlotBeforeBlock.map(
         earliestAvailabilityWindowSlotBeforeBlock ->
             earliestAvailabilityWindowSlotBeforeBlock.max(earliestAffectedSlot));
-  }
-
-  private Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
-      final ReadOnlyStore store, final UInt64 slot) {
-    final UInt64 currentEpoch = spec.getCurrentEpoch(store);
-    if (!spec.getForkSchedule()
-        .getSpecMilestoneAtEpoch(currentEpoch)
-        .isGreaterThanOrEqualTo(DENEB)) {
-      return Optional.empty();
-    }
-    final UInt64 firstAvailabilityWindowSlot =
-        spec.computeStartSlotAtEpoch(
-                currentEpoch.minusMinZero(MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS))
-            .max(
-                spec.getForkSchedule()
-                    .streamMilestoneBoundarySlots()
-                    .filter(pair -> pair.getLeft().isGreaterThanOrEqualTo(DENEB))
-                    .findFirst()
-                    .orElseThrow()
-                    .getRight());
-    if (firstAvailabilityWindowSlot.isLessThanOrEqualTo(slot)) {
-      return Optional.of(firstAvailabilityWindowSlot);
-    } else {
-      return Optional.empty();
-    }
   }
 
   private UInt64 getMillisIntoSlot(StoreTransaction transaction, UInt64 millisPerSlot) {

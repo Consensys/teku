@@ -65,6 +65,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
 import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.connection.TargetPeerRange;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -77,7 +78,6 @@ import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
@@ -205,10 +205,7 @@ public class Eth2P2PNetworkFactory {
 
         if (rpcEncoding == null) {
           rpcEncoding =
-              RpcEncoding.createSszSnappyEncoding(
-                  spec.isMilestoneSupported(SpecMilestone.BELLATRIX)
-                      ? spec.forMilestone(SpecMilestone.BELLATRIX).getConfig().getMaxChunkSize()
-                      : spec.forMilestone(SpecMilestone.PHASE0).getConfig().getMaxChunkSize());
+              RpcEncoding.createSszSnappyEncoding(spec.getNetworkingConfig().getMaxChunkSize());
         }
         final Eth2PeerManager eth2PeerManager =
             Eth2PeerManager.create(
@@ -236,11 +233,13 @@ public class Eth2P2PNetworkFactory {
         this.peerHandler(eth2PeerManager);
 
         final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
+        final PeerPools peerPools = new PeerPools();
         final ReputationManager reputationManager =
             new DefaultReputationManager(
                 metricsSystem,
                 StubTimeProvider.withTimeInSeconds(1000),
-                Constants.REPUTATION_MANAGER_CAPACITY);
+                Constants.REPUTATION_MANAGER_CAPACITY,
+                peerPools);
         final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
             new AttestationSubnetTopicProvider(recentChainData, gossipEncoding);
         final SyncCommitteeSubnetTopicProvider syncCommitteeTopicProvider =
@@ -272,6 +271,7 @@ public class Eth2P2PNetworkFactory {
                     LibP2PNetworkBuilder.create()
                         .asyncRunner(DelayedExecutorAsyncRunner.create())
                         .config(config.getNetworkConfig())
+                        .networkingSpecConfig(config.getNetworkingSpecConfig())
                         .privateKeyProvider(PrivateKeyGenerator::generate)
                         .reputationManager(reputationManager)
                         .metricsSystem(METRICS_SYSTEM)
@@ -282,6 +282,7 @@ public class Eth2P2PNetworkFactory {
                                 recentChainData::getMilestoneByForkDigest))
                         .gossipTopicFilter(gossipTopicsFilter)
                         .build())
+                .peerPools(peerPools)
                 .peerSelectionStrategy(
                     new Eth2PeerSelectionStrategy(
                         targetPeerRange,

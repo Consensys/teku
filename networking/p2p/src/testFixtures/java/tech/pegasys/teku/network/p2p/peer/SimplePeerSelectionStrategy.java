@@ -15,7 +15,7 @@ package tech.pegasys.teku.network.p2p.peer;
 
 import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toList;
-import static tech.pegasys.teku.networking.p2p.connection.PeerPools.PeerPool.STATIC;
+import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.STATIC;
 
 import java.util.Collection;
 import java.util.List;
@@ -56,7 +56,7 @@ public class SimplePeerSelectionStrategy implements PeerSelectionStrategy {
     final int peersToDrop = targetPeerRange.getPeersToDrop(network.getPeerCount());
     return network
         .streamPeers()
-        .filter(peer -> peerPools.getPool(peer.getId()) != STATIC)
+        .filter(peer -> peerPools.getPeerConnectionType(peer.getId()) != STATIC)
         .limit(peersToDrop)
         .collect(toList());
   }

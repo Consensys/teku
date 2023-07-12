@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.logic.versions.deneb.block;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -86,7 +87,8 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
   }
 
   @Override
-  public NewPayloadRequest computeNewPayloadRequest(final BeaconBlockBody beaconBlockBody)
+  public NewPayloadRequest computeNewPayloadRequest(
+      final BeaconState state, final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
     final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
     final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
@@ -95,7 +97,8 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
             .map(SszKZGCommitment::getKZGCommitment)
             .map(miscHelpers::kzgCommitmentToVersionedHash)
             .collect(Collectors.toList());
-    return new NewPayloadRequest(executionPayload, versionedHashes);
+    final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
+    return new NewPayloadRequest(executionPayload, versionedHashes, parentBeaconBlockRoot);
   }
 
   public SszList<SszKZGCommitment> extractBlobKzgCommitments(final BeaconBlockBody beaconBlockBody)

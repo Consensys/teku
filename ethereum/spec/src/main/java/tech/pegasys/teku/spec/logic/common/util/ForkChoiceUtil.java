@@ -23,6 +23,7 @@ import java.util.TreeMap;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -48,11 +49,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 
 public class ForkChoiceUtil {
 
-  private final SpecConfig specConfig;
-  private final BeaconStateAccessors beaconStateAccessors;
-  private final EpochProcessor epochProcessor;
-  private final AttestationUtil attestationUtil;
-  private final MiscHelpers miscHelpers;
+  protected final SpecConfig specConfig;
+  protected final BeaconStateAccessors beaconStateAccessors;
+  protected final EpochProcessor epochProcessor;
+  protected final AttestationUtil attestationUtil;
+  protected final MiscHelpers miscHelpers;
 
   public ForkChoiceUtil(
       final SpecConfig specConfig,
@@ -237,15 +238,6 @@ public class ForkChoiceUtil {
       return;
     }
 
-    // Update store.justified_checkpoint if a better checkpoint is known
-    if (!specConfig.getProgressiveBalancesMode().isFull()
-        && store
-            .getBestJustifiedCheckpoint()
-            .getEpoch()
-            .isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
-      store.setJustifiedCheckpoint(store.getBestJustifiedCheckpoint());
-    }
-
     final UInt64 previousEpoch = miscHelpers.computeEpochAtSlot(previousSlot);
     for (ProtoNodeData nodeData : store.getForkChoiceStrategy().getChainHeads(true)) {
       if (miscHelpers.computeEpochAtSlot(nodeData.getSlot()).equals(previousEpoch)) {
@@ -264,30 +256,11 @@ public class ForkChoiceUtil {
       final Checkpoint justifiedCheckpoint,
       final Checkpoint finalizedCheckpoint,
       final boolean isBlockOptimistic) {
-    if (specConfig.getProgressiveBalancesMode().isFull()) {
-      if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
-        store.setJustifiedCheckpoint(justifiedCheckpoint);
-      }
-      if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
-        store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
-      }
-    } else {
-      if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
-        if (justifiedCheckpoint
-            .getEpoch()
-            .isGreaterThan(store.getBestJustifiedCheckpoint().getEpoch())) {
-          store.setBestJustifiedCheckpoint(justifiedCheckpoint);
-        }
-        if (shouldUpdateJustifiedCheckpoint(
-            store, justifiedCheckpoint, store.getForkChoiceStrategy())) {
-          store.setJustifiedCheckpoint(justifiedCheckpoint);
-        }
-      }
-
-      if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
-        store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
-        store.setJustifiedCheckpoint(justifiedCheckpoint);
-      }
+    if (justifiedCheckpoint.getEpoch().isGreaterThan(store.getJustifiedCheckpoint().getEpoch())) {
+      store.setJustifiedCheckpoint(justifiedCheckpoint);
+    }
+    if (finalizedCheckpoint.getEpoch().isGreaterThan(store.getFinalizedCheckpoint().getEpoch())) {
+      store.setFinalizedCheckpoint(finalizedCheckpoint, isBlockOptimistic);
     }
   }
 
@@ -492,31 +465,6 @@ public class ForkChoiceUtil {
     return blockSlot.compareTo(finalizedEpochStartSlot) > 0;
   }
 
-  /*
-  To address the bouncing attack, only update conflicting justified
-  checkpoints in the fork choice if in the early slots of the epoch.
-  Otherwise, delay incorporation of new justified checkpoint until next epoch boundary.
-  See https://ethresear.ch/t/prevention-of-bouncing-attack-on-ffg/6114 for more detailed analysis and discussion.
-  */
-
-  private boolean shouldUpdateJustifiedCheckpoint(
-      ReadOnlyStore store,
-      Checkpoint newJustifiedCheckpoint,
-      ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
-    if (computeSlotsSinceEpochStart(getCurrentSlot(store))
-        .isLessThan(specConfig.getSafeSlotsToUpdateJustified())) {
-      return true;
-    }
-
-    UInt64 justifiedSlot =
-        miscHelpers.computeStartSlotAtEpoch(store.getJustifiedCheckpoint().getEpoch());
-    return hasAncestorAtSlot(
-        forkChoiceStrategy,
-        newJustifiedCheckpoint.getRoot(),
-        justifiedSlot,
-        store.getJustifiedCheckpoint().getRoot());
-  }
-
   private boolean hasAncestorAtSlot(
       ReadOnlyForkChoiceStrategy forkChoiceStrategy,
       Bytes32 root,
@@ -536,6 +484,12 @@ public class ForkChoiceUtil {
       return true;
     }
     return isBellatrixBlockOld(store, block.getSlot());
+  }
+
+  /** non-functional in early forks */
+  public Optional<UInt64> getEarliestAvailabilityWindowSlotBeforeBlock(
+      final Spec spec, final ReadOnlyStore store, final UInt64 slot) {
+    return Optional.empty();
   }
 
   private boolean isBellatrixBlockOld(final ReadOnlyStore store, final UInt64 blockSlot) {

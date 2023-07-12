@@ -36,7 +36,7 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
     this.withdrawals = withdrawals;
   }
 
-  public static Optional<PayloadAttributesV1> fromInternalPayloadBuildingAttributesV2(
+  public static Optional<PayloadAttributesV2> fromInternalPayloadBuildingAttributesV2(
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     return payloadBuildingAttributes.map(
         (payloadAttributes) ->
@@ -55,7 +55,7 @@ public class PayloadAttributesV2 extends PayloadAttributesV1 {
 
     final List<WithdrawalV1> withdrawals = new ArrayList<>();
 
-    for (Withdrawal w : maybeWithdrawals.get()) {
+    for (final Withdrawal w : maybeWithdrawals.get()) {
       withdrawals.add(
           new WithdrawalV1(w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()));
     }

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config.builder;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -29,12 +30,17 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Bytes4 denebForkVersion;
   private UInt64 denebForkEpoch;
 
-  private int fieldElementsPerBlob;
-  private int maxBlobCommitmentsPerBlock;
-  private int maxBlobsPerBlock;
+  private Integer fieldElementsPerBlob;
+  private Integer maxBlobCommitmentsPerBlock;
+  private Integer maxBlobsPerBlock;
 
   private Optional<String> trustedSetupPath = Optional.empty();
-  private boolean kzgNoop = false;
+  private Boolean kzgNoop = false;
+
+  private Integer maxRequestBlocksDeneb;
+  private Integer maxRequestBlobSidecars;
+  private Integer minEpochsForBlobSidecarsRequests;
+  private Integer blobSidecarSubnetCount;
 
   DenebBuilder() {}
 
@@ -48,7 +54,11 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
         trustedSetupPath,
-        kzgNoop);
+        kzgNoop,
+        maxRequestBlocksDeneb,
+        maxRequestBlobSidecars,
+        minEpochsForBlobSidecarsRequests,
+        blobSidecarSubnetCount);
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
@@ -63,17 +73,17 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     return this;
   }
 
-  public DenebBuilder fieldElementsPerBlob(final int fieldElementsPerBlob) {
+  public DenebBuilder fieldElementsPerBlob(final Integer fieldElementsPerBlob) {
     this.fieldElementsPerBlob = fieldElementsPerBlob;
     return this;
   }
 
-  public DenebBuilder maxBlobCommitmentsPerBlock(final int maxBlobCommitmentsPerBlock) {
+  public DenebBuilder maxBlobCommitmentsPerBlock(final Integer maxBlobCommitmentsPerBlock) {
     this.maxBlobCommitmentsPerBlock = maxBlobCommitmentsPerBlock;
     return this;
   }
 
-  public DenebBuilder maxBlobsPerBlock(final int maxBlobsPerBlock) {
+  public DenebBuilder maxBlobsPerBlock(final Integer maxBlobsPerBlock) {
     this.maxBlobsPerBlock = maxBlobsPerBlock;
     return this;
   }
@@ -83,8 +93,29 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     return this;
   }
 
-  public DenebBuilder kzgNoop(final boolean kzgNoop) {
+  public DenebBuilder kzgNoop(final Boolean kzgNoop) {
     this.kzgNoop = kzgNoop;
+    return this;
+  }
+
+  public DenebBuilder maxRequestBlocksDeneb(final Integer maxRequestBlocksDeneb) {
+    this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
+    return this;
+  }
+
+  public DenebBuilder maxRequestBlobSidecars(final Integer maxRequestBlobSidecars) {
+    this.maxRequestBlobSidecars = maxRequestBlobSidecars;
+    return this;
+  }
+
+  public DenebBuilder minEpochsForBlobSidecarsRequests(
+      final Integer minEpochsForBlobSidecarsRequests) {
+    this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
+    return this;
+  }
+
+  public DenebBuilder blobSidecarSubnetCount(final Integer blobSidecarSubnetCount) {
+    this.blobSidecarSubnetCount = blobSidecarSubnetCount;
     return this;
   }
 
@@ -94,11 +125,22 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
       denebForkEpoch = SpecConfig.FAR_FUTURE_EPOCH;
       denebForkVersion = SpecBuilderUtil.PLACEHOLDER_FORK_VERSION;
     }
+
+    // Fill default zeros if fork is unsupported
+    if (denebForkEpoch.equals(FAR_FUTURE_EPOCH)) {
+      SpecBuilderUtil.fillMissingValuesWithZeros(this);
+    }
+
     SpecBuilderUtil.validateConstant("denebForkEpoch", denebForkEpoch);
     SpecBuilderUtil.validateConstant("denebForkVersion", denebForkVersion);
     SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
     SpecBuilderUtil.validateConstant("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
     SpecBuilderUtil.validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
+    SpecBuilderUtil.validateConstant("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
+    SpecBuilderUtil.validateConstant("maxRequestBlobSidecars", maxRequestBlobSidecars);
+    SpecBuilderUtil.validateConstant(
+        "minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
+    SpecBuilderUtil.validateConstant("blobSidecarSubnetCount", blobSidecarSubnetCount);
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
     }
