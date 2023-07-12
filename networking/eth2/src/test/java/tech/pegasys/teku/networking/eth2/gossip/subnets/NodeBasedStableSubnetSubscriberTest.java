@@ -38,8 +38,23 @@ public class NodeBasedStableSubnetSubscriberTest {
   @Test
   void shouldSubscribeToExpectedSubnets() {
     final NodeBasedStableSubnetSubscriber subscriber = createSubscriber();
+    subscriber.onSlot(UInt64.ZERO);
+    verify(network, times(spec.getNetworkingConfig().getSubnetsPerNode()))
+        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
+  }
+
+  @Test
+  void shouldSubscribeToNewSubnetsAfterExpiration() {
+    final NodeBasedStableSubnetSubscriber subscriber = createSubscriber();
     subscriber.onSlot(UInt64.ONE);
     verify(network, times(spec.getNetworkingConfig().getSubnetsPerNode()))
+        .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
+    subscriber.onSlot(
+        UInt64.ONE.plus(
+            UInt64.valueOf(
+                (long) spec.getNetworkingConfig().getEpochsPerSubnetSubscription()
+                    * spec.getSlotsPerEpoch(UInt64.ONE))));
+    verify(network, times(spec.getNetworkingConfig().getSubnetsPerNode() * 2))
         .subscribeToAttestationSubnetId(intThat(i -> i >= 0 && i < attestationSubnetCount));
   }
 

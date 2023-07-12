@@ -85,8 +85,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
 
   /**
    * Adjusts the number of subscriptions to SUBNETS_PER_NODE. Returns the set of new subscriptions
-   * that were added, if there were no new subscriptions, or if there were unsubscriptions only, it
-   * returns an empty set.
+   * that were added, if there were no new subscriptions, it returns an empty set.
    */
   private Set<SubnetSubscription> adjustNumberOfSubscriptionsToNodeRequirement(
       final UInt64 currentSlot) {
@@ -112,19 +111,12 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     final Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
 
     while (subnetSubscriptions.size() < subnetsPerNode) {
-      if (nodeSubscribedSubnetsIterator.hasNext()) {
-        newSubnetSubscriptions.add(
-            subscribeToSubnet(
-                nodeSubscribedSubnetsIterator.next().intValue(),
-                spec.getGenesisSpec()
-                    .miscHelpers()
-                    .calculateNodeSubnetUnsubscriptionSlot(currentSlot)));
-      } else {
-        throw new IllegalArgumentException(
-            String.format(
-                "Unable to get enough subnet ids based on node id. Expecting %d subnet ids but got %d",
-                subnetsPerNode, nodeSubscribedSubnets.size()));
-      }
+      newSubnetSubscriptions.add(
+          subscribeToSubnet(
+              nodeSubscribedSubnetsIterator.next().intValue(),
+              spec.getGenesisSpec()
+                  .miscHelpers()
+                  .calculateNodeSubnetUnsubscriptionSlot(currentSlot)));
     }
     return newSubnetSubscriptions;
   }
