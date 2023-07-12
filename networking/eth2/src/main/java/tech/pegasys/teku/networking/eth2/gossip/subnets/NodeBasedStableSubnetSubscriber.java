@@ -39,7 +39,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
           Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
               .thenComparing(SubnetSubscription::getSubnetId));
   private final Spec spec;
-  private final int attestationSubnetCount;
   private final int subnetsPerNode;
   private final Optional<UInt256> discoveryNodeId;
 
@@ -49,7 +48,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       final Optional<UInt256> discoveryNodeId) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.spec = spec;
-    this.attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
     this.subnetsPerNode = spec.getNetworkingConfig().getSubnetsPerNode();
     this.discoveryNodeId = discoveryNodeId;
   }
@@ -65,7 +63,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       }
 
       iterator.remove();
-      int subnetId = subnetSubscription.getSubnetId();
     }
 
     // Adjust the number of subscriptions
