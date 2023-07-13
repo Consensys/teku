@@ -503,7 +503,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final BlockSelector blockSelector = mock(BlockSelector.class);
     when(blockSelector.getBlock())
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndMetaData)));
-    doReturn(blockSelector).when(blockSelectorFactory).defaultBlockSelector(any());
+    doReturn(blockSelector).when(blockSelectorFactory).createSelector(any());
   }
 
   @Test

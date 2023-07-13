@@ -42,7 +42,7 @@ public class BlockSelectorFactoryTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final SpecMilestone milestone = spec.getGenesisSpec().getMilestone();
-  final SignedBeaconBlock block = data.randomSignedBeaconBlock(100);
+  private final SignedBeaconBlock block = data.randomSignedBeaconBlock(100);
 
   private final BlockSelectorFactory blockSelectorFactory = new BlockSelectorFactory(spec, client);
 
@@ -104,8 +104,8 @@ public class BlockSelectorFactoryTest {
   }
 
   @Test
-  public void defaultBlockSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> blockSelectorFactory.defaultBlockSelector("a"));
+  public void createSelector_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> blockSelectorFactory.createSelector("a"));
   }
 
   private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {

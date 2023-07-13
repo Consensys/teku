@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
+import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -160,6 +162,35 @@ public class CombinedChainDataClient {
                 maybeBlock
                     .map(this::getStateForBlock)
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
+  }
+
+  public SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> blobSidecarKeys =
+        getBlobSidecarKeys(slotAndBlockRoot);
+    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> filteredKeysFuture =
+        blobSidecarKeys.thenApply(
+            blobKeys ->
+                blobKeys.stream()
+                    .filter(
+                        blobKey -> {
+                          if (indices.isEmpty()) {
+                            return true;
+                          } else {
+                            return indices.contains(blobKey.getBlobIndex());
+                          }
+                        })
+                    .collect(toList()));
+    return filteredKeysFuture
+        .thenCompose(
+            keys -> {
+              final Stream<SafeFuture<Optional<BlobSidecar>>> maybeBlobSidecarsFutures =
+                  keys.stream().map(this::getBlobSidecarByKey);
+              return SafeFuture.collectAll(maybeBlobSidecarsFutures);
+            })
+        .thenApply(
+            maybeBlobSidecars ->
+                maybeBlobSidecars.stream().flatMap(Optional::stream).collect(toList()));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {

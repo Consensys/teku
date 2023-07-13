@@ -37,30 +37,31 @@ public class StateSelectorFactory {
     this.client = client;
   }
 
-  public StateSelector byBlockRootStateSelector(final String selectorMethod) {
-    if (selectorMethod.startsWith("0x")) {
+  public StateSelector createSelectorByBlockId(final String blockId) {
+    if (blockId.startsWith("0x")) {
       try {
-        return forBlockRoot(Bytes32.fromHexString(selectorMethod));
+        return forBlockRoot(Bytes32.fromHexString(blockId));
       } catch (IllegalArgumentException ex) {
-        throw new BadRequestException("Invalid state: " + selectorMethod);
+        throw new BadRequestException("Invalid block id: " + blockId);
       }
     }
-    return byKeywordOrSlot(selectorMethod);
+    return byKeywordOrSlot(blockId);
   }
 
-  public StateSelector defaultStateSelector(final String selectorMethod) {
-    if (selectorMethod.startsWith("0x")) {
+  /** Parsing of the state_id parameter to determine the selector to return */
+  public StateSelector createSelector(final String stateId) {
+    if (stateId.startsWith("0x")) {
       try {
-        return forStateRoot(Bytes32.fromHexString(selectorMethod));
+        return forStateRoot(Bytes32.fromHexString(stateId));
       } catch (IllegalArgumentException ex) {
-        throw new BadRequestException("Invalid state: " + selectorMethod);
+        throw new BadRequestException("Invalid state id: " + stateId);
       }
     }
-    return byKeywordOrSlot(selectorMethod);
+    return byKeywordOrSlot(stateId);
   }
 
-  public StateSelector byKeywordOrSlot(final String selectorMethod) {
-    switch (selectorMethod) {
+  public StateSelector byKeywordOrSlot(final String identifier) {
+    switch (identifier) {
       case "head":
         return headSelector();
       case "genesis":
@@ -71,9 +72,9 @@ public class StateSelectorFactory {
         return justifiedSelector();
     }
     try {
-      return forSlot(UInt64.valueOf(selectorMethod));
+      return forSlot(UInt64.valueOf(identifier));
     } catch (NumberFormatException ex) {
-      throw new BadRequestException("Invalid state: " + selectorMethod);
+      throw new BadRequestException("Invalid identifier: " + identifier);
     }
   }
 

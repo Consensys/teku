@@ -130,13 +130,13 @@ public class StateSelectorFactoryTest {
   }
 
   @Test
-  public void defaultStateSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("a"));
+  public void createSelector_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> factory.createSelector("a"));
   }
 
   @Test
-  public void byBlockRootSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> factory.byBlockRootStateSelector("a"));
+  public void byBlockIdSelector_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> factory.createSelectorByBlockId("a"));
   }
 
   @Test
@@ -153,13 +153,13 @@ public class StateSelectorFactoryTest {
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.isPreForkChoice()).thenReturn(true);
     final SafeFuture<Optional<StateAndMetaData>> future =
-        factory.defaultStateSelector(ZERO.toString()).getState();
+        factory.createSelector(ZERO.toString()).getState();
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 
   @Test
-  public void defaultBlockSelector_shouldThrowBadRequestForBadHexState() {
-    assertThrows(BadRequestException.class, () -> factory.defaultStateSelector("0xzz"));
+  public void createSelector_shouldThrowBadRequestForBadHexState() {
+    assertThrows(BadRequestException.class, () -> factory.createSelector("0xzz"));
   }
 
   private StateAndMetaData withMetaData(final BeaconState state) {
