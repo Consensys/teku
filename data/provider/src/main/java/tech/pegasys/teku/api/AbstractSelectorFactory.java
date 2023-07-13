@@ -20,6 +20,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public abstract class AbstractSelectorFactory<T> {
 
+  public static final String HEX_PREFIX = "0x";
+
   public static final String HEAD = "head";
   public static final String GENESIS = "genesis";
   public static final String FINALIZED = "finalized";
@@ -36,8 +38,8 @@ public abstract class AbstractSelectorFactory<T> {
     if (isHexString(stateId)) {
       try {
         return stateRootSelector(Bytes32.fromHexString(stateId));
-      } catch (final IllegalArgumentException e) {
-        throw createBadArgumentException(stateId);
+      } catch (final IllegalArgumentException __) {
+        throw badRequestException(stateId);
       }
     }
     return createSelectorForKeywordOrSlot(stateId);
@@ -48,8 +50,8 @@ public abstract class AbstractSelectorFactory<T> {
     if (isHexString(blockId)) {
       try {
         return blockRootSelector(Bytes32.fromHexString(blockId));
-      } catch (final IllegalArgumentException e) {
-        throw createBadArgumentException(blockId);
+      } catch (final IllegalArgumentException __) {
+        throw badRequestException(blockId);
       }
     }
     return createSelectorForKeywordOrSlot(blockId);
@@ -68,8 +70,8 @@ public abstract class AbstractSelectorFactory<T> {
     }
     try {
       return slotSelector(UInt64.valueOf(identifier));
-    } catch (final NumberFormatException ex) {
-      throw createBadArgumentException(identifier);
+    } catch (final NumberFormatException __) {
+      throw badRequestException(identifier);
     }
   }
 
@@ -88,10 +90,10 @@ public abstract class AbstractSelectorFactory<T> {
   public abstract T slotSelector(UInt64 slot);
 
   private boolean isHexString(final String identifier) {
-    return identifier.startsWith("0x");
+    return identifier.startsWith(HEX_PREFIX);
   }
 
-  private BadRequestException createBadArgumentException(final String identifier) {
+  private BadRequestException badRequestException(final String identifier) {
     return new BadRequestException("Invalid identifier: " + identifier);
   }
 }
