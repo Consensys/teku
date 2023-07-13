@@ -670,9 +670,9 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<List<Withdrawal>>>> getExpectedWithdrawals(
-      String stateParameter, Optional<UInt64> optionalProposalSlot) {
+      String stateIdParam, Optional<UInt64> optionalProposalSlot) {
     return stateSelectorFactory
-        .createSelector(stateParameter)
+        .createSelector(stateIdParam)
         .getState()
         .thenApply(
             maybeStateData ->
