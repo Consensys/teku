@@ -104,9 +104,21 @@ public class BlockSelectorFactoryTest {
   }
 
   @Test
-  public void createSelector_shouldThrowBadRequestException() {
+  public void createSelectorForBlockId_shouldThrowBadRequestException() {
     assertThrows(
         BadRequestException.class, () -> blockSelectorFactory.createSelectorForBlockId("a"));
+  }
+
+  @Test
+  public void stateRootSelector_shouldThrowUnsupportedOperationException() {
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> blockSelectorFactory.stateRootSelector(data.randomBytes32()));
+  }
+
+  @Test
+  public void justifiedSelector_shouldThrowUnsupportedOperationException() {
+    assertThrows(UnsupportedOperationException.class, blockSelectorFactory::justifiedSelector);
   }
 
   private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {

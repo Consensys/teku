@@ -140,7 +140,7 @@ public class StateSelectorFactoryTest {
   }
 
   @Test
-  public void stateSelector_shouldReturnEmptyWhenPreForkChoice() {
+  public void createSelectorForStateId_shouldReturnEmptyWhenPreForkChoice() {
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
     final RecentChainData recentChainData = mock(RecentChainData.class);
     final CombinedChainDataClient client1 =

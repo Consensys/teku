@@ -116,8 +116,21 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
-  public void createSelector_shouldThrowBadRequestException() {
+  public void createSelectorForBlockId_shouldThrowBadRequestException() {
     assertThrows(
         BadRequestException.class, () -> blobSidecarSelectorFactory.createSelectorForBlockId("a"));
+  }
+
+  @Test
+  public void stateRootSelector_shouldThrowUnsupportedOperationException() {
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> blobSidecarSelectorFactory.stateRootSelector(data.randomBytes32()));
+  }
+
+  @Test
+  public void justifiedSelector_shouldThrowUnsupportedOperationException() {
+    assertThrows(
+        UnsupportedOperationException.class, blobSidecarSelectorFactory::justifiedSelector);
   }
 }
