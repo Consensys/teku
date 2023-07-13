@@ -160,7 +160,7 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<BlockAndMetaData>> getBlockAndMetaData(final String blockIdParam) {
-    return blockSelectorFactory.createSelector(blockIdParam).getBlock();
+    return blockSelectorFactory.createSelectorForBlockId(blockIdParam).getBlock();
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> getBlindedBlock(
@@ -182,7 +182,9 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
       final String blockIdParam, final List<UInt64> indices) {
-    return blobSidecarSelectorFactory.createSelector(blockIdParam).getBlobSidecars(indices);
+    return blobSidecarSelectorFactory
+        .createSelectorForBlockId(blockIdParam)
+        .getBlobSidecars(indices);
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {
@@ -211,7 +213,7 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<StateAndMetaData>> getBeaconStateAndMetadata(
       final String stateIdParam) {
-    return stateSelectorFactory.createSelector(stateIdParam).getState();
+    return stateSelectorFactory.createSelectorForStateId(stateIdParam).getState();
   }
 
   public SafeFuture<List<BlockAndMetaData>> getAllBlocksAtSlot(final UInt64 slot) {
@@ -219,9 +221,9 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState>>
-      getBeaconStateByBlockRoot(final String blockIdParam) {
+      getBeaconStateByBlockId(final String blockIdParam) {
     return stateSelectorFactory
-        .createSelectorByBlockId(blockIdParam)
+        .createSelectorForBlockId(blockIdParam)
         .getState()
         .thenApply(maybeState -> maybeState.map(ObjectAndMetaData::getData));
   }
@@ -510,7 +512,7 @@ public class ChainDataProvider {
   public SafeFuture<Optional<ObjectAndMetaData<LightClientBootstrap>>> getLightClientBoostrap(
       final Bytes32 blockRootParam) {
     return stateSelectorFactory
-        .forBlockRoot(blockRootParam)
+        .blockRootSelector(blockRootParam)
         .getState()
         .thenApply(maybeStateData -> maybeStateData.flatMap(this::getLightClientBootstrap));
   }
@@ -672,7 +674,7 @@ public class ChainDataProvider {
   public SafeFuture<Optional<ObjectAndMetaData<List<Withdrawal>>>> getExpectedWithdrawals(
       String stateIdParam, Optional<UInt64> optionalProposalSlot) {
     return stateSelectorFactory
-        .createSelector(stateIdParam)
+        .createSelectorForStateId(stateIdParam)
         .getState()
         .thenApply(
             maybeStateData ->
@@ -745,7 +747,7 @@ public class ChainDataProvider {
   private <T> SafeFuture<Optional<ObjectAndMetaData<T>>> fromBlock(
       final String blockIdParam, final Function<SignedBeaconBlock, T> mapper) {
     return blockSelectorFactory
-        .createSelector(blockIdParam)
+        .createSelectorForBlockId(blockIdParam)
         .getBlock()
         .thenApply(maybeBlockData -> maybeBlockData.map(blockData -> blockData.map(mapper)));
   }
@@ -755,7 +757,7 @@ public class ChainDataProvider {
       final Function<tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState, T>
           mapper) {
     return stateSelectorFactory
-        .createSelector(stateIdParam)
+        .createSelectorForStateId(stateIdParam)
         .getState()
         .thenApply(maybeStateData -> maybeStateData.map(blockData -> blockData.map(mapper)));
   }

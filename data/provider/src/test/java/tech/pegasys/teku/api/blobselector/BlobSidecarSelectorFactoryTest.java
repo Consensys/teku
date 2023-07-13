@@ -95,7 +95,10 @@ public class BlobSidecarSelectorFactoryTest {
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
     final Optional<List<BlobSidecar>> result =
-        blobSidecarSelectorFactory.forBlockRoot(block.getRoot()).getBlobSidecars(indices).get();
+        blobSidecarSelectorFactory
+            .blockRootSelector(block.getRoot())
+            .getBlobSidecars(indices)
+            .get();
     assertThat(result).hasValue(blobSidecars);
   }
 
@@ -108,12 +111,13 @@ public class BlobSidecarSelectorFactoryTest {
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
     final Optional<List<BlobSidecar>> result =
-        blobSidecarSelectorFactory.forSlot(block.getSlot()).getBlobSidecars(indices).get();
+        blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
     assertThat(result).hasValue(blobSidecars);
   }
 
   @Test
   public void createSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> blobSidecarSelectorFactory.createSelector("a"));
+    assertThrows(
+        BadRequestException.class, () -> blobSidecarSelectorFactory.createSelectorForBlockId("a"));
   }
 }

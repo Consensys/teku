@@ -18,7 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.AbstractBlockIdSelectorFactory;
+import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -26,15 +26,19 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-public class BlobSidecarSelectorFactory
-    extends AbstractBlockIdSelectorFactory<BlobSidecarSelector> {
+public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSidecarSelector> {
 
   public BlobSidecarSelectorFactory(final CombinedChainDataClient combinedChainDataClient) {
     super(combinedChainDataClient);
   }
 
   @Override
-  public BlobSidecarSelector forBlockRoot(final Bytes32 blockRoot) {
+  public BlobSidecarSelector stateRootSelector(final Bytes32 stateRoot) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public BlobSidecarSelector blockRootSelector(final Bytes32 blockRoot) {
     return indices ->
         client
             .getBlockByBlockRoot(blockRoot)
@@ -72,7 +76,12 @@ public class BlobSidecarSelectorFactory
   }
 
   @Override
-  public BlobSidecarSelector forSlot(final UInt64 slot) {
+  public BlobSidecarSelector justifiedSelector() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public BlobSidecarSelector slotSelector(final UInt64 slot) {
     return indices ->
         client
             .getBlockAtSlotExact(slot)

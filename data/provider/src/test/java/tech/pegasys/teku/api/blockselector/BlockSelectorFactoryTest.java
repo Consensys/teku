@@ -85,7 +85,7 @@ public class BlockSelectorFactoryTest {
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     List<BlockAndMetaData> blockList =
-        blockSelectorFactory.forBlockRoot(block.getRoot()).getBlocks().get();
+        blockSelectorFactory.blockRootSelector(block.getRoot()).getBlocks().get();
     verify(client).getBlockByBlockRoot(block.getRoot());
     assertThat(blockList).containsExactly(withMetaData(block));
   }
@@ -98,14 +98,15 @@ public class BlockSelectorFactoryTest {
     when(client.getBlockAtSlotExact(block.getSlot(), head.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     List<BlockAndMetaData> blockList =
-        blockSelectorFactory.forSlot(block.getSlot()).getBlocks().get();
+        blockSelectorFactory.slotSelector(block.getSlot()).getBlocks().get();
     verify(client).getBlockAtSlotExact(block.getSlot(), head.getRoot());
     assertThat(blockList).containsExactly(withMetaData(block));
   }
 
   @Test
   public void createSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> blockSelectorFactory.createSelector("a"));
+    assertThrows(
+        BadRequestException.class, () -> blockSelectorFactory.createSelectorForBlockId("a"));
   }
 
   private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {

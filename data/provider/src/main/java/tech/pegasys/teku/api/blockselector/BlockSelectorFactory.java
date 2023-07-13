@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.AbstractBlockIdSelectorFactory;
+import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-public class BlockSelectorFactory extends AbstractBlockIdSelectorFactory<BlockSelector> {
+public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector> {
 
   private final Spec spec;
 
@@ -40,7 +40,12 @@ public class BlockSelectorFactory extends AbstractBlockIdSelectorFactory<BlockSe
   }
 
   @Override
-  public BlockSelector forBlockRoot(final Bytes32 blockRoot) {
+  public BlockSelector stateRootSelector(final Bytes32 stateRoot) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public BlockSelector blockRootSelector(final Bytes32 blockRoot) {
     return () ->
         optionalToList(client.getBlockByBlockRoot(blockRoot).thenApply(this::lookupBlockData));
   }
@@ -70,6 +75,11 @@ public class BlockSelectorFactory extends AbstractBlockIdSelectorFactory<BlockSe
   }
 
   @Override
+  public BlockSelector justifiedSelector() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public BlockSelector genesisSelector() {
     return () ->
         optionalToList(
@@ -79,7 +89,7 @@ public class BlockSelectorFactory extends AbstractBlockIdSelectorFactory<BlockSe
   }
 
   @Override
-  public BlockSelector forSlot(final UInt64 slot) {
+  public BlockSelector slotSelector(final UInt64 slot) {
     return () -> optionalToList(forSlot(client.getChainHead(), slot));
   }
 

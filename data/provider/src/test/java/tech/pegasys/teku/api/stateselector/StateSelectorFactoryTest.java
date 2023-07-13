@@ -90,31 +90,31 @@ public class StateSelectorFactoryTest {
   }
 
   @Test
-  public void forSlot_shouldGetStateAtSlotExact() {
+  public void slotSelector_shouldGetStateAtSlotExact() {
     final SignedBlockAndState blockAndState =
         data.randomSignedBlockAndState(state.getSlot().plus(5));
     final ChainHead chainHead = ChainHead.create(blockAndState);
     when(client.getChainHead()).thenReturn(Optional.of(chainHead));
     when(client.getStateAtSlotExact(state.getSlot(), chainHead.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<StateAndMetaData> result = safeJoin(factory.forSlot(state.getSlot()).getState());
+    Optional<StateAndMetaData> result = safeJoin(factory.slotSelector(state.getSlot()).getState());
     assertThat(result).contains(withMetaData(state));
   }
 
   @Test
-  public void forSlot_shouldReturnEmptyWhenSlotAfterChainHead() {
+  public void slotSelector_shouldReturnEmptyWhenSlotAfterChainHead() {
     final SignedBlockAndState blockAndState = data.randomSignedBlockAndState(15);
     final ChainHead chainHead = ChainHead.create(blockAndState);
     when(client.getChainHead()).thenReturn(Optional.of(chainHead));
     when(client.getStateAtSlotExact(chainHead.getSlot().plus(1), chainHead.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
-    Optional<StateAndMetaData> result = safeJoin(factory.forSlot(state.getSlot()).getState());
+    Optional<StateAndMetaData> result = safeJoin(factory.slotSelector(state.getSlot()).getState());
     assertThat(result).isEmpty();
     verify(client, never()).getStateAtSlotExact(any(), any());
   }
 
   @Test
-  public void forStateRoot_shouldGetStateAtSlotExact() {
+  public void stateRootSelector_shouldGetStateAtSlotExact() {
     final Bytes32 blockRoot = BeaconBlockHeader.fromState(state).getRoot();
     final SignedBlockAndState head =
         data.randomSignedBlockAndState(state.getSlot().plus(3), blockRoot);
@@ -124,19 +124,19 @@ public class StateSelectorFactoryTest {
     when(client.getStateByStateRoot(state.hashTreeRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     Optional<StateAndMetaData> result =
-        safeJoin(factory.forStateRoot(state.hashTreeRoot()).getState());
+        safeJoin(factory.stateRootSelector(state.hashTreeRoot()).getState());
     assertThat(result).contains(withMetaData(state));
     verify(client).getStateByStateRoot(state.hashTreeRoot());
   }
 
   @Test
-  public void createSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> factory.createSelector("a"));
+  public void createSelectorForStateId_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> factory.createSelectorForStateId("a"));
   }
 
   @Test
-  public void byBlockIdSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> factory.createSelectorByBlockId("a"));
+  public void createSelectorForBlockId_shouldThrowBadRequestException() {
+    assertThrows(BadRequestException.class, () -> factory.createSelectorForBlockId("a"));
   }
 
   @Test
@@ -153,13 +153,13 @@ public class StateSelectorFactoryTest {
     when(recentChainData.isPreGenesis()).thenReturn(false);
     when(recentChainData.isPreForkChoice()).thenReturn(true);
     final SafeFuture<Optional<StateAndMetaData>> future =
-        factory.createSelector(ZERO.toString()).getState();
+        factory.createSelectorForStateId(ZERO.toString()).getState();
     assertThatSafeFuture(future).isCompletedWithEmptyOptional();
   }
 
   @Test
-  public void createSelector_shouldThrowBadRequestForBadHexState() {
-    assertThrows(BadRequestException.class, () -> factory.createSelector("0xzz"));
+  public void createSelectorForStateId_shouldThrowBadRequestForBadHexState() {
+    assertThrows(BadRequestException.class, () -> factory.createSelectorForStateId("0xzz"));
   }
 
   private StateAndMetaData withMetaData(final BeaconState state) {
