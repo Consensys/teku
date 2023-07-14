@@ -76,11 +76,6 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
   }
 
   @Override
-  public BlobSidecarSelector justifiedSelector() {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public BlobSidecarSelector slotSelector(final UInt64 slot) {
     return indices ->
         client
