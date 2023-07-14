@@ -45,7 +45,11 @@ public abstract class AbstractSelectorFactory<T> {
         throw badRequestException(STATE_ID, stateId);
       }
     }
-    return createSelectorForKeywordOrSlot(STATE_ID, stateId);
+    try {
+      return createSelectorForKeywordOrSlot(STATE_ID, stateId);
+    } catch (final UnsupportedOperationException __) {
+      throw badRequestException(STATE_ID, stateId);
+    }
   }
 
   /** Parsing of the {block_id} parameter to determine the selector to return */
@@ -57,7 +61,11 @@ public abstract class AbstractSelectorFactory<T> {
         throw badRequestException(BLOCK_ID, blockId);
       }
     }
-    return createSelectorForKeywordOrSlot(BLOCK_ID, blockId);
+    try {
+      return createSelectorForKeywordOrSlot(BLOCK_ID, blockId);
+    } catch (final UnsupportedOperationException __) {
+      throw badRequestException(BLOCK_ID, blockId);
+    }
   }
 
   public abstract T stateRootSelector(Bytes32 stateRoot);
@@ -82,7 +90,8 @@ public abstract class AbstractSelectorFactory<T> {
     return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
   }
 
-  private T createSelectorForKeywordOrSlot(final String type, final String identifier) {
+  private T createSelectorForKeywordOrSlot(final String type, final String identifier)
+      throws UnsupportedOperationException {
     switch (identifier) {
       case HEAD:
         return headSelector();
@@ -91,11 +100,7 @@ public abstract class AbstractSelectorFactory<T> {
       case FINALIZED:
         return finalizedSelector();
       case JUSTIFIED:
-        // justified keyword only used for {state_id} parameter
-        if (type.equals(STATE_ID)) {
-          return justifiedSelector();
-        }
-        throw badRequestException(type, identifier);
+        return justifiedSelector();
     }
     try {
       return slotSelector(UInt64.valueOf(identifier));
