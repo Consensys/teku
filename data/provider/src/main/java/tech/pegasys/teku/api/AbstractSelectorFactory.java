@@ -92,10 +92,6 @@ public abstract class AbstractSelectorFactory<T> {
     return identifier.startsWith(HEX_PREFIX);
   }
 
-  private BadRequestException badRequestException(final String type, final String identifier) {
-    return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
-  }
-
   private T createSelectorForKeywordOrSlot(final String identifier) {
     switch (identifier) {
       case HEAD:
@@ -108,5 +104,9 @@ public abstract class AbstractSelectorFactory<T> {
         return justifiedSelector();
     }
     return slotSelector(UInt64.valueOf(identifier));
+  }
+
+  private BadRequestException badRequestException(final String type, final String identifier) {
+    return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
   }
 }
