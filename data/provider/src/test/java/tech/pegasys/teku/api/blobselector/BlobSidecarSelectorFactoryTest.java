@@ -137,7 +137,7 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
-  public void slotSelector_shouldGetBlobSidecarsByRetrievingBlock()
+  public void slotSelector_shouldGetBlobSidecarsByRetrievingBlockWhenSlotNotFinalized()
       throws ExecutionException, InterruptedException {
     when(client.isFinalized(block.getSlot())).thenReturn(false);
     when(client.getBlockAtSlotExact(block.getSlot()))

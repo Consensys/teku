@@ -164,6 +164,10 @@ public class CombinedChainDataClient {
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
 
+  /**
+   * Retrieves blob sidecars for the given slot. If the slot is not finalized, it could return
+   * non-canonical blob sidecars.
+   */
   public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
     return historicalChainData
