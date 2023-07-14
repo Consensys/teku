@@ -20,12 +20,15 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public abstract class AbstractSelectorFactory<T> {
 
-  public static final String HEX_PREFIX = "0x";
+  private static final String HEX_PREFIX = "0x";
 
-  public static final String HEAD = "head";
-  public static final String GENESIS = "genesis";
-  public static final String FINALIZED = "finalized";
-  public static final String JUSTIFIED = "justified";
+  private static final String BLOCK_ID = "block ID";
+  private static final String STATE_ID = "state ID";
+
+  private static final String HEAD = "head";
+  private static final String GENESIS = "genesis";
+  private static final String FINALIZED = "finalized";
+  private static final String JUSTIFIED = "justified";
 
   protected CombinedChainDataClient client;
 
@@ -39,10 +42,10 @@ public abstract class AbstractSelectorFactory<T> {
       try {
         return stateRootSelector(Bytes32.fromHexString(stateId));
       } catch (final IllegalArgumentException __) {
-        throw badRequestException(stateId);
+        throw badRequestException(STATE_ID, stateId);
       }
     }
-    return createSelectorForKeywordOrSlot(stateId);
+    return createSelectorForKeywordOrSlot(STATE_ID, stateId);
   }
 
   /** Parsing of the block_id parameter to determine the selector to return */
@@ -51,28 +54,10 @@ public abstract class AbstractSelectorFactory<T> {
       try {
         return blockRootSelector(Bytes32.fromHexString(blockId));
       } catch (final IllegalArgumentException __) {
-        throw badRequestException(blockId);
+        throw badRequestException(BLOCK_ID, blockId);
       }
     }
-    return createSelectorForKeywordOrSlot(blockId);
-  }
-
-  public T createSelectorForKeywordOrSlot(final String identifier) {
-    switch (identifier) {
-      case HEAD:
-        return headSelector();
-      case GENESIS:
-        return genesisSelector();
-      case FINALIZED:
-        return finalizedSelector();
-      case JUSTIFIED:
-        return justifiedSelector();
-    }
-    try {
-      return slotSelector(UInt64.valueOf(identifier));
-    } catch (final NumberFormatException __) {
-      throw badRequestException(identifier);
-    }
+    return createSelectorForKeywordOrSlot(BLOCK_ID, blockId);
   }
 
   public abstract T stateRootSelector(Bytes32 stateRoot);
@@ -89,11 +74,29 @@ public abstract class AbstractSelectorFactory<T> {
 
   public abstract T slotSelector(UInt64 slot);
 
+  private T createSelectorForKeywordOrSlot(final String type, final String identifier) {
+    switch (identifier) {
+      case HEAD:
+        return headSelector();
+      case GENESIS:
+        return genesisSelector();
+      case FINALIZED:
+        return finalizedSelector();
+      case JUSTIFIED:
+        return justifiedSelector();
+    }
+    try {
+      return slotSelector(UInt64.valueOf(identifier));
+    } catch (final NumberFormatException __) {
+      throw badRequestException(type, identifier);
+    }
+  }
+
   private boolean isHexString(final String identifier) {
     return identifier.startsWith(HEX_PREFIX);
   }
 
-  private BadRequestException badRequestException(final String identifier) {
-    return new BadRequestException("Invalid identifier: " + identifier);
+  private BadRequestException badRequestException(final String type, final String identifier) {
+    return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
   }
 }

@@ -28,8 +28,8 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSidecarSelector> {
 
-  public BlobSidecarSelectorFactory(final CombinedChainDataClient combinedChainDataClient) {
-    super(combinedChainDataClient);
+  public BlobSidecarSelectorFactory(final CombinedChainDataClient client) {
+    super(client);
   }
 
   @Override

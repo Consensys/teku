@@ -31,9 +31,8 @@ public class StateSelectorFactory extends AbstractSelectorFactory<StateSelector>
 
   private final Spec spec;
 
-  public StateSelectorFactory(
-      final Spec spec, final CombinedChainDataClient combinedChainDataClient) {
-    super(combinedChainDataClient);
+  public StateSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
+    super(client);
     this.spec = spec;
   }
 

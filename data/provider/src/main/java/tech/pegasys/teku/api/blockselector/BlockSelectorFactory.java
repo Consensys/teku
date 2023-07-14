@@ -33,9 +33,8 @@ public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector>
 
   private final Spec spec;
 
-  public BlockSelectorFactory(
-      final Spec spec, final CombinedChainDataClient combinedChainDataClient) {
-    super(combinedChainDataClient);
+  public BlockSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
+    super(client);
     this.spec = spec;
   }
 
