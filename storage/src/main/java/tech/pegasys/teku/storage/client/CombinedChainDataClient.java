@@ -164,33 +164,39 @@ public class CombinedChainDataClient {
                     .orElseGet(() -> SafeFuture.completedFuture(Optional.empty())));
   }
 
+  /**
+   * Retrieves blob sidecars for the given slot. If the slot is not finalized, it could return
+   * non-canonical blob sidecars.
+   */
+  public SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return historicalChainData
+        .getBlobSidecarKeys(slot)
+        .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
+        .thenCompose(this::getBlobSidecars);
+  }
+
   public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
-    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> blobSidecarKeys =
-        getBlobSidecarKeys(slotAndBlockRoot);
-    final SafeFuture<List<SlotAndBlockRootAndBlobIndex>> filteredKeysFuture =
-        blobSidecarKeys.thenApply(
-            blobKeys ->
-                blobKeys.stream()
-                    .filter(
-                        blobKey -> {
-                          if (indices.isEmpty()) {
-                            return true;
-                          } else {
-                            return indices.contains(blobKey.getBlobIndex());
-                          }
-                        })
-                    .collect(toList()));
-    return filteredKeysFuture
-        .thenCompose(
-            keys -> {
-              final Stream<SafeFuture<Optional<BlobSidecar>>> maybeBlobSidecarsFutures =
-                  keys.stream().map(this::getBlobSidecarByKey);
-              return SafeFuture.collectAll(maybeBlobSidecarsFutures);
-            })
+    return historicalChainData
+        .getBlobSidecarKeys(slotAndBlockRoot)
+        .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
+        .thenCompose(this::getBlobSidecars);
+  }
+
+  private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
+      final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return keys.stream();
+    }
+    return keys.stream().filter(key -> indices.contains(key.getBlobIndex()));
+  }
+
+  private SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
+    return SafeFuture.collectAll(keys.map(this::getBlobSidecarByKey))
         .thenApply(
-            maybeBlobSidecars ->
-                maybeBlobSidecars.stream().flatMap(Optional::stream).collect(toList()));
+            blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).collect(toList()));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
@@ -362,6 +368,10 @@ public class CombinedChainDataClient {
             maybeSlot -> maybeSlot.map(this::getStateAtSlotExact).orElse(STATE_NOT_AVAILABLE));
   }
 
+  public SafeFuture<Optional<UInt64>> getFinalizedSlotByBlockRoot(final Bytes32 blockRoot) {
+    return historicalChainData.getFinalizedSlotByBlockRoot(blockRoot);
+  }
+
   private SafeFuture<Optional<BeaconState>> getStateFromSlotAndBlock(
       final SlotAndBlockRoot slotAndBlockRoot) {
     final UpdatableStore store = getStore();
@@ -491,21 +501,6 @@ public class CombinedChainDataClient {
     return recentChainData.getAncestorRootsOnHeadChain(startSlot, step, count);
   }
 
-  public boolean isAncestorOfCanonicalHead(final SlotAndBlockRoot slotAndBlockRoot) {
-    final Optional<ChainHead> chainHead = recentChainData.getChainHead();
-    final Optional<ReadOnlyForkChoiceStrategy> forkChoiceStrategy =
-        recentChainData.getForkChoiceStrategy();
-    if (chainHead.isEmpty() || forkChoiceStrategy.isEmpty()) {
-      return false;
-    }
-
-    return forkChoiceStrategy
-        .get()
-        .getAncestor(chainHead.get().getRoot(), slotAndBlockRoot.getSlot())
-        .map(blockRootAtSlot -> blockRootAtSlot.equals(slotAndBlockRoot.getBlockRoot()))
-        .orElse(false);
-  }
-
   /** @return The earliest available block's slot */
   public SafeFuture<Optional<UInt64>> getEarliestAvailableBlockSlot() {
     return earliestAvailableBlockSlot.get();
@@ -556,11 +551,6 @@ public class CombinedChainDataClient {
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot, final UInt64 limit) {
     return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
-  }
-
-  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    return historicalChainData.getBlobSidecarKeys(slotAndBlockRoot);
   }
 
   private boolean isRecentData(final UInt64 slot) {

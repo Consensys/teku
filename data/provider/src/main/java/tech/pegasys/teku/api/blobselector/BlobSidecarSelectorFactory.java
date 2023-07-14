@@ -36,8 +36,18 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
   public BlobSidecarSelector blockRootSelector(final Bytes32 blockRoot) {
     return indices ->
         client
-            .getBlockByBlockRoot(blockRoot)
-            .thenCompose(maybeBlock -> getBlobSidecarsForBlock(maybeBlock, indices));
+            .getFinalizedSlotByBlockRoot(blockRoot)
+            .thenCompose(
+                maybeSlot -> {
+                  if (maybeSlot.isPresent()) {
+                    final SlotAndBlockRoot slotAndBlockRoot =
+                        new SlotAndBlockRoot(maybeSlot.get(), blockRoot);
+                    return getBlobSidecars(slotAndBlockRoot, indices);
+                  }
+                  return client
+                      .getBlockByBlockRoot(blockRoot)
+                      .thenCompose(maybeBlock -> getBlobSidecarsForBlock(maybeBlock, indices));
+                });
   }
 
   @Override
@@ -45,12 +55,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     return indices ->
         client
             .getChainHead()
-            .map(
-                head -> {
-                  final SlotAndBlockRoot slotAndBlockRoot =
-                      new SlotAndBlockRoot(head.getSlot(), head.getRoot());
-                  return client.getBlobSidecars(slotAndBlockRoot, indices).thenApply(Optional::of);
-                })
+            .map(head -> getBlobSidecars(head.getSlotAndBlockRoot(), indices))
             .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
@@ -64,18 +69,23 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
 
   @Override
   public BlobSidecarSelector finalizedSelector() {
-    return indices -> {
-      final Optional<SignedBeaconBlock> maybeFinalizedBlock = client.getFinalizedBlock();
-      return getBlobSidecarsForBlock(maybeFinalizedBlock, indices);
-    };
+    return indices ->
+        client
+            .getLatestFinalized()
+            .map(anchorPoint -> getBlobSidecars(anchorPoint.getSlotAndBlockRoot(), indices))
+            .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Override
   public BlobSidecarSelector slotSelector(final UInt64 slot) {
-    return indices ->
-        client
-            .getBlockAtSlotExact(slot)
-            .thenCompose(maybeBlock -> getBlobSidecarsForBlock(maybeBlock, indices));
+    return indices -> {
+      if (client.isFinalized(slot)) {
+        return getBlobSidecars(slot, indices);
+      }
+      return client
+          .getBlockAtSlotExact(slot)
+          .thenCompose(maybeBlock -> getBlobSidecarsForBlock(maybeBlock, indices));
+    };
   }
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsForBlock(
@@ -84,6 +94,16 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
       return SafeFuture.completedFuture(Optional.empty());
     }
     final SignedBeaconBlock block = maybeBlock.get();
-    return client.getBlobSidecars(block.getSlotAndBlockRoot(), indices).thenApply(Optional::of);
+    return getBlobSidecars(block.getSlotAndBlockRoot(), indices);
+  }
+
+  private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
+      final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
+    return client.getBlobSidecars(slotAndBlockRoot, indices).thenApply(Optional::of);
+  }
+
+  private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return client.getBlobSidecars(slot, indices).thenApply(Optional::of);
   }
 }
