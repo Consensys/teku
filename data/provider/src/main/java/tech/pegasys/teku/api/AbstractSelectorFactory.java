@@ -22,13 +22,13 @@ public abstract class AbstractSelectorFactory<T> {
 
   private static final String HEX_PREFIX = "0x";
 
-  private static final String BLOCK_ID = "block ID";
-  private static final String STATE_ID = "state ID";
+  protected static final String BLOCK_ID = "block ID";
+  protected static final String STATE_ID = "state ID";
 
-  private static final String HEAD = "head";
-  private static final String GENESIS = "genesis";
-  private static final String FINALIZED = "finalized";
-  private static final String JUSTIFIED = "justified";
+  protected static final String HEAD = "head";
+  protected static final String GENESIS = "genesis";
+  protected static final String FINALIZED = "finalized";
+  protected static final String JUSTIFIED = "justified";
 
   protected CombinedChainDataClient client;
 
@@ -74,6 +74,14 @@ public abstract class AbstractSelectorFactory<T> {
 
   public abstract T slotSelector(UInt64 slot);
 
+  protected BadRequestException badRequestException(final String type, final String identifier) {
+    return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
+  }
+
+  private boolean isHexString(final String identifier) {
+    return identifier.startsWith(HEX_PREFIX);
+  }
+
   private T createSelectorForKeywordOrSlot(final String type, final String identifier) {
     switch (identifier) {
       case HEAD:
@@ -90,13 +98,5 @@ public abstract class AbstractSelectorFactory<T> {
     } catch (final NumberFormatException __) {
       throw badRequestException(type, identifier);
     }
-  }
-
-  private boolean isHexString(final String identifier) {
-    return identifier.startsWith(HEX_PREFIX);
-  }
-
-  private BadRequestException badRequestException(final String type, final String identifier) {
-    return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
   }
 }

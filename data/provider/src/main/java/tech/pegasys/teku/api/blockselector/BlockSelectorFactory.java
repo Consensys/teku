@@ -75,7 +75,7 @@ public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector>
 
   @Override
   public BlockSelector justifiedSelector() {
-    throw new UnsupportedOperationException();
+    throw badRequestException(BLOCK_ID, JUSTIFIED);
   }
 
   @Override

@@ -77,7 +77,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
 
   @Override
   public BlobSidecarSelector justifiedSelector() {
-    throw new UnsupportedOperationException();
+    throw badRequestException(BLOCK_ID, JUSTIFIED);
   }
 
   @Override
