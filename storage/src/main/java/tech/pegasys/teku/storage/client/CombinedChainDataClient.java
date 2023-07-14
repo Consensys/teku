@@ -182,6 +182,9 @@ public class CombinedChainDataClient {
 
   private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
       final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
+    if (indices.isEmpty()) {
+      return keys.stream();
+    }
     return keys.stream().filter(key -> indices.contains(key.getBlobIndex()));
   }
 
