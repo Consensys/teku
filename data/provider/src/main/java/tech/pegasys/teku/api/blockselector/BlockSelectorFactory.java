@@ -39,11 +39,6 @@ public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector>
   }
 
   @Override
-  public BlockSelector stateRootSelector(final Bytes32 stateRoot) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public BlockSelector blockRootSelector(final Bytes32 blockRoot) {
     return () ->
         optionalToList(client.getBlockByBlockRoot(blockRoot).thenApply(this::lookupBlockData));
@@ -71,11 +66,6 @@ public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector>
                     // at the head and if the head isn't optimistic, the finalized block can't be
                     // optimistic.
                     client.isChainHeadOptimistic())));
-  }
-
-  @Override
-  public BlockSelector justifiedSelector() {
-    throw new UnsupportedOperationException();
   }
 
   @Override

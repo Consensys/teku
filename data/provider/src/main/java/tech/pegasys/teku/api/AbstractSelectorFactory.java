@@ -38,49 +38,55 @@ public abstract class AbstractSelectorFactory<T> {
 
   /** Parsing of the {state_id} parameter to determine the selector to return */
   public T createSelectorForStateId(final String stateId) {
-    if (isHexString(stateId)) {
-      try {
-        return stateRootSelector(Bytes32.fromHexString(stateId));
-      } catch (final IllegalArgumentException __) {
-        throw badRequestException(STATE_ID, stateId);
-      }
-    }
     try {
+      if (isHexString(stateId)) {
+        return stateRootSelector(Bytes32.fromHexString(stateId));
+      }
       return createSelectorForKeywordOrSlot(STATE_ID, stateId);
-    } catch (final UnsupportedOperationException __) {
+    } catch (final IllegalArgumentException | UnsupportedOperationException __) {
       throw badRequestException(STATE_ID, stateId);
     }
   }
 
   /** Parsing of the {block_id} parameter to determine the selector to return */
   public T createSelectorForBlockId(final String blockId) {
-    if (isHexString(blockId)) {
-      try {
-        return blockRootSelector(Bytes32.fromHexString(blockId));
-      } catch (final IllegalArgumentException __) {
-        throw badRequestException(BLOCK_ID, blockId);
-      }
-    }
     try {
+      if (isHexString(blockId)) {
+        return blockRootSelector(Bytes32.fromHexString(blockId));
+      }
       return createSelectorForKeywordOrSlot(BLOCK_ID, blockId);
-    } catch (final UnsupportedOperationException __) {
+    } catch (final IllegalArgumentException | UnsupportedOperationException __) {
       throw badRequestException(BLOCK_ID, blockId);
     }
   }
 
-  public abstract T stateRootSelector(Bytes32 stateRoot);
+  public T stateRootSelector(Bytes32 stateRoot) {
+    throw new UnsupportedOperationException();
+  }
 
-  public abstract T blockRootSelector(Bytes32 blockRoot);
+  public T blockRootSelector(Bytes32 blockRoot) {
+    throw new UnsupportedOperationException();
+  }
 
-  public abstract T headSelector();
+  public T headSelector() {
+    throw new UnsupportedOperationException();
+  }
 
-  public abstract T genesisSelector();
+  public T genesisSelector() {
+    throw new UnsupportedOperationException();
+  }
 
-  public abstract T finalizedSelector();
+  public T finalizedSelector() {
+    throw new UnsupportedOperationException();
+  }
 
-  public abstract T justifiedSelector();
+  public T justifiedSelector() {
+    throw new UnsupportedOperationException();
+  }
 
-  public abstract T slotSelector(UInt64 slot);
+  public T slotSelector(UInt64 slot) {
+    throw new UnsupportedOperationException();
+  }
 
   private boolean isHexString(final String identifier) {
     return identifier.startsWith(HEX_PREFIX);
@@ -90,8 +96,7 @@ public abstract class AbstractSelectorFactory<T> {
     return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
   }
 
-  private T createSelectorForKeywordOrSlot(final String type, final String identifier)
-      throws UnsupportedOperationException {
+  private T createSelectorForKeywordOrSlot(final String type, final String identifier) {
     switch (identifier) {
       case HEAD:
         return headSelector();

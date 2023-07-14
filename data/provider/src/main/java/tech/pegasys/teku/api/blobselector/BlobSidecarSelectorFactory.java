@@ -33,11 +33,6 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
   }
 
   @Override
-  public BlobSidecarSelector stateRootSelector(final Bytes32 stateRoot) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
   public BlobSidecarSelector blockRootSelector(final Bytes32 blockRoot) {
     return indices ->
         client
@@ -73,11 +68,6 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
       final Optional<SignedBeaconBlock> maybeFinalizedBlock = client.getFinalizedBlock();
       return getBlobSidecarsForBlock(maybeFinalizedBlock, indices);
     };
-  }
-
-  @Override
-  public BlobSidecarSelector justifiedSelector() {
-    throw new UnsupportedOperationException();
   }
 
   @Override
