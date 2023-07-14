@@ -42,7 +42,7 @@ public abstract class AbstractSelectorFactory<T> {
       if (isHexString(stateId)) {
         return stateRootSelector(Bytes32.fromHexString(stateId));
       }
-      return createSelectorForKeywordOrSlot(STATE_ID, stateId);
+      return createSelectorForKeywordOrSlot(stateId);
     } catch (final IllegalArgumentException | UnsupportedOperationException __) {
       throw badRequestException(STATE_ID, stateId);
     }
@@ -54,7 +54,7 @@ public abstract class AbstractSelectorFactory<T> {
       if (isHexString(blockId)) {
         return blockRootSelector(Bytes32.fromHexString(blockId));
       }
-      return createSelectorForKeywordOrSlot(BLOCK_ID, blockId);
+      return createSelectorForKeywordOrSlot(blockId);
     } catch (final IllegalArgumentException | UnsupportedOperationException __) {
       throw badRequestException(BLOCK_ID, blockId);
     }
@@ -96,7 +96,7 @@ public abstract class AbstractSelectorFactory<T> {
     return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
   }
 
-  private T createSelectorForKeywordOrSlot(final String type, final String identifier) {
+  private T createSelectorForKeywordOrSlot(final String identifier) {
     switch (identifier) {
       case HEAD:
         return headSelector();
@@ -107,10 +107,6 @@ public abstract class AbstractSelectorFactory<T> {
       case JUSTIFIED:
         return justifiedSelector();
     }
-    try {
-      return slotSelector(UInt64.valueOf(identifier));
-    } catch (final NumberFormatException __) {
-      throw badRequestException(type, identifier);
-    }
+    return slotSelector(UInt64.valueOf(identifier));
   }
 }
