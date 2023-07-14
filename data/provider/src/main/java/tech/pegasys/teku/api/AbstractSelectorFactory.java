@@ -22,13 +22,13 @@ public abstract class AbstractSelectorFactory<T> {
 
   private static final String HEX_PREFIX = "0x";
 
-  protected static final String BLOCK_ID = "block ID";
-  protected static final String STATE_ID = "state ID";
+  private static final String BLOCK_ID = "block ID";
+  private static final String STATE_ID = "state ID";
 
-  protected static final String HEAD = "head";
-  protected static final String GENESIS = "genesis";
-  protected static final String FINALIZED = "finalized";
-  protected static final String JUSTIFIED = "justified";
+  private static final String HEAD = "head";
+  private static final String GENESIS = "genesis";
+  private static final String FINALIZED = "finalized";
+  private static final String JUSTIFIED = "justified";
 
   protected CombinedChainDataClient client;
 
@@ -36,7 +36,7 @@ public abstract class AbstractSelectorFactory<T> {
     this.client = client;
   }
 
-  /** Parsing of the state_id parameter to determine the selector to return */
+  /** Parsing of the {state_id} parameter to determine the selector to return */
   public T createSelectorForStateId(final String stateId) {
     if (isHexString(stateId)) {
       try {
@@ -48,7 +48,7 @@ public abstract class AbstractSelectorFactory<T> {
     return createSelectorForKeywordOrSlot(STATE_ID, stateId);
   }
 
-  /** Parsing of the block_id parameter to determine the selector to return */
+  /** Parsing of the {block_id} parameter to determine the selector to return */
   public T createSelectorForBlockId(final String blockId) {
     if (isHexString(blockId)) {
       try {
@@ -74,12 +74,12 @@ public abstract class AbstractSelectorFactory<T> {
 
   public abstract T slotSelector(UInt64 slot);
 
-  protected BadRequestException badRequestException(final String type, final String identifier) {
-    return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
-  }
-
   private boolean isHexString(final String identifier) {
     return identifier.startsWith(HEX_PREFIX);
+  }
+
+  private BadRequestException badRequestException(final String type, final String identifier) {
+    return new BadRequestException(String.format("Invalid %s: %s", type, identifier));
   }
 
   private T createSelectorForKeywordOrSlot(final String type, final String identifier) {
@@ -91,7 +91,11 @@ public abstract class AbstractSelectorFactory<T> {
       case FINALIZED:
         return finalizedSelector();
       case JUSTIFIED:
-        return justifiedSelector();
+        // justified keyword only used for {state_id} parameter
+        if (type.equals(STATE_ID)) {
+          return justifiedSelector();
+        }
+        throw badRequestException(type, identifier);
     }
     try {
       return slotSelector(UInt64.valueOf(identifier));
