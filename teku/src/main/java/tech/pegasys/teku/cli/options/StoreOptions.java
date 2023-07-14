@@ -42,9 +42,17 @@ public class StoreOptions {
       hidden = true,
       names = {"--Xstore-state-cache-size"},
       paramLabel = "<INTEGER>",
-      description = "Number of state to cache in memory",
+      description = "Number of states to cache in memory",
       arity = "1")
   private int stateCacheSize = StoreConfig.DEFAULT_STATE_CACHE_SIZE;
+
+  @Option(
+      hidden = true,
+      names = {"--Xstore-epoch-state-cache-size"},
+      paramLabel = "<INTEGER>",
+      description = "Number of epoch aligned states to cache in memory",
+      arity = "1")
+  private int epochStateCacheSize = StoreConfig.DEFAULT_EPOCH_STATE_CACHE_SIZE;
 
   @Option(
       hidden = true,
@@ -70,6 +78,7 @@ public class StoreOptions {
             b.hotStatePersistenceFrequencyInEpochs(hotStatePersistenceFrequencyInEpochs)
                 .blockCacheSize(blockCacheSize)
                 .stateCacheSize(stateCacheSize)
+                .epochStateCacheSize(epochStateCacheSize)
                 .earliestAvailableBlockSlotFrequency(earliestAvailableBlockSlotQueryFrequency)
                 .checkpointStateCacheSize(checkpointStateCacheSize));
   }

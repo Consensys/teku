@@ -22,6 +22,8 @@ public class StoreConfig {
   public static final int MAX_CACHE_SIZE = 10_000;
 
   public static final int DEFAULT_STATE_CACHE_SIZE = 32 * 5;
+
+  public static final int DEFAULT_EPOCH_STATE_CACHE_SIZE = 0;
   public static final int DEFAULT_BLOCK_CACHE_SIZE = 32;
   public static final int DEFAULT_CHECKPOINT_STATE_CACHE_SIZE = 20;
   public static final int DEFAULT_HOT_STATE_PERSISTENCE_FREQUENCY_IN_EPOCHS = 2;
@@ -29,6 +31,8 @@ public class StoreConfig {
   public static final int DEFAULT_EARLIEST_AVAILABLE_BLOCK_SLOT_QUERY_FREQUENCY = 0;
 
   private final int stateCacheSize;
+
+  private final int epochStateCacheSize;
   private final int blockCacheSize;
   private final int checkpointStateCacheSize;
   private final int hotStatePersistenceFrequencyInEpochs;
@@ -39,12 +43,14 @@ public class StoreConfig {
       final int blockCacheSize,
       final int checkpointStateCacheSize,
       final int hotStatePersistenceFrequencyInEpochs,
-      int earliestAvailableBlockSlotFrequency) {
+      final int earliestAvailableBlockSlotFrequency,
+      final int epochStateCacheSize) {
     this.stateCacheSize = stateCacheSize;
     this.blockCacheSize = blockCacheSize;
     this.checkpointStateCacheSize = checkpointStateCacheSize;
     this.hotStatePersistenceFrequencyInEpochs = hotStatePersistenceFrequencyInEpochs;
     this.earliestAvailableBlockSlotFrequency = earliestAvailableBlockSlotFrequency;
+    this.epochStateCacheSize = epochStateCacheSize;
   }
 
   public static Builder builder() {
@@ -57,6 +63,10 @@ public class StoreConfig {
 
   public int getStateCacheSize() {
     return stateCacheSize;
+  }
+
+  public int getEpochStateCacheSize() {
+    return epochStateCacheSize;
   }
 
   public int getBlockCacheSize() {
@@ -85,6 +95,7 @@ public class StoreConfig {
     }
     final StoreConfig that = (StoreConfig) o;
     return stateCacheSize == that.stateCacheSize
+        && epochStateCacheSize == that.epochStateCacheSize
         && blockCacheSize == that.blockCacheSize
         && checkpointStateCacheSize == that.checkpointStateCacheSize
         && hotStatePersistenceFrequencyInEpochs == that.hotStatePersistenceFrequencyInEpochs;
@@ -94,6 +105,7 @@ public class StoreConfig {
   public int hashCode() {
     return Objects.hash(
         stateCacheSize,
+        epochStateCacheSize,
         blockCacheSize,
         checkpointStateCacheSize,
         hotStatePersistenceFrequencyInEpochs);
@@ -101,6 +113,8 @@ public class StoreConfig {
 
   public static class Builder {
     private int stateCacheSize = DEFAULT_STATE_CACHE_SIZE;
+
+    private int epochStateCacheSize = DEFAULT_EPOCH_STATE_CACHE_SIZE;
     private int blockCacheSize = DEFAULT_BLOCK_CACHE_SIZE;
     private int checkpointStateCacheSize = DEFAULT_CHECKPOINT_STATE_CACHE_SIZE;
     private int hotStatePersistenceFrequencyInEpochs =
@@ -115,12 +129,19 @@ public class StoreConfig {
           blockCacheSize,
           checkpointStateCacheSize,
           hotStatePersistenceFrequencyInEpochs,
-          earliestAvailableBlockSlotFrequency);
+          earliestAvailableBlockSlotFrequency,
+          epochStateCacheSize);
     }
 
     public Builder stateCacheSize(final int stateCacheSize) {
       validateCacheSize(stateCacheSize);
       this.stateCacheSize = stateCacheSize;
+      return this;
+    }
+
+    public Builder epochStateCacheSize(final int epochStateCacheSize) {
+      validateCacheSize(stateCacheSize);
+      this.epochStateCacheSize = epochStateCacheSize;
       return this;
     }
 

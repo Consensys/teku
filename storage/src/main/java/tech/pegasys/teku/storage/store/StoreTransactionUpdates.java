@@ -121,14 +121,9 @@ class StoreTransactionUpdates {
         finalizedData -> store.finalizedAnchor = finalizedData.getLatestFinalized());
 
     // Prune blocks and states
-    prunedHotBlockRoots
-        .keySet()
-        .forEach(
-            (root) -> {
-              store.blocks.remove(root);
-              store.states.remove(root);
-            });
+    prunedHotBlockRoots.keySet().forEach(store::removeStateAndBlock);
 
+    store.cleanupEpochStates();
     store.checkpointStates.removeIf(
         slotAndBlockRoot -> prunedHotBlockRoots.containsKey(slotAndBlockRoot.getBlockRoot()));
 

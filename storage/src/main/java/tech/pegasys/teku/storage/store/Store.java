@@ -19,6 +19,7 @@ import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMa
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -45,11 +47,13 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
+import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -82,6 +86,10 @@ class Store implements UpdatableStore {
 
   private final MetricsSystem metricsSystem;
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
+
+  private Optional<SettableGauge> epochStatesCountGauge = Optional.empty();
+
+  private final Optional<Set<StateAndBlockSummary>> maybeEpochStates;
 
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
@@ -123,7 +131,8 @@ class Store implements UpdatableStore {
       final ForkChoiceStrategy forkChoiceStrategy,
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
-      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates) {
+      final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
+      final Optional<Set<StateAndBlockSummary>> maybeEpochStates) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -155,6 +164,7 @@ class Store implements UpdatableStore {
 
     // Track latest finalized block
     this.finalizedAnchor = finalizedAnchor;
+    this.maybeEpochStates = maybeEpochStates;
     states.cache(finalizedAnchor.getRoot(), finalizedAnchor);
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
 
@@ -204,6 +214,12 @@ class Store implements UpdatableStore {
     final CachingTaskQueue<Bytes32, StateAndBlockSummary> stateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
+
+    final Optional<Set<StateAndBlockSummary>> maybeEpochStates =
+        config.getEpochStateCacheSize() > 0
+            ? Optional.of(LimitedSet.createSynchronizedIterable(config.getEpochStateCacheSize()))
+            : Optional.empty();
+
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
     final ForkChoiceStrategy forkChoiceStrategy =
         ForkChoiceStrategy.initialize(
@@ -235,7 +251,8 @@ class Store implements UpdatableStore {
         forkChoiceStrategy,
         votes,
         blocks,
-        checkpointStateTaskQueue);
+        checkpointStateTaskQueue,
+        maybeEpochStates);
   }
 
   private static ProtoArray buildProtoArray(
@@ -290,6 +307,16 @@ class Store implements UpdatableStore {
                   TekuMetricCategory.STORAGE,
                   "memory_block_count",
                   "Number of beacon blocks held in the in-memory store"));
+
+      if (maybeEpochStates.isPresent()) {
+        epochStatesCountGauge =
+            Optional.of(
+                SettableGauge.create(
+                    metricsSystem,
+                    TekuMetricCategory.STORAGE,
+                    "memory_epoch_states_count",
+                    "Number of Epoch aligned states held in the in-memory store"));
+      }
       states.startMetrics();
       checkpointStates.startMetrics();
     } finally {
@@ -575,7 +602,11 @@ class Store implements UpdatableStore {
 
   private SafeFuture<Optional<BeaconState>> getAndCacheBlockState(final Bytes32 blockRoot) {
     return getOrRegenerateBlockAndState(blockRoot)
-        .thenApply(res -> res.map(StateAndBlockSummary::getState));
+        .thenApply(
+            res -> {
+              cacheIfEpochState(res);
+              return res.map(StateAndBlockSummary::getState);
+            });
   }
 
   private SafeFuture<Optional<SignedBlockAndState>> getAndCacheBlockAndState(
@@ -609,12 +640,41 @@ class Store implements UpdatableStore {
     if (cachedResult.isPresent()) {
       return SafeFuture.completedFuture(cachedResult);
     }
+
+    // is it an epoch boundary?
+    if (maybeEpochStates.isPresent()) {
+      final Optional<StateAndBlockSummary> maybeEpochState =
+          maybeEpochStates.get().stream()
+              .filter(
+                  stateAndBlockSummary ->
+                      stateAndBlockSummary.getBlockSummary().getRoot().equals(blockRoot))
+              .findFirst();
+      if (maybeEpochState.isPresent()) {
+        return SafeFuture.completedFuture(maybeEpochState);
+      }
+    }
     return createStateGenerationTask(blockRoot)
         .thenCompose(
             maybeTask ->
                 maybeTask.isPresent()
-                    ? states.perform(maybeTask.get())
+                    ? states.perform(maybeTask.get()).thenPeek(this::cacheIfEpochState)
                     : EmptyStoreResults.EMPTY_STATE_AND_BLOCK_SUMMARY_FUTURE);
+  }
+
+  private void cacheIfEpochState(Optional<StateAndBlockSummary> maybeStateAndBlockSummary) {
+    if (maybeStateAndBlockSummary.isPresent() && maybeEpochStates.isPresent()) {
+      final UInt64 slot = maybeStateAndBlockSummary.get().getSlot();
+      final int slotsPerEpoch =
+          spec.atSlot(maybeStateAndBlockSummary.get().getSlot()).getConfig().getSlotsPerEpoch();
+      if (slot.mod(slotsPerEpoch).isZero()) {
+        BeaconBlockSummary summary = maybeStateAndBlockSummary.get().getBlockSummary();
+
+        if (maybeEpochStates.get().add(maybeStateAndBlockSummary.get())) {
+          LOG.trace("epochCache ADD {}({})", summary.getRoot(), summary.getSlot());
+        }
+        epochStatesCountGauge.ifPresent(counter -> counter.set(maybeEpochStates.get().size()));
+      }
+    }
   }
 
   private SafeFuture<Optional<StateGenerationTask>> createStateGenerationTask(
@@ -746,5 +806,25 @@ class Store implements UpdatableStore {
     } finally {
       writeLock.unlock();
     }
+  }
+
+  @VisibleForTesting
+  Optional<Set<StateAndBlockSummary>> getEpochStates() {
+    return maybeEpochStates;
+  }
+
+  void removeStateAndBlock(final Bytes32 root) {
+    blocks.remove(root);
+    states.remove(root);
+  }
+
+  void cleanupEpochStates() {
+    final UInt64 finalizedSlot = finalizedAnchor.getSlot();
+    maybeEpochStates.ifPresent(
+        stateAndBlockSummaries -> {
+          stateAndBlockSummaries.removeIf(
+              summary -> summary.getState().getSlot().isLessThan(finalizedSlot));
+          epochStatesCountGauge.ifPresent(counter -> counter.set(stateAndBlockSummaries.size()));
+        });
   }
 }
