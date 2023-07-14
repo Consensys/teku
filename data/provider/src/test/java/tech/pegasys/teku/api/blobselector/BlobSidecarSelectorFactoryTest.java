@@ -30,6 +30,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -63,9 +65,10 @@ public class BlobSidecarSelectorFactoryTest {
   @Test
   public void finalizedSelector_shouldGetFinalizedBlobSidecars()
       throws ExecutionException, InterruptedException {
+    final AnchorPoint anchorPoint = data.randomAnchorPoint(UInt64.ONE);
 
-    when(client.getFinalizedBlock()).thenReturn(Optional.of(block));
-    when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
+    when(client.getLatestFinalized()).thenReturn(Optional.of(anchorPoint));
+    when(client.getBlobSidecars(anchorPoint.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
     final Optional<List<BlobSidecar>> result =
@@ -74,7 +77,7 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
-  public void genesisSelector_shouldGetBlobSidecarsForSlotZero()
+  public void genesisSelector_shouldGetGenesisBlobSidecars()
       throws ExecutionException, InterruptedException {
     when(client.getBlockAtSlotExact(UInt64.ZERO))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
@@ -87,8 +90,27 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
-  public void blockRootSelector_shouldGetBlobSidecarsByBlockRoot()
+  public void blockRootSelector_shouldGetBlobSidecarsForFinalizedSlot()
       throws ExecutionException, InterruptedException {
+    final UInt64 finalizedSlot = UInt64.valueOf(42);
+    when(client.getFinalizedSlotByBlockRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(finalizedSlot)));
+    when(client.getBlobSidecars(new SlotAndBlockRoot(finalizedSlot, block.getRoot()), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<List<BlobSidecar>> result =
+        blobSidecarSelectorFactory
+            .blockRootSelector(block.getRoot())
+            .getBlobSidecars(indices)
+            .get();
+    assertThat(result).hasValue(blobSidecars);
+  }
+
+  @Test
+  public void blockRootSelector_shouldGetBlobSidecarsByRetrievingBlock()
+      throws ExecutionException, InterruptedException {
+    when(client.getFinalizedSlotByBlockRoot(block.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
     when(client.getBlockByBlockRoot(block.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
@@ -103,8 +125,21 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
-  public void slotSelector_shouldGetBlobSidecarsAtSlot()
+  public void slotSelector_shouldGetBlobSidecarsFromFinalizedSlot()
       throws ExecutionException, InterruptedException {
+    when(client.isFinalized(block.getSlot())).thenReturn(true);
+    when(client.getBlobSidecars(block.getSlot(), indices))
+        .thenReturn(SafeFuture.completedFuture(blobSidecars));
+
+    final Optional<List<BlobSidecar>> result =
+        blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
+    assertThat(result).hasValue(blobSidecars);
+  }
+
+  @Test
+  public void slotSelector_shouldGetBlobSidecarsByRetrievingBlock()
+      throws ExecutionException, InterruptedException {
+    when(client.isFinalized(block.getSlot())).thenReturn(false);
     when(client.getBlockAtSlotExact(block.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))

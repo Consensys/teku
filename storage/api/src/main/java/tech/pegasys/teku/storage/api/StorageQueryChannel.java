@@ -43,13 +43,13 @@ public interface StorageQueryChannel extends ChannelInterface {
   /** @return The earliest available finalized block */
   SafeFuture<Optional<SignedBeaconBlock>> getEarliestAvailableBlock();
 
-  SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(final UInt64 slot);
+  SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlot(UInt64 slot);
 
-  SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(final UInt64 slot);
+  SafeFuture<Optional<SignedBeaconBlock>> getLatestFinalizedBlockAtSlot(UInt64 slot);
 
-  SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(final Bytes32 blockRoot);
+  SafeFuture<Optional<SignedBeaconBlock>> getBlockByBlockRoot(Bytes32 blockRoot);
 
-  SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(final Bytes32 blockRoot);
+  SafeFuture<Optional<SignedBlockAndState>> getHotBlockAndStateByBlockRoot(Bytes32 blockRoot);
 
   SafeFuture<Optional<StateAndBlockSummary>> getHotStateAndBlockSummaryByBlockRoot(
       final Bytes32 blockRoot);
@@ -61,22 +61,24 @@ public interface StorageQueryChannel extends ChannelInterface {
    * @param blockRoots The roots of blocks to look up
    * @return A map from root too block of any found blocks
    */
-  SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(final Set<Bytes32> blockRoots);
+  SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(Set<Bytes32> blockRoots);
 
   SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
-      final SlotAndBlockRoot slotAndBlockRoot);
+      SlotAndBlockRoot slotAndBlockRoot);
 
-  SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(final Bytes32 stateRoot);
+  SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(Bytes32 stateRoot);
 
-  SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UInt64 slot);
+  SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(UInt64 slot);
 
-  SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(final UInt64 slot);
+  SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(UInt64 slot);
 
-  SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot);
+  SafeFuture<Optional<UInt64>> getFinalizedSlotByBlockRoot(Bytes32 blockRoot);
 
-  SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(final Bytes32 stateRoot);
+  SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(Bytes32 blockRoot);
 
-  SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(final UInt64 slot);
+  SafeFuture<Optional<UInt64>> getFinalizedSlotByStateRoot(Bytes32 stateRoot);
+
+  SafeFuture<List<SignedBeaconBlock>> getNonCanonicalBlocksBySlot(UInt64 slot);
 
   SafeFuture<Optional<Checkpoint>> getAnchor();
 
@@ -86,6 +88,8 @@ public interface StorageQueryChannel extends ChannelInterface {
   SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot();
 
   SafeFuture<Optional<BlobSidecar>> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
+  SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(UInt64 slot);
 
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       UInt64 startSlot, UInt64 endSlot, UInt64 limit);

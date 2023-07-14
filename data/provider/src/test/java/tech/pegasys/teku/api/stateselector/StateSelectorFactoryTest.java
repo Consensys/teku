@@ -163,7 +163,7 @@ public class StateSelectorFactoryTest {
   }
 
   @Test
-  public void createSelectorForStateId_shouldNotThrowBadRequestOnJustifiedKeyword() {
+  public void createSelectorForStateId_shouldCreateSelectorOnJustifiedKeyword() {
     final StateSelector selector = factory.createSelectorForStateId("justified");
     assertThat(selector).isNotNull();
   }
