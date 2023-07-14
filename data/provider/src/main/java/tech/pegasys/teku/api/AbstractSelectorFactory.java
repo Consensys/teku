@@ -70,10 +70,7 @@ public abstract class AbstractSelectorFactory<T> {
 
   public abstract T finalizedSelector();
 
-  // justified keyword only used for {state_id} parameter
-  public T justifiedSelector() {
-    throw badRequestException(BLOCK_ID, JUSTIFIED);
-  }
+  public abstract T justifiedSelector();
 
   public abstract T slotSelector(UInt64 slot);
 
@@ -94,7 +91,11 @@ public abstract class AbstractSelectorFactory<T> {
       case FINALIZED:
         return finalizedSelector();
       case JUSTIFIED:
-        return justifiedSelector();
+        // justified keyword only used for {state_id} parameter
+        if (type.equals(STATE_ID)) {
+          return justifiedSelector();
+        }
+        throw badRequestException(type, identifier);
     }
     try {
       return slotSelector(UInt64.valueOf(identifier));

@@ -74,6 +74,11 @@ public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector>
   }
 
   @Override
+  public BlockSelector justifiedSelector() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
   public BlockSelector genesisSelector() {
     return () ->
         optionalToList(
