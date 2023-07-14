@@ -162,6 +162,12 @@ public class StateSelectorFactoryTest {
     assertThrows(BadRequestException.class, () -> factory.createSelectorForStateId("0xzz"));
   }
 
+  @Test
+  public void createSelectorForStateId_shouldNotThrowBadRequestOnJustifiedKeyword() {
+    final StateSelector selector = factory.createSelectorForStateId("justified");
+    assertThat(selector).isNotNull();
+  }
+
   private StateAndMetaData withMetaData(final BeaconState state) {
     return new StateAndMetaData(state, milestone, false, true, true);
   }

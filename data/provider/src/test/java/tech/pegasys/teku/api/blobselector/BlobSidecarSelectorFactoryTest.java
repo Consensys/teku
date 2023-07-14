@@ -129,6 +129,13 @@ public class BlobSidecarSelectorFactoryTest {
   }
 
   @Test
+  public void createSelectorForBlockId_shouldThrowBadRequestExceptionOnJustifiedKeyword() {
+    assertThrows(
+        BadRequestException.class,
+        () -> blobSidecarSelectorFactory.createSelectorForBlockId("justified"));
+  }
+
+  @Test
   public void justifiedSelector_shouldThrowUnsupportedOperationException() {
     assertThrows(
         UnsupportedOperationException.class, blobSidecarSelectorFactory::justifiedSelector);

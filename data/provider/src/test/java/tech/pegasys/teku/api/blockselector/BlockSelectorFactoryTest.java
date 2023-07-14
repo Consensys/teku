@@ -117,6 +117,13 @@ public class BlockSelectorFactoryTest {
   }
 
   @Test
+  public void createSelectorForBlockId_shouldThrowBadRequestExceptionOnJustifiedKeyword() {
+    assertThrows(
+        BadRequestException.class,
+        () -> blockSelectorFactory.createSelectorForBlockId("justified"));
+  }
+
+  @Test
   public void justifiedSelector_shouldThrowUnsupportedOperationException() {
     assertThrows(UnsupportedOperationException.class, blockSelectorFactory::justifiedSelector);
   }
