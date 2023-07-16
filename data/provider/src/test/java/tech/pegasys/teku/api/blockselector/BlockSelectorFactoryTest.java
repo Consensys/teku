@@ -42,7 +42,7 @@ public class BlockSelectorFactoryTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final SpecMilestone milestone = spec.getGenesisSpec().getMilestone();
-  final SignedBeaconBlock block = data.randomSignedBeaconBlock(100);
+  private final SignedBeaconBlock block = data.randomSignedBeaconBlock(100);
 
   private final BlockSelectorFactory blockSelectorFactory = new BlockSelectorFactory(spec, client);
 
@@ -85,7 +85,7 @@ public class BlockSelectorFactoryTest {
     when(client.getBlockByBlockRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     List<BlockAndMetaData> blockList =
-        blockSelectorFactory.forBlockRoot(block.getRoot()).getBlocks().get();
+        blockSelectorFactory.blockRootSelector(block.getRoot()).getBlocks().get();
     verify(client).getBlockByBlockRoot(block.getRoot());
     assertThat(blockList).containsExactly(withMetaData(block));
   }
@@ -98,14 +98,34 @@ public class BlockSelectorFactoryTest {
     when(client.getBlockAtSlotExact(block.getSlot(), head.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
     List<BlockAndMetaData> blockList =
-        blockSelectorFactory.forSlot(block.getSlot()).getBlocks().get();
+        blockSelectorFactory.slotSelector(block.getSlot()).getBlocks().get();
     verify(client).getBlockAtSlotExact(block.getSlot(), head.getRoot());
     assertThat(blockList).containsExactly(withMetaData(block));
   }
 
   @Test
-  public void defaultBlockSelector_shouldThrowBadRequestException() {
-    assertThrows(BadRequestException.class, () -> blockSelectorFactory.defaultBlockSelector("a"));
+  public void createSelectorForBlockId_shouldThrowBadRequestException() {
+    assertThrows(
+        BadRequestException.class, () -> blockSelectorFactory.createSelectorForBlockId("a"));
+  }
+
+  @Test
+  public void stateRootSelector_shouldThrowUnsupportedOperationException() {
+    assertThrows(
+        UnsupportedOperationException.class,
+        () -> blockSelectorFactory.stateRootSelector(data.randomBytes32()));
+  }
+
+  @Test
+  public void createSelectorForBlockId_shouldThrowBadRequestExceptionOnJustifiedKeyword() {
+    assertThrows(
+        BadRequestException.class,
+        () -> blockSelectorFactory.createSelectorForBlockId("justified"));
+  }
+
+  @Test
+  public void justifiedSelector_shouldThrowUnsupportedOperationException() {
+    assertThrows(UnsupportedOperationException.class, blockSelectorFactory::justifiedSelector);
   }
 
   private BlockAndMetaData withMetaData(final SignedBeaconBlock block) {

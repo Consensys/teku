@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
+import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -55,6 +56,7 @@ public abstract class AbstractChainDataProviderTest {
   protected RecentChainData recentChainData;
   protected CombinedChainDataClient combinedChainDataClient;
   protected BlockSelectorFactory blockSelectorFactory;
+  protected BlobSidecarSelectorFactory blobSidecarSelectorFactory;
   protected StateSelectorFactory stateSelectorFactory;
   protected BeaconState beaconStateInternal;
   protected SignedBlockAndState bestBlock;
@@ -101,6 +103,8 @@ public abstract class AbstractChainDataProviderTest {
       final Spec spec, final DataStructureUtil dataStructureUtil, final int validatorCount) {
     this.blockSelectorFactory = spy(new BlockSelectorFactory(spec, mockCombinedChainDataClient));
     this.stateSelectorFactory = spy(new StateSelectorFactory(spec, mockCombinedChainDataClient));
+    this.blobSidecarSelectorFactory =
+        spy(new BlobSidecarSelectorFactory(mockCombinedChainDataClient));
     final ChainDataProvider provider =
         new ChainDataProvider(
             spec,
@@ -108,6 +112,7 @@ public abstract class AbstractChainDataProviderTest {
             mockCombinedChainDataClient,
             blockSelectorFactory,
             stateSelectorFactory,
+            blobSidecarSelectorFactory,
             rewardCalculator);
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {

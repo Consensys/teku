@@ -69,7 +69,7 @@ public class GetStateByBlockRoot extends RestApiEndpoint {
     request.header(Header.CACHE_CONTROL, CACHE_NONE);
 
     final String blockId = request.getPathParameter(PARAMETER_BLOCK_ID);
-    SafeFuture<Optional<BeaconState>> future = chainDataProvider.getBeaconStateByBlockRoot(blockId);
+    SafeFuture<Optional<BeaconState>> future = chainDataProvider.getBeaconStateByBlockId(blockId);
 
     request.respondAsync(
         future.thenApply(

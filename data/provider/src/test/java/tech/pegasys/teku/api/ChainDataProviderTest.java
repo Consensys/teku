@@ -465,7 +465,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final UInt64 expectedSlot = spec.computeStartSlotAtEpoch(queriedEpoch.plus(2L)).minus(1);
     assertThat(provider.calculateAttestationRewardsAtEpoch(queriedEpoch, List.of())).isCompleted();
 
-    verify(stateSelectorFactory).forSlot(expectedSlot);
+    verify(stateSelectorFactory).slotSelector(expectedSlot);
   }
 
   @Test
@@ -503,7 +503,7 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     final BlockSelector blockSelector = mock(BlockSelector.class);
     when(blockSelector.getBlock())
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockAndMetaData)));
-    doReturn(blockSelector).when(blockSelectorFactory).defaultBlockSelector(any());
+    doReturn(blockSelector).when(blockSelectorFactory).createSelectorForBlockId(any());
   }
 
   @Test
