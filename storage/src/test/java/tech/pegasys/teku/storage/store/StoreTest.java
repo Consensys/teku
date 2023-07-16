@@ -121,7 +121,7 @@ class StoreTest extends AbstractStoreTest {
     assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(24, chainBuilder))).isCompleted();
     assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(8, chainBuilder))).isCompleted();
     assertThat(
-            s.getEpochStates().orElseThrow().stream()
+            s.getEpochStates().orElseThrow().values().stream()
                 .map(StateAndBlockSummary::getSlot)
                 .map(UInt64::intValue)
                 .collect(Collectors.toList()))
