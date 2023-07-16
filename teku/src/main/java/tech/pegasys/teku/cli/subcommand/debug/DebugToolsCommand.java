@@ -136,7 +136,7 @@ public class DebugToolsCommand implements Runnable {
         new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
     final KeyManager keyManager = new NoOpKeyManager();
     RestApi api =
-        ValidatorRestApi.create(
+        ValidatorRestApi.create( // TODO pass validatorApiChannel
             config,
             Optional.empty(),
             keyManager,

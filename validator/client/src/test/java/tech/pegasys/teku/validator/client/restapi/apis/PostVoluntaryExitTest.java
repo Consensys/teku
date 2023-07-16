@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
@@ -30,10 +31,15 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.KeyManager;
 
 public class PostVoluntaryExitTest {
-  private final PostVoluntaryExit handler = new PostVoluntaryExit();
+  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final KeyManager keyManager = mock(KeyManager.class);
   private final Spec spec = TestSpecFactory.createMinimal(SpecMilestone.CAPELLA);
+  private final PostVoluntaryExit handler =
+      new PostVoluntaryExit(spec, keyManager, validatorApiChannel);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test

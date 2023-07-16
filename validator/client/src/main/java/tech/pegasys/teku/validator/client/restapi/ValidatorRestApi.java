@@ -27,6 +27,8 @@ import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
@@ -54,9 +56,11 @@ public class ValidatorRestApi {
   public static final String TAG_GAS_LIMIT = "Gas Limit";
 
   public static RestApi create(
+      final ValidatorApiChannel validatorApiChannel,
       final ValidatorRestApiConfig config,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final KeyManager keyManager,
+      final Spec spec,
       final DataDirLayout dataDirLayout,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
       final DoppelgangerDetectionAction doppelgangerDetectionAction) {
@@ -109,7 +113,7 @@ public class ValidatorRestApi {
         .endpoint(new SetGasLimit(proposerConfigManager))
         .endpoint(new DeleteFeeRecipient(proposerConfigManager))
         .endpoint(new DeleteGasLimit(proposerConfigManager))
-        .endpoint(new PostVoluntaryExit())
+        .endpoint(new PostVoluntaryExit(spec, keyManager, validatorApiChannel))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))

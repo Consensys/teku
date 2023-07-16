@@ -218,6 +218,7 @@ public class ValidatorClientService extends Service {
             __ -> {
               if (validatorApiConfig.isRestApiEnabled()) {
                 validatorClientService.initializeValidatorRestApi(
+                    validatorApiChannel,
                     validatorApiConfig,
                     proposerConfigManager,
                     new ActiveKeyManager(
@@ -265,6 +266,7 @@ public class ValidatorClientService extends Service {
   }
 
   private void initializeValidatorRestApi(
+      final ValidatorApiChannel validatorApiChannel,
       final ValidatorRestApiConfig validatorRestApiConfig,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final ActiveKeyManager activeKeyManager,
@@ -272,9 +274,11 @@ public class ValidatorClientService extends Service {
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
     final RestApi validatorRestApi =
         ValidatorRestApi.create(
+            validatorApiChannel,
             validatorRestApiConfig,
             proposerConfigManager,
             activeKeyManager,
+            spec,
             dataDirLayout,
             maybeDoppelgangerDetector,
             new DoppelgangerDetectionAlert());
