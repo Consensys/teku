@@ -42,6 +42,133 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public interface ValidatorApiChannel extends ChannelInterface {
+  ValidatorApiChannel NO_OP =
+      new ValidatorApiChannel() {
+        @Override
+        public SafeFuture<Optional<GenesisData>> getGenesisData() {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
+            Collection<BLSPublicKey> publicKeys) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
+            Collection<BLSPublicKey> validatorIdentifiers) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
+            UInt64 epoch, IntCollection validatorIndices) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
+            UInt64 epoch, IntCollection validatorIndices) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+            UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<AttestationData>> createAttestationData(
+            UInt64 slot, int committeeIndex) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<Attestation>> createAggregate(
+            UInt64 slot, Bytes32 attestationHashTreeRoot) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
+            UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Void> subscribeToBeaconCommittee(
+            List<CommitteeSubscriptionRequest> requests) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
+            Collection<SyncCommitteeSubnetSubscription> subscriptions) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Void> subscribeToPersistentSubnets(
+            Set<SubnetSubscription> subnetSubscriptions) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
+            List<Attestation> attestations) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
+            List<SignedAggregateAndProof> aggregateAndProofs) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<SendSignedBlockResult> sendSignedBlock(
+            SignedBlockContainer blockContainer) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
+            List<SyncCommitteeMessage> syncCommitteeMessages) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Void> sendSignedContributionAndProofs(
+            Collection<SignedContributionAndProof> signedContributionAndProofs) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Void> prepareBeaconProposer(
+            Collection<BeaconPreparableProposer> beaconPreparableProposers) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Void> registerValidators(
+            SszList<SignedValidatorRegistration> validatorRegistrations) {
+          return null;
+        }
+
+        @Override
+        public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
+            List<UInt64> validatorIndices, UInt64 epoch) {
+          return null;
+        }
+      };
+
   int UNKNOWN_VALIDATOR_ID = -1;
 
   SafeFuture<Optional<GenesisData>> getGenesisData();

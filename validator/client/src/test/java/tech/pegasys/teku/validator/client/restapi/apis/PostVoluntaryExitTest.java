@@ -26,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -38,8 +39,9 @@ public class PostVoluntaryExitTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final KeyManager keyManager = mock(KeyManager.class);
   private final Spec spec = TestSpecFactory.createMinimal(SpecMilestone.CAPELLA);
+  private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100000);
   private final PostVoluntaryExit handler =
-      new PostVoluntaryExit(spec, keyManager, validatorApiChannel);
+      new PostVoluntaryExit(spec, keyManager, validatorApiChannel, timeProvider);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test

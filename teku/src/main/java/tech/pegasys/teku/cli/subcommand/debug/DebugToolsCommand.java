@@ -29,6 +29,7 @@ import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.service.serviceutils.layout.SeparateServiceDataDirLayou
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.NoOpKeyManager;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
@@ -114,8 +116,14 @@ public class DebugToolsCommand implements Runnable {
               required = true,
               names = {"--output", "-o"},
               description = "Directory to write swagger docs to.")
-          final Path outputPath)
+          final Path outputPath,
+      @Option(
+              defaultValue = "mainnet",
+              names = {"--network", "-n"},
+              description = "Represents which network to use.")
+          final String network)
       throws Exception {
+    final tech.pegasys.teku.spec.Spec spec = SpecFactory.create(network);
     if (!outputPath.toFile().mkdirs() && !outputPath.toFile().isDirectory()) {
       throw new InvalidConfigurationException(
           String.format(
@@ -136,11 +144,14 @@ public class DebugToolsCommand implements Runnable {
         new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
     final KeyManager keyManager = new NoOpKeyManager();
     RestApi api =
-        ValidatorRestApi.create( // TODO pass validatorApiChannel
+        ValidatorRestApi.create(
+            ValidatorApiChannel.NO_OP,
             config,
             Optional.empty(),
             keyManager,
+            spec,
             dataDirLayout,
+            new SystemTimeProvider(),
             Optional.empty(),
             new DoppelgangerDetectionAlert());
 

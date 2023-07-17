@@ -27,7 +27,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.restapi.OpenApiTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
@@ -52,12 +56,16 @@ class ValidatorOpenApiTest {
     when(config.getRestApiKeystoreFile()).thenReturn(Optional.of(Path.of("keystore")));
     when(config.getRestApiKeystorePasswordFile()).thenReturn(Optional.of(Path.of("pass")));
     when(dataDirLayout.getValidatorDataDirectory()).thenReturn(validatorDataDirectory);
+    final Spec spec = SpecFactory.create("mainnet");
     final RestApi restApi =
         ValidatorRestApi.create(
+            ValidatorApiChannel.NO_OP,
             config,
             Optional.of(proposerConfigManager),
             keyManager,
+            spec,
             dataDirLayout,
+            new SystemTimeProvider(),
             Optional.empty(),
             doppelgangerDetectionAction);
     final Optional<String> maybeJson = restApi.getRestApiDocs();

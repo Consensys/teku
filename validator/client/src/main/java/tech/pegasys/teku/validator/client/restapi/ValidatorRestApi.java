@@ -25,6 +25,7 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -62,6 +63,7 @@ public class ValidatorRestApi {
       final KeyManager keyManager,
       final Spec spec,
       final DataDirLayout dataDirLayout,
+      final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
       final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     final Path slashingProtectionPath =
@@ -113,7 +115,7 @@ public class ValidatorRestApi {
         .endpoint(new SetGasLimit(proposerConfigManager))
         .endpoint(new DeleteFeeRecipient(proposerConfigManager))
         .endpoint(new DeleteGasLimit(proposerConfigManager))
-        .endpoint(new PostVoluntaryExit(spec, keyManager, validatorApiChannel))
+        .endpoint(new PostVoluntaryExit(spec, keyManager, validatorApiChannel, timeProvider))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))

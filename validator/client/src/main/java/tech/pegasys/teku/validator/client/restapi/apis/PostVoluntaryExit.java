@@ -37,8 +37,10 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -66,9 +68,13 @@ public class PostVoluntaryExit extends RestApiEndpoint {
   private final Spec spec;
   final KeyManager keyManager;
   final ValidatorApiChannel validatorApiChannel;
+  final TimeProvider timeProvider;
 
   public PostVoluntaryExit(
-      final Spec spec, final KeyManager keyManager, final ValidatorApiChannel validatorApiChannel) {
+      final Spec spec,
+      final KeyManager keyManager,
+      final ValidatorApiChannel validatorApiChannel,
+      final TimeProvider timeProvider) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("signVoluntaryExit")
@@ -89,6 +95,7 @@ public class PostVoluntaryExit extends RestApiEndpoint {
     this.spec = spec;
     this.keyManager = keyManager;
     this.validatorApiChannel = validatorApiChannel;
+    this.timeProvider = timeProvider;
   }
 
   @Override
@@ -97,7 +104,15 @@ public class PostVoluntaryExit extends RestApiEndpoint {
     final UInt64 epoch =
         request
             .getOptionalQueryParameter(EPOCH_PARAMETER)
-            .orElse(UInt64.ZERO); // TODO current epoch
+            .orElseGet(
+                () -> {
+                  final SpecVersion genesisSpec = spec.getGenesisSpec();
+                  final UInt64 genesisTime = genesisSpec.getConfig().getMinGenesisTime();
+                  final UInt64 currentTime = timeProvider.getTimeInSeconds();
+                  final UInt64 slot =
+                      genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
+                  return spec.computeEpochAtSlot(slot);
+                });
 
     final SafeFuture<SignedVoluntaryExit> future = getVoluntaryExit(publicKey, epoch);
     request.respondAsync(future.thenApply(AsyncApiResponse::respondOk));
