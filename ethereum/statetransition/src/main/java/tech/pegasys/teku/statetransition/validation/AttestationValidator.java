@@ -130,6 +130,7 @@ public class AttestationValidator {
                 return completedFuture(InternalValidationResultWithState.ignore());
               }
               final BeaconState state = maybeState.get();
+
               // The committee index is within the expected range
               if (data.getIndex()
                   .isGreaterThanOrEqualTo(

@@ -38,8 +38,6 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContent
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -76,25 +74,14 @@ public class GetBlobSidecars extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final SafeFuture<Optional<ObjectAndMetaData<SignedBeaconBlock>>> blockFuture =
-        chainDataProvider.getBlock(request.getPathParameter(PARAMETER_BLOCK_ID));
     final List<UInt64> indices = request.getQueryParameterList(BLOB_INDICES_PARAMETER);
-    final SafeFuture<Optional<List<BlobSidecar>>> resultFuture =
-        blockFuture.thenCompose(
-            maybeSignedBlock ->
-                maybeSignedBlock
-                    .map(
-                        signedBlock ->
-                            chainDataProvider
-                                .getBlobSidecars(
-                                    signedBlock.getData().getSlotAndBlockRoot(), indices)
-                                .thenApply(Optional::of))
-                    .orElse(SafeFuture.completedFuture(Optional.empty())));
+    final SafeFuture<Optional<List<BlobSidecar>>> future =
+        chainDataProvider.getBlobSidecars(request.getPathParameter(PARAMETER_BLOCK_ID), indices);
 
     request.respondAsync(
-        resultFuture.thenApply(
-            blobSidecarList ->
-                blobSidecarList
+        future.thenApply(
+            blobSidecars ->
+                blobSidecars
                     .map(AsyncApiResponse::respondOk)
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
@@ -113,9 +100,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
 
   private static ResponseContentTypeDefinition<List<BlobSidecar>> getSszResponseType() {
     final OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<List<BlobSidecar>>
-        serializer =
-            (data, out) ->
-                data.stream().forEachOrdered(blobSidecar -> blobSidecar.sszSerialize(out));
+        serializer = (data, out) -> data.forEach(blobSidecar -> blobSidecar.sszSerialize(out));
 
     return new OctetStreamResponseContentTypeDefinition<>(serializer, __ -> Collections.emptyMap());
   }

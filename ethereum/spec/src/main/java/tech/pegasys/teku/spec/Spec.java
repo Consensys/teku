@@ -421,7 +421,7 @@ public class Spec {
   }
 
   public UInt64 computeTimeAtSlot(BeaconState state, UInt64 slot) {
-    return atSlot(slot).miscHelpers().computeTimeAtSlot(state, slot);
+    return atSlot(slot).miscHelpers().computeTimeAtSlot(state.getGenesisTime(), slot);
   }
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {

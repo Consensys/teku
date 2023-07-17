@@ -781,6 +781,12 @@ public final class DataStructureUtil {
         .create(randomBitlist(), randomAttestationData(slot), randomSignature());
   }
 
+  public Attestation randomAttestation(final AttestationData attestationData) {
+    return spec.getGenesisSchemaDefinitions()
+        .getAttestationSchema()
+        .create(randomBitlist(), attestationData, randomSignature());
+  }
+
   public AggregateAndProof randomAggregateAndProof() {
     return randomAggregateAndProof(randomUInt64());
   }

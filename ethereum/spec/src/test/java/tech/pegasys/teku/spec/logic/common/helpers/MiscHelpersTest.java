@@ -164,6 +164,39 @@ class MiscHelpersTest {
         .hasMessageContaining("Parameter n must be greater than 0");
   }
 
+  @ParameterizedTest
+  @MethodSource("getComputesSlotAtTimeArguments")
+  public void computesSlotAtTime(final long currentTime, final UInt64 expectedSlot) {
+    final UInt64 actualSlot =
+        miscHelpers.computeSlotAtTime(UInt64.ZERO, UInt64.valueOf(currentTime));
+    assertThat(actualSlot).isEqualTo(expectedSlot);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getComputesTimeAtSlotArguments")
+  public void computesTimeAtSlot(final UInt64 slot, final long expectedTime) {
+    final UInt64 actualTime = miscHelpers.computeTimeAtSlot(UInt64.ZERO, slot);
+    assertThat(actualTime).isEqualTo(UInt64.valueOf(expectedTime));
+  }
+
+  public static Stream<Arguments> getComputesSlotAtTimeArguments() {
+    // 6 seconds per slot
+    return Stream.of(
+        Arguments.of(6 * 10, UInt64.valueOf(10)),
+        Arguments.of(6 * 4, UInt64.valueOf(4)),
+        Arguments.of(0, UInt64.ZERO),
+        Arguments.of(60253, UInt64.valueOf(10042)));
+  }
+
+  public static Stream<Arguments> getComputesTimeAtSlotArguments() {
+    // 6 seconds per slot
+    return Stream.of(
+        Arguments.of(UInt64.valueOf(10), 6 * 10),
+        Arguments.of(UInt64.valueOf(4), 6 * 4),
+        Arguments.of(UInt64.ZERO, 0),
+        Arguments.of(UInt64.valueOf(10042), 60252));
+  }
+
   public static Stream<Arguments> getNValues() {
     return Stream.of(
         Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));

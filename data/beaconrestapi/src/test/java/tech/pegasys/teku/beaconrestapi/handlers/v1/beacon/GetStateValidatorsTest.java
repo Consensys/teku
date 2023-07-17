@@ -147,7 +147,7 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
-        .hasMessageContaining("Invalid state");
+        .hasMessageContaining("Invalid state ID: invalid");
   }
 
   @Test
