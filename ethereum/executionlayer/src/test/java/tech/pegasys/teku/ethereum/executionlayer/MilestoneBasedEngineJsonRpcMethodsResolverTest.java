@@ -157,22 +157,25 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
 
   @Test
   void getsCapabilities() {
-    final Spec denebSpec = TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.ONE);
+    final Spec spec =
+        TestSpecFactory.createMinimalWithCapellaAndDenebForkEpoch(UInt64.ONE, UInt64.valueOf(2));
 
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
-        new MilestoneBasedEngineJsonRpcMethodsResolver(denebSpec, executionEngineClient);
+        new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
 
     final List<String> capabilities = engineMethodsResolver.getCapabilities();
 
-    // when in Capella, but Deneb is scheduled, Bellatrix methods will not be considered supported
     assertThat(capabilities)
         .containsExactly(
-            "engine_forkchoiceUpdatedV2",
-            "engine_getPayloadV2",
+            "engine_newPayloadV1",
+            "engine_getPayloadV1",
+            "engine_forkchoiceUpdatedV1",
             "engine_newPayloadV2",
-            "engine_forkchoiceUpdatedV3",
+            "engine_getPayloadV2",
+            "engine_forkchoiceUpdatedV2",
+            "engine_newPayloadV3",
             "engine_getPayloadV3",
-            "engine_newPayloadV3");
+            "engine_forkchoiceUpdatedV3");
   }
 
   private static Stream<Arguments> denebMethods() {

@@ -18,7 +18,6 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -76,7 +75,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   }
 
   private Map<EngineApiMethod, EngineJsonRpcMethod<?>> bellatrixSupportedMethods() {
-    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new TreeMap<>();
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV1(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV1(executionEngineClient, spec));
@@ -86,7 +85,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   }
 
   private Map<EngineApiMethod, EngineJsonRpcMethod<?>> capellaSupportedMethods() {
-    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new TreeMap<>();
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV2(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV2(executionEngineClient, spec));
@@ -96,7 +95,7 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   }
 
   private Map<EngineApiMethod, EngineJsonRpcMethod<?>> denebSupportedMethods() {
-    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new TreeMap<>();
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV3(executionEngineClient));
     methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV3(executionEngineClient, spec));
@@ -126,7 +125,9 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   @Override
   public List<String> getCapabilities() {
     return methodsByMilestone.values().stream()
-        .flatMap(methods -> methods.values().stream().map(EngineJsonRpcMethod::getVersionedName))
+        .flatMap(methods -> methods.values().stream())
+        .filter(method -> !method.isDeprecated())
+        .map(EngineJsonRpcMethod::getVersionedName)
         .collect(Collectors.toList());
   }
 }
