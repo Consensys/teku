@@ -898,22 +898,21 @@ public class Spec {
   }
 
   // Deneb Utils
-  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
-      final ReadOnlyStore store, final UInt64 epoch) {
-    final UInt64 currentEpoch = getCurrentEpoch(store);
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    final UInt64 minEpochForBlobSidecars =
-        specConfigDeneb
-            .getDenebForkEpoch()
-            .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
-    return epoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
-        && epoch.isLessThanOrEqualTo(currentEpoch);
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtSlot(
+      final ReadOnlyStore store, final UInt64 slot) {
+    return isAvailabilityOfBlobSidecarsRequiredAtEpoch(store, computeEpochAtSlot(slot));
   }
 
-  public boolean isStorageOfBlobSidecarsRequiredAtSlot(
-      final ReadOnlyStore store, final UInt64 slot) {
-    return isStorageOfBlobSidecarsRequiredAtEpoch(store, computeEpochAtSlot(slot));
+  public boolean isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+      final ReadOnlyStore store, final UInt64 epoch) {
+    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(DENEB)) {
+      return false;
+    }
+    final SpecConfig config = atEpoch(epoch).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    return getCurrentEpoch(store)
+        .minusMinZero(epoch)
+        .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 
   public boolean isStorageOfBlobSidecarsRequiredAtEpoch(

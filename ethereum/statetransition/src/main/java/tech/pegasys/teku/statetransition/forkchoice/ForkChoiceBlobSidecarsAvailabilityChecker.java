@@ -113,7 +113,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       return validateBatch(blobSidecars, kzgCommitments);
     }
 
-    if (isStorageOfBlobSidecarsRequiredAtSlot()) {
+    if (isBlockOutsideDataAvailabilityWindow()) {
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
     }
 
@@ -187,7 +187,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
       if (blobSidecarsToValidate.isEmpty()
           && kzgCommitmentsInBlock.size() > 0
-          && isStorageOfBlobSidecarsRequiredAtSlot()) {
+          && isBlockOutsideDataAvailabilityWindow()) {
         // there are no available blobs so far, but we are outside the availability window. We can
         // skip additional checks
         return Optional.of(BlobSidecarsAndValidationResult.NOT_REQUIRED);
@@ -335,7 +335,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       // we haven't verified enough blobs to match the commitments present in the block
       // this should never happen in practice. If it does, is likely a bug and should be fixed.
       checkState(
-          isStorageOfBlobSidecarsRequiredAtSlot(),
+          isBlockOutsideDataAvailabilityWindow(),
           "Validated blobs are less than commitments present in block.");
 
       LOG.error(
@@ -347,8 +347,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         Collections.unmodifiableList(completeValidatedBlobSidecars));
   }
 
-  private boolean isStorageOfBlobSidecarsRequiredAtSlot() {
-    return !spec.isStorageOfBlobSidecarsRequiredAtSlot(
+  private boolean isBlockOutsideDataAvailabilityWindow() {
+    return !spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(
         recentChainData.getStore(), blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot());
   }
 
