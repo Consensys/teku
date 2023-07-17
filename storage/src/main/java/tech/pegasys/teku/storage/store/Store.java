@@ -656,15 +656,22 @@ class Store implements UpdatableStore {
 
   private void cacheIfEpochState(Optional<StateAndBlockSummary> maybeStateAndBlockSummary) {
     if (maybeStateAndBlockSummary.isPresent() && maybeEpochStates.isPresent()) {
-      final UInt64 slot = maybeStateAndBlockSummary.get().getSlot();
-      final int slotsPerEpoch =
-          spec.atSlot(maybeStateAndBlockSummary.get().getSlot()).getConfig().getSlotsPerEpoch();
-      if (!slot.mod(slotsPerEpoch).isZero()) {
+      final StateAndBlockSummary summary = maybeStateAndBlockSummary.get();
+      final UInt64 slot = summary.getSlot();
+      if (!isSlotAtNthEpochBoundary(slot, summary.getParentRoot(), 1)) {
         return;
       }
-      final StateAndBlockSummary stateAndBlockSummary = maybeStateAndBlockSummary.get();
+
       final Map<Bytes32, StateAndBlockSummary> epochStates = maybeEpochStates.get();
-      epochStates.put(stateAndBlockSummary.getRoot(), stateAndBlockSummary);
+      if (!slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
+        final Optional<StateAndBlockSummary> maybeParent =
+            states.getIfAvailable(summary.getParentRoot());
+        maybeParent.ifPresent(
+            stateAndBlockSummary -> epochStates.put(summary.getParentRoot(), stateAndBlockSummary));
+      }
+      // pre-epoch transition state
+      // post epoch transition state
+      epochStates.put(summary.getRoot(), summary);
       epochStatesCountGauge.ifPresent(counter -> counter.set(maybeEpochStates.get().size()));
     }
   }

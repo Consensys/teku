@@ -19,8 +19,6 @@ import com.google.common.collect.Maps;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -28,14 +26,12 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.api.FinalizedChainData;
 import tech.pegasys.teku.storage.api.StorageUpdate;
 import tech.pegasys.teku.storage.api.UpdateResult;
 
 class StoreTransactionUpdates {
-  private static final Logger LOG = LogManager.getLogger();
   private final StoreTransaction tx;
 
   private final Optional<FinalizedChainData> finalizedChainData;
@@ -111,16 +107,8 @@ class StoreTransactionUpdates {
         .filter(t -> t.isGreaterThan(store.getTimeMillis()))
         .ifPresent(value -> store.timeMillis = value);
     tx.genesisTime.ifPresent(value -> store.genesisTime = value);
-    tx.justifiedCheckpoint.ifPresent(
-        value -> {
-          store.justifiedCheckpoint = value;
-          addJustifiedtoEpochCache(store, value);
-        });
-    tx.bestJustifiedCheckpoint.ifPresent(
-        value -> {
-          store.bestJustifiedCheckpoint = value;
-          addJustifiedtoEpochCache(store, value);
-        });
+    tx.justifiedCheckpoint.ifPresent(value -> store.justifiedCheckpoint = value);
+    tx.bestJustifiedCheckpoint.ifPresent(value -> store.bestJustifiedCheckpoint = value);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
     store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     if (optimisticTransitionBlockRootSet) {
@@ -131,13 +119,19 @@ class StoreTransactionUpdates {
     // Update finalized data
     finalizedChainData.ifPresent(
         finalizedData -> {
+          store.maybeEpochStates.ifPresent(
+              epochStates -> epochStates.remove(store.finalizedAnchor.getRoot()));
           store.finalizedAnchor = finalizedData.getLatestFinalized();
-          final BeaconState state = finalizedData.getLatestFinalizedState();
-          StateAndBlockSummary summary =
-              StateAndBlockSummary.create(
-                  finalizedData.getLatestFinalized().getBlockSummary(), state);
-          final Bytes32 root = finalizedData.getLatestFinalized().getRoot();
-          store.maybeEpochStates.ifPresent(epochStates -> epochStates.put(root, summary));
+
+          store.maybeEpochStates.ifPresent(
+              epochStates -> {
+                final BeaconState state = finalizedData.getLatestFinalizedState();
+                StateAndBlockSummary summary =
+                    StateAndBlockSummary.create(
+                        finalizedData.getLatestFinalized().getBlockSummary(), state);
+                final Bytes32 root = finalizedData.getLatestFinalized().getRoot();
+                epochStates.put(root, summary);
+              });
         });
 
     // Prune blocks and states
@@ -155,26 +149,6 @@ class StoreTransactionUpdates {
         tx.pulledUpBlockCheckpoints,
         prunedHotBlockRoots,
         store.getFinalizedCheckpoint());
-  }
-
-  private void addJustifiedtoEpochCache(Store store, Checkpoint value) {
-    store.maybeEpochStates.ifPresent(
-        epochStates ->
-            store
-                .retrieveBlockAndState(value.getRoot())
-                .thenPeek(
-                    bas ->
-                        bas.ifPresent(
-                            b ->
-                                epochStates.put(
-                                    b.getSlotAndBlockRoot().getBlockRoot(),
-                                    StateAndBlockSummary.create(b))))
-                .exceptionally(
-                    err -> {
-                      LOG.debug("Failed attempting to retrieve justified state", err);
-                      return null;
-                    })
-                .ifExceptionGetsHereRaiseABug());
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {
