@@ -664,12 +664,13 @@ class Store implements UpdatableStore {
 
       final Map<Bytes32, StateAndBlockSummary> epochStates = maybeEpochStates.get();
       if (!slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
+        // pre-epoch transition state
+        // This will be referenced during epoch transition if the first slot of the epoch is empty
         final Optional<StateAndBlockSummary> maybeParent =
             states.getIfAvailable(summary.getParentRoot());
         maybeParent.ifPresent(
             stateAndBlockSummary -> epochStates.put(summary.getParentRoot(), stateAndBlockSummary));
       }
-      // pre-epoch transition state
       // post epoch transition state
       epochStates.put(summary.getRoot(), summary);
       epochStatesCountGauge.ifPresent(counter -> counter.set(maybeEpochStates.get().size()));
