@@ -14,6 +14,7 @@
 package tech.pegasys.teku;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.MAX_EPOCHS_STORE_BLOBS;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.vertx.core.Vertx;
@@ -169,7 +170,8 @@ public abstract class AbstractNode implements Node {
                   epochsStoreBlobsInput.toString(),
                   specConfigDeneb.getEpochsStoreBlobs()
                       != specConfigDeneb.getMinEpochsForBlobSidecarsRequests(),
-                  String.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
+                  String.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()),
+                  MAX_EPOCHS_STORE_BLOBS);
             });
   }
 

@@ -79,13 +79,17 @@ public class StatusLogger {
   }
 
   public void warnDenebEpochsStoreBlobsParameterSet(
-      final String epochsStoreBlobs, final boolean isOverriden, final String specValue) {
+      final String epochsStoreBlobs,
+      final boolean isOverriden,
+      final String specValue,
+      final Integer maxEpochsStoreBlobs) {
     if (isOverriden) {
-      final boolean isMax = String.valueOf(Integer.MAX_VALUE).equals(epochsStoreBlobs);
+      final boolean isMax = String.valueOf(maxEpochsStoreBlobs).equals(epochsStoreBlobs);
       log.warn(
           print(
-              "Xepochs-store-blobs sets the number of epochs blob sidecars are stored and requested during the sync to: "
-                  + (isMax ? "MAX" : epochsStoreBlobs),
+              "Xepochs-store-blobs has been set to "
+                  + (isMax ? "MAX" : epochsStoreBlobs)
+                  + ". It overrides the standard number of epochs blob sidecars are stored and requested during the sync.",
               Color.YELLOW));
     } else {
       log.warn(

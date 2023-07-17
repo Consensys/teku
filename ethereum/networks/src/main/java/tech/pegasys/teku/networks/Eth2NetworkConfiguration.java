@@ -48,6 +48,8 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
+  // 26 thousand years should be enough
+  public static final Integer MAX_EPOCHS_STORE_BLOBS = Integer.MAX_VALUE;
 
   private final Spec spec;
   private final String constants;
@@ -658,8 +660,7 @@ public class Eth2NetworkConfiguration {
         return Optional.empty();
       }
       if (epochsStoreBlobs.equalsIgnoreCase(EPOCHS_STORE_BLOBS_MAX_KEYWORD)) {
-        // 26 thousand years should be enough
-        return Optional.of(Integer.MAX_VALUE);
+        return Optional.of(MAX_EPOCHS_STORE_BLOBS);
       }
       final int epochsStoreBlobsInt;
       try {
