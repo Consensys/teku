@@ -311,7 +311,7 @@ class Store implements UpdatableStore {
                 SettableGauge.create(
                     metricsSystem,
                     TekuMetricCategory.STORAGE,
-                    "memory_epoch_states_count",
+                    "memory_epoch_states_cache_size",
                     "Number of Epoch aligned states held in the in-memory store"));
       }
       states.startMetrics();
