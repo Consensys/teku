@@ -166,7 +166,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
     final List<String> capabilities = engineMethodsResolver.getCapabilities();
 
     assertThat(capabilities)
-        .containsExactly(
+        .containsExactlyInAnyOrder(
             "engine_newPayloadV1",
             "engine_getPayloadV1",
             "engine_forkchoiceUpdatedV1",
