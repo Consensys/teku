@@ -36,6 +36,7 @@ import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
+import tech.pegasys.teku.ethereum.executionlayer.EngineCapabilitiesMonitor;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandler;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionClientHandlerImpl;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManager;
@@ -178,6 +179,12 @@ public class ExecutionLayerService extends Service {
     final ExecutionClientHandler executionClientHandler =
         new ExecutionClientHandlerImpl(
             config.getSpec(), executionEngineClient, engineMethodsResolver);
+
+    final EngineCapabilitiesMonitor engineCapabilitiesMonitor =
+        new EngineCapabilitiesMonitor(
+            config.getSpec(), EVENT_LOG, engineMethodsResolver, executionEngineClient);
+
+    serviceConfig.getEventChannels().subscribe(SlotEventsChannel.class, engineCapabilitiesMonitor);
 
     final Optional<BuilderClient> builderClient =
         builderRestClientProvider.map(
