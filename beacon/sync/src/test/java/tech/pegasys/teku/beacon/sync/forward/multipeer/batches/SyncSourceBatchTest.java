@@ -65,7 +65,7 @@ public class SyncSourceBatchTest {
 
   @BeforeEach
   public void setUp() {
-    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(false);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(false);
   }
 
   @Test
@@ -136,7 +136,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void requestMoreBlocks_shouldRequestBlobSidecarsWhenRequired() {
-    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Runnable callback = mock(Runnable.class);
     final Batch batch = createBatch(70, 50);
@@ -232,7 +232,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void shouldReportAsInvalidWhenUnexpectedNumberOfBlobSidecarsWereReceived() {
-    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Batch batch = createBatch(10, 10);
 
@@ -255,7 +255,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void shouldReportAsInvalidWhenBlobSidecarsWithUnexpectedSlotsWereReceived() {
-    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Batch batch = createBatch(10, 10);
 
@@ -286,7 +286,7 @@ public class SyncSourceBatchTest {
 
   @Test
   void shouldMarkBatchAsInconsistentWhenUnexpectedBlobSidecarsWithRootsWereReceived() {
-    when(blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(any())).thenReturn(true);
+    when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
     final Batch batch = createBatch(10, 10);
 

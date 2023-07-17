@@ -915,18 +915,6 @@ public class Spec {
         .isLessThanOrEqualTo(specConfigDeneb.getMinEpochsForBlobSidecarsRequests());
   }
 
-  public boolean isStorageOfBlobSidecarsRequiredAtEpoch(
-      final ReadOnlyStore store, final UInt64 epoch) {
-    if (!forkSchedule.getSpecMilestoneAtEpoch(epoch).isGreaterThanOrEqualTo(DENEB)) {
-      return false;
-    }
-    final SpecConfig config = atEpoch(epoch).getConfig();
-    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return getCurrentEpoch(store)
-        .minusMinZero(epoch)
-        .isLessThanOrEqualTo(specConfigDeneb.getEpochsStoreBlobs());
-  }
-
   public Optional<Integer> getMaxBlobsPerBlock() {
     final SpecMilestone highestSupportedMilestone =
         getForkSchedule().getHighestSupportedMilestone();

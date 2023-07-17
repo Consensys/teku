@@ -171,8 +171,7 @@ public class PeerSync {
               final PeerSyncBlobSidecarListener blobSidecarListener =
                   new PeerSyncBlobSidecarListener(requestContext.startSlot, requestContext.endSlot);
 
-              if (blobSidecarManager.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
-                  requestContext.endSlot)) {
+              if (blobSidecarManager.isAvailabilityRequiredAtSlot(requestContext.endSlot)) {
                 LOG.debug(
                     "Request {} blob sidecars starting at {} from peer {}",
                     requestContext.count,
