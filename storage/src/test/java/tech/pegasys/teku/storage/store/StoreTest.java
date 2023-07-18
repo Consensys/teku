@@ -128,7 +128,7 @@ class StoreTest extends AbstractStoreTest {
         .containsExactlyInAnyOrder(24, 8);
   }
 
-  private SlotAndBlockRoot stateAndBlockAtSlot(int i, ChainBuilder chainBuilder) {
+  private SlotAndBlockRoot stateAndBlockAtSlot(final int i, final ChainBuilder chainBuilder) {
     return new SlotAndBlockRoot(UInt64.valueOf(i), chainBuilder.getBlockAtSlot(i).getRoot());
   }
 
