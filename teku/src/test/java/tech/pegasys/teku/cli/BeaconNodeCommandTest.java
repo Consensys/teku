@@ -57,6 +57,8 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -70,6 +72,10 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_SUFFIX;
   private static final String LOG_PATTERN =
       LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_PATTERN_SUFFIX;
+  private static final String XEPOCHS_STORE_BLOBS_OPTION = "--Xepochs-store-blobs";
+  private static final String DOPPELGANGER_DETECTION_ENABLED_OPTION =
+      "--doppelganger-detection-enabled";
+  private static final String XDENEB_FORK_EPOCH_OPTION = "--Xnetwork-deneb-fork-epoch";
 
   final Eth1Address address =
       Eth1Address.fromHexString("0x77f7bED277449F51505a4C54550B074030d989bC");
@@ -348,7 +354,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldEnableDoppelgangerDetection() {
-    final String[] args = {"--doppelganger-detection-enabled", "true"};
+    final String[] args = {DOPPELGANGER_DETECTION_ENABLED_OPTION, "true"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
@@ -361,7 +367,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   public void shouldDisableDoppelgangerDetection() {
-    final String[] args = {"--doppelganger-detection-enabled", "false"};
+    final String[] args = {DOPPELGANGER_DETECTION_ENABLED_OPTION, "false"};
     beaconNodeCommand.parse(args);
     assertThat(
             beaconNodeCommand
@@ -370,6 +376,53 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 .getValidatorConfig()
                 .isDoppelgangerDetectionEnabled())
         .isFalse();
+  }
+
+  @Test
+  public void shouldIgnoreSmallDenebEpochsStoreBlobs() {
+    final String[] args = {XEPOCHS_STORE_BLOBS_OPTION, "2000", XDENEB_FORK_EPOCH_OPTION, "200000"};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
+        .contains(2000);
+
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .eth2NetworkConfiguration()
+                .getSpec()
+                .forMilestone(SpecMilestone.DENEB)
+                .getConfig());
+    // not overriden in spec however
+    assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(4096);
+  }
+
+  @Test
+  public void shouldMaxDenebEpochsStoreBlobs() {
+    final String[] args = {XEPOCHS_STORE_BLOBS_OPTION, "MAX"};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
+        .contains(Integer.MAX_VALUE);
+  }
+
+  @Test
+  public void shouldParseDenebEpochsStoreBlobs() {
+    final String[] args = {XEPOCHS_STORE_BLOBS_OPTION, "12345", XDENEB_FORK_EPOCH_OPTION, "200000"};
+    beaconNodeCommand.parse(args);
+    assertThat(
+            beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getEpochsStoreBlobs())
+        .contains(12345);
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .eth2NetworkConfiguration()
+                .getSpec()
+                .forMilestone(SpecMilestone.DENEB)
+                .getConfig());
+    assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(12345);
   }
 
   private Path createConfigFile() throws IOException {

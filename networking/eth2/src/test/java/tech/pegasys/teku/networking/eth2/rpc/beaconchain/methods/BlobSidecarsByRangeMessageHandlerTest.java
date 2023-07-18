@@ -60,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BlobSidecarsByRangeMessageHandlerTest {
 
@@ -67,6 +68,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       RpcEncoding.createSszSnappyEncoding(
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
 
+  private final UInt64 genesisTime = UInt64.valueOf(1982239L);
   private final UInt64 denebForkEpoch = UInt64.valueOf(1);
 
   private final Spec spec = TestSpecFactory.createMinimalWithDenebForkEpoch(denebForkEpoch);
@@ -98,6 +100,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  private final UpdatableStore store = mock(UpdatableStore.class);
 
   private final String protocolId =
       BeaconChainMethodIds.getBlobSidecarsByRangeMethodId(1, RPC_ENCODING);
@@ -116,12 +119,16 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .thenReturn(allowedObjectsRequest);
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
         .thenReturn(SafeFuture.completedFuture(Optional.of(ZERO)));
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(denebForkEpoch.increment());
+    when(combinedChainDataClient.getStore()).thenReturn(store);
     when(combinedChainDataClient.getBestBlockRoot()).thenReturn(Optional.of(headBlockRoot));
     // everything is finalized by default
     when(combinedChainDataClient.getFinalizedBlockSlot())
         .thenReturn(Optional.of(startSlot.plus(count)));
     when(listener.respond(any())).thenReturn(SafeFuture.COMPLETE);
+
+    // mock store
+    when(store.getGenesisTime()).thenReturn(genesisTime);
+    setCurrentEpoch(denebForkEpoch.increment());
   }
 
   @Test
@@ -192,7 +199,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   public void shouldSendResourceUnavailableIfBlobSidecarsAreNotAvailable() {
 
     // current epoch is 5020
-    when(combinedChainDataClient.getCurrentEpoch()).thenReturn(UInt64.valueOf(5020));
+    setCurrentEpoch(UInt64.valueOf(5020));
 
     // earliest available sidecar epoch - 5010
     when(combinedChainDataClient.getEarliestAvailableBlobSidecarSlot())
@@ -360,6 +367,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(listener).completeSuccessfully();
 
     AssertionsForInterfaceTypes.assertThat(actualSent).isEmpty();
+  }
+
+  private void setCurrentEpoch(final UInt64 currentEpoch) {
+    when(store.getTimeSeconds())
+        .thenReturn(
+            spec.getSlotStartTime(currentEpoch.times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
   }
 
   private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
