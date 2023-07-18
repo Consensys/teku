@@ -109,14 +109,9 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
 
   @Override
   public Optional<UInt256> getDiscoveryNodeId() {
-    BigInteger nodeId =
-        new BigInteger(
-            1,
-            discoveryService
-                .getNodeId()
-                .orElseThrow(() -> new IllegalArgumentException("Unable to get discovery node id"))
-                .toArray());
-    return Optional.of(UInt256.valueOf(nodeId));
+    return discoveryService
+        .getNodeId()
+        .map(bytes -> UInt256.valueOf(new BigInteger(bytes.toArray())));
   }
 
   @Override
