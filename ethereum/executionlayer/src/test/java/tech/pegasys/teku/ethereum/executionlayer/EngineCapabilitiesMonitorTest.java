@@ -26,8 +26,6 @@ import static tech.pegasys.teku.ethereum.executionlayer.EngineCapabilitiesMonito
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -103,11 +101,30 @@ public class EngineCapabilitiesMonitorTest {
     verify(executionEngineClient, never()).exchangeCapabilities(anyList());
   }
 
-  @ParameterizedTest
-  @ValueSource(ints = {1, 3, 8, 9, 11, 12})
-  public void doesNotRunMonitoringIfNotAtRequiredSlot(final int slot) {
-    engineCapabilitiesMonitor.onSlot(UInt64.valueOf(slot));
+  @Test
+  public void runsMonitoringFirstTimeRegardlessOfSlot() {
+    engineCapabilitiesMonitor.onSlot(UInt64.ZERO);
+    verify(executionEngineClient).exchangeCapabilities(anyList());
+  }
+
+  @Test
+  public void doesNotRunMonitoringIfNotAtRequiredSlot() {
+    // run once to bypass hasNeverRun()
+    engineCapabilitiesMonitor.onSlot(UInt64.ZERO);
+    verify(executionEngineClient).exchangeCapabilities(anyList());
+
+    clearInvocations(executionEngineClient);
+
+    // should not run monitoring on not applicable slots
+    final UInt64 nextApplicableSlot = computeApplicableSlotForEpoch(UInt64.valueOf(10));
+    engineCapabilitiesMonitor.onSlot(nextApplicableSlot.minus(1));
+    engineCapabilitiesMonitor.onSlot(nextApplicableSlot.plus(1));
+    engineCapabilitiesMonitor.onSlot(nextApplicableSlot.plus(2));
     verifyNoInteractions(executionEngineClient);
+
+    // should run on applicable slot
+    engineCapabilitiesMonitor.onSlot(nextApplicableSlot);
+    verify(executionEngineClient).exchangeCapabilities(anyList());
   }
 
   private void mockEngineCapabilitiesResponse(final List<String> engineCapabilities) {
