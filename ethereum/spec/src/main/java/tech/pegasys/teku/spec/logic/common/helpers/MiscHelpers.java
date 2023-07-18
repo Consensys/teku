@@ -215,7 +215,7 @@ public class MiscHelpers {
             permutationSeed);
 
     return UInt64.valueOf(
-        permutedPrefix + index % specConfig.getNetworkingConfig().getAttestationSubnetCount());
+        (permutedPrefix + index) % specConfig.getNetworkingConfig().getAttestationSubnetCount());
   }
 
   public UInt64 calculateNodeSubnetUnsubscriptionSlot(final UInt64 currentSlot) {
