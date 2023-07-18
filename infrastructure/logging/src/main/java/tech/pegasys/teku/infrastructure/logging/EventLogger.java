@@ -162,7 +162,7 @@ public class EventLogger {
         String.format(
             "Execution Client does not support required Engine API methods: %s. Make sure it is upgraded to a compatible version.",
             missingCapabilities),
-        Color.RED);
+        Color.YELLOW);
   }
 
   public void builderIsNotAvailable(final String errorMessage) {
