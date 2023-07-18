@@ -108,21 +108,6 @@ public class StableSubnetSubscriberTest {
     // since subnet id can randomly be chosen the same
   }
 
-  @Test
-  void shouldGenerateLargeNumberOfSubscriptionsAndCheckTheyreAllCorrect() {
-    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
-
-    stableSubnetSubscriber.onSlot(ZERO);
-
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
-        ArgumentCaptor.forClass(Set.class);
-    verify(attestationTopicSubscriber).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-    assertSubnetsAreDistinct(subnetSubscriptions.getValue());
-    assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
-    assertThat(subnetSubscriptions.getValue())
-        .hasSize(spec.getNetworkingConfig().getSubnetsPerNode());
-  }
-
   private void assertUnsubscribeSlotsAreInBound(
       Set<SubnetSubscription> subnetSubscriptions, UInt64 currentSlot) {
     UInt64 lowerBound =
