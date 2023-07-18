@@ -59,6 +59,7 @@ public abstract class AbstractStoreTest {
             .checkpointStateCacheSize(cacheSize)
             .blockCacheSize(cacheSize)
             .stateCacheSize(cacheSize)
+            .epochStateCacheSize(cacheSize)
             .build();
 
     final UpdatableStore store = createGenesisStore(pruningOptions);
