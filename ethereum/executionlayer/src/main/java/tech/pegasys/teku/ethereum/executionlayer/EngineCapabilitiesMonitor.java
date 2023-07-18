@@ -33,7 +33,7 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final int EPOCHS_PER_MONITORING = 10;
-  private static final UInt64 SLOT_IN_THE_EPOCH_TO_RUN_MONITORING = UInt64.valueOf(3);
+  static final UInt64 SLOT_IN_THE_EPOCH_TO_RUN_MONITORING = UInt64.valueOf(3);
 
   private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
 

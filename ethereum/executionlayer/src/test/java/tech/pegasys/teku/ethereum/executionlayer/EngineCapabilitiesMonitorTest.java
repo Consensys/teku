@@ -21,6 +21,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.executionlayer.EngineCapabilitiesMonitor.SLOT_IN_THE_EPOCH_TO_RUN_MONITORING;
 
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -115,6 +116,7 @@ public class EngineCapabilitiesMonitorTest {
   }
 
   private UInt64 computeApplicableSlotForEpoch(final UInt64 epoch) {
-    return spec.computeStartSlotAtEpoch(epoch).plus(2);
+    return spec.computeStartSlotAtEpoch(epoch)
+        .plus(SLOT_IN_THE_EPOCH_TO_RUN_MONITORING.minusMinZero(1));
   }
 }
