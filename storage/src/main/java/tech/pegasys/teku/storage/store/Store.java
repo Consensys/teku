@@ -505,7 +505,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(Bytes32 blockRoot) {
+  public SafeFuture<Optional<SignedBlockAndState>> retrieveBlockAndState(final Bytes32 blockRoot) {
     return getAndCacheBlockAndState(blockRoot);
   }
 
@@ -516,7 +516,7 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
+  public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
     return getAndCacheBlockAndState(blockRoot)
         .thenApply(
             maybeStateAndBlockSummary ->
@@ -524,13 +524,14 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint) {
+  public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(final Checkpoint checkpoint) {
     return checkpointStates.perform(
         new StateAtSlotTask(spec, checkpoint.toSlotAndBlockRoot(spec), this::retrieveBlockState));
   }
 
   @Override
-  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot slotAndBlockRoot) {
+  public SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(
+      final SlotAndBlockRoot slotAndBlockRoot) {
     return checkpointStates.perform(
         new StateAtSlotTask(spec, slotAndBlockRoot, this::retrieveBlockState));
   }
@@ -561,7 +562,7 @@ class Store implements UpdatableStore {
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
-      Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
+      final Checkpoint checkpoint, final BeaconState latestStateAtEpoch) {
     return checkpointStates.perform(
         new StateAtSlotTask(
             spec,
@@ -589,7 +590,7 @@ class Store implements UpdatableStore {
     }
   }
 
-  VoteTracker getVote(UInt64 validatorIndex) {
+  VoteTracker getVote(final UInt64 validatorIndex) {
     readVotesLock.lock();
     try {
       if (validatorIndex.intValue() >= votes.length) {
@@ -847,13 +848,13 @@ class Store implements UpdatableStore {
         });
   }
 
-  void updateFinalizedAnchor(AnchorPoint latestFinalized) {
+  void updateFinalizedAnchor(final AnchorPoint latestFinalized) {
     pruneOldFinalizedStateFromEpochCache(this.finalizedAnchor);
     finalizedAnchor = latestFinalized;
     cacheFinalizedAnchorPoint(latestFinalized);
   }
 
-  private void cacheFinalizedAnchorPoint(AnchorPoint latestFinalized) {
+  private void cacheFinalizedAnchorPoint(final AnchorPoint latestFinalized) {
     maybeEpochStates.ifPresent(
         epochStates -> {
           final BeaconState state = latestFinalized.getState();
@@ -878,7 +879,7 @@ class Store implements UpdatableStore {
         });
   }
 
-  void updateJustifiedCheckpoint(Checkpoint checkpoint) {
+  void updateJustifiedCheckpoint(final Checkpoint checkpoint) {
     this.justifiedCheckpoint = checkpoint;
     maybeEpochStates.ifPresent(
         epochStates -> {
@@ -891,7 +892,7 @@ class Store implements UpdatableStore {
         });
   }
 
-  void updateBestJustifiedCheckpoint(Checkpoint checkpoint) {
+  void updateBestJustifiedCheckpoint(final Checkpoint checkpoint) {
     this.bestJustifiedCheckpoint = checkpoint;
   }
 }
