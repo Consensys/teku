@@ -107,8 +107,8 @@ class StoreTransactionUpdates {
         .filter(t -> t.isGreaterThan(store.getTimeMillis()))
         .ifPresent(value -> store.timeMillis = value);
     tx.genesisTime.ifPresent(value -> store.genesisTime = value);
-    tx.justifiedCheckpoint.ifPresent(value -> store.justifiedCheckpoint = value);
-    tx.bestJustifiedCheckpoint.ifPresent(value -> store.bestJustifiedCheckpoint = value);
+    tx.justifiedCheckpoint.ifPresent(store::updateJustifiedCheckpoint);
+    tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
     store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     if (optimisticTransitionBlockRootSet) {
@@ -118,21 +118,7 @@ class StoreTransactionUpdates {
 
     // Update finalized data
     finalizedChainData.ifPresent(
-        finalizedData -> {
-          store.maybeEpochStates.ifPresent(
-              epochStates -> epochStates.remove(store.finalizedAnchor.getRoot()));
-          store.finalizedAnchor = finalizedData.getLatestFinalized();
-
-          store.maybeEpochStates.ifPresent(
-              epochStates -> {
-                final BeaconState state = finalizedData.getLatestFinalizedState();
-                StateAndBlockSummary summary =
-                    StateAndBlockSummary.create(
-                        finalizedData.getLatestFinalized().getBlockSummary(), state);
-                final Bytes32 root = finalizedData.getLatestFinalized().getRoot();
-                epochStates.put(root, summary);
-              });
-        });
+        finalizedData -> store.updateFinalizedAnchor(finalizedData.getLatestFinalized()));
 
     // Prune blocks and states
     prunedHotBlockRoots.keySet().forEach(store::removeStateAndBlock);

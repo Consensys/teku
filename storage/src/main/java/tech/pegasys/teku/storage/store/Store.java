@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -511,12 +512,15 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<StateAndBlockSummary>> retrieveStateAndBlockSummary(
       final Bytes32 blockRoot) {
-    return getAndCacheStateAndBlockSummary(blockRoot);
+    return getOrRegenerateBlockAndState(blockRoot);
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(Bytes32 blockRoot) {
-    return getAndCacheBlockState(blockRoot);
+    return getAndCacheBlockAndState(blockRoot)
+        .thenApply(
+            maybeStateAndBlockSummary ->
+                maybeStateAndBlockSummary.map(StateAndBlockSummary::getState));
   }
 
   @Override
@@ -597,15 +601,6 @@ class Store implements UpdatableStore {
     }
   }
 
-  private SafeFuture<Optional<BeaconState>> getAndCacheBlockState(final Bytes32 blockRoot) {
-    return getOrRegenerateBlockAndState(blockRoot)
-        .thenApply(
-            res -> {
-              cacheIfEpochState(res);
-              return res.map(StateAndBlockSummary::getState);
-            });
-  }
-
   private SafeFuture<Optional<SignedBlockAndState>> getAndCacheBlockAndState(
       final Bytes32 blockRoot) {
     return getOrRegenerateBlockAndState(blockRoot)
@@ -617,7 +612,9 @@ class Store implements UpdatableStore {
               final Optional<SignedBeaconBlock> maybeBlock =
                   res.flatMap(StateAndBlockSummary::getSignedBeaconBlock);
               return maybeBlock
-                  .map(b -> SafeFuture.completedFuture(Optional.of(b)))
+                  .map(
+                      signedBeaconBlock ->
+                          SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
                   .orElseGet(() -> blockProvider.getBlock(blockRoot))
                   .thenPeek(block -> block.ifPresent(this::putBlock))
                   .thenApply(
@@ -625,27 +622,40 @@ class Store implements UpdatableStore {
             });
   }
 
-  private SafeFuture<Optional<StateAndBlockSummary>> getAndCacheStateAndBlockSummary(
-      final Bytes32 blockRoot) {
-    return getOrRegenerateBlockAndState(blockRoot);
-  }
-
   private SafeFuture<Optional<StateAndBlockSummary>> getOrRegenerateBlockAndState(
       final Bytes32 blockRoot) {
     // Avoid generating the hash tree to rebuild if the state is already available.
     final Optional<StateAndBlockSummary> cachedResult = states.getIfAvailable(blockRoot);
     if (cachedResult.isPresent()) {
-      return SafeFuture.completedFuture(cachedResult);
+      return SafeFuture.completedFuture(cachedResult).thenPeek(this::cacheIfEpochState);
     }
 
     // is it an epoch boundary?
-    if (maybeEpochStates.isPresent()) {
-      final Optional<StateAndBlockSummary> maybeEpochState =
-          Optional.ofNullable(maybeEpochStates.get().get(blockRoot));
-      if (maybeEpochState.isPresent()) {
-        return SafeFuture.completedFuture(maybeEpochState);
-      }
+    final Optional<StateAndBlockSummary> maybeEpochState =
+        maybeEpochStates.flatMap(epochStates -> Optional.ofNullable(epochStates.get(blockRoot)));
+    if (maybeEpochState.isPresent()) {
+      LOG.trace("epochCache GET {}", () -> maybeEpochState.get().getSlot());
+      return SafeFuture.completedFuture(maybeEpochState);
     }
+
+    // if finalized is gone from cache we can still reconstruct that without regenerating
+    if (finalizedAnchor.getRoot().equals(blockRoot)) {
+      LOG.trace("epochCache GET finalizedAnchor {}", finalizedAnchor::getSlot);
+      return SafeFuture.completedFuture(
+          Optional.of(
+              StateAndBlockSummary.create(
+                  finalizedAnchor.getBlockSummary(), finalizedAnchor.getState())));
+    }
+
+    maybeEpochStates.ifPresent(
+        epochStates ->
+            LOG.trace(
+                "epochCache states in cache: {}",
+                () ->
+                    epochStates.values().stream()
+                        .map(StateAndBlockSummary::getSlot)
+                        .map(UInt64::toString)
+                        .collect(Collectors.joining(", "))));
     return createStateGenerationTask(blockRoot)
         .thenCompose(
             maybeTask ->
@@ -654,11 +664,11 @@ class Store implements UpdatableStore {
                     : EmptyStoreResults.EMPTY_STATE_AND_BLOCK_SUMMARY_FUTURE);
   }
 
-  private void cacheIfEpochState(Optional<StateAndBlockSummary> maybeStateAndBlockSummary) {
+  private void cacheIfEpochState(final Optional<StateAndBlockSummary> maybeStateAndBlockSummary) {
     if (maybeStateAndBlockSummary.isPresent() && maybeEpochStates.isPresent()) {
-      final StateAndBlockSummary summary = maybeStateAndBlockSummary.get();
-      final UInt64 slot = summary.getSlot();
-      if (!isSlotAtNthEpochBoundary(slot, summary.getParentRoot(), 1)) {
+      final StateAndBlockSummary stateAndBlockSummary = maybeStateAndBlockSummary.get();
+      final UInt64 slot = stateAndBlockSummary.getSlot();
+      if (!isSlotAtNthEpochBoundary(slot, stateAndBlockSummary.getParentRoot(), 1)) {
         return;
       }
 
@@ -666,13 +676,22 @@ class Store implements UpdatableStore {
       if (!slot.mod(spec.getSlotsPerEpoch(slot)).isZero()) {
         // pre-epoch transition state
         // This will be referenced during epoch transition if the first slot of the epoch is empty
-        final Optional<StateAndBlockSummary> maybeParent =
-            states.getIfAvailable(summary.getParentRoot());
-        maybeParent.ifPresent(
-            stateAndBlockSummary -> epochStates.put(summary.getParentRoot(), stateAndBlockSummary));
+        final Optional<StateAndBlockSummary> maybeParentStateAndBlockSummary =
+            states.getIfAvailable(stateAndBlockSummary.getParentRoot());
+        maybeParentStateAndBlockSummary.ifPresent(
+            parentStateAndBlockSummary -> {
+              if (epochStates.put(parentStateAndBlockSummary.getRoot(), parentStateAndBlockSummary)
+                  == null) {
+                LOG.trace("epochCache ADD.PRE {}", parentStateAndBlockSummary::getSlot);
+              }
+            });
+      } else {
+        // post epoch transition state
+        if (epochStates.put(stateAndBlockSummary.getRoot(), stateAndBlockSummary) == null) {
+          LOG.trace("epochCache ADD {}", stateAndBlockSummary::getSlot);
+        }
       }
-      // post epoch transition state
-      epochStates.put(summary.getRoot(), summary);
+
       epochStatesCountGauge.ifPresent(counter -> counter.set(maybeEpochStates.get().size()));
     }
   }
@@ -818,9 +837,61 @@ class Store implements UpdatableStore {
     states.remove(root);
     maybeEpochStates.ifPresent(
         epochStates -> {
-          if (!finalizedAnchor.getRoot().equals(root)) {
-            epochStates.remove(root);
+          if (!finalizedAnchor.getRoot().equals(root)
+              && !finalizedAnchor.getParentRoot().equals(root)) {
+            final StateAndBlockSummary stateAndBlockSummary = epochStates.remove(root);
+            if (stateAndBlockSummary != null) {
+              LOG.trace("epochCache REM {}", stateAndBlockSummary::getSlot);
+            }
           }
         });
+  }
+
+  void updateFinalizedAnchor(AnchorPoint latestFinalized) {
+    pruneOldFinalizedStateFromEpochCache(this.finalizedAnchor);
+    finalizedAnchor = latestFinalized;
+    cacheFinalizedAnchorPoint(latestFinalized);
+  }
+
+  private void cacheFinalizedAnchorPoint(AnchorPoint latestFinalized) {
+    maybeEpochStates.ifPresent(
+        epochStates -> {
+          final BeaconState state = latestFinalized.getState();
+          StateAndBlockSummary stateAndBlockSummary =
+              StateAndBlockSummary.create(latestFinalized.getBlockSummary(), state);
+          final Bytes32 root = latestFinalized.getRoot();
+          if (epochStates.put(root, stateAndBlockSummary) == null) {
+            LOG.trace("epochCache ADD FINALIZED {}", stateAndBlockSummary::getSlot);
+          }
+        });
+  }
+
+  private void pruneOldFinalizedStateFromEpochCache(final AnchorPoint anchorPoint) {
+    // ensure the old finalized state is not stored in cache, we no longer require it.
+    maybeEpochStates.ifPresent(
+        epochStates -> {
+          final StateAndBlockSummary stateAndBlockSummary =
+              epochStates.remove(anchorPoint.getRoot());
+          if (stateAndBlockSummary != null) {
+            LOG.trace("epochCache REM FINALIZED {}", stateAndBlockSummary::getSlot);
+          }
+        });
+  }
+
+  void updateJustifiedCheckpoint(Checkpoint checkpoint) {
+    this.justifiedCheckpoint = checkpoint;
+    maybeEpochStates.ifPresent(
+        epochStates -> {
+          final SlotAndBlockRoot slotAndBlockRoot = checkpoint.toSlotAndBlockRoot(spec);
+          if (epochStates.get(slotAndBlockRoot.getBlockRoot()) != null) {
+            LOG.trace("epochCache JUSTIFIED {}", slotAndBlockRoot::getSlot);
+          } else {
+            LOG.trace("epochCache MISS JUSTIFIED {}", slotAndBlockRoot::getSlot);
+          }
+        });
+  }
+
+  void updateBestJustifiedCheckpoint(Checkpoint checkpoint) {
+    this.bestJustifiedCheckpoint = checkpoint;
   }
 }
