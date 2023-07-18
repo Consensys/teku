@@ -90,7 +90,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
         subnetsPerNode);
 
     final List<UInt64> nodeSubscribedSubnets =
-        spec.getGenesisSpec()
+        spec.atSlot(currentSlot)
             .miscHelpers()
             .computeSubscribedSubnets(
                 discoveryNodeId.orElseThrow(
