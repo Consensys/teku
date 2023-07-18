@@ -24,5 +24,10 @@ public interface EngineJsonRpcMethodsResolver {
   <T> EngineJsonRpcMethod<T> getMethod(
       EngineApiMethod method, Supplier<SpecMilestone> milestoneSupplier, Class<T> resultType);
 
+  /**
+   * Get CL capabilities required for the <a
+   * href="https://github.com/ethereum/execution-apis/blob/main/src/engine/common.md#engine_exchangecapabilities">engine_exchangeCapabilities</a>
+   * request
+   */
   List<String> getCapabilities();
 }

@@ -56,16 +56,19 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
   @Override
   public void onSlot(final UInt64 slot) {
     final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
-    if (epochIsApplicable(currentEpoch) && slotIsApplicable(slot)) {
+    if (hasNeverRun() || (epochIsApplicable(currentEpoch) && slotIsApplicable(slot))) {
       monitor()
           .handleException(ex -> LOG.error("Exception exchanging Engine API capabilities", ex))
           .always(() -> lastRunEpoch.set(currentEpoch));
     }
   }
 
+  private boolean hasNeverRun() {
+    return lastRunEpoch.get() == null;
+  }
+
   private boolean epochIsApplicable(final UInt64 epoch) {
-    return lastRunEpoch.get() == null
-        || epoch.minusMinZero(lastRunEpoch.get()).isGreaterThanOrEqualTo(EPOCHS_PER_MONITORING);
+    return epoch.minusMinZero(lastRunEpoch.get()).isGreaterThanOrEqualTo(EPOCHS_PER_MONITORING);
   }
 
   private boolean slotIsApplicable(final UInt64 slot) {
@@ -80,7 +83,7 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
         .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
         .thenAccept(
             engineCapabilities -> {
-              LOG.debug("Engine API capabilities: " + engineCapabilities);
+              LOG.debug("Engine API capabilities response: " + engineCapabilities);
               final List<String> missingEngineCapabilities =
                   capabilities.stream()
                       .filter(capability -> !engineCapabilities.contains(capability))

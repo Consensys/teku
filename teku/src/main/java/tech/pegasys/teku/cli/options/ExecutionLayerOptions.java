@@ -21,6 +21,7 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
 import picocli.CommandLine.Help.Visibility;
@@ -127,6 +128,18 @@ public class ExecutionLayerOptions {
       hidden = true)
   private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
+  @Option(
+      names = {"--exchange-capabilities-monitoring-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Enable calling the Engine API exchangeCapabilities method periodically and logging a warning in case of incompatibilities.",
+      arity = "1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true",
+      hidden = true)
+  private boolean exchangeCapabilitiesMonitoringEnabled =
+      DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
+
   public void configure(final Builder builder) {
     builder.executionLayer(
         b ->
@@ -140,7 +153,8 @@ public class ExecutionLayerOptions {
                     builderCircuitBreakerAllowedConsecutiveFaults)
                 .builderBidCompareFactor(builderBidCompareFactor)
                 .builderSetUserAgentHeader(builderSetUserAgentHeader)
-                .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag));
+                .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag)
+                .exchangeCapabilitiesMonitoringEnabled(exchangeCapabilitiesMonitoringEnabled));
     depositOptions.configure(builder);
   }
 }

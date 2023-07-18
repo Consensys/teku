@@ -180,11 +180,14 @@ public class ExecutionLayerService extends Service {
         new ExecutionClientHandlerImpl(
             config.getSpec(), executionEngineClient, engineMethodsResolver);
 
-    final EngineCapabilitiesMonitor engineCapabilitiesMonitor =
-        new EngineCapabilitiesMonitor(
-            config.getSpec(), EVENT_LOG, engineMethodsResolver, executionEngineClient);
-
-    serviceConfig.getEventChannels().subscribe(SlotEventsChannel.class, engineCapabilitiesMonitor);
+    if (config.isExchangeCapabilitiesMonitoringEnabled()) {
+      final EngineCapabilitiesMonitor engineCapabilitiesMonitor =
+          new EngineCapabilitiesMonitor(
+              config.getSpec(), EVENT_LOG, engineMethodsResolver, executionEngineClient);
+      serviceConfig
+          .getEventChannels()
+          .subscribe(SlotEventsChannel.class, engineCapabilitiesMonitor);
+    }
 
     final Optional<BuilderClient> builderClient =
         builderRestClientProvider.map(

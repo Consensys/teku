@@ -23,7 +23,7 @@ public interface EngineJsonRpcMethod<T> {
 
   SafeFuture<T> execute(JsonRpcRequestParams params);
 
-  /** Override this method, when an Engine API method has been deprecated * */
+  /** Override this method, when an Engine API method has been deprecated */
   default boolean isDeprecated() {
     return false;
   }
