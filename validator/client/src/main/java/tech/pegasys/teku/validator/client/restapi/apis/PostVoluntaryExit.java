@@ -114,11 +114,11 @@ public class PostVoluntaryExit extends RestApiEndpoint {
                   return spec.computeEpochAtSlot(slot);
                 });
 
-    final SafeFuture<SignedVoluntaryExit> future = getVoluntaryExit(publicKey, epoch);
+    final SafeFuture<SignedVoluntaryExit> future = createSignedVoluntaryExit(publicKey, epoch);
     request.respondAsync(future.thenApply(AsyncApiResponse::respondOk));
   }
 
-  private SafeFuture<SignedVoluntaryExit> getVoluntaryExit(
+  private SafeFuture<SignedVoluntaryExit> createSignedVoluntaryExit(
       final BLSPublicKey publicKey, final UInt64 epoch) {
     return validatorApiChannel
         .getGenesisData()
