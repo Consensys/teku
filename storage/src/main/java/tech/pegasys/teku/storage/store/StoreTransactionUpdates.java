@@ -107,8 +107,8 @@ class StoreTransactionUpdates {
         .filter(t -> t.isGreaterThan(store.getTimeMillis()))
         .ifPresent(value -> store.timeMillis = value);
     tx.genesisTime.ifPresent(value -> store.genesisTime = value);
-    tx.justifiedCheckpoint.ifPresent(value -> store.justifiedCheckpoint = value);
-    tx.bestJustifiedCheckpoint.ifPresent(value -> store.bestJustifiedCheckpoint = value);
+    tx.justifiedCheckpoint.ifPresent(store::updateJustifiedCheckpoint);
+    tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
     hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
     store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     if (optimisticTransitionBlockRootSet) {
@@ -118,16 +118,10 @@ class StoreTransactionUpdates {
 
     // Update finalized data
     finalizedChainData.ifPresent(
-        finalizedData -> store.finalizedAnchor = finalizedData.getLatestFinalized());
+        finalizedData -> store.updateFinalizedAnchor(finalizedData.getLatestFinalized()));
 
     // Prune blocks and states
-    prunedHotBlockRoots
-        .keySet()
-        .forEach(
-            (root) -> {
-              store.blocks.remove(root);
-              store.states.remove(root);
-            });
+    prunedHotBlockRoots.keySet().forEach(store::removeStateAndBlock);
 
     store.checkpointStates.removeIf(
         slotAndBlockRoot -> prunedHotBlockRoots.containsKey(slotAndBlockRoot.getBlockRoot()));
