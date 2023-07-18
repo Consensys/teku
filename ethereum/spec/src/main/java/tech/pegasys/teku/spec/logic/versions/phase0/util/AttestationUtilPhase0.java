@@ -17,6 +17,7 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -46,10 +47,10 @@ public class AttestationUtilPhase0 extends AttestationUtil {
   }
 
   /**
-   * [IGNORE] aggregate.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (with
-   * a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. aggregate.data.slot +
-   * ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= aggregate.data.slot (a client MAY queue
-   * future aggregates for processing at the appropriate slot).
+   * [IGNORE] attestation.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots
+   * (with a MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. attestation.data.slot +
+   * ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= attestation.data.slot (a client MAY queue
+   * future attestations for processing at the appropriate slot).
    */
   @Override
   public Optional<SlotInclusionGossipValidationResult> performSlotInclusionGossipValidation(
@@ -67,21 +68,9 @@ public class AttestationUtilPhase0 extends AttestationUtil {
     return Optional.empty();
   }
 
-  protected boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
-      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 minimumBroadcastTimeMillis =
-        minimumBroadcastTimeMillis(attestationSlot, genesisTime);
-    return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
-  }
-
-  private boolean isCurrentTimeAfterAttestationPropagationSlotRange(
-      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    return maximumBroadcastTimeMillis(attestationSlot, genesisTime).isLessThan(currentTimeMillis);
-  }
-
-  private boolean isFromFarFuture(
+  protected boolean isFromFarFuture(
       final Attestation attestation, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
-    final UInt64 attestationSlotTimeMillis =
+    final UInt64 attestationForkChoiceEligibleTimeMillis =
         secondsToMillis(
             genesisTime.plus(
                 attestation
@@ -91,7 +80,21 @@ public class AttestationUtilPhase0 extends AttestationUtil {
     final UInt64 discardAttestationsAfterMillis =
         currentTimeMillis.plus(
             secondsToMillis(MAX_FUTURE_SLOT_ALLOWANCE.times(specConfig.getSecondsPerSlot())));
-    return attestationSlotTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
+    return attestationForkChoiceEligibleTimeMillis.isGreaterThan(discardAttestationsAfterMillis);
+  }
+
+  @VisibleForTesting
+  boolean isCurrentTimeAfterAttestationPropagationSlotRange(
+      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+    return maximumBroadcastTimeMillis(attestationSlot, genesisTime).isLessThan(currentTimeMillis);
+  }
+
+  @VisibleForTesting
+  boolean isCurrentTimeBeforeMinimumAttestationBroadcastTime(
+      final UInt64 attestationSlot, final UInt64 genesisTime, final UInt64 currentTimeMillis) {
+    final UInt64 minimumBroadcastTimeMillis =
+        minimumBroadcastTimeMillis(attestationSlot, genesisTime);
+    return currentTimeMillis.isLessThan(minimumBroadcastTimeMillis);
   }
 
   private UInt64 maximumBroadcastTimeMillis(

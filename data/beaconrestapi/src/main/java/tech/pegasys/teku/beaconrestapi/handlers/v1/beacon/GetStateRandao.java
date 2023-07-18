@@ -85,10 +85,9 @@ public class GetStateRandao extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    final String stateIdParam = request.getPathParameter(PARAMETER_STATE_ID);
     final Optional<UInt64> epoch = request.getOptionalQueryParameter(EPOCH_PARAMETER);
     final SafeFuture<Optional<ObjectAndMetaData<Optional<Bytes32>>>> future =
-        chainDataProvider.getRandaoAtEpoch(stateIdParam, epoch);
+        chainDataProvider.getRandaoAtEpoch(request.getPathParameter(PARAMETER_STATE_ID), epoch);
 
     request.respondAsync(
         future.thenApply(

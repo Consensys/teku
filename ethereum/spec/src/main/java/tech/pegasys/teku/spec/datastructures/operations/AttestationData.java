@@ -70,15 +70,19 @@ public class AttestationData
   }
 
   public UInt64 getEarliestSlotForForkChoice(final Spec spec) {
-    // Attestations can't be processed by fork choice until their slot is in the past and until we
-    // are in the same epoch as their target.
-    return getSlot().plus(UInt64.ONE).max(getTarget().getEpochStartSlot(spec));
+    final UInt64 targetEpochStartSlot = getTarget().getEpochStartSlot(spec);
+    return getEarliestSlotForForkChoice(targetEpochStartSlot);
   }
 
   public UInt64 getEarliestSlotForForkChoice(final MiscHelpers miscHelpers) {
-    return getSlot()
-        .plus(UInt64.ONE)
-        .max(miscHelpers.computeStartSlotAtEpoch(getTarget().getEpoch()));
+    final UInt64 targetEpochStartSlot = miscHelpers.computeStartSlotAtEpoch(getTarget().getEpoch());
+    return getEarliestSlotForForkChoice(targetEpochStartSlot);
+  }
+
+  public UInt64 getEarliestSlotForForkChoice(final UInt64 targetEpochStartSlot) {
+    // Attestations can't be processed by fork choice until their slot is in the past and until we
+    // are in the same epoch as their target.
+    return getSlot().plus(UInt64.ONE).max(targetEpochStartSlot);
   }
 
   public UInt64 getSlot() {

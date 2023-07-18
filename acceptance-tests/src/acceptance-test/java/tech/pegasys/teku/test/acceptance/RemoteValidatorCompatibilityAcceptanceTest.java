@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.test.acceptance;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDockerVersion;
@@ -27,13 +26,11 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
   private TekuValidatorNode validatorClient;
 
   @Test
-  @Disabled("TODO: Update version and enable after release")
   void shouldRunUpdatedValidatorAgainstOldBeaconNode() throws Exception {
-    verifyCompatibility(TekuDockerVersion.V22_8_1, TekuDockerVersion.LOCAL_BUILD);
+    verifyCompatibility(TekuDockerVersion.V23_6_1, TekuDockerVersion.LOCAL_BUILD);
   }
 
   @Test
-  @Disabled("TODO: Enable after release when new config is part of the release")
   void shouldRunUpdatedValidatorAgainstLastReleaseBeaconNode() throws Exception {
     verifyCompatibility(TekuDockerVersion.LAST_RELEASE, TekuDockerVersion.LOCAL_BUILD);
   }

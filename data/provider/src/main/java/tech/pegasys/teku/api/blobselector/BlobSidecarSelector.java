@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright ConsenSys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.dsl;
+package tech.pegasys.teku.api.blobselector;
 
-public enum TekuDockerVersion {
-  LOCAL_BUILD("develop"),
-  LAST_RELEASE("latest"),
-  V23_6_1("23.6.1");
+import java.util.List;
+import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-  private final String version;
-
-  TekuDockerVersion(final String version) {
-    this.version = version;
-  }
-
-  public String getVersion() {
-    return version;
-  }
+public interface BlobSidecarSelector {
+  SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(List<UInt64> indices);
 }

@@ -45,6 +45,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
   // Config: Time parameters
   int getSecondsPerSlot();
 
+  default int getMillisPerSlot() {
+    return getSecondsPerSlot() * 1000;
+  }
+
   int getSecondsPerEth1Block();
 
   int getMinValidatorWithdrawabilityDelay();

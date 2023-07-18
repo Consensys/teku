@@ -69,10 +69,21 @@ import tech.pegasys.teku.storage.storageSystem.StorageSystem;
  * network. (We define the following for convenience -- aggregate_and_proof =
  * signed_aggregate_and_proof.message and aggregate = aggregate_and_proof.aggregate)
  *
- * <p>aggregate.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (with a
- * MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. aggregate.data.slot +
- * ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= aggregate.data.slot (a client MAY queue
- * future aggregates for processing at the appropriate slot).
+ * <ul>
+ *   <li>Phase 0
+ *       <p>aggregate.data.slot is within the last ATTESTATION_PROPAGATION_SLOT_RANGE slots (with a
+ *       MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. aggregate.data.slot +
+ *       ATTESTATION_PROPAGATION_SLOT_RANGE >= current_slot >= aggregate.data.slot (a client MAY
+ *       queue future aggregates for processing at the appropriate slot).
+ *   <li>Deneb
+ *       <p>aggregate.data.slot is equal to or earlier than the current_slot (with a
+ *       MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e. aggregate.data.slot <= current_slot (a
+ *       client MAY queue future aggregates for processing at the appropriate slot).
+ *       <p>the epoch of aggregate.data.slot is either the current or previous epoch (with a
+ *       MAXIMUM_GOSSIP_CLOCK_DISPARITY allowance) -- i.e.
+ *       compute_epoch_at_slot(aggregate.data.slot) in (get_previous_epoch(state),
+ *       get_current_epoch(state))
+ * </ul>
  *
  * <p>The aggregate attestation defined by hash_tree_root(aggregate) has not already been seen (via
  * aggregate gossip, within a block, or through the creation of an equivalent aggregate locally).

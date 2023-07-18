@@ -78,7 +78,7 @@ executors:
 
   node_executor:
     docker:
-      - image: circleci/node:14-buster
+      - image: circleci/node:16-bullseye
         auth:
           <<: *docker-auth
 
@@ -139,7 +139,7 @@ commands:
             mkdir -p $HOME/.docker/trust/private
             echo $DCT_KEY | base64 --decode > $HOME/.docker/trust/private/$DCT_HASH.key
             chmod 600 $HOME/.docker/trust/private/$DCT_HASH.key
-            docker trust key load $HOME/.docker/trust/private/$DCT_HASH.key --name opsquorum
+            docker trust key load $HOME/.docker/trust/private/$DCT_HASH.key --name ecosystem
 
   docker_publish_images:
     description: "Upload the docker images"

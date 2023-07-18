@@ -193,7 +193,7 @@ public class BlockProcessorBellatrix extends BlockProcessorAltair {
     }
 
     if (!miscHelpersBellatrix
-        .computeTimeAtSlot(state, state.getSlot())
+        .computeTimeAtSlot(state.getGenesisTime(), state.getSlot())
         .equals(executionPayloadHeader.getTimestamp())) {
       throw new BlockProcessingException(
           "Execution payload timestamp does not match time for state slot");

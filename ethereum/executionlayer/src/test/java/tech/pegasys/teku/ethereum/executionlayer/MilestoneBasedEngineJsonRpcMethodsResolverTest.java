@@ -52,6 +52,20 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
     executionEngineClient = mock(ExecutionEngineClient.class);
   }
 
+  @Test
+  void bellatrixMilestoneMethodIsNotSupportedInAltair() {
+    final Spec altairSpec = TestSpecFactory.createMinimalAltair();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(altairSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                engineMethodsResolver.getMethod(
+                    ENGINE_GET_PAYLOAD, () -> SpecMilestone.BELLATRIX, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone BELLATRIX");
+  }
+
   @ParameterizedTest
   @MethodSource("bellatrixMethods")
   void shouldProvideExpectedMethodsForBellatrix(
