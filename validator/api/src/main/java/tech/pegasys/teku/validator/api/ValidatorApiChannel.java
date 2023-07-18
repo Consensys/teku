@@ -46,126 +46,126 @@ public interface ValidatorApiChannel extends ChannelInterface {
       new ValidatorApiChannel() {
         @Override
         public SafeFuture<Optional<GenesisData>> getGenesisData() {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Map<BLSPublicKey, Integer>> getValidatorIndices(
             Collection<BLSPublicKey> publicKeys) {
-          return null;
+          return SafeFuture.completedFuture(Map.of());
         }
 
         @Override
         public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
             Collection<BLSPublicKey> validatorIdentifiers) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
             UInt64 epoch, IntCollection validatorIndices) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
             UInt64 epoch, IntCollection validatorIndices) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
             UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Optional<AttestationData>> createAttestationData(
             UInt64 slot, int committeeIndex) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Optional<Attestation>> createAggregate(
             UInt64 slot, Bytes32 attestationHashTreeRoot) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Optional<SyncCommitteeContribution>> createSyncCommitteeContribution(
             UInt64 slot, int subcommitteeIndex, Bytes32 beaconBlockRoot) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
 
         @Override
         public SafeFuture<Void> subscribeToBeaconCommittee(
             List<CommitteeSubscriptionRequest> requests) {
-          return null;
+          return SafeFuture.COMPLETE;
         }
 
         @Override
         public SafeFuture<Void> subscribeToSyncCommitteeSubnets(
             Collection<SyncCommitteeSubnetSubscription> subscriptions) {
-          return null;
+          return SafeFuture.COMPLETE;
         }
 
         @Override
         public SafeFuture<Void> subscribeToPersistentSubnets(
             Set<SubnetSubscription> subnetSubscriptions) {
-          return null;
+          return SafeFuture.COMPLETE;
         }
 
         @Override
         public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
             List<Attestation> attestations) {
-          return null;
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
         public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
             List<SignedAggregateAndProof> aggregateAndProofs) {
-          return null;
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
         public SafeFuture<SendSignedBlockResult> sendSignedBlock(
             SignedBlockContainer blockContainer) {
-          return null;
+          return SafeFuture.completedFuture(SendSignedBlockResult.rejected("NO OP Implementation"));
         }
 
         @Override
         public SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
             List<SyncCommitteeMessage> syncCommitteeMessages) {
-          return null;
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
         public SafeFuture<Void> sendSignedContributionAndProofs(
             Collection<SignedContributionAndProof> signedContributionAndProofs) {
-          return null;
+          return SafeFuture.COMPLETE;
         }
 
         @Override
         public SafeFuture<Void> prepareBeaconProposer(
             Collection<BeaconPreparableProposer> beaconPreparableProposers) {
-          return null;
+          return SafeFuture.COMPLETE;
         }
 
         @Override
         public SafeFuture<Void> registerValidators(
             SszList<SignedValidatorRegistration> validatorRegistrations) {
-          return null;
+          return SafeFuture.COMPLETE;
         }
 
         @Override
         public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
             List<UInt64> validatorIndices, UInt64 epoch) {
-          return null;
+          return SafeFuture.completedFuture(Optional.empty());
         }
       };
 
