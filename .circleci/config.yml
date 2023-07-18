@@ -78,7 +78,7 @@ executors:
 
   node_executor:
     docker:
-      - image: circleci/node:14-buster
+      - image: circleci/node:16-bullseye
         auth:
           <<: *docker-auth
 

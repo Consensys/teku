@@ -50,7 +50,9 @@ async function main() {
  * @param {string} dirPath
  */
 function prepareDistDir(dirPath) {
-  fs.rmdirSync(dirPath, {recursive: true});
+  if (fs.existsSync(dirPath)) {
+    fs.rmdirSync(dirPath, {recursive: true});
+  }
   fs.mkdirSync(dirPath, {recursive: true});
 }
 
