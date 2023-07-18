@@ -838,8 +838,7 @@ class Store implements UpdatableStore {
     states.remove(root);
     maybeEpochStates.ifPresent(
         epochStates -> {
-          if (!finalizedAnchor.getRoot().equals(root)
-              && !finalizedAnchor.getParentRoot().equals(root)) {
+          if (!finalizedAnchor.getRoot().equals(root)) {
             final StateAndBlockSummary stateAndBlockSummary = epochStates.remove(root);
             if (stateAndBlockSummary != null) {
               LOG.trace("epochCache REM {}", stateAndBlockSummary::getSlot);
