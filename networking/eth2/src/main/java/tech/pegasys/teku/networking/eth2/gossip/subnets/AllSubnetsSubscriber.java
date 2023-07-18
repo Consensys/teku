@@ -36,9 +36,4 @@ public class AllSubnetsSubscriber implements StableSubnetSubscriber {
     subscriber.subscribeToPersistentSubnets(subscriptions);
     return new AllSubnetsSubscriber();
   }
-
-  @Override
-  public void onSlot(final UInt64 slot) {
-    // Already subscribed to all subnets
-  }
 }

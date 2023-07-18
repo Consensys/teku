@@ -256,6 +256,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
   protected volatile StorageUpdateChannel storageUpdateChannel;
+  protected volatile StableSubnetSubscriber stableSubnetSubscriber;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -430,6 +431,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlockManager();
     initSyncCommitteePools();
     initP2PNetwork();
+    initSubnetSubscriber();
     initSyncService();
     initSlotProcessor();
     initMetrics();
@@ -719,13 +721,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initActiveValidatorTracker() {
     LOG.debug("BeaconChainController.initActiveValidatorTracker");
+    this.activeValidatorTracker = new ActiveValidatorTracker(spec);
+  }
 
-    final StableSubnetSubscriber stableSubnetSubscriber =
+  protected void initSubnetSubscriber() {
+    LOG.debug("BeaconChainController.initSubnetSubscriber");
+    this.stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
             : new NodeBasedStableSubnetSubscriber(
                 attestationTopicSubscriber, spec, p2pNetwork.getDiscoveryNodeId());
-    this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber, spec);
   }
 
   public void initValidatorApiHandler() {
@@ -786,6 +791,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
+        .subscribe(SlotEventsChannel.class, stableSubnetSubscriber)
         .subscribeMultithreaded(
             ValidatorApiChannel.class,
             validatorApiHandler,

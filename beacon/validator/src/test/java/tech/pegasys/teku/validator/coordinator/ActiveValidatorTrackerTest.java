@@ -31,8 +31,7 @@ class ActiveValidatorTrackerTest {
   private final StableSubnetSubscriber stableSubnetSubscriber =
       mock(NodeBasedStableSubnetSubscriber.class);
 
-  private final ActiveValidatorTracker tracker =
-      new ActiveValidatorTracker(stableSubnetSubscriber, spec);
+  private final ActiveValidatorTracker tracker = new ActiveValidatorTracker(spec);
 
   @Test
   void shouldUpdateValidatorCountAtStartOfEpoch() {

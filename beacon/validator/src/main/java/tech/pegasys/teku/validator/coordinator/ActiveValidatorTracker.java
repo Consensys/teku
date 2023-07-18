@@ -25,7 +25,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.spec.Spec;
 
 public class ActiveValidatorTracker implements SlotEventsChannel {
@@ -34,11 +33,7 @@ public class ActiveValidatorTracker implements SlotEventsChannel {
   private final NavigableMap<UInt64, Set<Integer>> validatorsPerEpoch =
       new ConcurrentSkipListMap<>();
 
-  private final StableSubnetSubscriber stableSubnetSubscriber;
-
-  public ActiveValidatorTracker(
-      final StableSubnetSubscriber stableSubnetSubscriber, final Spec spec) {
-    this.stableSubnetSubscriber = stableSubnetSubscriber;
+  public ActiveValidatorTracker(final Spec spec) {
     this.spec = spec;
   }
 
@@ -54,7 +49,6 @@ public class ActiveValidatorTracker implements SlotEventsChannel {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
     final int validatorCount = getNumberOfValidatorsForEpoch(epoch);
     LOG.debug("{} active validators counted for epoch {}", validatorCount, epoch);
-    stableSubnetSubscriber.onSlot(slot);
 
     // PerformanceTracker uses validator counts to determine expected attestation count.
     // Thus we wait ATTESTATION_INCLUSION_RANGE epochs, after which the performance is determined,
