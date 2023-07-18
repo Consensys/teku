@@ -132,7 +132,7 @@ public class ExecutionLayerOptions {
       names = {"--exchange-capabilities-monitoring-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "Enable calling the Engine API exchangeCapabilities method periodically and logging a warning in case of incompatibilities.",
+          "Enables querying EL periodically for the Engine API methods it supports. If incompatibility is detected, there will be a warning raised in the logs.",
       arity = "1",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
