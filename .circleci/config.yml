@@ -61,7 +61,7 @@ executors:
 
   machine_executor_amd64:
     machine:
-      image: ubuntu-2204:2022.10.2 # https://circleci.com/developer/machine/image/ubuntu-2204
+      image: ubuntu-2204:2023.04.2 # https://circleci.com/developer/machine/image/ubuntu-2204
       docker_layer_caching: true
     working_directory: ~/project
     environment:
@@ -70,7 +70,7 @@ executors:
 
   machine_executor_arm64:
     machine:
-      image: ubuntu-2204:2022.10.2 # https://circleci.com/developer/machine/image/ubuntu-2204
+      image: ubuntu-2204:2023.04.2 # https://circleci.com/developer/machine/image/ubuntu-2204
     resource_class: arm.medium
     environment:
       architecture: "arm64"
